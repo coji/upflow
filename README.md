@@ -2,6 +2,15 @@ gitlab merge request fetch and reportor
 
 # configuration
 
+set configuration on .env file (e.g. see .env.default)
+
+```
+PROJECT_ID=<Your GitLab.com Project ID>
+PRIVATE_TOKEN=<Your GitLab.com Private Token>
+```
+
+install dependencies.
+
 ```
 pnpm i
 ```
