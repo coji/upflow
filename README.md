@@ -1,4 +1,4 @@
-gitlab merge request fetch and reportor
+gitlab merge request fetch and reporter
 
 # configuration
 
