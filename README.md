@@ -18,7 +18,7 @@ pnpm i
 # fetch
 
 ```
-pnpm tsx fetch
+pnpm run fetch
 ```
 
 then your merge requests with related commits and discussions save in to scripts/json directory.
@@ -26,7 +26,7 @@ then your merge requests with related commits and discussions save in to scripts
 # report
 
 ```
-pnpm tsx report
+pnpm run report
 ```
 
 list up report in tsv.
