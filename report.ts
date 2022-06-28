@@ -3,6 +3,10 @@ import dayjs from 'dayjs'
 import { loader } from './src/loader'
 import { aggregate } from './src/aggregator'
 
+const nullOrDate = (dateStr?: Date | string | null) => {
+  return dateStr && dayjs(dateStr).format('YYYY-MM-DD HH:mm')
+}
+
 async function main() {
   // ヘッダ
   console.log(
@@ -29,10 +33,6 @@ async function main() {
       const commits = await loader.commits(m.iid).catch(() => [])
       const discussions = await loader.discussions(m.iid).catch(() => [])
 
-      const nullOrDate = (created_at?: Date | string) => {
-        return created_at && dayjs(created_at).format('YYYY-MM-DD HH:mm')
-      }
-
       // マージリクエスト1件
       console.log(
         [
@@ -42,10 +42,10 @@ async function main() {
           commits.length,
           aggregate.reviewComments(discussions).length,
           nullOrDate(aggregate.firstCommit(commits)?.created_at),
+          nullOrDate(m.created_at),
           nullOrDate(aggregate.firstDisucussion(discussions)?.created_at),
-          dayjs(m.created_at).format('YYYY-MM-DD HH:mm'),
-          m.merged_at && dayjs(m.merged_at).format('YYYY-MM-DD HH:mm'),
-          ,
+          nullOrDate(m.merged_at),
+          nullOrDate(await aggregate.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
           m.author.username,
           m.title,
         ].join('\t')
