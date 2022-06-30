@@ -13,7 +13,7 @@ export const createFetcher = (api: any) => {
           .get(
             `https://gitlab.com/api/v4/projects/${projectId}/repository/commits`,
             {
-              searchParams: { all: true, ref_name, per_page: 100, page },
+              searchParams: { ref_name, per_page: 100, page },
               headers: { 'PRIVATE-TOKEN': privateToken },
             }
           )
