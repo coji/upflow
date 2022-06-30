@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import dayjs from 'dayjs'
-import { loader } from './src/loader'
-import { aggregate } from './src/aggregator'
+import { createLoader } from './src/loader'
+import { createAggregator } from './src/aggregator'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr && dayjs(dateStr).format('YYYY-MM-DD HH:mm')
@@ -14,18 +14,22 @@ async function main() {
       'id',
       'target_branch',
       'state',
-      'commits',
-      'review_comments',
-      'first_commited_at',
-      'mergerequest_created_at',
-      'first_reviewed_at',
-      'merged_at',
-      'released_at',
-      'author',
-      'title',
+      'コミット数',
+      'レビュー数',
+      '初回コミット日時',
+      'MR作成日時',
+      '初回レビュー日時',
+      'マージ日時',
+      'リリース日時',
+      'リリースにコミット済',
+      'MR作成者',
+      'MRタイトル',
     ].join('\t')
   )
 
+  const loader = createLoader()
+  const aggregator = createAggregator()
+  const releasedCommits = await loader.releasedCommits()
   const mr = await loader.mergerequests()
 
   mr.filter((m) => m.state !== 'closed' && m.target_branch === 'main') // close じゃない & mainブランチターゲットのみ
@@ -40,12 +44,13 @@ async function main() {
           m.target_branch,
           m.state,
           commits.length || null,
-          aggregate.reviewComments(discussions).length || null,
-          nullOrDate(aggregate.firstCommit(commits)?.created_at),
+          aggregator.reviewComments(discussions).length || null,
+          nullOrDate(aggregator.firstCommit(commits)?.created_at),
           nullOrDate(m.created_at),
-          nullOrDate(aggregate.firstDisucussion(discussions)?.created_at),
+          nullOrDate(aggregator.firstDisucussion(discussions)?.created_at),
           nullOrDate(m.merged_at),
-          nullOrDate(await aggregate.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
+          nullOrDate(await aggregator.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
+          aggregator.isCommitIncluded(releasedCommits, m.merge_commit_sha),
           m.author.username,
           m.title,
         ].join('\t')

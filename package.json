@@ -10,10 +10,13 @@
     "@gitbeaker/node": "^35.6.0",
     "dayjs": "^1.11.3",
     "dotenv": "^16.0.1",
+    "glob": "^8.0.3",
+    "glob-promise": "^4.2.2",
     "got": "^12.1.0",
     "sqlite3": "^5.0.8"
   },
   "devDependencies": {
+    "@types/glob": "^7.2.0",
     "tsx": "^3.6.0",
     "typescript": "^4.7.4"
   }
