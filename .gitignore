@@ -23,6 +23,4 @@ dist-ssr
 *.sln
 *.sw?
 .env
-json/*.json
-json/commits/*.json
-json/discussions/*.json
+json/**/*.json
