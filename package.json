@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@gitbeaker/node": "^35.6.0",
+    "cleye": "^1.2.1",
     "dayjs": "^1.11.3",
     "dotenv": "^16.0.1",
     "glob": "^8.0.3",

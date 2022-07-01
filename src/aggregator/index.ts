@@ -9,19 +9,32 @@ export const createAggregator = () => {
       ? commits.reduce((a, b) => (a.created_at < b.created_at ? a : b)) // 一番過去のもの1件を抽出
       : null
 
-  const reviewComments = (discussions: Types.DiscussionSchema[]) =>
-    discussions.filter(
-      (d) => d.notes && d.notes.some((note) => note.type === 'DiffNote') // レビューコメントがあるもののみ
-    )
+  /**
+   *　ディスカッションから、MRに対するレビューのみを抽出
+   * @param discussions
+   * @returns
+   */
+  const discussionComments = (discussions: Types.DiscussionSchema[]) =>
+    discussions
+      .filter(
+        (d) =>
+          d.notes &&
+          d.notes.some(
+            (note) => note.type === 'DiffNote' || note.type === 'DiscussionNote' // レビューコメントがあるもののみ
+          )
+      )
+      .map((d) => d.notes!)
+      .flat(1)
 
-  const firstDisucussion = (discussions: Types.DiscussionSchema[]) => {
-    const firstDiffNotes = reviewComments(discussions).map(
-      (d) => d.notes!.reduce((a, b) => (a.created_at < b.created_at ? a : b)) // コミットから最初のレビューコメントリストを抽出
-    )
-    if (!firstDiffNotes || firstDiffNotes.length === 0) return null
-    return firstDiffNotes.reduce(
-      (a, b) => (a.created_at < b.created_at ? a : b) // 最初のレビューコメントを抽出
-    )
+  /**
+   * 最初についたレビューコメントを抽出
+   * @param discussions
+   * @returns
+   */
+  const firstReviewComment = (discussions: Types.DiscussionSchema[]) => {
+    const comments = discussionComments(discussions)
+    if (comments.length === 0) return null
+    return comments.reduce((a, b) => (a.created_at < b.created_at ? a : b))
   }
 
   /**
@@ -67,8 +80,8 @@ export const createAggregator = () => {
 
   return {
     firstCommit,
-    reviewComments,
-    firstDisucussion,
+    discussionComments,
+    firstReviewComment,
     releasedMergeRequests,
     findReleaseDate,
     isCommitIncluded,
