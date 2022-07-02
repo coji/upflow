@@ -1,30 +1,10 @@
 import { Types } from '@gitbeaker/node'
-import { createLoader } from '../loader'
+import { createLoader } from '@/loader'
+import { firstCommit } from './firstCommit'
+import { reviewComments } from './reviewCommits'
 
 export const createAggregator = () => {
   const loader = createLoader()
-
-  const firstCommit = (commits: Types.CommitSchema[]) =>
-    commits.length
-      ? commits.reduce((a, b) => (a.created_at < b.created_at ? a : b)) // 一番過去のもの1件を抽出
-      : null
-
-  /**
-   * ディスカッションから、MRに対するレビューのみを抽出
-   * @param discussions
-   * @returns
-   */
-  const reviewComments = (discussions: Types.DiscussionSchema[]) =>
-    discussions
-      .filter(
-        (d) =>
-          d.notes &&
-          d.notes.some(
-            (note) => note.type === 'DiffNote' || note.type === 'DiscussionNote' // レビューコメントがあるもののみ
-          )
-      )
-      .map((d) => d.notes || [])
-      .flat(1)
 
   /**
    * 最初についたレビューコメントを抽出
@@ -42,12 +22,8 @@ export const createAggregator = () => {
    * @param allMergeRequests
    * @returns
    */
-  const releasedMergeRequests = (
-    allMergeRequests: Types.MergeRequestSchema[]
-  ) =>
-    allMergeRequests.filter(
-      (mr) => mr.target_branch === 'production' && mr.state === 'merged'
-    )
+  const releasedMergeRequests = (allMergeRequests: Types.MergeRequestSchema[]) =>
+    allMergeRequests.filter((mr) => mr.target_branch === 'production' && mr.state === 'merged')
 
   /**
    * リリースにマージされた日時を取得
@@ -55,10 +31,7 @@ export const createAggregator = () => {
    * @param allMergeRequests
    * @returns [string|null] マージ日時
    */
-  const findReleaseDate = async (
-    allMergeRequests: Types.MergeRequestSchema[],
-    targetHash?: string
-  ) => {
+  const findReleaseDate = async (allMergeRequests: Types.MergeRequestSchema[], targetHash?: string) => {
     let merged_at = null
     for (const m of releasedMergeRequests(allMergeRequests)) {
       const commits = await loader.commits(m.iid)
@@ -75,8 +48,7 @@ export const createAggregator = () => {
    * @param sha コミットハッシュ
    * @returns 含まれる: true, 含まれない: false
    */
-  const isCommitIncluded = (commits: Types.CommitSchema[], sha?: string) =>
-    commits.some((commit) => commit.id === sha)
+  const isCommitIncluded = (commits: Types.CommitSchema[], sha?: string) => commits.some((commit) => commit.id === sha)
 
   return {
     firstCommit,

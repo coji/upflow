@@ -10,7 +10,12 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "lib": ["esnext"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["vitest/importMeta"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["*.ts", "src/**/*.ts", "src/**/*.d.ts"]
 }
