@@ -5,7 +5,7 @@ import { createAggregator } from './src/aggregator'
 
 const argv = cli({
   name: 'review',
-  parameters: ['<mergerequest iid>'],
+  parameters: ['<mergerequest iid>']
 })
 
 async function printReviews(iid: number) {

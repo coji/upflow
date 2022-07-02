@@ -23,7 +23,7 @@ async function main() {
       'リリース日時',
       'リリースにコミット済',
       'MR作成者',
-      'MRタイトル',
+      'MRタイトル'
     ].join('\t')
   )
 
@@ -32,7 +32,7 @@ async function main() {
   const releasedCommits = await loader.releasedCommits()
   const mr = await loader.mergerequests()
 
-  mr.filter((m) => m.state !== 'closed' && m.target_branch === 'main') // close じゃない & mainブランチターゲットのみ
+  mr.filter((m) => m.state !== 'closed') // close じゃない & mainブランチターゲットのみ
     .forEach(async (m) => {
       const commits = await loader.commits(m.iid).catch(() => [])
       const discussions = await loader.discussions(m.iid).catch(() => [])
@@ -52,7 +52,7 @@ async function main() {
           nullOrDate(await aggregator.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
           aggregator.isCommitIncluded(releasedCommits, m.merge_commit_sha),
           m.author.username,
-          m.title,
+          m.title
         ].join('\t')
       )
     })

@@ -10,7 +10,7 @@ export const createAggregator = () => {
       : null
 
   /**
-   *　ディスカッションから、MRに対するレビューのみを抽出
+   * ディスカッションから、MRに対するレビューのみを抽出
    * @param discussions
    * @returns
    */
@@ -23,7 +23,7 @@ export const createAggregator = () => {
             (note) => note.type === 'DiffNote' || note.type === 'DiscussionNote' // レビューコメントがあるもののみ
           )
       )
-      .map((d) => d.notes!)
+      .map((d) => d.notes || [])
       .flat(1)
 
   /**
@@ -84,6 +84,6 @@ export const createAggregator = () => {
     firstReviewComment,
     releasedMergeRequests,
     findReleaseDate,
-    isCommitIncluded,
+    isCommitIncluded
   }
 }

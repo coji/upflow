@@ -6,7 +6,7 @@
     "fetch": "tsx fetch",
     "report": "tsx report",
     "lint:type": "tsc --noEmit",
-    "lint:eslint": "eslint"
+    "lint:eslint": "eslint **/*.ts"
   },
   "dependencies": {
     "@gitbeaker/node": "^35.6.0",

@@ -1,4 +1,3 @@
-import { setTimeout } from 'timers/promises'
 import { Gitlab } from '@gitbeaker/node'
 import 'dotenv/config'
 import { json, path } from './src/helper'
@@ -16,7 +15,7 @@ async function main() {
 
   // production ブランチのすべての commit
   console.log('fetch production commits...')
-  const releaseCommits = await fetcher.releaseCommits('production')
+  const releaseCommits = await fetcher.refCommits('production')
   for (const commit of releaseCommits) {
     json.save(path.releaseCommitsJsonFilename(commit.id), commit)
   }
@@ -25,7 +24,7 @@ async function main() {
   for (const iid of mr.map((m) => m.iid)) {
     // 個別MRのすべてのコミット
     console.log(`${iid} commits`)
-    const commits = await fetcher.commits(iid)
+    const commits = await fetcher.mergerequestCommits(iid)
     json.save(path.commitsJsonFilename(iid), commits)
 
     // 個別MRのすべてのディスカッション(レビューコメント含む)
