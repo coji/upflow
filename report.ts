@@ -44,7 +44,7 @@ async function main() {
           m.target_branch,
           m.state,
           commits.length || null,
-          aggregator.discussionComments(discussions).length || null,
+          aggregator.reviewComments(discussions).length || null,
           nullOrDate(aggregator.firstCommit(commits)?.created_at),
           nullOrDate(m.created_at),
           nullOrDate(aggregator.firstReviewComment(discussions)?.created_at),

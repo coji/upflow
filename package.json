@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "scripts": {
     "fetch": "tsx fetch",
-    "report": "tsx report"
+    "report": "tsx report",
+    "lint:type": "tsc --noEmit",
+    "lint:eslint": "eslint"
   },
   "dependencies": {
     "@gitbeaker/node": "^35.6.0",
@@ -18,6 +20,11 @@
   },
   "devDependencies": {
     "@types/glob": "^7.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.3",
+    "@typescript-eslint/parser": "^5.30.3",
+    "eslint": "^8.19.0",
+    "eslint-config-prettier": "^8.5.0",
+    "prettier": "^2.7.1",
     "tsx": "^3.6.0",
     "typescript": "^4.7.4"
   }
