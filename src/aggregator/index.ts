@@ -14,7 +14,7 @@ export const createAggregator = () => {
    * @param discussions
    * @returns
    */
-  const discussionComments = (discussions: Types.DiscussionSchema[]) =>
+  const reviewComments = (discussions: Types.DiscussionSchema[]) =>
     discussions
       .filter(
         (d) =>
@@ -32,7 +32,7 @@ export const createAggregator = () => {
    * @returns
    */
   const firstReviewComment = (discussions: Types.DiscussionSchema[]) => {
-    const comments = discussionComments(discussions)
+    const comments = reviewComments(discussions)
     if (comments.length === 0) return null
     return comments.reduce((a, b) => (a.created_at < b.created_at ? a : b))
   }
@@ -80,7 +80,7 @@ export const createAggregator = () => {
 
   return {
     firstCommit,
-    discussionComments,
+    reviewComments,
     firstReviewComment,
     releasedMergeRequests,
     findReleaseDate,
