@@ -1,3 +1,4 @@
+import { Types } from '@gitbeaker/node'
 import 'dotenv/config'
 import dayjs from 'dayjs'
 import { createLoader } from './src/loader'
@@ -47,7 +48,7 @@ async function main() {
           aggregator.reviewComments(discussions).length || null,
           nullOrDate(aggregator.firstCommit(commits)?.created_at),
           nullOrDate(m.created_at),
-          nullOrDate(aggregator.firstReviewComment(discussions)?.created_at),
+          nullOrDate(aggregator.firstReviewComment(discussions, (m.author as Types.UserSchema).username)?.created_at),
           nullOrDate(m.merged_at),
           nullOrDate(await aggregator.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
           aggregator.isCommitIncluded(releasedCommits, m.merge_commit_sha),
