@@ -15,13 +15,10 @@ export const createFetcher = (api: InstanceType<typeof Gitlab>) => {
     let page = 1
     for (;;) {
       const ret = await got
-        .get(
-          `https://gitlab.com/api/v4/projects/${projectId}/repository/commits`,
-          {
-            searchParams: { ref_name, per_page: 100, page },
-            headers: { 'PRIVATE-TOKEN': privateToken }
-          }
-        )
+        .get(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
+          searchParams: { ref_name, per_page: 100, page },
+          headers: { 'PRIVATE-TOKEN': privateToken }
+        })
         .json<Types.CommitSchema[]>()
 
       if (ret.length === 0) break
@@ -36,31 +33,20 @@ export const createFetcher = (api: InstanceType<typeof Gitlab>) => {
    * @param mergerequestIid
    * @returns 指定したMRのコミット情報の配列
    */
-  const mergerequestCommits = async (mergerequestIid: number) =>
-    (await api.MergeRequests.commits(
-      projectId,
-      mergerequestIid
-    )) as Types.CommitSchema[]
+  const mergerequestCommits = async (mergerequestIid: number) => await api.MergeRequests.commits(projectId, mergerequestIid)
 
   /**
    * MRのディスカッションリストを取得
    * @param mergerequestIid
    * @returns 指定したMRのディスカッション情報の配列
    */
-  const discussions = async (mergerequestIid: number) =>
-    (await api.MergeRequestDiscussions.all(
-      projectId,
-      mergerequestIid
-    )) as Types.DiscussionSchema[]
+  const discussions = async (mergerequestIid: number) => await api.MergeRequestDiscussions.all(projectId, mergerequestIid)
 
   /**
    * プロジェクトのすべてのMR情報を取得
    * @returns プロジェクトのすべてのMR情報の配列
    */
-  const mergerequests = async () =>
-    (await api.MergeRequests.all({
-      projectId
-    })) as Types.MergeRequestSchema[]
+  const mergerequests = async () => await api.MergeRequests.all({ projectId })
 
   return {
     refCommits,
