@@ -1,9 +1,9 @@
 import { Gitlab } from '@gitbeaker/node'
 import 'dotenv/config'
-import { json, path } from './src/helper'
-import { createFetcher } from './src/fetcher'
+import { json, path } from '@/helper'
+import { createFetcher } from '@/fetcher'
 
-async function main() {
+export async function fetchCommand() {
   const api = new Gitlab({ token: process.env.PRIVATE_TOKEN })
   const fetcher = createFetcher(api)
 
@@ -35,5 +35,3 @@ async function main() {
     // await setTimeout(1000)
   }
 }
-
-main()
