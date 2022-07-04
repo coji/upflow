@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "fetch": "tsx fetch",
-    "report": "tsx report",
+    "fetch": "tsx cycletime fetch",
+    "report": "tsx cycletime report",
     "lint:type": "tsc --noEmit",
     "lint:eslint": "eslint **/*.ts",
     "test": "vitest"

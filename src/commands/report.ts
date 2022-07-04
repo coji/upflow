@@ -1,14 +1,14 @@
 import { Types } from '@gitbeaker/node'
 import 'dotenv/config'
 import dayjs from 'dayjs'
-import { createLoader } from './src/loader'
-import { createAggregator } from './src/aggregator'
+import { createLoader } from '@/loader'
+import { createAggregator } from '@/aggregator'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr && dayjs(dateStr).format('YYYY-MM-DD HH:mm')
 }
 
-async function main() {
+export async function reportCommand() {
   // ヘッダ
   console.log(
     [
@@ -58,4 +58,3 @@ async function main() {
       )
     })
 }
-main()
