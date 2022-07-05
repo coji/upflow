@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import dayjs from 'dayjs'
 import { createLoader } from '../loader'
 import { createAggregator } from '../aggregator'

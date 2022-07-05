@@ -1,5 +1,4 @@
 import { Gitlab } from '@gitbeaker/node'
-import 'dotenv/config'
 import { json, path } from '@/helper'
 import { createFetcher } from '@/fetcher'
 import { createLoader } from '@/loader'
