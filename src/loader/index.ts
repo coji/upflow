@@ -1,4 +1,4 @@
-import glob from 'glob-promise'
+import { globby } from 'globby'
 import { Types } from '@gitbeaker/node'
 import { json, path } from '@/helper/index'
 
@@ -10,11 +10,10 @@ export const createLoader = () => {
 
   const releasedCommits = async () => {
     const commits: Types.CommitSchema[] = []
-    const matches = await glob(path.releaseCommitsGlob())
+    const matches = await globby(path.releaseCommitsGlob())
     for (const filename of matches) {
       const sha = path.sha(filename)
       commits.push(await json.load<Types.CommitSchema>(path.releaseCommitsJsonFilename(sha)))
-      //      commits.push(await json.load<Types.CommitSchema>(filename))
     }
     return commits
   }
