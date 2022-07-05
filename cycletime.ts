@@ -9,9 +9,16 @@ cli({
     command(
       {
         name: 'fetch',
+        flags: {
+          refresh: {
+            type: Boolean,
+            description: 'refresh all mergerequest resources.',
+            default: false
+          }
+        },
         help: { description: 'Fetch all resources from gitlab api.' }
       },
-      () => fetchCommand()
+      (argv) => fetchCommand({ refresh: argv.flags.refresh })
     ),
     command(
       {

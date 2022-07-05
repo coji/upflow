@@ -33,7 +33,7 @@ export async function reportCommand() {
   const releasedCommits = await loader.releasedCommits()
   const mr = await loader.mergerequests()
 
-  mr.filter((m) => m.state !== 'closed') // close じゃない & mainブランチターゲットのみ
+  mr.filter((m) => m.state !== 'closed' && m.target_branch !== 'production') // close じゃない & mainブランチターゲットのみ
     .forEach(async (m) => {
       const commits = await loader.commits(m.iid).catch(() => [])
       const discussions = await loader.discussions(m.iid).catch(() => [])
