@@ -31,7 +31,7 @@ const report = command(
 const commit = command(
   {
     name: 'commit',
-    parameters: ['<mergerequest iid>'],
+    parameters: ['[mergerequest iid]'],
     help: { description: 'List commits for a given mergerequest' }
   },
   (argv) => commitCommand(Number(argv._.mergerequestIid))
