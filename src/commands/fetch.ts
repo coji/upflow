@@ -26,7 +26,7 @@ export async function fetchCommand(props: FetchCommandProps) {
 
   // production ブランチのすべての commit
   console.log('fetch production commits...')
-  const releaseCommits = await fetcher.refCommits('production')
+  const releaseCommits = await fetcher.refCommits('production', props.refresh ? leastMergeRequest?.updated_at : undefined)
   for (const commit of releaseCommits) {
     json.save(path.releaseCommitsJsonFilename(commit.id), commit)
   }
