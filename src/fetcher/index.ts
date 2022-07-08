@@ -7,16 +7,17 @@ export const createFetcher = (api: InstanceType<typeof Gitlab>) => {
 
   /**
    * 指定ブランチ/タグのコミットリストを取得
-   * @param ref_name
+   * @param ref_name 対象のブランチ/タグ名
+   * @param since この日時以降のコミットをのみ取得する YYYY-MM-DDTHH:MM:SSZ ISO 8601形式
    * @returns
    */
-  const refCommits = async (ref_name: string) => {
+  const refCommits = async (ref_name: string, since?: string) => {
     const commits = []
     let page = 1
     for (;;) {
       const ret = await got
         .get(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
-          searchParams: { ref_name, per_page: 100, page },
+          searchParams: { ref_name, per_page: 100, page, since },
           headers: { 'PRIVATE-TOKEN': privateToken }
         })
         .json<Types.CommitSchema[]>()
