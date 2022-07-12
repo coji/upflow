@@ -9,12 +9,11 @@ export function getMergeRequestItems() {
 }
 
 export function upsertMergeRequest(mergeRequest: MergeRequest) {
-  const data = prisma.mergeRequest.upsert({
+  return prisma.mergeRequest.upsert({
     where: { id: mergeRequest.id },
     create: mergeRequest,
     update: mergeRequest
   })
-  return { data, error: false, status: 200 }
 }
 
 export function deleteMergeRequest({ id }: Pick<MergeRequest, 'id'>) {

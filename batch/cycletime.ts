@@ -4,6 +4,7 @@ import { fetchCommand } from '@/commands/fetch'
 import { reportCommand } from '@/commands/report'
 import { reviewCommand } from '@/commands/review'
 import { commitCommand } from '@/commands/commit'
+import { upsertCommand } from '@/commands/upsert'
 
 const fetch = command(
   {
@@ -28,6 +29,14 @@ const report = command(
   () => reportCommand()
 )
 
+const upsert = command(
+  {
+    name: 'upsert',
+    help: { description: 'upsert report data to frontend database.' }
+  },
+  () => upsertCommand()
+)
+
 const commit = command(
   {
     name: 'commit',
@@ -47,5 +56,5 @@ const review = command(
 )
 
 cli({
-  commands: [fetch, report, commit, review]
+  commands: [fetch, report, upsert, commit, review]
 })

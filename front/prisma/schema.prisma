@@ -14,13 +14,13 @@ model MergeRequest {
   id                      String @id
   target_branch           String
   state                   String
-  num_of_commits          Int
-  num_of_comments         Int
-  first_commited_at       DateTime?
-  mergerequest_created_at DateTime
-  first_reviewd_at        DateTime?
-  merged_at               DateTime?
-  released_at             DateTime?
+  num_of_commits          Int?
+  num_of_comments         Int?
+  first_commited_at       String?
+  mergerequest_created_at String
+  first_reviewd_at        String?
+  merged_at               String?
+  released_at             String?
   is_release_committed    Boolean
   author                  String
   title                   String
@@ -31,7 +31,7 @@ generator zod {
   output                   = "../src/schema"
   relationModel            = true
   modelCase                = "PascalCase"
-  modelSuffix              = "Model"
+  modelSuffix              = "Schema"
   useDecimalJs             = true
   imports                  = null
   prismaJsonNullability    = false

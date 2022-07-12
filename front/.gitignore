@@ -33,3 +33,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# database
+prisma/data.db
+prisma/data.db-journal
