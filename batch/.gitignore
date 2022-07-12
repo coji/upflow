@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+**/node_modules
 *.local
 
 # Editor directories and files
@@ -21,3 +22,4 @@ lerna-debug.log*
 *.sw?
 .env
 
+json/**/*.json
