@@ -16,10 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   try {
-    z.array(MergeRequestSchema).parse(req.body.items)
-    const items: MergeRequest[] = req.body.items
+    const items = z.array(MergeRequestSchema).parse(req.body.items) as MergeRequest[] // validate
     for (const mr of items) {
-      console.log(mr)
       await upsertMergeRequest(mr)
     }
   } catch (e) {
