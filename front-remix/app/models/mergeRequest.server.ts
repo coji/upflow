@@ -8,6 +8,10 @@ export function getMergeRequestItems() {
   })
 }
 
+export function getMergeRequestItem(id: string) {
+  return prisma.mergeRequest.findUniqueOrThrow({ where: { id } })
+}
+
 export function upsertMergeRequest(mergeRequest: MergeRequest) {
   return prisma.mergeRequest.upsert({
     where: { id: mergeRequest.id },

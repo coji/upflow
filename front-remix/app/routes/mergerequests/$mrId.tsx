@@ -2,30 +2,31 @@ import type { LoaderFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { requireUserId } from '~/session.server'
 import type { MergeRequest } from '~/models/mergeRequest.server'
-import { getMergeRequestItems } from '~/models/mergeRequest.server'
+import { getMergeRequestItem } from '~/models/mergeRequest.server'
+import invariant from 'tiny-invariant'
 
 import { useCatch, useLoaderData } from '@remix-run/react'
-import { Heading, Box } from '@chakra-ui/react'
+import { Heading, Stack, Box } from '@chakra-ui/react'
 
 // GET リクエスト時のデータ読み込み処理 (server side)
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
   await requireUserId(request)
-  return json<MergeRequest[]>(await getMergeRequestItems()) // ページコンポーネントの useLoaderData で使用
+  invariant(params.mrId, 'noteId not found')
+  return json<MergeRequest>(await getMergeRequestItem(params.mrId)) // ページコンポーネントの useLoaderData で使用
 }
 
-// MergeRequest 一覧ページ (client-side)
+// MergeRequest 詳細 (client-side)
 export default function MergeRequestsIndexPage() {
-  const mergeRequestItems = useLoaderData() as MergeRequest[] // loader 関数が返した json を取得
+  const mr = useLoaderData() as MergeRequest // loader 関数が返した json を取得
   return (
     <Box>
-      <Heading>MergeRequests</Heading>
-      <Box>
-        {mergeRequestItems.map((mr) => (
-          <Box key={mr.id}>
-            {mr.author} {mr.title}
-          </Box>
-        ))}
-      </Box>
+      <Heading>{mr.title}</Heading>
+      <Stack>
+        <Box>id: {mr.id}</Box>
+        <Box>state: {mr.state}</Box>
+        <Box>author: {mr.author}</Box>
+        <Box>created: {mr.mergerequest_created_at}</Box>
+      </Stack>
     </Box>
   )
 }
