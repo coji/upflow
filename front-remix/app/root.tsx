@@ -11,7 +11,7 @@ import { ServerStyleContext, ClientStyleContext } from './context'
 
 export const meta: MetaFunction = () => ({
   charset: 'utf-8',
-  title: 'Remix Notes',
+  title: 'UpFlow - optimize development cycletime for team.',
   viewport: 'width=device-width,initial-scale=1'
 })
 

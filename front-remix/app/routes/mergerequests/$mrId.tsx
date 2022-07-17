@@ -6,7 +6,7 @@ import { getMergeRequestItem } from '~/models/mergeRequest.server'
 import invariant from 'tiny-invariant'
 
 import { useCatch, useLoaderData } from '@remix-run/react'
-import { Heading, Stack, Box } from '@chakra-ui/react'
+import { Stack, Box } from '@chakra-ui/react'
 
 // GET リクエスト時のデータ読み込み処理 (server side)
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -17,17 +17,15 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 // MergeRequest 詳細 (client-side)
 export default function MergeRequestsIndexPage() {
-  const mr = useLoaderData() as MergeRequest // loader 関数が返した json を取得
+  const mr = useLoaderData<MergeRequest>() // loader 関数が返した json を取得
+
   return (
-    <Box>
-      <Heading>{mr.title}</Heading>
-      <Stack>
-        <Box>id: {mr.id}</Box>
-        <Box>state: {mr.state}</Box>
-        <Box>author: {mr.author}</Box>
-        <Box>created: {mr.mergerequest_created_at}</Box>
-      </Stack>
-    </Box>
+    <Stack>
+      <Box>id: {mr.id}</Box>
+      <Box>state: {mr.state}</Box>
+      <Box>author: {mr.author}</Box>
+      <Box>created: {mr.mergerequest_created_at}</Box>
+    </Stack>
   )
 }
 

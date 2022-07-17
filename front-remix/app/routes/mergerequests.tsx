@@ -4,8 +4,9 @@ import { requireUserId } from '~/session.server'
 import type { MergeRequest } from '~/models/mergeRequest.server'
 import { getMergeRequestItems } from '~/models/mergeRequest.server'
 
+import { memo } from 'react'
 import { Form, Link, NavLink, Outlet, useLoaderData } from '@remix-run/react'
-import { Heading, Stack, Box, Flex, Spacer, Text, Button } from '@chakra-ui/react'
+import { Heading, Stack, Box, Flex, Spacer, Text, Button, Badge, Tag } from '@chakra-ui/react'
 
 import { useUser } from '~/utils'
 
@@ -14,15 +15,15 @@ export const loader: LoaderFunction = async ({ request }) => {
   return json<MergeRequest[]>(await getMergeRequestItems()) // ページコンポーネントの useLoaderData で使用
 }
 
-export default function NotesPage() {
+const MergeRequestPage = memo(() => {
   const mergeRequestItems = useLoaderData() as MergeRequest[] // loader 関数が返した json を取得
   const user = useUser()
 
   return (
-    <Stack>
-      <Flex alignItems="center" bgColor="slategray" p="4" textColor="white">
+    <Box>
+      <Flex alignItems="center" bgColor="white" p="4" textColor="slategray">
         <Heading>
-          <Link to=".">Merge Requests</Link>
+          <Link to=".">Up Flow</Link>
         </Heading>
         <Spacer />
         <Stack direction="row" alignItems="center">
@@ -35,30 +36,34 @@ export default function NotesPage() {
         </Stack>
       </Flex>
 
-      <main className="flex h-full bg-white">
-        <div className="h-full w-80 border-r bg-gray-50">
-          <Link to="new" className="block p-4 text-xl text-blue-500">
-            + New Note
-          </Link>
+      <Flex as="main" height="full" bgColor="gray.200">
+        <Stack p="2" flexGrow={1}>
+          {mergeRequestItems.map((mr) => (
+            <NavLink key={mr.id} to={mr.id}>
+              <Stack px="4" py="1" gap="0" boxShadow="sm" bgColor="white" _hover={{ bgColor: 'gray.100' }} rounded="md">
+                <Stack direction="row">
+                  <Box>
+                    <Badge size="sm" variant="outline" colorScheme={mr.state === 'merged' ? 'blue' : 'green'}>
+                      {mr.state}
+                    </Badge>
+                  </Box>
+                  <Text>{mr.title}</Text>
+                </Stack>
+                <Flex alignItems="center" justify="end">
+                  <Tag fontSize="sm" colorScheme="blackAlpha">
+                    {mr.author}
+                  </Tag>
+                </Flex>
+              </Stack>
+            </NavLink>
+          ))}
+        </Stack>
 
-          <hr />
-
-          <Box>
-            <Heading>MergeRequests</Heading>
-            <Box>
-              {mergeRequestItems.map((mr) => (
-                <NavLink key={mr.id} className="block border-b p-4 text-xl" to={mr.id}>
-                  📝 {mr.title}
-                </NavLink>
-              ))}
-            </Box>
-          </Box>
-        </div>
-
-        <div className="flex-1 p-6">
+        <Box p="6" width="20rem">
           <Outlet />
-        </div>
-      </main>
-    </Stack>
+        </Box>
+      </Flex>
+    </Box>
   )
-}
+})
+export default MergeRequestPage
