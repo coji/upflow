@@ -4,8 +4,17 @@ export type { MergeRequest } from '@prisma/client'
 
 export function getMergeRequestItems() {
   return prisma.mergeRequest.findMany({
-    orderBy: { mergerequest_created_at: 'desc' }
+    orderBy: { mergerequest_created_at: 'desc' },
+    take: 10
   })
+}
+
+interface MergeRequestSummary {
+  author: string
+  cnt: number
+}
+export function getMergeRequestSummary() {
+  return prisma.$queryRaw<MergeRequestSummary[]>`SELECT author, count(*) as cnt FROM mergerequest GROUP BY author`
 }
 
 export function getMergeRequestItem(id: string) {

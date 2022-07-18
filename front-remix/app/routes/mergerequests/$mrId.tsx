@@ -4,9 +4,10 @@ import { requireUserId } from '~/session.server'
 import type { MergeRequest } from '~/models/mergeRequest.server'
 import { getMergeRequestItem } from '~/models/mergeRequest.server'
 import invariant from 'tiny-invariant'
+import dayjs from 'dayjs'
 
-import { useCatch, useLoaderData } from '@remix-run/react'
-import { Stack, Box } from '@chakra-ui/react'
+import { useCatch, useLoaderData, useNavigate } from '@remix-run/react'
+import { Stack, Box, Button, Drawer, DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, DrawerCloseButton } from '@chakra-ui/react'
 
 // GET リクエスト時のデータ読み込み処理 (server side)
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -18,14 +19,38 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 // MergeRequest 詳細 (client-side)
 export default function MergeRequestsIndexPage() {
   const mr = useLoaderData<MergeRequest>() // loader 関数が返した json を取得
+  const navigate = useNavigate()
+
+  const handleClose = () => {
+    navigate('/mergerequests')
+  }
 
   return (
-    <Stack>
-      <Box>id: {mr.id}</Box>
-      <Box>state: {mr.state}</Box>
-      <Box>author: {mr.author}</Box>
-      <Box>created: {mr.mergerequest_created_at}</Box>
-    </Stack>
+    <Drawer isOpen={true} placement="right" onClose={() => handleClose()}>
+      <DrawerContent>
+        <DrawerCloseButton />
+        <DrawerHeader>Create your account</DrawerHeader>
+
+        <DrawerBody>
+          <Stack>
+            <Box>id: {mr.id}</Box>
+            <Box>state: {mr.state}</Box>
+            <Box>author: {mr.author}</Box>
+            <Box>created: {dayjs(mr.mergerequest_created_at).format('YYYY-MM-DD HH:mm')}</Box>
+            <Box fontSize="sm" w="full" overflow="auto" rounded="md" bgColor="black" color="white" p="2">
+              <pre>{JSON.stringify(mr, null, 2)}</pre>
+            </Box>
+          </Stack>
+        </DrawerBody>
+
+        <DrawerFooter>
+          <Button variant="outline" mr={3} onClick={() => handleClose()}>
+            Cancel
+          </Button>
+          <Button colorScheme="blue">Save</Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   )
 }
 

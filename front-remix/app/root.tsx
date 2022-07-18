@@ -60,7 +60,7 @@ const Document = withEmotionCache(({ children }: DocumentProps, emotionCache) =>
   }, [])
 
   return (
-    <html lang="ja" className="h-full">
+    <html lang="ja">
       <head>
         <Meta />
         <Links />
@@ -68,7 +68,7 @@ const Document = withEmotionCache(({ children }: DocumentProps, emotionCache) =>
           <style key={key} data-emotion={`${key} ${ids.join(' ')}`} dangerouslySetInnerHTML={{ __html: css }} />
         ))}
       </head>
-      <body className="h-full">
+      <body>
         {children}
         <ScrollRestoration />
         <Scripts />

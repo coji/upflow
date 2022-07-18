@@ -39,6 +39,7 @@
     "@remix-run/serve": "^1.6.5",
     "@remix-run/server-runtime": "^1.6.5",
     "bcryptjs": "^2.4.3",
+    "dayjs": "^1.11.3",
     "framer-motion": "^6.5.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

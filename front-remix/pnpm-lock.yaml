@@ -32,6 +32,7 @@ specifiers:
   c8: ^7.11.3
   cross-env: ^7.0.3
   cypress: ^10.3.0
+  dayjs: ^1.11.3
   eslint: ^8.20.0
   eslint-config-prettier: ^8.5.0
   framer-motion: ^6.5.1
@@ -66,6 +67,7 @@ dependencies:
   '@remix-run/serve': 1.6.5_biqbaboplfbrettd7655fr4n2y
   '@remix-run/server-runtime': 1.6.5_biqbaboplfbrettd7655fr4n2y
   bcryptjs: 2.4.3
+  dayjs: 1.11.3
   framer-motion: 6.5.1_biqbaboplfbrettd7655fr4n2y
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
@@ -4573,7 +4575,6 @@ packages:
 
   /dayjs/1.11.3:
     resolution: {integrity: sha512-xxwlswWOlGhzgQ4TKzASQkUhqERI3egRNqgV4ScR8wlANA/A9tZ7miXa44vTTKEq5l7vWoL5G57bG3zA+Kow0A==}
-    dev: true
 
   /deasync/0.1.27:
     resolution: {integrity: sha512-aCt6M9Ilkvs8TKIchmibUpNe/QSp9UNQL6YkvVraAce/SFFZCvYw3lQevl6MlUDn8Xr4QD4wYTerWH22yn+ODQ==}
