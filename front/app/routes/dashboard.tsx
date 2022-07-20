@@ -2,21 +2,16 @@ import type { LoaderFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { requireUserId } from '~/session.server'
 import type { MergeRequest } from '~/models/mergeRequest.server'
-import { getMergeRequestItems, getMergeRequestSummary } from '~/models/mergeRequest.server'
+import { getMergeRequestItems } from '~/models/mergeRequest.server'
 
 import { memo } from 'react'
-import { Form, Link, NavLink, Outlet, useLoaderData, useLocation } from '@remix-run/react'
+import { Form, NavLink, Outlet, useLoaderData, useLocation } from '@remix-run/react'
 import { Heading, Stack, Box, Flex, Spacer, Text, Button, Badge, Tag } from '@chakra-ui/react'
-
+import { AppLink } from '~/components/AppLink'
 import { useUser } from '~/utils'
 
 export const loader: LoaderFunction = async ({ request }) => {
   await requireUserId(request)
-  const ret = await getMergeRequestSummary()
-  ret.forEach((author) => {
-    console.log(author.author, Number(author.cnt))
-  })
-
   return json<MergeRequest[]>(await getMergeRequestItems()) // ページコンポーネントの useLoaderData で使用
 }
 
@@ -30,7 +25,9 @@ const MergeRequestPage = memo(() => {
     <Box>
       <Flex alignItems="center" bgColor="white" p="4" textColor="slategray">
         <Heading>
-          <Link to=".">UpFlow</Link>
+          <AppLink to="." color="blue.800">
+            UpFlow
+          </AppLink>
         </Heading>
         <Spacer />
         <Stack direction="row" alignItems="center">

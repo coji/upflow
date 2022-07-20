@@ -21,9 +21,7 @@ export default function MergeRequestsIndexPage() {
   const mr = useLoaderData<MergeRequest>() // loader 関数が返した json を取得
   const navigate = useNavigate()
 
-  const handleClose = () => {
-    navigate('/mergerequests')
-  }
+  const handleClose = () => navigate('/dashboard')
 
   return (
     <Drawer isOpen={true} placement="right" onClose={() => handleClose()}>

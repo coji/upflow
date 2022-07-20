@@ -1,12 +1,13 @@
 import type { ActionFunction, LoaderFunction, MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
-import { Form, Link, useActionData, useSearchParams } from '@remix-run/react'
-import * as React from 'react'
-
 import { getUserId, createUserSession } from '~/session.server'
-
 import { createUser, getUserByEmail } from '~/models/user.server'
 import { safeRedirect, validateEmail } from '~/utils'
+
+import * as React from 'react'
+import { Form, useActionData, useSearchParams } from '@remix-run/react'
+import { Heading, Stack, Box, Text, Input, FormControl, FormLabel, FormErrorMessage, Button } from '@chakra-ui/react'
+import { AppLink } from '~/components/AppLink'
 
 export const loader: LoaderFunction = async ({ request }) => {
   const userId = await getUserId(request)
@@ -76,77 +77,78 @@ export default function Join() {
   }, [actionData])
 
   return (
-    <div className="flex min-h-full flex-col justify-center">
-      <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email address
-            </label>
-            <div className="mt-1">
-              <input
-                ref={emailRef}
-                id="email"
-                required
-                autoFocus={true}
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-invalid={actionData?.errors?.email ? true : undefined}
-                aria-describedby="email-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-              />
-              {actionData?.errors?.email && (
-                <div className="pt-1 text-red-700" id="email-error">
-                  {actionData.errors.email}
-                </div>
-              )}
-            </div>
-          </div>
+    <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
+      <Box flex="1" p="8">
+        <Box bgColor="white" p="8" maxW="container.sm" mx="auto" rounded="md" boxShadow="md">
+          <Heading fontSize="4xl" p="8" textAlign="center" color="blue.800" dropShadow="2xl">
+            UpFlow
+          </Heading>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <div className="mt-1">
-              <input
-                id="password"
-                ref={passwordRef}
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={actionData?.errors?.password ? true : undefined}
-                aria-describedby="password-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-              />
-              {actionData?.errors?.password && (
-                <div className="pt-1 text-red-700" id="password-error">
-                  {actionData.errors.password}
-                </div>
-              )}
-            </div>
-          </div>
+          <Box mx="auto" w="full" maxW="md" px="8" mt="4">
+            <Form method="post" noValidate>
+              <Stack>
+                <FormControl isInvalid={!!actionData?.errors?.email}>
+                  <FormLabel htmlFor="email" fontSize="sm" color="gray.600">
+                    Eメール
+                  </FormLabel>
+                  <Input
+                    ref={emailRef}
+                    id="email"
+                    required
+                    autoFocus={true}
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    aria-invalid={actionData?.errors?.email ? true : undefined}
+                    aria-describedby="email-error"
+                  />
 
-          <input type="hidden" name="redirectTo" value={redirectTo} />
-          <button type="submit" className="w-full rounded bg-blue-500  py-2 px-4 text-white hover:bg-blue-600 focus:bg-blue-400">
-            Create Account
-          </button>
-          <div className="flex items-center justify-center">
-            <div className="text-center text-sm text-gray-500">
-              Already have an account?{' '}
-              <Link
-                className="text-blue-500 underline"
-                to={{
-                  pathname: '/login',
-                  search: searchParams.toString()
-                }}
-              >
-                Log in
-              </Link>
-            </div>
-          </div>
-        </Form>
-      </div>
-    </div>
+                  {actionData?.errors?.email && <FormErrorMessage id="email-error">{actionData.errors.email}</FormErrorMessage>}
+                </FormControl>
+
+                <FormControl isInvalid={!!actionData?.errors?.password}>
+                  <FormLabel htmlFor="password" fontSize="sm" color="gray.600">
+                    パスワード
+                  </FormLabel>
+                  <Input
+                    id="password"
+                    ref={passwordRef}
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    aria-invalid={actionData?.errors?.password ? true : undefined}
+                    aria-describedby="password-error"
+                  />
+                  {actionData?.errors?.password && <FormErrorMessage id="password-error">{actionData.errors.password}</FormErrorMessage>}
+                </FormControl>
+
+                <input type="hidden" name="redirectTo" value={redirectTo} />
+                <Button type="submit" colorScheme="blue">
+                  アカウント登録
+                </Button>
+
+                <Text textAlign="right" color="gray.600" fontSize="sm">
+                  すでにアカウントがある方は
+                  <AppLink
+                    color="blue.500"
+                    textDecoration="underline"
+                    to={{
+                      pathname: '/',
+                      search: searchParams.toString()
+                    }}
+                  >
+                    ログイン
+                  </AppLink>
+                </Text>
+              </Stack>
+            </Form>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box as="footer" textAlign="center" bgColor="gray.200" py="4">
+        Copyright &copy; TechTalk Inc.
+      </Box>
+    </Box>
   )
 }

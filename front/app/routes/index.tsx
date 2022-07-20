@@ -1,66 +1,162 @@
-import { Link as RemixLink } from '@remix-run/react'
-import { Box } from '@chakra-ui/react'
+import type { ActionFunction, LoaderFunction, MetaFunction } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
+import { createUserSession, getUserId } from '~/session.server'
+import { verifyLogin } from '~/models/user.server'
+import { safeRedirect, validateEmail } from '~/utils'
 
-import { useOptionalUser } from '~/utils'
+import * as React from 'react'
+import { Form, useActionData, useSearchParams } from '@remix-run/react'
+import { Heading, Stack, Box, Text, Input, FormControl, FormLabel, FormErrorMessage, Button, Checkbox } from '@chakra-ui/react'
+import { AppLink } from '~/components/AppLink'
 
-export default function Index() {
-  const user = useOptionalUser()
+export const loader: LoaderFunction = async ({ request }) => {
+  const userId = await getUserId(request)
+  if (userId) return redirect('/dashboard')
+  return json({})
+}
+
+interface ActionData {
+  errors?: {
+    email?: string
+    password?: string
+  }
+}
+
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData()
+  const email = formData.get('email')
+  const password = formData.get('password')
+  const redirectTo = safeRedirect(formData.get('redirectTo'), '/dashboard')
+  const remember = formData.get('remember')
+
+  if (!validateEmail(email)) {
+    return json<ActionData>({ errors: { email: 'Email is invalid' } }, { status: 400 })
+  }
+
+  if (typeof password !== 'string' || password.length === 0) {
+    return json<ActionData>({ errors: { password: 'Password is required' } }, { status: 400 })
+  }
+
+  if (password.length < 8) {
+    return json<ActionData>({ errors: { password: 'Password is too short' } }, { status: 400 })
+  }
+
+  const user = await verifyLogin(email, password)
+
+  if (!user) {
+    return json<ActionData>({ errors: { email: 'Invalid email or password' } }, { status: 400 })
+  }
+
+  return createUserSession({
+    request,
+    userId: user.id,
+    remember: remember === 'on' ? true : false,
+    redirectTo
+  })
+}
+
+export const meta: MetaFunction = () => {
+  return {
+    title: 'UpFlow'
+  }
+}
+
+export default function LoginPage() {
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+  const actionData = useActionData<typeof action>()
+  const emailRef = React.useRef<HTMLInputElement>(null)
+  const passwordRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    if (actionData?.errors?.email) {
+      emailRef.current?.focus()
+    } else if (actionData?.errors?.password) {
+      passwordRef.current?.focus()
+    }
+  }, [actionData])
+
   return (
-    <Box as="main" position="relative" minH="100vh" bg="white" flex={{ sm: 'flex' }} alignItems={{ sm: 'center' }} justifyContent={{ sm: 'center' }}>
-      <div className="relative sm:pb-16 sm:pt-8">
-        <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-          <div className="relative shadow-xl sm:overflow-hidden sm:rounded-2xl">
-            <div className="absolute inset-0">
-              <img
-                className="h-full w-full object-cover"
-                src="https://user-images.githubusercontent.com/1500684/157774694-99820c51-8165-4908-a031-34fc371ac0d6.jpg"
-                alt="Sonic Youth On Stage"
-              />
-              <div className="absolute inset-0 bg-[color:rgba(254,204,27,0.5)] mix-blend-multiply" />
-            </div>
-            <div className="relative px-4 pt-16 pb-8 sm:px-6 sm:pt-24 sm:pb-14 lg:px-8 lg:pb-20 lg:pt-32">
-              <h1 className="text-center text-6xl font-extrabold tracking-tight sm:text-8xl lg:text-9xl">
-                <span className="block uppercase text-yellow-500 drop-shadow-md">Indie Stack</span>
-              </h1>
-              <p className="mx-auto mt-6 max-w-lg text-center text-xl text-white sm:max-w-3xl">
-                Check the README.md file for instructions on how to get this project deployed.
-              </p>
-              <div className="mx-auto mt-10 max-w-sm sm:flex sm:max-w-none sm:justify-center">
-                {user ? (
-                  <RemixLink
-                    to="/mergerequests"
-                    className="flex items-center justify-center rounded-md border border-transparent bg-white px-4 py-3 text-base font-medium text-yellow-700 shadow-sm hover:bg-yellow-50 sm:px-8"
-                  >
-                    View Merge Requests
-                  </RemixLink>
-                ) : (
-                  <div className="space-y-4 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5 sm:space-y-0">
-                    <RemixLink
-                      to="/join"
-                      className="flex items-center justify-center rounded-md border border-transparent bg-white px-4 py-3 text-base font-medium text-yellow-700 shadow-sm hover:bg-yellow-50 sm:px-8"
+    <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
+      <Box flex="1" p="8">
+        <Box bgColor="white" p="8" maxW="container.sm" mx="auto" rounded="md" boxShadow="md">
+          <Heading fontSize="4xl" p="8" textAlign="center" color="blue.800" dropShadow="2xl">
+            UpFlow
+          </Heading>
+
+          <Box mx="auto" w="full" maxW="md" px="8" mt="4">
+            <Form method="post" noValidate>
+              <Stack>
+                <FormControl isInvalid={!!actionData?.errors?.password}>
+                  <FormLabel htmlFor="email" fontSize="sm" color="gray.600">
+                    Eメール
+                  </FormLabel>
+                  <Input
+                    ref={emailRef}
+                    id="email"
+                    required
+                    autoFocus={true}
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    aria-invalid={actionData?.errors?.email ? true : undefined}
+                    aria-describedby="email-error"
+                  />
+                  {actionData?.errors?.email && <FormErrorMessage id="email-error">{actionData.errors.email}</FormErrorMessage>}
+                </FormControl>
+
+                <FormControl isInvalid={!!actionData?.errors?.password}>
+                  <FormLabel htmlFor="password" fontSize="sm" color="gray.600">
+                    パスワード
+                  </FormLabel>
+                  <Input
+                    id="password"
+                    ref={passwordRef}
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    aria-invalid={actionData?.errors?.password ? true : undefined}
+                    aria-describedby="password-error"
+                  />
+                  {actionData?.errors?.password && <FormErrorMessage id="password-error">{actionData.errors.password}</FormErrorMessage>}
+                </FormControl>
+
+                <input type="hidden" name="redirectTo" value={redirectTo} />
+                <Button type="submit" colorScheme="blue">
+                  ログイン
+                </Button>
+
+                <Stack direction="row" justify="space-between" color="gray.600" fontSize="sm">
+                  <Stack direction="row">
+                    <Checkbox id="remember" name="remenber" defaultChecked />
+                    <FormLabel htmlFor="remember" fontSize="sm">
+                      ログインを記憶
+                    </FormLabel>
+                  </Stack>
+
+                  <Text>
+                    アカウントがない方は
+                    <AppLink
+                      color="blue.500"
+                      textDecoration="underline"
+                      to={{
+                        pathname: '/join',
+                        search: searchParams.toString()
+                      }}
                     >
-                      Sign up
-                    </RemixLink>
-                    <RemixLink
-                      to="/login"
-                      className="flex items-center justify-center rounded-md bg-yellow-500 px-4 py-3 font-medium text-white hover:bg-yellow-600  "
-                    >
-                      Log In
-                    </RemixLink>
-                  </div>
-                )}
-              </div>
-              <a href="https://remix.run">
-                <img
-                  src="https://user-images.githubusercontent.com/1500684/158298926-e45dafff-3544-4b69-96d6-d3bcc33fc76a.svg"
-                  alt="Remix"
-                  className="mx-auto mt-16 w-full max-w-[12rem] md:max-w-[16rem]"
-                />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+                      ユーザ登録
+                    </AppLink>
+                  </Text>
+                </Stack>
+              </Stack>
+            </Form>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box as="footer" textAlign="center" bgColor="gray.200" py="4">
+        Copyright &copy; TechTalk Inc.
+      </Box>
     </Box>
   )
 }
