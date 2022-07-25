@@ -1,10 +1,10 @@
 import 'dotenv/config'
 import { cli, command } from 'cleye'
-import { fetchCommand } from '@/commands/fetch'
-import { reportCommand } from '@/commands/report'
-import { reviewCommand } from '@/commands/review'
-import { commitCommand } from '@/commands/commit'
-import { upsertCommand } from '@/commands/upsert'
+import { fetchCommand } from '~/batch/commands/fetch'
+import { reportCommand } from '~/batch/commands/report'
+import { reviewCommand } from '~/batch/commands/review'
+import { commitCommand } from '~/batch/commands/commit'
+import { upsertCommand } from '~/batch/commands/upsert'
 
 const fetch = command(
   {

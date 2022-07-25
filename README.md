@@ -18,7 +18,7 @@ pnpm i
 # fetch
 
 ```
-pnpm tsx cycletime fetch
+pnpm tsx batch/cycletime fetch
 ```
 
 then your merge requests with related commits and discussions save in to scripts/json directory.
@@ -26,7 +26,7 @@ then your merge requests with related commits and discussions save in to scripts
 # report
 
 ```
-pnpm tsx cycletime report
+pnpm tsx batch/cycletime report
 ```
 
 list up report in tsv.
@@ -34,7 +34,7 @@ list up report in tsv.
 # review
 
 ```
-pnpm tsx cycletime review <mergerequest iid>
+pnpm tsx batch/cycletime review <mergerequest iid>
 ```
 
 List review comments for a given mergerequest.

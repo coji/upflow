@@ -21,3 +21,15 @@ lerna-debug.log*
 *.sw?
 .env
 
+node_modules
+
+/build
+/public/build
+.env
+
+/cypress/screenshots
+/cypress/videos
+data/data.db
+data/data.db-journal
+
+/app/styles/tailwind.css
