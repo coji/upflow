@@ -44,14 +44,14 @@ const MergeRequestPage = memo(() => {
         <Stack p="2" flexGrow={1}>
           {mergeRequestItems.map((mr) => (
             <NavLink key={mr.id} to={mr.id}>
-              <Stack px="4" py="1" gap="0" boxShadow="sm" bgColor={currentId === mr.id ? 'blue.500' : 'white'} _hover={{ bgColor: 'gray.100' }} rounded="md">
+              <Stack px="4" py="1" gap="0" boxShadow="sm" bgColor={currentId === mr.id ? 'blue.100' : 'white'} _hover={{ bgColor: 'gray.100' }} rounded="md">
                 <Stack direction="row">
                   <Box>
                     <Badge size="sm" variant="outline" colorScheme={mr.state === 'merged' ? 'blue' : 'green'}>
                       {mr.state}
                     </Badge>
                   </Box>
-                  <Text>{mr.title}</Text>
+                  <Text noOfLines={1}>{mr.title}</Text>
                 </Stack>
                 <Flex alignItems="center" justify="end">
                   <Tag fontSize="sm" colorScheme="blackAlpha">
