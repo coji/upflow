@@ -6,7 +6,7 @@ import fs from 'fs'
  *
  * @param filename - ファイル名
  */
-export const jsonPath = (filename: string) => path.join(__dirname, '..', 'json', filename)
+export const jsonPath = (filename: string) => path.join(__dirname, '..', '..', 'data', 'json', filename)
 
 export const jsonFilename = (element: string, iid: number) => `/${element}/${iid}-${element}.json`
 

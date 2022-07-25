@@ -4,7 +4,7 @@
 // and that user will get deleted
 
 import { installGlobals } from '@remix-run/node'
-import { prisma } from '~/db.server'
+import { prisma } from '~/app/db.server'
 
 installGlobals()
 
