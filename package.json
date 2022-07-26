@@ -1,5 +1,5 @@
 {
-  "name": "coji-my-remix-app",
+  "name": "upflow",
   "private": true,
   "sideEffects": false,
   "scripts": {
@@ -63,7 +63,7 @@
     "@types/bcryptjs": "^2.4.2",
     "@types/cookie": "^0.5.1",
     "@types/eslint": "^8.4.5",
-    "@types/node": "^18.6.0",
+    "@types/node": "^18.6.1",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "@vitejs/plugin-react": "^2.0.0",
@@ -79,16 +79,16 @@
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.14",
     "prettier": "2.7.1",
-    "prettier-plugin-tailwindcss": "^0.1.12",
+    "prettier-plugin-tailwindcss": "^0.1.13",
     "prisma": "^4.1.0",
     "start-server-and-test": "^1.14.0",
     "tailwindcss": "^3.1.6",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.0.0",
     "typescript": "^4.7.4",
-    "vite": "^3.0.2",
+    "vite": "^3.0.3",
     "vite-tsconfig-paths": "^3.5.0",
-    "vitest": "^0.19.0"
+    "vitest": "^0.19.1"
   },
   "engines": {
     "node": ">=14"
