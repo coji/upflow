@@ -7,4 +7,5 @@
 
 set -ex
 npx prisma migrate deploy
-npm run start
+npx prisma generate
+pnpm run start

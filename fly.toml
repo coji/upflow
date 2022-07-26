@@ -1,4 +1,4 @@
-app = "coji-my-remix-app"
+app = "upflow"
 
 kill_signal = "SIGINT"
 kill_timeout = 5
@@ -12,7 +12,7 @@ processes = []
 
 [mounts]
   source = "data"
-  destination = "/data"
+  destination = "/upflow/data"
 
 [[services]]
   internal_port = 8080
