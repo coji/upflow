@@ -1,4 +1,4 @@
-import type { LoaderFunction } from '@remix-run/node'
+import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { requireUserId } from '~/app/session.server'
 import type { MergeRequest } from '~/app/models/mergeRequest.server'
@@ -10,7 +10,7 @@ import { useCatch, useLoaderData, useNavigate } from '@remix-run/react'
 import { Stack, Box, Button, Drawer, DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, DrawerCloseButton } from '@chakra-ui/react'
 
 // GET リクエスト時のデータ読み込み処理 (server side)
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
   invariant(params.mrId, 'noteId not found')
   return json<MergeRequest>(await getMergeRequestItem(params.mrId)) // ページコンポーネントの useLoaderData で使用
@@ -18,7 +18,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 // MergeRequest 詳細 (client-side)
 export default function MergeRequestsIndexPage() {
-  const mr = useLoaderData<MergeRequest>() // loader 関数が返した json を取得
+  const mr = useLoaderData<typeof loader>() // loader 関数が返した json を取得
   const navigate = useNavigate()
 
   const handleClose = () => navigate('/dashboard')

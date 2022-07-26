@@ -1,4 +1,4 @@
-import type { LoaderFunction } from '@remix-run/node'
+import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { requireUserId } from '~/app/session.server'
 import type { MergeRequest } from '~/app/models/mergeRequest.server'
@@ -10,13 +10,13 @@ import { Heading, Stack, Box, Flex, Spacer, Text, Button, Badge, Tag } from '@ch
 import { AppLink } from '~/app/components/AppLink'
 import { useUser } from '~/app/utils'
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request)
   return json<MergeRequest[]>(await getMergeRequestItems()) // ページコンポーネントの useLoaderData で使用
 }
 
 const MergeRequestPage = memo(() => {
-  const mergeRequestItems = useLoaderData() as MergeRequest[] // loader 関数が返した json を取得
+  const mergeRequestItems = useLoaderData<typeof loader>() // loader 関数が返した json を取得
   const user = useUser()
   const location = useLocation()
   const currentId = location.pathname.split('/').at(2)

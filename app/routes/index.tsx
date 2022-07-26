@@ -1,4 +1,4 @@
-import type { ActionFunction, LoaderFunction, MetaFunction } from '@remix-run/node'
+import type { ActionArgs, LoaderArgs, MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import { createUserSession, getUserId } from '~/app/session.server'
 import { verifyLogin } from '~/app/models/user.server'
@@ -9,7 +9,7 @@ import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import { Heading, Stack, Box, Text, Input, FormControl, FormLabel, FormErrorMessage, Button, Checkbox } from '@chakra-ui/react'
 import { AppLink } from '~/app/components/AppLink'
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUserId(request)
   if (userId) return redirect('/dashboard')
   return json({})
@@ -22,7 +22,7 @@ interface ActionData {
   }
 }
 
-export const action: ActionFunction = async ({ request }) => {
+export const action = async ({ request }: ActionArgs) => {
   const formData = await request.formData()
   const email = formData.get('email')
   const password = formData.get('password')
