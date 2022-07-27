@@ -5,4 +5,6 @@ import type { Types } from '@gitbeaker/node'
  * @param sha コミットハッシュ
  * @returns 含まれる: true, 含まれない: false
  */
-export const isCommitIncluded = (commits: Types.CommitSchema[], sha?: string) => commits.some((commit) => commit.id === sha)
+export const isCommitIncluded = (commits: Types.CommitSchema[], sha?: string) => {
+  return commits.some((commit) => commit.id === sha)
+}

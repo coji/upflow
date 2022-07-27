@@ -1,12 +1,15 @@
 import path from 'path'
 import fs from 'fs'
 
+// JSON データの保存場所
+const JSONDIR = path.join(__dirname, '..', '..', 'data', 'json')
+
 /**
  * JSON ファイルのパスを作成
  *
  * @param filename - ファイル名
  */
-export const jsonPath = (filename: string) => path.join(__dirname, '..', '..', 'data', 'json', filename)
+export const jsonPath = (filename: string) => path.join(JSONDIR, filename)
 
 export const jsonFilename = (element: string, iid: number) => `/${element}/${iid}-${element}.json`
 
@@ -20,6 +23,6 @@ export const releaseCommitsJsonFilename = (sha: string) => {
   return `release-commits/${subdir}/${sha}.json`
 }
 
-export const releaseCommitsGlob = () => path.join(__dirname, '..', '..', 'json', 'release-commits', '**', '*.json')
+export const releaseCommitsGlob = () => path.join(JSONDIR, 'release-commits', '**', '*.json')
 
 export const sha = (filename: string) => path.basename(filename, '.json')
