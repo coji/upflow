@@ -4,7 +4,6 @@ import { extendTheme, ChakraProvider } from '@chakra-ui/react'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import type { LinksFunction, LoaderFunction, MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import tailwindStylesheetUrl from './styles/tailwind.css'
 import { getUser } from './session.server'
 
 import { ServerStyleContext, ClientStyleContext } from './context'
@@ -16,7 +15,7 @@ export const meta: MetaFunction = () => ({
 })
 
 export let links: LinksFunction = () => {
-  return [{ rel: 'stylesheet', href: tailwindStylesheetUrl }]
+  return []
 }
 
 type LoaderData = {
