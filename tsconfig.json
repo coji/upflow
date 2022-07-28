@@ -3,7 +3,7 @@
   "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["vitest/globals", "vitest/importMeta"],
+    "types": ["vitest/globals", "vitest/importMeta", "@types/node"],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",

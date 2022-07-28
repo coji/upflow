@@ -18,10 +18,13 @@ export const createLoader = () => {
     return commits
   }
 
+  const releasedCommitsBySha = async (sha: string) => await json.load<Types.CommitSchema>(path.releaseCommitsJsonFilename(sha))
+
   return {
     commits,
     discussions,
     mergerequests,
-    releasedCommits
+    releasedCommits,
+    releasedCommitsBySha
   }
 }

@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs'
 
 // JSON データの保存場所
-const JSONDIR = path.join(__dirname, '..', '..', 'data', 'json')
+const JSONDIR = path.join(process.env.UPFLOW_DATA_DIR ?? path.join(__dirname, '..', '..', 'data'), 'json')
 
 /**
  * JSON ファイルのパスを作成
@@ -11,7 +11,7 @@ const JSONDIR = path.join(__dirname, '..', '..', 'data', 'json')
  */
 export const jsonPath = (filename: string) => path.join(JSONDIR, filename)
 
-export const jsonFilename = (element: string, iid: number) => `/${element}/${iid}-${element}.json`
+export const jsonFilename = (element: string, iid: number) => `${element}/${iid}-${element}.json`
 
 export const commitsJsonFilename = (iid: number) => jsonFilename('commits', iid)
 

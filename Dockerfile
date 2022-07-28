@@ -6,7 +6,7 @@ ENV NODE_ENV production
 
 # Install openssl for Prisma
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y openssl sqlite3 \
+  && apt-get install --no-install-recommends -y openssl sqlite3 procps \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
   && npm i -g pnpm
@@ -45,12 +45,13 @@ RUN pnpm run build
 # Finally, build the production image with minimal footprint
 FROM base
 
-ENV DATABASE_URL=file:/upflow/data/data.db
+ENV DATABASE_URL=file:/upflow/data/data.db?connection_limit=1
+ENV UPFLOW_DATA_DIR=/upflow/data
 ENV PORT="8080"
 ENV NODE_ENV="production"
 
 # add shortcut for connecting to database CLI
-RUN echo "#!/bin/sh\nset -x\nsqlite3 \$DATABASE_URL" > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
+RUN printf '#!/bin/sh\nset -x\nsqlite3 file:/upflow/data/data.db\n' > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
 
 WORKDIR /upflow
 
@@ -62,7 +63,7 @@ COPY --from=build /upflow/public /upflow/public
 COPY --from=build /upflow/package.json /upflow/package.json
 COPY --from=build /upflow/start.sh /upflow/start.sh
 COPY --from=build /upflow/prisma /upflow/prisma
-COPY --from=build /upflow/batch /upflow/batch
+COPY --from=build /upflow/cycletime.js /upflow/cycletime.js
 COPY tsconfig.json /upflow/tsconfig.json
 
 ENTRYPOINT [ "./start.sh" ]

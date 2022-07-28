@@ -37,4 +37,4 @@ node_modules
 data/data.db
 data/data.db-journal
 
-/app/styles/tailwind.css
+cycletime.js
