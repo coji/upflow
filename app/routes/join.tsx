@@ -6,8 +6,9 @@ import { safeRedirect, validateEmail } from '~/app/utils'
 
 import * as React from 'react'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
-import { Heading, Stack, Box, Text, Input, FormControl, FormLabel, FormErrorMessage, Button } from '@chakra-ui/react'
+import { Stack, Box, Text, Input, FormControl, FormLabel, FormErrorMessage, Button } from '@chakra-ui/react'
 import { AppLink } from '~/app/components/AppLink'
+import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUserId(request)
@@ -78,73 +79,65 @@ export default function Join() {
 
   return (
     <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
-      <Box flex="1" p="8">
-        <Box bgColor="white" p="8" maxW="container.sm" mx="auto" rounded="md" boxShadow="md">
-          <Heading fontSize="4xl" p="8" textAlign="center" color="blue.800" dropShadow="2xl">
-            UpFlow
-          </Heading>
+      <AppCenterFormFrame title="UpFlow" subtitle="会員登録">
+        <Form method="post" noValidate>
+          <Stack>
+            <FormControl isInvalid={!!actionData?.errors?.email}>
+              <FormLabel htmlFor="email" fontSize="sm" color="gray.600">
+                Eメール
+              </FormLabel>
+              <Input
+                ref={emailRef}
+                id="email"
+                required
+                autoFocus={true}
+                name="email"
+                type="email"
+                autoComplete="email"
+                aria-invalid={actionData?.errors?.email ? true : undefined}
+                aria-describedby="email-error"
+              />
 
-          <Box mx="auto" w="full" maxW="md" px="8" mt="4">
-            <Form method="post" noValidate>
-              <Stack>
-                <FormControl isInvalid={!!actionData?.errors?.email}>
-                  <FormLabel htmlFor="email" fontSize="sm" color="gray.600">
-                    Eメール
-                  </FormLabel>
-                  <Input
-                    ref={emailRef}
-                    id="email"
-                    required
-                    autoFocus={true}
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    aria-invalid={actionData?.errors?.email ? true : undefined}
-                    aria-describedby="email-error"
-                  />
+              {actionData?.errors?.email && <FormErrorMessage id="email-error">{actionData.errors.email}</FormErrorMessage>}
+            </FormControl>
 
-                  {actionData?.errors?.email && <FormErrorMessage id="email-error">{actionData.errors.email}</FormErrorMessage>}
-                </FormControl>
+            <FormControl isInvalid={!!actionData?.errors?.password}>
+              <FormLabel htmlFor="password" fontSize="sm" color="gray.600">
+                パスワード
+              </FormLabel>
+              <Input
+                id="password"
+                ref={passwordRef}
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                aria-invalid={actionData?.errors?.password ? true : undefined}
+                aria-describedby="password-error"
+              />
+              {actionData?.errors?.password && <FormErrorMessage id="password-error">{actionData.errors.password}</FormErrorMessage>}
+            </FormControl>
 
-                <FormControl isInvalid={!!actionData?.errors?.password}>
-                  <FormLabel htmlFor="password" fontSize="sm" color="gray.600">
-                    パスワード
-                  </FormLabel>
-                  <Input
-                    id="password"
-                    ref={passwordRef}
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    aria-invalid={actionData?.errors?.password ? true : undefined}
-                    aria-describedby="password-error"
-                  />
-                  {actionData?.errors?.password && <FormErrorMessage id="password-error">{actionData.errors.password}</FormErrorMessage>}
-                </FormControl>
+            <input type="hidden" name="redirectTo" value={redirectTo} />
+            <Button type="submit" colorScheme="blue">
+              アカウント登録
+            </Button>
 
-                <input type="hidden" name="redirectTo" value={redirectTo} />
-                <Button type="submit" colorScheme="blue">
-                  アカウント登録
-                </Button>
-
-                <Text textAlign="right" color="gray.600" fontSize="sm">
-                  すでにアカウントがある方は
-                  <AppLink
-                    color="blue.500"
-                    textDecoration="underline"
-                    to={{
-                      pathname: '/',
-                      search: searchParams.toString()
-                    }}
-                  >
-                    ログイン
-                  </AppLink>
-                </Text>
-              </Stack>
-            </Form>
-          </Box>
-        </Box>
-      </Box>
+            <Text textAlign="right" color="gray.600" fontSize="sm">
+              すでにアカウントがある方は
+              <AppLink
+                color="blue.500"
+                textDecoration="underline"
+                to={{
+                  pathname: '/',
+                  search: searchParams.toString()
+                }}
+              >
+                ログイン
+              </AppLink>
+            </Text>
+          </Stack>
+        </Form>
+      </AppCenterFormFrame>
 
       <Box as="footer" textAlign="center" bgColor="gray.200" py="4">
         Copyright &copy; TechTalk Inc.
