@@ -2,13 +2,23 @@ import { json, path } from '../helper'
 import { createFetcher } from '../fetcher'
 import { createLoader } from '../loader'
 import { createAggregator } from '../aggregator'
+import invariant from 'tiny-invariant'
 
 interface FetchCommandProps {
+  provider: string
+  token?: string
+  projectId?: string
   refresh: boolean
 }
 
 export async function fetchCommand(props: FetchCommandProps) {
-  const fetcher = createFetcher()
+  invariant(props.token, 'token not specified')
+  invariant(props.projectId, 'projectId not specified')
+
+  const fetcher = createFetcher({
+    token: props.token,
+    projectId: props.projectId
+  })
   const loader = createLoader()
   const aggregator = createAggregator()
 

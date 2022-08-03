@@ -2,9 +2,14 @@ import type { Types } from '@gitbeaker/node'
 import { Gitlab } from '@gitbeaker/node'
 import got from 'got'
 
-export const createFetcher = () => {
-  const privateToken = process.env.INTEGRATION_PRIVATE_TOKEN || ''
-  const projectId = process.env.REPOSITORY_PROJECT_ID || ''
+export interface createFetcherProps {
+  token: string
+  projectId: string
+}
+
+export const createFetcher = (props: createFetcherProps) => {
+  const privateToken = props.token
+  const projectId = props.projectId
   const api = new Gitlab({ token: privateToken })
 
   /**

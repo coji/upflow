@@ -10,6 +10,26 @@ const fetch = command(
   {
     name: 'fetch',
     flags: {
+      provider: {
+        type: String,
+        description: 'gitlab only',
+        default: 'gitlab'
+      },
+      method: {
+        type: String,
+        description: 'token only',
+        default: 'token'
+      },
+      token: {
+        type: String,
+        description: 'gitlab repository token',
+        default: process.env.INTEGRATION_PRIVATE_TOKEN
+      },
+      projectId: {
+        type: String,
+        description: 'gitlab project id',
+        default: process.env.REPOSITORY_PROJECT_ID
+      },
       refresh: {
         type: Boolean,
         description: 'refresh all mergerequest resources.',
@@ -18,7 +38,10 @@ const fetch = command(
     },
     help: { description: 'Fetch all resources from gitlab api.' }
   },
-  (argv) => fetchCommand({ refresh: argv.flags.refresh })
+  (argv) => {
+    const { help, ...rest } = argv.flags
+    fetchCommand({ ...rest })
+  }
 )
 
 const report = command(
