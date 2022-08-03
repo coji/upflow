@@ -11,8 +11,16 @@ export const getCompaniesByUser = async (userId: string) =>
       }
     },
     include: {
-      teams: true,
-      integrations: true,
+      teams: {
+        include: {
+          users: true
+        }
+      },
+      integrations: {
+        include: {
+          repositories: true
+        }
+      },
       users: true
     }
   })

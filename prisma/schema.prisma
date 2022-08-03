@@ -17,6 +17,7 @@ model User {
 
   password  Password?
   companies CompanyUser[]
+  teams     Team[]
 }
 
 model Password {
@@ -35,14 +36,15 @@ model Company {
 
   users        CompanyUser[]
   teams        Team[]
-  integrations RepositoryIntegration[]
+  integrations Integration[]
+  repositories Repository[]
 }
 
 model CompanyUser {
   id          String    @id @default(cuid())
   company     Company   @relation(fields: [companyId], references: [id])
   companyId   String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade) 
   userId      String
   role        String
   invitedAt   DateTime?
@@ -52,12 +54,15 @@ model CompanyUser {
 }
 
 model Team {
-  id        String  @id @default(cuid())
+  id   String @id @default(cuid())
+  name String
+
   company   Company @relation(fields: [companyId], references: [id])
   companyId String
+  users     User[]
 }
 
-model RepositoryIntegration {
+model Integration {
   id           String  @id @default(cuid())
   provider     String // github, gitlab, and so on...
   method       String // oauth2, token
@@ -69,11 +74,15 @@ model RepositoryIntegration {
 }
 
 model Repository {
-  id            String                @id @default(cuid())
-  integration   RepositoryIntegration @relation(fields: [integrationId], references: [id])
+  id            String      @id @default(cuid())
+  integration   Integration @relation(fields: [integrationId], references: [id])
   integrationId String
   provider      String // github, gitlab and so on...
   projectId     String // gitlab project id
+
+  mergerequest MergeRequest[]
+  company      Company        @relation(fields: [companyId], references: [id])
+  companyId    String
 }
 
 model MergeRequest {
@@ -90,4 +99,7 @@ model MergeRequest {
   is_release_committed    Boolean
   author                  String
   title                   String
+
+  repository   Repository @relation(fields: [repositoryId], references: [id])
+  repositoryId String
 }
