@@ -1,4 +1,3 @@
-import { Gitlab } from '@gitbeaker/node'
 import { json, path } from '../helper'
 import { createFetcher } from '../fetcher'
 import { createLoader } from '../loader'
@@ -9,8 +8,7 @@ interface FetchCommandProps {
 }
 
 export async function fetchCommand(props: FetchCommandProps) {
-  const api = new Gitlab({ token: process.env.PRIVATE_TOKEN })
-  const fetcher = createFetcher(api)
+  const fetcher = createFetcher()
   const loader = createLoader()
   const aggregator = createAggregator()
 

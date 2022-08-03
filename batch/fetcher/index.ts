@@ -1,9 +1,11 @@
-import type { Types, Gitlab } from '@gitbeaker/node'
+import type { Types } from '@gitbeaker/node'
+import { Gitlab } from '@gitbeaker/node'
 import got from 'got'
 
-export const createFetcher = (api: InstanceType<typeof Gitlab>) => {
-  const privateToken = process.env.PRIVATE_TOKEN || ''
-  const projectId = process.env.PROJECT_ID || ''
+export const createFetcher = () => {
+  const privateToken = process.env.INTEGRATION_PRIVATE_TOKEN || ''
+  const projectId = process.env.REPOSITORY_PROJECT_ID || ''
+  const api = new Gitlab({ token: privateToken })
 
   /**
    * 指定ブランチ/タグのコミットリストを取得
