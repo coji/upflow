@@ -6,8 +6,6 @@ import { reviewCommand } from '~/batch/commands/review'
 import { commitCommand } from '~/batch/commands/commit'
 import { upsertCommand } from '~/batch/commands/upsert'
 
-import { testCommand } from './commands/test'
-
 const fetch = command(
   {
     name: 'fetch',
@@ -30,9 +28,13 @@ const fetch = command(
 const report = command(
   {
     name: 'report',
+    parameters: ['[company id]'],
     help: { description: 'Report cycletime from fetched resources.' }
   },
-  () => reportCommand()
+  (argv) => {
+    const { help, ...rest } = argv.flags
+    reportCommand({ companyId: argv._.companyId, ...rest })
+  }
 )
 
 const upsert = command(
@@ -65,14 +67,6 @@ const review = command(
   (argv) => reviewCommand(Number(argv._.mergerequestIid))
 )
 
-const test = command(
-  {
-    name: 'test',
-    parameters: ['[repository id]']
-  },
-  (argv) => testCommand({ repositoryId: argv._.repositoryId })
-)
-
 cli({
-  commands: [fetch, report, upsert, commit, review, test]
+  commands: [fetch, report, upsert, commit, review]
 })

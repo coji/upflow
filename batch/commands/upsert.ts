@@ -1,11 +1,11 @@
-import { loadConfig, allConfigs } from '../config'
 import type { Types } from '@gitbeaker/node'
 import dayjs from 'dayjs'
-import { createLoader } from '../loader'
-import { createAggregator } from '../aggregator'
 import got from 'got'
-import type { MergeRequest } from '@prisma/client'
 import invariant from 'tiny-invariant'
+import { loadConfig, allConfigs } from '../config'
+import { createStore } from '../store'
+import { createAggregator } from '../aggregator'
+import type { MergeRequest } from '@prisma/client'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).format() : null
@@ -26,18 +26,21 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
   invariant(config, `config not found: ${companyId}`)
 
   for (const repository of config.repositories) {
-    const loader = createLoader()
+    const store = createStore({
+      companyId: config.companyId,
+      repositoryId: repository.id
+    })
     const aggregator = createAggregator()
     // const releasedCommits = await loader.releasedCommits()
-    const mr = await loader.mergerequests()
+    const mr = await store.loader.mergerequests()
 
     for (const m of mr.filter((m) => m.state !== 'closed' && m.target_branch !== 'production')) {
       // close じゃない & mainブランチターゲットのみ
-      const commits = await loader.commits(m.iid).catch(() => [])
-      const discussions = await loader.discussions(m.iid).catch(() => [])
+      const commits = await store.loader.commits(m.iid).catch(() => [])
+      const discussions = await store.loader.discussions(m.iid).catch(() => [])
       // リリースされたコミットにMR マージコミットが含まれるかどうか
       const releasedCommit =
-        m.merge_commit_sha !== undefined && m.merge_commit_sha !== null && (await loader.releasedCommitsBySha(m.merge_commit_sha).catch(() => false))
+        m.merge_commit_sha !== undefined && m.merge_commit_sha !== null && (await store.loader.releasedCommitsBySha(m.merge_commit_sha).catch(() => false))
 
       const item: MergeRequest = {
         id: String(m.iid),
