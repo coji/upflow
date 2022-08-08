@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client'
+const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 
 const prisma = new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })
-// @ts-ignore
 prisma.$on('query', async (e) => {
-  // @ts-ignore
   console.log(`${e.query} ${e.params}`)
 })
 
@@ -55,8 +53,8 @@ async function seed() {
   // integration
   const integration = await prisma.integration.create({
     data: {
-      provider: process.env.INTEGRATION_PROVIDER!,
-      method: process.env.INTEGRATION_METHOD!,
+      provider: process.env.INTEGRATION_PROVIDER,
+      method: process.env.INTEGRATION_METHOD,
       privateToken: process.env.INTEGRATION_PRIVATE_TOKEN,
       company: { connect: { id: company.id } }
     }
@@ -65,8 +63,8 @@ async function seed() {
   // respository
   await prisma.repository.create({
     data: {
-      provider: process.env.INTEGRATION_PROVIDER!,
-      projectId: process.env.REPOSITORY_PROJECT_ID!,
+      provider: process.env.INTEGRATION_PROVIDER,
+      projectId: process.env.REPOSITORY_PROJECT_ID,
       integration: { connect: { id: integration.id } },
       company: { connect: { id: company.id } }
     }
