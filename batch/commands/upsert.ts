@@ -52,7 +52,7 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
         mergerequest_created_at: nullOrDate(m.created_at)!,
         first_reviewd_at: nullOrDate(aggregator.firstReviewComment(discussions, (m.author as Types.UserSchema).username)?.created_at),
         merged_at: nullOrDate(m.merged_at),
-        released_at: nullOrDate(await aggregator.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
+        released_at: nullOrDate(await store.loader.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
         is_release_committed: releasedCommit !== false,
         author: m.author.username as string,
         title: m.title,

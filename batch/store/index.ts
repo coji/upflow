@@ -17,7 +17,6 @@ const createPathBuilder = ({ companyId, repositoryId }: createPathBuilderProps) 
   const discussionsJsonFilename = (iid: number) => jsonFilename('discussions', iid)
   const releaseCommitsJsonFilename = (sha: string) => {
     const subdir = sha.substring(0, 2)
-    //    fs.mkdirSync(jsonPath(`release-commits/${subdir}`), { recursive: true })
     return `release-commits/${subdir}/${sha}.json`
   }
   const releaseCommitsGlob = () => jsonPath(path.join('release-commits', '**', '*.json'))
@@ -75,6 +74,19 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   }
   const releasedCommitsBySha = async (sha: string) => await load<Types.CommitSchema>(pathBuilder.releaseCommitsJsonFilename(sha))
 
+  const releasedMergeRequests = (allMergeRequests: Types.MergeRequestSchema[]) =>
+    allMergeRequests.filter((mr) => mr.target_branch === 'production' && mr.state === 'merged')
+
+  const findReleaseDate = async (allMergeRequests: Types.MergeRequestSchema[], targetHash?: string) => {
+    let merged_at = null
+    for (const m of releasedMergeRequests(allMergeRequests)) {
+      if ((await commits(m.iid)).some((c: any) => c.id === targetHash)) {
+        merged_at = m.merged_at
+      }
+    }
+    return merged_at
+  }
+
   return {
     load,
     save,
@@ -84,7 +96,8 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
       discussions,
       mergerequests,
       releasedCommits,
-      releasedCommitsBySha
+      releasedCommitsBySha,
+      findReleaseDate
     }
   }
 }

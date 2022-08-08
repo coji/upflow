@@ -68,7 +68,7 @@ export async function reportCommand({ companyId }: reportCommandProps) {
           nullOrDate(m.created_at),
           nullOrDate(aggregator.firstReviewComment(discussions, (m.author as Types.UserSchema).username)?.created_at),
           nullOrDate(m.merged_at),
-          nullOrDate(await aggregator.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
+          nullOrDate(await store.loader.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
           releasedCommit !== false, // リリースされたコミットにMRマージコミットが含まれている？
           m.author.username,
           m.title
