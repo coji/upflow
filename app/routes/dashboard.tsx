@@ -43,7 +43,12 @@ const MergeRequestPage = memo(() => {
       <Flex as="main" height="full" bgColor="gray.200">
         <Stack p="2" flexGrow={1}>
           {mergeRequestItems.map((mr) => (
-            <NavLink key={mr.id} to={mr.id}>
+            <NavLink
+              key={mr.id}
+              to={`${mr.id}?repositoryId=${mr.repositoryId}
+            
+            `}
+            >
               <Stack px="4" py="1" gap="0" boxShadow="sm" bgColor={currentId === mr.id ? 'blue.100' : 'white'} _hover={{ bgColor: 'gray.100' }} rounded="md">
                 <Stack direction="row">
                   <Box>

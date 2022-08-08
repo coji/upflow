@@ -1,4 +1,4 @@
-import { loadConfig, allRepositories } from '../config'
+import { loadConfig, allConfigs } from '../config'
 import { json, path } from '../helper'
 import { createFetcher } from '../fetcher'
 import { createLoader } from '../loader'
@@ -14,7 +14,7 @@ export async function fetchCommand(props: FetchCommandProps) {
   console.log(props)
   if (!props.companyId) {
     console.log(`Error: company id should spacify`)
-    console.log((await allRepositories()).map((repo) => `${repo.companyName}\t${repo.companyId}`).join('\n'))
+    console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
     return
   }
 

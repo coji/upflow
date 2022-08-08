@@ -38,9 +38,13 @@ const report = command(
 const upsert = command(
   {
     name: 'upsert',
+    parameters: ['[company id]'],
     help: { description: 'upsert report data to frontend database.' }
   },
-  () => upsertCommand()
+  (argv) => {
+    const { help, ...rest } = argv.flags
+    upsertCommand({ companyId: argv._.companyId, ...rest })
+  }
 )
 
 const commit = command(

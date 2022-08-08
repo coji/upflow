@@ -1,10 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model User {
@@ -13,15 +13,15 @@ model User {
   name      String        @default("")
   updatedAt DateTime      @updatedAt
   createdAt DateTime      @default(now())
-  password  Password?
   companies CompanyUser[]
+  password  Password?
   teams     Team[]
 }
 
 model Password {
   hash   String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Company {
@@ -30,55 +30,55 @@ model Company {
   updatedAt    DateTime      @updatedAt
   createdAt    DateTime      @default(now())
   users        CompanyUser[]
-  teams        Team[]
   integration  Integration?
   repositories Repository[]
+  teams        Team[]
 }
 
 model CompanyUser {
   id          String    @id @default(cuid())
-  company     Company   @relation(fields: [companyId], references: [id])
   companyId   String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   role        String
   invitedAt   DateTime?
   activatedAt DateTime?
   updatedAt   DateTime  @updatedAt
   createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     Company   @relation(fields: [companyId], references: [id])
 }
 
 model Team {
   id        String  @id @default(cuid())
   name      String
-  company   Company @relation(fields: [companyId], references: [id])
   companyId String
+  company   Company @relation(fields: [companyId], references: [id])
   users     User[]
 }
 
 model Integration {
   id           String       @id @default(cuid())
-  provider     String // github, gitlab, and so on...
-  method       String // oauth2, token
+  provider     String
+  method       String
   privateToken String?
-  company      Company      @relation(fields: [companyId], references: [id])
   companyId    String       @unique
+  company      Company      @relation(fields: [companyId], references: [id])
   repositories Repository[]
 }
 
 model Repository {
   id            String         @id @default(cuid())
-  integration   Integration    @relation(fields: [integrationId], references: [id])
   integrationId String
-  provider      String // github, gitlab and so on...
-  projectId     String // gitlab project id
-  mergerequest  MergeRequest[]
-  company       Company        @relation(fields: [companyId], references: [id])
+  provider      String
+  projectId     String
   companyId     String
+  company       Company        @relation(fields: [companyId], references: [id])
+  integration   Integration    @relation(fields: [integrationId], references: [id])
+  mergerequest  MergeRequest[]
 }
 
 model MergeRequest {
-  id                      String     @id
+  id                      String
   target_branch           String
   state                   String
   num_of_commits          Int?
@@ -91,6 +91,8 @@ model MergeRequest {
   is_release_committed    Boolean
   author                  String
   title                   String
-  repository              Repository @relation(fields: [repositoryId], references: [id])
   repositoryId            String
+  repository              Repository @relation(fields: [repositoryId], references: [id])
+
+  @@id([repositoryId, id])
 }

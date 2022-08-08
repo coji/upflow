@@ -17,8 +17,8 @@ export interface Config {
   ]
 }
 
-export const allRepositories = async () => {
-  const repositories = await (
+export const allConfigs = async () => {
+  const configs = await (
     await prisma.company.findMany({
       include: {
         integration: { select: { id: true, provider: true, method: true, privateToken: true } },
@@ -33,10 +33,10 @@ export const allRepositories = async () => {
       repositories: company.repositories
     } as Config
   })
-  return repositories
+  return configs
 }
 
 export const loadConfig = async (companyId: string) => {
-  const repositories = await allRepositories()
-  return repositories.find((repo) => repo.companyId === companyId)
+  const configs = await allConfigs()
+  return configs.find((config) => config.companyId === companyId)
 }
