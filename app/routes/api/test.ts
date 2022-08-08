@@ -9,5 +9,5 @@ export const loader = async ({ request, params, context }: LoaderArgs) => {
     return redirect('/')
   }
   const companies = await getCompaniesByUser(user.id)
-  return json({ companies, user })
+  return json({ companies, me: user })
 }

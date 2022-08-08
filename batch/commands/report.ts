@@ -2,7 +2,6 @@ import type { Types } from '@gitbeaker/node'
 import dayjs from 'dayjs'
 import { createLoader } from '../loader'
 import { createAggregator } from '../aggregator'
-import os from 'os'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr && dayjs(dateStr).format('YYYY-MM-DD HH:mm')

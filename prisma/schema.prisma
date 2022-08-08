@@ -31,7 +31,7 @@ model Company {
   createdAt    DateTime      @default(now())
   users        CompanyUser[]
   teams        Team[]
-  integrations Integration[]
+  integration  Integration?
   repositories Repository[]
 }
 
@@ -62,7 +62,7 @@ model Integration {
   method       String // oauth2, token
   privateToken String?
   company      Company      @relation(fields: [companyId], references: [id])
-  companyId    String
+  companyId    String       @unique
   repositories Repository[]
 }
 

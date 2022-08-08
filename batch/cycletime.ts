@@ -6,30 +6,13 @@ import { reviewCommand } from '~/batch/commands/review'
 import { commitCommand } from '~/batch/commands/commit'
 import { upsertCommand } from '~/batch/commands/upsert'
 
+import { testCommand } from './commands/test'
+
 const fetch = command(
   {
     name: 'fetch',
+    parameters: ['[company id]'],
     flags: {
-      provider: {
-        type: String,
-        description: 'gitlab only',
-        default: 'gitlab'
-      },
-      method: {
-        type: String,
-        description: 'token only',
-        default: 'token'
-      },
-      token: {
-        type: String,
-        description: 'gitlab repository token',
-        default: process.env.INTEGRATION_PRIVATE_TOKEN
-      },
-      projectId: {
-        type: String,
-        description: 'gitlab project id',
-        default: process.env.REPOSITORY_PROJECT_ID
-      },
       refresh: {
         type: Boolean,
         description: 'refresh all mergerequest resources.',
@@ -40,7 +23,7 @@ const fetch = command(
   },
   (argv) => {
     const { help, ...rest } = argv.flags
-    fetchCommand({ ...rest })
+    fetchCommand({ companyId: argv._.companyId, ...rest })
   }
 )
 
@@ -78,6 +61,14 @@ const review = command(
   (argv) => reviewCommand(Number(argv._.mergerequestIid))
 )
 
+const test = command(
+  {
+    name: 'test',
+    parameters: ['[repository id]']
+  },
+  (argv) => testCommand({ repositoryId: argv._.repositoryId })
+)
+
 cli({
-  commands: [fetch, report, upsert, commit, review]
+  commands: [fetch, report, upsert, commit, review, test]
 })
