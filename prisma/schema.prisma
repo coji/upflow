@@ -45,14 +45,14 @@ model CompanyUser {
   updatedAt   DateTime  @updatedAt
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company     Company   @relation(fields: [companyId], references: [id])
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 model Team {
   id        String  @id @default(cuid())
   name      String
   companyId String
-  company   Company @relation(fields: [companyId], references: [id])
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   users     User[]
 }
 
@@ -62,7 +62,7 @@ model Integration {
   method       String
   privateToken String?
   companyId    String       @unique
-  company      Company      @relation(fields: [companyId], references: [id])
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   repositories Repository[]
 }
 
@@ -72,8 +72,8 @@ model Repository {
   provider      String
   projectId     String
   companyId     String
-  company       Company        @relation(fields: [companyId], references: [id])
-  integration   Integration    @relation(fields: [integrationId], references: [id])
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  integration   Integration    @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   mergerequest  MergeRequest[]
 }
 
@@ -92,7 +92,7 @@ model MergeRequest {
   author                  String
   title                   String
   repositoryId            String
-  repository              Repository @relation(fields: [repositoryId], references: [id])
+  repository              Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@id([repositoryId, id])
 }

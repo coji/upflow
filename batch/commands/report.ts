@@ -1,19 +1,24 @@
-import type { Types } from '@gitbeaker/node'
 import dayjs from 'dayjs'
 import { loadConfig, allConfigs } from '../config'
 import { createStore } from '../store'
-import { createAggregator } from '../aggregator'
+import { buildMergeRequests } from '../mergerequest'
 import invariant from 'tiny-invariant'
 
-const nullOrDate = (dateStr?: Date | string | null) => {
-  return dateStr && dayjs(dateStr).format('YYYY-MM-DD HH:mm')
-}
+const timeFormat = (date: string | null) => (date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : null)
 
 interface reportCommandProps {
   companyId?: string
 }
 
 export async function reportCommand({ companyId }: reportCommandProps) {
+  if (!companyId) {
+    console.log('config should specified')
+    console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
+    return
+  }
+  const config = await loadConfig(companyId)
+  invariant(config, `config not found: ${companyId}`)
+
   // ヘッダ
   console.log(
     [
@@ -32,46 +37,37 @@ export async function reportCommand({ companyId }: reportCommandProps) {
       'MRタイトル'
     ].join('\t')
   )
-  if (!companyId) {
-    console.log('config should specified')
-    console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
-    return
-  }
-  const config = await loadConfig(companyId)
-  invariant(config, `config not found: ${companyId}`)
 
   for (const repository of config.repositories) {
     const store = createStore({
       companyId: config.companyId,
       repositoryId: repository.id
     })
-    const aggregator = createAggregator()
-    const mr = await store.loader.mergerequests()
 
-    for (const m of mr.filter((m) => m.state !== 'closed' && m.target_branch !== 'production')) {
-      // close じゃない & mainブランチターゲットのみ
-      const commits = await store.loader.commits(m.iid).catch(() => [])
-      const discussions = await store.loader.discussions(m.iid).catch(() => [])
-      // リリースされたコミットにMR マージコミットが含まれるかどうか
-      const releasedCommit =
-        m.merge_commit_sha !== undefined && m.merge_commit_sha !== null && (await store.loader.releasedCommitsBySha(m.merge_commit_sha).catch(() => false))
+    const results = await buildMergeRequests(
+      {
+        companyId: config.companyId,
+        repositoryId: repository.id
+      },
+      await store.loader.mergerequests()
+    )
 
-      // マージリクエスト1件
+    for (const mr of results) {
       console.log(
         [
-          m.iid,
-          m.target_branch,
-          m.state,
-          commits.length || null,
-          aggregator.reviewComments(discussions).length || null,
-          nullOrDate(aggregator.firstCommit(commits)?.created_at),
-          nullOrDate(m.created_at),
-          nullOrDate(aggregator.firstReviewComment(discussions, (m.author as Types.UserSchema).username)?.created_at),
-          nullOrDate(m.merged_at),
-          nullOrDate(await store.loader.findReleaseDate(mr, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
-          releasedCommit !== false, // リリースされたコミットにMRマージコミットが含まれている？
-          m.author.username,
-          m.title
+          mr.id,
+          mr.target_branch,
+          mr.state,
+          mr.num_of_comments,
+          mr.num_of_comments,
+          timeFormat(mr.first_commited_at),
+          timeFormat(mr.mergerequest_created_at),
+          timeFormat(mr.first_reviewd_at),
+          timeFormat(mr.merged_at),
+          timeFormat(mr.released_at),
+          mr.is_release_committed,
+          mr.author,
+          mr.title
         ].join('\t')
       )
     }

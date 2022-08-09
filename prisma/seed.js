@@ -6,29 +6,55 @@ prisma.$on('query', async (e) => {
   console.log(`${e.query} ${e.params}`)
 })
 
+/**
+ * cleanup existing database
+ * @param string email
+ */
+const cleanup = async (email) => {
+  await prisma.user.delete({ where: { email } }).catch((e) => console.log(e))
+
+  const repository = await prisma.repository.findFirst({
+    where: {
+      provider: process.env.INTEGRATION_PROVIDER,
+      projectId: process.env.REPOSITORY_PROJECT_ID
+    }
+  })
+  if (!repository) return {}
+
+  const company = await prisma.company.findFirst({
+    where: { id: repository.companyId }
+  })
+  if (!company) return { repository: repository.id }
+  await prisma.company.delete({ where: { id: company.id } }).catch((e) => console.log(e))
+
+  return {
+    companyId: company?.id,
+    repositoryId: repository?.id
+  }
+}
+
+const seedMergeRequests = async (companyId) => {
+  const { $ } = await import('zx')
+  await $`tsx batch/cycletime.ts upsert ${companyId}`
+}
+
 async function seed() {
   const email = 'coji@techtalk.jp'
+  const { companyId, repositoryId } = await cleanup(email)
 
-  // cleanup the existing database
-  await prisma.user.delete({ where: { email } }).catch((e) => {
-    console.log(e)
-  })
   // user
   const user = await prisma.user.create({
     data: {
       email,
       name: 'Coji Mizoguchi',
-      password: {
-        create: {
-          hash: await bcrypt.hash('techtalk', 10)
-        }
-      }
+      password: { create: { hash: await bcrypt.hash('techtalk', 10) } }
     }
   })
 
   // company
   const company = await prisma.company.create({
     data: {
+      id: companyId,
       name: 'TechTalk'
     }
   })
@@ -63,12 +89,15 @@ async function seed() {
   // respository
   await prisma.repository.create({
     data: {
+      id: repositoryId,
       provider: process.env.INTEGRATION_PROVIDER,
       projectId: process.env.REPOSITORY_PROJECT_ID,
       integration: { connect: { id: integration.id } },
       company: { connect: { id: company.id } }
     }
   })
+
+  await seedMergeRequests(companyId)
 
   console.log(`Database has been seeded. 🌱`)
 }

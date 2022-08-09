@@ -34,6 +34,7 @@ export async function fetchCommand(props: FetchCommandProps) {
       repositoryId: repository.id
     })
 
+    store.save('config.json', config)
     console.log('fetch started: ')
     console.log({
       companyId: config.companyId,
