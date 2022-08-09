@@ -10,9 +10,7 @@ declare global {
 // the server with every change, but we want to make sure we don't
 // create a new connection to the DB with every change either.
 // in production we'll have a single connection to the DB.
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient()
-} else {
+if (process.env.NODE_ENV === 'development') {
   if (!global.__db__) {
     global.__db__ = new PrismaClient({
       log: [
@@ -25,6 +23,8 @@ if (process.env.NODE_ENV === 'production') {
   }
   prisma = global.__db__
   prisma.$connect()
+} else {
+  prisma = new PrismaClient()
 }
 
 export { prisma }
