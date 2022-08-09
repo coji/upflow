@@ -7,9 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
 *.local
 
 # Editor directories and files
@@ -23,4 +20,21 @@ dist-ssr
 *.sln
 *.sw?
 .env
-json/**/*.json
+
+data/data.db
+data/data.db-journal
+data/json/**/*.json
+
+
+node_modules
+
+/build
+/public/build
+.env
+
+/cypress/screenshots
+/cypress/videos
+data/data.db
+data/data.db-journal
+
+cycletime.js
