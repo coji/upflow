@@ -29,7 +29,8 @@ specifiers:
   '@types/node': ^18.7.6
   '@types/react': ^18.0.17
   '@types/react-dom': ^18.0.6
-  '@vitejs/plugin-react': ^2.0.1
+  '@vitejs/plugin-react': ^2.0.0
+  '@vitest/coverage-c8': ^0.22.0
   autoprefixer: ^10.4.8
   bcryptjs: ^2.4.3
   binode: ^1.0.5
@@ -107,6 +108,7 @@ devDependencies:
   '@types/react': 18.0.17
   '@types/react-dom': 18.0.6
   '@vitejs/plugin-react': 2.0.1_vite@3.0.8
+  '@vitest/coverage-c8': 0.22.0_happy-dom@6.0.4
   autoprefixer: 10.4.8
   binode: 1.0.5
   c8: 7.12.0
@@ -3711,6 +3713,24 @@ packages:
       - supports-color
     dev: true
 
+  /@vitest/coverage-c8/0.22.0_happy-dom@6.0.4:
+    resolution: {integrity: sha512-jwW6b8U+h9nbzQfKoRmpf2xjDg+mcAjLIdVUrZGhjTnIdekGfvoqFoeiXzsLv2HwYBeFi4943lYUftuj8qD1FQ==}
+    dependencies:
+      c8: 7.12.0
+      vitest: 0.22.0_happy-dom@6.0.4
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@vitest/browser'
+      - '@vitest/ui'
+      - happy-dom
+      - jsdom
+      - less
+      - sass
+      - stylus
+      - supports-color
+      - terser
+    dev: true
+
   /@web3-storage/multipart-parser/1.0.0:
     resolution: {integrity: sha512-BEO6al7BYqcnfX15W2cnGR+Q566ACXAT9UQykORCWW80lmkpWsnEob6zJS1ZVBKsSJC8+7vJkHwlp+lXG1UCdw==}
 
@@ -7255,7 +7275,7 @@ packages:
     engines: {node: '>=12.0.0'}
     dependencies:
       ansi-escapes: 4.3.2
-      chalk: 4.1.2
+      chalk: 4.1.1
       cli-cursor: 3.1.0
       cli-width: 3.0.0
       external-editor: 3.1.0
