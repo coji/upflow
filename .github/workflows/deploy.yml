@@ -25,13 +25,31 @@ jobs:
         with:
           node-version: 16
 
-      - name: 📥 Download deps
-        uses: bahmutov/npm-install@v1
+      - uses: pnpm/action-setup@v2.0.1
+        name: Install pnpm
+        id: pnpm-install
         with:
-          useLockFile: false
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: 🔬 Lint
-        run: npm run lint
+        run: pnpm run lint
 
   typecheck:
     name: ʦ TypeScript
@@ -48,13 +66,31 @@ jobs:
         with:
           node-version: 16
 
-      - name: 📥 Download deps
-        uses: bahmutov/npm-install@v1
+      - uses: pnpm/action-setup@v2.0.1
+        name: Install pnpm
+        id: pnpm-install
         with:
-          useLockFile: false
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: 🔎 Type check
-        run: npm run typecheck --if-present
+        run: pnpm run typecheck --if-present
 
   vitest:
     name: ⚡ Vitest
@@ -71,13 +107,31 @@ jobs:
         with:
           node-version: 16
 
-      - name: 📥 Download deps
-        uses: bahmutov/npm-install@v1
+      - uses: pnpm/action-setup@v2.0.1
+        name: Install pnpm
+        id: pnpm-install
         with:
-          useLockFile: false
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: ⚡ Run vitest
-        run: npm run test -- --coverage
+        run: pnpm run test -- --coverage
 
   # cypress:
   #   name: ⚫️ Cypress
@@ -97,21 +151,39 @@ jobs:
   #       with:
   #         node-version: 16
 
-  #     - name: 📥 Download deps
-  #       uses: bahmutov/npm-install@v1
-  #       with:
-  #         useLockFile: false
+  # - uses: pnpm/action-setup@v2.0.1
+  #   name: Install pnpm
+  #   id: pnpm-install
+  #   with:
+  #     version: 7
+  #     run_install: false
+
+  # - name: Get pnpm store directory
+  #   id: pnpm-cache
+  #   run: |
+  #     echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+  # - uses: actions/cache@v3
+  #   name: Setup pnpm cache
+  #   with:
+  #     path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+  #     key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #     restore-keys: |
+  #       ${{ runner.os }}-pnpm-store-
+
+  # - name: Install dependencies
+  #   run: pnpm install
 
   #     - name: 🛠 Setup Database
   #       run: npx prisma migrate reset --force
 
   #     - name: ⚙️ Build
-  #       run: npm run build
+  #       run: pnpm run build
 
   #     - name: 🌳 Cypress run
   #       uses: cypress-io/github-action@v4
   #       with:
-  #         start: npm run start:mocks
+  #         start: pnpm run start:mocks
   #         wait-on: "http://localhost:8811"
   #       env:
   #         PORT: "8811"
