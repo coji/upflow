@@ -38,3 +38,5 @@ data/data.db
 data/data.db-journal
 
 cycletime.js
+
+coverage/
