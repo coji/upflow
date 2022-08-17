@@ -1,11 +1,8 @@
-import got from 'got'
 import invariant from 'tiny-invariant'
 import { loadConfig, allConfigs } from '../config'
 import { createStore } from '../store'
 import { buildMergeRequests } from '../mergerequest'
 import { upsertMergeRequest } from '~/app/models/mergeRequest.server'
-
-const API_URL = process.env.NODE_ENV === 'production' ? 'http://localhost:8080/api/mergerequests/upsert' : 'http://localhost:3000/api/mergerequests/upsert'
 
 interface UpsertCommandProps {
   companyId?: string

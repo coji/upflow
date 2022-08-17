@@ -45,6 +45,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Generate prisma client
+        run: pnpm prisma generate
+
       - name: 🔬 Lint
         run: pnpm run lint
 
@@ -86,8 +89,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Generate prisma client
+        run: pnpm prisma generate
+
       - name: 🔎 Type check
-        run: pnpm run typecheck --if-present
+        run: pnpm run typecheck
 
   vitest:
     name: ⚡ Vitest
@@ -126,6 +132,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Generate prisma client
+        run: pnpm prisma generate
 
       - name: ⚡ Run vitest
         run: pnpm run test -- --coverage
