@@ -40,3 +40,4 @@ data/data.db-journal
 cycletime.js
 
 coverage/
+dist
