@@ -1,40 +1,45 @@
-gitlab merge request fetch and reporter
+GitLab merge request fetch and reporter
 
-# configuration
+# Quick start
 
-set configuration on .env file (e.g. see .env.default)
+First, clone this repository and set configuration on .env file (e.g. see .env.default)
 
 ```
 PROJECT_ID=<Your GitLab.com Project ID>
 PRIVATE_TOKEN=<Your GitLab.com Private Token>
 ```
 
-install dependencies.
+Next, install dependencies.
 
 ```
 pnpm i
 ```
 
-# fetch
+That's all you need to know to start! 🎉
+
+# Usage
+
+## Fetch
 
 ```
 pnpm tsx batch/cycletime fetch
 ```
 
-then your merge requests with related commits and discussions save in to scripts/json directory.
+Command for fetch merge requests, related commits and discussion.
+They are stored in `scripts/json`.
 
-# report
+## Report
 
 ```
 pnpm tsx batch/cycletime report
 ```
 
-list up report in tsv.
+Command for make a report in tsv format.
 
-# review
+## Review
 
 ```
 pnpm tsx batch/cycletime review <mergerequest iid>
 ```
 
-List review comments for a given mergerequest.
+Command for show review comments with the given merge request id.
