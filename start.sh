@@ -8,4 +8,5 @@
 set -ex
 npx -y prisma migrate deploy
 npx -y prisma generate
-pnpm run start
+#pnpm run start
+node /upflow/node_modules/.bin/../@remix-run/serve/dist/cli.js build
