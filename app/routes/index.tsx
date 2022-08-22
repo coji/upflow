@@ -6,8 +6,7 @@ import { safeRedirect, validateEmail } from '~/app/utils'
 
 import * as React from 'react'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
-import { Stack, Box, Text, Input, FormControl, FormLabel, FormErrorMessage, Button, Checkbox } from '@chakra-ui/react'
-import { AppLink } from '~/app/components/AppLink'
+import { Stack, Box, Input, FormControl, FormLabel, FormErrorMessage, Button, Checkbox } from '@chakra-ui/react'
 import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -80,9 +79,9 @@ export default function LoginPage() {
   return (
     <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
       <AppCenterFormFrame title="UpFlow" subtitle="ログイン">
-        <Form method="post" noValidate>
+        <Form method="post" action="." noValidate>
           <Stack>
-            <FormControl isInvalid={!!actionData?.errors?.password}>
+            <FormControl isInvalid={!!actionData?.errors?.email}>
               <FormLabel htmlFor="email" fontSize="sm" color="gray.600">
                 Eメール
               </FormLabel>
@@ -129,6 +128,7 @@ export default function LoginPage() {
                 </FormLabel>
               </Stack>
 
+              {/* 
               <Text>
                 アカウントがない方は
                 <AppLink
@@ -142,6 +142,7 @@ export default function LoginPage() {
                   ユーザ登録
                 </AppLink>
               </Text>
+              */}
             </Stack>
           </Stack>
         </Form>
