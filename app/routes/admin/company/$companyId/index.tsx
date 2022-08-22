@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
 import { json } from '@remix-run/node'
 import { useLoaderData, Form, NavLink } from '@remix-run/react'
@@ -25,18 +26,19 @@ export const action = async ({ request, params }: ActionArgs) => {
 
 const CompanyPage = () => {
   const company = useLoaderData<typeof loader>()
+  const [isEdit, setIsEdit] = useState(false)
 
   return (
     <Stack gap="2">
       <Box bgColor="white" boxShadow="md" p="4" rounded="md">
         <Form replace method="post" action=".">
           <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
-            <GridItem colSpan={2} display="flex">
+            <GridItem colSpan={2} display="flex" position="relative">
               <Heading size="md">Company: {company.name}</Heading>
               <Spacer />
-              <Box>
+              <Box position="absolute" top="0" right="0">
                 <Menu>
-                  <MenuButton as={Button} size="sm" rightIcon={<SettingsIcon />}>
+                  <MenuButton as={Button} size="xs" rightIcon={<SettingsIcon />}>
                     Menu
                   </MenuButton>
                   <MenuList>
@@ -52,19 +54,29 @@ const CompanyPage = () => {
             <Box py="1">{company.id}</Box>
 
             <FormLabel htmlFor="name">Name</FormLabel>
-            <Input name="name" id="name" defaultValue={company.name}></Input>
+            <Stack direction="row" align="center">
+              {isEdit ? (
+                <>
+                  <Input name="name" id="name" defaultValue={company.name} autoFocus></Input>
+                  <Button type="submit" colorScheme="blue" size="xs">
+                    Save
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Box py="1">{company.name}</Box>
+                  <Button size="xs" onClick={() => setIsEdit(true)}>
+                    Edit
+                  </Button>
+                </>
+              )}
+            </Stack>
 
             <FormLabel>Updated At</FormLabel>
             <Box py="1">{dayjs(company.updatedAt).format()}</Box>
 
             <FormLabel>Created At</FormLabel>
             <Box py="1">{dayjs(company.createdAt).format()}</Box>
-
-            <GridItem colSpan={2} textAlign="center">
-              <Button type="submit" colorScheme="blue">
-                Update
-              </Button>
-            </GridItem>
           </Box>
         </Form>
       </Box>

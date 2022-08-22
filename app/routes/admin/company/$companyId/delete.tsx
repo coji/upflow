@@ -32,18 +32,18 @@ const CompanyDelete = () => {
         <Stack>
           <Heading size="md">Are you shure delete this company?</Heading>
 
-          <Box display="grid" gridTemplateColumns="auto 1fr">
+          <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
             <FormLabel>ID</FormLabel>
-            <Box> {company.id}</Box>
+            <Box py="1"> {company.id}</Box>
 
             <FormLabel>Name</FormLabel>
-            <Box> {company.name}</Box>
+            <Box py="1"> {company.name}</Box>
 
             <FormLabel>Updated At</FormLabel>
-            <Box> {company.updatedAt}</Box>
+            <Box py="1"> {company.updatedAt}</Box>
 
             <FormLabel>Created At</FormLabel>
-            <Box> {company.createdAt}</Box>
+            <Box py="1"> {company.createdAt}</Box>
           </Box>
 
           <Box>
