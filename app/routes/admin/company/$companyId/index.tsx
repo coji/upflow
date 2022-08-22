@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
 import { json } from '@remix-run/node'
-import { useLoaderData, Form, NavLink } from '@remix-run/react'
+import { useLoaderData, Form, NavLink, useActionData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { Heading, Stack, Box, Spacer, Input, FormLabel, Button, GridItem, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
 import { SettingsIcon } from '@chakra-ui/icons'
@@ -11,12 +11,14 @@ import { requireUserId } from '~/app/session.server'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
+  console.log('loader', params)
   await requireUserId(request)
   invariant(params.companyId, 'companyId shoud specified found')
   return json(await getCompany(params.companyId)) // ページコンポーネントの useLoaderData で使用
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
+  console.log('action', params)
   const { companyId } = params
   const formData = await request.formData()
   const name = formData.get('name')
@@ -27,6 +29,13 @@ export const action = async ({ request, params }: ActionArgs) => {
 const CompanyPage = () => {
   const company = useLoaderData<typeof loader>()
   const [isEdit, setIsEdit] = useState(false)
+  const actionData = useActionData()
+
+  useEffect(() => {
+    if (actionData) {
+      setIsEdit(false)
+    }
+  }, [actionData])
 
   return (
     <Stack gap="2">
@@ -58,6 +67,9 @@ const CompanyPage = () => {
               {isEdit ? (
                 <>
                   <Input name="name" id="name" defaultValue={company.name} autoFocus></Input>
+                  <Button size="xs" onClick={() => setIsEdit(false)}>
+                    Cancel
+                  </Button>
                   <Button type="submit" colorScheme="blue" size="xs">
                     Save
                   </Button>
