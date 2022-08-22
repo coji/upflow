@@ -2,7 +2,7 @@ import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
 import { json } from '@remix-run/node'
 import { useLoaderData, Form, NavLink } from '@remix-run/react'
 import invariant from 'tiny-invariant'
-import { Heading, Stack, Box, Input, FormLabel, Button, GridItem, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
+import { Heading, Stack, Box, Spacer, Input, FormLabel, Button, GridItem, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
 import { SettingsIcon } from '@chakra-ui/icons'
 import dayjs from 'dayjs'
 
@@ -30,19 +30,19 @@ const CompanyPage = () => {
     <Stack gap="2">
       <Box bgColor="white" boxShadow="md" p="4" rounded="md">
         <Form replace method="post" action=".">
-          <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline" position="relative">
-            <GridItem colSpan={2}>
+          <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
+            <GridItem colSpan={2} display="flex">
               <Heading size="md">Company: {company.name}</Heading>
-
-              <Box position="absolute" top="0 " right="0">
+              <Spacer />
+              <Box>
                 <Menu>
-                  <MenuButton as={Button} rightIcon={<SettingsIcon />}>
+                  <MenuButton as={Button} size="sm" rightIcon={<SettingsIcon />}>
                     Menu
                   </MenuButton>
                   <MenuList>
-                    <NavLink to="delete">
-                      <MenuItem color="red.500">Delete...</MenuItem>
-                    </NavLink>
+                    <MenuItem color="red.500">
+                      <NavLink to="delete">Delete...</NavLink>
+                    </MenuItem>
                   </MenuList>
                 </Menu>
               </Box>
