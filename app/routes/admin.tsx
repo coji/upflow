@@ -5,12 +5,12 @@ import { NavLink, Outlet, useLoaderData, useParams } from '@remix-run/react'
 import { Box, Flex, Spacer, Heading, Container, Stack, Tag, Grid, Button } from '@chakra-ui/react'
 import { PlusSquareIcon } from '@chakra-ui/icons'
 import { useUser } from '~/app/utils'
-import { getCompaniesByUser } from '../models/company.server'
+import { getCompanies } from '../models/admin/company.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  const userId = await requireUserId(request)
+  await requireUserId(request)
   return {
-    companies: await getCompaniesByUser(userId)
+    companies: await getCompanies()
   }
 }
 
@@ -59,9 +59,11 @@ const AdminIndex = () => {
 
               <Spacer />
 
-              <Button variant="ghost" fontWeight="normal" leftIcon={<PlusSquareIcon />}>
-                新規作成
-              </Button>
+              <NavLink to={'company/new'}>
+                <Button w="full" variant="ghost" fontWeight="normal" leftIcon={<PlusSquareIcon />} _hover={{ bgColor: 'gray.100' }}>
+                  新規作成
+                </Button>
+              </NavLink>
             </Stack>
 
             <Box>

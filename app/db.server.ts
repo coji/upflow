@@ -12,14 +12,11 @@ declare global {
 // in production we'll have a single connection to the DB.
 if (process.env.NODE_ENV === 'development') {
   if (!global.__db__) {
-    global.__db__ = new PrismaClient({
-      log: [
-        {
-          emit: 'stdout',
-          level: 'query'
-        }
-      ]
+    const prisma = new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })
+    prisma.$on('query', async (e) => {
+      console.log(`${e.query} ${e.params}`)
     })
+    global.__db__ = prisma
   }
   prisma = global.__db__
   prisma.$connect()

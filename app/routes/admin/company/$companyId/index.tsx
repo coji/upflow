@@ -1,11 +1,13 @@
 import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
 import { json } from '@remix-run/node'
-import { useLoaderData, Form } from '@remix-run/react'
+import { useLoaderData, Form, NavLink } from '@remix-run/react'
 import invariant from 'tiny-invariant'
-import { Stack, Box, Input, FormLabel, Button, GridItem } from '@chakra-ui/react'
+import { Heading, Stack, Box, Input, FormLabel, Button, GridItem, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
+import { SettingsIcon } from '@chakra-ui/icons'
+import dayjs from 'dayjs'
 
 import { requireUserId } from '~/app/session.server'
-import { getCompany, updateCompany } from '~/app/models/company.server'
+import { getCompany, updateCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
@@ -25,10 +27,27 @@ const CompanyPage = () => {
   const company = useLoaderData<typeof loader>()
 
   return (
-    <Stack>
+    <Stack gap="2">
       <Box bgColor="white" boxShadow="md" p="4" rounded="md">
         <Form replace method="post" action=".">
-          <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
+          <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline" position="relative">
+            <GridItem colSpan={2}>
+              <Heading size="md">Company: {company.name}</Heading>
+
+              <Box position="absolute" top="0 " right="0">
+                <Menu>
+                  <MenuButton as={Button} rightIcon={<SettingsIcon />}>
+                    Menu
+                  </MenuButton>
+                  <MenuList>
+                    <NavLink to="delete">
+                      <MenuItem color="red.500">Delete...</MenuItem>
+                    </NavLink>
+                  </MenuList>
+                </Menu>
+              </Box>
+            </GridItem>
+
             <FormLabel>ID</FormLabel>
             <Box py="1">{company.id}</Box>
 
@@ -36,10 +55,10 @@ const CompanyPage = () => {
             <Input name="name" id="name" defaultValue={company.name}></Input>
 
             <FormLabel>Updated At</FormLabel>
-            <Box py="1">{company.updatedAt}</Box>
+            <Box py="1">{dayjs(company.updatedAt).format()}</Box>
 
             <FormLabel>Created At</FormLabel>
-            <Box py="1">{company.createdAt}</Box>
+            <Box py="1">{dayjs(company.createdAt).format()}</Box>
 
             <GridItem colSpan={2} textAlign="center">
               <Button type="submit" colorScheme="blue">
