@@ -37,34 +37,36 @@ const AdminIndex = () => {
       <Box as="main" bgColor="gray.200" p="4">
         <Container maxWidth="container.xl">
           <Grid display="grid" gridTemplateColumns="15rem 1fr" gap="4">
-            <Stack bgColor="white" rounded="md" p="2" boxShadow="md">
-              <Box fontWeight="bold">Companies</Box>
+            <Box>
+              <Stack bgColor="white" rounded="md" p="2" boxShadow="md">
+                <Box fontWeight="bold">Companies</Box>
 
-              {companies.map((company) => {
-                const isActive = companyId === company.id
-                return (
-                  <NavLink key={company.id} to={`company/${company.id}`}>
-                    <Box
-                      _hover={{ bgColor: !isActive ? 'gray.100' : undefined }}
-                      bgColor={isActive ? 'gray.500' : 'white'}
-                      color={isActive ? 'white' : 'inherit'}
-                      rounded="md"
-                      p="2"
-                    >
-                      {company.name}
-                    </Box>
-                  </NavLink>
-                )
-              })}
+                {companies.map((company) => {
+                  const isActive = companyId === company.id
+                  return (
+                    <NavLink key={company.id} to={`company/${company.id}`}>
+                      <Box
+                        _hover={{ bgColor: !isActive ? 'gray.100' : undefined }}
+                        bgColor={isActive ? 'gray.500' : 'white'}
+                        color={isActive ? 'white' : 'inherit'}
+                        rounded="md"
+                        p="2"
+                      >
+                        {company.name}
+                      </Box>
+                    </NavLink>
+                  )
+                })}
 
-              <Spacer />
+                <Spacer />
 
-              <NavLink to={'company/new'}>
-                <Button w="full" variant="ghost" fontWeight="normal" leftIcon={<PlusSquareIcon />} _hover={{ bgColor: 'gray.100' }}>
-                  新規作成
-                </Button>
-              </NavLink>
-            </Stack>
+                <NavLink to={'company/new'}>
+                  <Button w="full" variant="ghost" fontWeight="normal" leftIcon={<PlusSquareIcon />} _hover={{ bgColor: 'gray.100' }}>
+                    新規作成
+                  </Button>
+                </NavLink>
+              </Stack>
+            </Box>
 
             <Box>
               <Outlet />
