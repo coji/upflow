@@ -1,7 +1,20 @@
 import type { ActionArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
-import { Form } from '@remix-run/react'
-import { Stack, Heading, Box, FormLabel, Input, Button } from '@chakra-ui/react'
+import { Form, useNavigate } from '@remix-run/react'
+import {
+  Stack,
+  Box,
+  FormLabel,
+  Input,
+  Button,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter
+} from '@chakra-ui/react'
 import { createCompany } from '~/app/models/admin/company.server'
 
 export const action = async ({ request }: ActionArgs) => {
@@ -20,21 +33,36 @@ export const action = async ({ request }: ActionArgs) => {
 }
 
 const CompanyNewPage = () => {
+  const navigate = useNavigate()
+
   return (
-    <Box bgColor="white" boxShadow="md" rounded="md" p="4">
-      <Form action="." method="post">
-        <Stack>
-          <Heading fontSize="md">Create a new company</Heading>
-          <Box display="grid" gridTemplateColumns="auto 1fr" alignItems="baseline">
-            <FormLabel htmlFor="name">Name</FormLabel>
-            <Input id="name" name="name"></Input>
-          </Box>
-          <Button type="submit" colorScheme="blue">
+    <Modal
+      isOpen={true}
+      onClose={() => {
+        navigate('/admin/company')
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Create new company</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <Form action="." method="post" id="new-form" autoComplete="false">
+            <Stack>
+              <Box display="grid" gridTemplateColumns="auto 1fr" alignItems="baseline">
+                <FormLabel htmlFor="name">Name</FormLabel>
+                <Input id="name" name="name" autoFocus></Input>
+              </Box>
+            </Stack>
+          </Form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="submit" colorScheme="blue" form="new-form">
             Create
           </Button>
-        </Stack>
-      </Form>
-    </Box>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   )
 }
 export default CompanyNewPage

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
 import { json } from '@remix-run/node'
-import { useLoaderData, Form, NavLink, useActionData, useTransition } from '@remix-run/react'
+import { useLoaderData, Form, NavLink, useActionData, useTransition, Outlet } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import {
   Heading,
@@ -27,10 +27,15 @@ import { requireUserId } from '~/app/session.server'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  console.log('loader', params)
   await requireUserId(request)
   invariant(params.companyId, 'companyId shoud specified found')
-  return json(await getCompany(params.companyId)) // ページコンポーネントの useLoaderData で使用
+
+  const company = await getCompany(params.companyId)
+  if (!company) {
+    throw new Response('Company not found', { status: 404 })
+  }
+
+  return json(company) // ページコンポーネントの useLoaderData で使用
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
@@ -70,6 +75,8 @@ const CompanyPage = () => {
                   </MenuList>
                 </Menu>
               </Box>
+
+              <Outlet />
             </GridItem>
 
             <FormLabel htmlFor="name">Name</FormLabel>
