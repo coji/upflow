@@ -58,8 +58,6 @@ const AdminIndex = () => {
                   )
                 })}
 
-                <Spacer />
-
                 <NavLink to={'company/new'}>
                   <Button w="full" variant="ghost" fontWeight="normal" leftIcon={<PlusSquareIcon />} _hover={{ bgColor: 'gray.100' }}>
                     新規作成

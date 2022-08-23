@@ -1,6 +1,6 @@
 import type { LoaderArgs, ActionArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
-import { Form, useLoaderData } from '@remix-run/react'
+import { Form, useLoaderData, Link } from '@remix-run/react'
 import { getCompany, deleteCompany } from '~/app/models/admin/company.server'
 import invariant from 'tiny-invariant'
 import { Heading, Stack, Input, Box, Button, FormLabel } from '@chakra-ui/react'
@@ -30,7 +30,7 @@ const CompanyDelete = () => {
     <Box bgColor="white" rounded="md" boxShadow="md" p="4">
       <Form action="." method="post">
         <Stack>
-          <Heading size="md">Are you shure delete this company?</Heading>
+          <Heading size="md">Are you sure delete this company?</Heading>
 
           <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
             <FormLabel>ID</FormLabel>
@@ -46,20 +46,26 @@ const CompanyDelete = () => {
             <Box py="1"> {company.createdAt}</Box>
           </Box>
 
-          <Box>
-            <FormLabel htmlFor="confirm">Type Confirm</FormLabel>
-            <Input
-              id="confirm"
-              onChange={(event) => {
-                setIsEnabled(event.target.value === 'delete this company')
-              }}
-              placeholder="type 'delete this company' here"
-            ></Input>
-          </Box>
+          <FormLabel htmlFor="confirm">Confirm</FormLabel>
+          <Input
+            id="confirm"
+            onChange={(event) => {
+              setIsEnabled(event.target.value === 'delete this company')
+            }}
+            placeholder="type 'delete this company' here"
+          ></Input>
 
-          <Button type="submit" colorScheme="red" disabled={!isEnabled}>
-            DELETE
-          </Button>
+          <Stack direction="row" justify="center">
+            <Button type="submit" colorScheme="red" disabled={!isEnabled}>
+              DELETE
+            </Button>
+
+            <Link to={`/admin/company/${company.id}`}>
+              <Button as="span" variant="ghost">
+                Cancel
+              </Button>
+            </Link>
+          </Stack>
         </Stack>
       </Form>
     </Box>
