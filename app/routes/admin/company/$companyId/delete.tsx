@@ -1,6 +1,6 @@
 import type { LoaderArgs, ActionArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
-import { Form, useLoaderData, Link, useNavigate } from '@remix-run/react'
+import { Form, useLoaderData, useNavigate } from '@remix-run/react'
 import { getCompany, deleteCompany } from '~/app/models/admin/company.server'
 import invariant from 'tiny-invariant'
 import {
@@ -19,6 +19,7 @@ import {
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import dayjs from '~/app/libs/dayjs'
+import { AppLink } from '~/app/components/AppLink'
 
 export const loader = async ({ params }: LoaderArgs) => {
   invariant(params.companyId, 'companyId shout specified')
@@ -90,11 +91,9 @@ const CompanyDelete = () => {
               DELETE
             </Button>
 
-            <Link to={`/admin/company/${company.id}`}>
-              <Button as="span" variant="ghost">
-                Cancel
-              </Button>
-            </Link>
+            <Button as={AppLink} to={`/admin/company/${company.id}`} variant="ghost">
+              Cancel
+            </Button>
           </Stack>
         </ModalFooter>
       </ModalContent>

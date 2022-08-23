@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
 import { json } from '@remix-run/node'
-import { useLoaderData, Form, NavLink, useActionData, useTransition, Outlet } from '@remix-run/react'
+import { useLoaderData, Form, useActionData, useTransition, Outlet } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import {
   Heading,
@@ -33,6 +33,7 @@ import dayjs from '~/app/libs/dayjs'
 
 import { requireUserId } from '~/app/session.server'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
+import { AppLink } from '~/app/components/AppLink'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
@@ -77,9 +78,9 @@ const CompanyPage = () => {
                 <Menu>
                   <MenuButton as={IconButton} size="xs" icon={<SettingsIcon />}></MenuButton>
                   <MenuList>
-                    <NavLink to="delete">
+                    <AppLink to="delete">
                       <MenuItem color="red.500">Delete...</MenuItem>
-                    </NavLink>
+                    </AppLink>
                   </MenuList>
                 </Menu>
               </Box>

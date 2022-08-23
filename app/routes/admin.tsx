@@ -1,9 +1,10 @@
 import type { LoaderArgs } from '@remix-run/server-runtime'
 import { requireUserId } from '~/app/session.server'
 
-import { NavLink, Outlet } from '@remix-run/react'
+import { Outlet } from '@remix-run/react'
 import { Box, Flex, Spacer, Heading, Container, Stack, Tag } from '@chakra-ui/react'
 import { useUser } from '~/app/utils'
+import { AppLink } from '../components/AppLink'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request)
@@ -17,7 +18,7 @@ const AdminIndex = () => {
     <Box display="grid" gridTemplateRows="auto 1fr auto" height="100vh" color="gray.600">
       <Flex as="header" px="4" py="1" align="center" boxShadow="md">
         <Heading>
-          <NavLink to="/admin/company">UpFlow</NavLink>
+          <AppLink to="/admin/company">UpFlow</AppLink>
         </Heading>
 
         <Spacer />

@@ -12,11 +12,9 @@ import { Stack, Box, Button, Drawer, DrawerBody, DrawerFooter, DrawerHeader, Dra
 // GET リクエスト時のデータ読み込み処理 (server side)
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
-  const url = new URL(request.url)
-  const repositoryId = url.searchParams.get('repositoryId')
-  invariant(repositoryId, 'repositoryId should specified')
+  invariant(params.repositoryId, 'repositoryId should specified')
   invariant(params.mrId, 'mrId shoud specified found')
-  return json<MergeRequest>(await getMergeRequestItem(repositoryId, params.mrId)) // ページコンポーネントの useLoaderData で使用
+  return json<MergeRequest>(await getMergeRequestItem(params.repositoryId, params.mrId)) // ページコンポーネントの useLoaderData で使用
 }
 
 // MergeRequest 詳細 (client-side)
