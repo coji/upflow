@@ -11,7 +11,7 @@ import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUserId(request)
-  if (userId) return redirect('/dashboard')
+  if (userId) return redirect('/')
   return json({})
 }
 
@@ -26,7 +26,7 @@ export const action = async ({ request }: ActionArgs) => {
   const formData = await request.formData()
   const email = formData.get('email')
   const password = formData.get('password')
-  const redirectTo = safeRedirect(formData.get('redirectTo'), '/dashboard')
+  const redirectTo = safeRedirect(formData.get('redirectTo'), '/')
   const remember = formData.get('remember')
 
   if (!validateEmail(email)) {
@@ -63,7 +63,7 @@ export const meta: MetaFunction = () => {
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+  const redirectTo = searchParams.get('redirectTo') || '/'
   const actionData = useActionData<typeof action>()
   const emailRef = React.useRef<HTMLInputElement>(null)
   const passwordRef = React.useRef<HTMLInputElement>(null)
@@ -148,7 +148,7 @@ export default function LoginPage() {
         </Form>
       </AppCenterFormFrame>
 
-      <Box as="footer" textAlign="center" bgColor="gray.200" py="4">
+      <Box as="footer" textAlign="center" bgColor="white" py="4">
         Copyright &copy; TechTalk Inc.
       </Box>
     </Box>

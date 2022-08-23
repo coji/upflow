@@ -91,9 +91,9 @@ const CompanyDelete = () => {
               DELETE
             </Button>
 
-            <Button as={AppLink} to={`/admin/company/${company.id}`} variant="ghost">
-              Cancel
-            </Button>
+            <AppLink to={`/admin/company/${company.id}`}>
+              <Button variant="ghost">Cancel</Button>
+            </AppLink>
           </Stack>
         </ModalFooter>
       </ModalContent>

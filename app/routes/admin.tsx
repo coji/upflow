@@ -1,18 +1,20 @@
 import type { LoaderArgs } from '@remix-run/server-runtime'
-import { requireUserId } from '~/app/session.server'
+import { requireAdminUserId } from '~/app/session.server'
 
-import { Outlet } from '@remix-run/react'
-import { Box, Flex, Spacer, Heading, Container, Stack, Tag } from '@chakra-ui/react'
+import { Outlet, useSubmit } from '@remix-run/react'
+import { Box, Flex, Spacer, Heading, Container, Stack, Tag, Menu, MenuList, MenuItem } from '@chakra-ui/react'
 import { useUser } from '~/app/utils'
 import { AppLink } from '../components/AppLink'
+import { AppProfileMenuButton } from '../components/AppProfileMenuButton'
 
 export const loader = async ({ request }: LoaderArgs) => {
-  await requireUserId(request)
+  await requireAdminUserId(request)
   return {}
 }
 
 const AdminIndex = () => {
   const user = useUser()
+  const submit = useSubmit()
 
   return (
     <Box display="grid" gridTemplateRows="auto 1fr auto" height="100vh" color="gray.600">
@@ -26,7 +28,19 @@ const AdminIndex = () => {
           <Tag colorScheme="red" size="sm">
             Admin
           </Tag>
-          <Box textAlign="right">{user.name} </Box>
+
+          <Menu>
+            <AppProfileMenuButton name={user.name}></AppProfileMenuButton>
+            <MenuList>
+              <MenuItem
+                onClick={() => {
+                  submit(null, { method: 'post', action: 'logout' })
+                }}
+              >
+                Logout
+              </MenuItem>
+            </MenuList>
+          </Menu>
         </Stack>
       </Flex>
 
