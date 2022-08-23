@@ -34,7 +34,6 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  console.log('action', params)
   const { companyId } = params
   const formData = await request.formData()
   const name = formData.get('name')
@@ -48,10 +47,8 @@ const CompanyPage = () => {
   const [isEdit, setIsEdit] = useState(false)
   const actionData = useActionData()
   useEffect(() => {
-    if (actionData) {
-      setIsEdit(false)
-    }
-  }, [actionData])
+    setIsEdit(false)
+  }, [actionData, company])
 
   const transition = useTransition()
 
