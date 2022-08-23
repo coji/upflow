@@ -4,7 +4,7 @@ import { requireUserId } from '~/app/session.server'
 import type { MergeRequest } from '~/app/models/mergeRequest.server'
 import { getMergeRequestItem } from '~/app/models/mergeRequest.server'
 import invariant from 'tiny-invariant'
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 
 import { useCatch, useLoaderData, useNavigate } from '@remix-run/react'
 import { Stack, Box, Button, Drawer, DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, DrawerCloseButton } from '@chakra-ui/react'

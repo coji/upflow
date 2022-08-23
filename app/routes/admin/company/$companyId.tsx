@@ -18,10 +18,18 @@ import {
   MenuList,
   MenuItem,
   Divider,
+  Avatar,
+  TableContainer,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
   CircularProgress
 } from '@chakra-ui/react'
 import { SettingsIcon } from '@chakra-ui/icons'
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 
 import { requireUserId } from '~/app/session.server'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
@@ -105,10 +113,10 @@ const CompanyPage = () => {
             </Stack>
 
             <FormLabel>Updated At</FormLabel>
-            <Box py="1">{dayjs(company.updatedAt).format()}</Box>
+            <Box py="1">{dayjs(company.updatedAt).fromNow()}</Box>
 
             <FormLabel>Created At</FormLabel>
-            <Box py="1">{dayjs(company.createdAt).format()}</Box>
+            <Box py="1">{dayjs(company.createdAt).fromNow()}</Box>
           </Box>
         </Form>
 
@@ -137,14 +145,36 @@ const CompanyPage = () => {
             ))}
           </Stack>
 
-          <Box>Users {company.users.length}</Box>
-          <Stack>
-            {company.users.map((user) => (
-              <Box key={user.id}>
-                {user.id} {dayjs(user.createdAt).format()}
-              </Box>
-            ))}
-          </Stack>
+          <Box>Users</Box>
+          <TableContainer>
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>User Name</Th>
+                  <Th>Invited At</Th>
+                  <Th>Created At</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {company.users.map((user) => (
+                  <Tr key={user.id}>
+                    <Td>
+                      <Stack direction="row">
+                        <Avatar name={user.user.name} size="xs"></Avatar>
+                        <Box>{user.user.name}</Box>
+                      </Stack>
+                    </Td>
+                    <Td>
+                      <Box>{user.invitedAt}</Box>
+                    </Td>
+                    <Td>
+                      <Box>{dayjs(user.createdAt).fromNow()}</Box>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </TableContainer>
         </Box>
       </Stack>
     </Box>

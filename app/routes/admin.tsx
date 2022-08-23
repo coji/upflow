@@ -17,8 +17,9 @@ const AdminIndex = () => {
     <Box display="grid" gridTemplateRows="auto 1fr auto" height="100vh" color="gray.600">
       <Flex as="header" px="4" py="1" align="center" boxShadow="md">
         <Heading>
-          <NavLink to="/admin">UpFlow</NavLink>
+          <NavLink to="/admin/company">UpFlow</NavLink>
         </Heading>
+
         <Spacer />
         <Stack direction="row" align="center">
           <Tag colorScheme="red" size="sm">
@@ -28,8 +29,8 @@ const AdminIndex = () => {
         </Stack>
       </Flex>
 
-      <Box as="main" bgColor="gray.200" p="4">
-        <Container maxWidth="container.xl">
+      <Box as="main" bgColor="gray.200">
+        <Container p="4" maxWidth="container.xl">
           <Outlet />
         </Container>
       </Box>

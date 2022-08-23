@@ -18,6 +18,7 @@ import {
   FormLabel
 } from '@chakra-ui/react'
 import { useState } from 'react'
+import dayjs from '~/app/libs/dayjs'
 
 export const loader = async ({ params }: LoaderArgs) => {
   invariant(params.companyId, 'companyId shout specified')
@@ -64,10 +65,10 @@ const CompanyDelete = () => {
               <Box py="1"> {company.name}</Box>
 
               <FormLabel>Updated At</FormLabel>
-              <Box py="1"> {company.updatedAt}</Box>
+              <Box py="1"> {dayjs(company.updatedAt).fromNow()}</Box>
 
               <FormLabel>Created At</FormLabel>
-              <Box py="1"> {company.createdAt}</Box>
+              <Box py="1"> {dayjs(company.createdAt).fromNow()}</Box>
             </Box>
 
             <Form action="." method="post" id="form">
