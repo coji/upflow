@@ -27,7 +27,7 @@ export default function IndexPage() {
     <Box display="grid" gridTemplateRows="auto 1fr auto" bgColor="gray.100" minH="100vh">
       <Flex alignItems="center" bgColor="white" p="2" textColor="slategray">
         <Heading>
-          <AppLink to="/dashboard" color="gray.600">
+          <AppLink to="/" color="gray.600">
             UpFlow
           </AppLink>
         </Heading>
