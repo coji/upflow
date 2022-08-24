@@ -4,12 +4,12 @@ import { json, redirect } from '@remix-run/node'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import { useEffect, useRef } from 'react'
 import { verifyLogin } from '~/app/models/user.server'
-import { createUserSession, getUserId } from '~/app/session.server'
+import { createUserSession, getUser } from '~/app/session.server'
 import { safeRedirect, validateEmail } from '~/app/utils'
 import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
 
 export const loader = async ({ request }: LoaderArgs) => {
-  const userId = await getUserId(request)
+  const userId = await getUser(request)
   if (userId) return redirect('/')
   return json({})
 }
@@ -56,7 +56,7 @@ export const action = async ({ request }: ActionArgs) => {
 
 export const meta: MetaFunction = () => {
   return {
-    title: 'UpFlow'
+    title: 'Login - UpFlow'
   }
 }
 

@@ -5,10 +5,8 @@ import { useCatch, useLoaderData, useNavigate } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import dayjs from '~/app/libs/dayjs'
 import { getMergeRequestItem } from '~/app/models/mergeRequest.server'
-import { requireUserId } from '~/app/session.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  await requireUserId(request)
   invariant(params.repositoryId, 'repositoryId should specified')
   invariant(params.mrId, 'mrId shoud specified found')
 
