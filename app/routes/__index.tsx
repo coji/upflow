@@ -3,7 +3,7 @@ import { json } from '@remix-run/node'
 import { requireUser } from '~/app/session.server'
 
 import { Outlet, useSubmit } from '@remix-run/react'
-import { Heading, Stack, Box, Flex, Spacer, Menu, MenuList, MenuItem } from '@chakra-ui/react'
+import { Heading, Stack, Box, Container, Flex, Spacer, Menu, MenuList, MenuItem } from '@chakra-ui/react'
 import { AppLink } from '~/app/components/AppLink'
 import { AppProfileMenuButton } from '../components/AppProfileMenuButton'
 import { useUser } from '~/app/utils'
@@ -27,7 +27,7 @@ export default function IndexPage() {
     <Box display="grid" gridTemplateRows="auto 1fr auto" bgColor="gray.100" minH="100vh">
       <Flex alignItems="center" bgColor="white" p="2" textColor="slategray">
         <Heading>
-          <AppLink to="." color="blue.800">
+          <AppLink to="/dashboard" color="gray.600">
             UpFlow
           </AppLink>
         </Heading>
@@ -50,7 +50,9 @@ export default function IndexPage() {
       </Flex>
 
       <Box>
-        <Outlet />
+        <Container maxW="container.xl">
+          <Outlet />
+        </Container>
       </Box>
 
       <Box as="footer" textAlign="center" bgColor="white" py="4">

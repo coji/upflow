@@ -17,12 +17,11 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   return json<MergeRequest>(await getMergeRequestItem(params.repositoryId, params.mrId)) // ページコンポーネントの useLoaderData で使用
 }
 
-// MergeRequest 詳細 (client-side)
 export default function MergeRequestsIndexPage() {
   const mr = useLoaderData<typeof loader>() // loader 関数が返した json を取得
   const navigate = useNavigate()
 
-  const handleClose = () => navigate('/')
+  const handleClose = () => navigate('/dashboard')
 
   return (
     <Drawer isOpen={true} placement="right" onClose={() => handleClose()}>
@@ -59,6 +58,7 @@ export function ErrorBoundary({ error }: { error: Error }) {
 
   return <div>An unexpected error occurred: {error.message}</div>
 }
+
 export function CatchBoundary() {
   const caught = useCatch()
   if (caught.status === 404) {
