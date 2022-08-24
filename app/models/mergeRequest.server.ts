@@ -5,7 +5,7 @@ export type { MergeRequest } from '@prisma/client'
 export function getMergeRequestItems() {
   return prisma.mergeRequest.findMany({
     orderBy: { mergerequest_created_at: 'desc' },
-    take: 5
+    take: 20
   })
 }
 

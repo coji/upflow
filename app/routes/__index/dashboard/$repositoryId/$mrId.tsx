@@ -1,7 +1,6 @@
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { requireUserId } from '~/app/session.server'
-import type { MergeRequest } from '~/app/models/mergeRequest.server'
 import { getMergeRequestItem } from '~/app/models/mergeRequest.server'
 import invariant from 'tiny-invariant'
 import dayjs from '~/app/libs/dayjs'
@@ -14,7 +13,12 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
   invariant(params.repositoryId, 'repositoryId should specified')
   invariant(params.mrId, 'mrId shoud specified found')
-  return json<MergeRequest>(await getMergeRequestItem(params.repositoryId, params.mrId)) // ページコンポーネントの useLoaderData で使用
+
+  const mergeRequests = await getMergeRequestItem(params.repositoryId, params.mrId).catch(() => null)
+  if (!mergeRequests) {
+    throw new Response('404', { status: 404 })
+  }
+  return json(mergeRequests)
 }
 
 export default function MergeRequestsIndexPage() {
