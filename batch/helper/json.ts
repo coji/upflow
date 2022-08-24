@@ -6,8 +6,7 @@ import { jsonPath } from './path'
  *
  * @param filename
  */
-export const load = <T>(filename: string) =>
-  JSON.parse(fs.readFileSync(jsonPath(filename)).toString()) as T
+export const load = <T>(filename: string) => JSON.parse(fs.readFileSync(jsonPath(filename)).toString()) as T
 
 /**
  * JSON ファイルの保存
@@ -15,5 +14,4 @@ export const load = <T>(filename: string) =>
  * @param filename
  * @param content
  */
-export const save = (filename: string, content: unknown) =>
-  fs.writeFileSync(jsonPath(filename), JSON.stringify(content, null, 2))
+export const save = (filename: string, content: unknown) => fs.writeFileSync(jsonPath(filename), JSON.stringify(content, null, 2))

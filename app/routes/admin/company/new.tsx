@@ -1,20 +1,20 @@
+import {
+  Box,
+  Button,
+  FormLabel,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Stack
+} from '@chakra-ui/react'
 import type { ActionArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form, useNavigate } from '@remix-run/react'
-import {
-  Stack,
-  Box,
-  FormLabel,
-  Input,
-  Button,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter
-} from '@chakra-ui/react'
 import { createCompany } from '~/app/models/admin/company.server'
 
 export const action = async ({ request }: ActionArgs) => {

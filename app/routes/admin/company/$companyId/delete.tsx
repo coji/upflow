@@ -1,25 +1,25 @@
-import type { LoaderArgs, ActionArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { Form, useLoaderData, useNavigate } from '@remix-run/react'
-import { getCompany, deleteCompany } from '~/app/models/admin/company.server'
-import invariant from 'tiny-invariant'
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  Stack,
-  Input,
   Box,
   Button,
-  FormLabel
+  FormLabel,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Stack
 } from '@chakra-ui/react'
+import type { ActionArgs, LoaderArgs } from '@remix-run/node'
+import { redirect } from '@remix-run/node'
+import { Form, useLoaderData, useNavigate } from '@remix-run/react'
 import { useState } from 'react'
-import dayjs from '~/app/libs/dayjs'
+import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
+import dayjs from '~/app/libs/dayjs'
+import { deleteCompany, getCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
   invariant(params.companyId, 'companyId shout specified')

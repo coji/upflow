@@ -1,14 +1,12 @@
+import { Box, Button, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, Stack } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { requireUserId } from '~/app/session.server'
-import { getMergeRequestItem } from '~/app/models/mergeRequest.server'
+import { useCatch, useLoaderData, useNavigate } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import dayjs from '~/app/libs/dayjs'
+import { getMergeRequestItem } from '~/app/models/mergeRequest.server'
+import { requireUserId } from '~/app/session.server'
 
-import { useCatch, useLoaderData, useNavigate } from '@remix-run/react'
-import { Stack, Box, Button, Drawer, DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, DrawerCloseButton } from '@chakra-ui/react'
-
-// GET リクエスト時のデータ読み込み処理 (server side)
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
   invariant(params.repositoryId, 'repositoryId should specified')
@@ -22,7 +20,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 }
 
 export default function MergeRequestsIndexPage() {
-  const mr = useLoaderData<typeof loader>() // loader 関数が返した json を取得
+  const mr = useLoaderData<typeof loader>()
   const navigate = useNavigate()
 
   const handleClose = () => navigate('../..')
@@ -56,7 +54,6 @@ export default function MergeRequestsIndexPage() {
   )
 }
 
-// エラー時の処理 (client side)
 export function ErrorBoundary({ error }: { error: Error }) {
   console.error(error)
 

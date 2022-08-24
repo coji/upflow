@@ -1,8 +1,7 @@
+import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack, Tag } from '@chakra-ui/react'
+import { Outlet, useSubmit } from '@remix-run/react'
 import type { LoaderArgs } from '@remix-run/server-runtime'
 import { requireAdminUserId } from '~/app/session.server'
-
-import { Outlet, useSubmit } from '@remix-run/react'
-import { Box, Flex, Spacer, Heading, Container, Stack, Tag, Menu, MenuList, MenuItem } from '@chakra-ui/react'
 import { useUser } from '~/app/utils'
 import { AppLink } from '../components/AppLink'
 import { AppProfileMenuButton } from '../components/AppProfileMenuButton'

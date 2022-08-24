@@ -1,12 +1,11 @@
+import { Badge, Box, Flex, Stack, Tag, Text } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { requireUserId } from '~/app/session.server'
+import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
+import { memo } from 'react'
 import type { MergeRequest } from '~/app/models/mergeRequest.server'
 import { getMergeRequestItems } from '~/app/models/mergeRequest.server'
-
-import { memo } from 'react'
-import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
-import { Stack, Box, Flex, Text, Badge, Tag } from '@chakra-ui/react'
+import { requireUserId } from '~/app/session.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request)

@@ -1,12 +1,12 @@
-import React, { useContext, useEffect } from 'react'
+import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import { withEmotionCache } from '@emotion/react'
-import { extendTheme, ChakraProvider } from '@chakra-ui/react'
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import type { LinksFunction, LoaderFunction, MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
+import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
+import { useContext, useEffect } from 'react'
 import { getUser } from './session.server'
 
-import { ServerStyleContext, ClientStyleContext } from './context'
+import { ClientStyleContext, ServerStyleContext } from './context'
 
 export const meta: MetaFunction = () => ({
   charset: 'utf-8',

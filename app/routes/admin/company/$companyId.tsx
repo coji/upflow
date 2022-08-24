@@ -1,39 +1,38 @@
-import { useEffect, useState } from 'react'
-import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
-import { json } from '@remix-run/node'
-import { useLoaderData, Form, useActionData, useTransition, Outlet } from '@remix-run/react'
-import invariant from 'tiny-invariant'
+import { SettingsIcon } from '@chakra-ui/icons'
 import {
-  Heading,
-  Stack,
+  Avatar,
   Box,
-  Spacer,
-  Input,
-  FormLabel,
   Button,
+  CircularProgress,
+  Divider,
+  FormLabel,
   GridItem,
+  Heading,
   IconButton,
+  Input,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
-  Divider,
-  Avatar,
-  TableContainer,
+  MenuList,
+  Spacer,
+  Stack,
   Table,
-  Thead,
+  TableContainer,
   Tbody,
-  Tr,
-  Th,
   Td,
-  CircularProgress
+  Th,
+  Thead,
+  Tr
 } from '@chakra-ui/react'
-import { SettingsIcon } from '@chakra-ui/icons'
-import dayjs from '~/app/libs/dayjs'
-
-import { requireUserId } from '~/app/session.server'
-import { getCompany, updateCompany } from '~/app/models/admin/company.server'
+import { json } from '@remix-run/node'
+import { Form, Outlet, useActionData, useLoaderData, useTransition } from '@remix-run/react'
+import type { ActionArgs, LoaderArgs } from '@remix-run/server-runtime'
+import { useEffect, useState } from 'react'
+import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
+import dayjs from '~/app/libs/dayjs'
+import { getCompany, updateCompany } from '~/app/models/admin/company.server'
+import { requireUserId } from '~/app/session.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)

@@ -1,13 +1,12 @@
+import { Box, Button, Checkbox, FormControl, FormErrorMessage, FormLabel, Input, Stack } from '@chakra-ui/react'
 import type { ActionArgs, LoaderArgs, MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { createUserSession } from '~/app/session.server'
-import { verifyLogin } from '~/app/models/user.server'
-import { safeRedirect, validateEmail } from '~/app/utils'
-
-import * as React from 'react'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
-import { Stack, Box, Input, FormControl, FormLabel, FormErrorMessage, Button, Checkbox } from '@chakra-ui/react'
+import * as React from 'react'
 import { AppCenterFormFrame } from '~/app/components/AppCenterFormFrame'
+import { verifyLogin } from '~/app/models/user.server'
+import { createUserSession } from '~/app/session.server'
+import { safeRedirect, validateEmail } from '~/app/utils'
 
 export const loader = async ({ request }: LoaderArgs) => {
   return json({})

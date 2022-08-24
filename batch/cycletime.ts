@@ -1,5 +1,5 @@
-import 'dotenv/config'
 import { cli, command } from 'cleye'
+import 'dotenv/config'
 import { fetchCommand } from '~/batch/commands/fetch'
 import { reportCommand } from '~/batch/commands/report'
 import { upsertCommand } from '~/batch/commands/upsert'

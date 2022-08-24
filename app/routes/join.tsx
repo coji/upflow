@@ -1,13 +1,12 @@
+import { Box, Button, FormControl, FormErrorMessage, FormLabel, Input, Stack, Text } from '@chakra-ui/react'
 import type { ActionArgs, LoaderArgs, MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
-import { getUserId, createUserSession } from '~/app/session.server'
-import { createUser, getUserByEmail } from '~/app/models/user.server'
-import { safeRedirect, validateEmail } from '~/app/utils'
-
-import * as React from 'react'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
-import { Stack, Box, Text, Input, FormControl, FormLabel, FormErrorMessage, Button } from '@chakra-ui/react'
+import { useEffect, useRef } from 'react'
 import { AppLink } from '~/app/components/AppLink'
+import { createUser, getUserByEmail } from '~/app/models/user.server'
+import { createUserSession, getUserId } from '~/app/session.server'
+import { safeRedirect, validateEmail } from '~/app/utils'
 import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -66,10 +65,10 @@ export default function Join() {
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') ?? undefined
   const actionData = useActionData<typeof action>()
-  const emailRef = React.useRef<HTMLInputElement>(null)
-  const passwordRef = React.useRef<HTMLInputElement>(null)
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (actionData?.errors?.email) {
       emailRef.current?.focus()
     } else if (actionData?.errors?.password) {

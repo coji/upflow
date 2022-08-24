@@ -1,7 +1,7 @@
 import type { LoaderArgs } from '@remix-run/server-runtime'
 import { json, redirect } from '@remix-run/server-runtime'
-import { getUser } from '~/app/session.server'
 import { getCompaniesByUser } from '~/app/models/company.server'
+import { getUser } from '~/app/session.server'
 
 export const loader = async ({ request, params, context }: LoaderArgs) => {
   const user = await getUser(request)

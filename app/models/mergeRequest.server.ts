@@ -1,5 +1,5 @@
-import { prisma } from '~/app/db.server'
 import type { MergeRequest } from '@prisma/client'
+import { prisma } from '~/app/db.server'
 export type { MergeRequest } from '@prisma/client'
 
 export function getMergeRequestItems() {

@@ -1,6 +1,6 @@
+import { prisma } from '~/app/db.server'
 import { fetchCommand } from '../commands/fetch'
 import { upsertCommand } from '../commands/upsert'
-import { prisma } from '~/app/db.server'
 
 const crawlMain = async () => {
   const companies = await prisma.company.findMany({})

@@ -1,10 +1,9 @@
-import type { LoaderArgs } from '@remix-run/server-runtime'
-import { requireUserId } from '~/app/session.server'
-
-import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
-import { Box, Stack, Grid, Button } from '@chakra-ui/react'
 import { PlusSquareIcon } from '@chakra-ui/icons'
+import { Box, Button, Grid, Stack } from '@chakra-ui/react'
+import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
+import type { LoaderArgs } from '@remix-run/server-runtime'
 import { getCompanies } from '~/app/models/admin/company.server'
+import { requireUserId } from '~/app/session.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request)

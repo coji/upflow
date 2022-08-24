@@ -1,8 +1,8 @@
 import type { Types } from '@gitbeaker/node'
-import dayjs from 'dayjs'
-import { createStore } from '../store'
-import { createAggregator } from '../aggregator'
 import type { MergeRequest } from '@prisma/client'
+import dayjs from 'dayjs'
+import { createAggregator } from '../aggregator'
+import { createStore } from '../store'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).format() : null

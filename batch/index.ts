@@ -1,6 +1,6 @@
-import path from 'node:path'
-import Bree from 'bree'
 import Graceful from '@ladjs/graceful'
+import Bree from 'bree'
+import path from 'node:path'
 
 const main = async () => {
   const bree = new Bree({

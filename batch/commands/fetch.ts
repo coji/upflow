@@ -1,8 +1,8 @@
-import { loadConfig, allConfigs } from '../config'
-import { createStore } from '../store'
-import { createFetcher } from '../fetcher'
-import { createAggregator } from '../aggregator'
 import invariant from 'tiny-invariant'
+import { createAggregator } from '../aggregator'
+import { allConfigs, loadConfig } from '../config'
+import { createFetcher } from '../fetcher'
+import { createStore } from '../store'
 
 interface FetchCommandProps {
   companyId?: string

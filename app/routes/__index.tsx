@@ -1,12 +1,11 @@
+import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack } from '@chakra-ui/react'
 import type { LoaderArgs, MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { requireUser } from '~/app/session.server'
-
 import { Outlet, useSubmit } from '@remix-run/react'
-import { Heading, Stack, Box, Container, Flex, Spacer, Menu, MenuList, MenuItem } from '@chakra-ui/react'
 import { AppLink } from '~/app/components/AppLink'
-import { AppProfileMenuButton } from '../components/AppProfileMenuButton'
+import { requireUser } from '~/app/session.server'
 import { useUser } from '~/app/utils'
+import { AppProfileMenuButton } from '../components/AppProfileMenuButton'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUser(request)
