@@ -26,8 +26,8 @@
     "/public/build"
   ],
   "dependencies": {
-    "@chakra-ui/icons": "^2.0.8",
-    "@chakra-ui/react": "^2.2.8",
+    "@chakra-ui/icons": "^2.0.9",
+    "@chakra-ui/react": "^2.2.9",
     "@emotion/cache": "^11.10.3",
     "@emotion/react": "^11.10.0",
     "@emotion/server": "^11.10.0",
@@ -67,7 +67,7 @@
     "@types/bcryptjs": "^2.4.2",
     "@types/cookie": "^0.5.1",
     "@types/eslint": "^8.4.6",
-    "@types/node": "^18.7.11",
+    "@types/node": "^18.7.13",
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@vitejs/plugin-react": "^2.0.1",
