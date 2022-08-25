@@ -13,7 +13,8 @@ import {
   Stack
 } from '@chakra-ui/react'
 import { Form, useLoaderData, useNavigate } from '@remix-run/react'
-import type { LoaderArgs, ActionArgs } from '@remix-run/server-runtime'
+import type { LoaderArgs, ActionArgs } from '@remix-run/node'
+import { redirect } from '@remix-run/node'
 import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
@@ -32,8 +33,10 @@ export const action = async ({ request, params }: ActionArgs) => {
   const { companyId } = params
   const formData = await request.formData()
   const name = formData.get('name')
-  if (companyId && name) return await updateCompany(companyId, name.toString())
-  else return null
+  if (companyId && name) {
+    const company = await updateCompany(companyId, name.toString())
+    return redirect(`/admin/${company.id}`)
+  } else return null
 }
 
 const EditCompany = () => {
@@ -49,7 +52,7 @@ const EditCompany = () => {
       closeOnEsc
     >
       <ModalOverlay></ModalOverlay>
-      <ModalContent>
+      <ModalContent color="gray.600">
         <ModalHeader>Edit company</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -59,7 +62,7 @@ const EditCompany = () => {
               <Box py="1"> {company.id}</Box>
 
               <FormLabel htmlFor="name">Name</FormLabel>
-              <Input py="1" name="name" id="name" defaultValue={company.name}></Input>
+              <Input py="1" name="name" id="name" autoFocus defaultValue={company.name}></Input>
 
               <FormLabel>Updated At</FormLabel>
               <Box py="1"> {dayjs(company.updatedAt).fromNow()}</Box>

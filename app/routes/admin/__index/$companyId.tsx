@@ -30,20 +30,18 @@ const CompanyPage = () => {
           <GridItem colSpan={2} display="flex" position="relative">
             <Heading size="lg">{company.name}</Heading>
             <Spacer />
-            <Box position="absolute" top="0" right="0">
-              <Menu>
-                <MenuButton as={IconButton} size="xs" icon={<SettingsIcon />}></MenuButton>
-                <MenuList>
-                  <AppLink to="edit">
-                    <MenuItem>Edit</MenuItem>
-                  </AppLink>
-                  <MenuDivider />
-                  <AppLink to="delete">
-                    <MenuItem color="red.500">Delete...</MenuItem>
-                  </AppLink>
-                </MenuList>
-              </Menu>
-            </Box>
+            <Menu>
+              <MenuButton as={IconButton} size="xs" icon={<SettingsIcon />}></MenuButton>
+              <MenuList>
+                <AppLink to="edit">
+                  <MenuItem>Edit</MenuItem>
+                </AppLink>
+                <MenuDivider />
+                <AppLink to="delete">
+                  <MenuItem color="red.500">Delete...</MenuItem>
+                </AppLink>
+              </MenuList>
+            </Menu>
 
             <Outlet />
           </GridItem>
