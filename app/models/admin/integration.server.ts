@@ -1,0 +1,17 @@
+import { prisma } from '~/app/db.server'
+
+interface addIntegrationProps {
+  companyId: string
+  provider: 'github' | 'gitlab'
+  method: string
+  privateToken: string
+}
+export const createIntegration = async ({ companyId, provider, method, privateToken }: addIntegrationProps) =>
+  await prisma.integration.create({
+    data: {
+      companyId,
+      provider,
+      method,
+      privateToken
+    }
+  })

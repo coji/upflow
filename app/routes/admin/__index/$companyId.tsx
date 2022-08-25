@@ -1,5 +1,5 @@
 import { SettingsIcon } from '@chakra-ui/icons'
-import { Box, GridItem, Heading, IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Spacer, Stack } from '@chakra-ui/react'
+import { Box, GridItem, Heading, IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Spacer, Stack, Button } from '@chakra-ui/react'
 import { json } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import type { LoaderArgs } from '@remix-run/server-runtime'
@@ -11,13 +11,11 @@ import { requireUserId } from '~/app/session.server'
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
   invariant(params.companyId, 'companyId shoud specified found')
-
   const company = await getCompany(params.companyId)
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-
-  return json(company) // ページコンポーネントの useLoaderData で使用
+  return json(company)
 }
 
 const CompanyPage = () => {
@@ -52,9 +50,15 @@ const CompanyPage = () => {
             Integration and Repositories
           </Heading>
 
-          <Box>
-            {company.integration?.provider} {company.integration?.method} {company.integration?.privateToken}
-          </Box>
+          {company.integration ? (
+            <Box>
+              {company.integration?.provider} {company.integration?.method} {company.integration?.privateToken}
+            </Box>
+          ) : (
+            <AppLink to="add-integration">
+              <Button>Add Integration</Button>
+            </AppLink>
+          )}
 
           <Stack>
             {company.repositories.map((repo) => (

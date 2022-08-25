@@ -58,12 +58,15 @@ specifiers:
   start-server-and-test: ^1.14.0
   tiny-invariant: ^1.2.0
   ts-node: ^10.9.1
+  ts-pattern: ^4.0.5
   tsconfig-paths: ^4.1.0
   tsx: ^3.8.2
   typescript: ^4.7.4
   vite: ^3.0.9
   vite-tsconfig-paths: ^3.5.0
   vitest: ^0.22.1
+  zod: ^3.18.0
+  zod-form-data: ^1.2.1
   zx: ^7.0.8
 
 dependencies:
@@ -93,7 +96,10 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   tiny-invariant: 1.2.0
+  ts-pattern: 4.0.5
   tsx: 3.8.2
+  zod: 3.18.0
+  zod-form-data: 1.2.1_zod@3.18.0
   zx: 7.0.8
 
 devDependencies:
@@ -10927,6 +10933,10 @@ packages:
       yn: 3.1.1
     dev: true
 
+  /ts-pattern/4.0.5:
+    resolution: {integrity: sha512-Bq44KCEt7JVaNLa148mBCJkcQf4l7jtLEBDuDdeuLynWDA+1a60P4D0rMkqSM9mOKLQbIWUddE9h3XKyKwBeqA==}
+    dev: false
+
   /tsconfig-paths/3.14.1:
     resolution: {integrity: sha512-fxDhWnFSLt3VuTwtvJt5fpwxBHg5AdKWMsgcPOOIilyjymcYVZoCQF8fvFRezCNfblEXmi+PcM1eYHeOAgXCOQ==}
     dependencies:
@@ -11677,6 +11687,18 @@ packages:
       nanoclone: 0.2.1
       property-expr: 2.0.5
       toposort: 2.0.2
+    dev: false
+
+  /zod-form-data/1.2.1_zod@3.18.0:
+    resolution: {integrity: sha512-L4zocmlzikYB9A2uVVj3OUKX/t3spOZTzQLOhoCXECn9w+eN3bw0D/KYGX4J72iLdCIwDP6YJyYwVXkx3WTu7A==}
+    peerDependencies:
+      zod: ^3.11.x
+    dependencies:
+      zod: 3.18.0
+    dev: false
+
+  /zod/3.18.0:
+    resolution: {integrity: sha512-gwTm8RfUCe8l9rDwN5r2A17DkAa8Ez4Yl4yXqc5VqeGaXaJahzYYXbTwvhroZi0SNBqTwh/bKm2N0mpCzuw4bA==}
     dev: false
 
   /zwitch/2.0.2:
