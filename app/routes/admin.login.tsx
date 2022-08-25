@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
   return (
     <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
       <AppCenterFormFrame title="UpFlow" subtitle="admin ログイン">
-        <Form method="post" action="." noValidate>
+        <Form method="post" noValidate>
           <Stack>
             <FormControl isInvalid={!!actionData?.errors?.email}>
               <FormLabel htmlFor="email" fontSize="sm" color="gray.600">

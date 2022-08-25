@@ -50,7 +50,7 @@ const AddIntegrationModal = () => {
         </Stack>
       }
     >
-      <Form method="post" action="." id="form">
+      <Form method="post" id="form">
         <Box display="grid" gridTemplateColumns="auto 1fr" gap="4" alignItems="center">
           <FormLabel m="0">Provider</FormLabel>
           <RadioGroup>

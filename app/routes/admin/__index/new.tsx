@@ -29,7 +29,7 @@ const CompanyNewPage = () => {
         </Button>
       }
     >
-      <Form action="." method="post" id="new-form" autoComplete="false">
+      <Form method="post" id="new-form" autoComplete="false">
         <Stack>
           <Box display="grid" gridTemplateColumns="auto 1fr" alignItems="baseline">
             <FormLabel htmlFor="name">Name</FormLabel>

@@ -45,7 +45,7 @@ const EditCompany = () => {
         </Stack>
       }
     >
-      <Form action="." method="post" id="form">
+      <Form method="post" id="form">
         <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
           <FormLabel>ID</FormLabel>
           <Box py="1"> {company.id}</Box>

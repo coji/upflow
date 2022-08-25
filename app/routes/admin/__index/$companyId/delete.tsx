@@ -61,7 +61,7 @@ const CompanyDelete = () => {
           <Box py="1"> {dayjs(company.createdAt).fromNow()}</Box>
         </Box>
 
-        <Form action="." method="post" id="form">
+        <Form method="post" id="form">
           <FormLabel htmlFor="confirm">Confirm</FormLabel>
           <Input
             id="confirm"
