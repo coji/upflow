@@ -91,7 +91,7 @@ const CompanyDelete = () => {
               DELETE
             </Button>
 
-            <AppLink to={`/admin/company/${company.id}`}>
+            <AppLink to="..">
               <Button variant="ghost">Cancel</Button>
             </AppLink>
           </Stack>
