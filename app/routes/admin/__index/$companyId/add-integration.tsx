@@ -83,9 +83,6 @@ const AddIntegrationModal = () => {
             Token
           </FormLabel>
           <Input name="token" id="token"></Input>
-          {/* repositories */}
-          {/* gitlab: projectId */}
-          {/* github: owner, repo */}
         </Box>
       </Form>
     </AppMutationModal>

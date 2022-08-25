@@ -70,11 +70,16 @@ model Repository {
   id            String         @id @default(cuid())
   integrationId String
   provider      String
-  projectId     String
+  name          String         @default("")
+  projectId     String? // GitLab only
+  owner         String? // GitHub only
+  repo          String? // GitHub only
   companyId     String
   company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   integration   Integration    @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   mergerequest  MergeRequest[]
+
+  @@unique([integrationId, provider, projectId, owner, repo])
 }
 
 model MergeRequest {

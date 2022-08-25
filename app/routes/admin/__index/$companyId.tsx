@@ -2,12 +2,13 @@ import { SettingsIcon } from '@chakra-ui/icons'
 import { Box, Button, GridItem, Heading, IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Spacer, Stack } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { Outlet, useLoaderData } from '@remix-run/react'
+import { Outlet, useLoaderData, Link } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
 import { getCompany } from '~/app/models/admin/company.server'
 import { requireUserId } from '~/app/session.server'
 import { AppProviderBadge } from '~/app/components/AppProviderBadge'
+import * as React from 'react'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
@@ -63,13 +64,23 @@ const CompanyPage = () => {
 
           <Stack>
             {company.repositories.map((repo) => (
-              <Box key={repo.id}>
-                {repo.provider} {repo.projectId}
-              </Box>
+              <Stack direction="row" key={repo.id} align="center">
+                <Box>
+                  {repo.provider} {repo.name}
+                </Box>
+
+                <Link to={`repository/${repo.id}/delete`}>
+                  <Button size="xs">delete</Button>
+                </Link>
+              </Stack>
             ))}
           </Stack>
 
-          {company.integration && <Box>Add Repo</Box>}
+          {company.integration && (
+            <AppLink to="repository/add">
+              <Button>Add Repo</Button>
+            </AppLink>
+          )}
         </Stack>
       </Stack>
     </Box>

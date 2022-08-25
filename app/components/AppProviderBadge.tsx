@@ -11,7 +11,7 @@ export const AppProviderBadge = ({ provider }: AppProviderBadgeProps) => {
     .with('gitlab', () => '#FC6D27')
     .otherwise(() => 'gray')
   return (
-    <Box display="inline-block" px="2" py="1" borderWidth="1px" borderColor={color} rounded="md">
+    <Box display="inline-block" px="2" py="1" borderWidth="1px" borderColor={color} rounded="md" bgColor="white">
       <Stack direction="row" align="center">
         <Icon
           w="8"
