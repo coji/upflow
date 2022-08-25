@@ -1,4 +1,4 @@
-import { Box, Button, FormLabel, Input, Radio, RadioGroup, Stack } from '@chakra-ui/react'
+import { Box, Button, FormLabel, Input, Radio, RadioGroup, Stack, Icon } from '@chakra-ui/react'
 import type { LoaderArgs, ActionArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form } from '@remix-run/react'
@@ -7,6 +7,7 @@ import { zfd } from 'zod-form-data'
 import { AppLink } from '~/app/components/AppLink'
 import { AppMutationModal } from '~/app/components/AppMutationModal'
 import { createIntegration, getIntegration } from '~/app/models/admin/integration.server'
+import { RiGithubFill, RiGitlabFill } from 'react-icons/ri'
 
 const providerSchema = zfd.formData({
   provider: zfd.text(),
@@ -53,12 +54,18 @@ const AddIntegrationModal = () => {
         <Box display="grid" gridTemplateColumns="auto 1fr" gap="4" alignItems="center">
           <FormLabel m="0">Provider</FormLabel>
           <RadioGroup>
-            <Stack direction="row">
+            <Stack direction="row" gap="4">
               <Radio name="provider" value="github">
-                GitHub
+                <Stack direction="row" align="center">
+                  <Icon as={RiGithubFill} />
+                  <Box>GitHub</Box>
+                </Stack>
               </Radio>
               <Radio name="provider" value="gitlab">
-                GitLab
+                <Stack direction="row" align="center">
+                  <Icon as={RiGitlabFill} />
+                  <Box>GitLab</Box>
+                </Stack>
               </Radio>
             </Stack>
           </RadioGroup>

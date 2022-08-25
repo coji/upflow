@@ -7,6 +7,7 @@ import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
 import { getCompany } from '~/app/models/admin/company.server'
 import { requireUserId } from '~/app/session.server'
+import { AppProviderBadge } from '~/app/components/AppProviderBadge'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
@@ -52,7 +53,7 @@ const CompanyPage = () => {
 
           {company.integration ? (
             <Box>
-              {company.integration?.provider} {company.integration?.method} {company.integration?.privateToken}
+              <AppProviderBadge provider={company.integration.provider} />
             </Box>
           ) : (
             <AppLink to="add-integration">
@@ -67,6 +68,8 @@ const CompanyPage = () => {
               </Box>
             ))}
           </Stack>
+
+          {company.integration && <Box>Add Repo</Box>}
         </Stack>
       </Stack>
     </Box>
