@@ -1,37 +1,11 @@
 import { SettingsIcon } from '@chakra-ui/icons'
-import {
-  Avatar,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  FormLabel,
-  GridItem,
-  Heading,
-  IconButton,
-  Input,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
-  Spacer,
-  Stack,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr
-} from '@chakra-ui/react'
+import { Box, GridItem, Heading, IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Spacer, Stack } from '@chakra-ui/react'
 import { json } from '@remix-run/node'
-import { Form, Outlet, useActionData, useLoaderData, useTransition } from '@remix-run/react'
-import type { ActionArgs, LoaderArgs } from '@remix-run/server-runtime'
-import { useEffect, useState } from 'react'
+import { Outlet, useLoaderData } from '@remix-run/react'
+import type { LoaderArgs } from '@remix-run/server-runtime'
 import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
-import dayjs from '~/app/libs/dayjs'
-import { getCompany, updateCompany } from '~/app/models/admin/company.server'
+import { getCompany } from '~/app/models/admin/company.server'
 import { requireUserId } from '~/app/session.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
@@ -46,85 +20,44 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   return json(company) // ページコンポーネントの useLoaderData で使用
 }
 
-export const action = async ({ request, params }: ActionArgs) => {
-  const { companyId } = params
-  const formData = await request.formData()
-  const name = formData.get('name')
-  if (companyId && name) return await updateCompany(companyId, name.toString())
-  else return null
-}
-
 const CompanyPage = () => {
   const company = useLoaderData<typeof loader>()
-
-  const [isEdit, setIsEdit] = useState(false)
-  const actionData = useActionData()
-  useEffect(() => {
-    setIsEdit(false)
-  }, [actionData, company])
-
-  const transition = useTransition()
 
   return (
     <Box bgColor="white" boxShadow="md" p="4" rounded="md">
       <Stack gap="2">
-        <Form replace method="post" action=".">
-          <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
-            <GridItem colSpan={2} display="flex" position="relative">
-              <Heading size="md">{company.name}</Heading>
-              <Spacer />
-              <Box position="absolute" top="0" right="0">
-                <Menu>
-                  <MenuButton as={IconButton} size="xs" icon={<SettingsIcon />}></MenuButton>
-                  <MenuList>
-                    <AppLink to="delete">
-                      <MenuItem color="red.500">Delete...</MenuItem>
-                    </AppLink>
-                  </MenuList>
-                </Menu>
-              </Box>
+        <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
+          <GridItem colSpan={2} display="flex" position="relative">
+            <Heading size="lg">{company.name}</Heading>
+            <Spacer />
+            <Box position="absolute" top="0" right="0">
+              <Menu>
+                <MenuButton as={IconButton} size="xs" icon={<SettingsIcon />}></MenuButton>
+                <MenuList>
+                  <AppLink to="edit">
+                    <MenuItem>Edit</MenuItem>
+                  </AppLink>
+                  <MenuDivider />
+                  <AppLink to="delete">
+                    <MenuItem color="red.500">Delete...</MenuItem>
+                  </AppLink>
+                </MenuList>
+              </Menu>
+            </Box>
 
-              <Outlet />
-            </GridItem>
+            <Outlet />
+          </GridItem>
+        </Box>
 
-            <FormLabel htmlFor="name">Name</FormLabel>
-            <Stack direction="row" align="center">
-              {isEdit ? (
-                <>
-                  <Input name="name" id="name" defaultValue={company.name} autoFocus></Input>
-                  <Stack direction="row" align="center">
-                    {transition.state === 'submitting' && <CircularProgress size="6" isIndeterminate />}
-                    <Button size="xs" onClick={() => setIsEdit(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" colorScheme="blue" size="xs">
-                      Save
-                    </Button>
-                  </Stack>
-                </>
-              ) : (
-                <>
-                  <Box py="1">{company.name}</Box>
-                  <Button size="xs" onClick={() => setIsEdit(true)}>
-                    Edit
-                  </Button>
-                </>
-              )}
-            </Stack>
+        <Stack>
+          <Heading size="md" color="gray.500">
+            Integration and Repositories
+          </Heading>
 
-            <FormLabel>Updated At</FormLabel>
-            <Box py="1">{dayjs(company.updatedAt).fromNow()}</Box>
-
-            <FormLabel>Created At</FormLabel>
-            <Box py="1">{dayjs(company.createdAt).fromNow()}</Box>
+          <Box>
+            {company.integration?.provider} {company.integration?.method} {company.integration?.privateToken}
           </Box>
-        </Form>
 
-        <Divider />
-
-        <Box>
-          <Heading size="md">Integration and Repositories</Heading>
-          {company.integration?.provider} {company.integration?.method} {company.integration?.privateToken}
           <Stack>
             {company.repositories.map((repo) => (
               <Box key={repo.id}>
@@ -132,50 +65,7 @@ const CompanyPage = () => {
               </Box>
             ))}
           </Stack>
-        </Box>
-
-        <Divider />
-
-        <Box>
-          <Heading size="md">Teams and Users</Heading>
-          <Box>Teams {company.teams.length}</Box>
-          <Stack>
-            {company.teams.map((team) => (
-              <Box key={team.id}>{team.name}</Box>
-            ))}
-          </Stack>
-
-          <Box>Users</Box>
-          <TableContainer>
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>User Name</Th>
-                  <Th>Invited At</Th>
-                  <Th>Created At</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {company.users.map((user) => (
-                  <Tr key={user.id}>
-                    <Td>
-                      <Stack direction="row">
-                        <Avatar name={user.user.name} size="xs"></Avatar>
-                        <Box>{user.user.name}</Box>
-                      </Stack>
-                    </Td>
-                    <Td>
-                      <Box>{user.invitedAt}</Box>
-                    </Td>
-                    <Td>
-                      <Box>{dayjs(user.createdAt).fromNow()}</Box>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </TableContainer>
-        </Box>
+        </Stack>
       </Stack>
     </Box>
   )
