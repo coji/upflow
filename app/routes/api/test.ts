@@ -1,5 +1,5 @@
-import type { LoaderArgs } from '@remix-run/server-runtime'
-import { json, redirect } from '@remix-run/server-runtime'
+import type { LoaderArgs } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
 import { getCompaniesByUser } from '~/app/models/company.server'
 import { getUser } from '~/app/session.server'
 

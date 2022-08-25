@@ -1,7 +1,7 @@
 import { PlusSquareIcon } from '@chakra-ui/icons'
 import { Box, Button, Grid, Stack } from '@chakra-ui/react'
 import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
-import type { LoaderArgs } from '@remix-run/server-runtime'
+import type { LoaderArgs } from '@remix-run/node'
 import { getCompanies } from '~/app/models/admin/company.server'
 import { requireUserId } from '~/app/session.server'
 
