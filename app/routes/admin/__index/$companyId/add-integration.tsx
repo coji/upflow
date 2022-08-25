@@ -1,11 +1,12 @@
 import { Box, Button, FormLabel, Input, Radio, RadioGroup, Stack } from '@chakra-ui/react'
-import type { ActionArgs } from '@remix-run/node'
+import type { LoaderArgs, ActionArgs } from '@remix-run/node'
+import { redirect } from '@remix-run/node'
 import { Form } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { zfd } from 'zod-form-data'
 import { AppLink } from '~/app/components/AppLink'
 import { AppMutationModal } from '~/app/components/AppMutationModal'
-import { createIntegration } from '~/app/models/admin/integration.server'
+import { createIntegration, getIntegration } from '~/app/models/admin/integration.server'
 
 const providerSchema = zfd.formData({
   provider: zfd.text(),
@@ -13,8 +14,18 @@ const providerSchema = zfd.formData({
   token: zfd.text()
 })
 
+export const loader = async ({ request, params }: LoaderArgs) => {
+  invariant(params.companyId, 'company id shoud specified')
+  const integration = await getIntegration(params.companyId)
+  if (integration) {
+    // already added
+    return redirect(`/admin/${params.companyId}`)
+  }
+  return integration
+}
+
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id shout specified')
+  invariant(params.companyId, 'company id shoud specified')
   const formData = await request.formData()
   const { provider, method, token } = providerSchema.parse(formData)
   if (!(provider === 'github' || provider === 'gitlab')) {
