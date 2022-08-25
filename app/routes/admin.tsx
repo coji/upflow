@@ -19,7 +19,7 @@ const AdminIndex = () => {
     <Box display="grid" gridTemplateRows="auto 1fr auto" height="100vh" color="gray.600">
       <Flex as="header" px="4" py="1" align="center" boxShadow="md">
         <Heading>
-          <AppLink to="/admin/company">UpFlow</AppLink>
+          <AppLink to="/admin">UpFlow</AppLink>
         </Heading>
 
         <Spacer />

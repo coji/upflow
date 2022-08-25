@@ -34,7 +34,7 @@ export const action = async ({ request, params }: ActionArgs) => {
   invariant(params.companyId, 'companyId shoud specified')
   const company = await deleteCompany(params.companyId)
   if (company) {
-    return redirect(`/admin/company`)
+    return redirect('/admin')
   }
   return null
 }
@@ -48,7 +48,7 @@ const CompanyDelete = () => {
     <Modal
       isOpen={true}
       onClose={() => {
-        navigate(`/admin/company/${company.id}`)
+        navigate('..')
       }}
       closeOnEsc
     >

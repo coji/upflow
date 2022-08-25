@@ -25,9 +25,8 @@ export const action = async ({ request }: ActionArgs) => {
   }
 
   const company = await createCompany(name)
-  console.log(company)
   if (company) {
-    return redirect(`/admin/company/${company.id}`)
+    return redirect(`/admin/${company.id}`)
   }
   return company
 }
@@ -39,7 +38,7 @@ const CompanyNewPage = () => {
     <Modal
       isOpen={true}
       onClose={() => {
-        navigate('/admin/company')
+        navigate('..')
       }}
     >
       <ModalOverlay />
