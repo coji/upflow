@@ -18,7 +18,7 @@ const AdminCompanyIndex = () => {
   return (
     <Grid display="grid" gridTemplateColumns="15rem 1fr" gap="4">
       <Box>
-        <Stack bgColor="white" rounded="md" p="2" boxShadow="md">
+        <Stack bgColor="white" rounded="md" p="4" boxShadow="md">
           <Box fontWeight="bold">Companies</Box>
 
           {companies.map((company) => (
