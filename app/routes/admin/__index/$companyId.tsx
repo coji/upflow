@@ -2,7 +2,7 @@ import { SettingsIcon } from '@chakra-ui/icons'
 import { Box, Button, GridItem, Heading, IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Spacer, Stack } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { Outlet, useLoaderData, Link } from '@remix-run/react'
+import { Outlet, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
 import { getCompany } from '~/app/models/admin/company.server'
@@ -69,17 +69,19 @@ const CompanyPage = () => {
                   {repo.provider} {repo.name}
                 </Box>
 
-                <Link to={`repository/${repo.id}/delete`}>
+                <AppLink to={`repository/${repo.id}/delete`}>
                   <Button size="xs">delete</Button>
-                </Link>
+                </AppLink>
               </Stack>
             ))}
           </Stack>
 
           {company.integration && (
-            <AppLink to="repository/add">
-              <Button>Add Repo</Button>
-            </AppLink>
+            <Box>
+              <AppLink to="repository/add">
+                <Button>Add Repo</Button>
+              </AppLink>
+            </Box>
           )}
         </Stack>
       </Stack>
