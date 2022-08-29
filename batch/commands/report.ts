@@ -1,8 +1,8 @@
 import dayjs from 'dayjs'
 import invariant from 'tiny-invariant'
 import { allConfigs, loadConfig } from '../config'
-import { buildMergeRequests } from '../mergerequest'
-import { createStore } from '../store'
+import { buildMergeRequests } from '../provider/gitlab/mergerequest'
+import { createStore } from '../provider/gitlab/store'
 
 const timeFormat = (date: string | null) => (date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : null)
 

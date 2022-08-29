@@ -19,7 +19,7 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
   const refCommits = async (ref_name: string, since?: string) => {
     const commits = []
     let page = 1
-    for (;;) {
+    while (true) {
       const ret = await got
         .get(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
           searchParams: { ref_name, per_page: 100, page, since },

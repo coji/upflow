@@ -1,8 +1,8 @@
 import invariant from 'tiny-invariant'
 import { upsertMergeRequest } from '~/app/models/mergeRequest.server'
 import { allConfigs, loadConfig } from '../config'
-import { buildMergeRequests } from '../mergerequest'
-import { createStore } from '../store'
+import { buildMergeRequests } from '../provider/gitlab/mergerequest'
+import { createStore } from '../provider/gitlab/store'
 
 interface UpsertCommandProps {
   companyId?: string
