@@ -9,6 +9,5 @@ set -exm
 echo DATABASE_URL is $DATABASE_URL
 npx -y prisma migrate deploy
 npx -y prisma generate
-node --enable-source-maps dist/index.js &
-node node_modules/@remix-run/serve/dist/cli.js build &
+NODE_ENV=production node ./server.js
 fg %1

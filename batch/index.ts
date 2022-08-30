@@ -2,7 +2,7 @@ import Graceful from '@ladjs/graceful'
 import Bree from 'bree'
 import path from 'node:path'
 
-const main = async () => {
+export const main = async () => {
   const bree = new Bree({
     root: path.join(__dirname, 'jobs'),
     jobs: [
