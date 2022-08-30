@@ -5,7 +5,10 @@
 # run, which is why this file exists in the first place.
 # Learn more: https://community.fly.io/t/sqlite-not-getting-setup-properly/4386
 
-set -ex
+set -exm
+echo DATABASE_URL is $DATABASE_URL
 npx -y prisma migrate deploy
 npx -y prisma generate
-node /upflow/node_modules/.bin/../@remix-run/serve/dist/cli.js build
+node --enable-source-maps dist/index.js &
+node node_modules/@remix-run/serve/dist/cli.js build &
+fg %1

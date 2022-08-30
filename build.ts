@@ -10,6 +10,7 @@ const buildMain = async () => {
     platform: 'node',
     target: 'node16',
     treeShaking: true,
+    sourcemap: true,
     define: {
       'process.env.NODE_ENV': "'production'"
     }

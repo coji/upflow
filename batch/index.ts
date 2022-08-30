@@ -8,7 +8,8 @@ const main = async () => {
     jobs: [
       {
         name: 'crawl',
-        interval: '10s'
+        cron: '* 3 * * *',
+        timezone: 'Asia/Tokyo'
       }
     ],
     defaultExtension: process.env.NODE_ENV === 'production' ? 'js' : 'ts'
@@ -18,6 +19,7 @@ const main = async () => {
   graceful.listen()
 
   await bree.start()
+  console.log('batch process started.')
 }
 
 main()

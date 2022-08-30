@@ -13,11 +13,19 @@ if (parentPort) {
 }
 
 const crawlMain = async () => {
+  console.log('crawl started.')
+
   const companies = await prisma.company.findMany({
     include: { integration: true, repositories: true }
   })
 
+  if (companies.length === 0) {
+    console.log('no company found')
+  }
+
   for (const company of companies) {
+    console.log('company: ', company)
+
     const integration = company.integration
     if (!integration) {
       console.error('integration not set:', company.id, company.name)
@@ -43,6 +51,8 @@ const crawlMain = async () => {
     await provider.upsert(company.repositories)
     console.log('upsert completed.')
   }
+
+  console.log('crawl completed.')
 }
 
 crawlMain()
