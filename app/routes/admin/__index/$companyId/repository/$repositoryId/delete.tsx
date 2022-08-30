@@ -1,12 +1,12 @@
-import { Box, Button, FormLabel, Stack, GridItem } from '@chakra-ui/react'
-import type { LoaderArgs, ActionArgs } from '@remix-run/node'
+import { Box, Button, FormLabel, GridItem, Stack } from '@chakra-ui/react'
+import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
 import { AppMutationModal } from '~/app/components/AppMutationModal'
-import { getRepository, deleteRepository } from '~/app/models/admin/repository.server'
 import { AppProviderBadge } from '~/app/components/AppProviderBadge'
+import { deleteRepository, getRepository } from '~/app/models/admin/repository.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   invariant(params.repositoryId, 'company id shoud specified')

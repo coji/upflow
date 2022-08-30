@@ -1,5 +1,5 @@
-import { prisma } from '~/app/db.server'
 import invariant from 'tiny-invariant'
+import { prisma } from '~/app/db.server'
 
 interface createRepositoryProps {
   companyId: string

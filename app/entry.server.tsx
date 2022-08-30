@@ -3,7 +3,6 @@ import createEmotionServer from '@emotion/server/create-instance'
 import type { EntryContext } from '@remix-run/node'
 import { RemixServer } from '@remix-run/react'
 import { renderToString } from 'react-dom/server'
-
 import { ServerStyleContext } from './context'
 import createEmotionCache from './createEmotionCache'
 

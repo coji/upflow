@@ -1,5 +1,5 @@
-import { Box, Stack, Icon, Text } from '@chakra-ui/react'
-import { RiGithubFill, RiGitlabFill, RiFileUnknowFill } from 'react-icons/ri'
+import { Box, Icon, Stack, Text } from '@chakra-ui/react'
+import { RiFileUnknowFill, RiGithubFill, RiGitlabFill } from 'react-icons/ri'
 import { match } from 'ts-pattern'
 
 interface AppProviderBadgeProps {

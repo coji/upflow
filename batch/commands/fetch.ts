@@ -1,7 +1,7 @@
 import invariant from 'tiny-invariant'
+import { prisma } from '~/app/db.server'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider'
-import { prisma } from '~/app/db.server'
 
 interface FetchCommandProps {
   companyId?: string

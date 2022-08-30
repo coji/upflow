@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant'
-import { allConfigs } from '../config'
 import { prisma } from '~/app/db.server'
+import { allConfigs } from '../config'
 import { createProvider } from '../provider'
 
 interface reportCommandProps {

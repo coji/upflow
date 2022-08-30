@@ -1,6 +1,6 @@
+import { parentPort } from 'node:worker_threads'
 import { prisma } from '~/app/db.server'
 import { createProvider } from '../provider'
-import { parentPort } from 'node:worker_threads'
 
 const options = { refresh: false, halt: false }
 if (parentPort) {

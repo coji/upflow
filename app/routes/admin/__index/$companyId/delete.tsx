@@ -5,9 +5,9 @@ import { Form, useLoaderData } from '@remix-run/react'
 import { useState } from 'react'
 import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
+import { AppMutationModal } from '~/app/components/AppMutationModal'
 import dayjs from '~/app/libs/dayjs'
 import { deleteCompany, getCompany } from '~/app/models/admin/company.server'
-import { AppMutationModal } from '~/app/components/AppMutationModal'
 
 export const loader = async ({ params }: LoaderArgs) => {
   invariant(params.companyId, 'companyId shout specified')

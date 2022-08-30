@@ -1,12 +1,12 @@
 import { Box, Button, FormLabel, Input, Stack } from '@chakra-ui/react'
-import { Form, useLoaderData } from '@remix-run/react'
-import type { LoaderArgs, ActionArgs } from '@remix-run/node'
+import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
+import { Form, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { AppLink } from '~/app/components/AppLink'
-import { getCompany, updateCompany } from '~/app/models/admin/company.server'
-import dayjs from '~/app/libs/dayjs'
 import { AppMutationModal } from '~/app/components/AppMutationModal'
+import dayjs from '~/app/libs/dayjs'
+import { getCompany, updateCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
   invariant(params.companyId, 'companyId shout specified')

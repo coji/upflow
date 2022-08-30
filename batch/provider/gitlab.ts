@@ -1,11 +1,11 @@
-import { createFetcher } from '~/batch/provider/gitlab/fetcher'
-import { createStore } from './gitlab/store'
-import { createAggregator } from './gitlab/aggregator'
 import type { Integration, Repository } from '@prisma/client'
 import invariant from 'tiny-invariant'
-import { buildMergeRequests } from '../provider/gitlab/mergerequest'
 import { upsertMergeRequest } from '~/app/models/mergeRequest.server'
+import { createFetcher } from '~/batch/provider/gitlab/fetcher'
 import { timeFormat } from '../helper/timeformat'
+import { buildMergeRequests } from '../provider/gitlab/mergerequest'
+import { createAggregator } from './gitlab/aggregator'
+import { createStore } from './gitlab/store'
 
 export const createGitLabProvider = (integration: Integration) => {
   /**

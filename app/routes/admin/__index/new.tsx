@@ -2,8 +2,8 @@ import { Box, Button, FormLabel, Input, Stack } from '@chakra-ui/react'
 import type { ActionArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form } from '@remix-run/react'
-import { createCompany } from '~/app/models/admin/company.server'
 import { AppMutationModal } from '~/app/components/AppMutationModal'
+import { createCompany } from '~/app/models/admin/company.server'
 
 export const action = async ({ request }: ActionArgs) => {
   const formData = await request.formData()
