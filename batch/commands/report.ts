@@ -17,7 +17,8 @@ export async function reportCommand({ companyId }: reportCommandProps) {
   const company = await prisma.company.findFirstOrThrow({ where: { id: companyId }, include: { integration: true, repositories: true } })
   invariant(company.integration, 'integration shoud related')
 
-  const provider = createProvider(company.integration.provider)
+  const provider = createProvider(company.integration)
   invariant(provider, `unknown provider ${company.integration.provider}`)
+
   await provider.report(company.repositories)
 }

@@ -24,7 +24,7 @@ const crawlMain = async () => {
       continue
     }
 
-    const provider = createProvider(integration.provider)
+    const provider = createProvider(integration)
     if (!provider) {
       console.error('provider cant detected', company.id, company.name, integration.provider)
       continue
@@ -35,7 +35,7 @@ const crawlMain = async () => {
         continue
       }
       console.log('fetch started...')
-      await provider.fetch(integration, repository, options)
+      await provider.fetch(repository, options)
       console.log('fetch completed.')
     }
 

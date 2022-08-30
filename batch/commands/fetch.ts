@@ -17,10 +17,11 @@ export async function fetchCommand(props: FetchCommandProps) {
 
   const company = await prisma.company.findFirstOrThrow({ where: { id: props.companyId }, include: { integration: true, repositories: true } })
   invariant(company.integration, 'integration shoud related')
-  const provider = createProvider(company.integration.provider)
+
+  const provider = createProvider(company.integration)
   invariant(provider, `unkown provider: ${company.integration.provider}`)
 
   for (const repository of company.repositories) {
-    await provider.fetch(company.integration, repository, { refresh: props.refresh, halt: false })
+    await provider.fetch(repository, { refresh: props.refresh, halt: false })
   }
 }

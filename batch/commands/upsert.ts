@@ -1,8 +1,7 @@
 import invariant from 'tiny-invariant'
-import { upsertMergeRequest } from '~/app/models/mergeRequest.server'
-import { allConfigs, loadConfig } from '../config'
-import { buildMergeRequests } from '../provider/gitlab/mergerequest'
-import { createStore } from '../provider/gitlab/store'
+import { allConfigs } from '../config'
+import { prisma } from '~/app/db.server'
+import { createProvider } from '../provider/index'
 
 interface UpsertCommandProps {
   companyId?: string
@@ -13,26 +12,12 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
     console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
     return
   }
-  const config = await loadConfig(companyId)
-  invariant(config, `config not found: ${companyId}`)
 
-  for (const repository of config.repositories) {
-    const store = createStore({
-      companyId: config.companyId,
-      repositoryId: repository.id
-    })
-    const mergerequests = await store.loader.mergerequests()
+  const company = await prisma.company.findFirstOrThrow({ where: { id: companyId }, include: { integration: true, repositories: true } })
+  invariant(company.integration, 'integration shoud related')
 
-    const results = await buildMergeRequests(
-      {
-        companyId: config.companyId,
-        repositoryId: repository.id
-      },
-      mergerequests
-    )
-    for (const mr of results) {
-      await upsertMergeRequest(mr)
-      //      await got.post(API_URL, { json: { item: mr } })
-    }
-  }
+  const provider = createProvider(company.integration)
+  invariant(provider, `unknown provider ${company.integration.provider}`)
+
+  await provider.upsert(company.repositories)
 }

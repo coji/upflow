@@ -1,7 +1,7 @@
 import type { Integration, Repository } from '@prisma/client'
 
-export const createGitHubProvider = () => {
-  const fetch = async (integration: Integration, repository: Repository, { refresh = false, halt = false }: { refresh?: boolean; halt?: boolean }) => {
+export const createGitHubProvider = (integration: Integration) => {
+  const fetch = async (repository: Repository, { refresh = false, halt = false }: { refresh?: boolean; halt?: boolean }) => {
     console.log('github provider fetch is not implemented yet.')
   }
 
