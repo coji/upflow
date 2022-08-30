@@ -5,12 +5,17 @@ export const createGitHubProvider = () => {
     console.log('github provider fetch is not implemented yet.')
   }
 
+  const report = async (repositories: Repository[]) => {
+    console.log('github provider report is not implemented yet')
+  }
+
   const upsert = async (repositories: Repository[]) => {
     console.log('github provider upsert is not implemented yet')
   }
 
   return {
     fetch,
+    report,
     upsert
   }
 }

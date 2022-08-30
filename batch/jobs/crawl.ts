@@ -1,5 +1,16 @@
 import { prisma } from '~/app/db.server'
 import { createProvider } from '../provider'
+import { parentPort } from 'node:worker_threads'
+
+const options = { refresh: false, halt: false }
+if (parentPort) {
+  parentPort.once('message', (message) => {
+    if (message === 'cancel') {
+      console.log('cancel message received')
+      options.halt = true
+    }
+  })
+}
 
 const crawlMain = async () => {
   const companies = await prisma.company.findMany({
@@ -24,7 +35,7 @@ const crawlMain = async () => {
         continue
       }
       console.log('fetch started...')
-      await provider.fetch(integration, repository, { halt: false, refresh: false })
+      await provider.fetch(integration, repository, options)
       console.log('fetch completed.')
     }
 

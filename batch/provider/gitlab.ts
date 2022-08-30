@@ -5,8 +5,12 @@ import type { Integration, Repository } from '@prisma/client'
 import invariant from 'tiny-invariant'
 import { buildMergeRequests } from '../provider/gitlab/mergerequest'
 import { upsertMergeRequest } from '~/app/models/mergeRequest.server'
+import { timeFormat } from '../helper/timeformat'
 
 export const createGitLabProvider = () => {
+  /**
+   * fetch gitlab information
+   */
   const fetch = async (integration: Integration, repository: Repository, { refresh = false, halt = false }: { refresh: boolean; halt: boolean }) => {
     invariant(repository.projectId, 'project id shoud specified')
     invariant(integration.privateToken, 'provider privateToken shoud specified')
@@ -61,7 +65,68 @@ export const createGitLabProvider = () => {
     }
   }
 
-  // 集計結果を upsert
+  /**
+   * report
+   */
+  const report = async (repositories: Repository[]) => {
+    // ヘッダ
+    console.log(
+      [
+        'id',
+        'target_branch',
+        'state',
+        'コミット数',
+        'コメント数',
+        '初回コミット日時',
+        'MR作成日時',
+        '初回レビュー日時',
+        'マージ日時',
+        'リリース日時',
+        'リリースにコミット済',
+        'MR作成者',
+        'MRタイトル'
+      ].join('\t')
+    )
+
+    for (const repository of repositories) {
+      const store = createStore({
+        companyId: repository.companyId,
+        repositoryId: repository.id
+      })
+
+      const results = await buildMergeRequests(
+        {
+          companyId: repository.companyId,
+          repositoryId: repository.id
+        },
+        await store.loader.mergerequests()
+      )
+
+      for (const mr of results) {
+        console.log(
+          [
+            mr.id,
+            mr.target_branch,
+            mr.state,
+            mr.num_of_comments,
+            mr.num_of_comments,
+            timeFormat(mr.first_commited_at),
+            timeFormat(mr.mergerequest_created_at),
+            timeFormat(mr.first_reviewd_at),
+            timeFormat(mr.merged_at),
+            timeFormat(mr.released_at),
+            mr.is_release_committed,
+            mr.author,
+            mr.title
+          ].join('\t')
+        )
+      }
+    }
+  }
+
+  /**
+   * upsert analized report
+   */
   const upsert = async (repositories: Repository[]) => {
     for (const repository of repositories) {
       const store = createStore({
@@ -84,6 +149,7 @@ export const createGitLabProvider = () => {
 
   return {
     fetch,
+    report,
     upsert
   }
 }
