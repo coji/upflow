@@ -3,10 +3,8 @@ import { createGitHubProvider } from './github'
 import { createGitLabProvider } from './gitlab'
 import type { Integration } from '@prisma/client'
 
-export const createProvider = (integration: Integration) => {
-  const factory = match(integration.provider)
-    .with('github', () => createGitHubProvider)
-    .with('gitlab', () => createGitLabProvider)
+export const createProvider = (integration: Integration) =>
+  match(integration.provider)
+    .with('github', () => createGitHubProvider(integration))
+    .with('gitlab', () => createGitLabProvider(integration))
     .otherwise(() => null)
-  return factory && factory(integration)
-}
