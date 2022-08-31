@@ -14,6 +14,7 @@
     "start": "cross-env NODE_ENV=production node ./server.js",
     "start:mocks": "binode --require ./mocks -- @remix-run/serve:remix-serve build",
     "test": "vitest",
+    "test:playwright": "cross-env TEST=true playwright test",
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
     "pretest:e2e:run": "npm run build",
     "test:e2e:run": "cross-env PORT=8811 start-server-and-test start:mocks http://localhost:8811 \"npx cypress run\"",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^7.5.0",
+    "@playwright/test": "^1.25.1",
     "@remix-run/dev": "^1.7.0",
     "@remix-run/eslint-config": "^1.7.0",
     "@testing-library/cypress": "^8.0.3",
@@ -91,7 +93,6 @@
     "binode": "^1.0.5",
     "c8": "^7.12.0",
     "cross-env": "^7.0.3",
-    "cypress": "^10.7.0",
     "esbuild": "^0.15.6",
     "esbuild-plugin-clean": "^0.9.0",
     "eslint": "^8.23.0",
