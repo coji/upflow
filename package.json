@@ -15,10 +15,9 @@
     "start:mocks": "binode --require ./mocks -- @remix-run/serve:remix-serve build",
     "test": "vitest",
     "test:playwright": "cross-env TEST=true playwright test",
-    "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
     "pretest:e2e:run": "npm run build",
     "test:e2e:run": "cross-env PORT=8811 start-server-and-test start:mocks http://localhost:8811 \"npx cypress run\"",
-    "typecheck": "tsc -b && tsc -b cypress",
+    "typecheck": "tsc -b",
     "validate": "run-p \"test -- --run\" lint typecheck test:e2e:run"
   },
   "eslintIgnore": [
@@ -73,7 +72,6 @@
     "@playwright/test": "^1.25.1",
     "@remix-run/dev": "^1.7.0",
     "@remix-run/eslint-config": "^1.7.0",
-    "@testing-library/cypress": "^8.0.3",
     "@testing-library/dom": "^8.17.1",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.3.0",

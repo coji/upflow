@@ -23,7 +23,6 @@ specifiers:
   '@remix-run/server-runtime': ^1.7.0
   '@tanstack/react-table': ^8.5.11
   '@tanstack/react-virtual': 3.0.0-beta.18
-  '@testing-library/cypress': ^8.0.3
   '@testing-library/dom': ^8.17.1
   '@testing-library/jest-dom': ^5.16.5
   '@testing-library/react': ^13.3.0
@@ -129,7 +128,6 @@ devDependencies:
   '@playwright/test': 1.25.1
   '@remix-run/dev': 1.7.0_p6bz3zlyof7hasoqeidkhkiywu
   '@remix-run/eslint-config': 1.7.0_ehxjltspajcysklsgue4g44hsy
-  '@testing-library/cypress': 8.0.3
   '@testing-library/dom': 8.17.1
   '@testing-library/jest-dom': 5.16.5
   '@testing-library/react': 13.3.0_biqbaboplfbrettd7655fr4n2y
@@ -3351,16 +3349,6 @@ packages:
     resolution: {integrity: sha512-tcXutY05NpN9lp3+AXI9Sn85RxSPV0EJC0XMim9oeQj/E7bjXoL0qZ4Er4wwnvIbv/hZjC91EmbIQGjgdr6nZg==}
     engines: {node: '>=12'}
     dev: false
-
-  /@testing-library/cypress/8.0.3:
-    resolution: {integrity: sha512-nY2YaSbmuPo5k6kL0iLj/pGPPfka3iwb3kpTx8QN/vOCns92Saz9wfACqB8FJzcR7+lfA4d5HUOWqmTddBzczg==}
-    engines: {node: '>=12', npm: '>=6'}
-    peerDependencies:
-      cypress: ^2.1.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
-    dependencies:
-      '@babel/runtime': 7.18.9
-      '@testing-library/dom': 8.17.1
-    dev: true
 
   /@testing-library/dom/8.17.1:
     resolution: {integrity: sha512-KnH2MnJUzmFNPW6RIKfd+zf2Wue8mEKX0M3cpX6aKl5ZXrJM1/c/Pc8c2xDNYQCnJO48Sm5ITbMXgqTr3h4jxQ==}
