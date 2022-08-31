@@ -3,7 +3,7 @@ const express = require('express')
 const compression = require('compression')
 const morgan = require('morgan')
 const { createRequestHandler } = require('@remix-run/express')
-require('./dist')
+const { startBatchJobSchedular } = require('./dist')
 
 function purgeRequireCache() {
   for (const key in require.cache) {
@@ -45,3 +45,6 @@ const port = process.env.PORT || 3000
 app.listen(port, () => {
   console.log(`Express server listening on port ${port}`)
 })
+
+// batch ジョブスケジューラを起動
+startBatchJobSchedular()
