@@ -3,7 +3,7 @@ const express = require('express')
 const compression = require('compression')
 const morgan = require('morgan')
 const { createRequestHandler } = require('@remix-run/express')
-const { startBatchJobSchedular } = require('./dist')
+const { startBatchJobSchedular } = require('./dist/batch')
 
 function purgeRequireCache() {
   for (const key in require.cache) {

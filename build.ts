@@ -1,5 +1,6 @@
 import { build } from 'esbuild'
 import { globby } from 'globby'
+import esbuildPluginPino from 'esbuild-plugin-pino'
 
 const buildMain = async () => {
   const jobs = await globby('./batch/jobs/*.ts')
@@ -13,7 +14,8 @@ const buildMain = async () => {
     sourcemap: true,
     define: {
       'process.env.NODE_ENV': "'production'"
-    }
+    },
+    plugins: [esbuildPluginPino({ transports: ['pino-pretty'] })]
   }).catch(() => process.exit(1))
 }
 

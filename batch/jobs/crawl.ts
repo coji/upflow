@@ -1,40 +1,42 @@
 import { parentPort } from 'node:worker_threads'
 import { prisma } from '~/app/db.server'
 import { createProvider } from '../provider'
+import { logger } from '../helper/logger'
 
 const options = { refresh: false, halt: false }
 if (parentPort) {
   parentPort.once('message', (message) => {
     if (message === 'cancel') {
-      console.log('cancel message received')
+      logger.fatal('cancel message received')
       options.halt = true
     }
   })
 }
 
 const crawlMain = async () => {
-  console.log('crawl started.')
+  logger.info('crawl started.')
 
   const companies = await prisma.company.findMany({
     include: { integration: true, repositories: true }
   })
 
   if (companies.length === 0) {
-    console.log('no company found')
+    logger.error('no company found')
+    return
   }
 
   for (const company of companies) {
-    console.log('company: ', company)
+    logger.info('company: ', company)
 
     const integration = company.integration
     if (!integration) {
-      console.error('integration not set:', company.id, company.name)
+      logger.error('integration not set:', company.id, company.name)
       continue
     }
 
     const provider = createProvider(integration)
     if (!provider) {
-      console.error('provider cant detected', company.id, company.name, integration.provider)
+      logger.error('provider cant detected', company.id, company.name, integration.provider)
       continue
     }
 
@@ -42,17 +44,17 @@ const crawlMain = async () => {
       if (!provider) {
         continue
       }
-      console.log('fetch started...')
+      logger.info('fetch started...')
       await provider.fetch(repository, options)
-      console.log('fetch completed.')
+      logger.info('fetch completed.')
     }
 
-    console.log('upsert started...')
+    logger.info('upsert started...')
     await provider.upsert(company.repositories)
-    console.log('upsert completed.')
+    logger.info('upsert completed.')
   }
 
-  console.log('crawl completed.')
+  logger.info('crawl completed.')
 }
 
 crawlMain()

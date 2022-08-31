@@ -1,10 +1,12 @@
 import Graceful from '@ladjs/graceful'
 import Bree from 'bree'
 import path from 'node:path'
+import { logger } from './helper/logger'
 
 export const startBatchJobSchedular = async () => {
   const bree = new Bree({
     root: path.join(__dirname, 'jobs'),
+    logger,
     jobs: [
       {
         name: 'crawl',
@@ -19,5 +21,6 @@ export const startBatchJobSchedular = async () => {
   graceful.listen()
 
   await bree.start()
-  console.log('batch process started.')
+  logger.info('batch process started.')
 }
+console.log(process.cwd())
