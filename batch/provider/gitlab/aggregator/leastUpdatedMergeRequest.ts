@@ -1,4 +1,9 @@
 import type { Types } from '@gitbeaker/node'
+import { pipe, sortBy, last } from 'remeda'
 
 export const leastUpdatedMergeRequest = (mergerequests: Types.MergeRequestSchema[]) =>
-  mergerequests.length > 0 ? mergerequests.reduce((a, b) => (a.updated_at > b.updated_at ? a : b)) : null
+  pipe(
+    mergerequests,
+    sortBy((x) => x.updated_at),
+    last()
+  ) ?? null
