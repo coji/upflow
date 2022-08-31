@@ -5,9 +5,8 @@
 # run, which is why this file exists in the first place.
 # Learn more: https://community.fly.io/t/sqlite-not-getting-setup-properly/4386
 
-set -exm
+set -ex
 echo DATABASE_URL is $DATABASE_URL
 npx -y prisma migrate deploy
 npx -y prisma generate
 NODE_ENV=production node ./server.js
-fg %1
