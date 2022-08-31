@@ -5,3 +5,7 @@
 /.cache
 /public/build
 /build
+/dist
+/data
+/cypress
+/test

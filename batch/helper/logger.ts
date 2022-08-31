@@ -1,8 +1,3 @@
-import pino from 'pino'
+import { createSimpleLogger } from 'simple-node-logger'
 
-export const logger = pino({
-  level: 'trace',
-  transport: {
-    target: 'pino-pretty'
-  }
-})
+export const logger = createSimpleLogger({ level: 'info', timestampFormat: 'YYYY-MM-DD HH:mm:ss.SSS' })

@@ -1,12 +1,13 @@
 import { build } from 'esbuild'
 import { globby } from 'globby'
-import esbuildPluginPino from 'esbuild-plugin-pino'
+import cleanPlugin from 'esbuild-plugin-clean'
 
 const buildMain = async () => {
   const jobs = await globby('./batch/jobs/*.ts')
   build({
-    entryPoints: ['batch/index.ts', ...jobs],
+    entryPoints: ['batch/job-schedular.ts', ...jobs],
     bundle: true,
+    metafile: true,
     outdir: 'dist',
     platform: 'node',
     target: 'node16',
@@ -15,7 +16,7 @@ const buildMain = async () => {
     define: {
       'process.env.NODE_ENV': "'production'"
     },
-    plugins: [esbuildPluginPino({ transports: ['pino-pretty'] })]
+    plugins: [cleanPlugin({ patterns: ['./dist/*', './dist/jobs/*'] })]
   }).catch(() => process.exit(1))
 }
 
