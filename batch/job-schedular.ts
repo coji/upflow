@@ -10,7 +10,7 @@ export const createJobSchedular = () => {
     jobs: [
       {
         name: 'crawl',
-        cron: '* * * * *',
+        cron: '* 3 * * *',
         timezone: 'Asia/Tokyo'
       }
     ],
