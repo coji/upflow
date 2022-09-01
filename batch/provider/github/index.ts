@@ -23,11 +23,42 @@ export const createGitHubProvider = (integration: Integration) => {
 
     // 全プルリク情報をダウンロード
     logger.info(`fetching all pullrequests...`)
-    const pullrequests = await fetcher.pullrequests()
-    store.save('pullrequests.json', pullrequests)
+    const allPullRequests = await fetcher.pullrequests()
+    store.save('pullrequests.json', allPullRequests)
     logger.info(`fetching all pullrequests completed.`)
 
-    // logger.info('github provider fetch is not implemented yet.')
+    // production ブランチのすべての commit
+    // logger.info('fetch production commits...')
+    // const releaseCommits = await fetcher.refCommits('production', refresh ? leastMergeRequest?.updated_at : undefined)
+    // for (const commit of releaseCommits) {
+    //   store.save(store.path.releaseCommitsJsonFilename(commit.id), commit)
+    // }
+    // logger.info(`fetch production commits done: ${releaseCommits.length} commits`)
+
+    // 個別のPR
+    for (const pr of allPullRequests) {
+      if (halt) {
+        logger.fatal('halted')
+        return
+      }
+
+      const isNew = leastMergeRequest ? pr.updated_at > leastMergeRequest.updated_at : true // 新しく fetch してきた PR
+      // すべて再フェッチせず、オープン以外、前回以前fetchしたPRの場合はスキップ
+      if (!refresh && pr.state !== 'open' && !isNew) {
+        continue
+      }
+      const number = pr.number
+
+      // 個別PRの初回コミット
+      logger.info(`${number} commits`)
+      const commits = await fetcher.firstCommit(number)
+      store.save(store.path.commitsJsonFilename(number), commits ? [commits] : [])
+
+      // 個別PRの初回レビュー
+      logger.info(`${number} discussions`)
+      const discussions = await fetcher.firstReviewComment(number)
+      store.save(store.path.discussionsJsonFilename(number), discussions ? [discussions] : [])
+    }
   }
 
   const report = async (repositories: Repository[]) => {

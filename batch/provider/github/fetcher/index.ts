@@ -51,7 +51,6 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       page: 1,
       per_page: 1
     })
-    console.log(ret.data)
     const reviewComment: GitHubReviewComment = ret.data[0]
     if (!ret.data[0]) return
     return reviewComment

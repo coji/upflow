@@ -4,3 +4,4 @@ export type GitHubPullRequest = RestEndpointMethodTypes['pulls']['list']['respon
 export type GitHubCommit = RestEndpointMethodTypes['pulls']['listCommits']['response']['data'][0]
 export type GitHubReview = RestEndpointMethodTypes['pulls']['listReviews']['response']['data'][0]
 export type GitHubReviewComment = RestEndpointMethodTypes['pulls']['listReviewComments']['response']['data'][0]
+export type GitHubUser = GitHubPullRequest['user']
