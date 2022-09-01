@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import type { PullRequest } from '../model'
+import type { GitHubPullRequest } from '../model'
 import { leastUpdatedPullRequest } from './leastUpdatedPullRequest'
 
 describe('leastCreatedMergeRequest', () => {
@@ -104,7 +104,7 @@ describe('leastCreatedMergeRequest', () => {
     sha: '',
     user
   }
-  const prototype: PullRequest = {
+  const prototype: GitHubPullRequest = {
     url: '',
     id: 0,
     node_id: '',
@@ -158,7 +158,7 @@ describe('leastCreatedMergeRequest', () => {
   })
 
   test('shold retuns null when empty array specified', () => {
-    const subject: PullRequest[] = []
+    const subject: GitHubPullRequest[] = []
     const ret = leastUpdatedPullRequest(subject)
     expect(ret).toBeNull()
   })

@@ -1,5 +1,5 @@
 import { Octokit } from 'octokit'
-import type { PullRequest, Commit, ReviewComment } from '../model'
+import type { GitHubPullRequest, GitHubCommit, GitHubReviewComment } from '../model'
 
 interface createFetcherProps {
   owner: string
@@ -14,7 +14,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
    * @returns プロジェクトのすべてのプルリク情報の配列
    */
   const pullrequests = async () => {
-    let pulls: PullRequest[] = []
+    let pulls: GitHubPullRequest[] = []
     let page = 1
     do {
       const ret = await octokit.rest.pulls.list({
@@ -39,7 +39,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       page: 1,
       per_page: 1
     })
-    let commit: Commit = ret.data[0]
+    let commit: GitHubCommit = ret.data[0]
     return commit
   }
 
@@ -52,7 +52,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       per_page: 1
     })
     console.log(ret.data)
-    const reviewComment: ReviewComment = ret.data[0]
+    const reviewComment: GitHubReviewComment = ret.data[0]
     if (!ret.data[0]) return
     return reviewComment
   }

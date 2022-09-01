@@ -1,6 +1,5 @@
 import { createPathBuilder } from '~/batch/helper/path-builder'
-import type { ReviewComment, Commit } from '../model'
-import type { PullRequest } from '../model'
+import type { GitHubPullRequest, GitHubReviewComment, GitHubCommit } from '../model'
 import fs from 'fs'
 import path from 'path'
 import { globby } from 'globby'
@@ -32,23 +31,23 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   }
 
   // loaders
-  const commits = async (number: number) => load<Commit[]>(pathBuilder.commitsJsonFilename(number))
-  const discussions = async (number: number) => load<ReviewComment>(pathBuilder.discussionsJsonFilename(number))
-  const pullrequests = async () => load<PullRequest[]>('pullrequests.json')
+  const commits = async (number: number) => load<GitHubCommit[]>(pathBuilder.commitsJsonFilename(number))
+  const discussions = async (number: number) => load<GitHubReviewComment>(pathBuilder.discussionsJsonFilename(number))
+  const pullrequests = async () => load<GitHubPullRequest[]>('pullrequests.json')
   const releasedCommits = async () => {
-    const commits: Commit[] = []
+    const commits: GitHubCommit[] = []
     const matches = await globby(pathBuilder.releaseCommitsGlob())
     for (const filename of matches) {
       const sha = pathBuilder.sha(filename)
-      commits.push(await load<Commit>(pathBuilder.releaseCommitsJsonFilename(sha)))
+      commits.push(await load<GitHubCommit>(pathBuilder.releaseCommitsJsonFilename(sha)))
     }
     return commits
   }
-  const releasedCommitsBySha = async (sha: string) => await load<Commit>(pathBuilder.releaseCommitsJsonFilename(sha))
+  const releasedCommitsBySha = async (sha: string) => await load<GitHubCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
 
-  const releasedPullRequests = (allPullRequests: PullRequest[]) => allPullRequests.filter((pr) => pr.state === 'closed')
+  const releasedPullRequests = (allPullRequests: GitHubPullRequest[]) => allPullRequests.filter((pr) => pr.state === 'closed')
 
-  const findReleaseDate = async (allPullRequests: PullRequest[], targetHash?: string) => {
+  const findReleaseDate = async (allPullRequests: GitHubPullRequest[], targetHash?: string) => {
     let merged_at = null
     for (const m of releasedPullRequests(allPullRequests)) {
       if ((await commits(m.number)).some((c) => c.sha === targetHash)) {
