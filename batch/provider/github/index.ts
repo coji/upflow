@@ -4,7 +4,6 @@ import { createFetcher } from './fetcher'
 import { createAggregator } from './aggregator'
 import { createStore } from './store'
 import invariant from 'tiny-invariant'
-import { localStorageManager } from '@chakra-ui/system'
 
 export const createGitHubProvider = (integration: Integration) => {
   const fetch = async (repository: Repository, { refresh = false, halt = false }: { refresh?: boolean; halt?: boolean }) => {

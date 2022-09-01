@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import type { Types } from '@gitbeaker/node'
+import type { GitLabMergeRequest, GitLabMilestone } from '../model'
 import { leastUpdatedMergeRequest } from './leastUpdatedMergeRequest'
 
 describe('leastCreatedMergeRequest', () => {
-  const prototype: Types.MergeRequestSchema = {
+  const prototype: GitLabMergeRequest = {
     id: 0,
     iid: 0,
     project_id: 0,
@@ -23,7 +23,7 @@ describe('leastCreatedMergeRequest', () => {
     source_project_id: 0,
     target_project_id: 0,
     work_in_progress: true,
-    milestone: null as unknown as Types.MilestoneSchema,
+    milestone: null as unknown as GitLabMilestone,
     merge_when_pipeline_succeeds: false,
     merge_status: '',
     sha: '',
@@ -49,7 +49,7 @@ describe('leastCreatedMergeRequest', () => {
   })
 
   test('shold retuns null when empty array specified', () => {
-    const subject: Types.MergeRequestSchema[] = []
+    const subject: GitLabMergeRequest[] = []
     const ret = leastUpdatedMergeRequest(subject)
     expect(ret).toBeNull()
   })

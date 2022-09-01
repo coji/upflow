@@ -1,11 +1,11 @@
-import type { Types } from '@gitbeaker/node'
+import type { GitLabDiscussion } from '../model'
 
 /**
  * ディスカッションから、MRに対するレビューのみを抽出
  * @param discussions
  * @returns
  */
-export const reviewComments = (discussions: Types.DiscussionSchema[]) =>
+export const reviewComments = (discussions: GitLabDiscussion[]) =>
   discussions
     .filter(
       (d) =>

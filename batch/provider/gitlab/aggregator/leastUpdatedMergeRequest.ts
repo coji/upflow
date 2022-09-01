@@ -1,7 +1,7 @@
-import type { Types } from '@gitbeaker/node'
+import type { GitLabMergeRequest } from '../model'
 import { pipe, sortBy, last } from 'remeda'
 
-export const leastUpdatedMergeRequest = (mergerequests: Types.MergeRequestSchema[]) =>
+export const leastUpdatedMergeRequest = (mergerequests: GitLabMergeRequest[]) =>
   pipe(
     mergerequests,
     sortBy((x) => x.updated_at),

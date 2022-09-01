@@ -1,4 +1,4 @@
-import type { Types } from '@gitbeaker/node'
+import type { GitLabCommit } from '../model'
 import { Gitlab } from '@gitbeaker/node'
 import got from 'got'
 
@@ -25,7 +25,7 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
           searchParams: { ref_name, per_page: 100, page, since },
           headers: { 'PRIVATE-TOKEN': privateToken }
         })
-        .json<Types.CommitSchema[]>()
+        .json<GitLabCommit[]>()
 
       if (ret.length === 0) break
       commits.push(...ret)
