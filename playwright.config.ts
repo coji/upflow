@@ -1,7 +1,7 @@
 import type { PlaywrightTestConfig } from '@playwright/test'
 
 const config: PlaywrightTestConfig = {
-  globalSetup: require.resolve('./test/setup-test-env'),
+  //  globalSetup: require.resolve('./test/setup-test-env'),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   use: {
