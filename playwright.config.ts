@@ -23,12 +23,6 @@ const config: PlaywrightTestConfig = {
       use: {
         javaScriptEnabled: true
       }
-    },
-    {
-      name: `dev-js`,
-      use: {
-        javaScriptEnabled: false
-      }
     }
   ]
 }
