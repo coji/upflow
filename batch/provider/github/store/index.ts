@@ -1,14 +1,14 @@
-import type { Types } from '@gitbeaker/node'
-import fs from 'fs'
-import { globby } from 'globby'
-import path from 'path'
 import { createPathBuilder } from '~/batch/helper/path-builder'
+import type { ReviewComment, Commit } from '../model'
+import type { PullRequest } from '../model'
+import fs from 'fs'
+import path from 'path'
+import { globby } from 'globby'
 
 interface createStoreProps {
   companyId: string
   repositoryId: string
 }
-
 export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   const pathBuilder = createPathBuilder({ companyId, repositoryId })
 
@@ -32,27 +32,26 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   }
 
   // loaders
-  const commits = async (mergerequestIid: number) => load<Types.CommitSchema[]>(pathBuilder.commitsJsonFilename(mergerequestIid))
-  const discussions = async (mergerequestIid: number) => load<Types.DiscussionSchema[]>(pathBuilder.discussionsJsonFilename(mergerequestIid))
-  const mergerequests = async () => load<Types.MergeRequestSchema[]>('mergerequests.json')
+  const commits = async (number: number) => load<Commit[]>(pathBuilder.commitsJsonFilename(number))
+  const discussions = async (number: number) => load<ReviewComment>(pathBuilder.discussionsJsonFilename(number))
+  const pullrequests = async () => load<PullRequest[]>('pullrequests.json')
   const releasedCommits = async () => {
-    const commits: Types.CommitSchema[] = []
+    const commits: Commit[] = []
     const matches = await globby(pathBuilder.releaseCommitsGlob())
     for (const filename of matches) {
       const sha = pathBuilder.sha(filename)
-      commits.push(await load<Types.CommitSchema>(pathBuilder.releaseCommitsJsonFilename(sha)))
+      commits.push(await load<Commit>(pathBuilder.releaseCommitsJsonFilename(sha)))
     }
     return commits
   }
-  const releasedCommitsBySha = async (sha: string) => await load<Types.CommitSchema>(pathBuilder.releaseCommitsJsonFilename(sha))
+  const releasedCommitsBySha = async (sha: string) => await load<Commit>(pathBuilder.releaseCommitsJsonFilename(sha))
 
-  const releasedMergeRequests = (allMergeRequests: Types.MergeRequestSchema[]) =>
-    allMergeRequests.filter((mr) => mr.target_branch === 'production' && mr.state === 'merged')
+  const releasedPullRequests = (allPullRequests: PullRequest[]) => allPullRequests.filter((pr) => pr.state === 'closed')
 
-  const findReleaseDate = async (allMergeRequests: Types.MergeRequestSchema[], targetHash?: string) => {
+  const findReleaseDate = async (allPullRequests: PullRequest[], targetHash?: string) => {
     let merged_at = null
-    for (const m of releasedMergeRequests(allMergeRequests)) {
-      if ((await commits(m.iid)).some((c: any) => c.id === targetHash)) {
+    for (const m of releasedPullRequests(allPullRequests)) {
+      if ((await commits(m.number)).some((c) => c.sha === targetHash)) {
         merged_at = m.merged_at
       }
     }
@@ -66,7 +65,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     loader: {
       commits,
       discussions,
-      mergerequests,
+      pullrequests,
       releasedCommits,
       releasedCommitsBySha,
       findReleaseDate

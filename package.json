@@ -55,6 +55,7 @@
     "globby": "^13.1.2",
     "got": "^12.3.1",
     "morgan": "^1.10.0",
+    "octokit": "^2.0.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.4.0",
@@ -69,6 +70,8 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^7.5.0",
+    "@octokit/plugin-rest-endpoint-methods": "^6.4.0",
+    "@octokit/types": "^7.2.0",
     "@playwright/test": "^1.25.1",
     "@remix-run/dev": "^1.7.0",
     "@remix-run/eslint-config": "^1.7.0",
