@@ -8,7 +8,10 @@ const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).format() : null
 }
 
-export const buildMergeRequests = async (config: { companyId: string; repositoryId: string }, mergerequests: GitLabMergeRequest[]) => {
+export const buildMergeRequests = async (
+  config: { companyId: string; repositoryId: string },
+  mergerequests: GitLabMergeRequest[]
+) => {
   const store = createStore(config)
   const aggregator = createAggregator()
 
@@ -19,7 +22,9 @@ export const buildMergeRequests = async (config: { companyId: string; repository
     const discussions = await store.loader.discussions(m.iid).catch(() => [])
     // リリースされたコミットにMR マージコミットが含まれるかどうか
     const releasedCommit =
-      m.merge_commit_sha !== undefined && m.merge_commit_sha !== null && (await store.loader.releasedCommitsBySha(m.merge_commit_sha).catch(() => false))
+      m.merge_commit_sha !== undefined &&
+      m.merge_commit_sha !== null &&
+      (await store.loader.releasedCommitsBySha(m.merge_commit_sha).catch(() => false))
 
     results.push({
       id: String(m.iid),
@@ -29,7 +34,9 @@ export const buildMergeRequests = async (config: { companyId: string; repository
       num_of_comments: aggregator.reviewComments(discussions).length || null,
       first_commited_at: nullOrDate(aggregator.firstCommit(commits)?.created_at),
       mergerequest_created_at: nullOrDate(m.created_at)!,
-      first_reviewd_at: nullOrDate(aggregator.firstReviewComment(discussions, (m.author as GitLabUser).username)?.created_at),
+      first_reviewd_at: nullOrDate(
+        aggregator.firstReviewComment(discussions, (m.author as GitLabUser).username)?.created_at
+      ),
       merged_at: nullOrDate(m.merged_at),
       released_at: nullOrDate(await store.loader.findReleaseDate(mergerequests, m.merge_commit_sha)), // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
       is_release_committed: releasedCommit !== false,

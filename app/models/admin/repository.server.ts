@@ -41,5 +41,7 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
   return null
 }
 
-export const deleteRepository = async (repositoryId: string) => await prisma.repository.delete({ where: { id: repositoryId } })
-export const getRepository = async (repositoryId: string) => await prisma.repository.findFirst({ where: { id: repositoryId } })
+export const deleteRepository = async (repositoryId: string) =>
+  await prisma.repository.delete({ where: { id: repositoryId } })
+export const getRepository = async (repositoryId: string) =>
+  await prisma.repository.findFirst({ where: { id: repositoryId } })

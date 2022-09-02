@@ -12,7 +12,10 @@ export const createGitLabProvider = (integration: Integration) => {
   /**
    * fetch gitlab information
    */
-  const fetch = async (repository: Repository, { refresh = false, halt = false }: { refresh: boolean; halt: boolean }) => {
+  const fetch = async (
+    repository: Repository,
+    { refresh = false, halt = false }: { refresh: boolean; halt: boolean }
+  ) => {
     invariant(repository.projectId, 'project id shoud specified')
     invariant(integration.privateToken, 'provider privateToken shoud specified')
 

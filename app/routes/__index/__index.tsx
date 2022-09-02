@@ -19,7 +19,15 @@ const MergeRequestPage = memo(() => {
         {mergeRequestItems.map((mr) => (
           <NavLink key={`${mr.repositoryId}/${mr.id}`} to={`${mr.repositoryId}/${mr.id}`}>
             {({ isActive }) => (
-              <Stack px="4" py="1" gap="0" boxShadow="sm" bgColor={isActive ? 'blue.100' : 'white'} _hover={{ bgColor: 'gray.50' }} rounded="md">
+              <Stack
+                px="4"
+                py="1"
+                gap="0"
+                boxShadow="sm"
+                bgColor={isActive ? 'blue.100' : 'white'}
+                _hover={{ bgColor: 'gray.50' }}
+                rounded="md"
+              >
                 <Stack direction="row">
                   <Box>
                     <Badge size="sm" variant="outline" colorScheme={mr.state === 'merged' ? 'blue' : 'green'}>

@@ -11,7 +11,10 @@ const DEFAULT_REDIRECT = '/'
  * @param {string} to The redirect destination
  * @param {string} defaultRedirect The redirect to use if the to is unsafe.
  */
-export function safeRedirect(to: FormDataEntryValue | string | null | undefined, defaultRedirect: string = DEFAULT_REDIRECT) {
+export function safeRedirect(
+  to: FormDataEntryValue | string | null | undefined,
+  defaultRedirect: string = DEFAULT_REDIRECT
+) {
   if (!to || typeof to !== 'string') {
     return defaultRedirect
   }
@@ -50,7 +53,9 @@ export function useOptionalUser(): User | undefined {
 export function useUser(): User {
   const maybeUser = useOptionalUser()
   if (!maybeUser) {
-    throw new Error('No user found in root loader, but user is required by useUser. If user is optional, try useOptionalUser instead.')
+    throw new Error(
+      'No user found in root loader, but user is required by useUser. If user is optional, try useOptionalUser instead.'
+    )
   }
   return maybeUser
 }

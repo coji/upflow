@@ -43,9 +43,11 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     }
     return commits
   }
-  const releasedCommitsBySha = async (sha: string) => await load<GitHubCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
+  const releasedCommitsBySha = async (sha: string) =>
+    await load<GitHubCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
 
-  const releasedPullRequests = (allPullRequests: GitHubPullRequest[]) => allPullRequests.filter((pr) => pr.state === 'closed')
+  const releasedPullRequests = (allPullRequests: GitHubPullRequest[]) =>
+    allPullRequests.filter((pr) => pr.state === 'closed')
 
   const findReleaseDate = async (allPullRequests: GitHubPullRequest[], targetHash?: string) => {
     let merged_at = null

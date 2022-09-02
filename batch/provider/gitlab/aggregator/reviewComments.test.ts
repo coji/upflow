@@ -8,16 +8,60 @@ describe('reviewComments', () => {
         id: 'a',
         individual_note: true,
         notes: [
-          { id: 1, type: 'DiffNote', body: '', author: {}, created_at: '', updated_at: '', system: true, noteable_id: 1, noteable_type: '', resolvable: false },
-          { id: 2, type: 'other', body: '', author: {}, created_at: '', updated_at: '', system: true, noteable_id: 1, noteable_type: '', resolvable: false },
-          { id: 3, type: 'DiffNote', body: '', author: {}, created_at: '', updated_at: '', system: true, noteable_id: 1, noteable_type: '', resolvable: false }
+          {
+            id: 1,
+            type: 'DiffNote',
+            body: '',
+            author: {},
+            created_at: '',
+            updated_at: '',
+            system: true,
+            noteable_id: 1,
+            noteable_type: '',
+            resolvable: false
+          },
+          {
+            id: 2,
+            type: 'other',
+            body: '',
+            author: {},
+            created_at: '',
+            updated_at: '',
+            system: true,
+            noteable_id: 1,
+            noteable_type: '',
+            resolvable: false
+          },
+          {
+            id: 3,
+            type: 'DiffNote',
+            body: '',
+            author: {},
+            created_at: '',
+            updated_at: '',
+            system: true,
+            noteable_id: 1,
+            noteable_type: '',
+            resolvable: false
+          }
         ]
       },
       {
         id: 'b',
         individual_note: true,
         notes: [
-          { id: 4, type: 'DiffNote', body: '', author: {}, created_at: '', updated_at: '', system: true, noteable_id: 1, noteable_type: '', resolvable: false },
+          {
+            id: 4,
+            type: 'DiffNote',
+            body: '',
+            author: {},
+            created_at: '',
+            updated_at: '',
+            system: true,
+            noteable_id: 1,
+            noteable_type: '',
+            resolvable: false
+          },
           {
             id: 5,
             type: 'DiscussionNote',
@@ -30,7 +74,18 @@ describe('reviewComments', () => {
             noteable_type: '',
             resolvable: false
           },
-          { id: 6, type: 'DiffNote', body: '', author: {}, created_at: '', updated_at: '', system: true, noteable_id: 1, noteable_type: '', resolvable: false }
+          {
+            id: 6,
+            type: 'DiffNote',
+            body: '',
+            author: {},
+            created_at: '',
+            updated_at: '',
+            system: true,
+            noteable_id: 1,
+            noteable_type: '',
+            resolvable: false
+          }
         ]
       }
     ])

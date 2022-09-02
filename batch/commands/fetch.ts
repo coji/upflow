@@ -15,7 +15,10 @@ export async function fetchCommand(props: FetchCommandProps) {
     return
   }
 
-  const company = await prisma.company.findFirstOrThrow({ where: { id: props.companyId }, include: { integration: true, repositories: true } })
+  const company = await prisma.company.findFirstOrThrow({
+    where: { id: props.companyId },
+    include: { integration: true, repositories: true }
+  })
   invariant(company.integration, 'integration shoud related')
 
   const provider = createProvider(company.integration)

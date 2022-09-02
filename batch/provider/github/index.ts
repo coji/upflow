@@ -6,7 +6,10 @@ import { createStore } from './store'
 import invariant from 'tiny-invariant'
 
 export const createGitHubProvider = (integration: Integration) => {
-  const fetch = async (repository: Repository, { refresh = false, halt = false }: { refresh?: boolean; halt?: boolean }) => {
+  const fetch = async (
+    repository: Repository,
+    { refresh = false, halt = false }: { refresh?: boolean; halt?: boolean }
+  ) => {
     invariant(repository.repo, 'private token not specified')
     invariant(repository.owner, 'private token not specified')
     invariant(integration.privateToken, 'private token not specified')
@@ -62,6 +65,20 @@ export const createGitHubProvider = (integration: Integration) => {
   }
 
   const report = async (repositories: Repository[]) => {
+    console.log(
+      [
+        'number',
+        'state',
+        'user',
+        'title',
+        'html_url',
+        'first_commited_at',
+        'pr_created_at',
+        'first_review_commented_at',
+        'merged_at'
+      ].join('\t')
+    )
+
     logger.info('github provider report is not implemented yet')
   }
 

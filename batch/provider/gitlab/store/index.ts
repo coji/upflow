@@ -32,8 +32,10 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   }
 
   // loaders
-  const commits = async (mergerequestIid: number) => load<GitLabCommit[]>(pathBuilder.commitsJsonFilename(mergerequestIid))
-  const discussions = async (mergerequestIid: number) => load<GitLabDiscussion[]>(pathBuilder.discussionsJsonFilename(mergerequestIid))
+  const commits = async (mergerequestIid: number) =>
+    load<GitLabCommit[]>(pathBuilder.commitsJsonFilename(mergerequestIid))
+  const discussions = async (mergerequestIid: number) =>
+    load<GitLabDiscussion[]>(pathBuilder.discussionsJsonFilename(mergerequestIid))
   const mergerequests = async () => load<GitLabMergeRequest[]>('mergerequests.json')
   const releasedCommits = async () => {
     const commits: GitLabCommit[] = []
@@ -44,7 +46,8 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     }
     return commits
   }
-  const releasedCommitsBySha = async (sha: string) => await load<GitLabCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
+  const releasedCommitsBySha = async (sha: string) =>
+    await load<GitLabCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
 
   const releasedMergeRequests = (allMergeRequests: GitLabMergeRequest[]) =>
     allMergeRequests.filter((mr) => mr.target_branch === 'production' && mr.state === 'merged')

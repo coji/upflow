@@ -14,4 +14,5 @@ export const load = <T>(filename: string) => JSON.parse(fs.readFileSync(jsonPath
  * @param filename
  * @param content
  */
-export const save = (filename: string, content: unknown) => fs.writeFileSync(jsonPath(filename), JSON.stringify(content, null, 2))
+export const save = (filename: string, content: unknown) =>
+  fs.writeFileSync(jsonPath(filename), JSON.stringify(content, null, 2))

@@ -95,7 +95,9 @@ export default function LoginPage() {
                 aria-invalid={actionData?.errors?.email ? true : undefined}
                 aria-describedby="email-error"
               />
-              {actionData?.errors?.email && <FormErrorMessage id="email-error">{actionData.errors.email}</FormErrorMessage>}
+              {actionData?.errors?.email && (
+                <FormErrorMessage id="email-error">{actionData.errors.email}</FormErrorMessage>
+              )}
             </FormControl>
 
             <FormControl isInvalid={!!actionData?.errors?.password}>
@@ -111,7 +113,9 @@ export default function LoginPage() {
                 aria-invalid={actionData?.errors?.password ? true : undefined}
                 aria-describedby="password-error"
               />
-              {actionData?.errors?.password && <FormErrorMessage id="password-error">{actionData.errors.password}</FormErrorMessage>}
+              {actionData?.errors?.password && (
+                <FormErrorMessage id="password-error">{actionData.errors.password}</FormErrorMessage>
+              )}
             </FormControl>
 
             <input type="hidden" name="redirectTo" value={redirectTo} />
