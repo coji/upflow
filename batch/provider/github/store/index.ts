@@ -32,7 +32,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
 
   // loaders
   const commits = async (number: number) => load<GitHubCommit[]>(pathBuilder.commitsJsonFilename(number))
-  const discussions = async (number: number) => load<GitHubReviewComment>(pathBuilder.discussionsJsonFilename(number))
+  const discussions = async (number: number) => load<GitHubReviewComment[]>(pathBuilder.discussionsJsonFilename(number))
   const pullrequests = async () => load<GitHubPullRequest[]>('pullrequests.json')
   const releasedCommits = async () => {
     const commits: GitHubCommit[] = []

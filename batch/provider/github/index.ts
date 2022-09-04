@@ -4,6 +4,8 @@ import { createFetcher } from './fetcher'
 import { createAggregator } from './aggregator'
 import { createStore } from './store'
 import invariant from 'tiny-invariant'
+import { timeFormat } from '../../helper/timeformat'
+import { buildPullRequests } from './pullrequest'
 
 export const createGitHubProvider = (integration: Integration) => {
   const fetch = async (
@@ -78,6 +80,41 @@ export const createGitHubProvider = (integration: Integration) => {
         'merged_at'
       ].join('\t')
     )
+
+    for (const repository of repositories) {
+      const store = createStore({
+        companyId: repository.companyId,
+        repositoryId: repository.id
+      })
+
+      const results = await buildPullRequests(
+        {
+          companyId: repository.companyId,
+          repositoryId: repository.id
+        },
+        await store.loader.pullrequests()
+      )
+
+      for (const mr of results) {
+        console.log(
+          [
+            mr.id,
+            mr.target_branch,
+            mr.state,
+            mr.num_of_comments,
+            mr.num_of_comments,
+            timeFormat(mr.first_commited_at),
+            timeFormat(mr.mergerequest_created_at),
+            timeFormat(mr.first_reviewd_at),
+            timeFormat(mr.merged_at),
+            timeFormat(mr.released_at),
+            mr.is_release_committed,
+            mr.author,
+            mr.title
+          ].join('\t')
+        )
+      }
+    }
 
     logger.info('github provider report is not implemented yet')
   }
