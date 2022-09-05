@@ -7,19 +7,24 @@ import { upsertCommand } from '~/batch/commands/upsert'
 const fetch = command(
   {
     name: 'fetch',
-    parameters: ['[company id]'],
+    parameters: ['[company id]', '[repository id]'],
     flags: {
       refresh: {
         type: Boolean,
         description: 'refresh all mergerequest resources.',
         default: false
+      },
+      delay: {
+        type: Number,
+        description: 'provider api call delay for api call limit',
+        default: 0
       }
     },
     help: { description: 'Fetch all resources from gitlab api.' }
   },
   (argv) => {
     const { help, ...rest } = argv.flags
-    fetchCommand({ companyId: argv._.companyId, ...rest })
+    fetchCommand({ companyId: argv._.companyId, repositoryId: argv._.repositoryId, ...rest })
   }
 )
 

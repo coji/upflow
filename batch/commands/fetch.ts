@@ -5,7 +5,9 @@ import { createProvider } from '../provider'
 
 interface FetchCommandProps {
   companyId?: string
+  repositoryId?: string
   refresh: boolean
+  delay?: number
 }
 
 export async function fetchCommand(props: FetchCommandProps) {
@@ -24,7 +26,13 @@ export async function fetchCommand(props: FetchCommandProps) {
   const provider = createProvider(company.integration)
   invariant(provider, `unkown provider: ${company.integration.provider}`)
 
-  for (const repository of company.repositories) {
-    await provider.fetch(repository, { refresh: props.refresh, halt: false })
+  if (props.repositoryId) {
+    const repository = company.repositories.find((repository) => repository.id === props.repositoryId)
+    if (repository) await provider.fetch(repository, { refresh: props.refresh, halt: false, delay: props.delay })
+    else console.log('no such repository:', props.repositoryId)
+  } else {
+    for (const repository of company.repositories) {
+      await provider.fetch(repository, { refresh: props.refresh, halt: false, delay: props.delay })
+    }
   }
 }

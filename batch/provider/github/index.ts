@@ -1,4 +1,5 @@
 import type { Integration, Repository } from '@prisma/client'
+import { setTimeout } from 'node:timers/promises'
 import { logger } from '~/batch/helper/logger'
 import { createFetcher } from './fetcher'
 import { createAggregator } from './aggregator'
@@ -10,7 +11,7 @@ import { buildPullRequests } from './pullrequest'
 export const createGitHubProvider = (integration: Integration) => {
   const fetch = async (
     repository: Repository,
-    { refresh = false, halt = false }: { refresh?: boolean; halt?: boolean }
+    { refresh = false, halt = false, delay = 0 }: { refresh?: boolean; halt?: boolean; delay?: number }
   ) => {
     invariant(repository.repo, 'private token not specified')
     invariant(repository.owner, 'private token not specified')
@@ -59,10 +60,14 @@ export const createGitHubProvider = (integration: Integration) => {
       const commits = await fetcher.firstCommit(number)
       store.save(store.path.commitsJsonFilename(number), commits ? [commits] : [])
 
+      await setTimeout(delay) // 待つ
+
       // 個別PRの初回レビュー
       logger.info(`${number} discussions`)
       const discussions = await fetcher.firstReviewComment(number, pr.user?.login)
       store.save(store.path.discussionsJsonFilename(number), discussions ? [discussions] : [])
+
+      await setTimeout(delay) // 待つ
     }
   }
 

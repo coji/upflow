@@ -1,4 +1,5 @@
 import type { Integration, Repository } from '@prisma/client'
+import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
 import { createFetcher } from '~/batch/provider/gitlab/fetcher'
@@ -14,7 +15,7 @@ export const createGitLabProvider = (integration: Integration) => {
    */
   const fetch = async (
     repository: Repository,
-    { refresh = false, halt = false }: { refresh: boolean; halt: boolean }
+    { refresh = false, halt = false, delay = 0 }: { refresh: boolean; halt: boolean; delay?: number }
   ) => {
     invariant(repository.projectId, 'project id shoud specified')
     invariant(integration.privateToken, 'provider privateToken shoud specified')
@@ -62,10 +63,14 @@ export const createGitLabProvider = (integration: Integration) => {
       const commits = await fetcher.mergerequestCommits(iid)
       store.save(store.path.commitsJsonFilename(iid), commits)
 
+      await setTimeout(delay)
+
       // 個別MRのすべてのディスカッション(レビューコメント含む)
       logger.info(`${iid} discussions`)
       const discussions = await fetcher.discussions(iid)
       store.save(store.path.discussionsJsonFilename(iid), discussions)
+
+      await setTimeout(delay)
     }
   }
 
