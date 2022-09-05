@@ -30,7 +30,7 @@ export const reviewTime = ({
   mergedAt
 }: {
   firstCommittedAt: string | null
-  pullRequestCreatedAt: string | null
+  pullRequestCreatedAt: string
   firstReviewedAt: string | null
   mergedAt: string | null
 }) => {
@@ -55,7 +55,7 @@ export const totalTime = ({
   releasedAt
 }: {
   firstCommittedAt: string | null
-  pullRequestCreatedAt: string | null
+  pullRequestCreatedAt: string
   firstReviewedAt: string | null
   mergedAt: string | null
   releasedAt: string | null

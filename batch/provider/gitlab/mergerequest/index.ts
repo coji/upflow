@@ -3,7 +3,7 @@ import type { PullRequest } from '@prisma/client'
 import dayjs from 'dayjs'
 import { createAggregator } from '../aggregator'
 import { createStore } from '../store'
-import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/time'
+import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/cycletime'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).format() : null
