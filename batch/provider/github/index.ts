@@ -61,7 +61,7 @@ export const createGitHubProvider = (integration: Integration) => {
 
       // 個別PRの初回レビュー
       logger.info(`${number} discussions`)
-      const discussions = await fetcher.firstReviewComment(number)
+      const discussions = await fetcher.firstReviewComment(number, pr.user?.login)
       store.save(store.path.discussionsJsonFilename(number), discussions ? [discussions] : [])
     }
   }
@@ -129,8 +129,6 @@ export const createGitHubProvider = (integration: Integration) => {
         )
       }
     }
-
-    logger.info('github provider report is not implemented yet')
   }
 
   const upsert = async (repositories: Repository[]) => {

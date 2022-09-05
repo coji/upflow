@@ -14,30 +14,27 @@ export const codingTime = ({
 
 export const pickupTime = ({
   pullRequestCreatedAt,
-  firstReviewedAt
-}: {
-  pullRequestCreatedAt: string
-  firstReviewedAt: string | null
-}) =>
-  pullRequestCreatedAt && firstReviewedAt
-    ? Math.abs(dayjs(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true))
-    : null
-
-export const reviewTime = ({
-  firstCommittedAt,
-  pullRequestCreatedAt,
   firstReviewedAt,
   mergedAt
 }: {
-  firstCommittedAt: string | null
   pullRequestCreatedAt: string
+  firstReviewedAt: string | null
+  mergedAt: string | null
+}) => {
+  if (firstReviewedAt) return Math.abs(dayjs(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true))
+  if (mergedAt) Math.abs(dayjs(firstReviewedAt).diff(mergedAt, 'days', true))
+  return null
+}
+
+export const reviewTime = ({
+  firstReviewedAt,
+  mergedAt
+}: {
   firstReviewedAt: string | null
   mergedAt: string | null
 }) => {
   if (!mergedAt) return null
   if (firstReviewedAt) return Math.abs(dayjs(mergedAt).diff(firstReviewedAt, 'days', true))
-  if (pullRequestCreatedAt) return Math.abs(dayjs(mergedAt).diff(pullRequestCreatedAt, 'days', true))
-  if (firstCommittedAt) return Math.abs(dayjs(mergedAt).diff(firstCommittedAt, 'days', true))
   return null
 }
 

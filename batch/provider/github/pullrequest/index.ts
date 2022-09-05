@@ -47,8 +47,8 @@ export const buildPullRequests = async (
       mergedAt,
       releasedAt: null,
       codingTime: codingTime({ firstCommittedAt, pullRequestCreatedAt }),
-      pickupTime: pickupTime({ pullRequestCreatedAt, firstReviewedAt }),
-      reviewTime: reviewTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt }),
+      pickupTime: pickupTime({ pullRequestCreatedAt, firstReviewedAt, mergedAt }),
+      reviewTime: reviewTime({ firstReviewedAt, mergedAt }),
       deployTime: deployTime({ mergedAt, releasedAt }),
       totalTime: totalTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt }),
       repositoryId: config.repositoryId
