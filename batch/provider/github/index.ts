@@ -69,15 +69,24 @@ export const createGitHubProvider = (integration: Integration) => {
   const report = async (repositories: Repository[]) => {
     console.log(
       [
+        'repo',
         'number',
+        'target branch',
         'state',
-        'user',
+        'is released',
+        'author',
         'title',
-        'html_url',
-        'first_commited_at',
-        'pr_created_at',
-        'first_review_commented_at',
-        'merged_at'
+        'url',
+        '初回コミット日時',
+        'PR作成日時',
+        '初回レビュー日時',
+        'マージ日時',
+        'リリース日時',
+        'coding time',
+        'pickup time',
+        'review time',
+        'deploy time',
+        'total time'
       ].join('\t')
     )
 
@@ -106,16 +115,16 @@ export const createGitHubProvider = (integration: Integration) => {
             pr.author,
             pr.title,
             pr.url,
-            pr.firstCommittedAt,
-            pr.pullRequestCreatedAt,
-            pr.firstReviewedAt,
-            pr.mergedAt,
-            pr.releasedAt,
             timeFormat(pr.firstCommittedAt),
             timeFormat(pr.pullRequestCreatedAt),
             timeFormat(pr.firstReviewedAt),
             timeFormat(pr.mergedAt),
-            timeFormat(pr.releasedAt)
+            timeFormat(pr.releasedAt),
+            pr.codingTime,
+            pr.pickupTime,
+            pr.reviewTime,
+            pr.deployTime,
+            pr.totalTime
           ].join('\t')
         )
       }

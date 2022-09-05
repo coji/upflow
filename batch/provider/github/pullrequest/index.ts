@@ -24,7 +24,7 @@ export const buildPullRequests = async (
     const pullRequestCreatedAt = nullOrDate(pr.created_at)!
     const firstReviewedAt = nullOrDate(discussions[0]?.created_at)
     const mergedAt = nullOrDate(pr.merged_at)
-    const releasedAt = mergedAt // TODO: releasedAt をちゃんと計算
+    const releasedAt = null // TODO: releasedAt をちゃんと計算
 
     // リリースされたコミットにMR マージコミットが含まれるかどうか
     const isReleased =
