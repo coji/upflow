@@ -95,22 +95,27 @@ export const createGitHubProvider = (integration: Integration) => {
         await store.loader.pullrequests()
       )
 
-      for (const mr of results) {
+      for (const pr of results) {
         console.log(
           [
-            mr.id,
-            mr.target_branch,
-            mr.state,
-            mr.num_of_comments,
-            mr.num_of_comments,
-            timeFormat(mr.first_commited_at),
-            timeFormat(mr.mergerequest_created_at),
-            timeFormat(mr.first_reviewd_at),
-            timeFormat(mr.merged_at),
-            timeFormat(mr.released_at),
-            mr.is_release_committed,
-            mr.author,
-            mr.title
+            pr.repo,
+            pr.number,
+            pr.targetBranch,
+            pr.state,
+            pr.isReleased,
+            pr.author,
+            pr.title,
+            pr.url,
+            pr.firstCommittedAt,
+            pr.pullRequestCreatedAt,
+            pr.firstReviewedAt,
+            pr.mergedAt,
+            pr.releasedAt,
+            timeFormat(pr.firstCommittedAt),
+            timeFormat(pr.pullRequestCreatedAt),
+            timeFormat(pr.firstReviewedAt),
+            timeFormat(pr.mergedAt),
+            timeFormat(pr.releasedAt)
           ].join('\t')
         )
       }

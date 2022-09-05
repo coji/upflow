@@ -1,6 +1,6 @@
 import type { Integration, Repository } from '@prisma/client'
 import invariant from 'tiny-invariant'
-import { upsertMergeRequest } from '~/app/models/mergeRequest.server'
+import { upsertPullRequest } from '~/app/models/pullRequest.server'
 import { createFetcher } from '~/batch/provider/gitlab/fetcher'
 import { timeFormat } from '../../helper/timeformat'
 import { createAggregator } from './aggregator'
@@ -76,19 +76,24 @@ export const createGitLabProvider = (integration: Integration) => {
     // ヘッダ
     console.log(
       [
-        'id',
-        'target_branch',
+        'repo',
+        'iid',
+        'target branch',
         'state',
-        'コミット数',
-        'コメント数',
+        'is released',
+        'author',
+        'title',
+        'url',
         '初回コミット日時',
         'MR作成日時',
         '初回レビュー日時',
         'マージ日時',
         'リリース日時',
-        'リリースにコミット済',
-        'MR作成者',
-        'MRタイトル'
+        'coding time',
+        'pickup time',
+        'review time',
+        'deploy time',
+        'total time'
       ].join('\t')
     )
 
@@ -109,19 +114,24 @@ export const createGitLabProvider = (integration: Integration) => {
       for (const mr of results) {
         console.log(
           [
-            mr.id,
-            mr.target_branch,
+            mr.repo,
+            mr.number,
+            mr.targetBranch,
             mr.state,
-            mr.num_of_comments,
-            mr.num_of_comments,
-            timeFormat(mr.first_commited_at),
-            timeFormat(mr.mergerequest_created_at),
-            timeFormat(mr.first_reviewd_at),
-            timeFormat(mr.merged_at),
-            timeFormat(mr.released_at),
-            mr.is_release_committed,
+            mr.isReleased,
             mr.author,
-            mr.title
+            mr.title,
+            mr.url,
+            timeFormat(mr.firstCommittedAt),
+            timeFormat(mr.pullRequestCreatedAt),
+            timeFormat(mr.firstReviewedAt),
+            timeFormat(mr.mergedAt),
+            timeFormat(mr.releasedAt),
+            mr.codingTime,
+            mr.pickupTime,
+            mr.reviewTime,
+            mr.deployTime,
+            mr.totalTime
           ].join('\t')
         )
       }
@@ -146,7 +156,7 @@ export const createGitLabProvider = (integration: Integration) => {
         mergerequests
       )
       for (const mr of results) {
-        await upsertMergeRequest(mr)
+        await upsertPullRequest(mr)
       }
     }
   }

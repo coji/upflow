@@ -3,21 +3,21 @@ import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
 import { memo } from 'react'
-import type { MergeRequest } from '~/app/models/mergeRequest.server'
-import { getMergeRequestItems } from '~/app/models/mergeRequest.server'
+import type { PullRequest } from '~/app/models/pullRequest.server'
+import { getPullRequestItems } from '~/app/models/pullRequest.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
-  return json<MergeRequest[]>(await getMergeRequestItems())
+  return json<PullRequest[]>(await getPullRequestItems())
 }
 
 const MergeRequestPage = memo(() => {
-  const mergeRequestItems = useLoaderData<typeof loader>()
+  const pullRequestItems = useLoaderData<typeof loader>()
 
   return (
     <Flex as="main" height="full">
       <Stack p="2" flexGrow={1}>
-        {mergeRequestItems.map((mr) => (
-          <NavLink key={`${mr.repositoryId}/${mr.id}`} to={`${mr.repositoryId}/${mr.id}`}>
+        {pullRequestItems.map((pr) => (
+          <NavLink key={`${pr.repositoryId}/${pr.number}`} to={`${pr.repositoryId}/${pr.number}`}>
             {({ isActive }) => (
               <Stack
                 px="4"
@@ -30,15 +30,15 @@ const MergeRequestPage = memo(() => {
               >
                 <Stack direction="row">
                   <Box>
-                    <Badge size="sm" variant="outline" colorScheme={mr.state === 'merged' ? 'blue' : 'green'}>
-                      {mr.state}
+                    <Badge size="sm" variant="outline" colorScheme={pr.state === 'merged' ? 'blue' : 'green'}>
+                      {pr.state}
                     </Badge>
                   </Box>
-                  <Text noOfLines={1}>{mr.title}</Text>
+                  <Text noOfLines={1}>{pr.title}</Text>
                 </Stack>
                 <Flex alignItems="center" justify="end">
                   <Tag fontSize="sm" colorScheme="blackAlpha">
-                    {mr.author}
+                    {pr.author}
                   </Tag>
                 </Flex>
 

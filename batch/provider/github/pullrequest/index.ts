@@ -1,7 +1,8 @@
 import type { GitHubPullRequest } from '../model'
-import type { MergeRequest } from '@prisma/client'
+import type { PullRequest } from '@prisma/client'
 import dayjs from 'dayjs'
 import { createStore } from '../store'
+import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/time'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).format() : null
@@ -13,32 +14,43 @@ export const buildPullRequests = async (
 ) => {
   const store = createStore(config)
 
-  const results: MergeRequest[] = []
+  const results: PullRequest[] = []
   for (const pr of pullrequests) {
     // close じゃない
     const commits = await store.loader.commits(pr.number)
     const discussions = await store.loader.discussions(pr.number)
 
+    const firstCommittedAt = nullOrDate(commits[0]?.commit.author?.date)
+    const pullRequestCreatedAt = nullOrDate(pr.created_at)!
+    const firstReviewedAt = nullOrDate(discussions[0]?.created_at)
+    const mergedAt = nullOrDate(pr.merged_at)
+    const releasedAt = mergedAt // TODO: releasedAt をちゃんと計算
+
     // リリースされたコミットにMR マージコミットが含まれるかどうか
-    // const releasedCommit =
-    //   pr.merge_commit_sha !== undefined &&
-    //   pr.merge_commit_sha !== null &&
-    //   (await store.loader.releasedCommitsBySha(pr.merge_commit_sha).catch(() => false))
+    const isReleased =
+      pr.merge_commit_sha !== undefined &&
+      pr.merge_commit_sha !== null &&
+      (await store.loader.releasedCommitsBySha(pr.merge_commit_sha).catch(() => null)) != null
 
     results.push({
-      id: String(pr.number),
-      target_branch: '',
+      repo: pr.base.repo.name,
+      number: String(pr.number),
+      targetBranch: '',
       state: pr.state,
-      num_of_commits: commits.length || null,
-      num_of_comments: discussions.length || null,
-      first_commited_at: nullOrDate(commits[0]?.commit.author?.date),
-      mergerequest_created_at: nullOrDate(pr.created_at)!,
-      first_reviewd_at: nullOrDate(discussions[0]?.created_at),
-      merged_at: nullOrDate(pr.merged_at),
-      released_at: null,
-      is_release_committed: false,
       author: pr.user?.login as string,
       title: pr.title,
+      url: pr.html_url,
+      isReleased,
+      firstCommittedAt,
+      pullRequestCreatedAt,
+      firstReviewedAt,
+      mergedAt,
+      releasedAt: null,
+      codingTime: codingTime({ firstCommittedAt, pullRequestCreatedAt }),
+      pickupTime: pickupTime({ pullRequestCreatedAt, firstReviewedAt }),
+      reviewTime: reviewTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt }),
+      deployTime: deployTime({ mergedAt, releasedAt }),
+      totalTime: totalTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt }),
       repositoryId: config.repositoryId
     })
   }

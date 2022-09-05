@@ -77,27 +77,32 @@ model Repository {
   companyId     String
   company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   integration   Integration    @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  mergerequest  MergeRequest[]
+  mergerequest  PullRequest[]
 
   @@unique([integrationId, provider, projectId, owner, repo])
 }
 
-model MergeRequest {
-  id                      String
-  target_branch           String
+model PullRequest {
+  repo                    String  // repository name / project name
+  number                  String  // number / iid
+  targetBranch            String
   state                   String
-  num_of_commits          Int?
-  num_of_comments         Int?
-  first_commited_at       String?
-  mergerequest_created_at String
-  first_reviewd_at        String?
-  merged_at               String?
-  released_at             String?
-  is_release_committed    Boolean
+  isReleased              Boolean
   author                  String
   title                   String
+  url                     String
+  firstCommittedAt        String?
+  pullRequestCreatedAt    String
+  firstReviewedAt         String?
+  mergedAt                String?
+  releasedAt              String?
+  codingTime              Float?
+  pickupTime              Float?
+  reviewTime              Float?
+  deployTime              Float?
+  totalTime               Float?
   repositoryId            String
   repository              Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
-  @@id([repositoryId, id])
+  @@id([repositoryId, number])
 }
