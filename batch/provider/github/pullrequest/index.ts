@@ -1,4 +1,4 @@
-import type { GitHubPullRequest } from '../model'
+import type { ShapedGitHubPullRequest } from '../model'
 import type { PullRequest } from '@prisma/client'
 import dayjs from 'dayjs'
 import { createStore } from '../store'
@@ -10,7 +10,7 @@ const nullOrDate = (dateStr?: Date | string | null) => {
 
 export const buildPullRequests = async (
   config: { companyId: string; repositoryId: string },
-  pullrequests: GitHubPullRequest[]
+  pullrequests: ShapedGitHubPullRequest[]
 ) => {
   const store = createStore(config)
 
@@ -21,25 +21,25 @@ export const buildPullRequests = async (
     const discussions = await store.loader.discussions(pr.number)
 
     const firstCommittedAt = nullOrDate(commits[0]?.commit.author?.date)
-    const pullRequestCreatedAt = nullOrDate(pr.created_at)!
+    const pullRequestCreatedAt = nullOrDate(pr.createdAt)!
     const firstReviewedAt = nullOrDate(discussions[0]?.created_at)
-    const mergedAt = nullOrDate(pr.merged_at)
+    const mergedAt = nullOrDate(pr.mergedAt)
     const releasedAt = null // TODO: releasedAt をちゃんと計算
 
     // リリースされたコミットにMR マージコミットが含まれるかどうか
     const isReleased =
-      pr.merge_commit_sha !== undefined &&
-      pr.merge_commit_sha !== null &&
-      (await store.loader.releasedCommitsBySha(pr.merge_commit_sha).catch(() => null)) != null
+      pr.mergeCommitSha !== undefined &&
+      pr.mergeCommitSha !== null &&
+      (await store.loader.releasedCommitsBySha(pr.mergeCommitSha).catch(() => null)) != null
 
     results.push({
-      repo: pr.base.repo.name,
+      repo: pr.repo,
       number: String(pr.number),
-      targetBranch: pr.base.ref,
+      targetBranch: pr.targetBranch,
       state: pr.state,
-      author: pr.user?.login as string,
+      author: pr.author ?? '',
       title: pr.title,
-      url: pr.html_url,
+      url: pr.url,
       isReleased,
       firstCommittedAt,
       pullRequestCreatedAt,

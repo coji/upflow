@@ -1,5 +1,5 @@
 import { createPathBuilder } from '~/batch/helper/path-builder'
-import type { GitHubPullRequest, GitHubReviewComment, GitHubCommit } from '../model'
+import type { ShapedGitHubPullRequest, GitHubReviewComment, GitHubCommit } from '../model'
 import fs from 'fs'
 import path from 'path'
 import { globby } from 'globby'
@@ -33,7 +33,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   // loaders
   const commits = async (number: number) => load<GitHubCommit[]>(pathBuilder.commitsJsonFilename(number))
   const discussions = async (number: number) => load<GitHubReviewComment[]>(pathBuilder.discussionsJsonFilename(number))
-  const pullrequests = async () => load<GitHubPullRequest[]>('pullrequests.json')
+  const pullrequests = async () => load<ShapedGitHubPullRequest[]>('pullrequests.json')
   const releasedCommits = async () => {
     const commits: GitHubCommit[] = []
     const matches = await globby(pathBuilder.releaseCommitsGlob())
@@ -46,17 +46,17 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   const releasedCommitsBySha = async (sha: string) =>
     await load<GitHubCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
 
-  const releasedPullRequests = (allPullRequests: GitHubPullRequest[]) =>
+  const releasedPullRequests = (allPullRequests: ShapedGitHubPullRequest[]) =>
     allPullRequests.filter((pr) => pr.state === 'closed')
 
-  const findReleaseDate = async (allPullRequests: GitHubPullRequest[], targetHash?: string) => {
-    let merged_at = null
+  const findReleaseDate = async (allPullRequests: ShapedGitHubPullRequest[], targetHash?: string) => {
+    let mergedAt = null
     for (const m of releasedPullRequests(allPullRequests)) {
       if ((await commits(m.number)).some((c) => c.sha === targetHash)) {
-        merged_at = m.merged_at
+        mergedAt = m.mergedAt
       }
     }
-    return merged_at
+    return mergedAt
   }
 
   return {

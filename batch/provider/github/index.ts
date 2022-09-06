@@ -7,6 +7,7 @@ import { createStore } from './store'
 import invariant from 'tiny-invariant'
 import { timeFormat } from '../../helper/timeformat'
 import { buildPullRequests } from './pullrequest'
+import { shapeGitHubPullRequest } from './shaper'
 
 export const createGitHubProvider = (integration: Integration) => {
   const fetch = async (
@@ -25,12 +26,15 @@ export const createGitHubProvider = (integration: Integration) => {
 
     // PR の最終更新日時を起点とする
     const leastMergeRequest = aggregator.leastUpdatedPullRequest(await store.loader.pullrequests().catch(() => []))
-    logger.info(`last fetched at: ${leastMergeRequest?.updated_at}`)
+    logger.info(`last fetched at: ${leastMergeRequest?.updatedAt}`)
 
     // 全プルリク情報をダウンロード
     logger.info(`fetching all pullrequests...`)
     const allPullRequests = await fetcher.pullrequests()
-    store.save('pullrequests.json', allPullRequests)
+    store.save(
+      'pullrequests.json',
+      allPullRequests.map((pr) => shapeGitHubPullRequest(pr))
+    )
     logger.info(`fetching all pullrequests completed.`)
 
     // production ブランチのすべての commit
@@ -48,7 +52,7 @@ export const createGitHubProvider = (integration: Integration) => {
         return
       }
 
-      const isNew = leastMergeRequest ? pr.updated_at > leastMergeRequest.updated_at : true // 新しく fetch してきた PR
+      const isNew = leastMergeRequest ? pr.updated_at > leastMergeRequest.updatedAt : true // 新しく fetch してきた PR
       // すべて再フェッチせず、オープン以外、前回以前fetchしたPRの場合はスキップ
       if (!refresh && pr.state !== 'open' && !isNew) {
         continue

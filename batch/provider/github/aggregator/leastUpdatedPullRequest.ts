@@ -1,9 +1,9 @@
-import type { GitHubPullRequest } from '../model'
+import type { ShapedGitHubPullRequest } from '../model'
 import { pipe, sortBy, last } from 'remeda'
 
-export const leastUpdatedPullRequest = (pullrequests: GitHubPullRequest[]) =>
+export const leastUpdatedPullRequest = (pullrequests: ShapedGitHubPullRequest[]) =>
   pipe(
     pullrequests,
-    sortBy((x) => x.updated_at),
+    sortBy((x) => x.updatedAt),
     last()
   ) ?? null
