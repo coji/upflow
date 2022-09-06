@@ -19,3 +19,17 @@ export interface ShapedGitHubPullRequest {
   mergedAt: GitHubPullRequest['merged_at'] | null
   mergeCommitSha: GitHubPullRequest['merge_commit_sha'] | null
 }
+
+export interface ShapedGitHubCommit {
+  sha: GitHubCommit['sha']
+  url: GitHubCommit['html_url']
+  author: NonNullable<GitHubCommit['author']>['login'] | null
+  date: NonNullable<GitHubCommit['commit']['author']>['date'] | null
+}
+
+export interface ShapedGitHubReviewComment {
+  id: GitHubReviewComment['id']
+  user: GitHubReviewComment['user']['login']
+  url: GitHubReviewComment['html_url']
+  createdAt: GitHubReviewComment['created_at']
+}

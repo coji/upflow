@@ -1,8 +1,14 @@
-import type { GitHubPullRequest } from '../model'
-import type { ShapedGitHubPullRequest } from '../model'
+import type {
+  GitHubPullRequest,
+  GitHubCommit,
+  GitHubReviewComment,
+  ShapedGitHubPullRequest,
+  ShapedGitHubCommit,
+  ShapedGitHubReviewComment
+} from '../model'
 
 /**
- *
+ * GitHubPullRequest を集計に必要な props のみに shape する
  * @param pr
  * @returns
  */
@@ -19,5 +25,35 @@ export const shapeGitHubPullRequest: (pr: GitHubPullRequest) => ShapedGitHubPull
     updatedAt: pr.updated_at,
     mergedAt: pr.merged_at,
     mergeCommitSha: pr.merge_commit_sha
+  }
+}
+
+/**
+ * GitHubCommit を集計に必要な props のみに shape する
+ * @param commit
+ * @returns
+ */
+export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (commit: GitHubCommit) => {
+  return {
+    sha: commit.sha,
+    url: commit.html_url,
+    author: commit.author?.login ?? null,
+    date: commit.commit.author?.date ?? null
+  }
+}
+
+/**
+ * GitHubReviewComment を集計に必要な props のみに shape する
+ * @param comment
+ * @returns
+ */
+export const shapeGitHubReviewComment: (comment: GitHubReviewComment) => ShapedGitHubReviewComment = (
+  comment: GitHubReviewComment
+) => {
+  return {
+    id: comment.id,
+    user: comment.user.login,
+    url: comment.html_url,
+    createdAt: comment.created_at
   }
 }

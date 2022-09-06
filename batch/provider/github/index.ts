@@ -7,7 +7,7 @@ import { createStore } from './store'
 import invariant from 'tiny-invariant'
 import { timeFormat } from '../../helper/timeformat'
 import { buildPullRequests } from './pullrequest'
-import { shapeGitHubPullRequest } from './shaper'
+import { shapeGitHubPullRequest, shapeGitHubCommit, shapeGitHubReviewComment } from './shaper'
 
 export const createGitHubProvider = (integration: Integration) => {
   const fetch = async (
@@ -62,14 +62,14 @@ export const createGitHubProvider = (integration: Integration) => {
       // 個別PRの初回コミット
       logger.info(`${number} commits`)
       const commits = await fetcher.firstCommit(number)
-      store.save(store.path.commitsJsonFilename(number), commits ? [commits] : [])
+      store.save(store.path.commitsJsonFilename(number), commits ? [shapeGitHubCommit(commits)] : [])
 
       await setTimeout(delay) // 待つ
 
       // 個別PRの初回レビュー
       logger.info(`${number} discussions`)
       const discussions = await fetcher.firstReviewComment(number, pr.user?.login)
-      store.save(store.path.discussionsJsonFilename(number), discussions ? [discussions] : [])
+      store.save(store.path.discussionsJsonFilename(number), discussions ? [shapeGitHubReviewComment(discussions)] : [])
 
       await setTimeout(delay) // 待つ
     }

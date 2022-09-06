@@ -20,9 +20,9 @@ export const buildPullRequests = async (
     const commits = await store.loader.commits(pr.number)
     const discussions = await store.loader.discussions(pr.number)
 
-    const firstCommittedAt = nullOrDate(commits[0]?.commit.author?.date)
+    const firstCommittedAt = nullOrDate(commits[0].date)
     const pullRequestCreatedAt = nullOrDate(pr.createdAt)!
-    const firstReviewedAt = nullOrDate(discussions[0]?.created_at)
+    const firstReviewedAt = nullOrDate(discussions[0].createdAt)
     const mergedAt = nullOrDate(pr.mergedAt)
     const releasedAt = null // TODO: releasedAt をちゃんと計算
 
