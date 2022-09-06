@@ -1,9 +1,9 @@
-import type { GitLabMergeRequest } from '../model'
+import type { ShapedGitLabMergeRequest } from '../model'
 import { pipe, sortBy, last } from 'remeda'
 
-export const leastUpdatedMergeRequest = (mergerequests: GitLabMergeRequest[]) =>
+export const leastUpdatedMergeRequest = (mergerequests: ShapedGitLabMergeRequest[]) =>
   pipe(
     mergerequests,
-    sortBy((x) => x.updated_at),
+    sortBy((x) => x.updatedAt),
     last()
   ) ?? null

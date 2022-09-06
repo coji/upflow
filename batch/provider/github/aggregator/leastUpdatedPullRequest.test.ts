@@ -1,164 +1,33 @@
 import { describe, expect, test } from 'vitest'
-import type { GitHubPullRequest } from '../model'
+import type { ShapedGitHubPullRequest } from '../model'
 import { leastUpdatedPullRequest } from './leastUpdatedPullRequest'
 
 describe('leastCreatedMergeRequest', () => {
-  const user = {
-    id: 0,
-    node_id: '',
-    login: '',
-    avatar_url: '',
-    gravatar_id: '',
-    url: '',
-    html_url: '',
-    followers_url: '',
-    following_url: '',
-    gists_url: '',
-    starred_url: '',
-    subscriptions_url: '',
-    organizations_url: '',
-    repos_url: '',
-    events_url: '',
-    received_events_url: '',
-    type: '',
-    site_admin: false
-  }
-  const ref = {
-    label: '',
-    ref: '',
-    repo: {
-      id: 0,
-      node_id: '',
-      name: '',
-      full_name: '',
-      license: null,
-      forks: 0,
-      owner: user,
-      private: false,
-      html_url: '',
-      description: '',
-      fork: false,
-      url: '',
-      archive_url: '',
-      assignees_url: '',
-      blobs_url: '',
-      branches_url: '',
-      collaborators_url: '',
-      comments_url: '',
-      commits_url: '',
-      compare_url: '',
-      contents_url: '',
-      contributors_url: '',
-      deployments_url: '',
-      downloads_url: '',
-      events_url: '',
-      forks_url: '',
-      git_commits_url: '',
-      git_refs_url: '',
-      git_tags_url: '',
-      git_url: '',
-      issue_comment_url: '',
-      issue_events_url: '',
-      issues_url: '',
-      keys_url: '',
-      labels_url: '',
-      languages_url: '',
-      merges_url: '',
-      milestones_url: '',
-      notifications_url: '',
-      pulls_url: '',
-      releases_url: '',
-      ssh_url: '',
-      stargazers_count: 0,
-      stargazers_url: '',
-      statuses_url: '',
-      subscribers_url: '',
-      subscription_url: '',
-      tags_url: '',
-      teams_url: '',
-      trees_url: '',
-      clone_url: '',
-      mirror_url: '',
-      hooks_url: '',
-      svn_url: '',
-      homepage: '',
-      language: '',
-      forks_count: 0,
-      watchers_count: 0,
-      size: 0,
-      default_branch: '',
-      open_issues_count: 0,
-      has_issues: false,
-      has_projects: false,
-      has_wiki: false,
-      has_pages: false,
-      has_downloads: false,
-      archived: false,
-      disabled: false,
-      pushed_at: '',
-      created_at: '',
-      updated_at: '',
-      open_issues: 0,
-      watchers: 0
-    },
-    sha: '',
-    user
-  }
-  const prototype: GitHubPullRequest = {
-    url: '',
-    id: 0,
-    node_id: '',
-    html_url: '',
-    diff_url: '',
-    patch_url: '',
-    issue_url: '',
-    commits_url: '',
-    review_comments_url: '',
-    review_comment_url: '',
-    comments_url: '',
-    statuses_url: '',
-    state: '',
+  const prototype: ShapedGitHubPullRequest = {
+    repo: '',
     number: 0,
-    locked: false,
+    state: '',
     title: '',
-    user,
-    body: '',
-    labels: [],
-    milestone: null,
-    created_at: '',
-    updated_at: '',
-    closed_at: '',
-    merged_at: '',
-    merge_commit_sha: '',
-    assignee: user,
-    head: ref,
-    base: ref,
-    _links: {
-      comments: { href: '' },
-      commits: { href: '' },
-      html: { href: '' },
-      issue: { href: '' },
-      review_comment: { href: '' },
-      review_comments: { href: '' },
-      self: { href: '' },
-      statuses: { href: '' }
-    },
-    author_association: 'MEMBER',
-    draft: false,
-    auto_merge: null
+    createdAt: '',
+    updatedAt: '',
+    mergedAt: '',
+    mergeCommitSha: '',
+    url: '',
+    author: '',
+    targetBranch: ''
   }
 
   test('shold retun a least updated_at object', () => {
     const ret = leastUpdatedPullRequest([
-      { ...prototype, id: 1, updated_at: '2022-01-01T00:00:0.0Z' },
-      { ...prototype, id: 2, updated_at: '2022-01-02T00:00:0.0Z' },
-      { ...prototype, id: 3, updated_at: '2022-01-01T00:00:0.0Z' }
+      { ...prototype, number: 1, updatedAt: '2022-01-01T00:00:0.0Z' },
+      { ...prototype, number: 2, updatedAt: '2022-01-02T00:00:0.0Z' },
+      { ...prototype, number: 3, updatedAt: '2022-01-01T00:00:0.0Z' }
     ])
-    expect(ret?.id).toEqual(2) // 最新のもの１件
+    expect(ret?.number).toEqual(2) // 最新のもの１件
   })
 
   test('shold retuns null when empty array specified', () => {
-    const subject: GitHubPullRequest[] = []
+    const subject: ShapedGitHubPullRequest[] = []
     const ret = leastUpdatedPullRequest(subject)
     expect(ret).toBeNull()
   })

@@ -1,9 +1,9 @@
-import type { GitLabCommit } from '../model'
+import type { ShapedGitLabCommit } from '../model'
 import { pipe, sortBy, first } from 'remeda'
 
-export const firstCommit = (commits: GitLabCommit[]) =>
+export const firstCommit = (commits: ShapedGitLabCommit[]) =>
   pipe(
     commits,
-    sortBy((x) => x.created_at),
+    sortBy((x) => x.createdAt),
     first()
   ) ?? null

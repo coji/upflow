@@ -1,4 +1,4 @@
-import type { GitLabMergeRequest, GitLabUser } from '../model'
+import type { ShapedGitLabMergeRequest } from '../model'
 import type { PullRequest } from '@prisma/client'
 import dayjs from 'dayjs'
 import { createAggregator } from '../aggregator'
@@ -11,7 +11,7 @@ const nullOrDate = (dateStr?: Date | string | null) => {
 
 export const buildMergeRequests = async (
   config: { companyId: string; repositoryId: string },
-  mergerequests: GitLabMergeRequest[]
+  mergerequests: ShapedGitLabMergeRequest[]
 ) => {
   const store = createStore(config)
   const aggregator = createAggregator()
@@ -22,27 +22,25 @@ export const buildMergeRequests = async (
     const discussions = await store.loader.discussions(m.iid).catch(() => [])
     // リリースされたコミットにMR マージコミットが含まれるかどうか
     const releasedCommit =
-      m.merge_commit_sha !== undefined &&
-      m.merge_commit_sha !== null &&
-      (await store.loader.releasedCommitsBySha(m.merge_commit_sha).catch(() => false))
+      m.mergeCommitSha !== undefined &&
+      m.mergeCommitSha !== null &&
+      (await store.loader.releasedCommitsBySha(m.mergeCommitSha).catch(() => false))
 
-    const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.created_at)
-    const pullRequestCreatedAt = nullOrDate(m.created_at)!
-    const firstReviewedAt = nullOrDate(
-      aggregator.firstReviewComment(discussions, (m.author as GitLabUser).username)?.created_at
-    )
-    const mergedAt = nullOrDate(m.merged_at)
-    const releasedAt = nullOrDate(await store.loader.findReleaseDate(mergerequests, m.merge_commit_sha)) // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
+    const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.createdAt)
+    const pullRequestCreatedAt = nullOrDate(m.createdAt)!
+    const firstReviewedAt = nullOrDate(aggregator.firstReviewComment(discussions, m.author)?.createdAt)
+    const mergedAt = nullOrDate(m.mergedAt)
+    const releasedAt = nullOrDate(await store.loader.findReleaseDate(mergerequests, m.mergeCommitSha)) // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
 
     results.push({
-      repo: String(m.project_id),
+      repo: String(m.projectId),
       number: String(m.iid),
-      targetBranch: m.target_branch,
+      targetBranch: m.targetBranch,
       state: m.state,
       isReleased: releasedCommit !== false,
-      author: m.author.username as string,
+      author: m.author,
       title: m.title,
-      url: m.web_url,
+      url: m.url,
       firstCommittedAt,
       pullRequestCreatedAt,
       firstReviewedAt,

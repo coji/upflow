@@ -1,11 +1,11 @@
-import type { GitLabDiscussion } from '../model'
+import type { ShapedGitLabDiscussion } from '../model'
 
 /**
  * ディスカッションから、MRに対するレビューのみを抽出
  * @param discussions
  * @returns
  */
-export const reviewComments = (discussions: GitLabDiscussion[]) =>
+export const reviewComments = (discussions: ShapedGitLabDiscussion[]) =>
   discussions
     .filter(
       (d) =>

@@ -7,13 +7,13 @@ export type GitHubReviewComment = RestEndpointMethodTypes['pulls']['listReviewCo
 export type GitHubUser = GitHubPullRequest['user']
 
 export interface ShapedGitHubPullRequest {
+  repo: GitHubPullRequest['base']['repo']['name']
   number: GitHubPullRequest['number']
   state: GitHubPullRequest['state']
   title: GitHubPullRequest['title']
   url: GitHubPullRequest['html_url']
   author: NonNullable<GitHubPullRequest['user']>['login'] | null
   targetBranch: GitHubPullRequest['base']['ref']
-  repo: GitHubPullRequest['base']['repo']['name']
   createdAt: GitHubPullRequest['created_at']
   updatedAt: GitHubPullRequest['updated_at']
   mergedAt: GitHubPullRequest['merged_at'] | null

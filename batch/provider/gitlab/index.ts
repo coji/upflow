@@ -8,6 +8,7 @@ import { createAggregator } from './aggregator'
 import { buildMergeRequests } from './mergerequest'
 import { createStore } from './store'
 import { logger } from '~/batch/helper/logger'
+import { shapeGitLabMergeRequest, shapeGitLabCommit, shapeGitLabDiscussionNote } from './shaper'
 
 export const createGitLabProvider = (integration: Integration) => {
   /**
@@ -28,19 +29,22 @@ export const createGitLabProvider = (integration: Integration) => {
 
     // 前回最終取得されたMR
     const leastMergeRequest = aggregator.leastUpdatedMergeRequest(await store.loader.mergerequests().catch(() => []))
-    logger.info(`last fetched at: ${leastMergeRequest?.updated_at}`)
+    logger.info(`last fetched at: ${leastMergeRequest?.updatedAt}`)
 
     // すべてのMR
     logger.info('fetch all merge requests...')
     const allMergeRequests = await fetcher.mergerequests()
-    store.save('mergerequests.json', allMergeRequests)
+    store.save(
+      'mergerequests.json',
+      allMergeRequests.map((mr) => shapeGitLabMergeRequest(mr))
+    )
     logger.info(`fetch all merge requests done: ${allMergeRequests.length} merge requests`)
 
     // production ブランチのすべての commit
     logger.info('fetch production commits...')
-    const releaseCommits = await fetcher.refCommits('production', refresh ? leastMergeRequest?.updated_at : undefined)
+    const releaseCommits = await fetcher.refCommits('production', refresh ? leastMergeRequest?.updatedAt : undefined)
     for (const commit of releaseCommits) {
-      store.save(store.path.releaseCommitsJsonFilename(commit.id), commit)
+      store.save(store.path.releaseCommitsJsonFilename(commit.id), shapeGitLabCommit(commit))
     }
     logger.info(`fetch production commits done: ${releaseCommits.length} commits`)
 
@@ -51,24 +55,32 @@ export const createGitLabProvider = (integration: Integration) => {
         return
       }
 
-      const isNew = leastMergeRequest ? mr.updated_at > leastMergeRequest.updated_at : true // 新しく fetch してきた MR
+      const isNew = leastMergeRequest ? mr.updated_at > leastMergeRequest.updatedAt : true // 新しく fetch してきた MR
       // すべて再フェッチせず、オープン以外、前回以前fetchしたMRの場合はスキップ
       if (!refresh && mr.state !== 'opened' && !isNew) {
         continue
       }
       const iid = mr.iid
 
-      // 個別MRのすべてのコミット
+      // 個別MRの初回コミット
       logger.info(`${iid} commits`)
-      const commits = await fetcher.mergerequestCommits(iid)
-      store.save(store.path.commitsJsonFilename(iid), commits)
+      const commits = await fetcher.mergerequestFirstCommits(iid)
+      store.save(
+        store.path.commitsJsonFilename(iid),
+        commits.map((commit) => shapeGitLabCommit(commit))
+      )
 
       await setTimeout(delay)
 
       // 個別MRのすべてのディスカッション(レビューコメント含む)
       logger.info(`${iid} discussions`)
       const discussions = await fetcher.discussions(iid)
-      store.save(store.path.discussionsJsonFilename(iid), discussions)
+      store.save(
+        store.path.discussionsJsonFilename(iid),
+        discussions.map((discussion) =>
+          discussion.notes ? { notes: discussion.notes?.map((note) => shapeGitLabDiscussionNote(note)) } : { notes: [] }
+        )
+      )
 
       await setTimeout(delay)
     }
