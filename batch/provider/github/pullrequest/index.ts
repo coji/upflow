@@ -35,7 +35,7 @@ export const buildPullRequests = async (
     results.push({
       repo: pr.base.repo.name,
       number: String(pr.number),
-      targetBranch: '',
+      targetBranch: pr.base.ref,
       state: pr.state,
       author: pr.user?.login as string,
       title: pr.title,
