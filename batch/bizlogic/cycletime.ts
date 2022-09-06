@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { pipe, filter, sortBy, first } from 'remeda'
+import { pipe, filter, sortBy, first, last } from 'remeda'
 
 export const codingTime = ({
   firstCommittedAt,
@@ -57,18 +57,13 @@ export const totalTime = ({
   mergedAt: string | null
   releasedAt: string | null
 }) => {
-  const firstTime = pipe(
+  const times = pipe(
     [firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt],
     filter((x) => !!x),
-    sortBy((x) => dayjs(x).unix()),
-    first()
+    sortBy((x) => dayjs(x).unix())
   )
-  const lastTime = pipe(
-    [firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt],
-    filter((x) => !!x),
-    sortBy((x) => -dayjs(x).unix()),
-    first()
-  )
+  const firstTime = first(times)
+  const lastTime = last(times)
   if (firstTime && lastTime) return dayjs(lastTime).diff(firstTime, 'days', true)
   else return null
 }
