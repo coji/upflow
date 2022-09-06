@@ -20,9 +20,9 @@ export const buildPullRequests = async (
     const commits = await store.loader.commits(pr.number)
     const discussions = await store.loader.discussions(pr.number)
 
-    const firstCommittedAt = nullOrDate(commits[0].date)
+    const firstCommittedAt = nullOrDate(commits.length > 0 ? commits[0].date : null)
     const pullRequestCreatedAt = nullOrDate(pr.createdAt)!
-    const firstReviewedAt = nullOrDate(discussions[0].createdAt)
+    const firstReviewedAt = nullOrDate(discussions.length > 0 ? discussions[0].createdAt : null)
     const mergedAt = nullOrDate(pr.mergedAt)
     const releasedAt = null // TODO: releasedAt をちゃんと計算
 
@@ -35,6 +35,7 @@ export const buildPullRequests = async (
     results.push({
       repo: pr.repo,
       number: String(pr.number),
+      sourceBranch: pr.sourceBranch,
       targetBranch: pr.targetBranch,
       state: pr.state,
       author: pr.author ?? '',

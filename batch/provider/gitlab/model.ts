@@ -13,6 +13,7 @@ export interface ShapedGitLabMergeRequest {
   title: GitLabMergeRequest['title']
   url: GitLabMergeRequest['web_url']
   author: string // GitLabMergeRequest['author']['username']
+  sourceBranch: GitLabMergeRequest['source_branch']
   targetBranch: GitLabMergeRequest['target_branch']
   createdAt: GitLabMergeRequest['created_at']
   updatedAt: GitLabMergeRequest['updated_at']

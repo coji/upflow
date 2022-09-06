@@ -22,6 +22,7 @@ export const shapeGitLabMergeRequest: (mr: GitLabMergeRequest) => ShapedGitLabMe
     title: mr.title,
     url: mr.web_url,
     author: mr.author.username as string,
+    sourceBranch: mr.source_branch,
     targetBranch: mr.target_branch,
     createdAt: mr.created_at,
     updatedAt: mr.updated_at,

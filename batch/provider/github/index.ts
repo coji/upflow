@@ -80,6 +80,7 @@ export const createGitHubProvider = (integration: Integration) => {
       [
         'repo',
         'number',
+        'source branch',
         'target branch',
         'state',
         'is released',
@@ -118,6 +119,7 @@ export const createGitHubProvider = (integration: Integration) => {
           [
             pr.repo,
             pr.number,
+            pr.sourceBranch,
             pr.targetBranch,
             pr.state,
             pr.isReleased,

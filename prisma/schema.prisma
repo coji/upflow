@@ -85,6 +85,7 @@ model Repository {
 model PullRequest {
   repo                    String  // repository name / project name
   number                  String  // number / iid
+  sourceBranch            String
   targetBranch            String
   state                   String
   isReleased              Boolean

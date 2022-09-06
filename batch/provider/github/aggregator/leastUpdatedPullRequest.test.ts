@@ -14,6 +14,7 @@ describe('leastCreatedMergeRequest', () => {
     mergeCommitSha: '',
     url: '',
     author: '',
+    sourceBranch: '',
     targetBranch: ''
   }
 

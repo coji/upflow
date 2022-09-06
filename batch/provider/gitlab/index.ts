@@ -95,6 +95,7 @@ export const createGitLabProvider = (integration: Integration) => {
       [
         'repo',
         'iid',
+        'source branch',
         'target branch',
         'state',
         'is released',
@@ -133,6 +134,7 @@ export const createGitLabProvider = (integration: Integration) => {
           [
             mr.repo,
             mr.number,
+            mr.sourceBranch,
             mr.targetBranch,
             mr.state,
             mr.isReleased,

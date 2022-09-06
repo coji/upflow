@@ -13,6 +13,7 @@ export interface ShapedGitHubPullRequest {
   title: GitHubPullRequest['title']
   url: GitHubPullRequest['html_url']
   author: NonNullable<GitHubPullRequest['user']>['login'] | null
+  sourceBranch: GitHubPullRequest['head']['ref']
   targetBranch: GitHubPullRequest['base']['ref']
   createdAt: GitHubPullRequest['created_at']
   updatedAt: GitHubPullRequest['updated_at']
