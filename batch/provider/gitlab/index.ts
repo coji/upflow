@@ -56,7 +56,7 @@ export const createGitLabProvider = (integration: Integration) => {
 
       // 個別MRの初回コミット
       logger.info(`${iid} commits`)
-      const commits = await fetcher.mergerequestFirstCommits(iid)
+      const commits = await fetcher.commits(iid)
       store.save(
         store.path.commitsJsonFilename(iid),
         commits.map((commit) => shapeGitLabCommit(commit))

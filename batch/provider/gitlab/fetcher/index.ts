@@ -39,8 +39,7 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
    * @param mergerequestIid
    * @returns 指定したMRのコミット情報の配列
    */
-  const mergerequestFirstCommits = async (mergerequestIid: number) =>
-    await api.MergeRequests.commits(projectId, mergerequestIid)
+  const commits = async (mergerequestIid: number) => await api.MergeRequests.commits(projectId, mergerequestIid)
 
   /**
    * MRのディスカッションリストを取得
@@ -58,7 +57,7 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
 
   return {
     refCommits,
-    mergerequestFirstCommits,
+    commits,
     discussions,
     mergerequests
   }
