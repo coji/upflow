@@ -3,6 +3,7 @@ import type { PullRequest } from '@prisma/client'
 import dayjs from 'dayjs'
 import { createStore } from '../store'
 import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/cycletime'
+import { findReleaseDate } from '../release-detect'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).format() : null
@@ -24,7 +25,8 @@ export const buildPullRequests = async (
     const pullRequestCreatedAt = nullOrDate(pr.createdAt)!
     const firstReviewedAt = nullOrDate(discussions.length > 0 ? discussions[0].createdAt : null)
     const mergedAt = nullOrDate(pr.mergedAt)
-    const releasedAt = null // TODO: releasedAt をちゃんと計算
+    const releasedAt =
+      pr.mergedAt && pr.mergeCommitSha ? await findReleaseDate(pullrequests, store, pr.mergeCommitSha) : null
 
     results.push({
       repo: pr.repo,
@@ -39,7 +41,7 @@ export const buildPullRequests = async (
       pullRequestCreatedAt,
       firstReviewedAt,
       mergedAt,
-      releasedAt: null,
+      releasedAt,
       codingTime: codingTime({ firstCommittedAt, pullRequestCreatedAt }),
       pickupTime: pickupTime({ pullRequestCreatedAt, firstReviewedAt, mergedAt }),
       reviewTime: reviewTime({ firstReviewedAt, mergedAt }),

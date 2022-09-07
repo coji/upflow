@@ -31,16 +31,22 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return pulls
   }
 
-  const firstCommit = async (pullNumber: number) => {
-    const ret = await octokit.rest.pulls.listCommits({
-      owner,
-      repo,
-      pull_number: pullNumber,
-      page: 1,
-      per_page: 1
-    })
-    let commit: GitHubCommit = ret.data[0]
-    return commit
+  const commits = async (pullNumber: number) => {
+    let allCommits: GitHubCommit[] = []
+    let page = 1
+    do {
+      const ret = await octokit.rest.pulls.listCommits({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        page,
+        per_page: 100
+      })
+      if (ret.data.length === 0) break
+      allCommits = [...allCommits, ...ret.data]
+      page++
+    } while (true)
+    return allCommits
   }
 
   const firstReviewComment = async (pullNumber: number, excludeUser?: string) => {
@@ -62,5 +68,5 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     } while (true)
   }
 
-  return { pullrequests, firstCommit, firstReviewComment }
+  return { pullrequests, commits, firstReviewComment }
 }

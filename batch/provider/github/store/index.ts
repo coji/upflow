@@ -34,18 +34,6 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   const discussions = async (number: number) =>
     load<ShapedGitHubReviewComment[]>(pathBuilder.discussionsJsonFilename(number))
   const pullrequests = async () => load<ShapedGitHubPullRequest[]>('pullrequests.json')
-  const releasedPullRequests = (allPullRequests: ShapedGitHubPullRequest[]) =>
-    allPullRequests.filter((pr) => pr.state === 'closed')
-
-  const findReleaseDate = async (allPullRequests: ShapedGitHubPullRequest[], targetHash?: string) => {
-    let mergedAt = null
-    for (const m of releasedPullRequests(allPullRequests)) {
-      if ((await commits(m.number)).some((c) => c.sha === targetHash)) {
-        mergedAt = m.mergedAt
-      }
-    }
-    return mergedAt
-  }
 
   return {
     load,
@@ -54,8 +42,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     loader: {
       commits,
       discussions,
-      pullrequests,
-      findReleaseDate
+      pullrequests
     }
   }
 }

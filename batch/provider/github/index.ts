@@ -51,10 +51,13 @@ export const createGitHubProvider = (integration: Integration) => {
       }
       const number = pr.number
 
-      // 個別PRの初回コミット
+      // 個別PRの全コミット
       logger.info(`${number} commits`)
-      const commits = await fetcher.firstCommit(number)
-      store.save(store.path.commitsJsonFilename(number), commits ? [shapeGitHubCommit(commits)] : [])
+      const allCommits = await fetcher.commits(number)
+      store.save(
+        store.path.commitsJsonFilename(number),
+        allCommits.map((commit) => shapeGitHubCommit(commit))
+      )
 
       await setTimeout(delay) // 待つ
 
