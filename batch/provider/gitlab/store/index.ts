@@ -1,4 +1,4 @@
-import type { ShapedGitLabMergeRequest, ShapedGitLabCommit, ShapedGitLabDiscussion } from '../model'
+import type { ShapedGitLabMergeRequest, ShapedGitLabCommit, ShapedGitLabDiscussionNote } from '../model'
 import fs from 'fs'
 import { globby } from 'globby'
 import path from 'path'
@@ -35,7 +35,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   const commits = async (mergerequestIid: number) =>
     load<ShapedGitLabCommit[]>(pathBuilder.commitsJsonFilename(mergerequestIid))
   const discussions = async (mergerequestIid: number) =>
-    load<ShapedGitLabDiscussion[]>(pathBuilder.discussionsJsonFilename(mergerequestIid))
+    load<ShapedGitLabDiscussionNote[]>(pathBuilder.discussionsJsonFilename(mergerequestIid))
 
   const mergerequests = async () => load<ShapedGitLabMergeRequest[]>('mergerequests.json')
 

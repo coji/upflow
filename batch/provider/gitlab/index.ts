@@ -69,9 +69,11 @@ export const createGitLabProvider = (integration: Integration) => {
       const discussions = await fetcher.discussions(iid)
       store.save(
         store.path.discussionsJsonFilename(iid),
-        discussions.map((discussion) =>
-          discussion.notes ? { notes: discussion.notes?.map((note) => shapeGitLabDiscussionNote(note)) } : { notes: [] }
-        )
+        discussions
+          .map((discussion) =>
+            discussion.notes ? discussion.notes?.map((note) => shapeGitLabDiscussionNote(note)) : []
+          )
+          .flat()
       )
 
       await setTimeout(delay)
