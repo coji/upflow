@@ -26,12 +26,6 @@ export const buildPullRequests = async (
     const mergedAt = nullOrDate(pr.mergedAt)
     const releasedAt = null // TODO: releasedAt をちゃんと計算
 
-    // リリースされたコミットにMR マージコミットが含まれるかどうか
-    const isReleased =
-      pr.mergeCommitSha !== undefined &&
-      pr.mergeCommitSha !== null &&
-      (await store.loader.releasedCommitsBySha(pr.mergeCommitSha).catch(() => null)) != null
-
     results.push({
       repo: pr.repo,
       number: String(pr.number),
@@ -41,7 +35,6 @@ export const buildPullRequests = async (
       author: pr.author ?? '',
       title: pr.title,
       url: pr.url,
-      isReleased,
       firstCommittedAt,
       pullRequestCreatedAt,
       firstReviewedAt,

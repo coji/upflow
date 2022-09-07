@@ -40,14 +40,6 @@ export const createGitLabProvider = (integration: Integration) => {
     )
     logger.info(`fetch all merge requests done: ${allMergeRequests.length} merge requests`)
 
-    // production ブランチのすべての commit
-    logger.info('fetch production commits...')
-    const releaseCommits = await fetcher.refCommits('production', refresh ? leastMergeRequest?.updatedAt : undefined)
-    for (const commit of releaseCommits) {
-      store.save(store.path.releaseCommitsJsonFilename(commit.id), shapeGitLabCommit(commit))
-    }
-    logger.info(`fetch production commits done: ${releaseCommits.length} commits`)
-
     // 個別のMR
     for (const mr of allMergeRequests) {
       if (halt) {
@@ -98,7 +90,6 @@ export const createGitLabProvider = (integration: Integration) => {
         'source branch',
         'target branch',
         'state',
-        'is released',
         'author',
         'title',
         'url',
@@ -137,7 +128,6 @@ export const createGitLabProvider = (integration: Integration) => {
             mr.sourceBranch,
             mr.targetBranch,
             mr.state,
-            mr.isReleased,
             mr.author,
             mr.title,
             mr.url,

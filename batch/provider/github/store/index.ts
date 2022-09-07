@@ -2,7 +2,6 @@ import { createPathBuilder } from '~/batch/helper/path-builder'
 import type { ShapedGitHubPullRequest, ShapedGitHubReviewComment, ShapedGitHubCommit } from '../model'
 import fs from 'fs'
 import path from 'path'
-import { globby } from 'globby'
 
 interface createStoreProps {
   companyId: string
@@ -35,18 +34,6 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   const discussions = async (number: number) =>
     load<ShapedGitHubReviewComment[]>(pathBuilder.discussionsJsonFilename(number))
   const pullrequests = async () => load<ShapedGitHubPullRequest[]>('pullrequests.json')
-  const releasedCommits = async () => {
-    const commits: ShapedGitHubCommit[] = []
-    const matches = await globby(pathBuilder.releaseCommitsGlob())
-    for (const filename of matches) {
-      const sha = pathBuilder.sha(filename)
-      commits.push(await load<ShapedGitHubCommit>(pathBuilder.releaseCommitsJsonFilename(sha)))
-    }
-    return commits
-  }
-  const releasedCommitsBySha = async (sha: string) =>
-    await load<ShapedGitHubCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
-
   const releasedPullRequests = (allPullRequests: ShapedGitHubPullRequest[]) =>
     allPullRequests.filter((pr) => pr.state === 'closed')
 
@@ -68,8 +55,6 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
       commits,
       discussions,
       pullrequests,
-      releasedCommits,
-      releasedCommitsBySha,
       findReleaseDate
     }
   }

@@ -37,14 +37,6 @@ export const createGitHubProvider = (integration: Integration) => {
     )
     logger.info(`fetching all pullrequests completed.`)
 
-    // production ブランチのすべての commit
-    // logger.info('fetch production commits...')
-    // const releaseCommits = await fetcher.refCommits('production', refresh ? leastMergeRequest?.updated_at : undefined)
-    // for (const commit of releaseCommits) {
-    //   store.save(store.path.releaseCommitsJsonFilename(commit.id), commit)
-    // }
-    // logger.info(`fetch production commits done: ${releaseCommits.length} commits`)
-
     // 個別のPR
     for (const pr of allPullRequests) {
       if (halt) {
@@ -83,7 +75,6 @@ export const createGitHubProvider = (integration: Integration) => {
         'source branch',
         'target branch',
         'state',
-        'is released',
         'author',
         'title',
         'url',
@@ -122,7 +113,6 @@ export const createGitHubProvider = (integration: Integration) => {
             pr.sourceBranch,
             pr.targetBranch,
             pr.state,
-            pr.isReleased,
             pr.author,
             pr.title,
             pr.url,

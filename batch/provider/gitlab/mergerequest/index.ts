@@ -20,8 +20,6 @@ export const buildMergeRequests = async (
   for (const m of mergerequests) {
     const commits = await store.loader.commits(m.iid).catch(() => [])
     const discussions = await store.loader.discussions(m.iid).catch(() => [])
-    // リリースされたコミットにMR マージコミットが含まれるかどうか
-    const releasedCommit = await store.loader.releasedCommitsBySha(m.mergeCommitSha).catch(() => null)
 
     const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.createdAt)
     const pullRequestCreatedAt = dayjs(m.createdAt).format()
@@ -35,7 +33,6 @@ export const buildMergeRequests = async (
       sourceBranch: m.sourceBranch,
       targetBranch: m.targetBranch,
       state: m.state,
-      isReleased: !!releasedCommit,
       author: m.author,
       title: m.title,
       url: m.url,

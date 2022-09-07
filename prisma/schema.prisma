@@ -88,7 +88,6 @@ model PullRequest {
   sourceBranch            String
   targetBranch            String
   state                   String
-  isReleased              Boolean
   author                  String
   title                   String
   url                     String
