@@ -5,7 +5,7 @@ import cleanPlugin from 'esbuild-plugin-clean'
 const buildMain = async () => {
   const jobs = await globby('./batch/jobs/*.ts')
   build({
-    entryPoints: ['batch/job-schedular.ts', ...jobs],
+    entryPoints: ['batch/cli', 'batch/job-schedular.ts', ...jobs],
     bundle: true,
     metafile: true,
     outdir: 'dist',
