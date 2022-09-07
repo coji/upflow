@@ -1,5 +1,5 @@
 import { Octokit } from 'octokit'
-import type { GitHubPullRequest, GitHubCommit } from '../model'
+import type { GitHubPullRequest, GitHubCommit, GitHubReviewComment } from '../model'
 
 interface createFetcherProps {
   owner: string
@@ -49,7 +49,8 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return allCommits
   }
 
-  const firstReviewComment = async (pullNumber: number, excludeUser?: string) => {
+  const reviewComments = async (pullNumber: number) => {
+    let allComments: GitHubReviewComment[] = []
     let page = 1
     do {
       const ret = await octokit.rest.pulls.listReviewComments({
@@ -59,14 +60,12 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100
       })
-      if (!ret.data[0]) return null // 見つからないので null
+      if (ret.data.length === 0) break
+      allComments = [...allComments, ...ret.data]
       page++
-
-      // 除外ユーザを除いたレビューを一件取り出す
-      const reviews = ret.data.filter((review) => review.user.login !== excludeUser)
-      if (reviews.length > 0) return reviews[0]
     } while (true)
+    return allComments
   }
 
-  return { pullrequests, commits, firstReviewComment }
+  return { pullrequests, commits, reviewComments }
 }

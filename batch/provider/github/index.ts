@@ -63,8 +63,11 @@ export const createGitHubProvider = (integration: Integration) => {
 
       // 個別PRの初回レビュー
       logger.info(`${number} discussions`)
-      const discussions = await fetcher.firstReviewComment(number, pr.user?.login)
-      store.save(store.path.discussionsJsonFilename(number), discussions ? [shapeGitHubReviewComment(discussions)] : [])
+      const discussions = await fetcher.reviewComments(number)
+      store.save(
+        store.path.discussionsJsonFilename(number),
+        discussions ? discussions.map((comment) => shapeGitHubReviewComment(comment)) : []
+      )
 
       await setTimeout(delay) // 待つ
     }
