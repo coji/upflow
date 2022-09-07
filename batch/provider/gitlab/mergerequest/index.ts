@@ -21,13 +21,10 @@ export const buildMergeRequests = async (
     const commits = await store.loader.commits(m.iid).catch(() => [])
     const discussions = await store.loader.discussions(m.iid).catch(() => [])
     // リリースされたコミットにMR マージコミットが含まれるかどうか
-    const releasedCommit =
-      m.mergeCommitSha !== undefined &&
-      m.mergeCommitSha !== null &&
-      (await store.loader.releasedCommitsBySha(m.mergeCommitSha).catch(() => false))
+    const releasedCommit = await store.loader.releasedCommitsBySha(m.mergeCommitSha).catch(() => null)
 
     const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.createdAt)
-    const pullRequestCreatedAt = nullOrDate(m.createdAt)!
+    const pullRequestCreatedAt = dayjs(m.createdAt).format()
     const firstReviewedAt = nullOrDate(aggregator.firstReviewComment(discussions, m.author)?.createdAt)
     const mergedAt = nullOrDate(m.mergedAt)
     const releasedAt = nullOrDate(await store.loader.findReleaseDate(mergerequests, m.mergeCommitSha)) // リリース日時 = production ブランチ対象MRに含まれる commits を MR merge_commit_sha で探してきてMRを特定し、そこの merged_at
@@ -38,7 +35,7 @@ export const buildMergeRequests = async (
       sourceBranch: m.sourceBranch,
       targetBranch: m.targetBranch,
       state: m.state,
-      isReleased: releasedCommit !== false,
+      isReleased: !!releasedCommit,
       author: m.author,
       title: m.title,
       url: m.url,

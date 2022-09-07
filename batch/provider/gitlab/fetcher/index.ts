@@ -1,7 +1,6 @@
 import type { GitLabCommit } from '../model'
 import { Gitlab } from '@gitbeaker/node'
 import got from 'got'
-import { last } from 'remeda'
 
 export interface createFetcherProps {
   projectId: string
@@ -40,11 +39,8 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
    * @param mergerequestIid
    * @returns 指定したMRのコミット情報の配列
    */
-  const mergerequestFirstCommits = async (mergerequestIid: number) => {
-    const commits = await api.MergeRequests.commits(projectId, mergerequestIid)
-    const firstCommit = last(commits)
-    return firstCommit ? [firstCommit] : []
-  }
+  const mergerequestFirstCommits = async (mergerequestIid: number) =>
+    await api.MergeRequests.commits(projectId, mergerequestIid)
 
   /**
    * MRのディスカッションリストを取得

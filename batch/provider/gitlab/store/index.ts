@@ -36,7 +36,9 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     load<ShapedGitLabCommit[]>(pathBuilder.commitsJsonFilename(mergerequestIid))
   const discussions = async (mergerequestIid: number) =>
     load<ShapedGitLabDiscussion[]>(pathBuilder.discussionsJsonFilename(mergerequestIid))
+
   const mergerequests = async () => load<ShapedGitLabMergeRequest[]>('mergerequests.json')
+
   const releasedCommits = async () => {
     const commits: ShapedGitLabCommit[] = []
     const matches = await globby(pathBuilder.releaseCommitsGlob())
@@ -46,8 +48,8 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     }
     return commits
   }
-  const releasedCommitsBySha = async (sha: string) =>
-    await load<ShapedGitLabCommit>(pathBuilder.releaseCommitsJsonFilename(sha))
+  const releasedCommitsBySha = async (sha: string | null) =>
+    sha ? await load<ShapedGitLabCommit>(pathBuilder.releaseCommitsJsonFilename(sha)) : null
 
   const releasedMergeRequests = (allMergeRequests: ShapedGitLabMergeRequest[]) =>
     allMergeRequests.filter((mr) => mr.targetBranch === 'production' && mr.state === 'merged')
@@ -55,7 +57,8 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   const findReleaseDate = async (allMergeRequests: ShapedGitLabMergeRequest[], targetHash: string | null) => {
     let mergedAt = null
     for (const m of releasedMergeRequests(allMergeRequests)) {
-      if ((await commits(m.iid)).some((c: any) => c.id === targetHash)) {
+      const testCommits = await commits(m.iid)
+      if (testCommits.some((c) => c.sha === targetHash)) {
         mergedAt = m.mergedAt
       }
     }
