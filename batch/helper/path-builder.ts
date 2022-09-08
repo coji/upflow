@@ -13,6 +13,8 @@ export const createPathBuilder = ({ companyId, repositoryId }: createPathBuilder
   const jsonFilename = (element: string, iid: number) => `${element}/${iid}-${element}.json`
   const commitsJsonFilename = (iid: number) => jsonFilename('commits', iid)
   const discussionsJsonFilename = (iid: number) => jsonFilename('discussions', iid)
+  const reviewJsonFilename = (iid: number) => jsonFilename('reviews', iid)
+
   const releaseCommitsJsonFilename = (sha: string) => {
     const subdir = sha.substring(0, 2)
     return `release-commits/${subdir}/${sha}.json`
@@ -24,6 +26,7 @@ export const createPathBuilder = ({ companyId, repositoryId }: createPathBuilder
     jsonPath,
     commitsJsonFilename,
     discussionsJsonFilename,
+    reviewJsonFilename,
     releaseCommitsJsonFilename,
     releaseCommitsGlob,
     sha

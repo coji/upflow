@@ -34,3 +34,11 @@ export interface ShapedGitHubReviewComment {
   url: GitHubReviewComment['html_url']
   createdAt: GitHubReviewComment['created_at']
 }
+
+export interface ShapedGitHubReview {
+  id: GitHubReview['id']
+  user: NonNullable<GitHubReview['user']>['login'] | null
+  state: GitHubReview['state']
+  url: GitHubReview['html_url']
+  submittedAt: NonNullable<GitHubReview['submitted_at']> | null
+}

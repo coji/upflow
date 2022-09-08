@@ -1,5 +1,10 @@
 import { createPathBuilder } from '~/batch/helper/path-builder'
-import type { ShapedGitHubPullRequest, ShapedGitHubReviewComment, ShapedGitHubCommit } from '../model'
+import type {
+  ShapedGitHubPullRequest,
+  ShapedGitHubReviewComment,
+  ShapedGitHubCommit,
+  ShapedGitHubReview
+} from '../model'
 import fs from 'fs'
 import path from 'path'
 
@@ -33,6 +38,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
   const commits = async (number: number) => load<ShapedGitHubCommit[]>(pathBuilder.commitsJsonFilename(number))
   const discussions = async (number: number) =>
     load<ShapedGitHubReviewComment[]>(pathBuilder.discussionsJsonFilename(number))
+  const reviews = async (number: number) => load<ShapedGitHubReview[]>(pathBuilder.reviewJsonFilename(number))
   const pullrequests = async () => load<ShapedGitHubPullRequest[]>('pullrequests.json')
 
   return {
@@ -42,6 +48,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     loader: {
       commits,
       discussions,
+      reviews,
       pullrequests
     }
   }

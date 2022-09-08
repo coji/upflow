@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import { createStore } from '../store'
 import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/cycletime'
 import { findReleaseDate } from '../release-detect'
+import { first } from 'remeda'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).format() : null
@@ -19,11 +20,13 @@ export const buildPullRequests = async (
   for (const pr of pullrequests) {
     // close じゃない
     const commits = await store.loader.commits(pr.number)
+
+    const reviews = await store.loader.reviews(pr.number)
     const discussions = await store.loader.discussions(pr.number)
 
     const firstCommittedAt = nullOrDate(commits.length > 0 ? commits[0].date : null)
     const pullRequestCreatedAt = nullOrDate(pr.createdAt)!
-    const firstReviewedAt = nullOrDate(discussions.length > 0 ? discussions[0].createdAt : null)
+    const firstReviewedAt = nullOrDate(first(discussions)?.createdAt ?? first(reviews)?.submittedAt) // レビュー開始 = コメント最新 or レビュー submit 最新
     const mergedAt = nullOrDate(pr.mergedAt)
     const releasedAt =
       pr.mergedAt && pr.mergeCommitSha ? await findReleaseDate(pullrequests, store, pr.mergeCommitSha) : null

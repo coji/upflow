@@ -1,5 +1,5 @@
 import { Octokit } from 'octokit'
-import type { GitHubPullRequest, GitHubCommit, GitHubReviewComment } from '../model'
+import type { GitHubPullRequest, GitHubCommit, GitHubReviewComment, GitHubReview } from '../model'
 
 interface createFetcherProps {
   owner: string
@@ -67,5 +67,23 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return allComments
   }
 
-  return { pullrequests, commits, reviewComments }
+  const reviews = async (pullNumber: number) => {
+    let allReviews: GitHubReview[] = []
+    let page = 1
+    do {
+      const ret = await octokit.rest.pulls.listReviews({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        page,
+        per_page: 100
+      })
+      if (ret.data.length === 0) break
+      allReviews = [...allReviews, ...ret.data]
+      page++
+    } while (true)
+    return allReviews
+  }
+
+  return { pullrequests, commits, reviewComments, reviews }
 }
