@@ -7,9 +7,7 @@ import type { ShapedGitLabDiscussionNote } from '../model'
  * @returns
  */
 export const firstReviewComment = (discussions: ShapedGitLabDiscussionNote[], excludeUsername: string) => {
-  const comments = discussions.filter(
-    (review) => review.author !== excludeUsername && (review.type === 'DiffNote' || review.type === 'DiscussionNote')
-  )
+  const comments = discussions.filter((review) => review.author !== excludeUsername)
   if (comments.length === 0) return null
   return comments.reduce((a, b) => (a.createdAt < b.createdAt ? a : b))
 }
