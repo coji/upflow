@@ -25,7 +25,7 @@ export const createGitHubProvider = (integration: Integration) => {
     const pathBuilder = createPathBuilder({ companyId: repository.companyId, repositoryId: repository.id })
 
     logger.info('fetch started: ', repository.name)
-    logger.info(pathBuilder.jsonPath(''))
+    logger.info('path: ', pathBuilder.jsonPath(''))
 
     // PR の最終更新日時を起点とする
     const leastMergeRequest = aggregator.leastUpdatedPullRequest(await store.loader.pullrequests().catch(() => []))
@@ -84,6 +84,13 @@ export const createGitHubProvider = (integration: Integration) => {
 
       await setTimeout(delay) // 待つ
     }
+
+    // 全プルリク情報を保存
+    store.save(
+      'pullrequests.json',
+      allPullRequests.map((pr) => shapeGitHubPullRequest(pr))
+    )
+    logger.info('fetch completed: ', repository.name)
   }
 
   const report = async (repositories: Repository[]) => {
