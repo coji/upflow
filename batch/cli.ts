@@ -18,6 +18,10 @@ const fetch = command(
         type: Number,
         description: 'provider api call delay for api call limit',
         default: 0
+      },
+      exclude: {
+        type: String,
+        description: 'exclude repository id'
       }
     },
     help: { description: 'Fetch all resources from gitlab api.' }
