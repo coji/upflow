@@ -9,6 +9,7 @@ import { buildMergeRequests } from './mergerequest'
 import { createStore } from './store'
 import { logger } from '~/batch/helper/logger'
 import { shapeGitLabMergeRequest, shapeGitLabCommit, shapeGitLabDiscussionNote } from './shaper'
+import { createPathBuilder } from '../../helper/path-builder'
 
 export const createGitLabProvider = (integration: Integration) => {
   /**
@@ -24,8 +25,10 @@ export const createGitLabProvider = (integration: Integration) => {
     const fetcher = createFetcher({ projectId: repository.projectId, privateToken: integration.privateToken })
     const aggregator = createAggregator()
     const store = createStore({ companyId: repository.companyId, repositoryId: repository.id })
+    const pathBuilder = createPathBuilder({ companyId: repository.companyId, repositoryId: repository.id })
 
-    logger.info('fetch started: ')
+    logger.info('fetch started: ', repository.name)
+    logger.info('path: ', pathBuilder.jsonPath(''))
 
     // 前回最終取得されたMR
     const leastMergeRequest = aggregator.leastUpdatedMergeRequest(await store.loader.mergerequests().catch(() => []))
@@ -34,10 +37,6 @@ export const createGitLabProvider = (integration: Integration) => {
     // すべてのMR
     logger.info('fetch all merge requests...')
     const allMergeRequests = await fetcher.mergerequests()
-    store.save(
-      'mergerequests.json',
-      allMergeRequests.map((mr) => shapeGitLabMergeRequest(mr))
-    )
     logger.info(`fetch all merge requests done: ${allMergeRequests.length} merge requests`)
 
     // 個別のMR
@@ -78,6 +77,12 @@ export const createGitLabProvider = (integration: Integration) => {
 
       await setTimeout(delay)
     }
+
+    store.save(
+      'mergerequests.json',
+      allMergeRequests.map((mr) => shapeGitLabMergeRequest(mr))
+    )
+    logger.info('fetch completed: ', repository.name)
   }
 
   /**
