@@ -10,7 +10,12 @@ const nullOrDate = (dateStr?: Date | string | null) => {
 }
 
 export const buildMergeRequests = async (
-  config: { companyId: string; repositoryId: string },
+  config: {
+    companyId: string
+    repositoryId: string
+    releaseDetectionMethod: string
+    releaseDetectionKey: string
+  },
   mergerequests: ShapedGitLabMergeRequest[]
 ) => {
   const store = createStore(config)

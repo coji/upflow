@@ -22,5 +22,5 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
   const provider = createProvider(company.integration)
   invariant(provider, `unknown provider ${company.integration.provider}`)
 
-  await provider.upsert(company.repositories)
+  await provider.upsert(company, company.repositories)
 }

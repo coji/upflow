@@ -1,4 +1,4 @@
-import type { Integration, Repository } from '@prisma/client'
+import type { Integration, Repository, Company } from '@prisma/client'
 import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { logger } from '~/batch/helper/logger'
@@ -11,10 +11,12 @@ import { shapeGitHubCommit, shapeGitHubPullRequest, shapeGitHubReview, shapeGitH
 import { createStore } from './store'
 
 export const createGitHubProvider = (integration: Integration) => {
-  const fetch = async (
-    repository: Repository,
-    { refresh = false, halt = false, delay = 0 }: { refresh?: boolean; halt?: boolean; delay?: number }
-  ) => {
+  interface FetchOptions {
+    refresh?: boolean
+    halt?: boolean
+    delay?: number
+  }
+  const fetch = async (repository: Repository, { refresh = false, halt = false, delay = 0 }: FetchOptions) => {
     invariant(repository.repo, 'private token not specified')
     invariant(repository.owner, 'private token not specified')
     invariant(integration.privateToken, 'private token not specified')
@@ -34,7 +36,7 @@ export const createGitHubProvider = (integration: Integration) => {
     // 全プルリク情報をダウンロード
     logger.info(`fetching all pullrequests...`)
     const allPullRequests = await fetcher.pullrequests()
-    store.save(
+    await store.save(
       'pullrequests.json',
       allPullRequests.map((pr) => shapeGitHubPullRequest(pr))
     )
@@ -57,7 +59,7 @@ export const createGitHubProvider = (integration: Integration) => {
       // 個別PRの全コミット
       logger.info(`${number} commits`)
       const allCommits = await fetcher.commits(number)
-      store.save(
+      await store.save(
         store.path.commitsJsonFilename(number),
         allCommits.map((commit) => shapeGitHubCommit(commit))
       )
@@ -67,7 +69,7 @@ export const createGitHubProvider = (integration: Integration) => {
       // 個別PRのレビューコメント
       logger.info(`${number} review comments`)
       const discussions = await fetcher.reviewComments(number)
-      store.save(
+      await store.save(
         store.path.discussionsJsonFilename(number),
         discussions ? discussions.map((comment) => shapeGitHubReviewComment(comment)) : []
       )
@@ -77,7 +79,7 @@ export const createGitHubProvider = (integration: Integration) => {
       // 個別PRのレビュー
       logger.info(`${number} reviews`)
       const reviews = await fetcher.reviews(number)
-      store.save(
+      await store.save(
         store.path.reviewJsonFilename(number),
         reviews.map((review) => shapeGitHubReview(review))
       )
@@ -86,14 +88,14 @@ export const createGitHubProvider = (integration: Integration) => {
     }
 
     // 全プルリク情報を保存
-    store.save(
+    await store.save(
       'pullrequests.json',
       allPullRequests.map((pr) => shapeGitHubPullRequest(pr))
     )
     logger.info('fetch completed: ', repository.name)
   }
 
-  const report = async (repositories: Repository[]) => {
+  const report = async (company: Company, repositories: Repository[]) => {
     console.log(
       [
         'repo',
@@ -126,7 +128,9 @@ export const createGitHubProvider = (integration: Integration) => {
       const results = await buildPullRequests(
         {
           companyId: repository.companyId,
-          repositoryId: repository.id
+          repositoryId: repository.id,
+          releaseDetectionMethod: repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
+          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey
         },
         await store.loader.pullrequests()
       )
@@ -158,7 +162,7 @@ export const createGitHubProvider = (integration: Integration) => {
     }
   }
 
-  const upsert = async (repositories: Repository[]) => {
+  const upsert = async (company: Company, repositories: Repository[]) => {
     logger.info('github provider upsert is not implemented yet')
   }
 

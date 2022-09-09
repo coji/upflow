@@ -23,5 +23,5 @@ export async function reportCommand({ companyId }: reportCommandProps) {
   const provider = createProvider(company.integration)
   invariant(provider, `unknown provider ${company.integration.provider}`)
 
-  await provider.report(company.repositories)
+  await provider.report(company, company.repositories)
 }

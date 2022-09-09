@@ -11,16 +11,14 @@ const nullOrDate = (dateStr?: Date | string | null) => {
 }
 
 export const buildPullRequests = async (
-  config: { companyId: string; repositoryId: string },
+  config: { companyId: string; repositoryId: string; releaseDetectionMethod: string; releaseDetectionKey: string },
   pullrequests: ShapedGitHubPullRequest[]
 ) => {
   const store = createStore(config)
 
   const results: PullRequest[] = []
   for (const pr of pullrequests) {
-    // close じゃない
     const commits = await store.loader.commits(pr.number)
-
     const reviews = await store.loader.reviews(pr.number)
     const discussions = await store.loader.discussions(pr.number)
 
@@ -29,7 +27,15 @@ export const buildPullRequests = async (
     const firstReviewedAt = nullOrDate(first(discussions)?.createdAt ?? first(reviews)?.submittedAt) // レビュー開始 = コメント最新 or レビュー submit 最新
     const mergedAt = nullOrDate(pr.mergedAt)
     const releasedAt =
-      pr.mergedAt && pr.mergeCommitSha ? await findReleaseDate(pullrequests, store, pr.mergeCommitSha) : null
+      pr.mergedAt && pr.mergeCommitSha
+        ? await findReleaseDate(
+            pullrequests,
+            store,
+            pr.mergeCommitSha,
+            config.releaseDetectionMethod,
+            config.releaseDetectionKey
+          )
+        : null
 
     results.push({
       repo: pr.repo,

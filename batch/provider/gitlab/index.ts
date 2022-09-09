@@ -1,4 +1,4 @@
-import type { Integration, Repository } from '@prisma/client'
+import type { Integration, Repository, Company } from '@prisma/client'
 import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
@@ -88,7 +88,7 @@ export const createGitLabProvider = (integration: Integration) => {
   /**
    * report
    */
-  const report = async (repositories: Repository[]) => {
+  const report = async (company: Company, repositories: Repository[]) => {
     // ヘッダ
     console.log(
       [
@@ -122,7 +122,9 @@ export const createGitLabProvider = (integration: Integration) => {
       const results = await buildMergeRequests(
         {
           companyId: repository.companyId,
-          repositoryId: repository.id
+          repositoryId: repository.id,
+          releaseDetectionMethod: repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
+          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey
         },
         await store.loader.mergerequests()
       )
@@ -157,7 +159,7 @@ export const createGitLabProvider = (integration: Integration) => {
   /**
    * upsert analized report
    */
-  const upsert = async (repositories: Repository[]) => {
+  const upsert = async (company: Company, repositories: Repository[]) => {
     for (const repository of repositories) {
       const store = createStore({
         companyId: repository.companyId,
@@ -167,7 +169,9 @@ export const createGitLabProvider = (integration: Integration) => {
       const results = await buildMergeRequests(
         {
           companyId: repository.companyId,
-          repositoryId: repository.id
+          repositoryId: repository.id,
+          releaseDetectionMethod: repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
+          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey
         },
         mergerequests
       )
