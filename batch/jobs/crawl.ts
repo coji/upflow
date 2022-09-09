@@ -50,7 +50,7 @@ const crawlMain = async () => {
     }
 
     logger.info('upsert started...')
-    await provider.upsert(company.repositories)
+    await provider.upsert(company, company.repositories)
     logger.info('upsert completed.')
   }
 

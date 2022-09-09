@@ -1,6 +1,5 @@
 import type { ShapedGitLabMergeRequest, ShapedGitLabCommit, ShapedGitLabDiscussionNote } from '../model'
 import fs from 'fs'
-import { globby } from 'globby'
 import path from 'path'
 import { createPathBuilder } from '~/batch/helper/path-builder'
 
@@ -39,32 +38,6 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
 
   const mergerequests = async () => load<ShapedGitLabMergeRequest[]>('mergerequests.json')
 
-  const releasedCommits = async () => {
-    const commits: ShapedGitLabCommit[] = []
-    const matches = await globby(pathBuilder.releaseCommitsGlob())
-    for (const filename of matches) {
-      const sha = pathBuilder.sha(filename)
-      commits.push(await load<ShapedGitLabCommit>(pathBuilder.releaseCommitsJsonFilename(sha)))
-    }
-    return commits
-  }
-  const releasedCommitsBySha = async (sha: string | null) =>
-    sha ? await load<ShapedGitLabCommit>(pathBuilder.releaseCommitsJsonFilename(sha)) : null
-
-  const releasedMergeRequests = (allMergeRequests: ShapedGitLabMergeRequest[]) =>
-    allMergeRequests.filter((mr) => mr.targetBranch === 'production' && mr.state === 'merged')
-
-  const findReleaseDate = async (allMergeRequests: ShapedGitLabMergeRequest[], targetHash: string | null) => {
-    let mergedAt = null
-    for (const m of releasedMergeRequests(allMergeRequests)) {
-      const testCommits = await commits(m.iid)
-      if (testCommits.some((c) => c.sha === targetHash)) {
-        mergedAt = m.mergedAt
-      }
-    }
-    return mergedAt
-  }
-
   return {
     load,
     save,
@@ -72,10 +45,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     loader: {
       commits,
       discussions,
-      mergerequests,
-      releasedCommits,
-      releasedCommitsBySha,
-      findReleaseDate
+      mergerequests
     }
   }
 }
