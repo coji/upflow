@@ -56,7 +56,7 @@ export const createGitLabProvider = (integration: Integration) => {
       // 個別MRの初回コミット
       logger.info(`${iid} commits`)
       const commits = await fetcher.commits(iid)
-      store.save(
+      await store.save(
         store.path.commitsJsonFilename(iid),
         commits.map((commit) => shapeGitLabCommit(commit))
       )
@@ -66,7 +66,7 @@ export const createGitLabProvider = (integration: Integration) => {
       // 個別MRのすべてのディスカッション(レビューコメント含む)
       logger.info(`${iid} discussions`)
       const discussions = await fetcher.discussions(iid)
-      store.save(
+      await store.save(
         store.path.discussionsJsonFilename(iid),
         discussions
           .map((discussion) =>
@@ -78,7 +78,7 @@ export const createGitLabProvider = (integration: Integration) => {
       await setTimeout(delay)
     }
 
-    store.save(
+    await store.save(
       'mergerequests.json',
       allMergeRequests.map((mr) => shapeGitLabMergeRequest(mr))
     )

@@ -1,5 +1,5 @@
 import type { ShapedGitLabMergeRequest, ShapedGitLabCommit, ShapedGitLabDiscussionNote } from '../model'
-import fs from 'fs'
+import fs from 'fs/promises'
 import path from 'path'
 import { createPathBuilder } from '~/batch/helper/path-builder'
 
@@ -16,7 +16,8 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
    *
    * @param filename
    */
-  const load = <T>(filename: string) => JSON.parse(fs.readFileSync(pathBuilder.jsonPath(filename)).toString()) as T
+  const load = async <T>(filename: string) =>
+    JSON.parse(await fs.readFile(pathBuilder.jsonPath(filename), 'utf-8')) as T
 
   /**
    * JSON ファイルの保存
@@ -24,10 +25,10 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
    * @param filename
    * @param content
    */
-  const save = (filename: string, content: unknown) => {
+  const save = async (filename: string, content: unknown) => {
     // ディレクトリがなければ作成
-    fs.mkdirSync(path.dirname(pathBuilder.jsonPath(filename)), { recursive: true })
-    fs.writeFileSync(pathBuilder.jsonPath(filename), JSON.stringify(content, null, 2))
+    await fs.mkdir(path.dirname(pathBuilder.jsonPath(filename)), { recursive: true })
+    await fs.writeFile(pathBuilder.jsonPath(filename), JSON.stringify(content, null, 2))
   }
 
   // loaders
