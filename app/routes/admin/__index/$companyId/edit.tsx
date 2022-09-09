@@ -1,4 +1,4 @@
-import { Box, Button, FormLabel, Input, Stack } from '@chakra-ui/react'
+import { Box, Button, FormLabel, Input, Select, Stack } from '@chakra-ui/react'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form, useLoaderData } from '@remix-run/react'
@@ -21,8 +21,15 @@ export const action = async ({ request, params }: ActionArgs) => {
   const { companyId } = params
   const formData = await request.formData()
   const name = formData.get('name')
+  const releaseDetectionMethod = formData.get('releaseDetectionMethod')
+  const releaseDetectionKey = formData.get('releaseDetectionKey')
   if (companyId && name) {
-    const company = await updateCompany(companyId, name.toString())
+    const company = await updateCompany({
+      companyId,
+      name: String(name),
+      releaseDetectionMethod: String(releaseDetectionMethod),
+      releaseDetectionKey: String(releaseDetectionKey)
+    })
     return redirect(`/admin/${company.id}`)
   } else return null
 }
@@ -52,6 +59,27 @@ const EditCompany = () => {
 
           <FormLabel htmlFor="name">Name</FormLabel>
           <Input py="1" name="name" id="name" autoFocus defaultValue={company.name}></Input>
+
+          <FormLabel htmlFor="releaseDetectionMethod">Release Detection Method</FormLabel>
+          <Select
+            py="1"
+            name="releaseDetectionMethod"
+            id="releaseDetectionMethod"
+            autoFocus
+            defaultValue={company.releaseDetectionMethod}
+          >
+            <option value="tags">tags</option>
+            <option value="branch">branch</option>
+          </Select>
+
+          <FormLabel htmlFor="releaseDetectionKey">Release Detection Key</FormLabel>
+          <Input
+            py="1"
+            name="releaseDetectionKey"
+            id="releaseDetectionKey"
+            autoFocus
+            defaultValue={company.releaseDetectionKey}
+          ></Input>
 
           <FormLabel>Updated At</FormLabel>
           <Box py="1"> {dayjs(company.updatedAt).fromNow()}</Box>

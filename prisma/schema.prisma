@@ -25,14 +25,16 @@ model Password {
 }
 
 model Company {
-  id           String        @id @default(cuid())
-  name         String
-  updatedAt    DateTime      @updatedAt
-  createdAt    DateTime      @default(now())
-  users        CompanyUser[]
-  integration  Integration?
-  repositories Repository[]
-  teams        Team[]
+  id                     String        @id @default(cuid())
+  name                   String
+  releaseDetectionMethod String        @default("branch") // tags, branch
+  releaseDetectionKey    String        @default("production") // release-*, main, ^master$
+  updatedAt              DateTime      @updatedAt
+  createdAt              DateTime      @default(now())
+  users                  CompanyUser[]
+  integration            Integration?
+  repositories           Repository[]
+  teams                  Team[]
 }
 
 model CompanyUser {
@@ -67,42 +69,44 @@ model Integration {
 }
 
 model Repository {
-  id            String         @id @default(cuid())
-  integrationId String
-  provider      String
-  name          String         @default("")
-  projectId     String? // GitLab only
-  owner         String? // GitHub only
-  repo          String? // GitHub only
-  companyId     String
-  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  integration   Integration    @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  mergerequest  PullRequest[]
+  id                     String        @id @default(cuid())
+  integrationId          String
+  provider               String
+  name                   String        @default("")
+  projectId              String? // GitLab only
+  owner                  String? // GitHub only
+  repo                   String? // GitHub only
+  releaseDetectionMethod String        @default("branch") // tags, branch
+  releaseDetectionKey   String         @default("production") // release-*, main, ^master$
+  companyId              String
+  company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  integration            Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  mergerequest           PullRequest[]
 
   @@unique([integrationId, provider, projectId, owner, repo])
 }
 
 model PullRequest {
-  repo                    String  // repository name / project name
-  number                  String  // number / iid
-  sourceBranch            String
-  targetBranch            String
-  state                   String
-  author                  String
-  title                   String
-  url                     String
-  firstCommittedAt        String?
-  pullRequestCreatedAt    String
-  firstReviewedAt         String?
-  mergedAt                String?
-  releasedAt              String?
-  codingTime              Float?
-  pickupTime              Float?
-  reviewTime              Float?
-  deployTime              Float?
-  totalTime               Float?
-  repositoryId            String
-  repository              Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  repo                 String // repository name / project name
+  number               String // number / iid
+  sourceBranch         String
+  targetBranch         String
+  state                String
+  author               String
+  title                String
+  url                  String
+  firstCommittedAt     String?
+  pullRequestCreatedAt String
+  firstReviewedAt      String?
+  mergedAt             String?
+  releasedAt           String?
+  codingTime           Float?
+  pickupTime           Float?
+  reviewTime           Float?
+  deployTime           Float?
+  totalTime            Float?
+  repositoryId         String
+  repository           Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@id([repositoryId, number])
 }
