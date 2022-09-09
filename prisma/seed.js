@@ -35,7 +35,11 @@ const cleanup = async (email) => {
 
 const seedMergeRequests = async (companyId) => {
   const { $ } = await import('zx')
-  await $`tsx batch/cycletime.ts upsert ${companyId}`
+  if (process.env.NODE_ENV === 'development') {
+    await $`tsx batch/cli.ts upsert ${companyId}`
+  } else {
+    await $`node dist/cli.js upsert ${companyId}`
+  }
 }
 
 async function seed() {
