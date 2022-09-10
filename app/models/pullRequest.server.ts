@@ -40,3 +40,13 @@ export function upsertPullRequest(pullRequest: PullRequest) {
     update: pullRequest
   })
 }
+
+export async function getPullRequestReport(companyId: string) {
+  return prisma.pullRequest.findMany({
+    where: {
+      repository: {
+        companyId
+      }
+    }
+  })
+}

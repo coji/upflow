@@ -3,7 +3,6 @@ import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
 import { createFetcher } from '~/batch/provider/gitlab/fetcher'
-import { timeFormat } from '../../helper/timeformat'
 import { createAggregator } from './aggregator'
 import { buildMergeRequests } from './mergerequest'
 import { createStore } from './store'
@@ -36,7 +35,7 @@ export const createGitLabProvider = (integration: Integration) => {
 
     // すべてのMR
     logger.info('fetch all merge requests...')
-    const allMergeRequests = await fetcher.mergerequests()
+    const allMergeRequests = (await fetcher.mergerequests()).map((mr) => shapeGitLabMergeRequest(mr))
     logger.info(`fetch all merge requests done: ${allMergeRequests.length} merge requests`)
 
     // 個別のMR
@@ -46,7 +45,7 @@ export const createGitLabProvider = (integration: Integration) => {
         return
       }
 
-      const isNew = leastMergeRequest ? mr.updated_at > leastMergeRequest.updatedAt : true // 新しく fetch してきた MR
+      const isNew = leastMergeRequest ? mr.updatedAt > leastMergeRequest.updatedAt : true // 新しく fetch してきた MR
       // すべて再フェッチせず、オープン以外、前回以前fetchしたMRの場合はスキップ
       if (!refresh && mr.state !== 'opened' && !isNew) {
         continue
@@ -78,82 +77,8 @@ export const createGitLabProvider = (integration: Integration) => {
       await setTimeout(delay)
     }
 
-    await store.save(
-      'mergerequests.json',
-      allMergeRequests.map((mr) => shapeGitLabMergeRequest(mr))
-    )
+    await store.save('mergerequests.json', allMergeRequests)
     logger.info('fetch completed: ', repository.name)
-  }
-
-  /**
-   * report
-   */
-  const report = async (company: Company, repositories: Repository[]) => {
-    // ヘッダ
-    console.log(
-      [
-        'repo',
-        'iid',
-        'source branch',
-        'target branch',
-        'state',
-        'author',
-        'title',
-        'url',
-        '初回コミット日時',
-        'MR作成日時',
-        '初回レビュー日時',
-        'マージ日時',
-        'リリース日時',
-        'coding time',
-        'pickup time',
-        'review time',
-        'deploy time',
-        'total time'
-      ].join('\t')
-    )
-
-    for (const repository of repositories) {
-      const store = createStore({
-        companyId: repository.companyId,
-        repositoryId: repository.id
-      })
-
-      const results = await buildMergeRequests(
-        {
-          companyId: repository.companyId,
-          repositoryId: repository.id,
-          releaseDetectionMethod: repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
-          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey
-        },
-        await store.loader.mergerequests()
-      )
-
-      for (const mr of results) {
-        console.log(
-          [
-            mr.repo,
-            mr.number,
-            mr.sourceBranch,
-            mr.targetBranch,
-            mr.state,
-            mr.author,
-            mr.title,
-            mr.url,
-            timeFormat(mr.firstCommittedAt),
-            timeFormat(mr.pullRequestCreatedAt),
-            timeFormat(mr.firstReviewedAt),
-            timeFormat(mr.mergedAt),
-            timeFormat(mr.releasedAt),
-            mr.codingTime,
-            mr.pickupTime,
-            mr.reviewTime,
-            mr.deployTime,
-            mr.totalTime
-          ].join('\t')
-        )
-      }
-    }
   }
 
   /**
@@ -183,7 +108,6 @@ export const createGitLabProvider = (integration: Integration) => {
 
   return {
     fetch,
-    report,
     upsert
   }
 }

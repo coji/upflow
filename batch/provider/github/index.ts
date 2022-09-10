@@ -3,12 +3,12 @@ import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
-import { timeFormat } from '../../helper/timeformat'
 import { createAggregator } from './aggregator'
 import { createFetcher } from './fetcher'
 import { buildPullRequests } from './pullrequest'
 import { shapeGitHubCommit, shapeGitHubPullRequest, shapeGitHubReview, shapeGitHubReviewComment } from './shaper'
 import { createStore } from './store'
+import { upsertPullRequest } from '~/app/models/pullRequest.server'
 
 export const createGitHubProvider = (integration: Integration) => {
   interface FetchOptions {
@@ -35,11 +35,8 @@ export const createGitHubProvider = (integration: Integration) => {
 
     // 全プルリク情報をダウンロード
     logger.info(`fetching all pullrequests...`)
-    const allPullRequests = await fetcher.pullrequests()
-    await store.save(
-      'pullrequests.json',
-      allPullRequests.map((pr) => shapeGitHubPullRequest(pr))
-    )
+    const allPullRequests = (await fetcher.pullrequests()).map((pr) => shapeGitHubPullRequest(pr))
+    await store.save('pullrequests.json', allPullRequests)
     logger.info(`fetching all pullrequests completed.`)
 
     // 個別のPR
@@ -49,7 +46,7 @@ export const createGitHubProvider = (integration: Integration) => {
         return
       }
 
-      const isNew = leastMergeRequest ? pr.updated_at > leastMergeRequest.updatedAt : true // 新しく fetch してきた PR
+      const isNew = leastMergeRequest ? pr.updatedAt > leastMergeRequest.updatedAt : true // 新しく fetch してきた PR
       // すべて再フェッチせず、オープン以外、前回以前fetchしたPRの場合はスキップ
       if (!refresh && pr.state !== 'open' && !isNew) {
         continue
@@ -88,37 +85,11 @@ export const createGitHubProvider = (integration: Integration) => {
     }
 
     // 全プルリク情報を保存
-    await store.save(
-      'pullrequests.json',
-      allPullRequests.map((pr) => shapeGitHubPullRequest(pr))
-    )
+    await store.save('pullrequests.json', allPullRequests)
     logger.info('fetch completed: ', repository.name)
   }
 
-  const report = async (company: Company, repositories: Repository[]) => {
-    console.log(
-      [
-        'repo',
-        'number',
-        'source branch',
-        'target branch',
-        'state',
-        'author',
-        'title',
-        'url',
-        '初回コミット日時',
-        'PR作成日時',
-        '初回レビュー日時',
-        'マージ日時',
-        'リリース日時',
-        'coding time',
-        'pickup time',
-        'review time',
-        'deploy time',
-        'total time'
-      ].join('\t')
-    )
-
+  const upsert = async (company: Company, repositories: Repository[]) => {
     for (const repository of repositories) {
       const store = createStore({
         companyId: repository.companyId,
@@ -136,39 +107,13 @@ export const createGitHubProvider = (integration: Integration) => {
       )
 
       for (const pr of results) {
-        console.log(
-          [
-            pr.repo,
-            pr.number,
-            pr.sourceBranch,
-            pr.targetBranch,
-            pr.state,
-            pr.author,
-            pr.title,
-            pr.url,
-            timeFormat(pr.firstCommittedAt),
-            timeFormat(pr.pullRequestCreatedAt),
-            timeFormat(pr.firstReviewedAt),
-            timeFormat(pr.mergedAt),
-            timeFormat(pr.releasedAt),
-            pr.codingTime,
-            pr.pickupTime,
-            pr.reviewTime,
-            pr.deployTime,
-            pr.totalTime
-          ].join('\t')
-        )
+        await upsertPullRequest(pr)
       }
     }
   }
 
-  const upsert = async (company: Company, repositories: Repository[]) => {
-    logger.info('github provider upsert is not implemented yet')
-  }
-
   return {
     fetch,
-    report,
     upsert
   }
 }
