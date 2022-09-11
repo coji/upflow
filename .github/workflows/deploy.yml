@@ -22,34 +22,13 @@ jobs:
         with:
           node-version: 16
 
-      - uses: pnpm/action-setup@v2.0.1
-        name: Install pnpm
-        id: pnpm-install
+      - name: 📥 Download deps
+        uses: bahmutov/npm-install@v1
         with:
-          version: 7
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Generate prisma client
-        run: pnpm prisma generate
+          useLockFile: false
 
       - name: 🔬 Lint
-        run: pnpm run lint
+        run: npm run lint
 
   typecheck:
     name: ʦ TypeScript
@@ -66,34 +45,13 @@ jobs:
         with:
           node-version: 16
 
-      - uses: pnpm/action-setup@v2.0.1
-        name: Install pnpm
-        id: pnpm-install
+      - name: 📥 Download deps
+        uses: bahmutov/npm-install@v1
         with:
-          version: 7
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Generate prisma client
-        run: pnpm prisma generate
+          useLockFile: false
 
       - name: 🔎 Type check
-        run: pnpm run typecheck
+        run: npm run typecheck
 
   vitest:
     name: ⚡ Vitest
@@ -110,89 +68,13 @@ jobs:
         with:
           node-version: 16
 
-      - uses: pnpm/action-setup@v2.0.1
-        name: Install pnpm
-        id: pnpm-install
+      - name: 📥 Download deps
+        uses: bahmutov/npm-install@v1
         with:
-          version: 7
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Generate prisma client
-        run: pnpm prisma generate
+          useLockFile: false
 
       - name: ⚡ Run vitest
-        run: pnpm run test -- --coverage
-
-  # cypress:
-  #   name: ⚫️ Cypress
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: 🛑 Cancel Previous Runs
-  #       uses: styfle/cancel-workflow-action@0.9.1
-
-  #     - name: ⬇️ Checkout repo
-  #       uses: actions/checkout@v3
-
-  #     - name: 🏄 Copy test env vars
-  #       run: cp .env.example .env
-
-  #     - name: ⎔ Setup node
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: 16
-
-  # - uses: pnpm/action-setup@v2.0.1
-  #   name: Install pnpm
-  #   id: pnpm-install
-  #   with:
-  #     version: 7
-  #     run_install: false
-
-  # - name: Get pnpm store directory
-  #   id: pnpm-cache
-  #   run: |
-  #     echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
-
-  # - uses: actions/cache@v3
-  #   name: Setup pnpm cache
-  #   with:
-  #     path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-  #     key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-  #     restore-keys: |
-  #       ${{ runner.os }}-pnpm-store-
-
-  # - name: Install dependencies
-  #   run: pnpm install
-
-  #     - name: 🛠 Setup Database
-  #       run: npx prisma migrate reset --force
-
-  #     - name: ⚙️ Build
-  #       run: pnpm run build
-
-  #     - name: 🌳 Cypress run
-  #       uses: cypress-io/github-action@v4
-  #       with:
-  #         start: pnpm run start:mocks
-  #         wait-on: "http://localhost:8811"
-  #       env:
-  #         PORT: "8811"
+        run: npm run test -- --coverage
 
   build:
     name: 🐳 Build
