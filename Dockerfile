@@ -8,16 +8,15 @@ ENV NODE_ENV production
 RUN apt-get update \
   && apt-get install --no-install-recommends -y openssl sqlite3 procps \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
-  && npm i -g pnpm
+  && rm -rf /var/lib/apt/lists/* 
 
 # Install all node_modules, including dev dependencies
 FROM base as deps
 
 WORKDIR /upflow
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --production=false
+COPY package.json .npmrc ./
+RUN npm install --production=false
 
 # Setup production node_modules
 FROM base as production-deps
@@ -25,8 +24,8 @@ FROM base as production-deps
 WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm prune --production
+COPY package.json .npmrc ./
+RUN npm prune --production
 
 # Build the app
 FROM base as build
@@ -34,13 +33,13 @@ FROM base as build
 WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
-COPY package.json pnpm-lock.yaml ./
+COPY package.json .npmrc ./
 
 COPY prisma .
-RUN pnpm prisma generate
+RUN npx prisma generate
 
 COPY . .
-RUN pnpm run build
+RUN npm run build
 
 # Finally, build the production image with minimal footprint
 FROM base
@@ -56,7 +55,7 @@ RUN printf '#!/bin/sh\nset -x\nsqlite3 file:/upflow/data/data.db\n' > /usr/local
 WORKDIR /upflow
 
 COPY --from=production-deps /upflow/node_modules /upflow/node_modules
-COPY --from=build /upflow/node_modules/@prisma/client /upflow/node_modules/@prisma/client
+COPY --from=build /upflow/node_modules/.prisma /upflow/node_modules/.prisma
 
 COPY --from=build /upflow/build /upflow/build
 COPY --from=build /upflow/public /upflow/public
