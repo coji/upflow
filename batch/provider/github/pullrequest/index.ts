@@ -42,7 +42,7 @@ export const buildPullRequests = async (
       number: String(pr.number),
       sourceBranch: pr.sourceBranch,
       targetBranch: pr.targetBranch,
-      state: pr.state,
+      state: pr.state === 'closed' && !!pr.mergedAt ? 'merged' : pr.state, // github は api では merged にならないので
       author: pr.author ?? '',
       title: pr.title,
       url: pr.url,
