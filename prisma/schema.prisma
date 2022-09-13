@@ -25,16 +25,17 @@ model Password {
 }
 
 model Company {
-  id                     String        @id @default(cuid())
+  id                     String         @id @default(cuid())
   name                   String
-  releaseDetectionMethod String        @default("branch") // tags, branch
-  releaseDetectionKey    String        @default("production") // release-*, main, ^master$
-  updatedAt              DateTime      @updatedAt
-  createdAt              DateTime      @default(now())
+  releaseDetectionMethod String         @default("branch") // tags, branch
+  releaseDetectionKey    String         @default("production") // release-*, main, ^master$
+  updatedAt              DateTime       @updatedAt
+  createdAt              DateTime       @default(now())
   users                  CompanyUser[]
   integration            Integration?
   repositories           Repository[]
   teams                  Team[]
+  exportSetting          ExportSetting?
 }
 
 model CompanyUser {
@@ -77,7 +78,7 @@ model Repository {
   owner                  String? // GitHub only
   repo                   String? // GitHub only
   releaseDetectionMethod String        @default("branch") // tags, branch
-  releaseDetectionKey   String         @default("production") // release-*, main, ^master$
+  releaseDetectionKey    String        @default("production") // release-*, main, ^master$
   companyId              String
   company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   integration            Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
@@ -109,4 +110,15 @@ model PullRequest {
   repository           Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@id([repositoryId, number])
+}
+
+model ExportSetting {
+  id          String  @id @default(cuid())
+  companyId   String  @unique
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sheetId     String
+  clientEmail String
+  privateKey  String
+  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime  @default(now())
 }

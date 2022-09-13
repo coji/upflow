@@ -7,7 +7,13 @@ export const getCompanies = async () => prisma.company.findMany({})
 export const getCompany = async (companyId: string) =>
   prisma.company.findUnique({
     where: { id: companyId },
-    include: { teams: true, integration: true, repositories: true, users: { include: { user: true } } }
+    include: {
+      teams: true,
+      integration: true,
+      repositories: true,
+      users: { include: { user: true } },
+      exportSetting: true
+    }
   })
 
 export const updateCompany = async ({

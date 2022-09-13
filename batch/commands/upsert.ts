@@ -2,6 +2,7 @@ import invariant from 'tiny-invariant'
 import { prisma } from '~/app/db.server'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider/index'
+import { exportToSpreadsheet } from '../export'
 
 interface UpsertCommandProps {
   companyId?: string
@@ -23,4 +24,6 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
   invariant(provider, `unknown provider ${company.integration.provider}`)
 
   await provider.upsert(company, company.repositories)
+
+  await exportToSpreadsheet(company) // google spreadsheet にエクスポート
 }

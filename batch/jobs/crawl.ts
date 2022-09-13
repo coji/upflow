@@ -2,6 +2,7 @@ import { parentPort } from 'node:worker_threads'
 import { prisma } from '~/app/db.server'
 import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
+import { exportToSpreadsheet } from '../export'
 
 const options = { refresh: false, halt: false }
 if (parentPort) {
@@ -52,6 +53,11 @@ const crawlMain = async () => {
     logger.info('upsert started...')
     await provider.upsert(company, company.repositories)
     logger.info('upsert completed.')
+
+    // google spreadsheet にエクスポート
+    logger.info('exporting to spreadsheet...')
+    await exportToSpreadsheet(company)
+    logger.info('export to spreadsheet done')
   }
 
   logger.info('crawl completed.')

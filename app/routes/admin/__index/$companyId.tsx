@@ -64,6 +64,10 @@ const CompanyPage = () => {
             Integration and Repositories
           </Heading>
 
+          <AppLink to="export-setting">
+            <Button>{company.exportSetting ? 'Export Settings' : 'Add Export Settting'}</Button>
+          </AppLink>
+
           {company.integration ? (
             <Box>
               <AppProviderBadge provider={company.integration.provider} />
