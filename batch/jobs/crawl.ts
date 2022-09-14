@@ -4,7 +4,7 @@ import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
 import { exportToSpreadsheet } from '../export'
 
-const options = { refresh: false, halt: false }
+const options = { refresh: false, halt: false, delay: 800 }
 if (parentPort) {
   parentPort.once('message', (message) => {
     if (message === 'cancel') {
