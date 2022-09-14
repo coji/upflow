@@ -7,7 +7,6 @@ import { createAggregator } from './aggregator'
 import { buildMergeRequests } from './mergerequest'
 import { createStore } from './store'
 import { logger } from '~/batch/helper/logger'
-import { shapeGitLabMergeRequest, shapeGitLabCommit, shapeGitLabDiscussionNote } from './shaper'
 import { createPathBuilder } from '../../helper/path-builder'
 
 export const createGitLabProvider = (integration: Integration) => {
@@ -35,7 +34,7 @@ export const createGitLabProvider = (integration: Integration) => {
 
     // すべてのMR
     logger.info('fetch all merge requests...')
-    const allMergeRequests = (await fetcher.mergerequests()).map((mr) => shapeGitLabMergeRequest(mr))
+    const allMergeRequests = await fetcher.mergerequests()
     logger.info(`fetch all merge requests done: ${allMergeRequests.length} merge requests`)
 
     // 個別のMR
@@ -55,24 +54,14 @@ export const createGitLabProvider = (integration: Integration) => {
       // 個別MRの初回コミット
       logger.info(`${iid} commits`)
       const commits = await fetcher.commits(iid)
-      await store.save(
-        store.path.commitsJsonFilename(iid),
-        commits.map((commit) => shapeGitLabCommit(commit))
-      )
+      await store.save(store.path.commitsJsonFilename(iid), commits)
 
       await setTimeout(delay)
 
       // 個別MRのすべてのディスカッション(レビューコメント含む)
       logger.info(`${iid} discussions`)
       const discussions = await fetcher.discussions(iid)
-      await store.save(
-        store.path.discussionsJsonFilename(iid),
-        discussions
-          .map((discussion) =>
-            discussion.notes ? discussion.notes?.map((note) => shapeGitLabDiscussionNote(note)) : []
-          )
-          .flat()
-      )
+      await store.save(store.path.discussionsJsonFilename(iid), discussions)
 
       await setTimeout(delay)
     }

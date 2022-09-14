@@ -6,7 +6,6 @@ import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
 import { createFetcher } from './fetcher'
 import { buildPullRequests } from './pullrequest'
-import { shapeGitHubCommit, shapeGitHubPullRequest, shapeGitHubReview, shapeGitHubReviewComment } from './shaper'
 import { createStore } from './store'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
 
@@ -35,7 +34,7 @@ export const createGitHubProvider = (integration: Integration) => {
 
     // 全プルリク情報をダウンロード
     logger.info(`fetching all pullrequests...`)
-    const allPullRequests = (await fetcher.pullrequests()).map((pr) => shapeGitHubPullRequest(pr))
+    const allPullRequests = await fetcher.pullrequests()
     await store.save('pullrequests.json', allPullRequests)
     logger.info(`fetching all pullrequests completed.`)
 
@@ -56,30 +55,21 @@ export const createGitHubProvider = (integration: Integration) => {
       // 個別PRの全コミット
       logger.info(`${number} commits`)
       const allCommits = await fetcher.commits(number)
-      await store.save(
-        store.path.commitsJsonFilename(number),
-        allCommits.map((commit) => shapeGitHubCommit(commit))
-      )
+      await store.save(store.path.commitsJsonFilename(number), allCommits)
 
       await setTimeout(delay) // 待つ
 
       // 個別PRのレビューコメント
       logger.info(`${number} review comments`)
       const discussions = await fetcher.reviewComments(number)
-      await store.save(
-        store.path.discussionsJsonFilename(number),
-        discussions ? discussions.map((comment) => shapeGitHubReviewComment(comment)) : []
-      )
+      await store.save(store.path.discussionsJsonFilename(number), discussions)
 
       await setTimeout(delay) // 待つ
 
       // 個別PRのレビュー
       logger.info(`${number} reviews`)
       const reviews = await fetcher.reviews(number)
-      await store.save(
-        store.path.reviewJsonFilename(number),
-        reviews.map((review) => shapeGitHubReview(review))
-      )
+      await store.save(store.path.reviewJsonFilename(number), reviews)
 
       await setTimeout(delay) // 待つ
     }

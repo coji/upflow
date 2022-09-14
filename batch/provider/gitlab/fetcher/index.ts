@@ -1,6 +1,7 @@
 import type { GitLabCommit } from '../model'
 import { Gitlab } from '@gitbeaker/node'
 import got from 'got'
+import { shapeGitLabMergeRequest, shapeGitLabCommit, shapeGitLabDiscussionNote } from '../shaper'
 
 export interface createFetcherProps {
   projectId: string
@@ -31,7 +32,7 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
       commits.push(...ret)
       page++
     }
-    return commits
+    return commits.map((commit) => shapeGitLabCommit(commit))
   }
 
   /**
@@ -39,7 +40,8 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
    * @param mergerequestIid
    * @returns 指定したMRのコミット情報の配列
    */
-  const commits = async (mergerequestIid: number) => await api.MergeRequests.commits(projectId, mergerequestIid)
+  const commits = async (mergerequestIid: number) =>
+    (await api.MergeRequests.commits(projectId, mergerequestIid)).map((commit) => shapeGitLabCommit(commit))
 
   /**
    * MRのディスカッションリストを取得
@@ -47,13 +49,16 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
    * @returns 指定したMRのディスカッション情報の配列
    */
   const discussions = async (mergerequestIid: number) =>
-    await api.MergeRequestDiscussions.all(projectId, mergerequestIid)
+    (await api.MergeRequestDiscussions.all(projectId, mergerequestIid))
+      .map((discussion) => (discussion.notes ? discussion.notes?.map((note) => shapeGitLabDiscussionNote(note)) : []))
+      .flat()
 
   /**
    * プロジェクトのすべてのMR情報を取得
    * @returns プロジェクトのすべてのMR情報の配列
    */
-  const mergerequests = async () => await api.MergeRequests.all({ projectId })
+  const mergerequests = async () =>
+    (await api.MergeRequests.all({ projectId })).map((mr) => shapeGitLabMergeRequest(mr))
 
   return {
     refCommits,

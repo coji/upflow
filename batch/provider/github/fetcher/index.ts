@@ -1,5 +1,11 @@
 import { Octokit } from 'octokit'
-import type { GitHubPullRequest, GitHubCommit, GitHubReviewComment, GitHubReview } from '../model'
+import type {
+  ShapedGitHubPullRequest,
+  ShapedGitHubCommit,
+  ShapedGitHubReviewComment,
+  ShapedGitHubReview
+} from '../model'
+import { shapeGitHubPullRequest, shapeGitHubCommit, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
 
 interface createFetcherProps {
   owner: string
@@ -14,7 +20,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
    * @returns プロジェクトのすべてのプルリク情報の配列
    */
   const pullrequests = async () => {
-    let pulls: GitHubPullRequest[] = []
+    let pulls: ShapedGitHubPullRequest[] = []
     let page = 1
     do {
       const ret = await octokit.rest.pulls.list({
@@ -25,14 +31,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100
       })
       if (ret.data.length === 0) break
-      pulls = [...pulls, ...ret.data]
+      pulls = [...pulls, ...ret.data.map((pr) => shapeGitHubPullRequest(pr))]
       page++
     } while (true)
     return pulls
   }
 
   const commits = async (pullNumber: number) => {
-    let allCommits: GitHubCommit[] = []
+    let allCommits: ShapedGitHubCommit[] = []
     let page = 1
     do {
       const ret = await octokit.rest.pulls.listCommits({
@@ -43,14 +49,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100
       })
       if (ret.data.length === 0) break
-      allCommits = [...allCommits, ...ret.data]
+      allCommits = [...allCommits, ...ret.data.map((commit) => shapeGitHubCommit(commit))]
       page++
     } while (true)
     return allCommits
   }
 
   const reviewComments = async (pullNumber: number) => {
-    let allComments: GitHubReviewComment[] = []
+    let allComments: ShapedGitHubReviewComment[] = []
     let page = 1
     do {
       const ret = await octokit.rest.pulls.listReviewComments({
@@ -61,14 +67,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100
       })
       if (ret.data.length === 0) break
-      allComments = [...allComments, ...ret.data]
+      allComments = [...allComments, ...ret.data.map((comment) => shapeGitHubReviewComment(comment))]
       page++
     } while (true)
     return allComments
   }
 
   const reviews = async (pullNumber: number) => {
-    let allReviews: GitHubReview[] = []
+    let allReviews: ShapedGitHubReview[] = []
     let page = 1
     do {
       const ret = await octokit.rest.pulls.listReviews({
@@ -79,7 +85,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100
       })
       if (ret.data.length === 0) break
-      allReviews = [...allReviews, ...ret.data]
+      allReviews = [...allReviews, ...ret.data.map((review) => shapeGitHubReview(review))]
       page++
     } while (true)
     return allReviews
