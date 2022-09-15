@@ -38,21 +38,16 @@ export const exportToSpreadsheet = async (company: Company) => {
     'releasedAt'
   ].join('\t')
 
+  const repositories = await prisma.repository.findMany({
+    where: {
+      companyId: company.id
+    }
+  })
   const results = await prisma.pullRequest.findMany({
     where: {
-      repository: {
-        companyId: company.id
+      repositoryId: {
+        in: repositories.map((repo) => repo.id)
       }
-    },
-    include: {
-      repository: {
-        select: {
-          companyId: true
-        }
-      }
-    },
-    orderBy: {
-      number: 'desc'
     }
   })
 
@@ -60,16 +55,8 @@ export const exportToSpreadsheet = async (company: Company) => {
     header,
     ...results.map((pr) => {
       // １行タブ区切り x 改行区切りで全行まとめてペースト
-      const {
-        repositoryId,
-        repository,
-        firstCommittedAt,
-        pullRequestCreatedAt,
-        firstReviewedAt,
-        mergedAt,
-        releasedAt,
-        ...rest
-      } = pr
+      const { repositoryId, firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt, ...rest } =
+        pr
       return Object.values({
         ...rest,
         firstCommitedAt: timeFormat(firstCommittedAt), // ISO形式から YYYY-MM-DD HH:mm:ss に変換。TODO: タイムゾーン対応?
@@ -80,5 +67,11 @@ export const exportToSpreadsheet = async (company: Company) => {
       }).join('\t')
     })
   ].join('\n')
-  sheet.paste(data)
+
+  // ガベージコレクションを起動してがんばる
+  if (global.gc) {
+    global.gc()
+  }
+
+  await sheet.paste(data)
 }
