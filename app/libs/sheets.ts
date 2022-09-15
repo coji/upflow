@@ -24,6 +24,16 @@ export const createSheetApi = async ({ sheetId, clientEmail, privateKey }: creat
       requestBody: {
         requests: [
           {
+            deleteRange: {
+              range: {
+                sheetId: 0,
+                startColumnIndex: 0,
+                endColumnIndex: 99
+              },
+              shiftDimension: 'COLUMNS'
+            }
+          },
+          {
             pasteData: {
               coordinate: {
                 sheetId: 0,
