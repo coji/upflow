@@ -108,17 +108,18 @@ model PullRequest {
   totalTime            Float?
   repositoryId         String
   repository           Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  updatedAt            String?
 
   @@id([repositoryId, number])
 }
 
 model ExportSetting {
-  id          String  @id @default(cuid())
-  companyId   String  @unique
-  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  companyId   String   @unique
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   sheetId     String
   clientEmail String
   privateKey  String
-  updatedAt   DateTime  @updatedAt
-  createdAt   DateTime  @default(now())
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
 }

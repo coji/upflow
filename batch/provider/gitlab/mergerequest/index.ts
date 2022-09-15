@@ -62,7 +62,8 @@ export const buildMergeRequests = async (
       reviewTime: reviewTime({ firstReviewedAt, mergedAt }),
       deployTime: deployTime({ mergedAt, releasedAt }),
       totalTime: totalTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt }),
-      repositoryId: config.repositoryId
+      repositoryId: config.repositoryId,
+      updatedAt: nullOrDate(m.updatedAt)
     })
   }
   return results

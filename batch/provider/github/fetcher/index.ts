@@ -6,6 +6,7 @@ import type {
   ShapedGitHubReview
 } from '../model'
 import { shapeGitHubPullRequest, shapeGitHubCommit, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
+import dayjs from 'dayjs'
 
 interface createFetcherProps {
   owner: string
@@ -31,7 +32,12 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100
       })
       if (ret.data.length === 0) break
-      pulls = [...pulls, ...ret.data.map((pr) => shapeGitHubPullRequest(pr))]
+      pulls = [
+        ...pulls,
+        ...ret.data
+          .filter((pr) => dayjs(pr.updated_at) > dayjs().add(-90, 'days')) // 90日以上前のは除外
+          .map((pr) => shapeGitHubPullRequest(pr))
+      ]
       page++
     } while (true)
     return pulls

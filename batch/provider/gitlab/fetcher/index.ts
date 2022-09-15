@@ -2,6 +2,7 @@ import type { GitLabCommit } from '../model'
 import { Gitlab } from '@gitbeaker/node'
 import got from 'got'
 import { shapeGitLabMergeRequest, shapeGitLabCommit, shapeGitLabDiscussionNote } from '../shaper'
+import dayjs from 'dayjs'
 
 export interface createFetcherProps {
   projectId: string
@@ -58,7 +59,9 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
    * @returns プロジェクトのすべてのMR情報の配列
    */
   const mergerequests = async () =>
-    (await api.MergeRequests.all({ projectId })).map((mr) => shapeGitLabMergeRequest(mr))
+    (await api.MergeRequests.all({ projectId }))
+      .filter((mr) => dayjs(mr.updated_at) > dayjs().add(-90, 'days')) // 90日以上のは除外
+      .map((mr) => shapeGitLabMergeRequest(mr))
 
   return {
     refCommits,
