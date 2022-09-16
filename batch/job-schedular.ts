@@ -22,7 +22,7 @@ export const createJobSchedular = () => {
     graceful.listen()
 
     await jobSchedular.start()
-    logger.info('batch process started.')
+    logger.info('job schedular started.')
   }
 
   return {

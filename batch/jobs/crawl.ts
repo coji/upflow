@@ -1,4 +1,5 @@
 import { parentPort } from 'node:worker_threads'
+import { setTimeout } from 'node:timers/promises'
 import { prisma } from '~/app/db.server'
 import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
@@ -27,7 +28,7 @@ const crawlMain = async () => {
   }
 
   for (const company of companies) {
-    logger.info('company: ', company)
+    logger.info('company: ', company.name)
 
     const integration = company.integration
     if (!integration) {
@@ -63,4 +64,9 @@ const crawlMain = async () => {
   logger.info('crawl completed.')
 }
 
-crawlMain()
+;(async () => {
+  await crawlMain()
+  await setTimeout(1000) // 先に終了しちゃうのでちょっと待つ
+  if (parentPort) parentPort.postMessage('done')
+  else process.exit(0)
+})()
