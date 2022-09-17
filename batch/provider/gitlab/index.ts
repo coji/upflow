@@ -1,7 +1,6 @@
 import type { Integration, Repository, Company, PullRequest } from '@prisma/client'
 import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
-import { upsertPullRequest } from '~/app/models/pullRequest.server'
 import { createFetcher } from '~/batch/provider/gitlab/fetcher'
 import { createAggregator } from './aggregator'
 import { buildMergeRequests } from './mergerequest'
@@ -70,10 +69,7 @@ export const createGitLabProvider = (integration: Integration) => {
     logger.info('fetch completed: ', repository.name)
   }
 
-  /**
-   * upsert analized report
-   */
-  const upsert = async (company: Company, repositories: Repository[]) => {
+  const analyze = async (company: Company, repositories: Repository[]) => {
     let allPulls: PullRequest[] = []
 
     for (const repository of repositories) {
@@ -91,18 +87,13 @@ export const createGitLabProvider = (integration: Integration) => {
         },
         mergerequests
       )
-
       allPulls = [...allPulls, ...pulls]
-
-      for (const mr of pulls) {
-        await upsertPullRequest(mr)
-      }
     }
     return allPulls
   }
 
   return {
     fetch,
-    upsert
+    analyze
   }
 }

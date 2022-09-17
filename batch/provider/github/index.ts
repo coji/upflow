@@ -7,7 +7,6 @@ import { createAggregator } from './aggregator'
 import { createFetcher } from './fetcher'
 import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
-import { upsertPullRequest } from '~/app/models/pullRequest.server'
 
 export const createGitHubProvider = (integration: Integration) => {
   interface FetchOptions {
@@ -79,7 +78,7 @@ export const createGitHubProvider = (integration: Integration) => {
     logger.info('fetch completed: ', repository.name)
   }
 
-  const upsert = async (company: Company, repositories: Repository[]) => {
+  const analyze = async (company: Company, repositories: Repository[]) => {
     let allPulls: PullRequest[] = []
 
     for (const repository of repositories) {
@@ -87,7 +86,6 @@ export const createGitHubProvider = (integration: Integration) => {
         companyId: repository.companyId,
         repositoryId: repository.id
       })
-
       const pulls = await buildPullRequests(
         {
           companyId: repository.companyId,
@@ -97,18 +95,13 @@ export const createGitHubProvider = (integration: Integration) => {
         },
         await store.loader.pullrequests()
       )
-
       allPulls = [...allPulls, ...pulls]
-
-      for (const pr of pulls) {
-        await upsertPullRequest(pr)
-      }
     }
     return allPulls
   }
 
   return {
     fetch,
-    upsert
+    analyze
   }
 }

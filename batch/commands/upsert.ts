@@ -2,7 +2,7 @@ import invariant from 'tiny-invariant'
 import { prisma } from '~/app/db.server'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider/index'
-import { exportToSpreadsheet } from '../export'
+import { exportToSpreadsheet } from '../bizlogic/export-spreadsheet'
 
 interface UpsertCommandProps {
   companyId?: string
@@ -23,7 +23,23 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
   const provider = createProvider(company.integration)
   invariant(provider, `unknown provider ${company.integration.provider}`)
 
-  const pullrequests = await provider.upsert(company, company.repositories)
+  const pullrequests = await provider.analyze(company, company.repositories)
+
+  // upsert
+  await prisma.$transaction(
+    pullrequests.map((pr) =>
+      prisma.pullRequest.upsert({
+        where: {
+          repositoryId_number: {
+            repositoryId: pr.repositoryId,
+            number: pr.number
+          }
+        },
+        create: pr,
+        update: pr
+      })
+    )
+  )
 
   await exportToSpreadsheet(company, pullrequests) // google spreadsheet にエクスポート
 }

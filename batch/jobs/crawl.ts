@@ -3,7 +3,8 @@ import { setTimeout } from 'node:timers/promises'
 import { prisma } from '~/app/db.server'
 import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
-import { exportToSpreadsheet } from '../export'
+import { upsertPullRequest } from '~/app/models/pullRequest.server'
+import { exportToSpreadsheet } from '../bizlogic/export-spreadsheet'
 
 const options = { refresh: false, halt: false, delay: 800 }
 if (parentPort) {
@@ -51,11 +52,16 @@ const crawlMain = async () => {
       logger.info('fetch completed.')
     }
 
+    logger.info('analyze started...')
+    const pullrequests = await provider.analyze(company, company.repositories)
+    logger.info('analyze completed.')
+
     logger.info('upsert started...')
-    const pullrequests = await provider.upsert(company, company.repositories)
+    for (const pr of pullrequests) {
+      await upsertPullRequest(pr)
+    }
     logger.info('upsert completed.')
 
-    // google spreadsheet にエクスポート
     logger.info('exporting to spreadsheet...')
     await exportToSpreadsheet(company, pullrequests)
     logger.info('export to spreadsheet done')
