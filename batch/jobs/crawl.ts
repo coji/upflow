@@ -52,12 +52,12 @@ const crawlMain = async () => {
     }
 
     logger.info('upsert started...')
-    await provider.upsert(company, company.repositories)
+    const pullrequests = await provider.upsert(company, company.repositories)
     logger.info('upsert completed.')
 
     // google spreadsheet にエクスポート
     logger.info('exporting to spreadsheet...')
-    await exportToSpreadsheet(company)
+    await exportToSpreadsheet(company, pullrequests)
     logger.info('export to spreadsheet done')
   }
 
