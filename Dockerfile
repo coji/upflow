@@ -63,7 +63,6 @@ COPY --from=build /upflow/package.json /upflow/package.json
 COPY --from=build /upflow/start.sh /upflow/start.sh
 COPY --from=build /upflow/prisma /upflow/prisma
 COPY --from=build /upflow/dist /upflow/dist
-COPY tsconfig.json /upflow/tsconfig.json
 COPY server.js /upflow/server.js
 
 ENTRYPOINT [ "./start.sh" ]
