@@ -1,4 +1,4 @@
-import type { Company } from '@prisma/client'
+import type { Company, PullRequest } from '@prisma/client'
 import { prisma } from '~/app/db.server'
 import { createSheetApi } from '~/app/libs/sheets'
 import { timeFormat } from '../helper/timeformat'
@@ -8,7 +8,7 @@ import dayjs from 'dayjs'
  * google sheets にエクスポート
  * @param company
  */
-export const exportToSpreadsheet = async (company: Company) => {
+export const exportToSpreadsheet = async (company: Company, pullrequests: PullRequest[]) => {
   const exportSetting = await prisma.exportSetting.findFirst({ where: { companyId: company.id } })
   if (!exportSetting) {
     return
@@ -40,27 +40,9 @@ export const exportToSpreadsheet = async (company: Company) => {
     'updatedAt'
   ].join('\t')
 
-  const repositories = await prisma.repository.findMany({
-    where: {
-      companyId: company.id
-    }
-  })
-  const results = await prisma.pullRequest.findMany({
-    where: {
-      AND: {
-        repositoryId: {
-          in: repositories.map((repo) => repo.id)
-        },
-        updatedAt: {
-          not: null
-        }
-      }
-    }
-  })
-
   const data = [
     header,
-    ...results
+    ...pullrequests
       .filter((pr) => pr.updatedAt && dayjs(pr.updatedAt) > dayjs().add(-90, 'days'))
       .map((pr) => {
         // １行タブ区切り x 改行区切りで全行まとめてペースト

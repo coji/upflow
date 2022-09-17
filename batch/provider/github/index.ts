@@ -1,4 +1,4 @@
-import type { Integration, Repository, Company } from '@prisma/client'
+import type { Integration, Repository, Company, PullRequest } from '@prisma/client'
 import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { logger } from '~/batch/helper/logger'
@@ -80,13 +80,15 @@ export const createGitHubProvider = (integration: Integration) => {
   }
 
   const upsert = async (company: Company, repositories: Repository[]) => {
+    let allPulls: PullRequest[] = []
+
     for (const repository of repositories) {
       const store = createStore({
         companyId: repository.companyId,
         repositoryId: repository.id
       })
 
-      const results = await buildPullRequests(
+      const pulls = await buildPullRequests(
         {
           companyId: repository.companyId,
           repositoryId: repository.id,
@@ -96,10 +98,13 @@ export const createGitHubProvider = (integration: Integration) => {
         await store.loader.pullrequests()
       )
 
-      for (const pr of results) {
+      allPulls = [...allPulls, ...pulls]
+
+      for (const pr of pulls) {
         await upsertPullRequest(pr)
       }
     }
+    return allPulls
   }
 
   return {

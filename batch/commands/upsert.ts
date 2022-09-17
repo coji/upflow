@@ -23,7 +23,7 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
   const provider = createProvider(company.integration)
   invariant(provider, `unknown provider ${company.integration.provider}`)
 
-  await provider.upsert(company, company.repositories)
+  const pullrequests = await provider.upsert(company, company.repositories)
 
-  await exportToSpreadsheet(company) // google spreadsheet にエクスポート
+  await exportToSpreadsheet(company, pullrequests) // google spreadsheet にエクスポート
 }
