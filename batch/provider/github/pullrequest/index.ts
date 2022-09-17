@@ -1,13 +1,13 @@
 import type { ShapedGitHubPullRequest } from '../model'
 import type { PullRequest } from '@prisma/client'
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 import { createStore } from '../store'
 import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/cycletime'
 import { findReleaseDate } from '../release-detect'
 import { first } from 'remeda'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
-  return dateStr ? dayjs(dateStr).format() : null
+  return dateStr ? dayjs(dateStr).utc().toISOString() : null
 }
 
 export const buildPullRequests = async (

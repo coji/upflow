@@ -2,13 +2,14 @@ import type { Company, PullRequest } from '@prisma/client'
 import { prisma } from '~/app/db.server'
 import { createSheetApi } from '~/app/libs/sheets'
 import { timeFormat } from '../helper/timeformat'
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 
 /**
  * google sheets にエクスポート
  * @param company
  */
 export const exportToSpreadsheet = async (company: Company, pullrequests: PullRequest[]) => {
+  const tz = 'Asia/Tokyo'
   const exportSetting = await prisma.exportSetting.findFirst({ where: { companyId: company.id } })
   if (!exportSetting) {
     return
@@ -58,12 +59,12 @@ export const exportToSpreadsheet = async (company: Company, pullrequests: PullRe
         } = pr
         return Object.values({
           ...rest,
-          firstCommitedAt: timeFormat(firstCommittedAt), // ISO形式から YYYY-MM-DD HH:mm:ss に変換。TODO: タイムゾーン対応?
-          pullRequestCreatedAt: timeFormat(pullRequestCreatedAt),
-          firstReviewedAt: timeFormat(firstReviewedAt),
-          mergedAt: timeFormat(mergedAt),
-          releasedAt: timeFormat(releasedAt),
-          updatedAt: timeFormat(updatedAt)
+          firstCommitedAt: timeFormat(firstCommittedAt, tz), // ISO形式から YYYY-MM-DD HH:mm:ss に変換。TODO: タイムゾーン対応?
+          pullRequestCreatedAt: timeFormat(pullRequestCreatedAt, tz),
+          firstReviewedAt: timeFormat(firstReviewedAt, tz),
+          mergedAt: timeFormat(mergedAt, tz),
+          releasedAt: timeFormat(releasedAt, tz),
+          updatedAt: timeFormat(updatedAt, tz)
         }).join('\t')
       })
   ].join('\n')

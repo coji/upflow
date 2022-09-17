@@ -6,7 +6,7 @@ import type {
   ShapedGitHubReview
 } from '../model'
 import { shapeGitHubPullRequest, shapeGitHubCommit, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 
 interface createFetcherProps {
   owner: string

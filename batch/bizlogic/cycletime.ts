@@ -1,4 +1,4 @@
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 import { pipe, filter, sortBy, first, last } from 'remeda'
 
 export const codingTime = ({

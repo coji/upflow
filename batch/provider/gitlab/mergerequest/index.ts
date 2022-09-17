@@ -1,13 +1,13 @@
 import type { ShapedGitLabMergeRequest } from '../model'
 import type { PullRequest } from '@prisma/client'
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 import { createAggregator } from '../aggregator'
 import { createStore } from '../store'
 import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/cycletime'
 import { findReleaseDate } from '../release-detect'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
-  return dateStr ? dayjs(dateStr).format() : null
+  return dateStr ? dayjs(dateStr).utc().toISOString() : null
 }
 
 export const buildMergeRequests = async (
@@ -28,7 +28,7 @@ export const buildMergeRequests = async (
     const discussions = await store.loader.discussions(m.iid).catch(() => [])
 
     const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.createdAt)
-    const pullRequestCreatedAt = dayjs(m.createdAt).format()
+    const pullRequestCreatedAt = nullOrDate(m.createdAt)!
     const firstReviewedAt = nullOrDate(aggregator.firstReviewComment(discussions, m.author)?.createdAt)
     const mergedAt = nullOrDate(m.mergedAt)
     const releasedAt = nullOrDate(

@@ -1,7 +1,7 @@
-import dayjs from 'dayjs'
+import dayjs from '~/app/libs/dayjs'
 
 const log = (type: string, ...args: any[]) => {
-  console.log(`${dayjs().format('YYYY-MM-DD HH:mm:ss.SSS')}`, type, ...args)
+  console.log(`${dayjs().utc().format('YYYY-MM-DD HH:mm:ss.SSS')}`, type, ...args)
 }
 export const logger = {
   info: (...args: any[]): any => log('INFO', ...args),
