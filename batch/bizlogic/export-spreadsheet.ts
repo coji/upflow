@@ -69,10 +69,5 @@ export const exportToSpreadsheet = async (company: Company, pullrequests: PullRe
       })
   ].join('\n')
 
-  // ガベージコレクションを起動してがんばる
-  if (global.gc) {
-    global.gc()
-  }
-
   await sheet.paste(data)
 }
