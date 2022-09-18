@@ -20,13 +20,8 @@ const crawlMain = async () => {
   logger.info('crawl started.')
 
   const companies = await prisma.company.findMany({
-    include: { integration: true, repositories: true }
+    include: { integration: true, repositories: true, exportSetting: true }
   })
-
-  if (companies.length === 0) {
-    logger.error('no company found')
-    return
-  }
 
   for (const company of companies) {
     logger.info('company: ', company.name)
@@ -43,28 +38,31 @@ const crawlMain = async () => {
       continue
     }
 
+    // fetch
     for (const repository of company.repositories) {
-      if (!provider) {
-        continue
-      }
       logger.info('fetch started...')
       await provider.fetch(repository, options)
       logger.info('fetch completed.')
     }
 
+    // analyze
     logger.info('analyze started...')
     const pullrequests = await provider.analyze(company, company.repositories)
     logger.info('analyze completed.')
 
+    // upsert
     logger.info('upsert started...')
     for (const pr of pullrequests) {
       await upsertPullRequest(pr)
     }
     logger.info('upsert completed.')
 
-    logger.info('exporting to spreadsheet...')
-    await exportToSpreadsheet(company, pullrequests)
-    logger.info('export to spreadsheet done')
+    // export
+    if (company.exportSetting) {
+      logger.info('exporting to spreadsheet...')
+      await exportToSpreadsheet(pullrequests, company.exportSetting)
+      logger.info('export to spreadsheet done')
+    }
   }
 
   logger.info('crawl completed.')
