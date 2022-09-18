@@ -16,7 +16,7 @@ FROM base as deps
 WORKDIR /upflow
 
 COPY package.json .npmrc ./
-RUN npm install --production=false
+RUN npm install --include=dev
 
 # Setup production node_modules
 FROM base as production-deps
