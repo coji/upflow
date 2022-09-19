@@ -5,20 +5,19 @@ interface createSheetApiParams {
   clientEmail: string
   privateKey: string
 }
-export const createSheetApi = async ({ sheetId, clientEmail, privateKey }: createSheetApiParams) => {
-  const jwt = new auth.JWT({
-    email: clientEmail,
-    key: privateKey,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets']
-  })
-  await jwt.authorize()
+export const createSheetApi = ({ sheetId, clientEmail, privateKey }: createSheetApiParams) => {
+  const paste = async (data: string) => {
+    const jwt = new auth.JWT({
+      email: clientEmail,
+      key: privateKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    })
+    await jwt.authorize()
 
-  const sheet = sheets({
-    version: 'v4',
-    auth: jwt
-  })
-
-  const paste = async (data: string) =>
+    const sheet = sheets({
+      version: 'v4',
+      auth: jwt
+    })
     await sheet.spreadsheets.batchUpdate({
       spreadsheetId: sheetId,
       requestBody: {
@@ -48,6 +47,7 @@ export const createSheetApi = async ({ sheetId, clientEmail, privateKey }: creat
         ]
       }
     })
+  }
 
-  return { sheet, paste }
+  return { paste }
 }

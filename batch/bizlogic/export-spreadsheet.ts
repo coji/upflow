@@ -9,7 +9,7 @@ import dayjs from '~/app/libs/dayjs'
  */
 export const exportToSpreadsheet = async (pullrequests: PullRequest[], exportSetting: ExportSetting) => {
   const tz = 'Asia/Tokyo'
-  const sheet = await createSheetApi({
+  const sheet = createSheetApi({
     sheetId: exportSetting.sheetId,
     clientEmail: exportSetting.clientEmail,
     privateKey: exportSetting.privateKey
