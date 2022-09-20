@@ -1,10 +1,10 @@
-/node_modules
+node_modules
 *.log
 .DS_Store
 .env
-/.cache
-/public/build
-/build
-/dist
-/data
-/test
+.cache
+public/build
+build
+dist
+data
+test
