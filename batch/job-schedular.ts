@@ -1,32 +1,26 @@
-import Graceful from '@ladjs/graceful'
-import Bree from 'bree'
-import path from 'node:path'
+import schedule from 'node-schedule'
 import { logger } from './helper/logger'
+import { crawlJob } from './jobs/crawl'
 
 export const createJobSchedular = () => {
-  const jobSchedular = new Bree({
-    root: path.join(__dirname, 'jobs'),
-    logger,
-    jobs: [
-      {
-        name: 'crawl',
-        cron: '30 */1 * * *',
-        timezone: 'Asia/Tokyo'
+  const start = () => {
+    let isRunning = false
+
+    schedule.scheduleJob('30 * * * *', async () => {
+      try {
+        if (isRunning) throw new Error('crawl job already running.')
+        isRunning = true
+        logger.info('crawl job started.')
+
+        await crawlJob()
+
+        isRunning = false
+        logger.info('crawl job completed.')
+      } catch (e) {
+        logger.error(e)
       }
-    ],
-    defaultExtension: process.env.NODE_ENV === 'production' ? 'js' : 'ts'
-  })
-
-  const start = async () => {
-    const graceful = new Graceful({ brees: [jobSchedular] })
-    graceful.listen()
-
-    await jobSchedular.start()
-    logger.info('job schedular started.')
+    })
   }
 
-  return {
-    jobSchedular,
-    start
-  }
+  return { start }
 }

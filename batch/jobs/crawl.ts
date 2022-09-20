@@ -1,5 +1,3 @@
-import { parentPort } from 'node:worker_threads'
-import { setTimeout } from 'node:timers/promises'
 import { prisma } from '~/app/db.server'
 import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
@@ -7,16 +5,8 @@ import { upsertPullRequest } from '~/app/models/pullRequest.server'
 import { exportToSpreadsheet } from '../bizlogic/export-spreadsheet'
 
 const options = { refresh: false, halt: false, delay: 800 }
-if (parentPort) {
-  parentPort.once('message', (message) => {
-    if (message === 'cancel') {
-      logger.fatal('cancel message received')
-      options.halt = true
-    }
-  })
-}
 
-const crawlMain = async () => {
+export const crawlJob = async () => {
   logger.info('crawl started.')
 
   const companies = await prisma.company.findMany({
@@ -67,10 +57,3 @@ const crawlMain = async () => {
 
   logger.info('crawl completed.')
 }
-
-;(async () => {
-  await crawlMain()
-  await setTimeout(1000) // 先に終了しちゃうのでちょっと待つ
-  if (parentPort) parentPort.postMessage('done')
-  else process.exit(0)
-})()
