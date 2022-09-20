@@ -59,8 +59,8 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
    * @returns プロジェクトのすべてのMR情報の配列
    */
   const mergerequests = async () =>
-    (await api.MergeRequests.all({ projectId }))
-      .filter((mr) => dayjs(mr.updated_at) > dayjs().add(-90, 'days')) // 90日以上のは除外
+    (await api.MergeRequests.all({ projectId, updatedAfter: dayjs().utc().add(-90, 'days').toISOString() }))
+      .filter((mr) => dayjs(mr.updated_at) > dayjs().utc().add(-90, 'days')) // 90日以上のは除外
       .map((mr) => shapeGitLabMergeRequest(mr))
 
   return {
