@@ -4,8 +4,7 @@ import { Form, useLoaderData } from '@remix-run/react'
 import { redirect } from '@remix-run/node'
 import invariant from 'tiny-invariant'
 import { zfd } from 'zod-form-data'
-import { AppLink } from '~/app/components/AppLink'
-import { AppMutationModal } from '~/app/components/AppMutationModal'
+import { AppLink, AppMutationModal } from '~/app/components'
 import { upsertExportSetting, getExportSetting } from '~/app/models/admin/export-setting.server'
 
 const schema = zfd.formData({

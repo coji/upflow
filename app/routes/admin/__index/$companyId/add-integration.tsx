@@ -6,9 +6,7 @@ import { RiGithubFill, RiGitlabFill } from 'react-icons/ri'
 import { ValidatedForm, validationError } from 'remix-validated-form'
 import invariant from 'tiny-invariant'
 import { z } from 'zod'
-import { AppRadioGroup, AppSubmitButton, AppTextarea } from '~/app/components'
-import { AppLink } from '~/app/components/AppLink'
-import { AppMutationModal } from '~/app/components/AppMutationModal'
+import { AppLink, AppMutationModal, AppRadioGroup, AppSubmitButton, AppTextarea } from '~/app/components'
 import { createIntegration, getIntegration } from '~/app/models/admin/integration.server'
 
 export const validator = withZod(

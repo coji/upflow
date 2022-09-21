@@ -3,9 +3,7 @@ import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
-import { AppLink } from '~/app/components/AppLink'
-import { AppMutationModal } from '~/app/components/AppMutationModal'
-import { AppProviderBadge } from '~/app/components/AppProviderBadge'
+import { AppLink, AppMutationModal, AppProviderBadge } from '~/app/components'
 import { deleteRepository, getRepository } from '~/app/models/admin/repository.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {

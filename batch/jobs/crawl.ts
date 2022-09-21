@@ -1,4 +1,4 @@
-import { prisma } from '~/app/db.server'
+import { prisma } from '~/app/utils/db.server'
 import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'

@@ -3,11 +3,10 @@ import type { ActionArgs, LoaderArgs, MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import { useEffect, useRef } from 'react'
-import { AppLink } from '~/app/components/AppLink'
+import { AppLink, AppCenterFormFrame } from '~/app/components'
 import { createUser, getUserByEmail } from '~/app/models/user.server'
-import { createUserSession, getUserId } from '~/app/session.server'
-import { safeRedirect, validateEmail } from '~/app/utils'
-import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
+import { createUserSession, getUserId } from '~/app/utils/session.server'
+import { safeRedirect, validateEmail } from '~/app/utils/utils'
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUserId(request)

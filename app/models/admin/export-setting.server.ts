@@ -1,4 +1,4 @@
-import { prisma } from '~/app/db.server'
+import { prisma } from '~/app/utils/db.server'
 
 export const getExportSetting = async (companyId: string) =>
   await prisma.exportSetting.findFirst({ where: { companyId } })
