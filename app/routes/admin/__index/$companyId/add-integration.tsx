@@ -1,19 +1,21 @@
-import { Box, Button, FormLabel, Icon, Input, Radio, RadioGroup, Stack } from '@chakra-ui/react'
+import { Box, Button, Icon, Radio, Stack } from '@chakra-ui/react'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
-import { Form } from '@remix-run/react'
+import { withZod } from '@remix-validated-form/with-zod'
 import { RiGithubFill, RiGitlabFill } from 'react-icons/ri'
+import { ValidatedForm, validationError } from 'remix-validated-form'
 import invariant from 'tiny-invariant'
-import { zfd } from 'zod-form-data'
-import { AppLink } from '~/app/components/AppLink'
-import { AppMutationModal } from '~/app/components/AppMutationModal'
+import { z } from 'zod'
+import { AppLink, AppMutationModal, AppRadioGroup, AppSubmitButton, AppTextarea } from '~/app/components'
 import { createIntegration, getIntegration } from '~/app/models/admin/integration.server'
 
-const providerSchema = zfd.formData({
-  provider: zfd.text(),
-  method: zfd.text(),
-  token: zfd.text()
-})
+export const validator = withZod(
+  z.object({
+    provider: z.enum(['github', 'gitlab'], { required_error: 'provider is required' }),
+    method: z.enum(['token'], { required_error: 'token is required' }),
+    token: z.string().min(1, { message: 'token is required' })
+  })
+)
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   invariant(params.companyId, 'company id shoud specified')
@@ -27,12 +29,16 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 
 export const action = async ({ request, params }: ActionArgs) => {
   invariant(params.companyId, 'company id shoud specified')
-  const formData = await request.formData()
-  const { provider, method, token } = providerSchema.parse(formData)
-  if (!(provider === 'github' || provider === 'gitlab')) {
-    throw new Error('provider not supported')
+  const { error, data } = await validator.validate(await request.formData())
+  if (error) {
+    return validationError(error)
   }
-  return await createIntegration({ companyId: params.companyId, provider, method, privateToken: token })
+  return await createIntegration({
+    companyId: params.companyId,
+    provider: data.provider,
+    method: data.method,
+    privateToken: data.token
+  })
 }
 
 const AddIntegrationModal = () => {
@@ -41,50 +47,41 @@ const AddIntegrationModal = () => {
       title="Add integration"
       footer={
         <Stack direction="row">
-          <Button colorScheme="blue" type="submit" form="form">
+          <AppSubmitButton colorScheme="blue" type="submit" form="form">
             Add
-          </Button>
+          </AppSubmitButton>
           <AppLink to="..">
             <Button variant="ghost">Cancel</Button>
           </AppLink>
         </Stack>
       }
     >
-      <Form method="post" id="form">
-        <Box display="grid" gridTemplateColumns="auto 1fr" gap="4" alignItems="center">
-          <FormLabel m="0">Provider</FormLabel>
-          <RadioGroup>
+      <ValidatedForm method="post" id="form" validator={validator}>
+        <Stack>
+          <AppRadioGroup name="provider" label="Provider">
             <Stack direction="row" gap="4">
-              <Radio name="provider" value="github">
+              <Radio value="github">
                 <Stack direction="row" align="center">
                   <Icon as={RiGithubFill} />
                   <Box>GitHub</Box>
                 </Stack>
               </Radio>
-              <Radio name="provider" value="gitlab">
+              <Radio value="gitlab">
                 <Stack direction="row" align="center">
                   <Icon as={RiGitlabFill} />
                   <Box>GitLab</Box>
                 </Stack>
               </Radio>
             </Stack>
-          </RadioGroup>
+          </AppRadioGroup>
 
-          <FormLabel m="0">Method</FormLabel>
-          <RadioGroup value="token">
-            <Stack direction="row">
-              <Radio name="method" value="token">
-                Private Token
-              </Radio>
-            </Stack>
-          </RadioGroup>
+          <AppRadioGroup name="method" label="Method">
+            <Radio value="token">Private Token</Radio>
+          </AppRadioGroup>
 
-          <FormLabel m="0" htmlFor="token">
-            Token
-          </FormLabel>
-          <Input name="token" id="token"></Input>
-        </Box>
-      </Form>
+          <AppTextarea name="token" label="Token"></AppTextarea>
+        </Stack>
+      </ValidatedForm>
     </AppMutationModal>
   )
 }

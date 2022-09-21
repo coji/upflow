@@ -1,4 +1,4 @@
-import { prisma } from '~/app/db.server'
+import { prisma } from '~/app/utils/db.server'
 
 export const getIntegration = async (companyId: string) => await prisma.integration.findFirst({ where: { companyId } })
 

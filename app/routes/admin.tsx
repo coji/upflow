@@ -1,10 +1,9 @@
 import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack, Tag } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { Outlet, useSubmit } from '@remix-run/react'
-import { requireAdminUserId } from '~/app/session.server'
-import { useUser } from '~/app/utils'
-import { AppLink } from '../components/AppLink'
-import { AppProfileMenuButton } from '../components/AppProfileMenuButton'
+import { requireAdminUserId } from '~/app/utils/session.server'
+import { useUser } from '~/app/utils/utils'
+import { AppLink, AppProfileMenuButton } from '../components'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireAdminUserId(request)

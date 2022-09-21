@@ -58,5 +58,7 @@ app.listen(port, () => {
   console.log(`Express server listening on port ${port}`)
 })
 
-const { start } = createJobSchedular()
-start()
+if (process.env.NODE_ENV === 'production') {
+  const { start } = createJobSchedular()
+  start()
+}

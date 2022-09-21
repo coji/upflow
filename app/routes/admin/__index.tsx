@@ -3,7 +3,7 @@ import { Box, Button, Grid, Stack } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
 import { getCompanies } from '~/app/models/admin/company.server'
-import { requireUserId } from '~/app/session.server'
+import { requireUserId } from '~/app/utils/session.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request)

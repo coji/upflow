@@ -5,8 +5,8 @@ import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import * as React from 'react'
 import { AppCenterFormFrame } from '~/app/components/AppCenterFormFrame'
 import { verifyLogin } from '~/app/models/user.server'
-import { createUserSession } from '~/app/session.server'
-import { safeRedirect, validateEmail } from '~/app/utils'
+import { createUserSession } from '~/app/utils/session.server'
+import { safeRedirect, validateEmail } from '~/app/utils/utils'
 
 export const loader = async ({ request }: LoaderArgs) => {
   return json({})

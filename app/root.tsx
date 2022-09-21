@@ -4,8 +4,8 @@ import type { LinksFunction, LoaderFunction, MetaFunction } from '@remix-run/nod
 import { json } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import { useContext, useEffect } from 'react'
-import { ClientStyleContext, ServerStyleContext } from './context'
-import { getUser } from './session.server'
+import { ClientStyleContext, ServerStyleContext } from './utils/context'
+import { getUser } from './utils/session.server'
 
 export const meta: MetaFunction = () => ({
   charset: 'utf-8',

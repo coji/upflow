@@ -17,10 +17,9 @@ import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
-import { AppLink } from '~/app/components/AppLink'
-import { AppProviderBadge } from '~/app/components/AppProviderBadge'
+import { AppLink, AppProviderBadge } from '~/app/components'
 import { getCompany } from '~/app/models/admin/company.server'
-import { requireUserId } from '~/app/session.server'
+import { requireUserId } from '~/app/utils/session.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
