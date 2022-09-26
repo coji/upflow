@@ -29,7 +29,8 @@ export const createGitLabProvider = (integration: Integration) => {
 
     // 前回最終取得されたMR
     const leastMergeRequest = aggregator.leastUpdatedMergeRequest(await store.loader.mergerequests().catch(() => []))
-    logger.info(`last fetched at: ${leastMergeRequest?.updatedAt}`)
+    const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
+    logger.info(`last fetched at: ${lastFetchedAt}`)
 
     // すべてのMR
     logger.info('fetch all merge requests...')
@@ -43,9 +44,15 @@ export const createGitLabProvider = (integration: Integration) => {
         return
       }
 
-      const isNew = leastMergeRequest ? mr.updatedAt > leastMergeRequest.updatedAt : true // 新しく fetch してきた MR
-      // すべて再フェッチせず、オープン以外、前回以前fetchしたMRの場合はスキップ
-      if (!refresh && mr.state !== 'opened' && !isNew) {
+      const isUpdated = mr.updatedAt > lastFetchedAt
+      // 前回以前fetchしたときから更新されていないMRの場合はスキップ
+      if (!refresh && !isUpdated) {
+        logger.debug('skip', {
+          number: mr.iid,
+          state: mr.state,
+          updatedAt: mr.updatedAt,
+          lastUpdatedAt: lastFetchedAt
+        })
         continue
       }
       const iid = mr.iid
