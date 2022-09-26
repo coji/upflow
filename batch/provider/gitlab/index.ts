@@ -47,12 +47,7 @@ export const createGitLabProvider = (integration: Integration) => {
       const isUpdated = mr.updatedAt > lastFetchedAt
       // 前回以前fetchしたときから更新されていないMRの場合はスキップ
       if (!refresh && !isUpdated) {
-        logger.debug('skip', {
-          number: mr.iid,
-          state: mr.state,
-          updatedAt: mr.updatedAt,
-          lastUpdatedAt: lastFetchedAt
-        })
+        logger.debug('skip', mr.iid, mr.state, mr.updatedAt, lastFetchedAt)
         continue
       }
       const iid = mr.iid

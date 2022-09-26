@@ -48,12 +48,7 @@ export const createGitHubProvider = (integration: Integration) => {
       const isUpdated = pr.updatedAt > lastFetchedAt
       // 前回以前fetchしたときから更新されていないPRの場合はスキップ
       if (!refresh && !isUpdated) {
-        logger.debug('skip', {
-          number: pr.number,
-          state: pr.state,
-          updatedAt: pr.updatedAt,
-          lastUpdatedAt: lastFetchedAt
-        })
+        logger.debug('skip', pr.number, pr.state, pr.updatedAt, lastFetchedAt)
         continue
       }
       const number = pr.number
