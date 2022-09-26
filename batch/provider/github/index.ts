@@ -29,7 +29,8 @@ export const createGitHubProvider = (integration: Integration) => {
 
     // PR の最終更新日時を起点とする
     const leastMergeRequest = aggregator.leastUpdatedPullRequest(await store.loader.pullrequests().catch(() => []))
-    logger.info(`last fetched at: ${leastMergeRequest?.updatedAt}`)
+    const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
+    logger.info(`last fetched at: ${lastFetchedAt}`)
 
     // 全プルリク情報をダウンロード
     logger.info(`fetching all pullrequests...`)
@@ -44,9 +45,15 @@ export const createGitHubProvider = (integration: Integration) => {
         return
       }
 
-      const isNew = leastMergeRequest ? pr.updatedAt > leastMergeRequest.updatedAt : true // 新しく fetch してきた PR
-      // すべて再フェッチせず、オープン以外、前回以前fetchしたPRの場合はスキップ
-      if (!refresh && pr.state !== 'open' && !isNew) {
+      const isUpdated = pr.updatedAt > lastFetchedAt
+      // 前回以前fetchしたときから更新されていないPRの場合はスキップ
+      if (!refresh && !isUpdated) {
+        logger.debug('skip', {
+          number: pr.number,
+          state: pr.state,
+          updatedAt: pr.updatedAt,
+          lastUpdatedAt: lastFetchedAt
+        })
         continue
       }
       const number = pr.number
