@@ -3,6 +3,9 @@ import { createSheetApi } from '~/app/libs/sheets'
 import { timeFormat } from '../helper/timeformat'
 import dayjs from '~/app/libs/dayjs'
 
+const escapeTabString = (str: string) => {
+  return str.replaceAll('\t', '\\t')
+}
 /**
  * @param pullrequests
  * @param exportSetting
@@ -49,7 +52,7 @@ export const exportToSpreadsheet = async (pullrequests: PullRequest[], exportSet
           targetBranch: pr.targetBranch,
           state: pr.state,
           author: pr.author,
-          title: pr.title,
+          title: escapeTabString(pr.title),
           url: pr.url,
           codingTime: pr.codingTime,
           pickupTime: pr.pickupTime,
