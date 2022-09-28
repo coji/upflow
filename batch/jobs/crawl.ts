@@ -2,7 +2,7 @@ import { prisma } from '~/app/utils/db.server'
 import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
-import { exportToSpreadsheet } from '../bizlogic/export-spreadsheet'
+import { exportPullsToSpreadsheet } from '../bizlogic/export-spreadsheet'
 
 const options = { refresh: false, halt: false, delay: 800 }
 
@@ -37,12 +37,12 @@ export const crawlJob = async () => {
 
     // analyze
     logger.info('analyze started...')
-    const pullrequests = await provider.analyze(company, company.repositories)
+    const { pulls, reviewResponses } = await provider.analyze(company, company.repositories)
     logger.info('analyze completed.')
 
     // upsert
     logger.info('upsert started...')
-    for (const pr of pullrequests) {
+    for (const pr of pulls) {
       await upsertPullRequest(pr)
     }
     logger.info('upsert completed.')
@@ -50,7 +50,7 @@ export const crawlJob = async () => {
     // export
     if (company.exportSetting) {
       logger.info('exporting to spreadsheet...')
-      await exportToSpreadsheet(pullrequests, company.exportSetting)
+      await exportPullsToSpreadsheet(pulls, company.exportSetting)
       logger.info('export to spreadsheet done')
     }
   }

@@ -73,6 +73,13 @@ export const createGitLabProvider = (integration: Integration) => {
 
   const analyze = async (company: Company, repositories: Repository[]) => {
     let allPulls: PullRequest[] = []
+    let allReviewResponses: {
+      repo: string
+      number: string
+      author: string
+      createdAt: string
+      responseTime: number
+    }[] = []
 
     for (const repository of repositories) {
       const store = createStore({
@@ -80,7 +87,7 @@ export const createGitLabProvider = (integration: Integration) => {
         repositoryId: repository.id
       })
       const mergerequests = await store.loader.mergerequests()
-      const pulls = await buildMergeRequests(
+      const { pulls, reviewResponses } = await buildMergeRequests(
         {
           companyId: repository.companyId,
           repositoryId: repository.id,
@@ -90,8 +97,9 @@ export const createGitLabProvider = (integration: Integration) => {
         mergerequests
       )
       allPulls = [...allPulls, ...pulls]
+      allReviewResponses = [...allReviewResponses, ...reviewResponses]
     }
-    return allPulls
+    return { pulls: allPulls, reviewResponses: allReviewResponses }
   }
 
   return {

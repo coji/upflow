@@ -1,11 +1,12 @@
 import { sheets, auth } from '@googleapis/sheets'
 
 interface createSheetApiParams {
-  sheetId: string
+  spreadsheetId: string
+  sheetTitle: string
   clientEmail: string
   privateKey: string
 }
-export const createSheetApi = ({ sheetId, clientEmail, privateKey }: createSheetApiParams) => {
+export const createSheetApi = ({ spreadsheetId, sheetTitle, clientEmail, privateKey }: createSheetApiParams) => {
   const paste = async (data: string) => {
     const jwt = new auth.JWT({
       email: clientEmail,
@@ -18,14 +19,50 @@ export const createSheetApi = ({ sheetId, clientEmail, privateKey }: createSheet
       version: 'v4',
       auth: jwt
     })
+
+    const res = await sheet.spreadsheets.get({ spreadsheetId, fields: 'sheets.properties' })
+    if (!res || !res.data.sheets) {
+      throw new Error('invalid sheet')
+    }
+
+    let destSheet = res.data.sheets
+      .map((sheet) => ({ sheetId: sheet.properties?.sheetId, title: sheet.properties?.title }))
+      .filter((sheet) => sheet.title === sheetTitle)
+      .at(0)
+
+    if (!destSheet) {
+      const res = await sheet.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title: sheetTitle
+                }
+              }
+            }
+          ]
+        }
+      })
+      if (!res || !res.data.replies) {
+        throw new Error('sheet create failed')
+      }
+
+      destSheet = {
+        sheetId: res.data.replies[0].addSheet?.properties?.sheetId,
+        title: res.data.replies[0].addSheet?.properties?.title
+      }
+    }
+
     await sheet.spreadsheets.batchUpdate({
-      spreadsheetId: sheetId,
+      spreadsheetId,
       requestBody: {
         requests: [
           {
             deleteRange: {
               range: {
-                sheetId: 0,
+                sheetId: destSheet?.sheetId,
                 startColumnIndex: 0,
                 endColumnIndex: 99
               },
@@ -35,7 +72,7 @@ export const createSheetApi = ({ sheetId, clientEmail, privateKey }: createSheet
           {
             pasteData: {
               coordinate: {
-                sheetId: 0,
+                sheetId: destSheet?.sheetId,
                 rowIndex: 0,
                 columnIndex: 0
               },
