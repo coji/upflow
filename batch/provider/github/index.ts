@@ -99,7 +99,7 @@ export const createGitHubProvider = (integration: Integration) => {
       )
       allPulls = [...allPulls, ...pulls]
     }
-    return allPulls
+    return { pulls: allPulls, reviewResponses: [] }
   }
 
   return {

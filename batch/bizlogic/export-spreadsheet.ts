@@ -10,10 +10,11 @@ const escapeTabString = (str: string) => {
  * @param pullrequests
  * @param exportSetting
  */
-export const exportToSpreadsheet = async (pullrequests: PullRequest[], exportSetting: ExportSetting) => {
+export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], exportSetting: ExportSetting) => {
   const tz = 'Asia/Tokyo'
   const sheet = createSheetApi({
-    sheetId: exportSetting.sheetId,
+    spreadsheetId: exportSetting.sheetId,
+    sheetTitle: 'rawdata',
     clientEmail: exportSetting.clientEmail,
     privateKey: exportSetting.privateKey
   })
@@ -67,6 +68,36 @@ export const exportToSpreadsheet = async (pullrequests: PullRequest[], exportSet
           updatedAt: timeFormat(pr.updatedAt, tz)
         }).join('\t')
       })
+  ].join('\n')
+
+  await sheet.paste(data)
+}
+
+export const exportReviewResponsesToSpreadsheet = async (
+  reviewResponses: { repo: string; number: string; author: string; createdAt: string; responseTime: number }[],
+  exportSetting: ExportSetting
+) => {
+  const tz = 'Asia/Tokyo'
+  const sheet = createSheetApi({
+    spreadsheetId: exportSetting.sheetId,
+    sheetTitle: 'reviewres',
+    clientEmail: exportSetting.clientEmail,
+    privateKey: exportSetting.privateKey
+  })
+  const header = ['repo', 'number', 'author', 'createdAt', 'responseTime'].join('\t')
+
+  const data = [
+    header,
+    ...reviewResponses.map((res) => {
+      // １行タブ区切り x 改行区切りで全行まとめてペースト
+      return Object.values({
+        repo: res.repo,
+        number: res.number,
+        author: res.author,
+        createdAt: timeFormat(res.createdAt, tz),
+        responseTime: res.responseTime
+      }).join('\t')
+    })
   ].join('\n')
 
   await sheet.paste(data)

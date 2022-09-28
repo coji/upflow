@@ -6,6 +6,7 @@ import { createStore } from '../store'
 import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/batch/bizlogic/cycletime'
 import { findReleaseDate } from '../release-detect'
 import { logger } from '~/batch/helper/logger'
+import { analyzeReviewResponse } from '../review-response'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).utc().toISOString() : null
@@ -23,11 +24,23 @@ export const buildMergeRequests = async (
   const store = createStore(config)
   const aggregator = createAggregator()
 
-  const results: PullRequest[] = []
+  const pulls: PullRequest[] = []
+  const reviewResponses: { repo: string; number: string; author: string; createdAt: string; responseTime: number }[] =
+    []
   for (const m of mergerequests) {
     try {
       const commits = await store.loader.commits(m.iid).catch(() => [])
       const discussions = await store.loader.discussions(m.iid).catch(() => [])
+
+      reviewResponses.push(
+        ...analyzeReviewResponse(discussions).map((res) => ({
+          repo: String(m.projectId),
+          number: String(m.iid),
+          author: res.author,
+          createdAt: res.createdAt,
+          responseTime: res.responseTime
+        }))
+      )
 
       const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.createdAt)
       const pullRequestCreatedAt = nullOrDate(m.createdAt)!
@@ -45,7 +58,7 @@ export const buildMergeRequests = async (
           : null
       )
 
-      results.push({
+      pulls.push({
         repo: String(m.projectId),
         number: String(m.iid),
         sourceBranch: m.sourceBranch,
@@ -71,5 +84,5 @@ export const buildMergeRequests = async (
       logger.error('analyze failure:', e)
     }
   }
-  return results
+  return { pulls, reviewResponses }
 }
