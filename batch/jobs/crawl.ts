@@ -2,7 +2,7 @@ import { prisma } from '~/app/utils/db.server'
 import { createProvider } from '../provider'
 import { logger } from '../helper/logger'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
-import { exportPullsToSpreadsheet } from '../bizlogic/export-spreadsheet'
+import { exportPullsToSpreadsheet, exportReviewResponsesToSpreadsheet } from '../bizlogic/export-spreadsheet'
 
 const options = { refresh: false, halt: false, delay: 800 }
 
@@ -51,6 +51,7 @@ export const crawlJob = async () => {
     if (company.exportSetting) {
       logger.info('exporting to spreadsheet...')
       await exportPullsToSpreadsheet(pulls, company.exportSetting)
+      await exportReviewResponsesToSpreadsheet(reviewResponses, company.exportSetting)
       logger.info('export to spreadsheet done')
     }
   }
