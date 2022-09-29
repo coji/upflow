@@ -2,7 +2,11 @@ import type { ShapedGitHubPullRequest } from '../model'
 import type { createStore } from '../store'
 
 const releasedPullRequests = (allPullRequests: ShapedGitHubPullRequest[], method: string, key: string) => {
-  return allPullRequests.filter((pr) => pr.targetBranch.match(key) && pr.state === 'closed' && pr.mergedAt !== null)
+  if (method === 'branch') {
+    return allPullRequests.filter((pr) => pr.targetBranch === key && pr.state === 'closed' && pr.mergedAt !== null)
+  } else {
+    return []
+  }
 }
 
 export const findReleaseDate = async (
