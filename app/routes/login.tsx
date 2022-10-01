@@ -10,7 +10,7 @@ import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUser(request)
-  if (userId) return redirect('/')
+  if (userId) return redirect('/admin')
   return json({})
 }
 
@@ -62,7 +62,7 @@ export const meta: MetaFunction = () => {
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/'
+  const redirectTo = searchParams.get('redirectTo') || '/admin'
   const actionData = useActionData<typeof action>()
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
