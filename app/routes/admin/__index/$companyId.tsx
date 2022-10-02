@@ -77,23 +77,21 @@ const CompanyPage = () => {
             </AppLink>
           )}
 
-          <Stack>
-            {company.repositories.map((repo) => (
-              <Stack direction="row" key={repo.id} align="center">
-                <Box>
-                  {repo.provider} {repo.name}
-                </Box>
+          {company.repositories.map((repo) => (
+            <Stack direction="row" key={repo.id} align="center">
+              <Box>
+                {repo.provider} {repo.name}
+              </Box>
 
-                <AppLink to={`repository/${repo.id}/delete`}>
-                  <Button size="xs">delete</Button>
-                </AppLink>
-              </Stack>
-            ))}
-          </Stack>
+              <AppLink to={`repository/${repo.id}/delete`}>
+                <Button size="xs">delete</Button>
+              </AppLink>
+            </Stack>
+          ))}
 
           {company.integration && (
             <Box>
-              <AppLink to="repository/add">
+              <AppLink to="add-repository">
                 <Button>Add Repo</Button>
               </AppLink>
             </Box>
