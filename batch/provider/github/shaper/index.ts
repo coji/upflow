@@ -53,7 +53,7 @@ export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (
 export const shapeGitHubReviewComment: (comment: GitHubReviewComment) => ShapedGitHubReviewComment = (comment) => {
   return {
     id: comment.id,
-    user: comment.user.login,
+    user: comment.user?.login ?? null,
     url: comment.html_url,
     createdAt: comment.created_at
   }

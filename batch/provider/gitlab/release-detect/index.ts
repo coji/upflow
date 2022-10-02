@@ -3,12 +3,7 @@ import type { createStore } from '../store'
 
 const releasedMergeRequests = (allMergeRequests: ShapedGitLabMergeRequest[], method: string, key: string) => {
   if (method === 'branch') {
-    return allMergeRequests.filter((mr) => {
-      if (mr.targetBranch === key && mr.state === 'merged') {
-        console.log('release: ', mr.iid, mr.targetBranch, mr.mergedAt, mr.title)
-      }
-      return mr.targetBranch === key && mr.state === 'merged'
-    })
+    return allMergeRequests.filter((mr) => mr.targetBranch === key && mr.state === 'merged')
   } else {
     return []
   }
