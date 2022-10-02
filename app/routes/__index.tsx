@@ -1,6 +1,6 @@
 import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack } from '@chakra-ui/react'
 import type { LoaderArgs, MetaFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import { redirect } from '@remix-run/node'
 import { Outlet, useSubmit } from '@remix-run/react'
 import { AppLink, AppProfileMenuButton } from '~/app/components'
 import { requireUser } from '~/app/utils/session.server'
@@ -8,7 +8,7 @@ import { useUser } from '~/app/utils/utils'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUser(request)
-  return json({})
+  return redirect('/admin')
 }
 
 export const meta: MetaFunction = () => {

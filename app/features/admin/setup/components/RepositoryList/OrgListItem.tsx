@@ -1,4 +1,4 @@
-import { Stack, Box, Checkbox } from '@chakra-ui/react'
+import { Stack, Box, FormLabel, Checkbox } from '@chakra-ui/react'
 
 interface OrgListItemProps {
   org: string
@@ -19,6 +19,7 @@ export const OrgListItem = ({
   return (
     <Stack direction="row" align="center">
       <Checkbox
+        id={`org-${org}`}
         isChecked={isChecked}
         isIndeterminate={isIndeterminate}
         onClick={(e) => {
@@ -28,7 +29,7 @@ export const OrgListItem = ({
           onChange(org, isChecked)
         }}
       ></Checkbox>
-      <Box>{org}</Box>
+      <FormLabel htmlFor={`org-${org}`}>{org}</FormLabel>
       <Box fontSize="sm" color="gray.500">
         {checkedRepoNum} / {orgRepoNum} repos
       </Box>

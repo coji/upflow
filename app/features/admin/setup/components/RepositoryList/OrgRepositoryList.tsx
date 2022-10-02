@@ -1,14 +1,29 @@
-import { Badge, Box, chakra, Stack, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
-import dayjs from 'dayjs'
-import type { GitRepo } from '../interfaces/model'
-import type { CheckedRepositories } from './RepositoryList'
+import {
+  Badge,
+  Box,
+  chakra,
+  Stack,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+} from "@chakra-ui/react"
+import dayjs from "dayjs"
+import type { GitRepo, CheckedRepositories } from "../../interfaces/model"
 
 interface OrgRepositoryListProps {
   orgRepos: GitRepo[]
   checkedRepos: CheckedRepositories
   onCheck: (id: string) => void
 }
-export const OrgRepositoryList = ({ orgRepos, checkedRepos, onCheck }: OrgRepositoryListProps) => {
+export const OrgRepositoryList = ({
+  orgRepos,
+  checkedRepos,
+  onCheck,
+}: OrgRepositoryListProps) => {
   return (
     <TableContainer>
       <Table size="sm">
@@ -26,42 +41,62 @@ export const OrgRepositoryList = ({ orgRepos, checkedRepos, onCheck }: OrgReposi
         </Thead>
         <Tbody>
           {orgRepos.map((repo) => {
-            const isActive = dayjs(repo.pushedAt) > dayjs().add(-90, 'days')
+            const isActive = dayjs(repo.pushedAt) > dayjs().add(-90, "days")
 
             return (
               <Tr
                 key={repo.id}
                 _hover={{
-                  bgColor: 'gray.50',
-                  cursor: 'pointer'
+                  bgColor: isActive ? "gray.50" : "gray.100",
+                  cursor: isActive ? "pointer" : "initial",
                 }}
                 onClick={(e) => {
-                  onCheck(repo.id) // 行クリックでも発動
+                  if (isActive) onCheck(repo.id) // 行クリックでも発動
                 }}
+                bgColor={isActive ? "initial" : "gray.100"}
               >
-                <Td width="16rem" wordBreak="break-all" whiteSpace="break-spaces">
+                <Td
+                  width="16rem"
+                  wordBreak="break-all"
+                  whiteSpace="break-spaces"
+                >
                   <Stack direction="row">
                     {/* Checkbox はアニメーションするためまとめて変更するとめっちゃ遅いので数が多いこれは input に */}
                     <chakra.input
+                      name="repos[]"
                       type="checkbox"
-                      checked={checkedRepos[repo.id]}
+                      disabled={!isActive}
+                      checked={checkedRepos[repo.id] ?? false}
                       onClick={(e) => {
                         e.stopPropagation() // テーブル行クリックを発動させない
                       }}
-                      onChange={(e) => onCheck(repo.id)}
+                      onChange={() => {
+                        onCheck(repo.id)
+                      }}
                       sx={{
-                        'accent-color': '#3182ce'
+                        accentColor: "#3182ce",
                       }}
                     />
                     <Box>{repo.name}</Box>
                   </Stack>
                 </Td>
 
-                <Td width="16rem" wordBreak="break-all" whiteSpace="break-spaces" fontSize="xs" color="gray.500">
+                <Td
+                  width="16rem"
+                  wordBreak="break-all"
+                  whiteSpace="break-spaces"
+                  fontSize="xs"
+                  color="gray.500"
+                >
                   {repo.full_name}
                 </Td>
 
-                <Td fontSize="sm" color="gray.500" width="10rem" textAlign="center">
+                <Td
+                  fontSize="sm"
+                  color="gray.500"
+                  width="10rem"
+                  textAlign="center"
+                >
                   <Box>
                     {isActive ? (
                       <Badge variant="outline" colorScheme="green">
@@ -74,11 +109,18 @@ export const OrgRepositoryList = ({ orgRepos, checkedRepos, onCheck }: OrgReposi
                     )}
                   </Box>
 
-                  <Box fontSize="xs">{dayjs(repo.pushedAt).format('YYYY-MM-DD')}</Box>
+                  <Box fontSize="xs">
+                    {dayjs(repo.pushedAt).format("YYYY-MM-DD")}
+                  </Box>
                 </Td>
 
-                <Td fontSize="xs" color="gray.500" width="10rem" textAlign="center">
-                  {dayjs(repo.createdAt).format('YYYY-MM-DD')}
+                <Td
+                  fontSize="xs"
+                  color="gray.500"
+                  width="10rem"
+                  textAlign="center"
+                >
+                  {dayjs(repo.createdAt).format("YYYY-MM-DD")}
                 </Td>
               </Tr>
             )

@@ -1,13 +1,17 @@
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Spacer } from '@chakra-ui/react'
-import React, { useCallback, useState } from 'react'
-import { uniq } from 'remeda'
-import type { GitRepo } from '../interfaces/model'
-import { OrgListItem } from './OrgListItem'
-import { OrgRepositoryList } from './OrgRepositoryList'
-
-export interface CheckedRepositories {
-  [id: string]: boolean
-}
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Spacer,
+} from "@chakra-ui/react"
+import React, { useCallback, useState } from "react"
+import { uniq } from "remeda"
+import type { GitRepo, CheckedRepositories } from "../../interfaces/model"
+import { OrgListItem } from "./OrgListItem"
+import { OrgRepositoryList } from "./OrgRepositoryList"
+import dayjs from "dayjs"
 
 interface RepositoryListProps {
   allRepos: GitRepo[]
@@ -17,15 +21,22 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
   const [checkedRepos, setCheckedRepos] = useState<CheckedRepositories>({})
   const orgs = uniq(allRepos.map((repo) => repo.owner) ?? [])
 
+  // 選択されたリポジトリリスト。IDのハッシュから配列にする。
   const selectedRepos = useCallback(
-    (checked: CheckedRepositories) => allRepos.filter((repo) => Object.keys(checked).includes(repo.id)) || [],
+    (checked: CheckedRepositories) =>
+      allRepos.filter((repo) => Object.keys(checked).includes(repo.id)) || [],
     [allRepos]
   )
 
   // organization をチェック・クリアされたらまとめてレポジトリもチェック・クリア
   const handleClickOrgCheckbox = useCallback(
     (org: string, isPrevChecked: boolean) => {
-      const orgRepos = allRepos.filter((repo) => repo.owner === org) || []
+      const orgRepos =
+        allRepos.filter(
+          (repo) =>
+            repo.owner === org &&
+            dayjs(repo.pushedAt) > dayjs().add(-90, "days")
+        ) || []
       const newCheckedRepos = { ...checkedRepos }
       for (const repo of orgRepos) {
         if (isPrevChecked) {
@@ -40,6 +51,7 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
     [allRepos, checkedRepos, onChange, selectedRepos]
   )
 
+  // リポジトリをチェック・クリア
   const handleClickRepoCheckbox = useCallback(
     (id: string) => {
       const newCheckedRepos = { ...checkedRepos }
@@ -72,9 +84,12 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
       {!!orgs &&
         orgs.map((org) => {
           const orgRepos = allRepos.filter((repo) => repo.owner == org) || []
-          const checkedRepoNum = orgRepos.filter((repo) => !!checkedRepos[repo.id]).length
+          const checkedRepoNum = orgRepos.filter(
+            (repo) => !!checkedRepos[repo.id]
+          ).length
           const isOrgChecked = checkedRepoNum > 0
-          const isOrgIndeterminate = checkedRepoNum > 0 && checkedRepoNum != orgRepos.length
+          const isOrgIndeterminate =
+            checkedRepoNum > 0 && checkedRepoNum != orgRepos.length
 
           return (
             <React.Fragment key={org}>

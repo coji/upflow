@@ -59,6 +59,7 @@ specifiers:
   google-auth-library: ^8.5.2
   got: ^12.5.1
   happy-dom: ^6.0.4
+  ky: ^0.31.3
   morgan: ^1.10.0
   msw: ^0.47.3
   node-schedule: ^2.1.0
@@ -113,6 +114,7 @@ dependencies:
   globby: 13.1.2
   google-auth-library: 8.5.2
   got: 12.5.1
+  ky: 0.31.3
   morgan: 1.10.0
   node-schedule: 2.1.0
   octokit: 2.0.7
@@ -7954,6 +7956,11 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
     dev: true
+
+  /ky/0.31.3:
+    resolution: {integrity: sha512-YDDQKG0Lt4PFSPZGJI8WKAm5y+1ebbeA306am+4nT7riX13wjNVD5sR/QOKtgsaQaARwrdUHlv0M9kJ1qv+Jug==}
+    engines: {node: '>=14.16'}
+    dev: false
 
   /language-subtag-registry/0.3.22:
     resolution: {integrity: sha512-tN0MCzyWnoz/4nHS6uxdlFWoUZT7ABptwKPQ52Ea7URk6vll88bWBVhodtnlfEuCcKWNGoc+uGbw1cwa9IKh/w==}

@@ -13,6 +13,7 @@ module.exports = {
     '@szmarczak/http-timer',
     'p-cancelable',
     'lowercase-keys',
-    'form-data-encoder'
+    'form-data-encoder',
+    'ky'
   ]
 }
