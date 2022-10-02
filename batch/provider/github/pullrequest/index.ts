@@ -62,7 +62,7 @@ export const buildPullRequests = async (
         updatedAt: nullOrDate(pr.updatedAt)
       })
     } catch (e) {
-      logger.error('analyze failure:', e)
+      logger.error('analyze failure:', config.companyId, config.repositoryId, pr.number, e)
     }
   }
   return results

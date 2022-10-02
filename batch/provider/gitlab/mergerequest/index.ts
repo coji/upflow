@@ -81,7 +81,7 @@ export const buildMergeRequests = async (
         updatedAt: nullOrDate(m.updatedAt)
       })
     } catch (e) {
-      logger.error('analyze failure:', e)
+      logger.error('analyze failure:', config.companyId, config.repositoryId, m.iid, e)
     }
   }
   return { pulls, reviewResponses }
