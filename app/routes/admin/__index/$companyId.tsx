@@ -80,12 +80,16 @@ const CompanyPage = () => {
           {company.repositories.map((repo) => (
             <Stack direction="row" key={repo.id} align="center">
               <Box>
-                {repo.provider} {repo.name}
+                {repo.provider} {repo.name} {repo.releaseDetectionKey}
               </Box>
 
-              <AppLink to={`repository/${repo.id}/delete`}>
-                <Button size="xs">delete</Button>
-              </AppLink>
+              <Button as={AppLink} to={`repository/${repo.id}/edit`} colorScheme="blue" size="xs">
+                Edit
+              </Button>
+
+              <Button as={AppLink} to={`repository/${repo.id}/delete`} colorScheme="red" size="xs">
+                Delete
+              </Button>
             </Stack>
           ))}
 

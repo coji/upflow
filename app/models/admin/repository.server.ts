@@ -1,5 +1,6 @@
 import invariant from 'tiny-invariant'
 import { prisma } from '~/app/utils/db.server'
+import type { Repository } from '@prisma/client'
 
 interface createRepositoryProps {
   companyId: string
@@ -41,7 +42,12 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
   return null
 }
 
+export const updateRepository = async (repositoryId: string, data: Partial<Repository>) => {
+  return await prisma.repository.update({ data, where: { id: repositoryId } })
+}
+
 export const deleteRepository = async (repositoryId: string) =>
   await prisma.repository.delete({ where: { id: repositoryId } })
+
 export const getRepository = async (repositoryId: string) =>
-  await prisma.repository.findFirst({ where: { id: repositoryId } })
+  await prisma.repository.findFirst({ where: { id: repositoryId }, include: { integration: true } })
