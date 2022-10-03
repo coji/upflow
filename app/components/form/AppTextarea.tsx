@@ -5,13 +5,14 @@ import { FormControl, FormLabel, Textarea, FormErrorMessage } from '@chakra-ui/r
 interface AppTextareaProps extends TextareaProps {
   name: string
   label: string
+  isRequired?: boolean
 }
-export const AppTextarea = ({ name, label, ...rest }: AppTextareaProps) => {
+export const AppTextarea = ({ name, label, isRequired, ...rest }: AppTextareaProps) => {
   const { error, getInputProps } = useField(name)
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       <FormLabel htmlFor={name}>{label}</FormLabel>
-      <Textarea id={name} {...getInputProps()} {...rest} />
+      <Textarea {...getInputProps({ id: name, ...rest })} />
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>
   )
