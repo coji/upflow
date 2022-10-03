@@ -1,6 +1,20 @@
-import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack, Tag } from '@chakra-ui/react'
+import {
+  Box,
+  Container,
+  Flex,
+  Heading,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Spacer,
+  Stack,
+  Tag,
+  Divider
+} from '@chakra-ui/react'
+import { SettingsIcon } from '@chakra-ui/icons'
 import type { LoaderArgs } from '@remix-run/node'
-import { Outlet, useSubmit } from '@remix-run/react'
+import { Outlet, useSubmit, NavLink } from '@remix-run/react'
 import { requireAdminUserId } from '~/app/utils/session.server'
 import { useUser } from '~/app/utils/utils'
 import { AppLink, AppProfileMenuButton } from '../components'
@@ -30,6 +44,10 @@ const AdminIndex = () => {
           <Menu>
             <AppProfileMenuButton name={user.name}></AppProfileMenuButton>
             <MenuList>
+              <MenuItem as={NavLink} to="/admin/settings" icon={<SettingsIcon />}>
+                Settings
+              </MenuItem>
+              <Divider />
               <MenuItem
                 onClick={() => {
                   submit(null, { method: 'post', action: 'logout' })

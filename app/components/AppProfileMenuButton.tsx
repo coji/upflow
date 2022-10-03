@@ -1,5 +1,5 @@
 import type { UseMenuButtonProps } from '@chakra-ui/react'
-import { Avatar, Flex, useMenuButton } from '@chakra-ui/react'
+import { Avatar, MenuButton, useMenuButton } from '@chakra-ui/react'
 
 interface UserAvatarProps {
   name?: string
@@ -14,8 +14,8 @@ interface ProfileMenuButtonProps extends UseMenuButtonProps {
 export const AppProfileMenuButton = ({ name = '', ...props }: ProfileMenuButtonProps) => {
   const buttonProps = useMenuButton(props)
   return (
-    <Flex {...buttonProps} as="button" flexShrink={0} rounded="full" outline="0" _focus={{ shadow: 'outline' }}>
+    <MenuButton flexShrink={0} rounded="full" outline="0" _focus={{ shadow: 'outline' }} {...buttonProps}>
       <UserAvatar name={name} />
-    </Flex>
+    </MenuButton>
   )
 }
