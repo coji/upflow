@@ -52,3 +52,28 @@ export async function verifyLogin(email: User['email'], password: Password['hash
 
   return userWithoutPassword
 }
+
+/**
+ * パスワードの更新
+ * @param email
+ * @param oldPassword
+ * @param newPassword
+ * @returns
+ */
+export async function updatePassword(email: User['email'], oldPassword: Password['hash'], newPassword: string) {
+  const userWithoutPassword = await verifyLogin(email, oldPassword)
+  if (!userWithoutPassword) {
+    return null
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10)
+  const ret = await prisma.password.update({
+    data: {
+      hash: hashedPassword
+    },
+    where: {
+      userId: userWithoutPassword.id
+    }
+  })
+  return ret !== null
+}
