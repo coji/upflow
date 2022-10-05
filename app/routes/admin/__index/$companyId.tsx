@@ -11,7 +11,8 @@ import {
   MenuItem,
   MenuList,
   Spacer,
-  Stack
+  Stack,
+  Link
 } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
@@ -20,6 +21,7 @@ import invariant from 'tiny-invariant'
 import { AppLink, AppProviderBadge } from '~/app/components'
 import { getCompany } from '~/app/models/admin/company.server'
 import { requireUserId } from '~/app/utils/session.server'
+import { match } from 'ts-pattern'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
@@ -77,21 +79,30 @@ const CompanyPage = () => {
             </AppLink>
           )}
 
-          {company.repositories.map((repo) => (
-            <Stack direction="row" key={repo.id} align="center">
-              <Box>
-                {repo.provider} {repo.name} {repo.releaseDetectionKey}
-              </Box>
+          {company.repositories.map((repo) => {
+            const repoUrl = match(repo.provider)
+              .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
+              .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
+              .otherwise(() => '')
+            return (
+              <Stack direction="row" key={repo.id} align="center">
+                <Box>
+                  <Link isExternal href={repoUrl} color="blue.500">
+                    {repo.name}
+                  </Link>{' '}
+                  {repo.releaseDetectionKey}
+                </Box>
 
-              <Button as={AppLink} to={`repository/${repo.id}/edit`} colorScheme="blue" size="xs">
-                Edit
-              </Button>
+                <Button as={AppLink} to={`repository/${repo.id}/edit`} colorScheme="blue" size="xs">
+                  Edit
+                </Button>
 
-              <Button as={AppLink} to={`repository/${repo.id}/delete`} colorScheme="red" size="xs">
-                Delete
-              </Button>
-            </Stack>
-          ))}
+                <Button as={AppLink} to={`repository/${repo.id}/delete`} colorScheme="red" size="xs">
+                  Delete
+                </Button>
+              </Stack>
+            )
+          })}
 
           {company.integration && (
             <Box>
