@@ -10,7 +10,7 @@ export const getCompany = async (companyId: string) =>
     include: {
       teams: true,
       integration: true,
-      repositories: true,
+      repositories: { orderBy: { name: 'asc' } },
       users: { include: { user: true } },
       exportSetting: true
     }
