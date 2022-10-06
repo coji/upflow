@@ -40,8 +40,8 @@ export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (
   return {
     sha: commit.sha,
     url: commit.html_url,
-    author: commit.author?.login ?? null,
-    date: commit.commit.author?.date ?? null
+    author: commit.committer?.login ?? null, // author にすると古いのになっちゃうので committer
+    date: commit.commit.committer?.date ?? null
   }
 }
 
