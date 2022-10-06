@@ -5,13 +5,14 @@ import { FormControl, FormLabel, Input, FormErrorMessage } from '@chakra-ui/reac
 interface AppInputProps extends InputProps {
   name: string
   label: string
+  isRequired?: boolean
 }
-export const AppInput = ({ name, label, ...rest }: AppInputProps) => {
+export const AppInput = ({ name, label, isRequired, ...rest }: AppInputProps) => {
   const { error, getInputProps } = useField(name)
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired>
       <FormLabel htmlFor={name}>{label}</FormLabel>
-      <Input id={name} {...getInputProps()} {...rest} />
+      <Input {...getInputProps({ id: name, ...rest })} />
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>
   )
