@@ -24,7 +24,7 @@ export interface ShapedGitHubPullRequest {
 export interface ShapedGitHubCommit {
   sha: GitHubCommit['sha']
   url: GitHubCommit['html_url']
-  author: NonNullable<GitHubCommit['author']>['login'] | null
+  committer: NonNullable<GitHubCommit['author']>['login'] | null
   date: NonNullable<GitHubCommit['commit']['author']>['date'] | null
 }
 

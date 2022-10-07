@@ -24,7 +24,7 @@ export interface ShapedGitLabMergeRequest {
 export interface ShapedGitLabCommit {
   sha: GitLabCommit['id']
   url: GitLabCommit['web_url']
-  author: GitLabCommit['author_name']
+  committer: GitLabCommit['author_name']
   createdAt: string // GitLabCommit['created_at'] // defined as Date but actual type is string
 }
 

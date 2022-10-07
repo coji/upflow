@@ -40,8 +40,8 @@ export const shapeGitLabCommit: (commit: GitLabCommit) => ShapedGitLabCommit = (
   return {
     sha: commit.id,
     url: commit.web_url,
-    author: commit.committer_name || commit.author_name, // author にすると古いのになるので commiter を先に使う
-    createdAt: commit.created_at as unknown as string // defined as Date but actual type is string
+    committer: commit.committer_name || commit.author_name, // author にすると古いのになるので commiter を先に使う
+    createdAt: (commit.committed_date || commit.created_at) as unknown as string // defined as Date but actual type is string
   }
 }
 
