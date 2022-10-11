@@ -27,15 +27,15 @@ model Password {
 model Company {
   id                     String         @id @default(cuid())
   name                   String
-  releaseDetectionMethod String         @default("branch") // tags, branch
-  releaseDetectionKey    String         @default("production") // release-*, main, ^master$
+  releaseDetectionMethod String         @default("branch")
+  releaseDetectionKey    String         @default("production")
   updatedAt              DateTime       @updatedAt
   createdAt              DateTime       @default(now())
   users                  CompanyUser[]
+  exportSetting          ExportSetting?
   integration            Integration?
   repositories           Repository[]
   teams                  Team[]
-  exportSetting          ExportSetting?
 }
 
 model CompanyUser {
@@ -47,8 +47,8 @@ model CompanyUser {
   activatedAt DateTime?
   updatedAt   DateTime  @updatedAt
   createdAt   DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Team {
@@ -74,22 +74,22 @@ model Repository {
   integrationId          String
   provider               String
   name                   String        @default("")
-  projectId              String? // GitLab only
-  owner                  String? // GitHub only
-  repo                   String? // GitHub only
-  releaseDetectionMethod String        @default("branch") // tags, branch
-  releaseDetectionKey    String        @default("production") // release-*, main, ^master$
+  projectId              String?
+  owner                  String?
+  repo                   String?
+  releaseDetectionMethod String        @default("branch")
+  releaseDetectionKey    String        @default("production")
   companyId              String
-  company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   integration            Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   mergerequest           PullRequest[]
 
   @@unique([integrationId, provider, projectId, owner, repo])
 }
 
 model PullRequest {
-  repo                 String // repository name / project name
-  number               String // number / iid
+  repo                 String
+  number               String
   sourceBranch         String
   targetBranch         String
   state                String
@@ -107,8 +107,8 @@ model PullRequest {
   deployTime           Float?
   totalTime            Float?
   repositoryId         String
-  repository           Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   updatedAt            String?
+  repository           Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@id([repositoryId, number])
 }
@@ -116,10 +116,20 @@ model PullRequest {
 model ExportSetting {
   id          String   @id @default(cuid())
   companyId   String   @unique
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   sheetId     String
   clientEmail String
   privateKey  String
   updatedAt   DateTime @updatedAt
   createdAt   DateTime @default(now())
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model Calendar {
+  d         DateTime @unique(map: "sqlite_autoindex_calendar_1")
+  dayofweek Int
+  weekday   String
+  quarter   Int
+  year      Int
+  month     Int
+  day       Int
 }
