@@ -19,7 +19,7 @@ export async function reportCommand({ companyId }: reportCommandProps) {
     where: { id: companyId },
     include: { integration: true, repositories: true }
   })
-  invariant(company.integration, 'integration shoud related')
+  invariant(company.integration, 'integration should related')
 
   console.log(
     [

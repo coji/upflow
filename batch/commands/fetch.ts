@@ -13,7 +13,7 @@ interface FetchCommandProps {
 
 export async function fetchCommand(props: FetchCommandProps) {
   if (!props.companyId) {
-    console.log(`Error: company id should spacify`)
+    console.log(`Error: company id should specify`)
     console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
     return
   }
@@ -22,10 +22,10 @@ export async function fetchCommand(props: FetchCommandProps) {
     where: { id: props.companyId },
     include: { integration: true, repositories: true }
   })
-  invariant(company.integration, 'integration shoud related')
+  invariant(company.integration, 'integration should related')
 
   const provider = createProvider(company.integration)
-  invariant(provider, `unkown provider: ${company.integration.provider}`)
+  invariant(provider, `unknown provider: ${company.integration.provider}`)
 
   if (props.repositoryId) {
     const repository = company.repositories.find(

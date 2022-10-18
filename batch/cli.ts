@@ -1,8 +1,9 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
-import { fetchCommand } from '~/batch/commands/fetch'
-import { reportCommand } from '~/batch/commands/report'
-import { upsertCommand } from '~/batch/commands/upsert'
+import { fetchCommand } from './commands/fetch'
+import { reportCommand } from './commands/report'
+import { upsertCommand } from './commands/upsert'
+import { vacuumCommand } from './commands/vacuum'
 
 const fetch = command(
   {
@@ -56,6 +57,16 @@ const upsert = command(
   }
 )
 
+const vacuum = command(
+  {
+    name: 'vacuum',
+    help: { description: 'vacuum database' }
+  },
+  (argv) => {
+    vacuumCommand()
+  }
+)
+
 cli({
-  commands: [fetch, report, upsert]
+  commands: [fetch, report, upsert, vacuum]
 })
