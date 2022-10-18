@@ -24,43 +24,43 @@ export const createGitLabProvider = (integration: Integration) => {
     const store = createStore({ companyId: repository.companyId, repositoryId: repository.id })
     const pathBuilder = createPathBuilder({ companyId: repository.companyId, repositoryId: repository.id })
 
-    logger.info('fetch started: ', repository.name)
-    logger.info('path: ', pathBuilder.jsonPath(''))
+    await logger.info('fetch started: ', repository.name)
+    await logger.info('path: ', pathBuilder.jsonPath(''))
 
     // 前回最終取得されたMR
     const leastMergeRequest = aggregator.leastUpdatedMergeRequest(await store.loader.mergerequests().catch(() => []))
     const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
-    logger.info(`last fetched at: ${lastFetchedAt}`)
+    await logger.info(`last fetched at: ${lastFetchedAt}`)
 
     // すべてのMR
-    logger.info('fetch all merge requests...')
+    await logger.info('fetch all merge requests...')
     const allMergeRequests = await fetcher.mergerequests()
-    logger.info(`fetch all merge requests done: ${allMergeRequests.length} merge requests`)
+    await logger.info(`fetch all merge requests done: ${allMergeRequests.length} merge requests`)
 
     // 個別のMR
     for (const mr of allMergeRequests) {
       if (halt) {
-        logger.fatal('halted')
+        await logger.fatal('halted')
         return
       }
 
       const isUpdated = mr.updatedAt > lastFetchedAt
       // 前回以前fetchしたときから更新されていないMRの場合はスキップ
       if (!refresh && !isUpdated) {
-        logger.debug('skip', mr.iid, mr.state, mr.updatedAt, lastFetchedAt)
+        await logger.debug('skip', mr.iid, mr.state, mr.updatedAt)
         continue
       }
       const iid = mr.iid
 
       // 個別MRの初回コミット
-      logger.info(`${iid} commits`)
+      await logger.info(`${iid} commits`)
       const commits = await fetcher.commits(iid)
       await store.save(store.path.commitsJsonFilename(iid), commits)
 
       await setTimeout(delay)
 
       // 個別MRのすべてのディスカッション(レビューコメント含む)
-      logger.info(`${iid} discussions`)
+      await logger.info(`${iid} discussions`)
       const discussions = await fetcher.discussions(iid)
       await store.save(store.path.discussionsJsonFilename(iid), discussions)
 
@@ -68,7 +68,7 @@ export const createGitLabProvider = (integration: Integration) => {
     }
 
     await store.save('mergerequests.json', allMergeRequests)
-    logger.info('fetch completed: ', repository.name)
+    await logger.info('fetch completed: ', repository.name)
   }
 
   const analyze = async (company: Company, repositories: Repository[]) => {

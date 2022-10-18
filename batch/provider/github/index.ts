@@ -24,51 +24,51 @@ export const createGitHubProvider = (integration: Integration) => {
     const store = createStore({ companyId: repository.companyId, repositoryId: repository.id })
     const pathBuilder = createPathBuilder({ companyId: repository.companyId, repositoryId: repository.id })
 
-    logger.info('fetch started: ', repository.name)
-    logger.info('path: ', pathBuilder.jsonPath(''))
+    await logger.info('fetch started: ', repository.name)
+    await logger.info('path: ', pathBuilder.jsonPath(''))
 
     // PR の最終更新日時を起点とする
     const leastMergeRequest = aggregator.leastUpdatedPullRequest(await store.loader.pullrequests().catch(() => []))
     const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
-    logger.info(`last fetched at: ${lastFetchedAt}`)
+    await logger.info(`last fetched at: ${lastFetchedAt}`)
 
     // 全プルリク情報をダウンロード
-    logger.info(`fetching all pullrequests...`)
+    await logger.info(`fetching all pullrequests...`)
     const allPullRequests = await fetcher.pullrequests()
     await store.save('pullrequests.json', allPullRequests)
-    logger.info(`fetching all pullrequests completed.`)
+    await logger.info(`fetching all pullrequests completed.`)
 
     // 個別のPR
     for (const pr of allPullRequests) {
       if (halt) {
-        logger.fatal('halted')
+        await logger.fatal('halted')
         return
       }
 
       const isUpdated = pr.updatedAt > lastFetchedAt
       // 前回以前fetchしたときから更新されていないPRの場合はスキップ
       if (!refresh && !isUpdated) {
-        logger.debug('skip', pr.number, pr.state, pr.updatedAt, lastFetchedAt)
+        await logger.debug('skip', pr.number, pr.state, pr.updatedAt)
         continue
       }
       const number = pr.number
 
       // 個別PRの全コミット
-      logger.info(`${number} commits`)
+      await logger.info(`${number} commits`)
       const allCommits = await fetcher.commits(number)
       await store.save(store.path.commitsJsonFilename(number), allCommits)
 
       await setTimeout(delay) // 待つ
 
       // 個別PRのレビューコメント
-      logger.info(`${number} review comments`)
+      await logger.info(`${number} review comments`)
       const discussions = await fetcher.reviewComments(number)
       await store.save(store.path.discussionsJsonFilename(number), discussions)
 
       await setTimeout(delay) // 待つ
 
       // 個別PRのレビュー
-      logger.info(`${number} reviews`)
+      await logger.info(`${number} reviews`)
       const reviews = await fetcher.reviews(number)
       await store.save(store.path.reviewJsonFilename(number), reviews)
 
@@ -77,7 +77,7 @@ export const createGitHubProvider = (integration: Integration) => {
 
     // 全プルリク情報を保存
     await store.save('pullrequests.json', allPullRequests)
-    logger.info('fetch completed: ', repository.name)
+    await logger.info('fetch completed: ', repository.name)
   }
 
   const analyze = async (company: Company, repositories: Repository[]) => {
