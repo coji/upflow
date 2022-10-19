@@ -44,3 +44,6 @@ cycletime.js
 
 coverage/
 dist
+/test-results/
+/playwright-report/
+/playwright/.cache/

@@ -18,5 +18,13 @@ module.exports = {
   },
   rules: {
     semi: ['error', 'never']
-  }
+  },
+  overrides: [
+    {
+      files: ['test/playwright/**/*'],
+      rules: {
+        'testing-library/prefer-screen-queries': 'off'
+      }
+    }
+  ]
 }

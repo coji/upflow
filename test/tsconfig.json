@@ -1,9 +1,8 @@
 {
-  "exclude": ["./test"],
-  "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx", "server.ts", "server.ts"],
+  "include": ["**/*.ts"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["vitest/globals", "vitest/importMeta", "@types/node"],
+    "types": ["@types/node"],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",

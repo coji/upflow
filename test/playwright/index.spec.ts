@@ -1,20 +1,21 @@
 import { test, expect } from '@playwright/test'
+import { hello } from '~/support/helper'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
+  hello()
 })
 
-test.skip('should render "Upflow"', async ({ page }) => {
-  const title = page.locator('text=Upflow')
-  await expect(title).toHaveText('Upflow')
+test('"UpFlow"タイトル表示', async ({ page }) => {
+  const title = page.locator('text=UpFlow')
+  await expect(title).toHaveText('UpFlow')
 })
 
-test.skip('should show the login button for the auth page', async ({ page }) => {
-  const btnGoToAuthPage = page.locator('.action__auth')
-  await expect(btnGoToAuthPage).toBeVisible()
-})
-
-test.skip('should navigate to the auth page on click', async ({ page }) => {
-  await page.click('.action__auth')
-  expect(page.url().substring(page.url().lastIndexOf('/'))).toEqual('/auth')
+test.skip('ログインして admin 画面に遷移', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Eメール').fill('user@example.com')
+  await page.getByLabel('パスワード').fill('realygoodpassword')
+  await page.getByRole('button', { name: 'ログイン' }).click()
+  await page.waitForNavigation({ url: '/admin', timeout: 1000 })
+  await expect(page.url().substring(page.url().lastIndexOf('/'))).toEqual('/admin')
 })
