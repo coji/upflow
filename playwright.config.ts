@@ -1,30 +1,36 @@
 import type { PlaywrightTestConfig } from '@playwright/test'
+import { devices } from '@playwright/test'
 
+// require('dotenv').config();
 const config: PlaywrightTestConfig = {
-  //  globalSetup: require.resolve('./test/setup-test-env'),
+  testDir: './test/playwright',
+  timeout: 30 * 1000,
+  expect: {
+    timeout: 5000
+  },
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  use: {
-    trace: 'on-first-retry',
-    channel: 'chrome'
-  },
-  testDir: 'test/playwright',
-  timeout: 15000, // needs to be high because the AMP validator takes a stupid about of time to initialise
-  webServer: {
-    command: 'pnpm run dev',
-    port: 3000,
-    timeout: 10000,
-    reuseExistingServer: !process.env.CI
-  },
-  workers: 6,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
   projects: [
     {
-      name: `dev+js`,
+      name: 'chromium',
       use: {
-        javaScriptEnabled: true
+        ...devices['Desktop Chrome']
       }
     }
-  ]
+  ],
+  webServer: {
+    command: 'cross-env PORT=8811 npm run dev',
+    port: 8811
+  },
+  use: {
+    actionTimeout: 0,
+    baseURL: 'http://localhost:8811',
+    trace: 'on-first-retry',
+    video: 'on-first-retry'
+  }
 }
 
 export default config

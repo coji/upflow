@@ -33,15 +33,6 @@ const cleanup = async (email) => {
   }
 }
 
-const seedMergeRequests = async (companyId) => {
-  const { $ } = await import('zx')
-  if (process.env.NODE_ENV === 'development') {
-    await $`tsx batch/cli.ts upsert ${companyId}`
-  } else {
-    await $`node dist/cli.js upsert ${companyId}`
-  }
-}
-
 async function seed() {
   const email = 'coji@techtalk.jp'
   const { companyId, repositoryId } = await cleanup(email)
@@ -100,8 +91,6 @@ async function seed() {
       company: { connect: { id: company.id } }
     }
   })
-
-  await seedMergeRequests(companyId)
 
   console.log(`Database has been seeded. 🌱`)
 }
