@@ -6,7 +6,7 @@ export const vacuumJob = async () => {
   const deleted = await prisma.batchLog.deleteMany({
     where: {
       createdAt: {
-        lt: dayjs().subtract(1, 'month').toDate()
+        lt: dayjs().subtract(3, 'days').toDate()
       }
     }
   })
