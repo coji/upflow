@@ -82,13 +82,20 @@ export const createGitHubProvider = (integration: Integration) => {
 
   const analyze = async (company: Company, repositories: Repository[]) => {
     let allPulls: PullRequest[] = []
+    let allReviewResponses: {
+      repo: string
+      number: string
+      author: string
+      createdAt: string
+      responseTime: number
+    }[] = []
 
     for (const repository of repositories) {
       const store = createStore({
         companyId: repository.companyId,
         repositoryId: repository.id
       })
-      const pulls = await buildPullRequests(
+      const { pulls, reviewResponses } = await buildPullRequests(
         {
           companyId: repository.companyId,
           repositoryId: repository.id,
@@ -98,8 +105,9 @@ export const createGitHubProvider = (integration: Integration) => {
         await store.loader.pullrequests()
       )
       allPulls = [...allPulls, ...pulls]
+      allReviewResponses = [...allReviewResponses, ...reviewResponses]
     }
-    return { pulls: allPulls, reviewResponses: [] }
+    return { pulls: allPulls, reviewResponses: allReviewResponses }
   }
 
   return {

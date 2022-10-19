@@ -6,6 +6,7 @@ import { codingTime, pickupTime, reviewTime, deployTime, totalTime } from '~/bat
 import { findReleaseDate } from '../release-detect'
 import { first } from 'remeda'
 import { logger } from '~/batch/helper/logger'
+import { analyzeReviewResponse } from '../review-response'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).utc().toISOString() : null
@@ -17,12 +18,24 @@ export const buildPullRequests = async (
 ) => {
   const store = createStore(config)
 
-  const results: PullRequest[] = []
+  const pulls: PullRequest[] = []
+  const reviewResponses: { repo: string; number: string; author: string; createdAt: string; responseTime: number }[] =
+    []
   for (const pr of pullrequests) {
     try {
       const commits = await store.loader.commits(pr.number)
       const reviews = await store.loader.reviews(pr.number)
       const discussions = await store.loader.discussions(pr.number)
+
+      reviewResponses.push(
+        ...analyzeReviewResponse(discussions).map((res) => ({
+          repo: String(pr.repo),
+          number: String(pr.number),
+          author: res.author,
+          createdAt: res.createdAt,
+          responseTime: res.responseTime
+        }))
+      )
 
       const firstCommittedAt = nullOrDate(commits.length > 0 ? commits[0].date : null)
       const pullRequestCreatedAt = nullOrDate(pr.createdAt)!
@@ -39,7 +52,7 @@ export const buildPullRequests = async (
             )
           : null
 
-      results.push({
+      pulls.push({
         repo: pr.repo,
         number: String(pr.number),
         sourceBranch: pr.sourceBranch,
@@ -65,5 +78,5 @@ export const buildPullRequests = async (
       await logger.error('analyze failure:', config.companyId, config.repositoryId, pr.number, e)
     }
   }
-  return results
+  return { pulls, reviewResponses }
 }
