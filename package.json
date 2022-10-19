@@ -17,6 +17,7 @@
     "start:mocks": "cross-env NODE_ENV=production node --require ./mocks --require dotenv/config ./build/server.js",
     "test": "vitest --run",
     "test:e2e:dev": "playwright test",
+    "test:e2e:run": "cross-env CI=true playwright test",
     "typecheck": "tsc -b",
     "validate": "run-p test lint typecheck"
   },
