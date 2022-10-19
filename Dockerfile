@@ -4,7 +4,7 @@ ARG PNPM_VERSION=7.12.1
 
 # Install openssl for Prisma
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y openssl sqlite3 procps \
+  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps \
   && apt-get clean \
   && npm i -g pnpm@${PNPM_VERSION} \
   && rm -rf /var/lib/apt/lists/* 
