@@ -28,7 +28,14 @@ export const action = async ({ request }: ActionArgs) => {
 
 const CompanyNewPage = () => {
   return (
-    <AppMutationModal title="Create a company" footer={<AppSubmitButton form="company-new-form" />}>
+    <AppMutationModal
+      title="Create a company"
+      footer={
+        <AppSubmitButton form="company-new-form" colorScheme="blue">
+          Create
+        </AppSubmitButton>
+      }
+    >
       <ValidatedForm method="post" validator={validator} noValidate autoComplete="false" id="company-new-form">
         <AppInput name="name" label="Name" autoFocus />
       </ValidatedForm>

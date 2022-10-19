@@ -18,7 +18,7 @@ export const validator = withZod(
 )
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
   const integration = await getIntegration(params.companyId)
   if (integration) {
     // already added
@@ -28,7 +28,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
   const { error, data } = await validator.validate(await request.formData())
   if (error) {
     return validationError(error)

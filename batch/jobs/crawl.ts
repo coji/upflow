@@ -16,6 +16,11 @@ export const crawlJob = async () => {
   for (const company of companies) {
     await logger.info('company: ', company.name)
 
+    if (!company.isActive) {
+      await logger.info('company is not active.')
+      continue
+    }
+
     const integration = company.integration
     if (!integration) {
       await logger.error('integration not set:', company.id, company.name)

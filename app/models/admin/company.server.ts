@@ -16,31 +16,11 @@ export const getCompany = async (companyId: string) =>
     }
   })
 
-export const updateCompany = async ({
-  companyId,
-  name,
-  releaseDetectionMethod,
-  releaseDetectionKey
-}: {
-  companyId: Company['id']
-  name: Company['name']
-  releaseDetectionMethod: Company['releaseDetectionMethod']
-  releaseDetectionKey: Company['releaseDetectionKey']
-}) => {
-  const ret = await prisma.$transaction([
-    prisma.company.update({
-      data: { name, releaseDetectionMethod, releaseDetectionKey },
-      where: { id: companyId }
-    }),
-    // 関連リポジトリの release detection もまとめて更新する
-    // TODO: 暗黙っぽいのでリファクタ
-    prisma.repository.updateMany({
-      data: { releaseDetectionMethod, releaseDetectionKey },
-      where: { companyId }
-    })
-  ])
-
-  return ret[0]
+export const updateCompany = async (companyId: string, company: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>) => {
+  return await prisma.company.update({
+    data: company,
+    where: { id: companyId }
+  })
 }
 
 export const createCompany = async (name: string) => prisma.company.create({ data: { name } })

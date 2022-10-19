@@ -31,6 +31,7 @@ model Company {
   releaseDetectionKey    String         @default("production")
   updatedAt              DateTime       @updatedAt
   createdAt              DateTime       @default(now())
+  isActive               Boolean        @default(true)
   users                  CompanyUser[]
   exportSetting          ExportSetting?
   integration            Integration?

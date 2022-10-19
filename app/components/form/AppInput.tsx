@@ -7,7 +7,7 @@ interface AppInputProps extends InputProps {
   label: string
   isRequired?: boolean
 }
-export const AppInput = ({ name, label, isRequired, ...rest }: AppInputProps) => {
+export const AppInput = ({ name, label, isRequired, defaultValue, ...rest }: AppInputProps) => {
   const { error, getInputProps } = useField(name)
   return (
     <FormControl isInvalid={!!error} isRequired>

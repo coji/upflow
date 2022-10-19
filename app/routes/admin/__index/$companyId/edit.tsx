@@ -1,10 +1,13 @@
-import { Box, Button, FormLabel, Input, Select, Stack } from '@chakra-ui/react'
+import { Button, Stack } from '@chakra-ui/react'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
-import { Form, useLoaderData } from '@remix-run/react'
+import { useLoaderData } from '@remix-run/react'
+import { withZod } from '@remix-validated-form/with-zod'
+import { zfd } from 'zod-form-data'
+import { ValidatedForm, validationError } from 'remix-validated-form'
 import invariant from 'tiny-invariant'
-import { AppLink, AppMutationModal } from '~/app/components'
-import dayjs from '~/app/libs/dayjs'
+import { z } from 'zod'
+import { AppInput, AppLink, AppMutationModal, AppSelect, AppSubmitButton, AppSwitch } from '~/app/components'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
@@ -16,21 +19,24 @@ export const loader = async ({ params }: LoaderArgs) => {
   return company
 }
 
+export const validator = withZod(
+  z.object({
+    name: z.string().min(1, { message: 'name is required' }),
+    releaseDetectionMethod: z.string().min(1, { message: 'releaseDetectionMethod is required' }),
+    releaseDetectionKey: z.string().min(1, { message: 'releaseDetectionKey is required' }),
+    isActive: zfd.checkbox()
+  })
+)
+
 export const action = async ({ request, params }: ActionArgs) => {
   const { companyId } = params
-  const formData = await request.formData()
-  const name = formData.get('name')
-  const releaseDetectionMethod = formData.get('releaseDetectionMethod')
-  const releaseDetectionKey = formData.get('releaseDetectionKey')
-  if (companyId && name) {
-    const company = await updateCompany({
-      companyId,
-      name: String(name),
-      releaseDetectionMethod: String(releaseDetectionMethod),
-      releaseDetectionKey: String(releaseDetectionKey)
-    })
-    return redirect(`/admin/${company.id}`)
-  } else return null
+  invariant(companyId, 'companyId should specified')
+  const { error, data } = await validator.validate(await request.formData())
+  if (error) {
+    return validationError(error)
+  }
+  const company = await updateCompany(companyId, data)
+  return redirect(`/admin/${company.id}`)
 }
 
 const EditCompany = () => {
@@ -41,9 +47,9 @@ const EditCompany = () => {
       title="Edit company"
       footer={
         <Stack direction="row" justify="center">
-          <Button type="submit" colorScheme="blue" form="form">
+          <AppSubmitButton colorScheme="blue" type="submit" form="form">
             Update
-          </Button>
+          </AppSubmitButton>
 
           <AppLink to="..">
             <Button variant="ghost">Cancel</Button>
@@ -51,42 +57,20 @@ const EditCompany = () => {
         </Stack>
       }
     >
-      <Form method="post" id="form">
-        <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
-          <FormLabel>ID</FormLabel>
-          <Box py="1"> {company.id}</Box>
+      <ValidatedForm validator={validator} method="post" id="form" defaultValues={company}>
+        <Stack>
+          <AppInput name="name" label="Company Name" />
 
-          <FormLabel htmlFor="name">Name</FormLabel>
-          <Input py="1" name="name" id="name" autoFocus defaultValue={company.name}></Input>
-
-          <FormLabel htmlFor="releaseDetectionMethod">Release Detection Method</FormLabel>
-          <Select
-            py="1"
-            name="releaseDetectionMethod"
-            id="releaseDetectionMethod"
-            autoFocus
-            defaultValue={company.releaseDetectionMethod}
-          >
+          <AppSelect name="releaseDetectionMethod" label="Release Detection Method">
             <option value="tags">tags</option>
             <option value="branch">branch</option>
-          </Select>
+          </AppSelect>
 
-          <FormLabel htmlFor="releaseDetectionKey">Release Detection Key</FormLabel>
-          <Input
-            py="1"
-            name="releaseDetectionKey"
-            id="releaseDetectionKey"
-            autoFocus
-            defaultValue={company.releaseDetectionKey}
-          ></Input>
+          <AppInput name="releaseDetectionKey" label="Release Detection Key" />
 
-          <FormLabel>Updated At</FormLabel>
-          <Box py="1"> {dayjs(company.updatedAt).fromNow()}</Box>
-
-          <FormLabel>Created At</FormLabel>
-          <Box py="1"> {dayjs(company.createdAt).fromNow()}</Box>
-        </Box>
-      </Form>
+          <AppSwitch name="isActive" label="Active" value="on" />
+        </Stack>
+      </ValidatedForm>
     </AppMutationModal>
   )
 }
