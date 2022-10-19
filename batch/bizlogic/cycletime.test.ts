@@ -6,7 +6,7 @@ describe('codingTime', () => {
     expect(codingTime({ firstCommittedAt: null, pullRequestCreatedAt: null })).toBeNull()
   })
 
-  test('null if firstCommitedAt is null', () => {
+  test('null if firstCommittedAt is null', () => {
     expect(codingTime({ firstCommittedAt: null, pullRequestCreatedAt: '2022-08-01 10:00' })).toBeNull()
   })
 

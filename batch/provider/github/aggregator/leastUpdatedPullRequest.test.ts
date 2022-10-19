@@ -18,7 +18,7 @@ describe('leastCreatedMergeRequest', () => {
     targetBranch: ''
   }
 
-  test('shold retun a least updated_at object', () => {
+  test('should return a least updated_at object', () => {
     const ret = leastUpdatedPullRequest([
       { ...prototype, number: 1, updatedAt: '2022-01-01T00:00:0.0Z' },
       { ...prototype, number: 2, updatedAt: '2022-01-02T00:00:0.0Z' },
@@ -27,7 +27,7 @@ describe('leastCreatedMergeRequest', () => {
     expect(ret?.number).toEqual(2) // 最新のもの１件
   })
 
-  test('shold retuns null when empty array specified', () => {
+  test('should returns null when empty array specified', () => {
     const subject: ShapedGitHubPullRequest[] = []
     const ret = leastUpdatedPullRequest(subject)
     expect(ret).toBeNull()
