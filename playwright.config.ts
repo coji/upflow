@@ -22,7 +22,7 @@ const config: PlaywrightTestConfig = {
     }
   ],
   webServer: {
-    command: 'cross-env PORT=8811 npm run dev',
+    command: 'PORT=8811 npm run dev',
     port: 8811
   },
   use: {

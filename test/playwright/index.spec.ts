@@ -1,9 +1,7 @@
 import { test, expect } from '@playwright/test'
-import { hello } from '~/support/helper'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  hello()
 })
 
 test('"UpFlow"タイトル表示', async ({ page }) => {
