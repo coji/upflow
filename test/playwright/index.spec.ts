@@ -16,8 +16,7 @@ test.afterAll(async () => {
 
 test('"UpFlow"タイトル表示', async ({ page }) => {
   await page.goto('/')
-  const title = page.locator('text=UpFlow')
-  await expect(title).toHaveText('UpFlow')
+  await expect(page.locator('text=UpFlow')).toBeVisible()
 })
 
 test('ログインして admin 画面に遷移', async ({ page }) => {
@@ -25,6 +24,8 @@ test('ログインして admin 画面に遷移', async ({ page }) => {
   await page.getByLabel('Eメール').fill(testUser.email)
   await page.getByLabel('パスワード').fill(testUser.password)
   await page.getByRole('button', { name: 'ログイン' }).click()
-  await page.waitForNavigation({ url: '/admin', timeout: 1000 })
-  await expect(page.url().substring(page.url().lastIndexOf('/'))).toEqual('/admin')
+  await page.waitForNavigation({ url: '/admin' })
+
+  await expect(page.getByRole('link', { name: 'UpFlow' })).toHaveAttribute('href', '/admin')
+  await expect(page.getByText('admin')).toBeVisible()
 })
