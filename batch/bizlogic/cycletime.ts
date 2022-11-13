@@ -1,62 +1,68 @@
 import dayjs from '~/app/libs/dayjs'
 import { pipe, filter, sortBy, first, last } from 'remeda'
 
-export const codingTime = ({
-  firstCommittedAt,
-  pullRequestCreatedAt
-}: {
+interface codingTimeProps {
   firstCommittedAt: string | null
   pullRequestCreatedAt: string | null
-}) =>
-  firstCommittedAt && pullRequestCreatedAt
-    ? Math.abs(dayjs(pullRequestCreatedAt).diff(firstCommittedAt, 'days', true))
-    : null
+}
+export const codingTime = ({ firstCommittedAt, pullRequestCreatedAt }: codingTimeProps) => {
+  if (firstCommittedAt && pullRequestCreatedAt) {
+    return Math.abs(dayjs(pullRequestCreatedAt).diff(firstCommittedAt, 'days', true))
+  }
+  return null
+}
 
-export const pickupTime = ({
-  pullRequestCreatedAt,
-  firstReviewedAt,
-  mergedAt
-}: {
+interface pickupTimeProps {
   pullRequestCreatedAt: string
   firstReviewedAt: string | null
   mergedAt: string | null
-}) => {
-  if (firstReviewedAt) return Math.abs(dayjs(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true))
-  if (mergedAt) Math.abs(dayjs(firstReviewedAt).diff(mergedAt, 'days', true))
+}
+export const pickupTime = ({ pullRequestCreatedAt, firstReviewedAt, mergedAt }: pickupTimeProps) => {
+  if (firstReviewedAt) {
+    return Math.abs(dayjs(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true))
+  }
+  if (mergedAt) {
+    return Math.abs(dayjs(mergedAt).diff(pullRequestCreatedAt, 'days', true))
+  }
   return null
 }
 
-export const reviewTime = ({
-  firstReviewedAt,
-  mergedAt
-}: {
+interface reviewTimeProps {
   firstReviewedAt: string | null
   mergedAt: string | null
-}) => {
-  if (!mergedAt) return null
-  if (firstReviewedAt) return Math.abs(dayjs(mergedAt).diff(firstReviewedAt, 'days', true))
+}
+export const reviewTime = ({ firstReviewedAt, mergedAt }: reviewTimeProps) => {
+  if (firstReviewedAt && mergedAt) {
+    return Math.abs(dayjs(mergedAt).diff(firstReviewedAt, 'days', true))
+  }
   return null
 }
 
-export const deployTime = ({ mergedAt, releasedAt }: { mergedAt: string | null; releasedAt: string | null }) => {
-  if (!mergedAt) return null
-  if (!releasedAt) return null
-  return Math.abs(dayjs(releasedAt).diff(mergedAt, 'days', true))
+interface deployTimeProps {
+  mergedAt: string | null
+  releasedAt: string | null
+}
+export const deployTime = ({ mergedAt, releasedAt }: deployTimeProps) => {
+  if (mergedAt && releasedAt) {
+    return Math.abs(dayjs(releasedAt).diff(mergedAt, 'days', true))
+  }
+  return null
 }
 
+interface totalTimeProps {
+  firstCommittedAt: string | null
+  pullRequestCreatedAt: string
+  firstReviewedAt: string | null
+  mergedAt: string | null
+  releasedAt: string | null
+}
 export const totalTime = ({
   firstCommittedAt,
   pullRequestCreatedAt,
   firstReviewedAt,
   mergedAt,
   releasedAt
-}: {
-  firstCommittedAt: string | null
-  pullRequestCreatedAt: string
-  firstReviewedAt: string | null
-  mergedAt: string | null
-  releasedAt: string | null
-}) => {
+}: totalTimeProps) => {
   const times = pipe(
     [firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt],
     filter((x) => !!x),
