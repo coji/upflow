@@ -1,7 +1,6 @@
 import type { PlaywrightTestConfig } from '@playwright/test'
 import { devices } from '@playwright/test'
 
-// require('dotenv').config();
 const config: PlaywrightTestConfig = {
   testDir: './test/playwright',
   timeout: 30 * 1000,
@@ -22,8 +21,9 @@ const config: PlaywrightTestConfig = {
     },
   ],
   webServer: {
-    command: 'PORT=8811 pnpm run dev',
+    command: 'PORT=8811 pnpm run start',
     port: 8811,
+    reuseExistingServer: !process.env.CI,
   },
   use: {
     actionTimeout: 0,
