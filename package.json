@@ -91,8 +91,8 @@
     "@vitest/coverage-c8": "^0.25.2",
     "binode": "^1.0.5",
     "c8": "^7.12.0",
-    "esbuild": "^0.15.14",
-    "esbuild-plugin-clean": "^1.0.0",
+    "esbuild": "^0.15.15",
+    "esbuild-plugin-clean": "^1.0.1",
     "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "happy-dom": "^7.7.0",
@@ -103,7 +103,7 @@
     "tsconfig-paths": "^4.1.0",
     "typescript": "^4.9.3",
     "vite": "^3.2.4",
-    "vite-tsconfig-paths": "^3.5.2",
+    "vite-tsconfig-paths": "^3.6.0",
     "vitest": "^0.25.2"
   },
   "engines": {
