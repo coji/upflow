@@ -12,7 +12,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       prisma.user.count(),
       fetch(url.toString(), { method: 'HEAD' }).then((r) => {
         if (!r.ok) return Promise.reject(r)
-      })
+      }),
     ])
     return new Response('OK')
   } catch (error: unknown) {

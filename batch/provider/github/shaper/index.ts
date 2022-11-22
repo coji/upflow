@@ -6,7 +6,7 @@ import type {
   ShapedGitHubPullRequest,
   ShapedGitHubCommit,
   ShapedGitHubReviewComment,
-  ShapedGitHubReview
+  ShapedGitHubReview,
 } from '../model'
 
 /**
@@ -27,7 +27,7 @@ export const shapeGitHubPullRequest: (pr: GitHubPullRequest) => ShapedGitHubPull
     createdAt: pr.created_at,
     updatedAt: pr.updated_at,
     mergedAt: pr.merged_at,
-    mergeCommitSha: pr.merge_commit_sha
+    mergeCommitSha: pr.merge_commit_sha,
   }
 }
 
@@ -41,7 +41,7 @@ export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (
     sha: commit.sha,
     url: commit.html_url,
     committer: commit.committer?.login ?? null, // author にすると古いのになっちゃうので committer
-    date: commit.commit.committer?.date ?? null
+    date: commit.commit.committer?.date ?? null,
   }
 }
 
@@ -55,7 +55,7 @@ export const shapeGitHubReviewComment: (comment: GitHubReviewComment) => ShapedG
     id: comment.id,
     user: comment.user?.login ?? null,
     url: comment.html_url,
-    createdAt: comment.created_at
+    createdAt: comment.created_at,
   }
 }
 
@@ -70,6 +70,6 @@ export const shapeGitHubReview: (review: GitHubReview) => ShapedGitHubReview = (
     user: review.user?.login ?? null,
     state: review.state,
     url: review.html_url,
-    submittedAt: review.submitted_at ?? null
+    submittedAt: review.submitted_at ?? null,
   }
 }

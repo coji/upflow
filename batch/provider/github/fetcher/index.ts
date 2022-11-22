@@ -3,7 +3,7 @@ import type {
   ShapedGitHubPullRequest,
   ShapedGitHubCommit,
   ShapedGitHubReviewComment,
-  ShapedGitHubReview
+  ShapedGitHubReview,
 } from '../model'
 import { shapeGitHubPullRequest, shapeGitHubCommit, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
 import dayjs from '~/app/libs/dayjs'
@@ -29,14 +29,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         repo,
         state: 'all',
         page,
-        per_page: 100
+        per_page: 100,
       })
       if (ret.data.filter((pr) => dayjs(pr.updated_at) > dayjs().utc().add(-90, 'days')).length === 0) break
       pulls = [
         ...pulls,
         ...ret.data
           .filter((pr) => dayjs(pr.updated_at) > dayjs().utc().add(-90, 'days')) // 90日以上前のは除外
-          .map((pr) => shapeGitHubPullRequest(pr))
+          .map((pr) => shapeGitHubPullRequest(pr)),
       ]
       page++
     } while (true)
@@ -52,7 +52,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         repo,
         pull_number: pullNumber,
         page,
-        per_page: 100
+        per_page: 100,
       })
       if (ret.data.length === 0) break
       allCommits = [...allCommits, ...ret.data.map((commit) => shapeGitHubCommit(commit))]
@@ -70,7 +70,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         repo,
         pull_number: pullNumber,
         page,
-        per_page: 100
+        per_page: 100,
       })
       if (ret.data.length === 0) break
       allComments = [...allComments, ...ret.data.map((comment) => shapeGitHubReviewComment(comment))]
@@ -88,7 +88,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         repo,
         pull_number: pullNumber,
         page,
-        per_page: 100
+        per_page: 100,
       })
       if (ret.data.length === 0) break
       allReviews = [...allReviews, ...ret.data.map((review) => shapeGitHubReview(review))]

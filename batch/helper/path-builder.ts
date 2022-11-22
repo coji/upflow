@@ -29,6 +29,6 @@ export const createPathBuilder = ({ companyId, repositoryId }: createPathBuilder
     reviewJsonFilename,
     releaseCommitsJsonFilename,
     releaseCommitsGlob,
-    sha
+    sha,
   }
 }

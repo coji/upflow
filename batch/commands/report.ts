@@ -17,7 +17,7 @@ export async function reportCommand({ companyId }: reportCommandProps) {
 
   const company = await prisma.company.findFirstOrThrow({
     where: { id: companyId },
-    include: { integration: true, repositories: true }
+    include: { integration: true, repositories: true },
   })
   invariant(company.integration, 'integration should related')
 
@@ -40,8 +40,8 @@ export async function reportCommand({ companyId }: reportCommandProps) {
       'pickup time',
       'review time',
       'deploy time',
-      'total time'
-    ].join('\t')
+      'total time',
+    ].join('\t'),
   )
 
   const prList = await getPullRequestReport(company.id)
@@ -65,8 +65,8 @@ export async function reportCommand({ companyId }: reportCommandProps) {
         pr.pickupTime,
         pr.reviewTime,
         pr.deployTime,
-        pr.totalTime
-      ].join('\t')
+        pr.totalTime,
+      ].join('\t'),
     )
   }
 }

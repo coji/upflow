@@ -12,7 +12,7 @@ import {
   MenuList,
   Spacer,
   Stack,
-  Link
+  Link,
 } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'

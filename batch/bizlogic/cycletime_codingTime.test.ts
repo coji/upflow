@@ -6,8 +6,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: null,
-        pullRequestCreatedAt: null
-      })
+        pullRequestCreatedAt: null,
+      }),
     ).toBeNull()
   })
 
@@ -15,8 +15,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: null,
-        pullRequestCreatedAt: '2022-08-01 10:00'
-      })
+        pullRequestCreatedAt: '2022-08-01 10:00',
+      }),
     ).toBeNull()
   })
 
@@ -24,8 +24,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01 10:00',
-        pullRequestCreatedAt: null
-      })
+        pullRequestCreatedAt: null,
+      }),
     ).toBeNull()
   })
 
@@ -33,8 +33,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-10 10:00',
-        pullRequestCreatedAt: '2022-08-10 10:00'
-      })
+        pullRequestCreatedAt: '2022-08-10 10:00',
+      }),
     ).toStrictEqual(0)
   })
 
@@ -42,8 +42,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01 10:00',
-        pullRequestCreatedAt: '2022-08-02 11:00'
-      })
+        pullRequestCreatedAt: '2022-08-02 11:00',
+      }),
     ).toStrictEqual(1 + 1 / 24)
   })
 
@@ -51,8 +51,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-02 11:00',
-        pullRequestCreatedAt: '2022-08-01 10:00'
-      })
+        pullRequestCreatedAt: '2022-08-01 10:00',
+      }),
     ).toStrictEqual(1 + 1 / 24)
   })
 
@@ -60,8 +60,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01 10:00',
-        pullRequestCreatedAt: '2023-08-01 10:00'
-      })
+        pullRequestCreatedAt: '2023-08-01 10:00',
+      }),
     ).toStrictEqual(365)
   })
 
@@ -69,8 +69,8 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01 10:00',
-        pullRequestCreatedAt: '2062-08-01 10:00'
-      })
+        pullRequestCreatedAt: '2062-08-01 10:00',
+      }),
     ).toStrictEqual(40 * 365 + 10) // うるう年が10年 = +10日分ある
   })
 })

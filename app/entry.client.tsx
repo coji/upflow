@@ -28,5 +28,5 @@ hydrateRoot(
   document,
   <ClientCacheProvider>
     <RemixBrowser />
-  </ClientCacheProvider>
+  </ClientCacheProvider>,
 )

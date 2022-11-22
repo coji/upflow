@@ -14,7 +14,7 @@ export const findReleaseDate = async (
   store: ReturnType<typeof createStore>,
   targetHash: string,
   method: string,
-  key: string
+  key: string,
 ) => {
   for (const m of releasedMergeRequests(allMergeRequests, method, key)) {
     if ((await store.loader.commits(m.iid)).some((c) => c.sha === targetHash)) {

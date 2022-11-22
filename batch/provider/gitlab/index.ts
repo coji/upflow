@@ -14,7 +14,7 @@ export const createGitLabProvider = (integration: Integration) => {
    */
   const fetch = async (
     repository: Repository,
-    { refresh = false, halt = false, delay = 0 }: { refresh: boolean; halt: boolean; delay?: number }
+    { refresh = false, halt = false, delay = 0 }: { refresh: boolean; halt: boolean; delay?: number },
   ) => {
     invariant(repository.projectId, 'project id shoud specified')
     invariant(integration.privateToken, 'provider privateToken shoud specified')
@@ -84,7 +84,7 @@ export const createGitLabProvider = (integration: Integration) => {
     for (const repository of repositories) {
       const store = createStore({
         companyId: repository.companyId,
-        repositoryId: repository.id
+        repositoryId: repository.id,
       })
       const mergerequests = await store.loader.mergerequests()
       const { pulls, reviewResponses } = await buildMergeRequests(
@@ -92,9 +92,9 @@ export const createGitLabProvider = (integration: Integration) => {
           companyId: repository.companyId,
           repositoryId: repository.id,
           releaseDetectionMethod: repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
-          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey
+          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey,
         },
-        mergerequests
+        mergerequests,
       )
       allPulls = [...allPulls, ...pulls]
       allReviewResponses = [...allReviewResponses, ...reviewResponses]
@@ -104,6 +104,6 @@ export const createGitLabProvider = (integration: Integration) => {
 
   return {
     fetch,
-    analyze
+    analyze,
   }
 }

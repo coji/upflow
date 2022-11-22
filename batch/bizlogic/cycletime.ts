@@ -61,12 +61,12 @@ export const totalTime = ({
   pullRequestCreatedAt,
   firstReviewedAt,
   mergedAt,
-  releasedAt
+  releasedAt,
 }: totalTimeProps) => {
   const times = pipe(
     [firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt],
     filter((x) => !!x),
-    sortBy((x) => dayjs(x).unix())
+    sortBy((x) => dayjs(x).unix()),
   )
   const firstTime = first(times)
   const lastTime = last(times)

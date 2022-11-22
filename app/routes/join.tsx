@@ -50,13 +50,13 @@ export const action = async ({ request }: ActionArgs) => {
     request,
     userId: user.id,
     remember: false,
-    redirectTo
+    redirectTo,
   })
 }
 
 export const meta: MetaFunction = () => {
   return {
-    title: 'Sign Up'
+    title: 'Sign Up',
   }
 }
 
@@ -131,7 +131,7 @@ export default function Join() {
                 textDecoration="underline"
                 to={{
                   pathname: '/',
-                  search: searchParams.toString()
+                  search: searchParams.toString(),
                 }}
               >
                 ログイン

@@ -14,7 +14,7 @@ const nullOrDate = (dateStr?: Date | string | null) => {
 
 export const buildPullRequests = async (
   config: { companyId: string; repositoryId: string; releaseDetectionMethod: string; releaseDetectionKey: string },
-  pullrequests: ShapedGitHubPullRequest[]
+  pullrequests: ShapedGitHubPullRequest[],
 ) => {
   const store = createStore(config)
 
@@ -33,8 +33,8 @@ export const buildPullRequests = async (
           number: String(pr.number),
           author: res.author,
           createdAt: res.createdAt,
-          responseTime: res.responseTime
-        }))
+          responseTime: res.responseTime,
+        })),
       )
 
       const firstCommittedAt = nullOrDate(commits.length > 0 ? commits[0].date : null)
@@ -48,7 +48,7 @@ export const buildPullRequests = async (
               store,
               pr.mergeCommitSha,
               config.releaseDetectionMethod,
-              config.releaseDetectionKey
+              config.releaseDetectionKey,
             )
           : null
 
@@ -72,7 +72,7 @@ export const buildPullRequests = async (
         deployTime: deployTime({ mergedAt, releasedAt }),
         totalTime: totalTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt }),
         repositoryId: config.repositoryId,
-        updatedAt: nullOrDate(pr.updatedAt)
+        updatedAt: nullOrDate(pr.updatedAt),
       })
     } catch (e) {
       await logger.error('analyze failure:', config.companyId, config.repositoryId, pr.number, e)

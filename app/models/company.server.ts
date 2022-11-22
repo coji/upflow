@@ -6,18 +6,18 @@ export const getCompaniesByUser = async (userId: string) =>
     where: {
       users: {
         some: {
-          userId
-        }
-      }
+          userId,
+        },
+      },
     },
     include: {
       teams: {
         include: {
-          users: true
-        }
+          users: true,
+        },
       },
       integration: true,
       repositories: true,
-      users: true
-    }
+      users: true,
+    },
   })

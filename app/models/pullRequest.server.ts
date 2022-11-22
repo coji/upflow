@@ -5,7 +5,7 @@ export type { PullRequest } from '@prisma/client'
 export function getPullRequestItems() {
   return prisma.pullRequest.findMany({
     orderBy: { pullRequestCreatedAt: 'desc' },
-    take: 20
+    take: 20,
   })
 }
 
@@ -22,9 +22,9 @@ export function getPullRequestItem(repositoryId: string, number: string) {
     where: {
       repositoryId_number: {
         repositoryId,
-        number
-      }
-    }
+        number,
+      },
+    },
   })
 }
 
@@ -33,11 +33,11 @@ export function upsertPullRequest(pullRequest: PullRequest) {
     where: {
       repositoryId_number: {
         repositoryId: pullRequest.repositoryId,
-        number: pullRequest.number
-      }
+        number: pullRequest.number,
+      },
     },
     create: pullRequest,
-    update: pullRequest
+    update: pullRequest,
   })
 }
 
@@ -45,8 +45,8 @@ export async function getPullRequestReport(companyId: string) {
   return prisma.pullRequest.findMany({
     where: {
       repository: {
-        companyId
-      }
-    }
+        companyId,
+      },
+    },
   })
 }

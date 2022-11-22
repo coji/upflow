@@ -15,9 +15,9 @@ const RepoSchema = zfd.formData({
     z.object({
       projectId: z.string().optional(),
       owner: z.string().optional(),
-      repo: z.string().optional()
-    })
-  )
+      repo: z.string().optional(),
+    }),
+  ),
 })
 
 export const loader = async ({ params }: LoaderArgs) => {
@@ -40,7 +40,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       companyId: params.companyId,
       projectId: repo.projectId,
       owner: repo.owner,
-      repo: repo.repo
+      repo: repo.repo,
     })
   }
   return redirect(`/admin/${params.companyId}`)

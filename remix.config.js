@@ -14,6 +14,6 @@ module.exports = {
     'p-cancelable',
     'lowercase-keys',
     'form-data-encoder',
-    'ky'
-  ]
+    'ky',
+  ],
 }

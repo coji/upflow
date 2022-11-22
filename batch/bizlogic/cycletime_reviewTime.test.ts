@@ -12,15 +12,15 @@ describe('reviewTime', () => {
     expect(
       reviewTime({
         firstReviewedAt: '2022-08-01 10:00',
-        mergedAt: '2022-08-02 10:00'
-      })
+        mergedAt: '2022-08-02 10:00',
+      }),
     ).toStrictEqual(1)
 
     expect(
       reviewTime({
         firstReviewedAt: '2022-08-02 10:00',
-        mergedAt: '2022-08-01 10:00'
-      })
+        mergedAt: '2022-08-01 10:00',
+      }),
     ).toStrictEqual(1)
   })
 })

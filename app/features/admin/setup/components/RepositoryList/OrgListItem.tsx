@@ -14,7 +14,7 @@ export const OrgListItem = ({
   isIndeterminate,
   checkedRepoNum,
   orgRepoNum,
-  onChange
+  onChange,
 }: OrgListItemProps) => {
   return (
     <Stack direction="row" align="center">

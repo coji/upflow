@@ -48,13 +48,13 @@ export const action = async ({ request }: ActionArgs) => {
     request,
     userId: user.id,
     remember: remember === 'on' ? true : false,
-    redirectTo
+    redirectTo,
   })
 }
 
 export const meta: MetaFunction = () => {
   return {
-    title: 'UpFlow'
+    title: 'UpFlow',
   }
 }
 

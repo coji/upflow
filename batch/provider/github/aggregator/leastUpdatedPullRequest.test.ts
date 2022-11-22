@@ -15,14 +15,14 @@ describe('leastCreatedMergeRequest', () => {
     url: '',
     author: '',
     sourceBranch: '',
-    targetBranch: ''
+    targetBranch: '',
   }
 
   test('should return a least updated_at object', () => {
     const ret = leastUpdatedPullRequest([
       { ...prototype, number: 1, updatedAt: '2022-01-01T00:00:0.0Z' },
       { ...prototype, number: 2, updatedAt: '2022-01-02T00:00:0.0Z' },
-      { ...prototype, number: 3, updatedAt: '2022-01-01T00:00:0.0Z' }
+      { ...prototype, number: 3, updatedAt: '2022-01-01T00:00:0.0Z' },
     ])
     expect(ret?.number).toEqual(2) // 最新のもの１件
   })

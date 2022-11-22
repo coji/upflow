@@ -3,7 +3,7 @@ import type {
   ShapedGitHubPullRequest,
   ShapedGitHubReviewComment,
   ShapedGitHubCommit,
-  ShapedGitHubReview
+  ShapedGitHubReview,
 } from '../model'
 import fs from 'fs/promises'
 import path from 'path'
@@ -50,7 +50,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
       commits,
       discussions,
       reviews,
-      pullrequests
-    }
+      pullrequests,
+    },
   }
 }

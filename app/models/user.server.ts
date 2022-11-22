@@ -19,10 +19,10 @@ export async function createUser(email: User['email'], password: string) {
       email,
       password: {
         create: {
-          hash: hashedPassword
-        }
-      }
-    }
+          hash: hashedPassword,
+        },
+      },
+    },
   })
 }
 
@@ -34,8 +34,8 @@ export async function verifyLogin(email: User['email'], password: Password['hash
   const userWithPassword = await prisma.user.findUnique({
     where: { email },
     include: {
-      password: true
-    }
+      password: true,
+    },
   })
 
   if (!userWithPassword || !userWithPassword.password) {
@@ -69,11 +69,11 @@ export async function updatePassword(email: User['email'], oldPassword: Password
   const hashedPassword = await bcrypt.hash(newPassword, 10)
   const ret = await prisma.password.update({
     data: {
-      hash: hashedPassword
+      hash: hashedPassword,
     },
     where: {
-      userId: userWithoutPassword.id
-    }
+      userId: userWithoutPassword.id,
+    },
   })
   return ret !== null
 }

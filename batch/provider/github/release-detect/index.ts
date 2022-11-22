@@ -14,7 +14,7 @@ export const findReleaseDate = async (
   store: ReturnType<typeof createStore>,
   targetHash: string,
   method: string,
-  key: string
+  key: string,
 ) => {
   for (const m of releasedPullRequests(allPullRequests, method, key)) {
     if ((await store.loader.commits(m.number)).some((c) => c.sha === targetHash)) {

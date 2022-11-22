@@ -16,20 +16,20 @@ const cleanup = async (email) => {
   const repository = await prisma.repository.findFirst({
     where: {
       provider: process.env.INTEGRATION_PROVIDER,
-      projectId: process.env.REPOSITORY_PROJECT_ID
-    }
+      projectId: process.env.REPOSITORY_PROJECT_ID,
+    },
   })
   if (!repository) return {}
 
   const company = await prisma.company.findFirst({
-    where: { id: repository.companyId }
+    where: { id: repository.companyId },
   })
   if (!company) return { repository: repository.id }
   await prisma.company.delete({ where: { id: company.id } }).catch((e) => console.log(e))
 
   return {
     companyId: company?.id,
-    repositoryId: repository?.id
+    repositoryId: repository?.id,
   }
 }
 
@@ -42,24 +42,24 @@ async function seed() {
     data: {
       email,
       name: 'Coji Mizoguchi',
-      password: { create: { hash: await bcrypt.hash('techtalk', 10) } }
-    }
+      password: { create: { hash: await bcrypt.hash('techtalk', 10) } },
+    },
   })
 
   // company
   const company = await prisma.company.create({
     data: {
       id: companyId,
-      name: 'TechTalk'
-    }
+      name: 'TechTalk',
+    },
   })
 
   await prisma.companyUser.create({
     data: {
       company: { connect: { id: company.id } },
       user: { connect: { id: user.id } },
-      role: 'admin'
-    }
+      role: 'admin',
+    },
   })
 
   // team
@@ -67,8 +67,8 @@ async function seed() {
     data: {
       name: 'frontend',
       company: { connect: { id: company.id } },
-      users: { connect: { id: user.id } }
-    }
+      users: { connect: { id: user.id } },
+    },
   })
 
   // integration
@@ -77,8 +77,8 @@ async function seed() {
       provider: process.env.INTEGRATION_PROVIDER,
       method: process.env.INTEGRATION_METHOD,
       privateToken: process.env.INTEGRATION_PRIVATE_TOKEN,
-      company: { connect: { id: company.id } }
-    }
+      company: { connect: { id: company.id } },
+    },
   })
 
   // respository
@@ -88,8 +88,8 @@ async function seed() {
       provider: process.env.INTEGRATION_PROVIDER,
       projectId: process.env.REPOSITORY_PROJECT_ID,
       integration: { connect: { id: integration.id } },
-      company: { connect: { id: company.id } }
-    }
+      company: { connect: { id: company.id } },
+    },
   })
 
   console.log(`Database has been seeded. 🌱`)

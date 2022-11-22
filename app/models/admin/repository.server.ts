@@ -21,8 +21,8 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
         provider: integration.provider,
         owner,
         repo,
-        name: `${owner}/${repo}`
-      }
+        name: `${owner}/${repo}`,
+      },
     })
   }
 
@@ -34,8 +34,8 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
         integrationId: integration.id,
         provider: integration.provider,
         projectId,
-        name: `${projectId}`
-      }
+        name: `${projectId}`,
+      },
     })
   }
 

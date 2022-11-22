@@ -11,13 +11,13 @@ export const createSheetApi = ({ spreadsheetId, sheetTitle, clientEmail, private
     const jwt = new auth.JWT({
       email: clientEmail,
       key: privateKey,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     })
     await jwt.authorize()
 
     const sheet = sheets({
       version: 'v4',
-      auth: jwt
+      auth: jwt,
     })
 
     const res = await sheet.spreadsheets.get({ spreadsheetId, fields: 'sheets.properties' })
@@ -38,12 +38,12 @@ export const createSheetApi = ({ spreadsheetId, sheetTitle, clientEmail, private
             {
               addSheet: {
                 properties: {
-                  title: sheetTitle
-                }
-              }
-            }
-          ]
-        }
+                  title: sheetTitle,
+                },
+              },
+            },
+          ],
+        },
       })
       if (!res || !res.data.replies) {
         throw new Error('sheet create failed')
@@ -51,7 +51,7 @@ export const createSheetApi = ({ spreadsheetId, sheetTitle, clientEmail, private
 
       destSheet = {
         sheetId: res.data.replies[0].addSheet?.properties?.sheetId,
-        title: res.data.replies[0].addSheet?.properties?.title
+        title: res.data.replies[0].addSheet?.properties?.title,
       }
     }
 
@@ -64,25 +64,25 @@ export const createSheetApi = ({ spreadsheetId, sheetTitle, clientEmail, private
               range: {
                 sheetId: destSheet?.sheetId,
                 startColumnIndex: 0,
-                endColumnIndex: 99
+                endColumnIndex: 99,
               },
-              shiftDimension: 'COLUMNS'
-            }
+              shiftDimension: 'COLUMNS',
+            },
           },
           {
             pasteData: {
               coordinate: {
                 sheetId: destSheet?.sheetId,
                 rowIndex: 0,
-                columnIndex: 0
+                columnIndex: 0,
               },
               type: 'PASTE_VALUES',
               delimiter: '\t',
-              data
-            }
-          }
-        ]
-      }
+              data,
+            },
+          },
+        ],
+      },
     })
   }
 

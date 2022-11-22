@@ -7,8 +7,8 @@ describe('pickupTime', () => {
       pickupTime({
         pullRequestCreatedAt: '2022-08-01 10:00',
         firstReviewedAt: null,
-        mergedAt: null
-      })
+        mergedAt: null,
+      }),
     ).toBeNull()
   })
 
@@ -17,8 +17,8 @@ describe('pickupTime', () => {
       pickupTime({
         pullRequestCreatedAt: '2022-08-01 10:00',
         firstReviewedAt: '2022-08-02 10:00',
-        mergedAt: null
-      })
+        mergedAt: null,
+      }),
     ).toStrictEqual(1)
   })
 
@@ -27,8 +27,8 @@ describe('pickupTime', () => {
       pickupTime({
         pullRequestCreatedAt: '2022-08-01 10:00',
         firstReviewedAt: null,
-        mergedAt: '2022-08-02 10:00'
-      })
+        mergedAt: '2022-08-02 10:00',
+      }),
     ).toStrictEqual(1)
   })
 
@@ -37,8 +37,8 @@ describe('pickupTime', () => {
       pickupTime({
         pullRequestCreatedAt: '2022-08-01 10:00',
         firstReviewedAt: '2022-08-02 10:00',
-        mergedAt: '2022-08-03 10:00'
-      })
+        mergedAt: '2022-08-03 10:00',
+      }),
     ).toStrictEqual(1)
   })
 })

@@ -25,7 +25,7 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
       const ret = await got
         .get(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
           searchParams: { ref_name, per_page: 100, page, since },
-          headers: { 'PRIVATE-TOKEN': privateToken }
+          headers: { 'PRIVATE-TOKEN': privateToken },
         })
         .json<GitLabCommit[]>()
 
@@ -67,6 +67,6 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
     refCommits,
     commits,
     discussions,
-    mergerequests
+    mergerequests,
   }
 }

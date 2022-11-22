@@ -33,14 +33,10 @@ node_modules
 /public/build
 .env
 
-/cypress/screenshots
-/cypress/videos
 data/data.db
 data/data.db-journal
 data/data.db-shm
 data/data.db-wal
-
-cycletime.js
 
 coverage/
 dist

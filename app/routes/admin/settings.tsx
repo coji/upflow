@@ -11,7 +11,7 @@ import { getUser } from '~/app/utils/session.server'
 
 const schema = zfd.formData({
   oldPassword: z.string().min(1, { message: 'current password shoud input' }),
-  newPassword: z.string().min(1, { message: 'new password shoud input' })
+  newPassword: z.string().min(1, { message: 'new password shoud input' }),
 })
 const validator = withZod(schema)
 

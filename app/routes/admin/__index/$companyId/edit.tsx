@@ -24,8 +24,8 @@ export const validator = withZod(
     name: z.string().min(1, { message: 'name is required' }),
     releaseDetectionMethod: z.string().min(1, { message: 'releaseDetectionMethod is required' }),
     releaseDetectionKey: z.string().min(1, { message: 'releaseDetectionKey is required' }),
-    isActive: zfd.checkbox()
-  })
+    isActive: zfd.checkbox(),
+  }),
 )
 
 export const action = async ({ request, params }: ActionArgs) => {

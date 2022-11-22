@@ -59,6 +59,6 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
 
   return {
     repositories: checkedRepos,
-    RepositoryAddModal
+    RepositoryAddModal,
   }
 }

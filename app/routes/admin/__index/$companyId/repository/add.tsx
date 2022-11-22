@@ -21,7 +21,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 const providerSchema = zfd.formData({
   projectId: zfd.text().optional(),
   owner: zfd.text().optional(),
-  repo: zfd.text().optional()
+  repo: zfd.text().optional(),
 })
 export const action = async ({ request, params }: ActionArgs) => {
   invariant(params.companyId, 'company id shoud specified')

@@ -13,8 +13,8 @@ export const validator = withZod(
   z.object({
     provider: z.enum(['github', 'gitlab'], { required_error: 'provider is required' }),
     method: z.enum(['token'], { required_error: 'token is required' }),
-    token: z.string().min(1, { message: 'token is required' })
-  })
+    token: z.string().min(1, { message: 'token is required' }),
+  }),
 )
 
 export const loader = async ({ request, params }: LoaderArgs) => {
@@ -37,7 +37,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     companyId: params.companyId,
     provider: data.provider,
     method: data.method,
-    privateToken: data.token
+    privateToken: data.token,
   })
 }
 

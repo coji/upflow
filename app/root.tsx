@@ -12,7 +12,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 export const meta: MetaFunction = () => ({
   charset: 'utf-8',
   title: 'UpFlow',
-  viewport: 'width=device-width,initial-scale=1'
+  viewport: 'width=device-width,initial-scale=1',
 })
 
 export let links: LinksFunction = () => {
@@ -74,8 +74,8 @@ const colors = {
   brand: {
     900: '#1a365d',
     800: '#153e75',
-    700: '#2a69ac'
-  }
+    700: '#2a69ac',
+  },
 }
 
 const theme = extendTheme({ colors })

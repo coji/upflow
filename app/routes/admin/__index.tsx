@@ -8,7 +8,7 @@ import { requireUserId } from '~/app/utils/session.server'
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request)
   return {
-    companies: await getCompanies()
+    companies: await getCompanies(),
   }
 }
 

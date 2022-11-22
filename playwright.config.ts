@@ -6,7 +6,7 @@ const config: PlaywrightTestConfig = {
   testDir: './test/playwright',
   timeout: 30 * 1000,
   expect: {
-    timeout: 5000
+    timeout: 5000,
   },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -17,20 +17,20 @@ const config: PlaywrightTestConfig = {
     {
       name: 'chromium',
       use: {
-        ...devices['Desktop Chrome']
-      }
-    }
+        ...devices['Desktop Chrome'],
+      },
+    },
   ],
   webServer: {
     command: 'PORT=8811 pnpm run dev',
-    port: 8811
+    port: 8811,
   },
   use: {
     actionTimeout: 0,
     baseURL: 'http://localhost:8811',
     trace: 'on-first-retry',
-    video: 'on-first-retry'
-  }
+    video: 'on-first-retry',
+  },
 }
 
 export default config

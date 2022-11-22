@@ -4,5 +4,8 @@ node_modules
 /public/build
 .env
 
-/app/styles/tailwind.css
+coverage
+playwright-report
+
 data
+pnpm-lock.yaml

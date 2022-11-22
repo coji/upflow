@@ -15,6 +15,6 @@ export const createIntegration = async ({ companyId, provider, method, privateTo
       companyId,
       provider,
       method,
-      privateToken
-    }
+      privateToken,
+    },
   })

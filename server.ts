@@ -46,10 +46,10 @@ app.all(
         purgeRequireCache()
         const requestHandler = createRequestHandler({
           build: require(BUILD_DIR),
-          mode: MODE
+          mode: MODE,
         })
         return requestHandler(...args)
-      }
+      },
 )
 const port = process.env.PORT || 3000
 

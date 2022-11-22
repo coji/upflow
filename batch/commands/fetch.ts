@@ -20,7 +20,7 @@ export async function fetchCommand(props: FetchCommandProps) {
 
   const company = await prisma.company.findFirstOrThrow({
     where: { id: props.companyId },
-    include: { integration: true, repositories: true }
+    include: { integration: true, repositories: true },
   })
   invariant(company.integration, 'integration should related')
 
@@ -29,7 +29,7 @@ export async function fetchCommand(props: FetchCommandProps) {
 
   if (props.repositoryId) {
     const repository = company.repositories.find(
-      (repository) => repository.id === props.repositoryId && repository.id !== props.exclude
+      (repository) => repository.id === props.repositoryId && repository.id !== props.exclude,
     )
     if (repository) await provider.fetch(repository, { refresh: props.refresh, halt: false, delay: props.delay })
     else console.log('no such repository:', props.repositoryId)

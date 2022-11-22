@@ -13,7 +13,7 @@ export interface Config {
     {
       id: string
       projectId: string
-    }
+    },
   ]
 }
 
@@ -22,15 +22,15 @@ export const allConfigs = async () => {
     await prisma.company.findMany({
       include: {
         integration: { select: { id: true, provider: true, method: true, privateToken: true } },
-        repositories: { select: { id: true, projectId: true } }
-      }
+        repositories: { select: { id: true, projectId: true } },
+      },
     })
   ).map((company) => {
     return {
       companyId: company.id,
       companyName: company.name,
       integraiton: company.integration,
-      repositories: company.repositories
+      repositories: company.repositories,
     } as Config
   })
   return configs

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { listGithubRepos } from '../services/listGithubRepos'
 
 export const schema = z.object({
-  token: z.string({ required_error: 'token should specified' })
+  token: z.string({ required_error: 'token should specified' }),
 })
 
 export const loader = async ({ request }: LoaderArgs) => {

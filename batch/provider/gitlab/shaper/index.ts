@@ -4,7 +4,7 @@ import type {
   GitLabDiscussionNote,
   ShapedGitLabMergeRequest,
   ShapedGitLabCommit,
-  ShapedGitLabDiscussionNote
+  ShapedGitLabDiscussionNote,
 } from '../model'
 
 /**
@@ -13,7 +13,7 @@ import type {
  * @returns
  */
 export const shapeGitLabMergeRequest: (mr: GitLabMergeRequest) => ShapedGitLabMergeRequest = (
-  mr: GitLabMergeRequest
+  mr: GitLabMergeRequest,
 ) => {
   return {
     projectId: mr.project_id,
@@ -27,7 +27,7 @@ export const shapeGitLabMergeRequest: (mr: GitLabMergeRequest) => ShapedGitLabMe
     createdAt: mr.created_at,
     updatedAt: mr.updated_at,
     mergedAt: mr.merged_at,
-    mergeCommitSha: mr.merge_commit_sha ?? null
+    mergeCommitSha: mr.merge_commit_sha ?? null,
   }
 }
 
@@ -41,7 +41,7 @@ export const shapeGitLabCommit: (commit: GitLabCommit) => ShapedGitLabCommit = (
     sha: commit.id,
     url: commit.web_url,
     committer: commit.committer_name || commit.author_name, // author にすると古いのになるので commiter を先に使う
-    createdAt: (commit.committed_date || commit.created_at) as unknown as string // defined as Date but actual type is string
+    createdAt: (commit.committed_date || commit.created_at) as unknown as string, // defined as Date but actual type is string
   }
 }
 
@@ -51,12 +51,12 @@ export const shapeGitLabCommit: (commit: GitLabCommit) => ShapedGitLabCommit = (
  * @returns
  */
 export const shapeGitLabDiscussionNote: (comment: GitLabDiscussionNote) => ShapedGitLabDiscussionNote = (
-  comment: GitLabDiscussionNote
+  comment: GitLabDiscussionNote,
 ) => {
   return {
     id: comment.id,
     author: comment.author.username as string,
     type: comment.type ?? null,
-    createdAt: comment.created_at
+    createdAt: comment.created_at,
   }
 }

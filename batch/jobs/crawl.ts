@@ -10,7 +10,7 @@ export const crawlJob = async () => {
   await logger.info('crawl started.')
 
   const companies = await prisma.company.findMany({
-    include: { integration: true, repositories: true, exportSetting: true }
+    include: { integration: true, repositories: true, exportSetting: true },
   })
 
   for (const company of companies) {

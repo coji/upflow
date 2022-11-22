@@ -10,7 +10,7 @@ import { upsertExportSetting, getExportSetting } from '~/app/models/admin/export
 const schema = zfd.formData({
   sheetId: zfd.text(),
   clientEmail: zfd.text(),
-  privateKey: zfd.text()
+  privateKey: zfd.text(),
 })
 
 export const loader = async ({ params }: LoaderArgs) => {

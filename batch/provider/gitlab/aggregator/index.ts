@@ -8,6 +8,6 @@ export const createAggregator = () => {
     firstCommit,
     firstReviewComment,
     isCommitIncluded,
-    leastUpdatedMergeRequest
+    leastUpdatedMergeRequest,
   }
 }

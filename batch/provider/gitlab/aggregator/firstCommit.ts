@@ -5,5 +5,5 @@ export const firstCommit = (commits: ShapedGitLabCommit[]) =>
   pipe(
     commits,
     sortBy((x) => x.createdAt),
-    first()
+    first(),
   ) ?? null

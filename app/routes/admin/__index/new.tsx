@@ -8,8 +8,8 @@ import { createCompany } from '~/app/models/admin/company.server'
 
 export const validator = withZod(
   z.object({
-    name: z.string().min(1, { message: 'Company name is required' })
-  })
+    name: z.string().min(1, { message: 'Company name is required' }),
+  }),
 )
 
 export const action = async ({ request }: ActionArgs) => {

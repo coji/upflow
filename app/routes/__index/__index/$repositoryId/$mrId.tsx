@@ -7,7 +7,7 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
-  Stack
+  Stack,
 } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'

@@ -13,7 +13,7 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export const meta: MetaFunction = () => {
   return {
-    title: 'UpFlow'
+    title: 'UpFlow',
   }
 }
 

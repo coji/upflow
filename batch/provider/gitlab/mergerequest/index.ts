@@ -19,7 +19,7 @@ export const buildMergeRequests = async (
     releaseDetectionMethod: string
     releaseDetectionKey: string
   },
-  mergerequests: ShapedGitLabMergeRequest[]
+  mergerequests: ShapedGitLabMergeRequest[],
 ) => {
   const store = createStore(config)
   const aggregator = createAggregator()
@@ -38,8 +38,8 @@ export const buildMergeRequests = async (
           number: String(m.iid),
           author: res.author,
           createdAt: res.createdAt,
-          responseTime: res.responseTime
-        }))
+          responseTime: res.responseTime,
+        })),
       )
 
       const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.createdAt)
@@ -53,9 +53,9 @@ export const buildMergeRequests = async (
               store,
               m.mergeCommitSha,
               config.releaseDetectionMethod,
-              config.releaseDetectionKey
+              config.releaseDetectionKey,
             )
-          : null
+          : null,
       )
 
       pulls.push({
@@ -78,7 +78,7 @@ export const buildMergeRequests = async (
         deployTime: deployTime({ mergedAt, releasedAt }),
         totalTime: totalTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt }),
         repositoryId: config.repositoryId,
-        updatedAt: nullOrDate(m.updatedAt)
+        updatedAt: nullOrDate(m.updatedAt),
       })
     } catch (e) {
       await logger.error('analyze failure:', config.companyId, config.repositoryId, m.iid, e)

@@ -16,7 +16,7 @@ export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], expo
     spreadsheetId: exportSetting.sheetId,
     sheetTitle: 'rawdata',
     clientEmail: exportSetting.clientEmail,
-    privateKey: exportSetting.privateKey
+    privateKey: exportSetting.privateKey,
   })
   const header = [
     'repo',
@@ -37,7 +37,7 @@ export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], expo
     'firstReviewedAt',
     'mergedAt',
     'releasedAt',
-    'updatedAt'
+    'updatedAt',
   ].join('\t')
 
   const data = [
@@ -65,9 +65,9 @@ export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], expo
           firstReviewedAt: timeFormat(pr.firstReviewedAt, tz),
           mergedAt: timeFormat(pr.mergedAt, tz),
           releasedAt: timeFormat(pr.releasedAt, tz),
-          updatedAt: timeFormat(pr.updatedAt, tz)
+          updatedAt: timeFormat(pr.updatedAt, tz),
         }).join('\t')
-      })
+      }),
   ].join('\n')
 
   await sheet.paste(data)
@@ -75,14 +75,14 @@ export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], expo
 
 export const exportReviewResponsesToSpreadsheet = async (
   reviewResponses: { repo: string; number: string; author: string; createdAt: string; responseTime: number }[],
-  exportSetting: ExportSetting
+  exportSetting: ExportSetting,
 ) => {
   const tz = 'Asia/Tokyo'
   const sheet = createSheetApi({
     spreadsheetId: exportSetting.sheetId,
     sheetTitle: 'reviewres',
     clientEmail: exportSetting.clientEmail,
-    privateKey: exportSetting.privateKey
+    privateKey: exportSetting.privateKey,
   })
   const header = ['repo', 'number', 'author', 'createdAt', 'responseTime'].join('\t')
 
@@ -95,9 +95,9 @@ export const exportReviewResponsesToSpreadsheet = async (
         number: res.number,
         author: res.author,
         createdAt: timeFormat(res.createdAt, tz),
-        responseTime: res.responseTime
+        responseTime: res.responseTime,
       }).join('\t')
-    })
+    }),
   ].join('\n')
 
   await sheet.paste(data)

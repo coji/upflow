@@ -3,7 +3,7 @@ import { createTestUser, deleteTestUser } from '../support'
 
 const testUser = {
   email: 'test@example.com',
-  password: 'realysecurepassword'
+  password: 'realysecurepassword',
 }
 
 test.beforeAll(async () => {

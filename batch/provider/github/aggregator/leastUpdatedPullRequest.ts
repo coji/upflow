@@ -5,5 +5,5 @@ export const leastUpdatedPullRequest = (pullrequests: ShapedGitHubPullRequest[])
   pipe(
     pullrequests,
     sortBy((x) => x.updatedAt),
-    last()
+    last(),
   ) ?? null

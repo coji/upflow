@@ -93,16 +93,16 @@ export const createGitHubProvider = (integration: Integration) => {
     for (const repository of repositories) {
       const store = createStore({
         companyId: repository.companyId,
-        repositoryId: repository.id
+        repositoryId: repository.id,
       })
       const { pulls, reviewResponses } = await buildPullRequests(
         {
           companyId: repository.companyId,
           repositoryId: repository.id,
           releaseDetectionMethod: repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
-          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey
+          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey,
         },
-        await store.loader.pullrequests()
+        await store.loader.pullrequests(),
       )
       allPulls = [...allPulls, ...pulls]
       allReviewResponses = [...allReviewResponses, ...reviewResponses]
@@ -112,6 +112,6 @@ export const createGitHubProvider = (integration: Integration) => {
 
   return {
     fetch,
-    analyze
+    analyze,
   }
 }

@@ -25,7 +25,7 @@ describe('shapeGitHubReview', () => {
           starred_url: '',
           subscriptions_url: '',
           type: '',
-          url: ''
+          url: '',
         },
         author_association: 'MEMBER',
         body: '',
@@ -36,19 +36,19 @@ describe('shapeGitHubReview', () => {
         submitted_at: '2022-01-01',
         _links: {
           html: {
-            href: ''
+            href: '',
           },
           pull_request: {
-            href: ''
-          }
-        }
-      })
+            href: '',
+          },
+        },
+      }),
     ).toStrictEqual({
       id: 1,
       user: 'coji',
       state: 'state',
       url: 'html_url',
-      submittedAt: '2022-01-01'
+      submittedAt: '2022-01-01',
     })
   })
 
@@ -67,19 +67,19 @@ describe('shapeGitHubReview', () => {
         submitted_at: '2022-01-01',
         _links: {
           html: {
-            href: ''
+            href: '',
           },
           pull_request: {
-            href: ''
-          }
-        }
-      })
+            href: '',
+          },
+        },
+      }),
     ).toStrictEqual({
       id: 1,
       user: null,
       state: 'state',
       url: 'html_url',
-      submittedAt: '2022-01-01'
+      submittedAt: '2022-01-01',
     })
   })
 })

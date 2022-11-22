@@ -13,60 +13,60 @@ const fetch = command(
       refresh: {
         type: Boolean,
         description: 'refresh all mergerequest resources.',
-        default: false
+        default: false,
       },
       delay: {
         type: Number,
         description: 'provider api call delay for api call limit',
-        default: 0
+        default: 0,
       },
       exclude: {
         type: String,
-        description: 'exclude repository id'
-      }
+        description: 'exclude repository id',
+      },
     },
-    help: { description: 'Fetch all resources from gitlab api.' }
+    help: { description: 'Fetch all resources from gitlab api.' },
   },
   (argv) => {
     const { help, ...rest } = argv.flags
     fetchCommand({ companyId: argv._.companyId, repositoryId: argv._.repositoryId, ...rest })
-  }
+  },
 )
 
 const report = command(
   {
     name: 'report',
     parameters: ['[company id]'],
-    help: { description: 'Report cycletime from fetched resources.' }
+    help: { description: 'Report cycletime from fetched resources.' },
   },
   (argv) => {
     const { help, ...rest } = argv.flags
     reportCommand({ companyId: argv._.companyId, ...rest })
-  }
+  },
 )
 
 const upsert = command(
   {
     name: 'upsert',
     parameters: ['[company id]'],
-    help: { description: 'upsert report data to frontend database.' }
+    help: { description: 'upsert report data to frontend database.' },
   },
   (argv) => {
     const { help, ...rest } = argv.flags
     upsertCommand({ companyId: argv._.companyId, ...rest })
-  }
+  },
 )
 
 const vacuum = command(
   {
     name: 'vacuum',
-    help: { description: 'vacuum database' }
+    help: { description: 'vacuum database' },
   },
   (argv) => {
     vacuumCommand()
-  }
+  },
 )
 
 cli({
-  commands: [fetch, report, upsert, vacuum]
+  commands: [fetch, report, upsert, vacuum],
 })

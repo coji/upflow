@@ -16,7 +16,7 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
 
   const company = await prisma.company.findFirstOrThrow({
     where: { id: companyId },
-    include: { integration: true, repositories: true, exportSetting: true }
+    include: { integration: true, repositories: true, exportSetting: true },
   })
   invariant(company.integration, 'integration shoud related')
 
@@ -32,13 +32,13 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
         where: {
           repositoryId_number: {
             repositoryId: pr.repositoryId,
-            number: pr.number
-          }
+            number: pr.number,
+          },
         },
         create: pr,
-        update: pr
-      })
-    )
+        update: pr,
+      }),
+    ),
   )
 
   if (company.exportSetting) {

@@ -12,14 +12,14 @@ export const getCompany = async (companyId: string) =>
       integration: true,
       repositories: { orderBy: { name: 'asc' } },
       users: { include: { user: true } },
-      exportSetting: true
-    }
+      exportSetting: true,
+    },
   })
 
 export const updateCompany = async (companyId: string, company: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>) => {
   return await prisma.company.update({
     data: company,
-    where: { id: companyId }
+    where: { id: companyId },
   })
 }
 

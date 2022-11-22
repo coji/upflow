@@ -46,7 +46,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     loader: {
       commits,
       discussions,
-      mergerequests
-    }
+      mergerequests,
+    },
   }
 }
