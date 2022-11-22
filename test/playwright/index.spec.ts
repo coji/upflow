@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createTestUser, deleteTestUser } from '../support'
+import { createTestUser, deleteTestUser } from './support'
 
 const testUser = {
   email: 'test@example.com',
