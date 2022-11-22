@@ -137,8 +137,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Generate prisma client
-        run: pnpm prisma generate
+      - name: 🛠 Setup Database
+        run: pnpm prisma migrate reset --force
 
       - name: ⚡ Run vitest
         run: pnpm run test -- --coverage
