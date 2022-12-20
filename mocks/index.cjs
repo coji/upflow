@@ -1,4 +1,5 @@
-import { setupServer } from 'msw/node'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { setupServer } = require('msw/node')
 
 const server = setupServer()
 
