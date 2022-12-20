@@ -1,6 +1,0 @@
-build
-public/build
-node_modules
-coverage
-data
-dist

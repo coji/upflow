@@ -38,7 +38,7 @@ export const buildPullRequests = async (
       )
 
       const firstCommittedAt = nullOrDate(commits.length > 0 ? commits[0].date : null)
-      const pullRequestCreatedAt = nullOrDate(pr.createdAt)!
+      const pullRequestCreatedAt = nullOrDate(pr.createdAt) ?? ''
       const firstReviewedAt = nullOrDate(first(discussions)?.createdAt ?? first(reviews)?.submittedAt) // レビュー開始 = コメント最新 or レビュー submit 最新
       const mergedAt = nullOrDate(pr.mergedAt)
       const releasedAt =

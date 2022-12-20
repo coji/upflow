@@ -38,8 +38,8 @@ export function useMatchesData(id: string): Record<string, unknown> | undefined 
   return route?.data
 }
 
-function isUser(user: any): user is User {
-  return user && typeof user === 'object' && typeof user.email === 'string'
+function isUser(user: unknown): user is User {
+  return !!user && typeof user === 'object' && 'email' in user && typeof user.email === 'string'
 }
 
 export function useOptionalUser(): User | undefined {

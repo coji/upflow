@@ -1,4 +1,4 @@
-import { prisma } from '~/app/utils/db.server'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import dayjs from '~/app/libs/dayjs'
 
 const log = async (type: string, ...args: any[]) => {

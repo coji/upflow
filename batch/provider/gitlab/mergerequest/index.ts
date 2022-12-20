@@ -43,7 +43,7 @@ export const buildMergeRequests = async (
       )
 
       const firstCommittedAt = nullOrDate(aggregator.firstCommit(commits)?.createdAt)
-      const pullRequestCreatedAt = nullOrDate(m.createdAt)!
+      const pullRequestCreatedAt = nullOrDate(m.createdAt) ?? ''
       const firstReviewedAt = nullOrDate(aggregator.firstReviewComment(discussions, m.author)?.createdAt)
       const mergedAt = nullOrDate(m.mergedAt)
       const releasedAt = nullOrDate(

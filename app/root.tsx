@@ -15,7 +15,7 @@ export const meta: MetaFunction = () => ({
   viewport: 'width=device-width,initial-scale=1',
 })
 
-export let links: LinksFunction = () => {
+export const links: LinksFunction = () => {
   return []
 }
 
@@ -44,6 +44,7 @@ const Document = withEmotionCache(({ children }: DocumentProps, emotionCache) =>
     const tags = emotionCache.sheet.tags
     emotionCache.sheet.flush()
     tags.forEach((tag) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(emotionCache.sheet as any)._insertTag(tag)
     })
     // reset cache to reapply global styles
