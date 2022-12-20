@@ -80,6 +80,7 @@ specifiers:
   vite: ^4.0.2
   vite-tsconfig-paths: ^4.0.3
   vitest: ^0.26.1
+  vitest-environment-vprisma: ^1.2.0
   zod: ^3.20.2
   zod-form-data: ^1.2.4
 
@@ -167,6 +168,7 @@ devDependencies:
   vite: 4.0.2_@types+node@18.11.17
   vite-tsconfig-paths: 4.0.3_dpxuw3r62ifu7qhmptvgc7emmm
   vitest: 0.26.1_happy-dom@8.1.0
+  vitest-environment-vprisma: 1.2.0_3uduurk74llrkuew4n3ihiao4e
 
 packages:
 
@@ -3724,15 +3726,22 @@ packages:
     dependencies:
       '@prisma/engines-version': 4.7.1-1.272861e07ab64f234d3ffc4094e32bd61775599c
       prisma: 4.7.1
-    dev: false
 
   /@prisma/engines-version/4.7.1-1.272861e07ab64f234d3ffc4094e32bd61775599c:
     resolution: {integrity: sha512-Bd4LZ+WAnUHOq31e9X/ihi5zPlr4SzTRwUZZYxvWOxlerIZ7HJlVa9zXpuKTKLpI9O1l8Ec4OYCKsivWCs5a3Q==}
-    dev: false
 
   /@prisma/engines/4.7.1:
     resolution: {integrity: sha512-zWabHosTdLpXXlMefHmnouhXMoTB1+SCbUU3t4FCmdrtIOZcarPKU3Alto7gm/pZ9vHlGOXHCfVZ1G7OIrSbog==}
     requiresBuild: true
+
+  /@quramy/jest-prisma-core/1.3.1:
+    resolution: {integrity: sha512-wfPXyvg6O8yygdLC81iFeu0YmtP7ZfVi6lLckUzqVBzUBTeBdDMZYvotxhB8LcH7adtI21L8/ZCAm9t0NMJC3g==}
+    engines: {node: '>=14.13'}
+    peerDependencies:
+      jest: ^28.0.0 || ^29.0.0
+    dependencies:
+      chalk: 4.1.2
+    dev: true
 
   /@remix-run/dev/1.9.0_mkzy6tkjmjsmfnxs5znqfowy5i:
     resolution: {integrity: sha512-4EEctL2lo7eLPbVkzVBuRW+TX1B9yNdR9Ug7z7PYwFvJF0Oy9PovGx7ooVIypNiWLGOztKgN+K3c9jdffsrYYQ==}
@@ -11612,6 +11621,19 @@ packages:
       rollup: 3.7.5
     optionalDependencies:
       fsevents: 2.3.2
+    dev: true
+
+  /vitest-environment-vprisma/1.2.0_3uduurk74llrkuew4n3ihiao4e:
+    resolution: {integrity: sha512-NDjeEb7A9HuOiMJPBywb/tgzNzgLhLU6AY9vMl+OoymUZcOuf4OjDPGQnJok9OKqbVhwlMDvOHa+j52qNNZF1Q==}
+    peerDependencies:
+      '@prisma/client': ^2.29.0 || ^3.0.0 || ^4.0.0
+      vitest: '*'
+    dependencies:
+      '@prisma/client': 4.7.1_prisma@4.7.1
+      '@quramy/jest-prisma-core': 1.3.1
+      vitest: 0.26.1_happy-dom@8.1.0
+    transitivePeerDependencies:
+      - jest
     dev: true
 
   /vitest/0.26.0_happy-dom@8.1.0:
