@@ -14,7 +14,7 @@ specifiers:
   '@octokit/plugin-rest-endpoint-methods': ^6.7.0
   '@octokit/types': ^8.0.0
   '@playwright/test': ^1.29.0
-  '@prisma/client': ^4.7.1
+  '@prisma/client': ^4.8.0
   '@remix-run/dev': ^1.9.0
   '@remix-run/eslint-config': ^1.9.0
   '@remix-run/express': ^1.9.0
@@ -58,7 +58,7 @@ specifiers:
   globby: ^13.1.3
   google-auth-library: ^8.7.0
   got: ^12.5.3
-  happy-dom: ^8.1.0
+  happy-dom: ^8.1.1
   ky: ^0.33.0
   morgan: ^1.10.0
   msw: ^0.49.2
@@ -66,7 +66,7 @@ specifiers:
   npm-run-all: ^4.1.5
   octokit: ^2.0.10
   prettier: 2.8.1
-  prisma: ^4.7.1
+  prisma: ^4.8.0
   react: ^18.2.0
   react-dom: ^18.2.0
   react-icons: ^4.7.1
@@ -96,7 +96,7 @@ dependencies:
   '@gitbeaker/node': 35.8.0
   '@googleapis/sheets': 4.0.0
   '@octokit/plugin-rest-endpoint-methods': 6.7.0
-  '@prisma/client': 4.7.1_prisma@4.7.1
+  '@prisma/client': 4.8.0_prisma@4.8.0
   '@remix-run/express': 1.9.0_cwk4saenierp7pa7l5cpbeswge
   '@remix-run/node': 1.9.0_biqbaboplfbrettd7655fr4n2y
   '@remix-run/react': 1.9.0_biqbaboplfbrettd7655fr4n2y
@@ -151,24 +151,24 @@ devDependencies:
   '@types/react': 18.0.26
   '@types/react-dom': 18.0.9
   '@vitejs/plugin-react': 3.0.0_vite@4.0.2
-  '@vitest/coverage-c8': 0.26.0_happy-dom@8.1.0
+  '@vitest/coverage-c8': 0.26.0_happy-dom@8.1.1
   binode: 1.0.5
   c8: 7.12.0
   esbuild: 0.16.10
   esbuild-plugin-clean: 1.0.1_esbuild@0.16.10
   eslint: 8.30.0
   eslint-config-prettier: 8.5.0_eslint@8.30.0
-  happy-dom: 8.1.0
+  happy-dom: 8.1.1
   msw: 0.49.2_typescript@4.9.4
   npm-run-all: 4.1.5
   prettier: 2.8.1
-  prisma: 4.7.1
+  prisma: 4.8.0
   tsconfig-paths: 4.1.1
   typescript: 4.9.4
   vite: 4.0.2_@types+node@18.11.17
   vite-tsconfig-paths: 4.0.3_dpxuw3r62ifu7qhmptvgc7emmm
-  vitest: 0.26.1_happy-dom@8.1.0
-  vitest-environment-vprisma: 1.2.0_3uduurk74llrkuew4n3ihiao4e
+  vitest: 0.26.1_happy-dom@8.1.1
+  vitest-environment-vprisma: 1.2.0_czoxkqvuhsylpmqgb7asputqoi
 
 packages:
 
@@ -3714,8 +3714,8 @@ packages:
     resolution: {integrity: sha512-50/17A98tWUfQ176raKiOGXuYpLyyVMkxxG6oylzL3BPOlA6ADGdK7EYunSa4I064xerltq9TGXs8HmOk5E+vw==}
     dev: false
 
-  /@prisma/client/4.7.1_prisma@4.7.1:
-    resolution: {integrity: sha512-/GbnOwIPtjiveZNUzGXOdp7RxTEkHL4DZP3vBaFNadfr6Sf0RshU5EULFzVaSi9i9PIK9PYd+1Rn7z2B2npb9w==}
+  /@prisma/client/4.8.0_prisma@4.8.0:
+    resolution: {integrity: sha512-Y1riB0p2W52kh3zgssP/YAhln3RjBFcJy3uwEiyjmU+TQYh6QTZDRFBo3JtBWuq2FyMOl1Rye8jxzUP+n0l5Cg==}
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -3724,14 +3724,14 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.7.1-1.272861e07ab64f234d3ffc4094e32bd61775599c
-      prisma: 4.7.1
+      '@prisma/engines-version': 4.8.0-61.d6e67a83f971b175a593ccc12e15c4a757f93ffe
+      prisma: 4.8.0
 
-  /@prisma/engines-version/4.7.1-1.272861e07ab64f234d3ffc4094e32bd61775599c:
-    resolution: {integrity: sha512-Bd4LZ+WAnUHOq31e9X/ihi5zPlr4SzTRwUZZYxvWOxlerIZ7HJlVa9zXpuKTKLpI9O1l8Ec4OYCKsivWCs5a3Q==}
+  /@prisma/engines-version/4.8.0-61.d6e67a83f971b175a593ccc12e15c4a757f93ffe:
+    resolution: {integrity: sha512-MHSOSexomRMom8QN4t7bu87wPPD+pa+hW9+71JnVcF3DqyyO/ycCLhRL1we3EojRpZxKvuyGho2REQsMCvxcJw==}
 
-  /@prisma/engines/4.7.1:
-    resolution: {integrity: sha512-zWabHosTdLpXXlMefHmnouhXMoTB1+SCbUU3t4FCmdrtIOZcarPKU3Alto7gm/pZ9vHlGOXHCfVZ1G7OIrSbog==}
+  /@prisma/engines/4.8.0:
+    resolution: {integrity: sha512-A1Asn2rxZMlLAj1HTyfaCv0VQrLUv034jVay05QlqZg1qiHPeA3/pGTfNMijbsMYCsGVxfWEJuaZZuNxXGMCrA==}
     requiresBuild: true
 
   /@quramy/jest-prisma-core/1.3.1:
@@ -4546,11 +4546,11 @@ packages:
       - supports-color
     dev: true
 
-  /@vitest/coverage-c8/0.26.0_happy-dom@8.1.0:
+  /@vitest/coverage-c8/0.26.0_happy-dom@8.1.1:
     resolution: {integrity: sha512-1LSMHvX1Winy1dIV1XqQanIskYBvd3+TlQtxO6BeyFa57Lah2uNBm3gh5iDB+ZWCySN5o6bl7qOJdaZjEQZZeg==}
     dependencies:
       c8: 7.12.0
-      vitest: 0.26.0_happy-dom@8.1.0
+      vitest: 0.26.0_happy-dom@8.1.1
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@vitest/browser'
@@ -4825,8 +4825,8 @@ packages:
       tslib: 2.4.1
     dev: true
 
-  /astring/1.8.3:
-    resolution: {integrity: sha512-sRpyiNrx2dEYIMmUXprS8nlpRg2Drs8m9ElX9vVEXaCB4XEAJhKfs7IcX0IwShjuOAjLR6wzIrgoptz1n19i1A==}
+  /astring/1.8.4:
+    resolution: {integrity: sha512-97a+l2LBU3Op3bBQEff79i/E4jMD2ZLFD8rHx9B6mXyB2uQwhJQYfiDqUwtfjF4QA1F2qs//N6Cw8LetMbQjcw==}
     hasBin: true
     dev: true
 
@@ -7391,8 +7391,8 @@ packages:
       through2: 2.0.5
     dev: true
 
-  /happy-dom/8.1.0:
-    resolution: {integrity: sha512-R9NVb5815gpMFsldZF0wVSHw2uSobx6yitSkCdQPda1kwfAmVw4Ut8ZspxGHXkK6OA93SznldkcvrbhKFr6JcA==}
+  /happy-dom/8.1.1:
+    resolution: {integrity: sha512-uI8NneN2B0D+vwIhjQVKtIUYOSh/zymfj61bU/fxkoAw+Aktn0ewG6dYKyFPOvyBoFLPg3S8fsn2OqSoYCqJeQ==}
     dependencies:
       css.escape: 1.5.1
       he: 1.2.0
@@ -9841,13 +9841,13 @@ packages:
       parse-ms: 2.1.0
     dev: true
 
-  /prisma/4.7.1:
-    resolution: {integrity: sha512-CCQP+m+1qZOGIZlvnL6T3ZwaU0LAleIHYFPN9tFSzjs/KL6vH9rlYbGOkTuG9Q1s6Ki5D0LJlYlW18Z9EBUpGg==}
+  /prisma/4.8.0:
+    resolution: {integrity: sha512-DWIhxvxt8f4h6MDd35mz7BJff+fu7HItW3WPDIEpCR3RzcOWyiHBbLQW5/DOgmf+pRLTjwXQob7kuTZVYUAw5w==}
     engines: {node: '>=14.17'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      '@prisma/engines': 4.7.1
+      '@prisma/engines': 4.8.0
 
   /process-nextick-args/2.0.1:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
@@ -11623,20 +11623,20 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /vitest-environment-vprisma/1.2.0_3uduurk74llrkuew4n3ihiao4e:
+  /vitest-environment-vprisma/1.2.0_czoxkqvuhsylpmqgb7asputqoi:
     resolution: {integrity: sha512-NDjeEb7A9HuOiMJPBywb/tgzNzgLhLU6AY9vMl+OoymUZcOuf4OjDPGQnJok9OKqbVhwlMDvOHa+j52qNNZF1Q==}
     peerDependencies:
       '@prisma/client': ^2.29.0 || ^3.0.0 || ^4.0.0
       vitest: '*'
     dependencies:
-      '@prisma/client': 4.7.1_prisma@4.7.1
+      '@prisma/client': 4.8.0_prisma@4.8.0
       '@quramy/jest-prisma-core': 1.3.1
-      vitest: 0.26.1_happy-dom@8.1.0
+      vitest: 0.26.1_happy-dom@8.1.1
     transitivePeerDependencies:
       - jest
     dev: true
 
-  /vitest/0.26.0_happy-dom@8.1.0:
+  /vitest/0.26.0_happy-dom@8.1.1:
     resolution: {integrity: sha512-5kUnms5WOa0qrDCJePEPB13v9mhr+ZT1Qy0qNg0eVj1X7/Fx4GY4L1e5s3OH+BQ/J7M5WtaKsUGv9l1pbC7v2Q==}
     engines: {node: '>=v14.16.0'}
     hasBin: true
@@ -11665,7 +11665,7 @@ packages:
       acorn-walk: 8.2.0
       chai: 4.3.7
       debug: 4.3.4
-      happy-dom: 8.1.0
+      happy-dom: 8.1.1
       local-pkg: 0.4.2
       source-map: 0.6.1
       strip-literal: 1.0.0
@@ -11683,7 +11683,7 @@ packages:
       - terser
     dev: true
 
-  /vitest/0.26.1_happy-dom@8.1.0:
+  /vitest/0.26.1_happy-dom@8.1.1:
     resolution: {integrity: sha512-qTLRnjYmjmJpHlLUtErxtlRqGCe8WItFhGXKklpWivu7CLP9KXN9iTezROe+vf51Kb+BB/fzxK6fUG9DvFGL5Q==}
     engines: {node: '>=v14.16.0'}
     hasBin: true
@@ -11712,7 +11712,7 @@ packages:
       acorn-walk: 8.2.0
       chai: 4.3.7
       debug: 4.3.4
-      happy-dom: 8.1.0
+      happy-dom: 8.1.1
       local-pkg: 0.4.2
       source-map: 0.6.1
       strip-literal: 1.0.0
@@ -11873,7 +11873,7 @@ packages:
     dependencies:
       '@rollup/pluginutils': 4.2.1
       '@types/estree-jsx': 0.0.1
-      astring: 1.8.3
+      astring: 1.8.4
       estree-util-build-jsx: 2.2.0
       estree-util-is-identifier-name: 2.0.1
       estree-walker: 3.0.1
