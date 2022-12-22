@@ -1,6 +1,6 @@
 # base node image
 FROM node:18-bullseye-slim as base
-ARG PNPM_VERSION=7.15.0
+ARG PNPM_VERSION=7.19.0
 
 # Install openssl for Prisma
 RUN apt-get update \
@@ -41,8 +41,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --offline --frozen-lockfile
 
 COPY . .
-RUN pnpm exec prisma generate
-RUN pnpm run build
+RUN pnpm exec prisma generate \
+  && pnpm run build
 
 
 # Finally, build the production image with minimal footprint
