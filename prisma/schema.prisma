@@ -134,10 +134,3 @@ model Calendar {
   month     Int
   day       Int
 }
-
-model BatchLog {
-  id        String   @id @default(cuid())
-  type      String
-  message   String
-  createdAt DateTime @default(now())
-}

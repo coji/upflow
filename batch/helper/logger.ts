@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import dayjs from '~/app/libs/dayjs'
-import { prisma } from '~/app/utils/db.server'
 
 const log = async (type: string, ...args: any[]) => {
-  await prisma.batchLog.create({
-    data: {
-      type,
-      message: args.join(' '),
-    },
-  })
   console.log(`${dayjs().utc().format('YYYY-MM-DD HH:mm:ss.SSS')}`, type, ...args)
 }
 export const logger = {
