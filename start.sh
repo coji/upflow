@@ -7,5 +7,4 @@
 
 set -ex
 echo DATABASE_URL is $DATABASE_URL
-npx prisma migrate deploy
 NODE_ENV=production node ./build/server.js
