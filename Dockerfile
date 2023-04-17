@@ -67,4 +67,4 @@ COPY --from=build /upflow/prisma /upflow/prisma
 COPY --from=build /upflow/package.json /upflow/package.json
 COPY --from=build /upflow/start.sh /upflow/start.sh
 
-ENTRYPOINT [ "./start.sh" ]
+CMD [ "sh", "./start.sh" ]
