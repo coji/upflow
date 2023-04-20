@@ -1,10 +1,11 @@
-import { Box } from '@chakra-ui/react'
+import { Box, FormControl, FormLabel, Input } from '@chakra-ui/react'
+import { AppMutationModal } from '~/app/components'
 import { redirect } from '@remix-run/node'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { zfd } from 'zod-form-data'
 import invariant from 'tiny-invariant'
 import { z } from 'zod'
-import { useLoaderData, useFetcher } from '@remix-run/react'
+import { useLoaderData, useFetcher, Form } from '@remix-run/react'
 import { getIntegration } from '~/app/models/admin/integration.server'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
 import { createRepository } from '~/app/models/admin/repository.server'
@@ -21,7 +22,7 @@ const RepoSchema = zfd.formData({
 })
 
 export const loader = async ({ params }: LoaderArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
   const integration = getIntegration(params.companyId)
   if (!integration) {
     throw new Error('integration not created')
@@ -30,7 +31,7 @@ export const loader = async ({ params }: LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
 
   const { repos } = RepoSchema.parse(await request.formData())
   console.log('repos', repos)
@@ -67,8 +68,19 @@ const AddRepositoryModal = () => {
 
   return (
     <>
-      {RepositoryAddModal}
+      {integration.provider === 'github' && RepositoryAddModal}
 
+      {integration.provider === 'gitlab' && (
+        <AppMutationModal title="Add GitLab Repository">
+          <Form method="post">
+            GitLab
+            <FormControl>
+              <FormLabel htmlFor="projectId">Project ID</FormLabel>
+              <Input id="projectId" name="repos[0].projectId"></Input>
+            </FormControl>
+          </Form>
+        </AppMutationModal>
+      )}
       <fetcher.Form method="post"></fetcher.Form>
     </>
   )

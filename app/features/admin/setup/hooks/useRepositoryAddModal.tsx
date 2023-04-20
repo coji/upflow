@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { Box, Stack, Button, CircularProgress } from '@chakra-ui/react'
 import { AppMutationModal, AppLink } from '~/app/components'
 import { RepositoryList } from '../components/RepositoryList'
-import { useGithubRepoQuery } from './useReposQuery'
+import { useGithubRepoQuery } from './useGithubReposQuery'
 import type { GitRepo } from '../interfaces/model'
 import type { Integration } from '@prisma/client'
 

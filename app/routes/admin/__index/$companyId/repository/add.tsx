@@ -10,7 +10,7 @@ import { getIntegration } from '~/app/models/admin/integration.server'
 import { createRepository } from '~/app/models/admin/repository.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
   const integration = getIntegration(params.companyId)
   if (!integration) {
     throw new Error('integration not created')
@@ -24,7 +24,7 @@ const providerSchema = zfd.formData({
   repo: zfd.text().optional(),
 })
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
   const integration = getIntegration(params.companyId)
   if (!integration) {
     throw new Error('integration not created')
