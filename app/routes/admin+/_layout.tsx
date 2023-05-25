@@ -4,7 +4,7 @@ import type { LoaderArgs } from '@remix-run/node'
 import { Outlet, useSubmit, NavLink } from '@remix-run/react'
 import { requireAdminUserId } from '~/app/utils/session.server'
 import { useUser } from '~/app/utils/utils'
-import { AppLink, AppProfileMenuButton } from '../components'
+import { AppLink, AppProfileMenuButton } from '~/app/components'
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireAdminUserId(request)
@@ -37,7 +37,7 @@ const AdminIndex = () => {
               <Divider />
               <MenuItem
                 onClick={() => {
-                  submit(null, { method: 'post', action: 'logout' })
+                  submit(null, { method: 'post', action: '/logout' })
                 }}
               >
                 Logout

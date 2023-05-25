@@ -1,5 +1,6 @@
 {
-  "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx", "server.ts", "server.ts"],
+  "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx", "server.ts"],
+  "exclude": ["remix.config.js"],
   "files": [".eslintrc.js"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],

@@ -237,6 +237,9 @@ devDependencies:
   prisma:
     specifier: ^4.14.1
     version: 4.14.1
+  remix-flat-routes:
+    specifier: ^0.5.8
+    version: 0.5.8
   tsconfig-paths:
     specifier: ^4.2.0
     version: 4.2.0
@@ -9531,6 +9534,13 @@ packages:
       brace-expansion: 1.1.11
     dev: true
 
+  /minimatch@5.1.6:
+    resolution: {integrity: sha512-lKwV/1brpG6mBUFHtb7NUmtABCb2WZZmm2wNiOA5hAb8VdCS4B3dtMWyvcoViccwAW/COERjXLt0zP1zXUN26g==}
+    engines: {node: '>=10'}
+    dependencies:
+      brace-expansion: 2.0.1
+    dev: true
+
   /minimatch@9.0.1:
     resolution: {integrity: sha512-0jWhJpD/MdhPXwPuiRkCbfYfSKp2qnn2eOc279qI7f+osl/l+prKSrvhg157zSYvx/1nmgn2NqdT6k2Z7zSH9w==}
     engines: {node: '>=16 || 14 >=14.17'}
@@ -10855,6 +10865,13 @@ packages:
       '@remix-run/server-runtime': 1.16.1
       uuid: 8.3.2
     dev: false
+
+  /remix-flat-routes@0.5.8:
+    resolution: {integrity: sha512-wMKS48CR5NN+wcMu34JUljcVfkKzuLIZ6eP0ksxE0zgJIeqz4mdPi/TZxvHAVossxAg174iLRh1E9d4wPmxAQg==}
+    hasBin: true
+    dependencies:
+      minimatch: 5.1.6
+    dev: true
 
   /remix-validated-form@4.6.11(@remix-run/react@1.16.1)(@remix-run/server-runtime@1.16.1)(react@18.2.0):
     resolution: {integrity: sha512-rgbFitoU9+FBg7fx/JKdpwGZ28m3Lg+F32cSMtXsMmLrH4s9HlAWcoNsuH4g8HNhoDu7UlSeNDLTyuuOCARRow==}

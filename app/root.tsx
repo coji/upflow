@@ -1,6 +1,6 @@
 import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import { withEmotionCache } from '@emotion/react'
-import type { LinksFunction, LoaderFunction, MetaFunction } from '@remix-run/node'
+import type { LinksFunction, LoaderFunction, V2_MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import { useContext, useEffect } from 'react'
@@ -9,23 +9,22 @@ import { getUser } from './utils/session.server'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
-export const meta: MetaFunction = () => ({
-  charset: 'utf-8',
-  title: 'UpFlow',
-  viewport: 'width=device-width,initial-scale=1',
-})
+export const meta: V2_MetaFunction = () => [
+  {
+    charset: 'utf-8',
+    title: 'UpFlow',
+    viewport: 'width=device-width,initial-scale=1',
+  },
+]
 
 export const links: LinksFunction = () => {
   return []
 }
 
-type LoaderData = {
-  user: Awaited<ReturnType<typeof getUser>>
-}
-
 export const loader: LoaderFunction = async ({ request }) => {
+  console.log('root loader')
   const user = await getUser(request)
-  return json<LoaderData>({ user })
+  return json({ user })
 }
 
 interface DocumentProps {

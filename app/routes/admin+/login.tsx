@@ -1,5 +1,5 @@
 import { Box, Button, Checkbox, FormControl, FormErrorMessage, FormLabel, Input, Stack } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs, MetaFunction } from '@remix-run/node'
+import type { ActionArgs, LoaderArgs, V2_MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import * as React from 'react'
@@ -52,11 +52,7 @@ export const action = async ({ request }: ActionArgs) => {
   })
 }
 
-export const meta: MetaFunction = () => {
-  return {
-    title: 'UpFlow',
-  }
-}
+export const meta: V2_MetaFunction = () => [{ title: 'UpFlow' }]
 
 export default function AdminLoginPage() {
   const [searchParams] = useSearchParams()

@@ -18,7 +18,7 @@ import { getPullRequestItem } from '~/app/models/pullRequest.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   invariant(params.repositoryId, 'repositoryId should specified')
-  invariant(params.mrId, 'mrId shoud specified found')
+  invariant(params.mrId, 'mrId should specified found')
 
   const pullRequests = await getPullRequestItem(params.repositoryId, params.mrId).catch(() => null)
   if (!pullRequests) {

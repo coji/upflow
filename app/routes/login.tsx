@@ -1,16 +1,19 @@
 import { Box, Button, Checkbox, FormControl, FormErrorMessage, FormLabel, Input, Stack } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs, MetaFunction } from '@remix-run/node'
+import type { ActionArgs, LoaderArgs, V2_MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import { useEffect, useRef } from 'react'
 import { verifyLogin } from '~/app/models/user.server'
 import { createUserSession, getUser } from '~/app/utils/session.server'
 import { safeRedirect, validateEmail } from '~/app/utils/utils'
-import { AppCenterFormFrame } from '../components/AppCenterFormFrame'
+import { AppCenterFormFrame } from '~/app/components'
+
+export const meta: V2_MetaFunction = () => [{ title: 'Login - UpFlow' }]
 
 export const loader = async ({ request }: LoaderArgs) => {
-  const userId = await getUser(request)
-  if (userId) return redirect('/admin')
+  console.log('login loader')
+  const user = await getUser(request)
+  if (user) return redirect('/admin')
   return json({})
 }
 
@@ -52,12 +55,6 @@ export const action = async ({ request }: ActionArgs) => {
     remember: remember === 'on' ? true : false,
     redirectTo,
   })
-}
-
-export const meta: MetaFunction = () => {
-  return {
-    title: 'Login - UpFlow',
-  }
 }
 
 export default function LoginPage() {

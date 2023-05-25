@@ -6,5 +6,5 @@
 # Learn more: https://community.fly.io/t/sqlite-not-getting-setup-properly/4386
 
 set -ex
-echo DATABASE_URL is $DATABASE_URL
+echo "DATABASE_URL is $DATABASE_URL"
 NODE_ENV=production node ./build/server.js

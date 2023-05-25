@@ -1,5 +1,5 @@
 import { Box, Button, FormControl, FormErrorMessage, FormLabel, Input, Stack, Text } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs, MetaFunction } from '@remix-run/node'
+import type { ActionArgs, LoaderArgs, V2_MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import { Form, useActionData, useSearchParams } from '@remix-run/react'
 import { useEffect, useRef } from 'react'
@@ -54,11 +54,7 @@ export const action = async ({ request }: ActionArgs) => {
   })
 }
 
-export const meta: MetaFunction = () => {
-  return {
-    title: 'Sign Up',
-  }
-}
+export const meta: V2_MetaFunction = () => [{ title: 'Sign Up' }]
 
 export default function Join() {
   const [searchParams] = useSearchParams()

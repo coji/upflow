@@ -6,6 +6,7 @@ import { getCompanies } from '~/app/models/admin/company.server'
 import { requireUserId } from '~/app/utils/session.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
+  console.log('admin _index')
   await requireUserId(request)
   return {
     companies: await getCompanies(),
