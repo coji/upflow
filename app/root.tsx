@@ -22,7 +22,6 @@ export const links: LinksFunction = () => {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  console.log('root loader')
   const user = await getUser(request)
   return json({ user })
 }

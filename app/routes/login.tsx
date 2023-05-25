@@ -11,7 +11,6 @@ import { AppCenterFormFrame } from '~/app/components'
 export const meta: V2_MetaFunction = () => [{ title: 'Login - UpFlow' }]
 
 export const loader = async ({ request }: LoaderArgs) => {
-  console.log('login loader')
   const user = await getUser(request)
   if (user) return redirect('/admin')
   return json({})
