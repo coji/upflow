@@ -7,7 +7,7 @@ import { AppLink, AppMutationModal, AppProviderBadge } from '~/app/components'
 import { deleteRepository, getRepository } from '~/app/models/admin/repository.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  invariant(params.repositoryId, 'company id shoud specified')
+  invariant(params.repositoryId, 'company id should specified')
   const repository = getRepository(params.repositoryId)
   if (!repository) {
     throw new Error('repository not found')
@@ -16,7 +16,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.repositoryId, 'repository id shoud specified')
+  invariant(params.repositoryId, 'repository id should specified')
   const repository = await deleteRepository(params.repositoryId)
   if (repository) {
     return redirect(`/admin/${params.companyId}`)

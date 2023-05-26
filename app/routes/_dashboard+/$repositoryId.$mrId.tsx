@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { useCatch, useLoaderData, useNavigate } from '@remix-run/react'
+import { useLoaderData, useNavigate } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import dayjs from '~/app/libs/dayjs'
 import { getPullRequestItem } from '~/app/models/pullRequest.server'
@@ -66,12 +66,4 @@ export function ErrorBoundary({ error }: { error: Error }) {
   console.error(error)
 
   return <div>An unexpected error occurred: {error.message}</div>
-}
-
-export function CatchBoundary() {
-  const caught = useCatch()
-  if (caught.status === 404) {
-    return <div>Note not found</div>
-  }
-  throw new Error(`Unexpected caught response with status: ${caught.status}`)
 }

@@ -25,7 +25,7 @@ import { match } from 'ts-pattern'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   await requireUserId(request)
-  invariant(params.companyId, 'companyId shoud specified found')
+  invariant(params.companyId, 'companyId should specified found')
   const company = await getCompany(params.companyId)
   if (!company) {
     throw new Response('Company not found', { status: 404 })
@@ -66,7 +66,7 @@ const CompanyPage = () => {
           </Heading>
 
           <AppLink to="export-setting">
-            <Button>{company.exportSetting ? 'Export Settings' : 'Add Export Settting'}</Button>
+            <Button>{company.exportSetting ? 'Export Settings' : 'Add Export Setting'}</Button>
           </AppLink>
 
           {company.integration ? (

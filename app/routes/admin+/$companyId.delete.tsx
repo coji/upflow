@@ -18,7 +18,7 @@ export const loader = async ({ params }: LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'companyId shoud specified')
+  invariant(params.companyId, 'companyId should specified')
   const company = await deleteCompany(params.companyId)
   if (company) {
     return redirect('/admin')

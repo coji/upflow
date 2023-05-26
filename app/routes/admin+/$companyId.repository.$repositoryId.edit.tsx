@@ -8,7 +8,7 @@ import { updateRepository, getRepository } from '~/app/models/admin/repository.s
 import { match } from 'ts-pattern'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  invariant(params.repositoryId, 'company id shoud specified')
+  invariant(params.repositoryId, 'company id should specified')
   const repository = getRepository(params.repositoryId)
   if (!repository) {
     throw new Error('repository not found')
@@ -18,7 +18,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 
 export const action = async ({ request, params }: ActionArgs) => {
   const formData = await request.formData()
-  invariant(params.repositoryId, 'repository id shoud specified')
+  invariant(params.repositoryId, 'repository id should specified')
   const entries = Object.fromEntries(formData.entries())
   const repository = await updateRepository(params.repositoryId, entries)
   if (repository) {

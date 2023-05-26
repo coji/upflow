@@ -14,13 +14,13 @@ const schema = zfd.formData({
 })
 
 export const loader = async ({ params }: LoaderArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
   const exportSetting = await getExportSetting(params.companyId)
   return exportSetting
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id shoud specified')
+  invariant(params.companyId, 'company id should specified')
   const formData = await request.formData()
   const { sheetId, clientEmail, privateKey } = schema.parse(formData)
   await upsertExportSetting({ companyId: params.companyId, sheetId, clientEmail, privateKey })
