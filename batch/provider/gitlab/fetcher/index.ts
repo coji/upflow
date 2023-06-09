@@ -1,6 +1,5 @@
 import type { GitLabCommit } from '../model'
-import { Gitlab } from '@gitbeaker/node'
-import got from 'got'
+import { Gitlab } from '@gitbeaker/rest'
 import { shapeGitLabMergeRequest, shapeGitLabCommit, shapeGitLabDiscussionNote } from '../shaper'
 import dayjs from '~/app/libs/dayjs'
 
@@ -22,14 +21,18 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
     const commits = []
     let page = 1
     while (true) {
-      const ret = await got
-        .get(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
-          searchParams: { ref_name, per_page: 100, page, since },
+      const res = await fetch(
+        `https://gitlab.com/api/v4/projects/${projectId}/repository/commits?ref_name=${ref_name}&per_page=100&page=${page}`,
+        {
           headers: { 'PRIVATE-TOKEN': privateToken },
-        })
-        .json<GitLabCommit[]>()
-
+        },
+      )
+      if (!res.ok) {
+        break
+      }
+      const ret: GitLabCommit[] = await res.json()
       if (ret.length === 0) break
+
       commits.push(...ret)
       page++
     }
@@ -41,8 +44,9 @@ export const createFetcher = ({ projectId, privateToken }: createFetcherProps) =
    * @param mergerequestIid
    * @returns 指定したMRのコミット情報の配列
    */
-  const commits = async (mergerequestIid: number) =>
-    (await api.MergeRequests.commits(projectId, mergerequestIid)).map((commit) => shapeGitLabCommit(commit))
+  const commits = async (mergerequestIid: number) => {
+    return (await api.MergeRequests.allCommits(projectId, mergerequestIid)).map((commit) => shapeGitLabCommit(commit))
+  }
 
   /**
    * MRのディスカッションリストを取得

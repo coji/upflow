@@ -1,10 +1,16 @@
-import type { Types } from '@gitbeaker/node'
+import type {
+  MergeRequestSchema,
+  MilestoneSchema,
+  CommitSchema,
+  DiscussionSchema,
+  DiscussionNoteSchema,
+} from '@gitbeaker/rest'
 
-export type GitLabMergeRequest = Types.MergeRequestSchema
-export type GitLabMilestone = Types.MilestoneSchema
-export type GitLabCommit = Types.CommitSchema
-export type GitLabDiscussion = Types.DiscussionSchema
-export type GitLabDiscussionNote = Types.DiscussionNote
+export type GitLabMergeRequest = MergeRequestSchema
+export type GitLabMilestone = MilestoneSchema
+export type GitLabCommit = CommitSchema
+export type GitLabDiscussion = DiscussionSchema
+export type GitLabDiscussionNote = DiscussionNoteSchema
 
 export interface ShapedGitLabMergeRequest {
   projectId: GitLabMergeRequest['project_id']
