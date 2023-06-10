@@ -1,51 +1,53 @@
+# fly.toml app configuration file generated for upflow on 2023-06-10T16:54:42+09:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
 app = "upflow"
-
+primary_region = "nrt"
 kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
-
-[deploy]
-release_command = "npx prisma migrate deploy"
+kill_timeout = "5s"
 
 [experimental]
   auto_rollback = true
 
-[mounts]
-  source = "data"
+[deploy]
+  release_command = "npx prisma migrate deploy"
+
+[[mounts]]
+  source = "database_machines"
   destination = "/upflow/data"
+  processes = ["app"]
 
 [[services]]
+  protocol = "tcp"
   internal_port = 8080
   processes = ["app"]
-  protocol = "tcp"
-  script_checks = []
-
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-    type = "connections"
 
   [[services.ports]]
-    handlers = ["http"]
     port = 80
+    handlers = ["http"]
     force_https = true
 
   [[services.ports]]
-    handlers = ["tls", "http"]
     port = 443
+    handlers = ["tls", "http"]
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
 
   [[services.tcp_checks]]
-    grace_period = "1s"
     interval = "15s"
-    restart_limit = 0
     timeout = "2s"
+    grace_period = "1s"
+    restart_limit = 0
 
   [[services.http_checks]]
     interval = "10s"
+    timeout = "2s"
     grace_period = "5s"
+    restart_limit = 0
     method = "get"
     path = "/healthcheck"
     protocol = "http"
-    timeout = "2s"
-    tls_skip_verify = false
-    [services.http_checks.headers]
