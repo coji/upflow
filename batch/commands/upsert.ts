@@ -18,7 +18,7 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
     where: { id: companyId },
     include: { integration: true, repositories: true, exportSetting: true },
   })
-  invariant(company.integration, 'integration shoud related')
+  invariant(company.integration, 'integration should related')
 
   const provider = createProvider(company.integration)
   invariant(provider, `unknown provider ${company.integration.provider}`)
