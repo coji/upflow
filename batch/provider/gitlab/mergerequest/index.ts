@@ -47,15 +47,7 @@ export const buildMergeRequests = async (
       const firstReviewedAt = nullOrDate(aggregator.firstReviewComment(discussions, m.author)?.createdAt)
       const mergedAt = nullOrDate(m.mergedAt)
       const releasedAt = nullOrDate(
-        m.mergeCommitSha
-          ? await findReleaseDate(
-              mergerequests,
-              store,
-              m.mergeCommitSha,
-              config.releaseDetectionMethod,
-              config.releaseDetectionKey,
-            )
-          : null,
+        m.mergeCommitSha ? await findReleaseDate(mergerequests, store, m, config.releaseDetectionKey) : null,
       )
 
       pulls.push({

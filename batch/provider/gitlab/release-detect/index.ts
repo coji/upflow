@@ -1,23 +1,24 @@
 import type { ShapedGitLabMergeRequest } from '../model'
 import type { createStore } from '../store'
+import * as R from 'remeda'
 
-const releasedMergeRequests = (allMergeRequests: ShapedGitLabMergeRequest[], method: string, key: string) => {
-  if (method === 'branch') {
-    return allMergeRequests.filter((mr) => mr.targetBranch === key && mr.state === 'merged')
-  } else {
-    return []
-  }
+const releasedMergeRequests = (allMergeRequests: ShapedGitLabMergeRequest[], key: string) => {
+  return R.pipe(
+    allMergeRequests,
+    R.filter((mr) => mr.targetBranch === key && mr.state === 'merged' && mr.mergedAt !== null),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    R.sortBy((mr) => mr.mergedAt!),
+  )
 }
 
 export const findReleaseDate = async (
   allMergeRequests: ShapedGitLabMergeRequest[],
   store: ReturnType<typeof createStore>,
-  targetHash: string,
-  method: string,
+  mr: ShapedGitLabMergeRequest,
   key: string,
 ) => {
-  for (const m of releasedMergeRequests(allMergeRequests, method, key)) {
-    if ((await store.loader.commits(m.iid)).some((c) => c.sha === targetHash)) {
+  for (const m of releasedMergeRequests(allMergeRequests, key)) {
+    if ((await store.loader.commits(m.iid)).some((c) => c.sha === mr.mergeCommitSha)) {
       return m.mergedAt
     }
   }

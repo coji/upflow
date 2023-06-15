@@ -43,13 +43,7 @@ export const buildPullRequests = async (
       const mergedAt = nullOrDate(pr.mergedAt)
       const releasedAt =
         pr.mergedAt && pr.mergeCommitSha
-          ? await findReleaseDate(
-              pullrequests,
-              store,
-              pr.mergeCommitSha,
-              config.releaseDetectionMethod,
-              config.releaseDetectionKey,
-            )
+          ? await findReleaseDate(pullrequests, store, pr, config.releaseDetectionKey)
           : null
 
       pulls.push({
