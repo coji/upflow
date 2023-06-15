@@ -37,6 +37,7 @@ data/data.db
 data/data.db-journal
 data/data.db-shm
 data/data.db-wal
+tmp
 
 coverage/
 dist
