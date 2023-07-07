@@ -71,7 +71,6 @@ export const findReleaseDate = async (
   releaseDetectionMethod: string,
   releaseDetectionKey: string,
 ) => {
-  console.log(pr.number, { releaseDetectionMethod, releaseDetectionKey })
   if (releaseDetectionMethod === 'branch') {
     return findReleaseDateByBranch(allPullRequests, store, pr, releaseDetectionKey)
   }
