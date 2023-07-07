@@ -39,10 +39,12 @@ export const createGitHubProvider = (integration: Integration) => {
     await logger.info(`fetching all pullrequests completed.`)
 
     // 全タグを情報をダウンロード
-    await logger.info(`fetching all tags...`)
-    const allTags = await fetcher.tags()
-    await store.save('tags.json', allTags)
-    await logger.info('fetching all tags completed.')
+    if (repository.releaseDetectionMethod === 'tags') {
+      await logger.info(`fetching all tags...`)
+      const allTags = await fetcher.tags()
+      await store.save('tags.json', allTags)
+      await logger.info('fetching all tags completed.')
+    }
 
     // 個別のPR
     for (const pr of allPullRequests) {
