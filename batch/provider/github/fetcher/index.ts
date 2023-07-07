@@ -4,6 +4,7 @@ import type {
   ShapedGitHubCommit,
   ShapedGitHubReviewComment,
   ShapedGitHubReview,
+  ShapedGitHubTag,
 } from '../model'
 import { shapeGitHubPullRequest, shapeGitHubCommit, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
 import dayjs from '~/app/libs/dayjs'
@@ -97,5 +98,26 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return allReviews
   }
 
-  return { pullrequests, commits, reviewComments, reviews }
+  type PickPartial<T, K extends keyof T, G extends Exclude<keyof T, K>> = Required<Pick<T, K>> & Partial<Pick<T, G>>
+
+  const tags = async () => {
+    let tags: PickPartial<ShapedGitHubTag, 'name' | 'sha', 'committedAt'>[] = []
+    let page = 1
+    // タグの一覧を取得
+    while (true) {
+      const ret = await octokit.rest.repos.listTags({ owner, repo, page, per_page: 100 })
+      if (ret.data.length === 0) break
+      tags = [...tags, ...ret.data.map((tag) => ({ name: tag.name, sha: tag.commit.sha }))]
+      page++
+    }
+
+    // タグのコミット日時を補完
+    for (const tag of tags) {
+      const tagCommit = await octokit.rest.repos.getCommit({ owner, repo, ref: tag.sha })
+      tag.committedAt = tagCommit.data.commit.committer?.date
+    }
+    return tags.filter((tag) => !!tag.committedAt) as ShapedGitHubTag[] // コミット日時がないものは除外 (通常ないけど)
+  }
+
+  return { pullrequests, commits, reviewComments, reviews, tags }
 }

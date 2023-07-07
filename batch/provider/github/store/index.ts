@@ -4,6 +4,7 @@ import type {
   ShapedGitHubReviewComment,
   ShapedGitHubCommit,
   ShapedGitHubReview,
+  ShapedGitHubTag,
 } from '../model'
 import fs from 'fs/promises'
 import path from 'path'
@@ -41,6 +42,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
     load<ShapedGitHubReviewComment[]>(pathBuilder.discussionsJsonFilename(number))
   const reviews = async (number: number) => load<ShapedGitHubReview[]>(pathBuilder.reviewJsonFilename(number))
   const pullrequests = async () => load<ShapedGitHubPullRequest[]>('pullrequests.json')
+  const tags = async () => load<ShapedGitHubTag[]>('tags.json')
 
   return {
     load,
@@ -51,6 +53,7 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
       discussions,
       reviews,
       pullrequests,
+      tags,
     },
   }
 }

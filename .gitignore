@@ -21,10 +21,7 @@ lerna-debug.log*
 *.sw?
 .env
 
-data/data.db
-data/data.db-journal
-data/json/**/*.json
-
+data
 
 node_modules
 

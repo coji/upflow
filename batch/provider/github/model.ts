@@ -42,3 +42,10 @@ export interface ShapedGitHubReview {
   url: GitHubReview['html_url']
   submittedAt: NonNullable<GitHubReview['submitted_at']> | null
 }
+
+// タグ
+export interface ShapedGitHubTag {
+  name: string
+  sha: string
+  committedAt: string
+}
