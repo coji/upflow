@@ -1,19 +1,17 @@
 import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack, Tag, Divider } from '@chakra-ui/react'
 import { SettingsIcon } from '@chakra-ui/icons'
-import type { LoaderArgs } from '@remix-run/node'
-import { Outlet, useSubmit, NavLink } from '@remix-run/react'
-import { requireAdminUserId } from '~/app/utils/session.server'
-import { useUser } from '~/app/utils/utils'
+import { json, type LoaderArgs } from '@remix-run/node'
+import { Outlet, NavLink, useLoaderData, Link } from '@remix-run/react'
+import { getAdminUser } from '~/app/features/auth/services/user-session.server'
 import { AppLink, AppProfileMenuButton } from '~/app/components'
 
 export const loader = async ({ request }: LoaderArgs) => {
-  await requireAdminUserId(request)
-  return {}
+  const adminUser = await getAdminUser(request)
+  return json({ adminUser })
 }
 
 const AdminIndex = () => {
-  const user = useUser()
-  const submit = useSubmit()
+  const { adminUser } = useLoaderData<typeof loader>()
 
   return (
     <Box display="grid" gridTemplateRows="auto 1fr auto" height="100vh" color="gray.600">
@@ -29,17 +27,13 @@ const AdminIndex = () => {
           </Tag>
 
           <Menu>
-            <AppProfileMenuButton name={user.name}></AppProfileMenuButton>
+            <AppProfileMenuButton name={adminUser.displayName}></AppProfileMenuButton>
             <MenuList>
               <MenuItem as={NavLink} to="/admin/settings" icon={<SettingsIcon />}>
                 Settings
               </MenuItem>
               <Divider />
-              <MenuItem
-                onClick={() => {
-                  submit(null, { method: 'post', action: '/logout' })
-                }}
-              >
+              <MenuItem as={Link} to="/logout">
                 Logout
               </MenuItem>
             </MenuList>

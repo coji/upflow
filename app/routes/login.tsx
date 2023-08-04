@@ -1,150 +1,45 @@
-import { Box, Button, Checkbox, FormControl, FormErrorMessage, FormLabel, Input, Stack } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs, V2_MetaFunction } from '@remix-run/node'
-import { json, redirect } from '@remix-run/node'
-import { Form, useActionData, useSearchParams } from '@remix-run/react'
-import { useEffect, useRef } from 'react'
-import { verifyLogin } from '~/app/models/user.server'
-import { createUserSession, getUser } from '~/app/utils/session.server'
-import { safeRedirect, validateEmail } from '~/app/utils/utils'
-import { AppCenterFormFrame } from '~/app/components'
+import { Box, Stack } from '@chakra-ui/react'
+import type { LoaderArgs, V2_MetaFunction } from '@remix-run/node'
+import { json } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
+import { AppCenterFormFrame, AppAlert } from '~/app/components'
+import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
+import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
 
 export const meta: V2_MetaFunction = () => [{ title: 'Login - UpFlow' }]
 
 export const loader = async ({ request }: LoaderArgs) => {
-  const user = await getUser(request)
-  if (user) return redirect('/admin')
-  return json({})
-}
+  // 認証済みならトップページにリダイレクト
+  await authenticator.isAuthenticated(request, { successRedirect: '/admin' })
 
-interface ActionData {
-  errors?: {
-    email?: string
-    password?: string
-  }
-}
+  // ログイン時のエラーメッセージがもしあればそれを表示する
+  const session = await sessionStorage.getSession(request.headers.get('Cookie') || '')
+  const error = session.get(authenticator.sessionErrorKey) as { message: string } | undefined
 
-export const action = async ({ request }: ActionArgs) => {
-  const formData = await request.formData()
-  const email = formData.get('email')
-  const password = formData.get('password')
-  const redirectTo = safeRedirect(formData.get('redirectTo'), '/')
-  const remember = formData.get('remember')
-
-  if (!validateEmail(email)) {
-    return json<ActionData>({ errors: { email: 'Email is invalid' } }, { status: 400 })
-  }
-
-  if (typeof password !== 'string' || password.length === 0) {
-    return json<ActionData>({ errors: { password: 'Password is required' } }, { status: 400 })
-  }
-
-  if (password.length < 8) {
-    return json<ActionData>({ errors: { password: 'Password is too short' } }, { status: 400 })
-  }
-
-  const user = await verifyLogin(email, password)
-
-  if (!user) {
-    return json<ActionData>({ errors: { email: 'Invalid email or password' } }, { status: 400 })
-  }
-
-  return createUserSession({
-    request,
-    userId: user.id,
-    remember: remember === 'on' ? true : false,
-    redirectTo,
-  })
+  return json(
+    { errorMessage: error?.message },
+    { headers: new Headers({ 'Set-Cookie': await sessionStorage.commitSession(session) }) }, // flash messageを削除するためにセッションを更新
+  )
 }
 
 export default function LoginPage() {
-  const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') || '/admin'
-  const actionData = useActionData<typeof action>()
-  const emailRef = useRef<HTMLInputElement>(null)
-  const passwordRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (actionData?.errors?.email) {
-      emailRef.current?.focus()
-    } else if (actionData?.errors?.password) {
-      passwordRef.current?.focus()
-    }
-  }, [actionData])
+  const { errorMessage } = useLoaderData<typeof loader>()
 
   return (
     <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
       <AppCenterFormFrame title="UpFlow" subtitle="ログイン">
-        <Form method="post" noValidate>
-          <Stack>
-            <FormControl isInvalid={!!actionData?.errors?.email}>
-              <FormLabel htmlFor="email" fontSize="sm" color="gray.600">
-                Eメール
-              </FormLabel>
-              <Input
-                ref={emailRef}
-                id="email"
-                required
-                autoFocus={true}
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-invalid={actionData?.errors?.email ? true : undefined}
-                aria-describedby="email-error"
-              />
-              {actionData?.errors?.email && (
-                <FormErrorMessage id="email-error">{actionData.errors.email}</FormErrorMessage>
-              )}
-            </FormControl>
+        <Stack>
+          <GoogleLoginButton w="full" mt="8">
+            Googleアカウントで登録 / ログイン
+          </GoogleLoginButton>
 
-            <FormControl isInvalid={!!actionData?.errors?.password}>
-              <FormLabel htmlFor="password" fontSize="sm" color="gray.600">
-                パスワード
-              </FormLabel>
-              <Input
-                id="password"
-                ref={passwordRef}
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                aria-invalid={actionData?.errors?.password ? true : undefined}
-                aria-describedby="password-error"
-              />
-              {actionData?.errors?.password && (
-                <FormErrorMessage id="password-error">{actionData.errors.password}</FormErrorMessage>
-              )}
-            </FormControl>
-
-            <input type="hidden" name="redirectTo" value={redirectTo} />
-            <Button type="submit" colorScheme="blue">
-              ログイン
-            </Button>
-
-            <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" color="gray.600" fontSize="sm">
-              <Stack direction="row">
-                <Checkbox id="remember" name="remenber" defaultChecked />
-                <FormLabel htmlFor="remember" fontSize="sm">
-                  ログインを記憶
-                </FormLabel>
-              </Stack>
-
-              {/* 
-              <Text>
-                アカウントがない方は
-                <AppLink
-                  color="blue.500"
-                  textDecoration="underline"
-                  to={{
-                    pathname: '/join',
-                    search: searchParams.toString()
-                  }}
-                >
-                  ユーザ登録
-                </AppLink>
-              </Text>
-              */}
-            </Stack>
-          </Stack>
-        </Form>
+          {errorMessage && (
+            <AppAlert status="error">
+              <Box fontWeight="bold">ログインができません</Box>
+              <Box>{errorMessage}</Box>
+            </AppAlert>
+          )}
+        </Stack>
       </AppCenterFormFrame>
 
       <Box as="footer" textAlign="center" bgColor="white" py="4">

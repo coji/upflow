@@ -20,11 +20,9 @@ import { Outlet, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { AppLink, AppProviderBadge } from '~/app/components'
 import { getCompany } from '~/app/models/admin/company.server'
-import { requireUserId } from '~/app/utils/session.server'
 import { match } from 'ts-pattern'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  await requireUserId(request)
   invariant(params.companyId, 'companyId should specified found')
   const company = await getCompany(params.companyId)
   if (!company) {

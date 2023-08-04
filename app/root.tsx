@@ -5,7 +5,6 @@ import { json } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import { useContext, useEffect } from 'react'
 import { ClientStyleContext, ServerStyleContext } from './utils/context'
-import { getUser } from './utils/session.server'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
@@ -19,11 +18,6 @@ export const meta: V2_MetaFunction = () => [
 
 export const links: LinksFunction = () => {
   return []
-}
-
-export const loader: LoaderFunction = async ({ request }) => {
-  const user = await getUser(request)
-  return json({ user })
 }
 
 interface DocumentProps {

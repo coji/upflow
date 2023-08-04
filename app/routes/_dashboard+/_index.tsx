@@ -1,17 +1,17 @@
 import { Badge, Box, Flex, Stack, Tag, Text } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
-import { json } from '@remix-run/node'
-import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
+import { NavLink, Outlet } from '@remix-run/react'
 import { memo } from 'react'
+import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import type { PullRequest } from '~/app/models/pullRequest.server'
 import { getPullRequestItems } from '~/app/models/pullRequest.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
-  return json<PullRequest[]>(await getPullRequestItems())
+  return typedjson<PullRequest[]>(await getPullRequestItems())
 }
 
 const MergeRequestPage = memo(() => {
-  const pullRequestItems = useLoaderData<typeof loader>()
+  const pullRequestItems = useTypedLoaderData<typeof loader>()
 
   return (
     <Flex as="main" height="full">

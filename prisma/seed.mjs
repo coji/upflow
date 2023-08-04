@@ -41,8 +41,9 @@ async function seed() {
   const user = await prisma.user.create({
     data: {
       email,
-      name: 'Coji Mizoguchi',
-      password: { create: { hash: await bcrypt.hash('techtalk', 10) } },
+      displayName: 'Coji Mizoguchi',
+      locale: 'ja',
+      role: 'admin',
     },
   })
 
@@ -62,15 +63,6 @@ async function seed() {
     },
   })
 
-  // team
-  await prisma.team.create({
-    data: {
-      name: 'frontend',
-      company: { connect: { id: company.id } },
-      users: { connect: { id: user.id } },
-    },
-  })
-
   // integration
   const integration = await prisma.integration.create({
     data: {
@@ -81,7 +73,7 @@ async function seed() {
     },
   })
 
-  // respository
+  // repository
   await prisma.repository.create({
     data: {
       id: repositoryId,

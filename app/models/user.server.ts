@@ -1,79 +1,37 @@
-import type { Password, User } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import type { User } from '@prisma/client'
 import { prisma } from '~/app/utils/db.server'
 export type { User } from '@prisma/client'
 
 export async function getUserById(id: User['id']) {
-  return prisma.user.findUnique({ where: { id } })
+  return prisma.user.findUnique({
+    where: { id },
+    select: { id: true, email: true, displayName: true, pictureUrl: true, locale: true, role: true },
+  })
 }
 
 export async function getUserByEmail(email: User['email']) {
   return prisma.user.findUnique({ where: { email } })
 }
 
-export async function createUser(email: User['email'], password: string) {
-  const hashedPassword = await bcrypt.hash(password, 10)
-
-  return prisma.user.create({
-    data: {
-      email,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-    },
+export async function upsertUserByEmail({
+  email,
+  displayName,
+  pictureUrl,
+  locale,
+}: {
+  email: User['email']
+  displayName: User['displayName']
+  pictureUrl: User['pictureUrl']
+  locale: User['locale']
+}) {
+  return prisma.user.upsert({
+    where: { email },
+    select: { id: true, email: true, displayName: true, pictureUrl: true, locale: true, role: true },
+    create: { email, displayName, pictureUrl, locale },
+    update: { displayName, pictureUrl, locale },
   })
 }
 
 export async function deleteUserByEmail(email: User['email']) {
   return prisma.user.delete({ where: { email } })
-}
-
-export async function verifyLogin(email: User['email'], password: Password['hash']) {
-  const userWithPassword = await prisma.user.findUnique({
-    where: { email },
-    include: {
-      password: true,
-    },
-  })
-
-  if (!userWithPassword || !userWithPassword.password) {
-    return null
-  }
-
-  const isValid = await bcrypt.compare(password, userWithPassword.password.hash)
-
-  if (!isValid) {
-    return null
-  }
-
-  const { password: _password, ...userWithoutPassword } = userWithPassword
-
-  return userWithoutPassword
-}
-
-/**
- * パスワードの更新
- * @param email
- * @param oldPassword
- * @param newPassword
- * @returns
- */
-export async function updatePassword(email: User['email'], oldPassword: Password['hash'], newPassword: string) {
-  const userWithoutPassword = await verifyLogin(email, oldPassword)
-  if (!userWithoutPassword) {
-    return null
-  }
-
-  const hashedPassword = await bcrypt.hash(newPassword, 10)
-  const ret = await prisma.password.update({
-    data: {
-      hash: hashedPassword,
-    },
-    where: {
-      userId: userWithoutPassword.id,
-    },
-  })
-  return ret !== null
 }
