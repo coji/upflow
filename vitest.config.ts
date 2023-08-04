@@ -9,8 +9,8 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
     globals: true,
-    environment: 'vprisma',
-    setupFiles: ['vitest-environment-vprisma/setup', './test/vitest.batch.setup.ts'],
+    environment: 'jsdom',
+    setupFiles: ['./test/vitest.batch.setup.ts'],
     include: ['**/*.test.ts'],
     environmentOptions: {
       vprisma: {

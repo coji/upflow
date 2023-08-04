@@ -16,14 +16,8 @@ module.exports = {
     v2_meta: true,
     v2_normalizeFormMethod: true,
     v2_routeConvention: true,
+    v2_dev: true,
+    v2_headers: true,
   },
-  serverDependenciesToBundle: [
-    'got',
-    '@sindresorhus/is',
-    '@szmarczak/http-timer',
-    'p-cancelable',
-    'lowercase-keys',
-    'form-data-encoder',
-    'ky',
-  ],
+  serverDependenciesToBundle: 'all',
 }
