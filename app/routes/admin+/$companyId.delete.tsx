@@ -39,9 +39,9 @@ const CompanyDelete = () => {
             DELETE
           </Button>
 
-          <AppLink to="..">
-            <Button variant="ghost">Cancel</Button>
-          </AppLink>
+          <Button as={AppLink} to=".." variant="ghost">
+            Cancel
+          </Button>
         </Stack>
       }
     >

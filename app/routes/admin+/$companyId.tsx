@@ -37,83 +37,76 @@ const CompanyPage = () => {
   const company = useLoaderData<typeof loader>()
 
   return (
-    <Box bgColor="white" boxShadow="md" p="4" rounded="md">
-      <Stack gap="2">
-        <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
-          <GridItem colSpan={2} display="flex" position="relative">
-            <Heading size="lg">{company.name}</Heading>
-            <Spacer />
-            <Menu>
-              <MenuButton as={IconButton} size="xs" icon={<SettingsIcon />}></MenuButton>
-              <MenuList>
-                <AppLink to="edit">
-                  <MenuItem>Edit</MenuItem>
-                </AppLink>
-                <MenuDivider />
-                <AppLink to="delete">
-                  <MenuItem color="red.500">Delete...</MenuItem>
-                </AppLink>
-              </MenuList>
-            </Menu>
+    <Stack bgColor="white" boxShadow="md" p="4" rounded="md" gap="2">
+      <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
+        <GridItem colSpan={2} display="flex" position="relative">
+          <Heading size="lg">{company.name}</Heading>
+          <Spacer />
+          <Menu>
+            <MenuButton as={IconButton} size="xs" icon={<SettingsIcon />}></MenuButton>
+            <MenuList>
+              <MenuItem as={AppLink} to="edit">
+                Edit
+              </MenuItem>
+              <MenuDivider />
+              <MenuItem as={AppLink} to="delete" color="red.500">
+                Delete...
+              </MenuItem>
+            </MenuList>
+          </Menu>
+          <Outlet />
+        </GridItem>
+      </Box>
 
-            <Outlet />
-          </GridItem>
+      <Heading size="md" color="gray.500">
+        Integration and Repositories
+      </Heading>
+
+      <Button as={AppLink} to="export-setting">
+        {company.exportSetting ? 'Export Settings' : 'Add Export Setting'}
+      </Button>
+
+      {company.integration ? (
+        <Box>
+          <AppProviderBadge provider={company.integration.provider} />
         </Box>
+      ) : (
+        <Button as={AppLink} to="add-integration">
+          Add Integration
+        </Button>
+      )}
 
-        <Stack>
-          <Heading size="md" color="gray.500">
-            Integration and Repositories
-          </Heading>
-
-          <AppLink to="export-setting">
-            <Button>{company.exportSetting ? 'Export Settings' : 'Add Export Setting'}</Button>
-          </AppLink>
-
-          {company.integration ? (
+      {company.repositories.map((repo) => {
+        const repoUrl = match(repo.provider)
+          .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
+          .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
+          .otherwise(() => '')
+        return (
+          <Stack direction="row" key={repo.id} align="center">
             <Box>
-              <AppProviderBadge provider={company.integration.provider} />
+              <Link isExternal href={repoUrl} color="blue.500">
+                {repo.name}
+              </Link>{' '}
+              {repo.releaseDetectionKey}
             </Box>
-          ) : (
-            <AppLink to="add-integration">
-              <Button>Add Integration</Button>
-            </AppLink>
-          )}
 
-          {company.repositories.map((repo) => {
-            const repoUrl = match(repo.provider)
-              .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
-              .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
-              .otherwise(() => '')
-            return (
-              <Stack direction="row" key={repo.id} align="center">
-                <Box>
-                  <Link isExternal href={repoUrl} color="blue.500">
-                    {repo.name}
-                  </Link>{' '}
-                  {repo.releaseDetectionKey}
-                </Box>
+            <Button as={AppLink} to={`repository/${repo.id}/edit`} colorScheme="blue" size="xs">
+              Edit
+            </Button>
 
-                <Button as={AppLink} to={`repository/${repo.id}/edit`} colorScheme="blue" size="xs">
-                  Edit
-                </Button>
+            <Button as={AppLink} to={`repository/${repo.id}/delete`} colorScheme="red" size="xs">
+              Delete
+            </Button>
+          </Stack>
+        )
+      })}
 
-                <Button as={AppLink} to={`repository/${repo.id}/delete`} colorScheme="red" size="xs">
-                  Delete
-                </Button>
-              </Stack>
-            )
-          })}
-
-          {company.integration && (
-            <Box>
-              <AppLink to="add-repository">
-                <Button>Add Repo</Button>
-              </AppLink>
-            </Box>
-          )}
-        </Stack>
-      </Stack>
-    </Box>
+      {company.integration && (
+        <Button as={AppLink} to="add-repository">
+          Add Repo
+        </Button>
+      )}
+    </Stack>
   )
 }
 export default CompanyPage

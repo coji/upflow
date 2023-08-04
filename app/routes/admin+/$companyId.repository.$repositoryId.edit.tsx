@@ -41,9 +41,9 @@ const EditRepositoryModal = () => {
           <Button colorScheme="blue" type="submit" form="form">
             Update
           </Button>
-          <AppLink to="..">
-            <Button variant="ghost">Cancel</Button>
-          </AppLink>
+          <Button as={AppLink} to=".." variant="ghost">
+            Cancel
+          </Button>
         </Stack>
       }
     >

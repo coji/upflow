@@ -53,9 +53,9 @@ const AddRepositoryModal = () => {
           <Button colorScheme="blue" type="submit" form="form">
             Add
           </Button>
-          <AppLink to="..">
-            <Button variant="ghost">Cancel</Button>
-          </AppLink>
+          <Button as={AppLink} to=".." variant="ghost">
+            Cancel
+          </Button>
         </Stack>
       }
     >

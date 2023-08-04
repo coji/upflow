@@ -51,9 +51,9 @@ const EditCompany = () => {
             Update
           </AppSubmitButton>
 
-          <AppLink to="..">
-            <Button variant="ghost">Cancel</Button>
-          </AppLink>
+          <Button as={AppLink} to=".." variant="ghost">
+            Cancel
+          </Button>
         </Stack>
       }
     >
