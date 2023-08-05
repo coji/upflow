@@ -1,4 +1,18 @@
-import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack } from '@chakra-ui/react'
+import {
+  Text,
+  Box,
+  Container,
+  Flex,
+  Heading,
+  Menu,
+  MenuItem,
+  MenuList,
+  Spacer,
+  Stack,
+  MenuDivider,
+  HStack,
+  Badge,
+} from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { Outlet, useLoaderData, Link } from '@remix-run/react'
@@ -15,8 +29,8 @@ export default function IndexPage() {
 
   return (
     <Box display="grid" gridTemplateRows="auto 1fr auto" bgColor="gray.100" minH="100vh">
-      <Flex alignItems="center" bgColor="white" p="2" textColor="slategray">
-        <Heading>
+      <Flex alignItems="center" bgColor="white" px="4" py="1">
+        <Heading fontSize="3xl">
           <AppLink to="/" color="gray.600">
             UpFlow
           </AppLink>
@@ -25,21 +39,38 @@ export default function IndexPage() {
 
         <Stack direction="row" alignItems="center">
           <Menu>
-            <AppProfileMenuButton name={user.displayName}></AppProfileMenuButton>
+            <AppProfileMenuButton name={user.displayName} pictureUrl={user.pictureUrl ?? undefined} />
             <MenuList>
+              <MenuItem display="block">
+                <HStack>
+                  <Box>
+                    <Text fontSize="sm">{user.displayName}</Text>
+                    <Text fontSize="xs">{user.email}</Text>
+                  </Box>
+                  <Spacer />
+                  <Badge colorScheme={user.role === 'admin' ? 'red' : 'blue'}>{user.role}</Badge>
+                </HStack>
+              </MenuItem>
+              {user.role === 'admin' && (
+                <>
+                  <MenuDivider />
+                  <MenuItem as={Link} to="/admin">
+                    Admin
+                  </MenuItem>
+                </>
+              )}
+              <MenuDivider />
               <MenuItem as={Link} to="/logout">
-                Logout
+                ログアウト
               </MenuItem>
             </MenuList>
           </Menu>
         </Stack>
       </Flex>
 
-      <Box>
-        <Container maxW="container.xl">
-          <Outlet />
-        </Container>
-      </Box>
+      <Container maxW="container.xl">
+        <Outlet />
+      </Container>
 
       <Box as="footer" textAlign="center" bgColor="white" py="4">
         Copyright &copy; TechTalk Inc.

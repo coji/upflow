@@ -1,7 +1,21 @@
-import { Box, Container, Flex, Heading, Menu, MenuItem, MenuList, Spacer, Stack, Tag, Divider } from '@chakra-ui/react'
-import { SettingsIcon } from '@chakra-ui/icons'
+import {
+  Text,
+  Box,
+  Container,
+  Flex,
+  Heading,
+  Menu,
+  MenuItem,
+  MenuList,
+  Spacer,
+  Stack,
+  Tag,
+  MenuDivider,
+  HStack,
+  Badge,
+} from '@chakra-ui/react'
 import { json, type LoaderArgs } from '@remix-run/node'
-import { Outlet, NavLink, useLoaderData, Link } from '@remix-run/react'
+import { Outlet, useLoaderData, Link } from '@remix-run/react'
 import { getAdminUser } from '~/app/features/auth/services/user-session.server'
 import { AppLink, AppProfileMenuButton } from '~/app/components'
 
@@ -15,9 +29,9 @@ const AdminIndex = () => {
 
   return (
     <Box display="grid" gridTemplateRows="auto 1fr auto" height="100vh" color="gray.600">
-      <Flex as="header" px="4" py="1" align="center" boxShadow="md">
-        <Heading>
-          <AppLink to="/admin">UpFlow</AppLink>
+      <Flex alignItems="center" bgColor="white" px="4" py="1">
+        <Heading fontSize="3xl">
+          <AppLink to="/admin">UpFlow Admin</AppLink>
         </Heading>
 
         <Spacer />
@@ -27,14 +41,25 @@ const AdminIndex = () => {
           </Tag>
 
           <Menu>
-            <AppProfileMenuButton name={adminUser.displayName}></AppProfileMenuButton>
+            <AppProfileMenuButton name={adminUser.displayName} pictureUrl={adminUser.pictureUrl ?? undefined} />
             <MenuList>
-              <MenuItem as={NavLink} to="/admin/settings" icon={<SettingsIcon />}>
-                Settings
+              <MenuItem display="block">
+                <HStack>
+                  <Box>
+                    <Text fontSize="sm">{adminUser.displayName}</Text>
+                    <Text fontSize="xs">{adminUser.email}</Text>
+                  </Box>
+                  <Spacer />
+                  <Badge colorScheme={adminUser.role === 'admin' ? 'red' : 'blue'}>{adminUser.role}</Badge>
+                </HStack>
               </MenuItem>
-              <Divider />
+              <MenuDivider />
+              <MenuItem as={Link} to="/">
+                ユーザー画面
+              </MenuItem>
+              <MenuDivider />
               <MenuItem as={Link} to="/logout">
-                Logout
+                ログアウト
               </MenuItem>
             </MenuList>
           </Menu>
