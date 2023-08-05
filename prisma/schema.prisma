@@ -8,20 +8,16 @@ datasource db {
 }
 
 model User {
-  id        String        @id @default(cuid())
-  email     String        @unique
-  name      String        @default("")
-  updatedAt DateTime      @updatedAt
-  createdAt DateTime      @default(now())
-  companies CompanyUser[]
-  password  Password?
-  teams     Team[]
-}
-
-model Password {
-  hash   String
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String        @id @default(cuid())
+  email       String        @unique
+  displayName String
+  pictureUrl  String?
+  locale      String
+  role        String        @default("user")
+  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now())
+  companies   CompanyUser[]
+  teamUser    TeamUser[]
 }
 
 model Company {
@@ -40,7 +36,6 @@ model Company {
 }
 
 model CompanyUser {
-  id          String    @id @default(cuid())
   companyId   String
   userId      String
   role        String
@@ -50,14 +45,31 @@ model CompanyUser {
   createdAt   DateTime  @default(now())
   company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, userId])
 }
 
 model Team {
-  id        String  @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
+  updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now())
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  users     User[]
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  teamUser  TeamUser[]
+}
+
+model TeamUser {
+  teamId    String
+  userId    String
+  role      String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
 }
 
 model Integration {

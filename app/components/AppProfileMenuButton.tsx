@@ -1,21 +1,19 @@
-import type { UseMenuButtonProps } from '@chakra-ui/react'
-import { Avatar, MenuButton, useMenuButton } from '@chakra-ui/react'
+import { Avatar, MenuButton } from '@chakra-ui/react'
+import type { MenuButtonProps, AvatarProps } from '@chakra-ui/react'
 
-interface UserAvatarProps {
-  name?: string
-}
-const UserAvatar = ({ name = '' }: UserAvatarProps) => {
-  return <Avatar size="sm" name={name} />
+type UserAvatarProps = AvatarProps
+const UserAvatar = ({ ...rest }: UserAvatarProps) => {
+  return <Avatar size="sm" {...rest} />
 }
 
-interface ProfileMenuButtonProps extends UseMenuButtonProps {
+interface ProfileMenuButtonProps extends MenuButtonProps {
   name?: string
+  pictureUrl?: string
 }
-export const AppProfileMenuButton = ({ name = '', ...props }: ProfileMenuButtonProps) => {
-  const buttonProps = useMenuButton(props)
+export const AppProfileMenuButton = ({ name = '', pictureUrl, ...props }: ProfileMenuButtonProps) => {
   return (
-    <MenuButton flexShrink={0} rounded="full" outline="0" _focus={{ shadow: 'outline' }} {...buttonProps}>
-      <UserAvatar name={name} />
+    <MenuButton flexShrink={0} rounded="full" outline="0" _focus={{ shadow: 'outline' }} {...props}>
+      <UserAvatar name={name} src={pictureUrl} />
     </MenuButton>
   )
 }
