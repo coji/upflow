@@ -3,11 +3,13 @@ import { createTestUser, deleteTestUser } from './support'
 
 const testUser = {
   email: 'test@example.com',
-  password: 'realysecurepassword',
+  displayName: 'test user',
+  pictureUrl: null,
+  locale: 'ja',
 }
 
 test.beforeAll(async () => {
-  await createTestUser(testUser.email, testUser.password)
+  await createTestUser(testUser)
 })
 
 test.afterAll(async () => {
@@ -21,10 +23,10 @@ test('"UpFlow"タイトル表示', async ({ page }) => {
 
 test('ログインして admin 画面に遷移', async ({ page }) => {
   await page.goto('/login')
+
   await page.getByLabel('Eメール').fill(testUser.email)
-  await page.getByLabel('パスワード').fill(testUser.password)
   await page.getByRole('button', { name: 'ログイン' }).click()
-  await page.waitForNavigation({ url: '/admin' })
+  await page.waitForURL('/')
 
   await expect(page.getByRole('link', { name: 'UpFlow' })).toHaveAttribute('href', '/admin')
   await expect(page.getByText('admin')).toBeVisible()

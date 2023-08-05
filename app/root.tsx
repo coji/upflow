@@ -1,7 +1,6 @@
 import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import { withEmotionCache } from '@emotion/react'
-import type { LinksFunction, LoaderFunction, V2_MetaFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import type { LinksFunction, V2_MetaFunction } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import { useContext, useEffect } from 'react'
 import { ClientStyleContext, ServerStyleContext } from './utils/context'
