@@ -1,7 +1,7 @@
 import { PlusSquareIcon } from '@chakra-ui/icons'
-import { Box, Button, Grid, Stack } from '@chakra-ui/react'
 import type { LoaderArgs } from '@remix-run/node'
-import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
+import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import { Button, Heading, Stack } from '~/app/components/ui'
 import { getCompanies } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -14,48 +14,32 @@ const AdminCompanyIndex = () => {
   const { companies } = useLoaderData<typeof loader>()
 
   return (
-    <Grid display="grid" gridTemplateColumns="15rem 1fr" gap="4">
-      <Box>
-        <Stack bgColor="white" rounded="md" p="4" boxShadow="md">
-          <Box fontWeight="bold">Companies</Box>
+    <div className="grid grid-cols-[15rem_1fr] gap-4">
+      <div>
+        <Stack className="rounded bg-background p-4 shadow">
+          <Heading size="md">Companies</Heading>
 
           {companies.map((company) => (
-            <NavLink key={company.id} to={`${company.id}`} color="red">
-              {({ isActive }) => (
-                <Box
-                  _hover={{ bgColor: !isActive ? 'gray.100' : undefined }}
-                  bgColor={isActive ? 'gray.500' : 'white'}
-                  color={isActive ? 'white' : 'inherit'}
-                  rounded="md"
-                  p="2"
-                >
-                  {company.name}
-                </Box>
-              )}
-            </NavLink>
+            <Link
+              className="rounded p-2 hover:bg-gray-100 active:bg-gray-100 hover:active:bg-gray-100"
+              key={company.id}
+              to={`${company.id}`}
+            >
+              {company.name}
+            </Link>
           ))}
 
-          <NavLink to="new">
-            {({ isActive }) => (
-              <Button
-                w="full"
-                bgColor={isActive ? 'gray.500' : undefined}
-                color={isActive ? 'white' : undefined}
-                variant="ghost"
-                fontWeight="normal"
-                leftIcon={<PlusSquareIcon />}
-              >
-                新規作成
-              </Button>
-            )}
-          </NavLink>
+          <Button asChild className="w-full" variant="ghost">
+            <Link to="new">
+              <PlusSquareIcon className="mr-2" />
+              新規作成
+            </Link>
+          </Button>
         </Stack>
-      </Box>
+      </div>
 
-      <Box>
-        <Outlet />
-      </Box>
-    </Grid>
+      <Outlet />
+    </div>
   )
 }
 export default AdminCompanyIndex
