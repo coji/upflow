@@ -83,7 +83,7 @@ const CompanyPage = () => {
             .otherwise(() => '')
           return (
             <HStack key={repo.id}>
-              <Link to={`repository/${repo.id}/edit`} preventScrollReset>
+              <Link to={`repository/${repo.id}/edit`}>
                 <span className="underline decoration-border hover:bg-accent">
                   {repo.name}
                   {repo.releaseDetectionKey}
