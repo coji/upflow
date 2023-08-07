@@ -20,11 +20,7 @@ const AdminCompanyIndex = () => {
           <Heading size="md">Companies</Heading>
 
           {companies.map((company) => (
-            <Link
-              className="rounded p-2 hover:bg-gray-100 active:bg-gray-100 hover:active:bg-gray-100"
-              key={company.id}
-              to={`${company.id}`}
-            >
+            <Link key={company.id} className="rounded p-2 hover:bg-gray-200" to={`${company.id}`}>
               {company.name}
             </Link>
           ))}

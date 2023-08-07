@@ -104,7 +104,8 @@
     "ts-pattern": "5.0.4",
     "tsx": "3.12.7",
     "zod": "3.21.4",
-    "zod-form-data": "2.0.1"
+    "zod-form-data": "2.0.1",
+    "zodix": "0.4.1"
   },
   "devDependencies": {
     "@octokit/types": "11.1.0",
