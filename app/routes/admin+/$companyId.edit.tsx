@@ -115,7 +115,7 @@ const EditCompany = () => {
       </CardContent>
       <CardFooter>
         <Stack direction="row">
-          <Button type="submit" form="edit-company-form">
+          <Button type="submit" form={form.id}>
             Update
           </Button>
 
