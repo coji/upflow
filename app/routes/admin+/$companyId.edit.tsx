@@ -1,77 +1,130 @@
-import { Button, Stack } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
-import { withZod } from '@remix-validated-form/with-zod'
-import { zfd } from 'zod-form-data'
-import { ValidatedForm, validationError } from 'remix-validated-form'
-import invariant from 'tiny-invariant'
+import { conform, useForm } from '@conform-to/react'
+import { parse } from '@conform-to/zod'
+import { redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
-import { AppInput, AppLink, AppMutationModal, AppSelect, AppSubmitButton, AppSwitch } from '~/app/components'
+import { zx } from 'zodix'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+  Stack,
+  Switch,
+} from '~/app/components/ui'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
-  invariant(params.companyId, 'companyId shout specified')
-  const company = await getCompany(params.companyId)
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const company = await getCompany(companyId)
   if (!company) {
     throw new Response('No company', { status: 404 })
   }
   return company
 }
 
-export const validator = withZod(
-  z.object({
-    name: z.string().min(1, { message: 'name is required' }),
-    releaseDetectionMethod: z.string().min(1, { message: 'releaseDetectionMethod is required' }),
-    releaseDetectionKey: z.string().min(1, { message: 'releaseDetectionKey is required' }),
-    isActive: zfd.checkbox(),
-  }),
-)
+const schema = z.object({
+  name: z.string().min(1, { message: 'name is required' }),
+  releaseDetectionMethod: z.enum(['branch', 'tags']),
+  releaseDetectionKey: z.string().nonempty(),
+  isActive: z
+    .string()
+    .optional()
+    .transform((val) => !!val),
+})
 
 export const action = async ({ request, params }: ActionArgs) => {
-  const { companyId } = params
-  invariant(companyId, 'companyId should specified')
-  const { error, data } = await validator.validate(await request.formData())
-  if (error) {
-    return validationError(error)
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const submission = await parse(await request.formData(), { schema })
+  if (!submission.value) {
+    throw new Error('Invalid submission')
   }
-  const company = await updateCompany(companyId, data)
+  const company = await updateCompany(companyId, submission.value)
   return redirect(`/admin/${company.id}`)
 }
 
 const EditCompany = () => {
   const company = useLoaderData<typeof loader>()
 
-  return (
-    <AppMutationModal
-      title="Edit company"
-      footer={
-        <Stack direction="row" justify="center">
-          <AppSubmitButton colorScheme="blue" type="submit" form="form">
-            Update
-          </AppSubmitButton>
+  const [form, { isActive, name, releaseDetectionKey, releaseDetectionMethod }] = useForm({
+    id: 'edit-company-form',
+    onValidate({ formData }) {
+      return parse(formData, { schema })
+    },
+    defaultValue: company,
+  })
 
-          <Button as={AppLink} to=".." variant="ghost">
-            Cancel
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Edit company</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form method="POST" {...form.props}>
+          <Stack>
+            <fieldset>
+              <Label htmlFor={name.id}>Company Name</Label>
+              <Input {...conform.input(name)} />
+              <div className="text-destructive">{name.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={releaseDetectionMethod.id}>Release Detection Method</Label>
+              <Select name={releaseDetectionMethod.name} defaultValue={releaseDetectionMethod.defaultValue}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a method"></SelectValue>
+                </SelectTrigger>
+                <SelectContent {...conform.select(releaseDetectionMethod)}>
+                  <SelectGroup>
+                    <SelectLabel>Release Detection Method</SelectLabel>
+                    <SelectItem value="branch">Branch</SelectItem>
+                    <SelectItem value="tags">Tags</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <div className="text-destructive">{releaseDetectionMethod.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={releaseDetectionKey.id}>Release Detection Key</Label>
+              <Input {...conform.input(releaseDetectionKey)} />
+              <div className="text-destructive">{releaseDetectionKey.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <HStack>
+                <Label htmlFor={isActive.id}>Active</Label>
+                <Switch name={isActive.name} id={isActive.id} defaultChecked={!!isActive.defaultValue}></Switch>
+              </HStack>
+              <div className="text-destructive">{isActive.error}</div>
+            </fieldset>
+          </Stack>
+        </Form>
+      </CardContent>
+      <CardFooter>
+        <Stack direction="row">
+          <Button type="submit" form="edit-company-form">
+            Update
+          </Button>
+
+          <Button variant="ghost" asChild>
+            <Link to="..">Cancel</Link>
           </Button>
         </Stack>
-      }
-    >
-      <ValidatedForm validator={validator} method="post" id="form" defaultValues={company}>
-        <Stack>
-          <AppInput name="name" label="Company Name" />
-
-          <AppSelect name="releaseDetectionMethod" label="Release Detection Method">
-            <option value="tags">tags</option>
-            <option value="branch">branch</option>
-          </AppSelect>
-
-          <AppInput name="releaseDetectionKey" label="Release Detection Key" />
-
-          <AppSwitch name="isActive" label="Active" value="on" />
-        </Stack>
-      </ValidatedForm>
-    </AppMutationModal>
+      </CardFooter>
+    </Card>
   )
 }
 export default EditCompany
