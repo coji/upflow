@@ -1,8 +1,7 @@
-import { Box, Stack } from '@chakra-ui/react'
-import type { LoaderArgs, V2_MetaFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import { json, type LoaderArgs, type V2_MetaFunction } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { AppAlert, AppCenterFormFrame } from '~/app/components'
+import { Stack } from '~/app/components/ui'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
 import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
 
@@ -26,23 +25,23 @@ export default function LoginPage() {
   const { errorMessage } = useLoaderData<typeof loader>()
 
   return (
-    <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
+    <div className="grid min-h-screen grid-rows-[1fr_auto] bg-gray-100">
       <AppCenterFormFrame title="UpFlow" subtitle="ログイン">
         <Stack>
-          <GoogleLoginButton className="mt-8 w-full">Googleアカウントで登録 / ログイン</GoogleLoginButton>
+          <GoogleLoginButton className="mt-8 w-full" variant="default">
+            Googleアカウントで登録 / ログイン
+          </GoogleLoginButton>
 
           {errorMessage && (
             <AppAlert status="error">
-              <Box fontWeight="bold">ログインができません</Box>
-              <Box>{errorMessage}</Box>
+              <div className="font-bold">ログインができません</div>
+              <div>{errorMessage}</div>
             </AppAlert>
           )}
         </Stack>
       </AppCenterFormFrame>
 
-      <Box as="footer" textAlign="center" bgColor="white" py="4">
-        Copyright &copy; TechTalk Inc.
-      </Box>
-    </Box>
+      <footer className="bg-background py-4 text-center">Copyright &copy; TechTalk Inc.</footer>
+    </div>
   )
 }

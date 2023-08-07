@@ -7,7 +7,7 @@ interface AppCenterFormFrameProps extends CenterProps {
   children: React.ReactNode
 }
 export const AppCenterFormFrame = ({ title, subtitle, children, ...rest }: AppCenterFormFrameProps) => (
-  <Center flex="1" {...rest}>
+  <Center h="full" {...rest}>
     <Box bgColor="white" p={{ base: '2', md: '8' }} width="container.sm" mx="2" rounded="md" boxShadow="md">
       <Heading fontSize="4xl" textAlign="center" color="blue.800" dropShadow="2xl">
         <Box>{title}</Box>
