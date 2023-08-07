@@ -19,9 +19,7 @@ import {
 import { getCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
-  const { companyId } = zx.parseParams(params, {
-    companyId: z.string(),
-  })
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const company = await getCompany(companyId)
   if (!company) {
     throw new Response('Company not found', { status: 404 })
@@ -39,7 +37,7 @@ const CompanyPage = () => {
           <Heading size="lg">{company.name}</Heading>
           <Spacer />
           <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
               <Button size="icon" variant="outline">
                 <SettingsIcon />
               </Button>

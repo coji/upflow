@@ -1,88 +1,131 @@
-import { Box, Button, Icon, Radio, Stack } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { withZod } from '@remix-validated-form/with-zod'
+import { conform, useForm } from '@conform-to/react'
+import { parse } from '@conform-to/zod'
+import { redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { Form, Link } from '@remix-run/react'
 import { RiGithubFill, RiGitlabFill } from 'react-icons/ri'
-import { ValidatedForm, validationError } from 'remix-validated-form'
-import invariant from 'tiny-invariant'
 import { z } from 'zod'
-import { AppLink, AppMutationModal, AppRadioGroup, AppSubmitButton, AppTextarea } from '~/app/components'
+import { zx } from 'zodix'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
+  Stack,
+  Textarea,
+} from '~/app/components/ui'
 import { createIntegration, getIntegration } from '~/app/models/admin/integration.server'
 
-export const validator = withZod(
-  z.object({
-    provider: z.enum(['github', 'gitlab'], { required_error: 'provider is required' }),
-    method: z.enum(['token'], { required_error: 'token is required' }),
-    token: z.string().min(1, { message: 'token is required' }),
-  }),
-)
+const schema = z.object({
+  provider: z.enum(['github', 'gitlab'], { required_error: 'provider is required' }),
+  method: z.enum(['token'], { required_error: 'token is required' }),
+  token: z.string().min(1, { message: 'token is required' }),
+})
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  invariant(params.companyId, 'company id should specified')
-  const integration = await getIntegration(params.companyId)
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const integration = await getIntegration(companyId)
   if (integration) {
-    // already added
-    return redirect(`/admin/${params.companyId}`)
+    throw new Error('Integration already exists')
   }
-  return integration
+  return null
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id should specified')
-  const { error, data } = await validator.validate(await request.formData())
-  if (error) {
-    return validationError(error)
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const submission = await parse(await request.formData(), { schema })
+  if (!submission.value) {
+    throw new Error('Failed to parse form data')
   }
-  return await createIntegration({
-    companyId: params.companyId,
-    provider: data.provider,
-    method: data.method,
-    privateToken: data.token,
+  await createIntegration({
+    companyId,
+    provider: submission.value.provider,
+    method: submission.value.method,
+    privateToken: submission.value.token,
   })
+  return redirect('..')
 }
 
 const AddIntegrationModal = () => {
+  const [form, { provider, method, token }] = useForm({
+    id: 'add-integration-form',
+    onValidate({ form, formData }) {
+      return parse(formData, { schema })
+    },
+    defaultValue: {
+      provider: 'github',
+      method: 'token',
+    },
+  })
   return (
-    <AppMutationModal
-      title="Add integration"
-      footer={
+    <Card>
+      <CardHeader>
+        <CardTitle>Add integration</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form method="POST" {...form.props}>
+          <Stack>
+            <fieldset>
+              <Label htmlFor={provider.id}>Provider</Label>
+              <RadioGroup {...conform.input(provider)}>
+                <HStack>
+                  <RadioGroupItem id="github" value="github"></RadioGroupItem>
+                  <Label htmlFor="github">
+                    <HStack className="gap-1">
+                      <RiGithubFill />
+                      <span>GitHub</span>
+                    </HStack>
+                  </Label>
+                </HStack>
+                <HStack>
+                  <RadioGroupItem id="gitlab" value="gitlab"></RadioGroupItem>
+                  <Label htmlFor="gitlab">
+                    <HStack className="gap-1">
+                      <RiGitlabFill />
+                      <span>GitLab</span>
+                    </HStack>
+                  </Label>
+                </HStack>
+              </RadioGroup>
+              <div className="text-destructive">{provider.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={method.id}>Method</Label>
+              <RadioGroup {...conform.input(method)}>
+                <HStack>
+                  <RadioGroupItem id="token" value="token"></RadioGroupItem>
+                  <Label htmlFor="token">トークン</Label>
+                </HStack>
+              </RadioGroup>
+              <div className="text-destructive">{method.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={token.id}>Token</Label>
+              <Textarea {...conform.textarea(token)}></Textarea>
+              <div className="text-destructive">{token.error}</div>
+            </fieldset>
+          </Stack>
+        </Form>
+      </CardContent>
+
+      <CardFooter>
         <Stack direction="row">
-          <AppSubmitButton colorScheme="blue" type="submit" form="form">
+          <Button type="submit" form={form.id}>
             Add
-          </AppSubmitButton>
-          <Button as={AppLink} to=".." variant="ghost">
-            Cancel
+          </Button>
+          <Button asChild variant="ghost">
+            <Link to="..">Cancel</Link>
           </Button>
         </Stack>
-      }
-    >
-      <ValidatedForm method="post" id="form" validator={validator}>
-        <Stack>
-          <AppRadioGroup name="provider" label="Provider">
-            <Stack direction="row" gap="4">
-              <Radio value="github">
-                <Stack direction="row" align="center">
-                  <Icon as={RiGithubFill} />
-                  <Box>GitHub</Box>
-                </Stack>
-              </Radio>
-              <Radio value="gitlab">
-                <Stack direction="row" align="center">
-                  <Icon as={RiGitlabFill} />
-                  <Box>GitLab</Box>
-                </Stack>
-              </Radio>
-            </Stack>
-          </AppRadioGroup>
-
-          <AppRadioGroup name="method" label="Method">
-            <Radio value="token">Private Token</Radio>
-          </AppRadioGroup>
-
-          <AppTextarea name="token" label="Token"></AppTextarea>
-        </Stack>
-      </ValidatedForm>
-    </AppMutationModal>
+      </CardFooter>
+    </Card>
   )
 }
 export default AddIntegrationModal

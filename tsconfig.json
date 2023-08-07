@@ -1,5 +1,5 @@
 {
-  "include": ["*.ts", "*.js", "**/*.ts", "**/*.tsx", "server.ts"],
+  "include": ["*", "**/*"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": ["vitest/globals", "vitest/importMeta", "@types/node"],
