@@ -1,4 +1,4 @@
-import { PlusSquareIcon } from '@chakra-ui/icons'
+import { PlusCircledIcon } from '@radix-ui/react-icons'
 import type { LoaderArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { Button, Heading, Stack } from '~/app/components/ui'
@@ -27,7 +27,7 @@ const AdminCompanyIndex = () => {
 
           <Button asChild className="w-full" variant="ghost">
             <Link to="new">
-              <PlusSquareIcon className="mr-2" />
+              <PlusCircledIcon className="mr-2" />
               新規作成
             </Link>
           </Button>

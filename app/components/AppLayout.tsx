@@ -57,7 +57,7 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <Spacer />
-                  <Badge>{user.role}</Badge>
+                  <Badge variant={user.role === 'admin' ? 'destructive' : 'default'}>{user.role}</Badge>
                 </HStack>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

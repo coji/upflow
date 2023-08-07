@@ -1,6 +1,5 @@
 import { ExternalLinkIcon, GearIcon } from '@radix-ui/react-icons'
-import type { LoaderArgs } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import { json, type LoaderArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
