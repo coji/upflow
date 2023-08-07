@@ -2,7 +2,7 @@ import { Box, Stack } from '@chakra-ui/react'
 import type { LoaderArgs, V2_MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
-import { AppCenterFormFrame, AppAlert } from '~/app/components'
+import { AppAlert, AppCenterFormFrame } from '~/app/components'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
 import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
 
@@ -29,9 +29,7 @@ export default function LoginPage() {
     <Box display="flex" flexDirection="column" bgColor="gray.100" minH="100vh">
       <AppCenterFormFrame title="UpFlow" subtitle="ログイン">
         <Stack>
-          <GoogleLoginButton w="full" mt="8">
-            Googleアカウントで登録 / ログイン
-          </GoogleLoginButton>
+          <GoogleLoginButton className="mt-8 w-full">Googleアカウントで登録 / ログイン</GoogleLoginButton>
 
           {errorMessage && (
             <AppAlert status="error">

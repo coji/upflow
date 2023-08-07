@@ -11,6 +11,7 @@ module.exports = {
     return flatRoutes('routes', defineRoutes)
   },
   serverModuleFormat: 'cjs',
+  serverDependenciesToBundle: 'all',
   future: {
     v2_errorBoundary: true,
     v2_meta: true,
@@ -19,5 +20,6 @@ module.exports = {
     v2_dev: true,
     v2_headers: true,
   },
-  serverDependenciesToBundle: 'all',
+  tailwind: true,
+  postcss: true,
 }

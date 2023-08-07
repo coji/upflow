@@ -6,6 +6,7 @@ import { useContext, useEffect } from 'react'
 import { ClientStyleContext, ServerStyleContext } from './utils/context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import globalStyles from './globals.css'
 
 export const meta: V2_MetaFunction = () => [
   {
@@ -16,7 +17,7 @@ export const meta: V2_MetaFunction = () => [
 ]
 
 export const links: LinksFunction = () => {
-  return []
+  return [{ rel: 'stylesheet', href: globalStyles }]
 }
 
 interface DocumentProps {

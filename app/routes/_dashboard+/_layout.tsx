@@ -1,22 +1,19 @@
-import {
-  Text,
-  Box,
-  Container,
-  Flex,
-  Heading,
-  Menu,
-  MenuItem,
-  MenuList,
-  Spacer,
-  Stack,
-  MenuDivider,
-  HStack,
-  Badge,
-} from '@chakra-ui/react'
+import {} from '@radix-ui/react-dropdown-menu'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { Outlet, useLoaderData, Link } from '@remix-run/react'
+import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { AppLink, AppProfileMenuButton } from '~/app/components'
+import {
+  Badge,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  HStack,
+  Heading,
+  Spacer,
+  Stack,
+} from '~/app/components/ui'
 import { getUser } from '~/app/features/auth/services/user-session.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -28,53 +25,51 @@ export default function IndexPage() {
   const { user } = useLoaderData<typeof loader>()
 
   return (
-    <Box display="grid" gridTemplateRows="auto 1fr auto" bgColor="gray.100" minH="100vh">
-      <Flex alignItems="center" bgColor="white" px="4" py="1">
-        <Heading fontSize="3xl">
+    <div className="grid h-screen grid-rows-[auto_1fr_auto]">
+      <div className="flex items-center px-4 py-1">
+        <Heading>
           <AppLink to="/" color="gray.600">
             UpFlow
           </AppLink>
         </Heading>
         <Spacer />
 
-        <Stack direction="row" alignItems="center">
-          <Menu>
+        <Stack direction="row">
+          <DropdownMenu>
             <AppProfileMenuButton name={user.displayName} pictureUrl={user.pictureUrl ?? undefined} />
-            <MenuList>
-              <MenuItem display="block">
+            <DropdownMenuContent>
+              <DropdownMenuItem>
                 <HStack>
-                  <Box>
-                    <Text fontSize="sm">{user.displayName}</Text>
-                    <Text fontSize="xs">{user.email}</Text>
-                  </Box>
+                  <div>
+                    <p className="text-sm">{user.displayName}</p>
+                    <p className="text-xs">{user.email}</p>
+                  </div>
                   <Spacer />
-                  <Badge colorScheme={user.role === 'admin' ? 'red' : 'blue'}>{user.role}</Badge>
+                  <Badge>{user.role}</Badge>
                 </HStack>
-              </MenuItem>
+              </DropdownMenuItem>
               {user.role === 'admin' && (
                 <>
-                  <MenuDivider />
-                  <MenuItem as={Link} to="/admin">
-                    Admin
-                  </MenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin">Admin</Link>
+                  </DropdownMenuItem>
                 </>
               )}
-              <MenuDivider />
-              <MenuItem as={Link} to="/logout">
-                ログアウト
-              </MenuItem>
-            </MenuList>
-          </Menu>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/logout">ログアウト</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </Stack>
-      </Flex>
+      </div>
 
-      <Container maxW="container.xl">
+      <main className="container bg-gray-200 py-2">
         <Outlet />
-      </Container>
+      </main>
 
-      <Box as="footer" textAlign="center" bgColor="white" py="4">
-        Copyright &copy; TechTalk Inc.
-      </Box>
-    </Box>
+      <footer className="p-4 text-center shadow">Copyright&copy; TechTalk Inc.</footer>
+    </div>
   )
 }

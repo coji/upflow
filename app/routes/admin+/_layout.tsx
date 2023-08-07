@@ -1,23 +1,17 @@
-import {
-  Text,
-  Box,
-  Container,
-  Flex,
-  Heading,
-  Menu,
-  MenuItem,
-  MenuList,
-  Spacer,
-  Stack,
-  Tag,
-  MenuDivider,
-  HStack,
-  Badge,
-} from '@chakra-ui/react'
+import { Spacer } from '@chakra-ui/react'
 import { json, type LoaderArgs } from '@remix-run/node'
-import { Outlet, useLoaderData, Link } from '@remix-run/react'
+import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import { AppProfileMenuButton } from '~/app/components'
+import {
+  Badge,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  Heading,
+  HStack,
+} from '~/app/components/ui'
 import { getAdminUser } from '~/app/features/auth/services/user-session.server'
-import { AppLink, AppProfileMenuButton } from '~/app/components'
 
 export const loader = async ({ request }: LoaderArgs) => {
   const adminUser = await getAdminUser(request)
@@ -28,54 +22,47 @@ const AdminIndex = () => {
   const { adminUser } = useLoaderData<typeof loader>()
 
   return (
-    <Box display="grid" gridTemplateRows="auto 1fr auto" height="100vh" color="gray.600">
-      <Flex alignItems="center" bgColor="white" px="4" py="1">
-        <Heading fontSize="3xl">
-          <AppLink to="/admin">UpFlow Admin</AppLink>
+    <div className="grid h-screen grid-rows-[auto_1fr_auto]">
+      <div className="flex items-center px-4 py-1">
+        <Heading>
+          <Link to="/admin">UpFlow Admin</Link>
         </Heading>
 
+        <Badge className="ml-2">Admin</Badge>
+
         <Spacer />
-        <Stack direction="row" align="center">
-          <Tag colorScheme="red" size="sm">
-            Admin
-          </Tag>
 
-          <Menu>
-            <AppProfileMenuButton name={adminUser.displayName} pictureUrl={adminUser.pictureUrl ?? undefined} />
-            <MenuList>
-              <MenuItem display="block">
-                <HStack>
-                  <Box>
-                    <Text fontSize="sm">{adminUser.displayName}</Text>
-                    <Text fontSize="xs">{adminUser.email}</Text>
-                  </Box>
-                  <Spacer />
-                  <Badge colorScheme={adminUser.role === 'admin' ? 'red' : 'blue'}>{adminUser.role}</Badge>
-                </HStack>
-              </MenuItem>
-              <MenuDivider />
-              <MenuItem as={Link} to="/">
-                ユーザー画面
-              </MenuItem>
-              <MenuDivider />
-              <MenuItem as={Link} to="/logout">
-                ログアウト
-              </MenuItem>
-            </MenuList>
-          </Menu>
-        </Stack>
-      </Flex>
+        <DropdownMenu>
+          <AppProfileMenuButton name={adminUser.displayName} pictureUrl={adminUser.pictureUrl ?? undefined} />
+          <DropdownMenuContent>
+            <DropdownMenuItem>
+              <HStack>
+                <div>
+                  <p className="text-sm">{adminUser.displayName}</p>
+                  <p className="text-xs text-gray-500">{adminUser.email}</p>
+                </div>
+                <Spacer />
+                <Badge>{adminUser.role}</Badge>
+              </HStack>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/">ユーザー画面</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/logout">ログアウト</Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-      <Box as="main" bgColor="gray.200">
-        <Container p="4" maxWidth="container.xl">
-          <Outlet />
-        </Container>
-      </Box>
+      <main className="container bg-gray-200 py-2">
+        <Outlet />
+      </main>
 
-      <Box as="footer" textAlign="center" p="4" boxShadow="md">
-        Copyright&copy; TechTalk Inc.
-      </Box>
-    </Box>
+      <footer className="p-4 text-center shadow">Copyright&copy; TechTalk Inc.</footer>
+    </div>
   )
 }
 export default AdminIndex

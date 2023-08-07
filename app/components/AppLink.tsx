@@ -1,11 +1,6 @@
-import type { LinkProps as ChakraLinkProps } from '@chakra-ui/react'
-import { Link as ChakraLink } from '@chakra-ui/react'
-import type { LinkProps as RemixLinkProps } from '@remix-run/react'
-import { Link as RemixLink } from '@remix-run/react'
-import React from 'react'
+import { Link, type LinkProps } from '@remix-run/react'
 
-const AppLink = React.forwardRef((props: Omit<RemixLinkProps, 'color'> & ChakraLinkProps, ref) => (
-  <ChakraLink as={RemixLink} _hover={{ textDecoration: 'none' }} {...props} ref={ref} />
-))
+const AppLink = ({ children, ...rest }: LinkProps) => <Link {...rest}>{children}</Link>
 AppLink.displayName = 'AppLink'
+
 export { AppLink }

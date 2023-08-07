@@ -1,17 +1,16 @@
-import { Button, type ButtonProps } from '@chakra-ui/react'
 import { useFetcher } from '@remix-run/react'
 import React from 'react'
+import { Button, type ButtonProps } from '~/app/components/ui'
 
 interface LogoutButtonProps extends ButtonProps {
   children?: React.ReactNode
 }
 export const LogoutButton = ({ children, ...rest }: LogoutButtonProps) => {
   const fetcher = useFetcher()
-  const isLoading = fetcher.state !== 'idle'
 
   return (
     <fetcher.Form method="post" action="/logout">
-      <Button type="submit" colorScheme="teal" variant="outline" isLoading={isLoading} {...rest}>
+      <Button type="submit" variant="outline" {...rest}>
         {children ? children : 'ログアウト'}
       </Button>
     </fetcher.Form>
