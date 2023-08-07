@@ -1,68 +1,101 @@
-import { Box, Button, FormLabel, Input, Stack, Textarea } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node'
-import { Form, useLoaderData } from '@remix-run/react'
-import { redirect } from '@remix-run/node'
-import invariant from 'tiny-invariant'
-import { zfd } from 'zod-form-data'
-import { AppLink, AppMutationModal } from '~/app/components'
-import { upsertExportSetting, getExportSetting } from '~/app/models/admin/export-setting.server'
+import { conform, useForm } from '@conform-to/react'
+import { parse } from '@conform-to/zod'
+import { json, redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { Form, Link, useLoaderData } from '@remix-run/react'
+import { z } from 'zod'
+import { zx } from 'zodix'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Input,
+  Label,
+  Stack,
+  Textarea,
+} from '~/app/components/ui'
+import { getExportSetting, upsertExportSetting } from '~/app/models/admin/export-setting.server'
 
-const schema = zfd.formData({
-  sheetId: zfd.text(),
-  clientEmail: zfd.text(),
-  privateKey: zfd.text(),
+const schema = z.object({
+  sheetId: z.string().nonempty(),
+  clientEmail: z.string().email().nonempty(),
+  privateKey: z.string().nonempty(),
 })
 
 export const loader = async ({ params }: LoaderArgs) => {
-  invariant(params.companyId, 'company id should specified')
-  const exportSetting = await getExportSetting(params.companyId)
-  return exportSetting
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const exportSetting = await getExportSetting(companyId)
+  return json({ exportSetting })
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id should specified')
-  const formData = await request.formData()
-  const { sheetId, clientEmail, privateKey } = schema.parse(formData)
-  await upsertExportSetting({ companyId: params.companyId, sheetId, clientEmail, privateKey })
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const submission = parse(await request.formData(), { schema })
+  if (!submission.value) {
+    throw new Error('Invalid form data')
+  }
+  const { sheetId, clientEmail, privateKey } = submission.value
+  await upsertExportSetting({ companyId, sheetId, clientEmail, privateKey })
   return redirect(`/admin/${params.companyId}`)
 }
 
 const ExportSetting = () => {
-  const exportSetting = useLoaderData<typeof loader>()
+  const { exportSetting } = useLoaderData<typeof loader>()
+
+  const [form, { sheetId, clientEmail, privateKey }] = useForm({
+    id: 'export-setting-form',
+    onValidate({ formData }) {
+      return parse(formData, { schema })
+    },
+    defaultValue: {
+      sheetId: exportSetting?.sheetId,
+      clientEmail: exportSetting?.clientEmail,
+      privateKey: exportSetting?.privateKey,
+    },
+  })
 
   return (
-    <AppMutationModal
-      title="Export Setting"
-      footer={
-        <Stack direction="row">
-          <Button colorScheme="blue" type="submit" form="form">
+    <Card>
+      <CardHeader>
+        <CardTitle>Export Settings</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form method="POST" {...form.props}>
+          <Stack>
+            <fieldset>
+              <Label htmlFor={sheetId.id}>Sheet Id</Label>
+              <Input {...conform.input(sheetId)}></Input>
+              <div className="text-destructive">{sheetId.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={clientEmail.id}>Client Email</Label>
+              <Input {...conform.input(clientEmail)}></Input>
+              <div className="text-destructive">{clientEmail.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={privateKey.id}>Private Key</Label>
+              <Textarea {...conform.input(privateKey)}></Textarea>
+              <div className="text-destructive">{privateKey.error}</div>
+            </fieldset>
+          </Stack>
+        </Form>
+      </CardContent>
+      <CardFooter>
+        <HStack>
+          <Button type="submit" form={form.id}>
             Add
           </Button>
-          <Button as={AppLink} to=".." variant="ghost">
-            Cancel
+          <Button variant="ghost" asChild>
+            <Link to="..">Cancel</Link>
           </Button>
-        </Stack>
-      }
-    >
-      <Form method="post" id="form">
-        <Box display="grid" gridTemplateColumns="auto 1fr" gap="4" alignItems="center">
-          <FormLabel m="0" htmlFor="sheetId">
-            Sheet Id
-          </FormLabel>
-          <Input name="sheetId" id="sheetId" defaultValue={exportSetting?.sheetId}></Input>
-
-          <FormLabel m="0" htmlFor="clientEmail">
-            Client Email
-          </FormLabel>
-          <Input name="clientEmail" id="clientEmail" defaultValue={exportSetting?.clientEmail}></Input>
-
-          <FormLabel m="0" htmlFor="privateKey">
-            Private Key
-          </FormLabel>
-          <Textarea name="privateKey" id="privateKey" defaultValue={exportSetting?.privateKey}></Textarea>
-        </Box>
-      </Form>
-    </AppMutationModal>
+        </HStack>
+      </CardFooter>
+    </Card>
   )
 }
 export default ExportSetting
