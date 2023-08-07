@@ -27,7 +27,7 @@ const schema = z.object({
   token: z.string().min(1, { message: 'token is required' }),
 })
 
-export const loader = async ({ request, params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const integration = await getIntegration(companyId)
   if (integration) {
@@ -51,7 +51,7 @@ export const action = async ({ request, params }: ActionArgs) => {
   return redirect('..')
 }
 
-const AddIntegrationModal = () => {
+const AddIntegrationPage = () => {
   const [form, { provider, method, token }] = useForm({
     id: 'add-integration-form',
     onValidate({ form, formData }) {
@@ -128,4 +128,5 @@ const AddIntegrationModal = () => {
     </Card>
   )
 }
-export default AddIntegrationModal
+AddIntegrationPage.displayName = 'AddIntegrationPage'
+export default AddIntegrationPage
