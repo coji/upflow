@@ -17,6 +17,12 @@ dependencies:
   '@chakra-ui/system':
     specifier: 2.6.0
     version: 2.6.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(react@18.2.0)
+  '@conform-to/react':
+    specifier: 0.7.4
+    version: 0.7.4(react@18.2.0)
+  '@conform-to/zod':
+    specifier: 0.7.4
+    version: 0.7.4(@conform-to/dom@0.7.4)(zod@3.21.4)
   '@emotion/cache':
     specifier: 11.11.0
     version: 11.11.0
@@ -2803,6 +2809,29 @@ packages:
     dependencies:
       '@chakra-ui/system': 2.6.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(react@18.2.0)
       react: 18.2.0
+    dev: false
+
+  /@conform-to/dom@0.7.4:
+    resolution: {integrity: sha512-Cct89jWhJA+hfCth+9mphnwBVmFRx5caHtQp+0f+iK/UQKYgYMaK15JqtfNV8aHHXlrpWcSJ99x6iUgwYVQaLA==}
+    dev: false
+
+  /@conform-to/react@0.7.4(react@18.2.0):
+    resolution: {integrity: sha512-r3HNOIW3GBBjHWIvqoalKxAoTtQFiphVClYtdLBblEgxnStRjEaIkEP+JfktlEulYiVqL+935e9CV7U2v/Uxzw==}
+    peerDependencies:
+      react: '>=16.8'
+    dependencies:
+      '@conform-to/dom': 0.7.4
+      react: 18.2.0
+    dev: false
+
+  /@conform-to/zod@0.7.4(@conform-to/dom@0.7.4)(zod@3.21.4):
+    resolution: {integrity: sha512-CFdbx/5rreymbBjSfmO9p0QBQ2toGXyTGuV3Cmam1eX/XGSSQyUU4fT0NNoutQ/CHIMeqKRVc5bzv7f46XbspQ==}
+    peerDependencies:
+      '@conform-to/dom': 0.7.4
+      zod: ^3.21.0
+    dependencies:
+      '@conform-to/dom': 0.7.4
+      zod: 3.21.4
     dev: false
 
   /@emotion/babel-plugin@11.11.0:

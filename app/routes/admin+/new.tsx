@@ -1,45 +1,52 @@
-import type { ActionArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { withZod } from '@remix-validated-form/with-zod'
-import { ValidatedForm, validationError } from 'remix-validated-form'
+import { conform, useForm } from '@conform-to/react'
+import { parse } from '@conform-to/zod'
+import { json, redirect, type ActionArgs } from '@remix-run/node'
+import { Form } from '@remix-run/react'
 import { z } from 'zod'
-import { AppMutationModal, AppInput, AppSubmitButton } from '~/app/components'
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label } from '~/app/components/ui'
 import { createCompany } from '~/app/models/admin/company.server'
 
-export const validator = withZod(
-  z.object({
-    name: z.string().min(1, { message: 'Company name is required' }),
-  }),
-)
+export const schema = z.object({
+  name: z.string().min(1, { message: 'Company name is required' }),
+})
 
 export const action = async ({ request }: ActionArgs) => {
-  console.log(action, request)
-  const result = await validator.validate(await request.formData())
-  if (result.error) {
-    return validationError(result.error)
+  const submission = await parse(await request.formData(), { schema })
+  if (!submission.value) {
+    return json({ error: submission.error })
   }
-  const company = await createCompany(result.data.name)
+  const company = await createCompany(submission.value.name)
   if (!company) {
-    console.log('create company failure')
-    return null
+    throw new Error('Failed to create company')
   }
   return redirect(`/admin/${company.id}`)
 }
 
 const CompanyNewPage = () => {
+  const [form, { name }] = useForm({
+    onValidate({ form, formData }) {
+      return parse(formData, { schema })
+    },
+    id: 'company-new-form',
+  })
   return (
-    <AppMutationModal
-      title="Create a company"
-      footer={
-        <AppSubmitButton form="company-new-form" colorScheme="blue">
+    <Card>
+      <CardHeader>
+        <CardTitle>Create a new company</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form method="POST" {...form.props}>
+          <Label htmlFor={name.id}>Company name</Label>
+          <Input autoFocus {...conform.input(name)} />
+          <div className="text-destructive">{name.error}</div>
+        </Form>
+      </CardContent>
+      <CardFooter>
+        <Button type="submit" form={form.id}>
           Create
-        </AppSubmitButton>
-      }
-    >
-      <ValidatedForm method="post" validator={validator} noValidate autoComplete="false" id="company-new-form">
-        <AppInput name="name" label="Name" autoFocus />
-      </ValidatedForm>
-    </AppMutationModal>
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
 export default CompanyNewPage
