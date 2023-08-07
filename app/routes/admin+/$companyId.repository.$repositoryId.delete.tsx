@@ -1,59 +1,53 @@
-import { Box, Button, FormLabel, GridItem, Stack } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { Form, useLoaderData } from '@remix-run/react'
-import invariant from 'tiny-invariant'
-import { AppLink, AppMutationModal, AppProviderBadge } from '~/app/components'
+import { json, redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { Form, Link, useLoaderData } from '@remix-run/react'
+import { z } from 'zod'
+import { zx } from 'zodix'
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, Input, Label } from '~/app/components/ui'
 import { deleteRepository, getRepository } from '~/app/models/admin/repository.server'
 
-export const loader = async ({ request, params }: LoaderArgs) => {
-  invariant(params.repositoryId, 'company id should specified')
-  const repository = getRepository(params.repositoryId)
+export const loader = async ({ params }: LoaderArgs) => {
+  const { repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  const repository = await getRepository(repositoryId)
   if (!repository) {
     throw new Error('repository not found')
   }
-  return repository
+  if (!repository.integration) {
+    throw new Error('repository.integration not found')
+  }
+  return json({ repository })
 }
 
-export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.repositoryId, 'repository id should specified')
-  const repository = await deleteRepository(params.repositoryId)
-  if (repository) {
-    return redirect(`/admin/${params.companyId}`)
-  }
-  return null
+export const action = async ({ params }: ActionArgs) => {
+  const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  await deleteRepository(repositoryId)
+  return redirect(`/admin/${companyId}`)
 }
 
 const AddRepositoryModal = () => {
-  const repository = useLoaderData<typeof loader>()
-  if (!repository) {
-    return <Box>repository not found</Box>
-  }
+  const { repository } = useLoaderData<typeof loader>()
 
   return (
-    <AppMutationModal
-      title="Remove repository"
-      footer={
-        <Stack direction="row">
-          <Button colorScheme="red" type="submit" form="form">
+    <Card>
+      <CardHeader>
+        <CardTitle>Delete repository</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form method="POST">
+          <Label>Name</Label>
+          <Input readOnly disabled defaultValue={repository.name} />
+        </Form>
+      </CardContent>
+      <CardFooter>
+        <HStack>
+          <Button variant="destructive" type="submit">
             Delete
           </Button>
-          <AppLink to="..">
-            <Button variant="ghost">Cancel</Button>
-          </AppLink>
-        </Stack>
-      }
-    >
-      <Form method="post" id="form">
-        <Box display="grid" gridTemplateColumns="auto 1fr" gap="4" alignItems="center">
-          <GridItem colSpan={2}>
-            <AppProviderBadge provider={repository.provider} />
-          </GridItem>
-          <FormLabel>Name</FormLabel>
-          <Box>{repository.name}</Box>
-        </Box>
-      </Form>
-    </AppMutationModal>
+          <Button asChild variant="ghost">
+            <Link to="..">Cancel</Link>
+          </Button>
+        </HStack>
+      </CardFooter>
+    </Card>
   )
 }
 export default AddRepositoryModal
