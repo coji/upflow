@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   Heading,
   HStack,
@@ -25,7 +26,7 @@ const AdminIndex = () => {
     <div className="grid h-screen grid-rows-[auto_1fr_auto]">
       <div className="flex items-center px-4 py-1">
         <Heading>
-          <Link to="/admin">UpFlow Admin</Link>
+          <Link to="/admin">UpFlow</Link>
         </Heading>
 
         <Badge className="ml-2">Admin</Badge>
@@ -35,7 +36,7 @@ const AdminIndex = () => {
         <DropdownMenu>
           <AppProfileMenuButton name={adminUser.displayName} pictureUrl={adminUser.pictureUrl ?? undefined} />
           <DropdownMenuContent>
-            <DropdownMenuItem>
+            <DropdownMenuLabel>
               <HStack>
                 <div>
                   <p className="text-sm">{adminUser.displayName}</p>
@@ -44,7 +45,7 @@ const AdminIndex = () => {
                 <Spacer />
                 <Badge>{adminUser.role}</Badge>
               </HStack>
-            </DropdownMenuItem>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/">ユーザー画面</Link>

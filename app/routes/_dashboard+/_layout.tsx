@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   HStack,
   Heading,
@@ -38,16 +39,16 @@ export default function IndexPage() {
           <DropdownMenu>
             <AppProfileMenuButton name={user.displayName} pictureUrl={user.pictureUrl ?? undefined} />
             <DropdownMenuContent>
-              <DropdownMenuItem>
+              <DropdownMenuLabel>
                 <HStack>
                   <div>
                     <p className="text-sm">{user.displayName}</p>
-                    <p className="text-xs">{user.email}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <Spacer />
                   <Badge>{user.role}</Badge>
                 </HStack>
-              </DropdownMenuItem>
+              </DropdownMenuLabel>
               {user.role === 'admin' && (
                 <>
                   <DropdownMenuSeparator />
