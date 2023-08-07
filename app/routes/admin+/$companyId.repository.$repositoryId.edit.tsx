@@ -1,11 +1,10 @@
-import { Box, Button, FormLabel, GridItem, Stack, Input } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { Form, useLoaderData } from '@remix-run/react'
+import { redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { Form, Link, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
-import { AppLink, AppMutationModal, AppProviderBadge } from '~/app/components'
-import { updateRepository, getRepository } from '~/app/models/admin/repository.server'
 import { match } from 'ts-pattern'
+import { AppProviderBadge } from '~/app/components'
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label, Stack } from '~/app/components/ui'
+import { getRepository, updateRepository } from '~/app/models/admin/repository.server'
 
 export const loader = async ({ request, params }: LoaderArgs) => {
   invariant(params.repositoryId, 'company id should specified')
@@ -30,71 +29,66 @@ export const action = async ({ request, params }: ActionArgs) => {
 const EditRepositoryModal = () => {
   const repository = useLoaderData<typeof loader>()
   if (!repository) {
-    return <Box>repository not found</Box>
+    return <div>repository not found</div>
   }
 
   return (
-    <AppMutationModal
-      title="Remove repository"
-      footer={
+    <Card>
+      <CardHeader>
+        <CardTitle>Edit Repository</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form method="POST" id="repository-edit-form">
+          <div className="grid grid-cols-[auto_1fr] items-center gap-4">
+            <div className="col-span-2">
+              <AppProviderBadge provider={repository.integration.provider} />
+            </div>
+
+            {match(repository.integration.provider)
+              .with('github', () => (
+                <>
+                  <Label htmlFor="owner">Owner</Label>
+                  <Input name="owner" id="owner" defaultValue={repository.owner ?? ''} />
+
+                  <Label htmlFor="repo">Repo</Label>
+                  <Input name="repo" id="repo" defaultValue={repository.repo ?? ''} />
+                </>
+              ))
+              .with('gitlab', () => (
+                <>
+                  <Label htmlFor="projectId">ProjectID</Label>
+                  <Input name="projectId" id="projectId" autoFocus defaultValue={repository.projectId ?? ''} />
+                </>
+              ))
+              .otherwise(() => (
+                <></>
+              ))}
+
+            <Label htmlFor="releaseDetectionMethod">Release Detection Method</Label>
+            <Input
+              name="releaseDetectionMethod"
+              id="releaseDetectionMethod"
+              defaultValue={repository.releaseDetectionMethod}
+            />
+
+            <Label htmlFor="releaseDetectionKey">Release Detection Key</Label>
+            <Input name="releaseDetectionKey" id="releaseDetectionKey" defaultValue={repository.releaseDetectionKey} />
+          </div>
+        </Form>
+      </CardContent>
+      <CardFooter>
         <Stack direction="row">
-          <Button colorScheme="blue" type="submit" form="form">
+          <Button type="submit" form="repository-edit-form">
             Update
           </Button>
-          <Button as={AppLink} to=".." variant="ghost">
-            Cancel
+          <Button asChild variant="ghost">
+            <Link to=".." preventScrollReset>
+              Cancel
+            </Link>
           </Button>
         </Stack>
-      }
-    >
-      <Form method="post" id="form">
-        <Box display="grid" gridTemplateColumns="auto 1fr" gap="4" alignItems="center">
-          <GridItem colSpan={2}>
-            <AppProviderBadge provider={repository.integration.provider} />
-          </GridItem>
-
-          {match(repository.integration.provider)
-            .with('github', () => (
-              <>
-                <FormLabel m="0" htmlFor="owner">
-                  Owner
-                </FormLabel>
-                <Input name="owner" id="owner" defaultValue={repository.owner ?? ''} />
-
-                <FormLabel m="0" htmlFor="repo">
-                  Repo
-                </FormLabel>
-                <Input name="repo" id="repo" defaultValue={repository.repo ?? ''} />
-              </>
-            ))
-            .with('gitlab', () => (
-              <>
-                <FormLabel m="0" htmlFor="projectId">
-                  ProjectID
-                </FormLabel>
-                <Input name="projectId" id="projectId" autoFocus defaultValue={repository.projectId ?? ''} />
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-
-          <FormLabel m="0" htmlFor="releaseDetectionMethod">
-            Release Detection Method
-          </FormLabel>
-          <Input
-            name="releaseDetectionMethod"
-            id="releaseDetectionMethod"
-            defaultValue={repository.releaseDetectionMethod}
-          />
-
-          <FormLabel m="0" htmlFor="releaseDetectionKey">
-            Release Detection Key
-          </FormLabel>
-          <Input name="releaseDetectionKey" id="releaseDetectionKey" defaultValue={repository.releaseDetectionKey} />
-        </Box>
-      </Form>
-    </AppMutationModal>
+      </CardFooter>
+    </Card>
   )
 }
 export default EditRepositoryModal

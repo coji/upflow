@@ -1,4 +1,4 @@
-import { SettingsIcon } from '@chakra-ui/icons'
+import { ExternalLinkIcon, GearIcon } from '@radix-ui/react-icons'
 import type { LoaderArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  HStack,
   Heading,
   Spacer,
   Stack,
@@ -39,7 +40,7 @@ const CompanyPage = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="outline">
-                <SettingsIcon />
+                <GearIcon />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -74,30 +75,39 @@ const CompanyPage = () => {
         </Button>
       )}
 
-      {company.repositories.map((repo) => {
-        const repoUrl = match(repo.provider)
-          .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
-          .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
-          .otherwise(() => '')
-        return (
-          <Stack direction="row" key={repo.id}>
-            <div>
-              <Link to={repoUrl} target="_blank">
-                {repo.name}
-              </Link>{' '}
-              {repo.releaseDetectionKey}
-            </div>
+      <Stack>
+        {company.repositories.map((repo) => {
+          const repoUrl = match(repo.provider)
+            .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
+            .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
+            .otherwise(() => '')
+          return (
+            <HStack key={repo.id}>
+              <Link to={`repository/${repo.id}/edit`} preventScrollReset>
+                <span className="underline decoration-border hover:bg-accent">
+                  {repo.name}
+                  {repo.releaseDetectionKey}
+                </span>
+              </Link>
 
-            <Button asChild size="xs">
-              <Link to={`repository/${repo.id}/edit`}>Edit</Link>
-            </Button>
+              <Button asChild size="xs" variant="outline">
+                <Link to={repoUrl} target="_blank">
+                  Repo <ExternalLinkIcon />
+                </Link>
+              </Button>
 
-            <Button asChild size="xs">
-              <Link to={`repository/${repo.id}/delete`}>Delete</Link>
-            </Button>
-          </Stack>
-        )
-      })}
+              <Button
+                asChild
+                size="xs"
+                variant="outline"
+                className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <Link to={`repository/${repo.id}/delete`}>Delete</Link>
+              </Button>
+            </HStack>
+          )
+        })}
+      </Stack>
 
       {company.integration && (
         <Button asChild>

@@ -29,11 +29,13 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
   return (
     <div className="grid h-screen grid-rows-[auto_1fr_auto]">
       <div className="flex items-center px-4 py-1">
-        <Heading>
-          <Link to="/admin">UpFlow</Link>
-        </Heading>
+        <HStack>
+          <Heading>
+            <Link to="/admin">UpFlow</Link>
+          </Heading>
 
-        {isAdmin && <Badge className="ml-2">Admin</Badge>}
+          {isAdmin && <Badge variant="destructive">Admin</Badge>}
+        </HStack>
 
         <Spacer />
 
