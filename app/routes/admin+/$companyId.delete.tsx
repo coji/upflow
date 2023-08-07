@@ -1,16 +1,15 @@
-import { Box, Button, FormLabel, Input, Stack } from '@chakra-ui/react'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { Form, useLoaderData } from '@remix-run/react'
+import { redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { Form, Link, useLoaderData } from '@remix-run/react'
 import { useState } from 'react'
-import invariant from 'tiny-invariant'
-import { AppLink, AppMutationModal } from '~/app/components'
+import { z } from 'zod'
+import { zx } from 'zodix'
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label, Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import { deleteCompany, getCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
-  invariant(params.companyId, 'companyId shout specified')
-  const company = await getCompany(params.companyId)
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const company = await getCompany(companyId)
   if (!company) {
     throw new Response('No company', { status: 404 })
   }
@@ -18,60 +17,63 @@ export const loader = async ({ params }: LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'companyId should specified')
-  const company = await deleteCompany(params.companyId)
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const company = await deleteCompany(companyId)
   if (company) {
     return redirect('/admin')
   }
   return null
 }
 
-const CompanyDelete = () => {
+const CompanyDeletePage = () => {
   const company = useLoaderData<typeof loader>()
   const [isEnabled, setIsEnabled] = useState(false)
 
   return (
-    <AppMutationModal
-      title="Delete a company"
-      footer={
-        <Stack direction="row" justify="center">
-          <Button type="submit" colorScheme="red" disabled={!isEnabled} form="form">
+    <Card>
+      <CardHeader>
+        <CardTitle>Delete a company</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Stack>
+          <div className="grid grid-cols-[auto_1fr] items-baseline gap-2 gap-y-4">
+            <Label>ID</Label>
+            <div> {company.id}</div>
+
+            <Label>Name</Label>
+            <div> {company.name}</div>
+
+            <Label>Updated At</Label>
+            <div> {dayjs(company.updatedAt).fromNow()}</div>
+
+            <Label>Created At</Label>
+            <div> {dayjs(company.createdAt).fromNow()}</div>
+          </div>
+
+          <Form method="POST" id="conform-form">
+            <Input
+              id="confirm"
+              onChange={(event) => {
+                setIsEnabled(event.target.value === 'delete this company')
+              }}
+              placeholder="type 'delete this company' here"
+            />
+          </Form>
+        </Stack>
+      </CardContent>
+      <CardFooter>
+        <Stack direction="row">
+          <Button type="submit" disabled={!isEnabled} form="conform-form" variant="destructive">
             DELETE
           </Button>
 
-          <Button as={AppLink} to=".." variant="ghost">
-            Cancel
+          <Button asChild variant="ghost">
+            <Link to="..">Cancel</Link>
           </Button>
         </Stack>
-      }
-    >
-      <Stack>
-        <Box display="grid" gridTemplateColumns="auto 1fr" gap="2" alignItems="baseline">
-          <FormLabel>ID</FormLabel>
-          <Box py="1"> {company.id}</Box>
-
-          <FormLabel>Name</FormLabel>
-          <Box py="1"> {company.name}</Box>
-
-          <FormLabel>Updated At</FormLabel>
-          <Box py="1"> {dayjs(company.updatedAt).fromNow()}</Box>
-
-          <FormLabel>Created At</FormLabel>
-          <Box py="1"> {dayjs(company.createdAt).fromNow()}</Box>
-        </Box>
-
-        <Form method="post" id="form">
-          <FormLabel htmlFor="confirm">Confirm</FormLabel>
-          <Input
-            id="confirm"
-            onChange={(event) => {
-              setIsEnabled(event.target.value === 'delete this company')
-            }}
-            placeholder="type 'delete this company' here"
-          ></Input>
-        </Form>
-      </Stack>
-    </AppMutationModal>
+      </CardFooter>
+    </Card>
   )
 }
-export default CompanyDelete
+CompanyDeletePage.displayName = 'CompanyDeletePage'
+export default CompanyDeletePage
