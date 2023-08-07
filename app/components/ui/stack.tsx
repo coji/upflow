@@ -3,12 +3,12 @@ import { cva } from 'class-variance-authority'
 import * as React from 'react'
 import { cn } from '~/app/libs/utils'
 
-const stackVariants = cva('flex', {
+const stackVariants = cva('flex items-center', {
   variants: {
     direction: {
       column: 'flex-col',
       'column-reverse': 'flex-col-reverse',
-      row: 'flex-row items-center',
+      row: 'flex-row',
       'row-reverse': 'flex-row-reverse',
     },
     gap: {
