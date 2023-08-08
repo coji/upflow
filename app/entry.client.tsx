@@ -1,32 +1,13 @@
-import { CacheProvider } from '@emotion/react'
 import { RemixBrowser } from '@remix-run/react'
-import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { startTransition, StrictMode } from 'react'
 import { hydrateRoot } from 'react-dom/client'
-import { ClientStyleContext } from './utils/context'
-import createEmotionCache from './utils/createEmotionCache'
 
-interface ClientCacheProviderProps {
-  children: ReactNode
-}
-
-function ClientCacheProvider({ children }: ClientCacheProviderProps) {
-  const [cache, setCache] = useState(createEmotionCache())
-
-  function reset() {
-    setCache(createEmotionCache())
-  }
-
-  return (
-    <ClientStyleContext.Provider value={{ reset }}>
-      <CacheProvider value={cache}>{children}</CacheProvider>
-    </ClientStyleContext.Provider>
+startTransition(() => {
+  hydrateRoot(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    document.getElementById('root')!,
+    <StrictMode>
+      <RemixBrowser />
+    </StrictMode>,
   )
-}
-
-hydrateRoot(
-  document,
-  <ClientCacheProvider>
-    <RemixBrowser />
-  </ClientCacheProvider>,
-)
+})

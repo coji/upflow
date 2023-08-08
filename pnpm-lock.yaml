@@ -188,6 +188,9 @@ dependencies:
   got:
     specifier: 13.0.0
     version: 13.0.0
+  isbot:
+    specifier: 3.6.13
+    version: 3.6.13
   ky:
     specifier: 0.33.3
     version: 0.33.3
@@ -227,9 +230,9 @@ dependencies:
   remix-auth-oauth2:
     specifier: 1.8.0
     version: 1.8.0(@remix-run/server-runtime@1.19.2)(remix-auth@3.5.0)
-  remix-typedjson:
-    specifier: 0.1.7
-    version: 0.1.7(@remix-run/react@1.19.2)(@remix-run/server-runtime@1.19.2)(react@18.2.0)
+  remix-island:
+    specifier: 0.1.2
+    version: 0.1.2(@remix-run/react@1.19.2)(@remix-run/server-runtime@1.19.2)(react-dom@18.2.0)(react@18.2.0)
   remix-validated-form:
     specifier: 5.0.2
     version: 5.0.2(@remix-run/react@1.19.2)(@remix-run/server-runtime@1.19.2)(@types/react@18.2.18)(react@18.2.0)
@@ -9491,6 +9494,11 @@ packages:
     resolution: {integrity: sha512-xHjhDr3cNBK0BzdUJSPXZntQUx/mwMS5Rw4A7lPJ90XGAO6ISP/ePDNuo0vhqOZU+UD5JoodwCAAoZQd3FeAKw==}
     dev: true
 
+  /isbot@3.6.13:
+    resolution: {integrity: sha512-uoP4uK5Dc2CrabmK+Gue1jTL+scHiCc1c9rblRpJwG8CPxjLIv8jmGyyGRGkbPOweayhkskdZsEQXG6p+QCQrg==}
+    engines: {node: '>=12'}
+    dev: false
+
   /isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
@@ -11918,16 +11926,18 @@ packages:
       minimatch: 5.1.6
     dev: true
 
-  /remix-typedjson@0.1.7(@remix-run/react@1.19.2)(@remix-run/server-runtime@1.19.2)(react@18.2.0):
-    resolution: {integrity: sha512-h7WoKbKBGsVdZZp3s79U5SDrMvQ3We7BjGaSIPxchnJOTS3GUDat0kBoy/gh9TVKRf5KYCee+K1UlFAYQmLQsA==}
+  /remix-island@0.1.2(@remix-run/react@1.19.2)(@remix-run/server-runtime@1.19.2)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-1vXF56y7ZKb8caUduCKdkbxObAxZnTO+arQ94QlwKK6a7wVozGCfiOOk3lr919rm7cy54eeqOVI0hud3cfHlLg==}
     peerDependencies:
-      '@remix-run/react': ^1.6.5
-      '@remix-run/server-runtime': ^1.6.5
-      react: ^17.0.2 || ^18.0.0
+      '@remix-run/react': '>= 1'
+      '@remix-run/server-runtime': '>= 1'
+      react: '>= 16.8'
+      react-dom: '>= 16.8'
     dependencies:
       '@remix-run/react': 1.19.2(react-dom@18.2.0)(react@18.2.0)
       '@remix-run/server-runtime': 1.19.2
       react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
     dev: false
 
   /remix-validated-form@5.0.2(@remix-run/react@1.19.2)(@remix-run/server-runtime@1.19.2)(@types/react@18.2.18)(react@18.2.0):

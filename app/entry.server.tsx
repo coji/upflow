@@ -1,40 +1,119 @@
-import { CacheProvider } from '@emotion/react'
-import createEmotionServer from '@emotion/server/create-instance'
-import type { EntryContext } from '@remix-run/node'
+import { PassThrough } from 'stream'
+
+import type { AppLoadContext, EntryContext } from '@remix-run/node'
+import { Response } from '@remix-run/node'
 import { RemixServer } from '@remix-run/react'
-import { renderToString } from 'react-dom/server'
-import { ServerStyleContext } from './utils/context'
-import createEmotionCache from './utils/createEmotionCache'
+import isbot from 'isbot'
+import { renderToPipeableStream } from 'react-dom/server'
+import { renderHeadToString } from 'remix-island'
+import { Head } from './root'
+
+const ABORT_DELAY = 5_000
 
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
+  loadContext: AppLoadContext,
 ) {
-  const cache = createEmotionCache()
-  const { extractCriticalToChunks } = createEmotionServer(cache)
+  return isbot(request.headers.get('user-agent'))
+    ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext)
+    : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext)
+}
 
-  const html = renderToString(
-    <ServerStyleContext.Provider value={null}>
-      <CacheProvider value={cache}>
-        <RemixServer context={remixContext} url={request.url} />
-      </CacheProvider>
-    </ServerStyleContext.Provider>,
-  )
-  const chunks = extractCriticalToChunks(html)
-  const markup = renderToString(
-    <ServerStyleContext.Provider value={chunks.styles}>
-      <CacheProvider value={cache}>
-        <RemixServer context={remixContext} url={request.url} />
-      </CacheProvider>
-    </ServerStyleContext.Provider>,
-  )
+function handleBotRequest(
+  request: Request,
+  responseStatusCode: number,
+  responseHeaders: Headers,
+  remixContext: EntryContext,
+) {
+  return new Promise((resolve, reject) => {
+    let shellRendered = false
+    const { pipe, abort } = renderToPipeableStream(
+      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
+      {
+        onAllReady() {
+          shellRendered = true
+          const head = renderHeadToString({ request, remixContext, Head })
+          const body = new PassThrough()
 
-  responseHeaders.set('Content-Type', 'text/html')
+          responseHeaders.set('Content-Type', 'text/html')
 
-  return new Response('<!DOCTYPE html>' + markup, {
-    status: responseStatusCode,
-    headers: responseHeaders,
+          resolve(
+            new Response(body, {
+              headers: responseHeaders,
+              status: responseStatusCode,
+            }),
+          )
+
+          body.write(`<!DOCTYPE html><html><head>${head}</head><body><div id="root">`)
+          pipe(body)
+          body.write(`</div></body></html>`)
+        },
+        onShellError(error: unknown) {
+          reject(error)
+        },
+        onError(error: unknown) {
+          responseStatusCode = 500
+          // Log streaming rendering errors from inside the shell.  Don't log
+          // errors encountered during initial shell rendering since they'll
+          // reject and get logged in handleDocumentRequest.
+          if (shellRendered) {
+            console.error(error)
+          }
+        },
+      },
+    )
+
+    setTimeout(abort, ABORT_DELAY)
+  })
+}
+
+function handleBrowserRequest(
+  request: Request,
+  responseStatusCode: number,
+  responseHeaders: Headers,
+  remixContext: EntryContext,
+) {
+  return new Promise((resolve, reject) => {
+    let shellRendered = false
+    const { pipe, abort } = renderToPipeableStream(
+      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
+      {
+        onShellReady() {
+          shellRendered = true
+          const head = renderHeadToString({ request, remixContext, Head })
+          const body = new PassThrough()
+
+          responseHeaders.set('Content-Type', 'text/html')
+
+          resolve(
+            new Response(body, {
+              headers: responseHeaders,
+              status: responseStatusCode,
+            }),
+          )
+
+          body.write(`<!DOCTYPE html><html><head>${head}</head><body><div id="root">`)
+          pipe(body)
+          body.write(`</div></body></html>`)
+        },
+        onShellError(error: unknown) {
+          reject(error)
+        },
+        onError(error: unknown) {
+          responseStatusCode = 500
+          // Log streaming rendering errors from inside the shell.  Don't log
+          // errors encountered during initial shell rendering since they'll
+          // reject and get logged in handleDocumentRequest.
+          if (shellRendered) {
+            console.error(error)
+          }
+        },
+      },
+    )
+
+    setTimeout(abort, ABORT_DELAY)
   })
 }
