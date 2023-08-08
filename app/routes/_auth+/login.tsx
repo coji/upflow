@@ -1,11 +1,9 @@
-import { json, type LoaderArgs, type V2_MetaFunction } from '@remix-run/node'
+import { json, type LoaderArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
-import { AppAlert, AppCenterFormFrame } from '~/app/components'
+import { AppAlert, AppCenterFormFrame, AppLayout } from '~/app/components'
 import { Stack } from '~/app/components/ui'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
 import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
-
-export const meta: V2_MetaFunction = () => [{ title: 'Login - UpFlow' }]
 
 export const loader = async ({ request }: LoaderArgs) => {
   // 認証済みならトップページにリダイレクト
@@ -25,11 +23,11 @@ export default function LoginPage() {
   const { errorMessage } = useLoaderData<typeof loader>()
 
   return (
-    <div className="grid min-h-screen grid-rows-[1fr_auto] bg-gray-100">
+    <AppLayout>
       <AppCenterFormFrame title="UpFlow" subtitle="ログイン">
         <Stack>
           <GoogleLoginButton className="mt-8 w-full" variant="default">
-            Googleアカウントで登録 / ログイン
+            Googleアカウントで続ける
           </GoogleLoginButton>
 
           {errorMessage && (
@@ -40,8 +38,6 @@ export default function LoginPage() {
           )}
         </Stack>
       </AppCenterFormFrame>
-
-      <footer className="bg-background py-4 text-center">Copyright &copy; TechTalk Inc.</footer>
-    </div>
+    </AppLayout>
   )
 }

@@ -27,7 +27,7 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
   const isAdmin = location.pathname.startsWith('/admin')
 
   return (
-    <div className="grid h-screen grid-rows-[auto_1fr_auto]">
+    <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
       <div className="flex items-center px-4 py-1">
         <HStack>
           <Heading>
