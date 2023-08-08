@@ -1,12 +1,13 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
 import { json, redirect, type ActionArgs } from '@remix-run/node'
-import { Form } from '@remix-run/react'
+import { Form, Link } from '@remix-run/react'
 import { z } from 'zod'
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label } from '~/app/components/ui'
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, Input, Label } from '~/app/components/ui'
 import { createCompany } from '~/app/models/admin/company.server'
 
 export const schema = z.object({
+  id: z.string().min(1, { message: 'Company ID is required' }),
   name: z.string().min(1, { message: 'Company name is required' }),
 })
 
@@ -15,7 +16,7 @@ export const action = async ({ request }: ActionArgs) => {
   if (!submission.value) {
     return json({ error: submission.error })
   }
-  const company = await createCompany(submission.value.name)
+  const company = await createCompany(submission.value)
   if (!company) {
     throw new Error('Failed to create company')
   }
@@ -23,11 +24,11 @@ export const action = async ({ request }: ActionArgs) => {
 }
 
 const CompanyNewPage = () => {
-  const [form, { name }] = useForm({
-    onValidate({ form, formData }) {
+  const [form, { id, name }] = useForm({
+    onValidate({ formData }) {
       return parse(formData, { schema })
     },
-    id: 'company-new-form',
+    id: 'company-add-form',
   })
   return (
     <Card>
@@ -36,15 +37,29 @@ const CompanyNewPage = () => {
       </CardHeader>
       <CardContent>
         <Form method="POST" {...form.props}>
-          <Label htmlFor={name.id}>Company name</Label>
-          <Input autoFocus {...conform.input(name)} />
-          <div className="text-destructive">{name.error}</div>
+          <fieldset>
+            <Label htmlFor={id.id}>ID</Label>
+            <Input autoFocus {...conform.input(id)} />
+            <div className="text-destructive">{id.error}</div>
+          </fieldset>
+
+          <fieldset>
+            <Label htmlFor={name.id}>Company name</Label>
+            <Input autoFocus {...conform.input(name)} />
+            <div className="text-destructive">{name.error}</div>
+          </fieldset>
         </Form>
       </CardContent>
       <CardFooter>
-        <Button type="submit" form={form.id}>
-          Create
-        </Button>
+        <HStack>
+          <Button type="submit" form={form.id}>
+            Create
+          </Button>
+
+          <Button asChild type="button" variant="ghost">
+            <Link to="/admin">Cancel</Link>
+          </Button>
+        </HStack>
       </CardFooter>
     </Card>
   )

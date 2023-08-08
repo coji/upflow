@@ -23,6 +23,7 @@ export const updateCompany = async (companyId: string, company: Omit<Company, 'i
   })
 }
 
-export const createCompany = async (name: string) => prisma.company.create({ data: { name } })
+export const createCompany = async ({ id, name }: { id: Company['id']; name: Company['name'] }) =>
+  prisma.company.create({ data: { id, name } })
 
 export const deleteCompany = async (companyId: string) => prisma.company.delete({ where: { id: companyId } })

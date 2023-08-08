@@ -1,6 +1,6 @@
 import { ExternalLinkIcon, GearIcon } from '@radix-ui/react-icons'
 import { json, type LoaderArgs } from '@remix-run/node'
-import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import { Link, useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -113,8 +113,6 @@ const CompanyPage = () => {
           <Link to="add-repository">Add Repo</Link>
         </Button>
       )}
-
-      <Outlet />
     </Stack>
   )
 }

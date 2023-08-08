@@ -26,7 +26,7 @@ const AdminCompanyIndex = () => {
           ))}
 
           <Button asChild className="w-full" variant="ghost">
-            <Link to="new">
+            <Link to="add">
               <PlusCircledIcon className="mr-2" />
               新規作成
             </Link>

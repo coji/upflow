@@ -1,3 +1,4 @@
+import { useForm } from '@conform-to/react'
 import { json, redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
@@ -6,7 +7,7 @@ import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, I
 import { deleteRepository, getRepository } from '~/app/models/admin/repository.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
-  const { repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   const repository = await getRepository(repositoryId)
   if (!repository) {
     throw new Error('repository not found')
@@ -14,7 +15,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   if (!repository.integration) {
     throw new Error('repository.integration not found')
   }
-  return json({ repository })
+  return json({ companyId, repositoryId, repository })
 }
 
 export const action = async ({ params }: ActionArgs) => {
@@ -24,7 +25,8 @@ export const action = async ({ params }: ActionArgs) => {
 }
 
 const AddRepositoryModal = () => {
-  const { repository } = useLoaderData<typeof loader>()
+  const { companyId, repository } = useLoaderData<typeof loader>()
+  const [form] = useForm({ id: 'delete-repository-form' })
 
   return (
     <Card>
@@ -32,18 +34,18 @@ const AddRepositoryModal = () => {
         <CardTitle>Delete repository</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form method="POST">
+        <Form method="POST" {...form.props}>
           <Label>Name</Label>
           <Input readOnly disabled defaultValue={repository.name} />
         </Form>
       </CardContent>
       <CardFooter>
         <HStack>
-          <Button variant="destructive" type="submit">
+          <Button variant="destructive" type="submit" form={form.id}>
             Delete
           </Button>
           <Button asChild variant="ghost">
-            <Link to="..">Cancel</Link>
+            <Link to={`/admin/${companyId}`}>Cancel</Link>
           </Button>
         </HStack>
       </CardFooter>

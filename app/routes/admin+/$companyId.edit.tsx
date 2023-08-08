@@ -18,7 +18,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
   Stack,
@@ -32,7 +31,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   if (!company) {
     throw new Response('No company', { status: 404 })
   }
-  return company
+  return { companyId, company }
 }
 
 const schema = z.object({
@@ -56,7 +55,7 @@ export const action = async ({ request, params }: ActionArgs) => {
 }
 
 const EditCompany = () => {
-  const company = useLoaderData<typeof loader>()
+  const { companyId, company } = useLoaderData<typeof loader>()
 
   const [form, { isActive, name, releaseDetectionKey, releaseDetectionMethod }] = useForm({
     id: 'edit-company-form',
@@ -88,7 +87,6 @@ const EditCompany = () => {
                 </SelectTrigger>
                 <SelectContent {...conform.select(releaseDetectionMethod)}>
                   <SelectGroup>
-                    <SelectLabel>Release Detection Method</SelectLabel>
                     <SelectItem value="branch">Branch</SelectItem>
                     <SelectItem value="tags">Tags</SelectItem>
                   </SelectGroup>
@@ -120,7 +118,7 @@ const EditCompany = () => {
           </Button>
 
           <Button variant="ghost" asChild>
-            <Link to="..">Cancel</Link>
+            <Link to={`/admin/${companyId}`}>Cancel</Link>
           </Button>
         </Stack>
       </CardFooter>

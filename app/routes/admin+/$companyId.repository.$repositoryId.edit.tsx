@@ -6,7 +6,23 @@ import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppProviderBadge } from '~/app/components'
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label, Stack } from '~/app/components/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Stack,
+} from '~/app/components/ui'
 import { getRepository, updateRepository } from '~/app/models/admin/repository.server'
 
 const githubSchema = z.object({
@@ -25,7 +41,7 @@ const gitlabSchema = z.object({
 })
 
 export const loader = async ({ request, params }: LoaderArgs) => {
-  const { repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   const repository = await getRepository(repositoryId)
   if (!repository) {
     throw new Error('repository not found')
@@ -33,7 +49,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   if (!repository.integration) {
     throw new Error('repository.integration not found')
   }
-  return json({ repository, provider: repository.integration.provider })
+  return json({ companyId, repositoryId, repository, provider: repository.integration.provider })
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
@@ -77,7 +93,17 @@ const GithubRepositoryForm = ({
 
         <fieldset>
           <Label htmlFor={releaseDetectionMethod.id}>Release Detection Method</Label>
-          <Input {...conform.input(releaseDetectionMethod)} />
+          <Select name={releaseDetectionMethod.name} defaultValue={releaseDetectionMethod.defaultValue}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a method"></SelectValue>
+            </SelectTrigger>
+            <SelectContent {...conform.select(releaseDetectionMethod)}>
+              <SelectGroup>
+                <SelectItem value="branch">Branch</SelectItem>
+                <SelectItem value="tags">Tags</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <div className="text-destructive">{releaseDetectionMethod.error}</div>
         </fieldset>
 
@@ -117,8 +143,18 @@ const GitLabRepositoryForm = ({
         </fieldset>
 
         <fieldset>
-          <Label htmlFor="releaseDetectionMethod">Release Detection Method</Label>
-          <Input {...conform.input(releaseDetectionMethod)} />
+          <Label htmlFor={releaseDetectionMethod.id}>Release Detection Method</Label>
+          <Select name={releaseDetectionMethod.name} defaultValue={releaseDetectionMethod.defaultValue}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a method"></SelectValue>
+            </SelectTrigger>
+            <SelectContent {...conform.select(releaseDetectionMethod)}>
+              <SelectGroup>
+                <SelectItem value="branch">Branch</SelectItem>
+                <SelectItem value="tags">Tags</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <div className="text-destructive">{releaseDetectionMethod.error}</div>
         </fieldset>
 
@@ -133,7 +169,7 @@ const GitLabRepositoryForm = ({
 }
 
 const EditRepositoryModal = () => {
-  const { repository, provider } = useLoaderData<typeof loader>()
+  const { companyId, repository, provider } = useLoaderData<typeof loader>()
   const form = match(provider)
     .with('github', () => <GithubRepositoryForm repository={repository} />)
     .with('gitlab', () => <GitLabRepositoryForm repository={repository} />)
@@ -151,7 +187,7 @@ const EditRepositoryModal = () => {
             Update
           </Button>
           <Button asChild variant="ghost">
-            <Link to="..">Cancel</Link>
+            <Link to={`/admin/${companyId}`}>Cancel</Link>
           </Button>
         </Stack>
       </CardFooter>
