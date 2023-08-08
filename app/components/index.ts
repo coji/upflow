@@ -1,7 +1,6 @@
 export * from './AppAlert'
 export * from './AppCenterFormFrame'
 export * from './AppLayout'
-export * from './AppLink'
 export * from './AppMutationModal'
 export * from './AppProviderBadge'
 export * from './form/AppInput'

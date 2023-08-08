@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react'
-import { Box, Stack, Button, CircularProgress } from '@chakra-ui/react'
-import { AppMutationModal, AppLink } from '~/app/components'
-import { RepositoryList } from '../components/RepositoryList'
-import { useGithubRepoQuery } from './useGithubReposQuery'
-import type { GitRepo } from '../interfaces/model'
+import { Box, Button, CircularProgress, Stack } from '@chakra-ui/react'
 import type { Integration } from '@prisma/client'
+import { Link } from '@remix-run/react'
+import { useCallback, useState } from 'react'
+import { AppMutationModal } from '~/app/components'
+import { RepositoryList } from '../components/RepositoryList'
+import type { GitRepo } from '../interfaces/model'
+import { useGithubRepoQuery } from './useGithubReposQuery'
 
 interface useRepositoryAddModalProps {
   integration: Integration | null
@@ -42,7 +43,7 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
             Add
           </Button>
 
-          <Button as={AppLink} to=".." variant="ghost">
+          <Button as={Link} to=".." variant="ghost">
             Cancel
           </Button>
         </Stack>
