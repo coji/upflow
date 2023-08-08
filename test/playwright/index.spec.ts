@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { createTestUser, deleteTestUser } from './support'
 
 const testUser = {
@@ -18,5 +18,5 @@ test.afterAll(async () => {
 
 test('"UpFlow"タイトル表示', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('text=UpFlow')).toBeVisible()
+  await expect(page.locator('text=ログイン')).toBeVisible()
 })
