@@ -1,5 +1,5 @@
 import type { PullRequest } from '@prisma/client'
-import { prisma } from '~/app/utils/db.server'
+import { prisma } from '~/app/services/db.server'
 export type { PullRequest } from '@prisma/client'
 
 export function getPullRequestItems() {

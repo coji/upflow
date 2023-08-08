@@ -1,5 +1,5 @@
 import type { User } from '@prisma/client'
-import { prisma } from '~/app/utils/db.server'
+import { prisma } from '~/app/services/db.server'
 export type { User } from '@prisma/client'
 
 export async function getUserById(id: User['id']) {

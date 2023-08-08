@@ -1,4 +1,4 @@
-import { prisma } from '~/app/utils/db.server'
+import { prisma } from '~/app/services/db.server'
 export type { Company } from '@prisma/client'
 
 export const getCompaniesByUser = async (userId: string) =>

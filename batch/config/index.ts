@@ -1,4 +1,4 @@
-import { prisma } from '~/app/utils/db.server'
+import { prisma } from '~/app/services/db.server'
 
 export interface Config {
   companyId: string

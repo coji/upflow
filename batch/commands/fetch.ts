@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant'
-import { prisma } from '~/app/utils/db.server'
+import { prisma } from '~/app/services/db.server'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider'
 

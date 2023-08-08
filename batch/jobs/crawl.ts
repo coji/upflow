@@ -1,8 +1,8 @@
-import { prisma } from '~/app/utils/db.server'
-import { createProvider } from '../provider'
-import { logger } from '../helper/logger'
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
+import { prisma } from '~/app/services/db.server'
 import { exportPullsToSpreadsheet, exportReviewResponsesToSpreadsheet } from '../bizlogic/export-spreadsheet'
+import { logger } from '../helper/logger'
+import { createProvider } from '../provider'
 
 const options = { refresh: false, halt: false, delay: 800 }
 

@@ -1,8 +1,8 @@
 import invariant from 'tiny-invariant'
-import { prisma } from '~/app/utils/db.server'
+import { getPullRequestReport } from '~/app/models/pullRequest.server'
+import { prisma } from '~/app/services/db.server'
 import { allConfigs } from '../config'
 import { timeFormat } from '../helper/timeformat'
-import { getPullRequestReport } from '~/app/models/pullRequest.server'
 
 interface reportCommandProps {
   companyId?: string

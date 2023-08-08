@@ -1,8 +1,8 @@
 import invariant from 'tiny-invariant'
-import { prisma } from '~/app/utils/db.server'
+import { prisma } from '~/app/services/db.server'
+import { exportPullsToSpreadsheet, exportReviewResponsesToSpreadsheet } from '../bizlogic/export-spreadsheet'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider/index'
-import { exportPullsToSpreadsheet, exportReviewResponsesToSpreadsheet } from '../bizlogic/export-spreadsheet'
 
 interface UpsertCommandProps {
   companyId?: string
