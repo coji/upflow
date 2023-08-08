@@ -12,6 +12,7 @@ module.exports = {
   },
   serverModuleFormat: 'cjs',
   serverDependenciesToBundle: 'all',
+  watchPaths: ['tailwind.config.js', 'server.ts'],
   future: {
     v2_errorBoundary: true,
     v2_meta: true,

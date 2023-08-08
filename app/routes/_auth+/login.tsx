@@ -25,26 +25,24 @@ export default function LoginPage() {
   return (
     <AppLayout>
       <Center>
-        <div className="mx-2 w-full rounded bg-primary-foreground p-2 text-center shadow md:w-auto md:p-8">
+        <div className="rounded bg-primary-foreground px-16 py-8 text-center shadow md:w-auto">
           <Heading>
             <p className="text-2xl">UpFlow</p>
             <p className="text-sm font-normal">ログイン</p>
           </Heading>
 
-          <div className="mx-auto mt-4 w-full max-w-md px-2 pb-2 md:px-8 md:pb-8">
-            <Stack>
-              <GoogleLoginButton className="mt-8 w-full" variant="default">
-                Googleアカウントでログイン
-              </GoogleLoginButton>
+          <Stack>
+            <GoogleLoginButton className="mt-8 w-full" variant="default">
+              Googleでログイン
+            </GoogleLoginButton>
 
-              {errorMessage && (
-                <Alert>
-                  <AlertTitle>ログインができません</AlertTitle>
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-            </Stack>
-          </div>
+            {errorMessage && (
+              <Alert>
+                <AlertTitle>ログインができません</AlertTitle>
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+          </Stack>
         </div>
       </Center>
     </AppLayout>
