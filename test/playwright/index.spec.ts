@@ -18,5 +18,5 @@ test.afterAll(async () => {
 
 test('"UpFlow"タイトル表示', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('text=ログイン')).toBeVisible()
+  await expect(page.locator('text=Googleでログイン')).toBeVisible()
 })
