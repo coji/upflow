@@ -8,7 +8,7 @@ interface AppCenterFormFrameProps extends CenterProps {
 }
 export const AppCenterFormFrame = ({ title, subtitle, children, ...rest }: AppCenterFormFrameProps) => (
   <Center h="full" {...rest}>
-    <Box bgColor="white" p={{ base: '2', md: '8' }} width="container.sm" mx="2" rounded="md" boxShadow="md">
+    <Box bgColor="white" p={{ base: '2', md: '8' }} mx="2" rounded="md" boxShadow="md" w={{ base: 'full', md: 'auto' }}>
       <Heading fontSize="4xl" textAlign="center" color="blue.800" dropShadow="2xl">
         <Box>{title}</Box>
         <Box fontSize="md" fontWeight="normal">

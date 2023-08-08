@@ -2,18 +2,17 @@ import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import { withEmotionCache } from '@emotion/react'
 import type { LinksFunction, V2_MetaFunction } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
-import { useContext, useEffect } from 'react'
-import { ClientStyleContext, ServerStyleContext } from './utils/context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { useContext, useEffect } from 'react'
 import globalStyles from './globals.css'
+import { ClientStyleContext, ServerStyleContext } from './utils/context'
 
 export const meta: V2_MetaFunction = () => [
-  {
-    charset: 'utf-8',
-    title: 'UpFlow',
-    viewport: 'width=device-width,initial-scale=1',
-  },
+  { charSet: 'utf-8' },
+  { name: 'viewport', content: 'width=device-width,initial-scale=1' },
+  { title: 'UpFlow' },
+  { name: 'description', content: 'Cycletime metrics reports.' },
 ]
 
 export const links: LinksFunction = () => {

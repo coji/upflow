@@ -73,9 +73,21 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
         )}
       </div>
 
-      <main className="container bg-gray-200 py-2">{children}</main>
+      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 px-4 py-2">
+        <div className="container flex-1">{children}</div>
+      </main>
 
-      <footer className="p-4 text-center shadow">Copyright&copy; TechTalk Inc.</footer>
+      <footer className="p-2 text-center shadow">
+        Copyright&copy;{' '}
+        <a
+          href="https://www.techtalk.jp/"
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-primary hover:underline"
+        >
+          TechTalk Inc.
+        </a>
+      </footer>
     </div>
   )
 }
