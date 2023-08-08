@@ -3,7 +3,18 @@ import { parse } from '@conform-to/zod'
 import { json, redirect, type ActionArgs } from '@remix-run/node'
 import { Form, Link } from '@remix-run/react'
 import { z } from 'zod'
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, Input, Label } from '~/app/components/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Input,
+  Label,
+  Stack,
+} from '~/app/components/ui'
 import { createCompany } from '~/app/models/admin/company.server'
 
 export const schema = z.object({
@@ -37,17 +48,19 @@ const CompanyNewPage = () => {
       </CardHeader>
       <CardContent>
         <Form method="POST" {...form.props}>
-          <fieldset>
-            <Label htmlFor={id.id}>ID</Label>
-            <Input autoFocus {...conform.input(id)} />
-            <div className="text-destructive">{id.error}</div>
-          </fieldset>
+          <Stack>
+            <fieldset>
+              <Label htmlFor={id.id}>ID</Label>
+              <Input {...conform.input(id)} />
+              <div className="text-destructive">{id.error}</div>
+            </fieldset>
 
-          <fieldset>
-            <Label htmlFor={name.id}>Company name</Label>
-            <Input autoFocus {...conform.input(name)} />
-            <div className="text-destructive">{name.error}</div>
-          </fieldset>
+            <fieldset>
+              <Label htmlFor={name.id}>Company name</Label>
+              <Input {...conform.input(name)} />
+              <div className="text-destructive">{name.error}</div>
+            </fieldset>
+          </Stack>
         </Form>
       </CardContent>
       <CardFooter>

@@ -1,7 +1,7 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons'
 import type { LoaderArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
-import { Button, Heading, Stack } from '~/app/components/ui'
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from '~/app/components/ui'
 import { getCompanies } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -15,24 +15,26 @@ const AdminCompanyIndex = () => {
 
   return (
     <div className="grid grid-cols-[15rem_1fr] gap-4">
-      <div>
-        <Stack className="rounded bg-background p-4 shadow">
-          <Heading size="md">Companies</Heading>
-
+      <Card>
+        <CardHeader>
+          <CardTitle>Companies</CardTitle>
+        </CardHeader>
+        <CardContent>
           {companies.map((company) => (
-            <Link key={company.id} className="rounded p-2 hover:bg-gray-200" to={`${company.id}`}>
+            <Link key={company.id} className="block rounded p-2 hover:bg-gray-200" to={`${company.id}`}>
               {company.name}
             </Link>
           ))}
-
-          <Button asChild className="w-full" variant="ghost">
+        </CardContent>
+        <CardFooter>
+          <Button asChild className="w-full" variant="default">
             <Link to="add">
               <PlusCircledIcon className="mr-2" />
               新規作成
             </Link>
           </Button>
-        </Stack>
-      </div>
+        </CardFooter>
+      </Card>
 
       <Outlet />
     </div>

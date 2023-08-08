@@ -1,11 +1,10 @@
-import { Box, FormControl, FormLabel, Input } from '@chakra-ui/react'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form, useFetcher, useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
-import { AppMutationModal } from '~/app/components'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label } from '~/app/components/ui'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
 import type { GitRepo } from '~/app/features/admin/setup/interfaces/model'
 import { getIntegration } from '~/app/models/admin/integration.server'
@@ -23,11 +22,11 @@ const RepoSchema = zfd.formData({
 
 export const loader = async ({ params }: LoaderArgs) => {
   invariant(params.companyId, 'company id should specified')
-  const integration = getIntegration(params.companyId)
+  const integration = await getIntegration(params.companyId)
   if (!integration) {
     throw new Error('integration not created')
   }
-  return integration
+  return { integration }
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
@@ -49,7 +48,7 @@ export const action = async ({ request, params }: ActionArgs) => {
 
 const AddRepositoryModal = () => {
   const fetcher = useFetcher()
-  const integration = useLoaderData<typeof loader>()
+  const { integration } = useLoaderData<typeof loader>()
 
   const handleAddRepository = async (repos: GitRepo[]) => {
     const keyValues: Record<string, string> = {}
@@ -63,7 +62,7 @@ const AddRepositoryModal = () => {
   const { RepositoryAddModal } = useRepositoryAddModal({ integration, onSubmit: handleAddRepository })
 
   if (!integration) {
-    return <Box>integration not found</Box>
+    return <p>integration not found</p>
   }
 
   return (
@@ -71,15 +70,21 @@ const AddRepositoryModal = () => {
       {integration.provider === 'github' && RepositoryAddModal}
 
       {integration.provider === 'gitlab' && (
-        <AppMutationModal title="Add GitLab Repository">
-          <Form method="post">
-            GitLab
-            <FormControl>
-              <FormLabel htmlFor="projectId">Project ID</FormLabel>
-              <Input id="projectId" name="repos[0].projectId"></Input>
-            </FormControl>
-          </Form>
-        </AppMutationModal>
+        <Card>
+          <CardHeader>
+            <CardTitle>Add GitLab repositories</CardTitle>
+          </CardHeader>
+          <CardContent></CardContent>
+          <CardFooter>
+            <Form method="POST">
+              GitLab
+              <fieldset>
+                <Label htmlFor="projectId">Project ID</Label>
+                <Input id="projectId" name="repos[0].projectId"></Input>
+              </fieldset>
+            </Form>
+          </CardFooter>
+        </Card>
       )}
       <fetcher.Form method="post"></fetcher.Form>
     </>

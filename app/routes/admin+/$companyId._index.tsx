@@ -7,12 +7,16 @@ import { zx } from 'zodix'
 import { AppProviderBadge } from '~/app/components'
 import {
   Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  Heading,
   Spacer,
   Stack,
 } from '~/app/components/ui'
@@ -31,10 +35,10 @@ const CompanyPage = () => {
   const company = useLoaderData<typeof loader>()
 
   return (
-    <Stack className="gap-2 rounded bg-background p-4 shadow">
-      <div className="grid grid-cols-[auto_1fr] items-baseline gap-2">
-        <div className="relative col-span-2 flex">
-          <Heading size="lg">{company.name}</Heading>
+    <Card>
+      <CardHeader>
+        <Stack direction="row" className="items-start">
+          <CardTitle>{company.name}</CardTitle>
           <Spacer />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -44,8 +48,13 @@ const CompanyPage = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
-                <Link to="edit">Edit</Link>
+                <Link to="edit">Edit Company</Link>
               </DropdownMenuItem>
+              {company.exportSetting && (
+                <DropdownMenuItem asChild>
+                  <Link to="export-setting">{company.exportSetting ? 'Export Settings' : 'Add Export Setting'}</Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
                 <Link to="delete" className="text-destructive">
                   Delete
@@ -53,67 +62,75 @@ const CompanyPage = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
+        </Stack>
+      </CardHeader>
 
-      <Heading size="md" color="gray.500">
-        Integration and Repositories
-      </Heading>
-
-      <Button asChild>
-        <Link to="export-setting">{company.exportSetting ? 'Export Settings' : 'Add Export Setting'}</Link>
-      </Button>
-
-      {company.integration ? (
-        <div>
-          <AppProviderBadge provider={company.integration.provider} />
-        </div>
-      ) : (
-        <Button asChild>
-          <Link to="add-integration">Add Integration</Link>
-        </Button>
-      )}
-
-      <Stack>
-        {company.repositories.map((repo) => {
-          const repoUrl = match(repo.provider)
-            .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
-            .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
-            .otherwise(() => '')
-          return (
-            <HStack key={repo.id}>
-              <Link to={`repository/${repo.id}/edit`}>
-                <span className="underline decoration-border hover:bg-accent">
-                  {repo.name}
-                  {repo.releaseDetectionKey}
-                </span>
-              </Link>
-
-              <Button asChild size="xs" variant="outline">
-                <Link to={repoUrl} target="_blank">
-                  Repo <ExternalLinkIcon />
-                </Link>
+      <CardContent>
+        <Stack>
+          <HStack>
+            {company.integration ? (
+              <div>
+                <AppProviderBadge provider={company.integration.provider} />
+              </div>
+            ) : (
+              <Button asChild>
+                <Link to="add-integration">Add Integration</Link>
               </Button>
+            )}
 
-              <Button
-                asChild
-                size="xs"
-                variant="outline"
-                className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <Link to={`repository/${repo.id}/delete`}>Delete</Link>
+            {!company.exportSetting && (
+              <Button asChild>
+                <Link to="export-setting">{company.exportSetting ? 'Export Settings' : 'Add Export Setting'}</Link>
               </Button>
-            </HStack>
-          )
-        })}
-      </Stack>
+            )}
+          </HStack>
 
-      {company.integration && (
-        <Button asChild>
-          <Link to="add-repository">Add Repo</Link>
-        </Button>
-      )}
-    </Stack>
+          <Stack>
+            {company.repositories.map((repo) => {
+              const repoUrl = match(repo.provider)
+                .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
+                .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
+                .otherwise(() => '')
+              return (
+                <HStack key={repo.id}>
+                  <Link to={`repository/${repo.id}/edit`}>
+                    <span className="underline decoration-border hover:bg-accent">
+                      {repo.name}
+                      {repo.releaseDetectionKey}
+                    </span>
+                  </Link>
+
+                  <Button asChild size="xs" variant="outline">
+                    <Link to={repoUrl} target="_blank">
+                      {repo.provider} <ExternalLinkIcon />
+                    </Link>
+                  </Button>
+
+                  <Spacer />
+
+                  <Button
+                    asChild
+                    size="xs"
+                    variant="outline"
+                    className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <Link to={`repository/${repo.id}/delete`}>Delete</Link>
+                  </Button>
+                </HStack>
+              )
+            })}
+          </Stack>
+        </Stack>
+      </CardContent>
+
+      <CardFooter>
+        {company.integration && (
+          <Button className="w-full" asChild>
+            <Link to="add-repository">Add Repo</Link>
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
   )
 }
 export default CompanyPage

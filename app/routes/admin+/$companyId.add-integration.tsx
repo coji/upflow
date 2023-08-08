@@ -1,7 +1,7 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
 import { redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
-import { Form, Link } from '@remix-run/react'
+import { Form, Link, useLoaderData } from '@remix-run/react'
 import { RiGithubFill, RiGitlabFill } from 'react-icons/ri'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -19,7 +19,7 @@ import {
   Stack,
   Textarea,
 } from '~/app/components/ui'
-import { createIntegration, getIntegration } from '~/app/models/admin/integration.server'
+import { createIntegration } from '~/app/models/admin/integration.server'
 
 const schema = z.object({
   provider: z.enum(['github', 'gitlab'], { required_error: 'provider is required' }),
@@ -29,11 +29,7 @@ const schema = z.object({
 
 export const loader = async ({ params }: LoaderArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const integration = await getIntegration(companyId)
-  if (integration) {
-    throw new Error('Integration already exists')
-  }
-  return null
+  return { companyId }
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
@@ -52,6 +48,7 @@ export const action = async ({ request, params }: ActionArgs) => {
 }
 
 const AddIntegrationPage = () => {
+  const { companyId } = useLoaderData<typeof loader>()
   const [form, { provider, method, token }] = useForm({
     id: 'add-integration-form',
     onValidate({ form, formData }) {
@@ -121,7 +118,7 @@ const AddIntegrationPage = () => {
             Add
           </Button>
           <Button asChild variant="ghost">
-            <Link to="..">Cancel</Link>
+            <Link to={`/admin/${companyId}`}>Cancel</Link>
           </Button>
         </Stack>
       </CardFooter>

@@ -28,7 +28,7 @@ const schema = z.object({
 export const loader = async ({ params }: LoaderArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const exportSetting = await getExportSetting(companyId)
-  return json({ exportSetting })
+  return json({ companyId, exportSetting })
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
@@ -43,7 +43,7 @@ export const action = async ({ request, params }: ActionArgs) => {
 }
 
 const ExportSetting = () => {
-  const { exportSetting } = useLoaderData<typeof loader>()
+  const { companyId, exportSetting } = useLoaderData<typeof loader>()
 
   const [form, { sheetId, clientEmail, privateKey }] = useForm({
     id: 'export-setting-form',
@@ -91,7 +91,7 @@ const ExportSetting = () => {
             Add
           </Button>
           <Button variant="ghost" asChild>
-            <Link to="..">Cancel</Link>
+            <Link to={`/admin/${companyId}`}>Cancel</Link>
           </Button>
         </HStack>
       </CardFooter>

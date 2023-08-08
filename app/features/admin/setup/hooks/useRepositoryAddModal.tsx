@@ -1,8 +1,7 @@
-import { Box, Button, CircularProgress, Stack } from '@chakra-ui/react'
 import type { Integration } from '@prisma/client'
 import { Link } from '@remix-run/react'
 import { useCallback, useState } from 'react'
-import { AppMutationModal } from '~/app/components'
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, Spacer } from '~/app/components/ui'
 import { RepositoryList } from '../components/RepositoryList'
 import type { GitRepo } from '../interfaces/model'
 import { useGithubRepoQuery } from './useGithubReposQuery'
@@ -20,17 +19,16 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
   }, [])
 
   const RepositoryAddModal = (
-    <AppMutationModal
-      title="Add repositories"
-      footer={
-        <Stack direction="row" align="center">
-          {checkedRepos.length > 0 && (
-            <Box fontSize="sm" color="gray.400">
-              {checkedRepos.length} repos selected
-            </Box>
-          )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Add GitHub repositories</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? <p>Loading...</p> : <RepositoryList allRepos={data ?? []} onChange={handleChangeCheckedRepos} />}
+      </CardContent>
+      <CardFooter>
+        <HStack>
           <Button
-            colorScheme="blue"
             type="submit"
             form="form"
             disabled={checkedRepos.length === 0}
@@ -42,21 +40,15 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
           >
             Add
           </Button>
-
-          <Button as={Link} to=".." variant="ghost">
-            Cancel
+          <Button asChild variant="ghost">
+            <Link to="..">Cancel</Link>
           </Button>
-        </Stack>
-      }
-      size="4xl"
-      closeOnOverlayClick={false}
-    >
-      {isLoading ? (
-        <CircularProgress isIndeterminate={isLoading} />
-      ) : (
-        <RepositoryList allRepos={data ?? []} onChange={handleChangeCheckedRepos} />
-      )}
-    </AppMutationModal>
+        </HStack>
+
+        <Spacer />
+        {checkedRepos.length > 0 && <p className="text-sm text-secondary">{checkedRepos.length} repos selected</p>}
+      </CardFooter>
+    </Card>
   )
 
   return {

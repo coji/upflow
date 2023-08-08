@@ -11,22 +11,19 @@ export const loader = async ({ params }: LoaderArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const company = await getCompany(companyId)
   if (!company) {
-    throw new Response('No company', { status: 404 })
+    throw new Error('Company not found')
   }
-  return company
+  return { companyId, company }
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const company = await deleteCompany(companyId)
-  if (company) {
-    return redirect('/admin')
-  }
-  return null
+  await deleteCompany(companyId)
+  return redirect('/admin')
 }
 
 const CompanyDeletePage = () => {
-  const company = useLoaderData<typeof loader>()
+  const { companyId, company } = useLoaderData<typeof loader>()
   const [isEnabled, setIsEnabled] = useState(false)
 
   return (
@@ -68,7 +65,7 @@ const CompanyDeletePage = () => {
           </Button>
 
           <Button asChild variant="ghost">
-            <Link to="..">Cancel</Link>
+            <Link to={`/admin/${companyId}`}>Cancel</Link>
           </Button>
         </Stack>
       </CardFooter>
