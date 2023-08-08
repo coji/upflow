@@ -77,7 +77,7 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
         <div className="container flex-1">{children}</div>
       </main>
 
-      <footer className="p-2 text-center shadow">
+      <footer className="p-2 text-center text-sm shadow">
         Copyright&copy;{' '}
         <a
           href="https://www.techtalk.jp/"
