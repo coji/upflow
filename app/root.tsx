@@ -1,4 +1,4 @@
-import { ChakraProvider, extendTheme } from '@chakra-ui/react'
+import { ChakraProvider } from '@chakra-ui/react'
 import type { LinksFunction, V2_MetaFunction } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -24,7 +24,6 @@ export const Head = createHead(() => (
   </>
 ))
 
-const theme = extendTheme({})
 const queryClient = new QueryClient()
 
 export default function App() {
@@ -33,7 +32,7 @@ export default function App() {
       <Head />
 
       <QueryClientProvider client={queryClient}>
-        <ChakraProvider theme={theme} resetCSS>
+        <ChakraProvider resetCSS>
           <Outlet />
         </ChakraProvider>
         <ReactQueryDevtools initialIsOpen={false} />
