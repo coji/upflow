@@ -44,7 +44,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     method: submission.value.method,
     privateToken: submission.value.token,
   })
-  return redirect('..')
+  return redirect(`/admin/${companyId}`)
 }
 
 const AddIntegrationPage = () => {
