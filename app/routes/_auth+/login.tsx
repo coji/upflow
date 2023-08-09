@@ -1,7 +1,17 @@
 import { json, type LoaderArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { AppLayout } from '~/app/components'
-import { Alert, AlertDescription, AlertTitle, Center, Heading, Stack } from '~/app/components/ui'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Center,
+  Stack,
+} from '~/app/components/ui'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
 import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
 
@@ -25,25 +35,26 @@ export default function LoginPage() {
   return (
     <AppLayout>
       <Center>
-        <div className="rounded bg-primary-foreground px-16 py-8 text-center shadow md:w-auto">
-          <Heading>
-            <p className="text-2xl">UpFlow</p>
-            <p className="text-sm font-normal">ログイン</p>
-          </Heading>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle>UpFlow</CardTitle>
+          </CardHeader>
 
-          <Stack>
-            <GoogleLoginButton className="mt-8 w-full" variant="default">
-              Googleでログイン
-            </GoogleLoginButton>
+          <CardContent>
+            <Stack>
+              <GoogleLoginButton className="w-full" variant="default">
+                Googleでログイン
+              </GoogleLoginButton>
 
-            {errorMessage && (
-              <Alert>
-                <AlertTitle>ログインができません</AlertTitle>
-                <AlertDescription>{errorMessage}</AlertDescription>
-              </Alert>
-            )}
-          </Stack>
-        </div>
+              {errorMessage && (
+                <Alert>
+                  <AlertTitle>ログインができません</AlertTitle>
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
       </Center>
     </AppLayout>
   )
