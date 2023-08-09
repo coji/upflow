@@ -1,6 +1,16 @@
-import { Badge, Box, chakra, Stack, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
 import dayjs from 'dayjs'
-import type { GitRepo, CheckedRepositories } from '../../interfaces/model'
+import {
+  Badge,
+  Checkbox,
+  HStack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/app/components/ui'
+import type { CheckedRepositories, GitRepo } from '../../interfaces/model'
 
 interface OrgRepositoryListProps {
   orgRepos: GitRepo[]
@@ -9,86 +19,66 @@ interface OrgRepositoryListProps {
 }
 export const OrgRepositoryList = ({ orgRepos, checkedRepos, onCheck }: OrgRepositoryListProps) => {
   return (
-    <TableContainer>
-      <Table size="sm">
-        <Thead>
-          <Tr>
-            <Th width="16rem">Repository</Th>
-            <Th width="16rem">Path</Th>
-            <Th width="10rem" textAlign="center">
-              Last Pushed
-            </Th>
-            <Th width="10rem" textAlign="center">
-              Created
-            </Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {orgRepos.map((repo) => {
-            const isActive = dayjs(repo.pushedAt) > dayjs().add(-90, 'days')
+    <Table>
+      <TableHeader>
+        <TableHead className="w-64">Repository</TableHead>
+        <TableHead className="w-64">Path</TableHead>
+        <TableHead className="w-40 text-center">Last Pushed</TableHead>
+        <TableHead className="w-40 text-center">Created</TableHead>
+      </TableHeader>
+      <TableBody>
+        {orgRepos.map((repo) => {
+          const isActive = dayjs(repo.pushedAt) > dayjs().add(-90, 'days')
 
-            return (
-              <Tr
-                key={repo.id}
-                _hover={{
-                  bgColor: isActive ? 'gray.50' : 'gray.100',
-                  cursor: isActive ? 'pointer' : 'initial',
-                }}
-                onClick={(e) => {
-                  if (isActive) onCheck(repo.id) // 行クリックでも発動
-                }}
-                bgColor={isActive ? 'initial' : 'gray.100'}
-              >
-                <Td width="16rem" wordBreak="break-all" whiteSpace="break-spaces">
-                  <Stack direction="row">
-                    {/* Checkbox はアニメーションするためまとめて変更するとめっちゃ遅いので数が多いこれは input に */}
-                    <chakra.input
-                      name="repos[]"
-                      type="checkbox"
-                      disabled={!isActive}
-                      checked={checkedRepos[repo.id] ?? false}
-                      onClick={(e) => {
-                        e.stopPropagation() // テーブル行クリックを発動させない
-                      }}
-                      onChange={() => {
-                        onCheck(repo.id)
-                      }}
-                      sx={{
-                        accentColor: '#3182ce',
-                      }}
-                    />
-                    <Box>{repo.name}</Box>
-                  </Stack>
-                </Td>
+          return (
+            <TableRow
+              key={repo.id}
+              className={
+                isActive
+                  ? 'bg-inherit hover:cursor-pointer hover:bg-white'
+                  : 'bg-gray-100 hover:cursor-auto hover:bg-gray-100'
+              }
+              onClick={(e) => {
+                if (isActive) onCheck(repo.id) // 行クリックでも発動
+              }}
+            >
+              <TableCell className="w-64 whitespace-break-spaces break-all">
+                <HStack>
+                  {/* Checkbox はアニメーションするためまとめて変更するとめっちゃ遅いので数が多いこれは input に */}
+                  <Checkbox
+                    name="repos[]"
+                    disabled={!isActive}
+                    checked={checkedRepos[repo.id] ?? false}
+                    onClick={(e) => {
+                      e.stopPropagation() // テーブル行クリックを発動させない
+                    }}
+                    onChange={() => {
+                      onCheck(repo.id)
+                    }}
+                  />
+                  <div>{repo.name}</div>
+                </HStack>
+              </TableCell>
 
-                <Td width="16rem" wordBreak="break-all" whiteSpace="break-spaces" fontSize="xs" color="gray.500">
-                  {repo.full_name}
-                </Td>
+              <TableCell className="gray-500 w-64 whitespace-break-spaces break-all text-xs">
+                {repo.full_name}
+              </TableCell>
 
-                <Td fontSize="sm" color="gray.500" width="10rem" textAlign="center">
-                  <Box>
-                    {isActive ? (
-                      <Badge variant="outline" colorScheme="green">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" colorScheme="gray">
-                        Inactive
-                      </Badge>
-                    )}
-                  </Box>
+              <TableCell className="w-40 text-center text-sm text-gray-500">
+                <div>
+                  {isActive ? <Badge variant="default">Active</Badge> : <Badge variant="outline">Inactive</Badge>}
+                </div>
 
-                  <Box fontSize="xs">{dayjs(repo.pushedAt).format('YYYY-MM-DD')}</Box>
-                </Td>
+                <div className="text-xs">{dayjs(repo.pushedAt).format('YYYY-MM-DD')}</div>
+              </TableCell>
 
-                <Td fontSize="xs" color="gray.500" width="10rem" textAlign="center">
-                  {dayjs(repo.createdAt).format('YYYY-MM-DD')}
-                </Td>
-              </Tr>
-            )
-          })}
-        </Tbody>
-      </Table>
-    </TableContainer>
+              <TableCell className="w-40 text-center text-xs text-gray-500">
+                {dayjs(repo.createdAt).format('YYYY-MM-DD')}
+              </TableCell>
+            </TableRow>
+          )
+        })}
+      </TableBody>
+    </Table>
   )
 }

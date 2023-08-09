@@ -1,10 +1,10 @@
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Spacer } from '@chakra-ui/react'
+import dayjs from 'dayjs'
 import React, { useCallback, useState } from 'react'
 import { uniq } from 'remeda'
-import type { GitRepo, CheckedRepositories } from '../../interfaces/model'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/app/components/ui'
+import type { CheckedRepositories, GitRepo } from '../../interfaces/model'
 import { OrgListItem } from './OrgListItem'
 import { OrgRepositoryList } from './OrgRepositoryList'
-import dayjs from 'dayjs'
 
 interface RepositoryListProps {
   allRepos: GitRepo[]
@@ -54,21 +54,8 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
     [checkedRepos, onChange, selectedRepos],
   )
 
-  // 初期状態で選択済みのリポジトリ
-  /*
-  useEffect(() => {
-    if (allRepos) {
-      const prevCheckedRepos: { [id: string]: boolean } = {}
-      for (const repo of config.repositories) {
-        prevCheckedRepos[repo.id] = true
-      }
-      setCheckedRepos(prevCheckedRepos)
-    }
-  }, [data, config.repositories])
-  */
-
   return (
-    <Accordion allowToggle>
+    <Accordion collapsible type="single">
       {!!orgs &&
         orgs.map((org) => {
           const orgRepos = allRepos.filter((repo) => repo.owner == org) || []
@@ -78,8 +65,8 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
 
           return (
             <React.Fragment key={org}>
-              <AccordionItem>
-                <AccordionButton display="flex">
+              <AccordionItem value={org}>
+                <AccordionTrigger>
                   <OrgListItem
                     org={org}
                     isChecked={isOrgChecked}
@@ -88,17 +75,15 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
                     orgRepoNum={orgRepos.length}
                     onChange={handleClickOrgCheckbox}
                   />
-                  <Spacer />
-                  <AccordionIcon />
-                </AccordionButton>
+                </AccordionTrigger>
 
-                <AccordionPanel>
+                <AccordionContent>
                   <OrgRepositoryList
                     orgRepos={orgRepos}
                     checkedRepos={checkedRepos}
                     onCheck={handleClickRepoCheckbox}
                   ></OrgRepositoryList>
-                </AccordionPanel>
+                </AccordionContent>
               </AccordionItem>
             </React.Fragment>
           )
