@@ -1,4 +1,3 @@
-import { ChakraProvider } from '@chakra-ui/react'
 import type { LinksFunction, V2_MetaFunction } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -32,9 +31,7 @@ export default function App() {
       <Head />
 
       <QueryClientProvider client={queryClient}>
-        <ChakraProvider resetCSS>
-          <Outlet />
-        </ChakraProvider>
+        <Outlet />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
       <ScrollRestoration />
