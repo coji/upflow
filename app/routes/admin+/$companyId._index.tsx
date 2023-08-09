@@ -94,7 +94,7 @@ const CompanyPage = () => {
               return (
                 <HStack key={repo.id}>
                   <Link to={`repository/${repo.id}/edit`}>
-                    <span className="underline decoration-border hover:bg-accent">
+                    <span className="underline decoration-border hover:text-primary">
                       {repo.name} {repo.releaseDetectionKey}
                     </span>
                   </Link>

@@ -21,7 +21,7 @@ const AdminCompanyIndex = () => {
         </CardHeader>
         <CardContent>
           {companies.map((company) => (
-            <Link key={company.id} className="block rounded p-2 hover:bg-gray-200" to={`${company.id}`}>
+            <Link key={company.id} className="block rounded p-2 hover:bg-secondary" to={`${company.id}`}>
               {company.name}
             </Link>
           ))}
