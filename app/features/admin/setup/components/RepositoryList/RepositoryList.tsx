@@ -2,13 +2,13 @@ import dayjs from 'dayjs'
 import React, { useCallback, useState } from 'react'
 import { uniq } from 'remeda'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/app/components/ui'
-import type { CheckedRepositories, GitRepo } from '../../interfaces/model'
+import type { CheckedRepositories, GithubRepo } from '../../interfaces/model'
 import { OrgListItem } from './OrgListItem'
 import { OrgRepositoryList } from './OrgRepositoryList'
 
 interface RepositoryListProps {
-  allRepos: GitRepo[]
-  onChange: (repos: GitRepo[]) => void // 選択変更
+  allRepos: GithubRepo[]
+  onChange: (repos: GithubRepo[]) => void // 選択変更
 }
 export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
   const [checkedRepos, setCheckedRepos] = useState<CheckedRepositories>({})

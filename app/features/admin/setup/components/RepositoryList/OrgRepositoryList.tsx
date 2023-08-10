@@ -10,10 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import type { CheckedRepositories, GitRepo } from '../../interfaces/model'
+import type { CheckedRepositories, GithubRepo } from '../../interfaces/model'
 
 interface OrgRepositoryListProps {
-  orgRepos: GitRepo[]
+  orgRepos: GithubRepo[]
   checkedRepos: CheckedRepositories
   onCheck: (id: string) => void
 }
