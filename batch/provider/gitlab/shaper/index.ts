@@ -1,10 +1,10 @@
 import type {
-  GitLabMergeRequest,
   GitLabCommit,
   GitLabDiscussionNote,
-  ShapedGitLabMergeRequest,
+  GitLabMergeRequest,
   ShapedGitLabCommit,
   ShapedGitLabDiscussionNote,
+  ShapedGitLabMergeRequest,
 } from '../model'
 
 /**

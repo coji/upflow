@@ -1,13 +1,13 @@
 import { Octokit } from 'octokit'
+import dayjs from '~/app/libs/dayjs'
 import type {
-  ShapedGitHubPullRequest,
   ShapedGitHubCommit,
-  ShapedGitHubReviewComment,
+  ShapedGitHubPullRequest,
   ShapedGitHubReview,
+  ShapedGitHubReviewComment,
   ShapedGitHubTag,
 } from '../model'
-import { shapeGitHubPullRequest, shapeGitHubCommit, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
-import dayjs from '~/app/libs/dayjs'
+import { shapeGitHubCommit, shapeGitHubPullRequest, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
 
 interface createFetcherProps {
   owner: string

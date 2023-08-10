@@ -1,12 +1,12 @@
 import type {
-  GitHubPullRequest,
   GitHubCommit,
-  GitHubReviewComment,
+  GitHubPullRequest,
   GitHubReview,
-  ShapedGitHubPullRequest,
+  GitHubReviewComment,
   ShapedGitHubCommit,
-  ShapedGitHubReviewComment,
+  ShapedGitHubPullRequest,
   ShapedGitHubReview,
+  ShapedGitHubReviewComment,
 } from '../model'
 
 /**

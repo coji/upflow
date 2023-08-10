@@ -1,7 +1,7 @@
-import type { ShapedGitLabMergeRequest, ShapedGitLabCommit, ShapedGitLabDiscussionNote } from '../model'
 import fs from 'fs/promises'
 import path from 'path'
 import { createPathBuilder } from '~/batch/helper/path-builder'
+import type { ShapedGitLabCommit, ShapedGitLabDiscussionNote, ShapedGitLabMergeRequest } from '../model'
 
 interface createStoreProps {
   companyId: string

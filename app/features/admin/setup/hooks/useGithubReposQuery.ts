@@ -1,7 +1,7 @@
 import type { Integration } from '@prisma/client'
 import { useQuery } from '@tanstack/react-query'
-import { listGithubRepos } from '../services/listGithubRepos'
 import { sortBy } from 'remeda'
+import { listGithubRepos } from '../services/listGithubRepos'
 
 export const useGithubRepoQuery = (integration: Integration | null) =>
   useQuery(['setup', 'repos'], () => listGithubRepos(integration?.privateToken ?? ''), {

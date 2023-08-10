@@ -1,5 +1,5 @@
+import { last, pipe, sortBy } from 'remeda'
 import type { ShapedGitHubPullRequest } from '../model'
-import { pipe, sortBy, last } from 'remeda'
 
 export const leastUpdatedPullRequest = (pullrequests: ShapedGitHubPullRequest[]) =>
   pipe(

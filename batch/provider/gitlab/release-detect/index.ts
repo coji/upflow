@@ -1,6 +1,6 @@
+import * as R from 'remeda'
 import type { ShapedGitLabMergeRequest } from '../model'
 import type { createStore } from '../store'
-import * as R from 'remeda'
 
 const releasedMergeRequests = (allMergeRequests: ShapedGitLabMergeRequest[], key: string) => {
   return R.pipe(

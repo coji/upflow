@@ -1,9 +1,9 @@
 import type {
+  CommitSchema,
+  DiscussionNoteSchema,
+  DiscussionSchema,
   MergeRequestSchema,
   MilestoneSchema,
-  CommitSchema,
-  DiscussionSchema,
-  DiscussionNoteSchema,
 } from '@gitbeaker/rest'
 
 export type GitLabMergeRequest = MergeRequestSchema

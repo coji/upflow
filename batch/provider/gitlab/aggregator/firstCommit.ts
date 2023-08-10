@@ -1,5 +1,5 @@
+import { first, pipe, sortBy } from 'remeda'
 import type { ShapedGitLabCommit } from '../model'
-import { pipe, sortBy, first } from 'remeda'
 
 export const firstCommit = (commits: ShapedGitLabCommit[]) =>
   pipe(

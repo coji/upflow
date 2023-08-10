@@ -1,5 +1,5 @@
+import { last, pipe, sortBy } from 'remeda'
 import type { ShapedGitLabMergeRequest } from '../model'
-import { pipe, sortBy, last } from 'remeda'
 
 export const leastUpdatedMergeRequest = (mergerequests: ShapedGitLabMergeRequest[]) =>
   pipe(

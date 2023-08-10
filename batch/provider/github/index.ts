@@ -1,4 +1,4 @@
-import type { Integration, Repository, Company, PullRequest } from '@prisma/client'
+import type { Company, Integration, PullRequest, Repository } from '@prisma/client'
 import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { logger } from '~/batch/helper/logger'

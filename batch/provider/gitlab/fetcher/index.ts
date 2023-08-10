@@ -1,7 +1,7 @@
-import type { GitLabCommit } from '../model'
 import { Gitlab } from '@gitbeaker/rest'
-import { shapeGitLabMergeRequest, shapeGitLabCommit, shapeGitLabDiscussionNote } from '../shaper'
 import dayjs from '~/app/libs/dayjs'
+import type { GitLabCommit } from '../model'
+import { shapeGitLabCommit, shapeGitLabDiscussionNote, shapeGitLabMergeRequest } from '../shaper'
 
 export interface createFetcherProps {
   projectId: string

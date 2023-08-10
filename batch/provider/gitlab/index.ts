@@ -1,12 +1,12 @@
-import type { Integration, Repository, Company, PullRequest } from '@prisma/client'
+import type { Company, Integration, PullRequest, Repository } from '@prisma/client'
 import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
+import { logger } from '~/batch/helper/logger'
 import { createFetcher } from '~/batch/provider/gitlab/fetcher'
+import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
 import { buildMergeRequests } from './mergerequest'
 import { createStore } from './store'
-import { logger } from '~/batch/helper/logger'
-import { createPathBuilder } from '../../helper/path-builder'
 
 export const createGitLabProvider = (integration: Integration) => {
   /**

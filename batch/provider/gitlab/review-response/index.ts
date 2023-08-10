@@ -1,6 +1,6 @@
-import type { ShapedGitLabDiscussionNote } from '../model'
 import { sortBy } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
+import type { ShapedGitLabDiscussionNote } from '../model'
 
 export const analyzeReviewResponse = (discussions: ShapedGitLabDiscussionNote[]) => {
   let lastRes: ShapedGitLabDiscussionNote | null = null

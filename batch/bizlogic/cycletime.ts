@@ -1,5 +1,5 @@
+import { filter, first, last, pipe, sortBy } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import { pipe, filter, sortBy, first, last } from 'remeda'
 
 interface codingTimeProps {
   firstCommittedAt: string | null

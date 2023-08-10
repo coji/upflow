@@ -1,6 +1,6 @@
+import { redirect } from '@remix-run/node'
 import type { SessionUser } from '../types/types'
 import { authenticator, sessionStorage } from './authenticator.server'
-import { redirect } from '@remix-run/node'
 
 /**
  * リクエストに含まれるCookieからセッション情報を取得する
