@@ -73,7 +73,7 @@ const AddIntegrationPage = () => {
                 <HStack>
                   <RadioGroupItem id="github" value="github"></RadioGroupItem>
                   <Label htmlFor="github">
-                    <HStack className="gap-1">
+                    <HStack className="gap-1 text-github">
                       <RiGithubFill />
                       <span>GitHub</span>
                     </HStack>
@@ -82,7 +82,7 @@ const AddIntegrationPage = () => {
                 <HStack>
                   <RadioGroupItem id="gitlab" value="gitlab"></RadioGroupItem>
                   <Label htmlFor="gitlab">
-                    <HStack className="gap-1">
+                    <HStack className="gap-1 text-gitlab">
                       <RiGitlabFill />
                       <span>GitLab</span>
                     </HStack>

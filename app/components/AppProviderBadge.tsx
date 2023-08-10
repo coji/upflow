@@ -9,15 +9,15 @@ export const AppProviderBadge = ({ provider }: AppProviderBadgeProps) => {
   const { label, icon, textClass, borderClass } = match(provider)
     .with('github', () => ({
       label: 'GitHub',
-      icon: <RiGithubFill className="block text-[#24292e]" />,
-      textClass: 'text-[#24292e]',
-      borderClass: 'border-[#24292e] border',
+      icon: <RiGithubFill className="block text-github" />,
+      textClass: 'text-github',
+      borderClass: 'border-github border',
     }))
     .with('gitlab', () => ({
       label: 'GitLab',
-      icon: <RiGitlabFill className="block text-[#FC6D27]" />,
-      textClass: 'text-[#FC6D27]',
-      borderClass: 'border-[#FC6D27] border',
+      icon: <RiGitlabFill className="block text-gitlab" />,
+      textClass: 'text-gitlab',
+      borderClass: 'border-gitlab border',
     }))
     .otherwise(() => ({
       label: 'Unknown',
