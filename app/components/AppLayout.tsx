@@ -28,7 +28,7 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
 
   return (
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
-      <div className="flex items-center px-4 py-1">
+      <header className="flex items-center px-2 py-1 md:container">
         <HStack>
           <Heading>
             <Link to="/admin">UpFlow</Link>
@@ -71,10 +71,10 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-      </div>
+      </header>
 
-      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 px-4 py-2">
-        <div className="container flex-1">{children}</div>
+      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 px-2 py-2 md:px-0">
+        <div className="flex-1 md:container">{children}</div>
       </main>
 
       <footer className="p-2 text-center text-sm shadow">
