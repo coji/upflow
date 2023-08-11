@@ -3,7 +3,6 @@ import { useState } from 'react'
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
   Button,
   Command,
   CommandEmpty,
@@ -67,8 +66,7 @@ export const TeamSwitcher = ({ className, companies, selectedTeam }: TeamSwitche
             {selectedTeam ? (
               <>
                 <Avatar className="mr-2 h-5 w-5">
-                  <AvatarImage src={`https://avatar.vercel.sh/${selectedTeam.id}.png`} alt={selectedTeam.name} />
-                  <AvatarFallback>SC</AvatarFallback>
+                  <AvatarFallback>{selectedTeam.name}</AvatarFallback>
                 </Avatar>
                 {selectedTeam.name}
                 <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
@@ -93,14 +91,6 @@ export const TeamSwitcher = ({ className, companies, selectedTeam }: TeamSwitche
                       }}
                       className="text-sm"
                     >
-                      <Avatar className="mr-2 h-5 w-5">
-                        <AvatarImage
-                          src={`https://avatar.vercel.sh/${team.id}.png`}
-                          alt={team.name}
-                          className="grayscale"
-                        />
-                        <AvatarFallback>SC</AvatarFallback>
-                      </Avatar>
                       {team.name}
                       <CheckIcon
                         className={cn('ml-auto h-4 w-4', selectedTeam?.id === team.id ? 'opacity-100' : 'opacity-0')}
