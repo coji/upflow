@@ -6,11 +6,11 @@ settings:
 
 dependencies:
   '@conform-to/react':
-    specifier: 0.7.4
-    version: 0.7.4(react@18.2.0)
+    specifier: 0.8.0
+    version: 0.8.0(react@18.2.0)
   '@conform-to/zod':
-    specifier: 0.7.4
-    version: 0.7.4(@conform-to/dom@0.7.4)(zod@3.21.4)
+    specifier: 0.8.0
+    version: 0.8.0(@conform-to/dom@0.8.0)(zod@3.21.4)
   '@gitbeaker/rest':
     specifier: 39.10.3
     version: 39.10.3
@@ -221,8 +221,8 @@ devDependencies:
     specifier: 11.1.0
     version: 11.1.0
   '@playwright/test':
-    specifier: 1.36.2
-    version: 1.36.2
+    specifier: 1.37.0
+    version: 1.37.0
   '@remix-run/dev':
     specifier: 1.19.3
     version: 1.19.3(@remix-run/serve@1.19.3)(@types/node@20.4.9)
@@ -305,8 +305,8 @@ devDependencies:
     specifier: 3.2.3
     version: 3.2.3(prettier@3.0.1)(typescript@5.1.6)
   prettier-plugin-tailwindcss:
-    specifier: 0.4.1
-    version: 0.4.1(prettier-plugin-organize-imports@3.2.3)(prettier@3.0.1)
+    specifier: 0.5.1
+    version: 0.5.1(prettier-plugin-organize-imports@3.2.3)(prettier@3.0.1)
   prisma:
     specifier: 5.1.1
     version: 5.1.1
@@ -1653,26 +1653,26 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
-  /@conform-to/dom@0.7.4:
-    resolution: {integrity: sha512-Cct89jWhJA+hfCth+9mphnwBVmFRx5caHtQp+0f+iK/UQKYgYMaK15JqtfNV8aHHXlrpWcSJ99x6iUgwYVQaLA==}
+  /@conform-to/dom@0.8.0:
+    resolution: {integrity: sha512-6IRg+ZtRV2K3GszXWaE0Fs0xO1mY8p9vORtTXazldjODqINcQA49+68yTYLJsnnwKiv1I1kXv538TcLc52K8Dw==}
     dev: false
 
-  /@conform-to/react@0.7.4(react@18.2.0):
-    resolution: {integrity: sha512-r3HNOIW3GBBjHWIvqoalKxAoTtQFiphVClYtdLBblEgxnStRjEaIkEP+JfktlEulYiVqL+935e9CV7U2v/Uxzw==}
+  /@conform-to/react@0.8.0(react@18.2.0):
+    resolution: {integrity: sha512-8eqZHyT8octeEJ4ywiEFzpoVoQYeEoCTavSZmoGeIhwO2hTuBEgp1Jk3Fa/Dy7lT4E0ZJxE0orZTgHprLcz0Jg==}
     peerDependencies:
       react: '>=16.8'
     dependencies:
-      '@conform-to/dom': 0.7.4
+      '@conform-to/dom': 0.8.0
       react: 18.2.0
     dev: false
 
-  /@conform-to/zod@0.7.4(@conform-to/dom@0.7.4)(zod@3.21.4):
-    resolution: {integrity: sha512-CFdbx/5rreymbBjSfmO9p0QBQ2toGXyTGuV3Cmam1eX/XGSSQyUU4fT0NNoutQ/CHIMeqKRVc5bzv7f46XbspQ==}
+  /@conform-to/zod@0.8.0(@conform-to/dom@0.8.0)(zod@3.21.4):
+    resolution: {integrity: sha512-5AZhKKgfIrtW8ackQaPOaxazxxaoPhiTOSi3tv2Cb385dMSm3UyUsi9jExnSivt5uqFSDM0U50RNPQ5Ad5L7bw==}
     peerDependencies:
-      '@conform-to/dom': 0.7.4
+      '@conform-to/dom': 0.8.0
       zod: ^3.21.0
     dependencies:
-      '@conform-to/dom': 0.7.4
+      '@conform-to/dom': 0.8.0
       zod: 3.21.4
     dev: false
 
@@ -1684,7 +1684,7 @@ packages:
     resolution: {integrity: sha512-BDXFbYOJzT/NBEtp71cvsrGPwGAMGRB/349rwKuoxNSiKjPraNNnlK6MIIabViCjqZugu6j+xeMDlEkWdHHJSg==}
     dependencies:
       '@esbuild-kit/core-utils': 3.1.0
-      get-tsconfig: 4.6.2
+      get-tsconfig: 4.7.0
     dev: false
 
   /@esbuild-kit/core-utils@3.1.0:
@@ -1698,7 +1698,7 @@ packages:
     resolution: {integrity: sha512-Qwfvj/qoPbClxCRNuac1Du01r9gvNOT+pMYtJDapfB1eoGN1YlJ1BixLyL9WVENRx5RXgNLdfYdx/CuswlGhMw==}
     dependencies:
       '@esbuild-kit/core-utils': 3.1.0
-      get-tsconfig: 4.6.2
+      get-tsconfig: 4.7.0
     dev: false
 
   /@esbuild/android-arm64@0.17.19:
@@ -2771,7 +2771,7 @@ packages:
       '@octokit/request-error': 5.0.0
       '@octokit/types': 11.1.0
       deprecation: 2.3.1
-      lru-cache: 10.0.0
+      lru-cache: 10.0.1
       universal-github-app-jwt: 1.1.1
       universal-user-agent: 6.0.0
     dev: false
@@ -2988,13 +2988,13 @@ packages:
     resolution: {integrity: sha512-Aq58f5HiWdyDlFffbbSjAlv596h/cOnt2DO1w3DOC7OJ5EHs0hd/nycJfiu9RJbT6Yk6F1knnRRXNSpxoIVZ9Q==}
     dev: true
 
-  /@playwright/test@1.36.2:
-    resolution: {integrity: sha512-2rVZeyPRjxfPH6J0oGJqE8YxiM1IBRyM8hyrXYK7eSiAqmbNhxwcLa7dZ7fy9Kj26V7FYia5fh9XJRq4Dqme+g==}
+  /@playwright/test@1.37.0:
+    resolution: {integrity: sha512-181WBLk4SRUyH1Q96VZl7BP6HcK0b7lbdeKisn3N/vnjitk+9HbdlFz/L5fey05vxaAhldIDnzo8KUoy8S3mmQ==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
       '@types/node': 20.4.9
-      playwright-core: 1.36.2
+      playwright-core: 1.37.0
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
@@ -6782,7 +6782,7 @@ packages:
       eslint-module-utils: 2.8.0(@typescript-eslint/parser@5.62.0)(eslint-import-resolver-node@0.3.7)(eslint-import-resolver-typescript@3.6.0)(eslint@8.46.0)
       eslint-plugin-import: 2.28.0(@typescript-eslint/parser@5.62.0)(eslint-import-resolver-typescript@3.6.0)(eslint@8.46.0)
       fast-glob: 3.3.1
-      get-tsconfig: 4.6.2
+      get-tsconfig: 4.7.0
       is-core-module: 2.13.0
       is-glob: 4.0.3
     transitivePeerDependencies:
@@ -7468,8 +7468,8 @@ packages:
       - supports-color
     dev: false
 
-  /gaxios@6.0.4:
-    resolution: {integrity: sha512-mwKfHJn7f3pLRfahdEPNyvygXRwjwgsgDPaIIoBRIDkgP4SFyezkYGWQ2aLCfrAnzimSrP+mAg1aSUj5gidXvw==}
+  /gaxios@6.1.0:
+    resolution: {integrity: sha512-EIHuesZxNyIkUGcTQKQPMICyOpDD/bi+LJIJx+NLsSGmnS7N+xCLRX5bi4e9yAu9AlSZdVq+qlyWWVuTh/483w==}
     engines: {node: '>=14'}
     dependencies:
       extend: 3.0.2
@@ -7496,7 +7496,7 @@ packages:
     resolution: {integrity: sha512-Ozxyi23/1Ar51wjUT2RDklK+3HxqDr8TLBNK8rBBFQ7T85iIGnXnVusauj06QyqCXRFZig8LZC+TUddWbndlpQ==}
     engines: {node: '>=14'}
     dependencies:
-      gaxios: 6.0.4
+      gaxios: 6.1.0
       json-bigint: 1.0.0
     transitivePeerDependencies:
       - encoding
@@ -7561,8 +7561,8 @@ packages:
       get-intrinsic: 1.2.1
     dev: true
 
-  /get-tsconfig@4.6.2:
-    resolution: {integrity: sha512-E5XrT4CbbXcXWy+1jChlZmrmCwd5KGx502kDCXJJ7y898TtWW9FwoG5HfOLVRKmlmDGkWN2HM9Ho+/Y8F0sJDg==}
+  /get-tsconfig@4.7.0:
+    resolution: {integrity: sha512-pmjiZ7xtB8URYm74PlGJozDNyhvsVLUcpBa8DZBG3bWHwaHa9bPiRpiSfovw+fjhwONSCWKRyk+JQHEGZmMrzw==}
     dependencies:
       resolve-pkg-maps: 1.0.0
 
@@ -7699,7 +7699,7 @@ packages:
     dependencies:
       base64-js: 1.5.1
       ecdsa-sig-formatter: 1.0.11
-      gaxios: 6.0.4
+      gaxios: 6.1.0
       gcp-metadata: 6.0.0
       gtoken: 7.0.1
       jws: 4.0.0
@@ -7783,7 +7783,7 @@ packages:
     resolution: {integrity: sha512-KcFVtoP1CVFtQu0aSk3AyAt2og66PFhZAlkUOuWKwzMLoulHXG5W5wE5xAnHb+yl3/wEFoqGW7/cDGMU8igDZQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      gaxios: 6.0.4
+      gaxios: 6.1.0
       jws: 4.0.0
     transitivePeerDependencies:
       - encoding
@@ -8729,8 +8729,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /lru-cache@10.0.0:
-    resolution: {integrity: sha512-svTf/fzsKHffP42sujkO/Rjs37BCIsQVRCeNYIm9WN8rgT7ffoUnRtZCqU+6BqcSBdv8gwJeTz8knJpgACeQMw==}
+  /lru-cache@10.0.1:
+    resolution: {integrity: sha512-IJ4uwUTi2qCccrioU6g9g/5rvvVl13bsdczUUcqbciD9iLr095yj8DQKdObriEvuNSx325N1rV1O0sJFszx75g==}
     engines: {node: 14 || >=16.14}
     dev: false
 
@@ -9891,8 +9891,8 @@ packages:
       pathe: 1.1.1
     dev: true
 
-  /playwright-core@1.36.2:
-    resolution: {integrity: sha512-sQYZt31dwkqxOrP7xy2ggDfEzUxM1lodjhsQ3NMMv5uGTRDsLxU0e4xf4wwMkF2gplIxf17QMBCodSFgm6bFVQ==}
+  /playwright-core@1.37.0:
+    resolution: {integrity: sha512-1c46jhTH/myQw6sesrcuHVtLoSNfJv8Pfy9t3rs6subY7kARv0HRw5PpyfPYPpPtQvBOmgbE6K+qgYUpj81LAA==}
     engines: {node: '>=16'}
     hasBin: true
     dev: true
@@ -10048,16 +10048,16 @@ packages:
       typescript: 5.1.6
     dev: true
 
-  /prettier-plugin-tailwindcss@0.4.1(prettier-plugin-organize-imports@3.2.3)(prettier@3.0.1):
-    resolution: {integrity: sha512-hwn2EiJmv8M+AW4YDkbjJ6HlZCTzLyz1QlySn9sMuKV/Px0fjwldlB7tol8GzdgqtkdPtzT3iJ4UzdnYXP25Ag==}
-    engines: {node: '>=12.17.0'}
+  /prettier-plugin-tailwindcss@0.5.1(prettier-plugin-organize-imports@3.2.3)(prettier@3.0.1):
+    resolution: {integrity: sha512-dvJRVoYlzTXa7mD1DooUl0m+7XXMiaClTgZATah27x0vqWAnmoTdndGdpRZDUXl9chk1FFiaQ0ncquUOKBhMoQ==}
+    engines: {node: '>=14.21.3'}
     peerDependencies:
       '@ianvs/prettier-plugin-sort-imports': '*'
       '@prettier/plugin-pug': '*'
       '@shopify/prettier-plugin-liquid': '*'
       '@shufo/prettier-plugin-blade': '*'
       '@trivago/prettier-plugin-sort-imports': '*'
-      prettier: ^2.2 || ^3.0
+      prettier: ^3.0
       prettier-plugin-astro: '*'
       prettier-plugin-css-order: '*'
       prettier-plugin-import-sort: '*'
