@@ -3,6 +3,7 @@ import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createHead } from 'remix-island'
+import { AppLoadingProgress } from './components'
 import globalStyles from './styles/globals.css'
 
 export const meta: V2_MetaFunction = () => [
@@ -29,7 +30,7 @@ export default function App() {
   return (
     <>
       <Head />
-
+      <AppLoadingProgress />
       <QueryClientProvider client={queryClient}>
         <Outlet />
         <ReactQueryDevtools initialIsOpen={false} />
