@@ -1,12 +1,10 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons'
 import type { LoaderArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
-import { setTimeout } from 'timers/promises'
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from '~/app/components/ui'
 import { getCompanies } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
-  await setTimeout(3000)
   return {
     companies: await getCompanies(),
   }
