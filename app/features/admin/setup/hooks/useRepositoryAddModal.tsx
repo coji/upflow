@@ -3,18 +3,18 @@ import { Link } from '@remix-run/react'
 import { useCallback, useState } from 'react'
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, Spacer } from '~/app/components/ui'
 import { RepositoryList } from '../components/RepositoryList'
-import type { GitRepo } from '../interfaces/model'
+import type { GithubRepo } from '../interfaces/model'
 import { useGithubRepoQuery } from './useGithubReposQuery'
 
 interface useRepositoryAddModalProps {
   integration: Integration | null
-  onSubmit: (repos: GitRepo[]) => Promise<boolean>
+  onSubmit: (repos: GithubRepo[]) => Promise<boolean>
 }
 export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAddModalProps) => {
   const { data, isLoading } = useGithubRepoQuery(integration)
-  const [checkedRepos, setCheckedRepos] = useState<GitRepo[]>([])
+  const [checkedRepos, setCheckedRepos] = useState<GithubRepo[]>([])
 
-  const handleChangeCheckedRepos = useCallback((checkedRepos: GitRepo[]) => {
+  const handleChangeCheckedRepos = useCallback((checkedRepos: GithubRepo[]) => {
     setCheckedRepos(checkedRepos)
   }, [])
 

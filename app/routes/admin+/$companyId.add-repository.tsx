@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { zfd } from 'zod-form-data'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label } from '~/app/components/ui'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
-import type { GitRepo } from '~/app/features/admin/setup/interfaces/model'
+import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
 import { getIntegration } from '~/app/models/admin/integration.server'
 import { createRepository } from '~/app/models/admin/repository.server'
 
@@ -50,7 +50,7 @@ const AddRepositoryModal = () => {
   const fetcher = useFetcher()
   const { integration } = useLoaderData<typeof loader>()
 
-  const handleAddRepository = async (repos: GitRepo[]) => {
+  const handleAddRepository = async (repos: GithubRepo[]) => {
     const keyValues: Record<string, string> = {}
     for (const [idx, repo] of repos.entries()) {
       keyValues[`repos[${idx}].owner`] = repo.owner
