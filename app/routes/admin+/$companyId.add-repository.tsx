@@ -1,9 +1,9 @@
 import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form, useFetcher, useLoaderData } from '@remix-run/react'
-import invariant from 'tiny-invariant'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
+import { zx } from 'zodix'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label } from '~/app/components/ui'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
 import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
@@ -21,8 +21,8 @@ const RepoSchema = zfd.formData({
 })
 
 export const loader = async ({ params }: LoaderArgs) => {
-  invariant(params.companyId, 'company id should specified')
-  const integration = await getIntegration(params.companyId)
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const integration = await getIntegration(companyId)
   if (!integration) {
     throw new Error('integration not created')
   }
@@ -30,14 +30,14 @@ export const loader = async ({ params }: LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: ActionArgs) => {
-  invariant(params.companyId, 'company id should specified')
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
 
   const { repos } = RepoSchema.parse(await request.formData())
   console.log('repos', repos)
 
   for (const repo of repos) {
     await createRepository({
-      companyId: params.companyId,
+      companyId,
       projectId: repo.projectId,
       owner: repo.owner,
       repo: repo.repo,
