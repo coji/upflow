@@ -2,7 +2,15 @@ import type { Company } from '@prisma/client'
 import { prisma } from '~/app/services/db.server'
 export type { Company } from '@prisma/client'
 
-export const getCompanies = async () => prisma.company.findMany({})
+export const listCompanies = async () => {
+  return prisma.company.findMany({
+    select: {
+      id: true,
+      name: true,
+      teams: { select: { id: true, name: true } },
+    },
+  })
+}
 
 export const getCompany = async (companyId: string) =>
   prisma.company.findUnique({

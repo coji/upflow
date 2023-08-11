@@ -5,5 +5,5 @@ export const prisma = new PrismaClient({
 })
 
 prisma.$on('query', (e) => {
-  //  console.log(`${e.query} ${e.params}`)
+  console.log(`${e.query} ${e.params}`)
 })

@@ -16,13 +16,16 @@ import {
   Spacer,
 } from '~/app/components/ui'
 import type { SessionUser } from '~/app/features/auth/types/types'
+import { TeamSwitcher, type Companies, type Team } from '~/app/routes/company-switcher'
 
 interface AppLayoutProps {
   user?: SessionUser
+  companies?: Companies[]
+  selectedTeam?: Team
   children: React.ReactNode
 }
 
-const AppLayout = ({ user, children }: AppLayoutProps) => {
+const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
   const location = useLocation()
   const isAdmin = location.pathname.startsWith('/admin')
 
@@ -35,6 +38,8 @@ const AppLayout = ({ user, children }: AppLayoutProps) => {
           </Heading>
 
           {isAdmin && <Badge variant="destructive">Admin</Badge>}
+
+          {user && <TeamSwitcher companies={companies} />}
         </HStack>
 
         <Spacer />

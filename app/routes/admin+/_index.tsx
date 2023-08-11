@@ -2,11 +2,11 @@ import { PlusCircledIcon } from '@radix-ui/react-icons'
 import type { LoaderArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from '~/app/components/ui'
-import { getCompanies } from '~/app/models/admin/company.server'
+import { listCompanies } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request }: LoaderArgs) => {
   return {
-    companies: await getCompanies(),
+    companies: await listCompanies(),
   }
 }
 
