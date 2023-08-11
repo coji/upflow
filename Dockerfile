@@ -1,5 +1,5 @@
 # base node image
-FROM node:20-bullseye-slim as base
+FROM node:18-bullseye-slim as base
 ARG PNPM_VERSION=8.6.10
 
 # Install openssl for Prisma
