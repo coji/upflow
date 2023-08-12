@@ -21,6 +21,8 @@ import {
 } from '~/app/components/ui'
 import { createIntegration } from '~/app/models/admin/integration.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Add Integration' }) }
+
 const schema = z.object({
   provider: z.enum(['github', 'gitlab'], { required_error: 'provider is required' }),
   method: z.enum(['token'], { required_error: 'token is required' }),

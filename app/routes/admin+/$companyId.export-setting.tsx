@@ -19,6 +19,8 @@ import {
 } from '~/app/components/ui'
 import { getExportSetting, upsertExportSetting } from '~/app/models/admin/export-setting.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Export Settings' }) }
+
 const schema = z.object({
   sheetId: z.string().nonempty(),
   clientEmail: z.string().email().nonempty(),

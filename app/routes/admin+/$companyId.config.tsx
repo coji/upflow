@@ -25,6 +25,8 @@ import {
 } from '~/app/components/ui'
 import { getCompany, updateCompany } from '~/app/models/admin/company.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Config' }) }
+
 export const loader = async ({ params }: LoaderArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const company = await getCompany(companyId)
@@ -68,7 +70,7 @@ const EditCompany = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Edit company</CardTitle>
+        <CardTitle>Company Config</CardTitle>
       </CardHeader>
       <CardContent>
         <Form method="POST" {...form.props}>

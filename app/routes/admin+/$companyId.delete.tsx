@@ -7,6 +7,8 @@ import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, La
 import dayjs from '~/app/libs/dayjs'
 import { deleteCompany, getCompany } from '~/app/models/admin/company.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Delete Company' }) }
+
 export const loader = async ({ params }: LoaderArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const company = await getCompany(companyId)
@@ -29,7 +31,7 @@ const CompanyDeletePage = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Delete a company</CardTitle>
+        <CardTitle>Delete Company</CardTitle>
       </CardHeader>
       <CardContent>
         <Stack>

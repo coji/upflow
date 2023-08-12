@@ -28,11 +28,11 @@ export const loader = async ({ params }: LoaderArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-  return json(company)
+  return json({ company })
 }
 
 const CompanyPage = () => {
-  const company = useLoaderData<typeof loader>()
+  const { company } = useLoaderData<typeof loader>()
 
   return (
     <Card>
@@ -48,7 +48,7 @@ const CompanyPage = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
-                <Link to="edit">Edit Company</Link>
+                <Link to="config">Config</Link>
               </DropdownMenuItem>
               {company.exportSetting && (
                 <DropdownMenuItem asChild>
@@ -125,7 +125,7 @@ const CompanyPage = () => {
       <CardFooter>
         {company.integration && (
           <Button className="w-full" asChild>
-            <Link to="add-repository">Add Repo</Link>
+            <Link to="add-repositories">Add Repositories</Link>
           </Button>
         )}
       </CardFooter>

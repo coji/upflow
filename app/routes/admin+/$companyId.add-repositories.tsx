@@ -10,6 +10,8 @@ import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
 import { getIntegration } from '~/app/models/admin/integration.server'
 import { createRepository } from '~/app/models/admin/repository.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
+
 const RepoSchema = zfd.formData({
   repos: z.array(
     z.object({
@@ -72,7 +74,7 @@ const AddRepositoryModal = () => {
       {integration.provider === 'gitlab' && (
         <Card>
           <CardHeader>
-            <CardTitle>Add GitLab repositories</CardTitle>
+            <CardTitle>Add GitLab Repositories</CardTitle>
           </CardHeader>
           <CardContent></CardContent>
           <CardFooter>

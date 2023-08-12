@@ -21,7 +21,7 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
   const RepositoryAddModal = (
     <Card>
       <CardHeader>
-        <CardTitle>Add GitHub repositories</CardTitle>
+        <CardTitle>Add GitHub Repositories</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? <p>Loading...</p> : <RepositoryList allRepos={data ?? []} onChange={handleChangeCheckedRepos} />}
