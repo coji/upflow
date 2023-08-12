@@ -25,6 +25,8 @@ import {
 } from '~/app/components/ui'
 import { getRepository, updateRepository } from '~/app/models/admin/repository.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Edit Repository' }) }
+
 const githubSchema = z.object({
   provider: z.literal('github'),
   owner: z.string().nonempty(),

@@ -6,6 +6,8 @@ import { zx } from 'zodix'
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, Input, Label } from '~/app/components/ui'
 import { deleteRepository, getRepository } from '~/app/models/admin/repository.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Delete Repository' }) }
+
 export const loader = async ({ params }: LoaderArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   const repository = await getRepository(repositoryId)
