@@ -17,9 +17,21 @@ import {
 } from '~/app/components/ui'
 import { createCompany } from '~/app/models/admin/company.server'
 
+export const handle = { breadcrumb: () => ({ label: 'Create Company' }) }
+
 export const schema = z.object({
-  id: z.string().min(1, { message: 'Company ID is required' }),
-  name: z.string().min(1, { message: 'Company name is required' }),
+  companyId: z
+    .string()
+    .min(1)
+    .max(20)
+    .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
+  companyName: z.string().min(1).max(20),
+  teamId: z
+    .string()
+    .min(1)
+    .max(20)
+    .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
+  teamName: z.string().min(1).max(20),
 })
 
 export const action = async ({ request }: ActionArgs) => {
@@ -35,7 +47,7 @@ export const action = async ({ request }: ActionArgs) => {
 }
 
 const CompanyNewPage = () => {
-  const [form, { id, name }] = useForm({
+  const [form, { companyId, companyName, teamId, teamName }] = useForm({
     onValidate({ formData }) {
       return parse(formData, { schema })
     },
@@ -50,15 +62,27 @@ const CompanyNewPage = () => {
         <Form method="POST" {...form.props}>
           <Stack>
             <fieldset>
-              <Label htmlFor={id.id}>ID</Label>
-              <Input {...conform.input(id)} />
-              <div className="text-destructive">{id.error}</div>
+              <Label htmlFor={companyId.id}>Company ID</Label>
+              <Input autoFocus {...conform.input(companyId)} />
+              <div className="text-destructive">{companyId.error}</div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={name.id}>Company name</Label>
-              <Input {...conform.input(name)} />
-              <div className="text-destructive">{name.error}</div>
+              <Label htmlFor={companyName.id}>Company name</Label>
+              <Input {...conform.input(companyName)} />
+              <div className="text-destructive">{companyName.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={teamId.id}>Team ID</Label>
+              <Input {...conform.input(teamId)} />
+              <div className="text-destructive">{teamId.error}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={teamName.id}>Initial team name</Label>
+              <Input {...conform.input(teamName)} />
+              <div className="text-destructive">{teamName.error}</div>
             </fieldset>
           </Stack>
         </Form>

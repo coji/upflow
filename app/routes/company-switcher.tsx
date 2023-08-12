@@ -18,7 +18,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   Input,
   Label,
   Popover,
@@ -107,17 +106,15 @@ export const TeamSwitcher = ({ className, companies, selectedTeam, isAdmin }: Te
             <CommandSeparator />
             <CommandList>
               <CommandGroup>
-                <DialogTrigger asChild>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false)
-                      setShowNewTeamDialog(true)
-                    }}
-                  >
-                    <PlusCircledIcon className="mr-2 h-5 w-5" />
-                    Create Team
-                  </CommandItem>
-                </DialogTrigger>
+                <CommandItem
+                  onSelect={() => {
+                    navigate(`${isAdmin ? '/admin' : ''}/create`)
+                    setOpen(false)
+                  }}
+                >
+                  <PlusCircledIcon className="mr-2 h-5 w-5" />
+                  Create Team
+                </CommandItem>
               </CommandGroup>
             </CommandList>
           </Command>

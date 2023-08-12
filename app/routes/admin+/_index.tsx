@@ -27,8 +27,8 @@ const AdminCompanyIndex = () => {
           ))}
         </CardContent>
         <CardFooter>
-          <Button asChild className="w-full" variant="default">
-            <Link to="add">
+          <Button asChild className="w-full" variant="outline">
+            <Link to="create">
               <PlusCircledIcon className="mr-2" />
               新規作成
             </Link>
