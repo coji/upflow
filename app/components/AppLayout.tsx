@@ -16,8 +16,8 @@ import {
   Spacer,
 } from '~/app/components/ui'
 import type { SessionUser } from '~/app/features/auth/types/types'
+import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 import { TeamSwitcher, type Companies, type Team } from '~/app/routes/company-switcher'
-import { AppBreadcrumbs, useBreadcrumbs } from './AppBreadcrumbs'
 
 interface AppLayoutProps {
   user?: SessionUser
@@ -29,7 +29,7 @@ interface AppLayoutProps {
 const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
   const location = useLocation()
   const isAdmin = location.pathname.startsWith('/admin')
-  const breadcrumbs = useBreadcrumbs()
+  const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
@@ -80,7 +80,7 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
 
       <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 md:px-0">
         <div className="flex flex-1 flex-col px-2 md:container">
-          <AppBreadcrumbs items={breadcrumbs} />
+          <AppBreadcrumbs />
           <div className="flex-1">{children}</div>
         </div>
       </main>
