@@ -17,6 +17,7 @@ import {
 } from '~/app/components/ui'
 import type { SessionUser } from '~/app/features/auth/types/types'
 import { TeamSwitcher, type Companies, type Team } from '~/app/routes/company-switcher'
+import { AppBreadcrumbs, useBreadcrumbs } from './AppBreadcrumbs'
 
 interface AppLayoutProps {
   user?: SessionUser
@@ -28,18 +29,17 @@ interface AppLayoutProps {
 const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
   const location = useLocation()
   const isAdmin = location.pathname.startsWith('/admin')
+  const breadcrumbs = useBreadcrumbs()
 
   return (
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
       <header className="flex items-center px-2 py-1 md:container">
         <HStack>
           <Heading>
-            <Link to="/admin">UpFlow</Link>
+            <Link to="/admin">UpFlow {isAdmin && ' Admin'}</Link>
           </Heading>
 
-          {isAdmin && <Badge variant="destructive">Admin</Badge>}
-
-          {user && <TeamSwitcher companies={companies} />}
+          {user && <TeamSwitcher companies={companies} isAdmin={isAdmin} />}
         </HStack>
 
         <Spacer />
@@ -78,8 +78,11 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
         )}
       </header>
 
-      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 px-2 py-2 md:px-0">
-        <div className="flex-1 md:container">{children}</div>
+      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 md:px-0">
+        <div className="flex flex-1 flex-col px-2 md:container">
+          <AppBreadcrumbs items={breadcrumbs} />
+          <div className="flex-1">{children}</div>
+        </div>
       </main>
 
       <footer className="p-2 text-center text-sm shadow">

@@ -1,4 +1,5 @@
 import { CaretSortIcon, CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons'
+import { useNavigate } from '@remix-run/react'
 import { useState } from 'react'
 import {
   Avatar,
@@ -46,11 +47,13 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 interface TeamSwitcherProps extends PopoverTriggerProps {
   companies: Companies[]
   selectedTeam?: Team
+  isAdmin: boolean
 }
 
-export const TeamSwitcher = ({ className, companies, selectedTeam }: TeamSwitcherProps) => {
+export const TeamSwitcher = ({ className, companies, selectedTeam, isAdmin }: TeamSwitcherProps) => {
   const [open, setOpen] = useState(false)
   const [showNewTeamDialog, setShowNewTeamDialog] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
@@ -61,7 +64,7 @@ export const TeamSwitcher = ({ className, companies, selectedTeam }: TeamSwitche
             role="combobox"
             aria-expanded={open}
             aria-label="Select a team"
-            className={cn('w-[200px] justify-between', className)}
+            className={cn('w-[10rem] justify-between md:w-[12rem]', className)}
           >
             {selectedTeam ? (
               <>
@@ -72,11 +75,11 @@ export const TeamSwitcher = ({ className, companies, selectedTeam }: TeamSwitche
                 <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
               </>
             ) : (
-              <div>Select Team</div>
+              <div>Select Team...</div>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-[10rem] p-0 md:w-[12rem]">
           <Command>
             <CommandList>
               <CommandInput placeholder="Search team..." />
@@ -88,6 +91,7 @@ export const TeamSwitcher = ({ className, companies, selectedTeam }: TeamSwitche
                       key={team.id}
                       onSelect={() => {
                         setOpen(false)
+                        navigate(`${isAdmin ? '/admin' : ''}/${company.id}`)
                       }}
                       className="text-sm"
                     >

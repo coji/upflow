@@ -1,6 +1,6 @@
 import { json, type LoaderArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
-import { AppBreadcrumbs, AppLayout, useBreadcrumbs } from '~/app/components'
+import { AppLayout } from '~/app/components'
 import { getAdminUser } from '~/app/features/auth/services/user-session.server'
 import { listCompanies } from '~/app/models/admin/company.server'
 
@@ -34,11 +34,9 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 const AdminLayoutPage = () => {
   const { adminUser, companies } = useLoaderData<typeof loader>()
-  const breadcrumbs = useBreadcrumbs()
 
   return (
     <AppLayout user={adminUser} companies={companies}>
-      <AppBreadcrumbs items={breadcrumbs} />
       <Outlet />
     </AppLayout>
   )
