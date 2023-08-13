@@ -6,10 +6,7 @@ import { getCompany } from '~/app/models/admin/company.server'
 
 export const handle = {
   breadcrumb: ({ company }: { company: NonNullable<Awaited<ReturnType<typeof getCompany>>> }) => {
-    return {
-      label: company.name,
-      to: `/admin/${company.id}`,
-    }
+    return { label: company.name, to: `/admin/${company.id}` }
   },
 }
 
