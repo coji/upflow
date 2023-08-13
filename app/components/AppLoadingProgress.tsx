@@ -20,7 +20,7 @@ export const AppLoadingProgress = () => {
         setValue((v) => {
           if (v < 50) return v + Math.random() * 2
           if (v < 90) return v * v
-          return v + 1
+          return v
         })
       }, 100)
     } else {
