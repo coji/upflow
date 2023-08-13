@@ -30,8 +30,8 @@ export default function App() {
   return (
     <>
       <Head />
-      <AppLoadingProgress />
       <QueryClientProvider client={queryClient}>
+        <AppLoadingProgress />
         <Outlet />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>

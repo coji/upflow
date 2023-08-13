@@ -1,14 +1,19 @@
 import { useNavigation } from '@remix-run/react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Progress } from './ui'
 
 export const AppLoadingProgress = () => {
   const navigation = useNavigation()
+  const isRemixLoading = navigation.state === 'loading'
+  const queryClient = useQueryClient()
+  const isReactQueryLoading = !!queryClient.isFetching()
+  const isLoading = isRemixLoading || isReactQueryLoading
   const [value, setValue] = useState(0)
 
   useEffect(() => {
     let interval: number | null = null
-    if (navigation.state === 'loading') {
+    if (isLoading) {
       setValue(0)
       interval = window.setInterval(() => {
         // 演出
@@ -27,14 +32,16 @@ export const AppLoadingProgress = () => {
         clearInterval(interval)
       }
     }
-  }, [navigation.state])
+  }, [isLoading])
 
   return (
-    <Progress
-      className={`fixed left-0 right-0 top-0 h-[2px] transition-opacity duration-1000 ${
-        navigation.state === 'loading' ? 'opacity-100' : 'opacity-0'
-      }`}
-      value={value}
-    />
+    <div>
+      <Progress
+        className={`fixed left-0 right-0 top-0 h-[2px] transition-opacity duration-1000 ${
+          isLoading ? 'opacity-100' : 'opacity-0'
+        }`}
+        value={value}
+      />
+    </div>
   )
 }
