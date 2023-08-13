@@ -47,7 +47,7 @@ const AddRepositoryModal = () => {
             Delete
           </Button>
           <Button asChild variant="ghost">
-            <Link to={`/admin/${companyId}`}>Cancel</Link>
+            <Link to={`/admin/${companyId}/repository`}>Cancel</Link>
           </Button>
         </HStack>
       </CardFooter>

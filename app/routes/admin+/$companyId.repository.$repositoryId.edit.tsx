@@ -189,7 +189,7 @@ const EditRepositoryModal = () => {
             Update
           </Button>
           <Button asChild variant="ghost">
-            <Link to={`/admin/${companyId}`}>Cancel</Link>
+            <Link to={`/admin/${companyId}/repository`}>Cancel</Link>
           </Button>
         </Stack>
       </CardFooter>

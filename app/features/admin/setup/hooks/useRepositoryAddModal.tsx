@@ -41,7 +41,7 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
             Add
           </Button>
           <Button asChild variant="ghost">
-            <Link to="..">Cancel</Link>
+            <Link to="./..">Cancel</Link>
           </Button>
         </HStack>
 
