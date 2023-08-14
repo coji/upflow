@@ -78,7 +78,7 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
         )}
       </header>
 
-      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 md:px-0">
+      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 pb-2 md:px-0">
         <div className="flex flex-1 flex-col px-2 md:container">
           <AppBreadcrumbs />
           <div className="flex-1">{children}</div>
