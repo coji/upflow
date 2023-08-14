@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   DropdownMenu,
@@ -47,7 +46,6 @@ export default function CompanyLayout() {
       <CardHeader>
         <Stack direction="row" className="items-start">
           <CardTitle>{company.name}</CardTitle>
-          <CardDescription>Manage your company.</CardDescription>
 
           <Spacer />
           <DropdownMenu>

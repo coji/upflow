@@ -4,7 +4,17 @@ import { Link, useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Button, HStack, Spacer, Stack } from '~/app/components/ui'
+import {
+  Button,
+  HStack,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/app/components/ui'
 import { getCompany } from '~/app/models/admin/company.server'
 
 export const loader = async ({ params }: LoaderArgs) => {
@@ -21,38 +31,52 @@ export default function CompanyRepositoryIndexPage() {
 
   return (
     <Stack>
-      {company.repositories.map((repo) => {
-        const repoUrl = match(repo.provider)
-          .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
-          .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
-          .otherwise(() => '')
-        return (
-          <HStack key={repo.id}>
-            <Link to={`${repo.id}/edit`}>
-              <span className="underline decoration-border hover:text-primary">
-                {repo.name} {repo.releaseDetectionKey}
-              </span>
-            </Link>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Owner</TableHead>
+            <TableHead>Repo</TableHead>
+            <TableHead>Method</TableHead>
+            <TableHead>Key</TableHead>
+            <TableHead>Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {company.repositories.map((repo) => {
+            const repoUrl = match(repo.provider)
+              .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
+              .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
+              .otherwise(() => '')
+            return (
+              <TableRow key={repo.id}>
+                <TableCell>{repo.owner}</TableCell>
 
-            <Button asChild size="xs" variant="outline">
-              <Link to={repoUrl} target="_blank">
-                {repo.provider} <ExternalLinkIcon />
-              </Link>
-            </Button>
+                <TableCell>
+                  <Link to={repoUrl} target="_blank" className="">
+                    {repo.repo} <ExternalLinkIcon className="inline" />
+                  </Link>
+                </TableCell>
 
-            <Spacer />
+                <TableCell>{repo.releaseDetectionKey}</TableCell>
 
-            <Button
-              asChild
-              size="xs"
-              variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <Link to={`${repo.id}/delete`}>Delete</Link>
-            </Button>
-          </HStack>
-        )
-      })}
+                <TableCell>{repo.releaseDetectionMethod}</TableCell>
+
+                <TableCell>
+                  <HStack>
+                    <Button asChild size="xs" variant="outline">
+                      <Link to={`${repo.id}/edit`}>Edit</Link>
+                    </Button>
+
+                    <Button asChild size="xs" variant="destructive">
+                      <Link to={`${repo.id}/delete`}>Delete</Link>
+                    </Button>
+                  </HStack>
+                </TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
 
       {company.integration && (
         <Button className="w-full" asChild>

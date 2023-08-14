@@ -22,9 +22,9 @@ import { getExportSetting, upsertExportSetting } from '~/app/models/admin/export
 export const handle = { breadcrumb: () => ({ label: 'Export Settings' }) }
 
 const schema = z.object({
-  sheetId: z.string().nonempty(),
-  clientEmail: z.string().email().nonempty(),
-  privateKey: z.string().nonempty(),
+  sheetId: z.string(),
+  clientEmail: z.string().email(),
+  privateKey: z.string(),
 })
 
 export const loader = async ({ params }: LoaderArgs) => {

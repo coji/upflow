@@ -1,8 +1,8 @@
+import { parse } from '@conform-to/zod'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node'
 import { redirect } from '@remix-run/node'
 import { Form, useFetcher, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
-import { zfd } from 'zod-form-data'
 import { zx } from 'zodix'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label } from '~/app/components/ui'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
@@ -12,7 +12,7 @@ import { createRepository } from '~/app/models/admin/repository.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
-const RepoSchema = zfd.formData({
+const RepoSchema = z.object({
   repos: z.array(
     z.object({
       projectId: z.string().optional(),
@@ -34,7 +34,11 @@ export const loader = async ({ params }: LoaderArgs) => {
 export const action = async ({ request, params }: ActionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
 
-  const { repos } = RepoSchema.parse(await request.formData())
+  const submission = parse(await request.formData(), { schema: RepoSchema })
+  if (!submission.value) {
+    throw new Error('invalid submission')
+  }
+  const repos = submission.value.repos
   console.log('repos', repos)
 
   for (const repo of repos) {
@@ -45,7 +49,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       repo: repo.repo,
     })
   }
-  return redirect(`/admin/${params.companyId}`)
+  return redirect(`/admin/${params.companyId}/repository`)
 }
 
 const AddRepositoryModal = () => {

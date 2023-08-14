@@ -23,7 +23,7 @@ export const loader = async ({ params }: LoaderArgs) => {
 export const action = async ({ params }: ActionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   await deleteRepository(repositoryId)
-  return redirect(`/admin/${companyId}`)
+  return redirect(`/admin/${companyId}/repository`)
 }
 
 const AddRepositoryModal = () => {

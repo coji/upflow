@@ -9,6 +9,7 @@ interface createRepositoryProps {
   repo?: string
 }
 export const createRepository = async ({ companyId, projectId, owner, repo }: createRepositoryProps) => {
+  const company = await prisma.company.findFirstOrThrow({ where: { id: companyId } })
   const integration = await prisma.integration.findFirstOrThrow({ where: { companyId } })
   if (integration.provider === 'github') {
     invariant(owner, 'github repo must specify owner')
@@ -22,6 +23,8 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
         owner,
         repo,
         name: `${owner}/${repo}`,
+        releaseDetectionKey: company.releaseDetectionKey,
+        releaseDetectionMethod: company.releaseDetectionMethod,
       },
     })
   }
@@ -35,6 +38,8 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
         provider: integration.provider,
         projectId,
         name: `${projectId}`,
+        releaseDetectionKey: company.releaseDetectionKey,
+        releaseDetectionMethod: company.releaseDetectionMethod,
       },
     })
   }
