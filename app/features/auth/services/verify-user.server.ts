@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client'
 import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
 import invariant from 'tiny-invariant'
-import { upsertUserByEmail, type User } from '~/app/models/user.server'
+import { getUserByEmail, upsertUserByEmail, type User } from '~/app/models/user.server'
 import type { SessionUser } from '../types/types'
 import {
   isSupportedSocialProvider,
@@ -20,7 +20,10 @@ export const verifyUser: StrategyVerifyCallback<
 
   const errorMessages = []
   let user: Omit<User, 'createdAt' | 'updatedAt'> | null = null
+
   try {
+    user = await getUserByEmail({ email })
+
     // ユーザを登録 / upsert
     user = await upsertUserByEmail({
       email,

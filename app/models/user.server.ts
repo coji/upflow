@@ -9,8 +9,8 @@ export async function getUserById(id: User['id']) {
   })
 }
 
-export async function getUserByEmail(email: User['email']) {
-  return prisma.user.findUnique({ where: { email } })
+export async function getUserByEmail({ email }: { email: User['email'] }) {
+  return prisma.user.findUniqueOrThrow({ where: { email } })
 }
 
 export async function upsertUserByEmail({

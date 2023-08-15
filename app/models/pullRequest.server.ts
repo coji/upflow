@@ -43,10 +43,7 @@ export function upsertPullRequest(pullRequest: PullRequest) {
 
 export async function getPullRequestReport(companyId: string) {
   return prisma.pullRequest.findMany({
-    where: {
-      repository: {
-        companyId,
-      },
-    },
+    where: { repository: { companyId } },
+    orderBy: { mergedAt: 'desc' },
   })
 }
