@@ -1,5 +1,5 @@
 import { GearIcon } from '@radix-ui/react-icons'
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderArgs, type V2_MetaFunction } from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -20,6 +20,8 @@ import {
   TabsTrigger,
 } from '~/app/components/ui'
 import { getCompany } from '~/app/models/admin/company.server'
+
+export const meta: V2_MetaFunction<typeof loader> = ({ data }) => [{ title: `${data?.company.name} - Upflow Admin` }]
 
 export const handle = {
   breadcrumb: ({ company }: { company: NonNullable<Awaited<ReturnType<typeof getCompany>>> }) => {

@@ -1,8 +1,10 @@
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderArgs, type V2_MetaFunction } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { AppLayout } from '~/app/components'
 import { getAdminUser } from '~/app/features/auth/services/user-session.server'
 import { listCompanies } from '~/app/models/admin/company.server'
+
+export const meta: V2_MetaFunction = () => [{ title: 'Upflow Admin' }]
 
 export const handle = {
   breadcrumb: () => ({ label: 'Admin', to: `/admin` }),
