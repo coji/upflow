@@ -11,7 +11,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   return json({ companyId, teams })
 }
 export default function TeamPage() {
-  const { companyId, teams } = useLoaderData<typeof loader>()
+  const { teams } = useLoaderData<typeof loader>()
 
   return (
     <div>
