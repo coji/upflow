@@ -19,7 +19,7 @@ export const AppLoadingProgress = () => {
         // 演出
         setValue((v) => {
           if (v < 50) return v + Math.random() * 2
-          if (v < 90) return v * v
+          if (v < 90) return v + 1
           return v
         })
       }, 100)
@@ -37,7 +37,7 @@ export const AppLoadingProgress = () => {
   return (
     <div>
       <Progress
-        className={`fixed left-0 right-0 top-0 h-[2px] transition-opacity duration-1000 ${
+        className={`fixed left-0 right-0 top-0 h-0.5 transition-opacity duration-1000 ${
           isLoading ? 'opacity-100' : 'opacity-0'
         }`}
         value={value}
