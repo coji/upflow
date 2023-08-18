@@ -7,7 +7,7 @@ interface createPathBuilderProps {
 export const createPathBuilder = ({ companyId, repositoryId }: createPathBuilderProps) => {
   const jsonPath = (filename: string) => {
     // JSON データの保存場所
-    const JSON_DIR = path.join(process.env.UPFLOW_DATA_DIR ?? path.join(__dirname, '..', '..', 'data'), 'json')
+    const JSON_DIR = path.join(process.env.UPFLOW_DATA_DIR ?? path.join(__dirname, '..', 'data'), 'json')
     return path.join(JSON_DIR, companyId, repositoryId, filename)
   }
   const jsonFilename = (element: string, iid: number) => `${element}/${iid}-${element}.json`
