@@ -3,6 +3,7 @@ import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-meth
 export type GitHubPullRequest = RestEndpointMethodTypes['pulls']['list']['response']['data'][0]
 export type GitHubCommit = RestEndpointMethodTypes['pulls']['listCommits']['response']['data'][0]
 export type GitHubReview = RestEndpointMethodTypes['pulls']['listReviews']['response']['data'][0]
+export type GithubIssueComment = RestEndpointMethodTypes['issues']['listComments']['response']['data'][0]
 export type GitHubReviewComment = RestEndpointMethodTypes['pulls']['listReviewComments']['response']['data'][0]
 export type GitHubUser = GitHubPullRequest['user']
 
@@ -26,6 +27,13 @@ export interface ShapedGitHubCommit {
   url: GitHubCommit['html_url']
   committer: NonNullable<GitHubCommit['author']>['login'] | null
   date: NonNullable<GitHubCommit['commit']['author']>['date'] | null
+}
+
+export interface ShapedGitHubIssueComment {
+  id: GithubIssueComment['id']
+  user: NonNullable<GithubIssueComment['user']>['login'] | null
+  url: GithubIssueComment['html_url']
+  createdAt: GithubIssueComment['created_at']
 }
 
 export interface ShapedGitHubReviewComment {

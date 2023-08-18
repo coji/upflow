@@ -2,12 +2,19 @@ import { Octokit } from 'octokit'
 import dayjs from '~/app/libs/dayjs'
 import type {
   ShapedGitHubCommit,
+  ShapedGitHubIssueComment,
   ShapedGitHubPullRequest,
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
 } from '../model'
-import { shapeGitHubCommit, shapeGitHubPullRequest, shapeGitHubReview, shapeGitHubReviewComment } from '../shaper'
+import {
+  shapeGitHubCommit,
+  shapeGitHubIssueComment,
+  shapeGitHubPullRequest,
+  shapeGitHubReview,
+  shapeGitHubReviewComment,
+} from '../shaper'
 
 interface createFetcherProps {
   owner: string
@@ -62,6 +69,24 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return allCommits
   }
 
+  const issueComments = async (pullNumber: number) => {
+    const allComments: ShapedGitHubIssueComment[] = []
+    let page = 1
+    do {
+      const ret = await octokit.rest.issues.listComments({
+        owner,
+        repo,
+        issue_number: pullNumber,
+        page,
+        per_page: 100,
+      })
+      if (ret.data.length === 0) break
+      allComments.push(...ret.data.map((comment) => shapeGitHubIssueComment(comment)))
+      page++
+    } while (true)
+    return allComments
+  }
+
   const reviewComments = async (pullNumber: number) => {
     let allComments: ShapedGitHubReviewComment[] = []
     let page = 1
@@ -77,6 +102,16 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       allComments = [...allComments, ...ret.data.map((comment) => shapeGitHubReviewComment(comment))]
       page++
     } while (true)
+    return allComments
+  }
+
+  // すべてのコメントを統合してマージ/ソート
+  const comments = async (pullNumber: number) => {
+    const issue = await issueComments(pullNumber)
+    const review = await reviewComments(pullNumber)
+
+    const allComments = [...issue, ...review]
+    allComments.sort((a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix())
     return allComments
   }
 
@@ -119,5 +154,5 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return tags.filter((tag) => !!tag.committedAt) as ShapedGitHubTag[] // コミット日時がないものは除外 (通常ないけど)
   }
 
-  return { pullrequests, commits, reviewComments, reviews, tags }
+  return { pullrequests, commits, comments, reviews, tags }
 }

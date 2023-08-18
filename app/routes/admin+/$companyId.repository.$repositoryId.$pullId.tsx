@@ -47,7 +47,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   })
 
   const commits = await fetcher.commits(pullId)
-  const comments = await fetcher.reviewComments(pullId)
+  const comments = await fetcher.comments(pullId)
   const reviews = await fetcher.reviews(pullId)
   return json({ companyId, repositoryId, pull, commits, comments, reviews })
 }
@@ -63,7 +63,7 @@ const RepositoryPullsIndexPage = () => {
       </div>
 
       <div>
-        <Heading>Comments (live)</Heading>
+        <Heading>ReviewComments (live)</Heading>
         <pre>{JSON.stringify(comments, null, 2)}</pre>
       </div>
 

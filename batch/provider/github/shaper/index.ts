@@ -3,7 +3,9 @@ import type {
   GitHubPullRequest,
   GitHubReview,
   GitHubReviewComment,
+  GithubIssueComment,
   ShapedGitHubCommit,
+  ShapedGitHubIssueComment,
   ShapedGitHubPullRequest,
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
@@ -42,6 +44,18 @@ export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (
     url: commit.html_url,
     committer: commit.committer?.login ?? null, // author にすると古いのになっちゃうので committer
     date: commit.commit.committer?.date ?? null,
+  }
+}
+
+/**
+ * GitHubIssueComment を集計に必要な props のみに shape する
+ */
+export const shapeGitHubIssueComment: (comment: GithubIssueComment) => ShapedGitHubIssueComment = (comment) => {
+  return {
+    id: comment.id,
+    user: comment.user?.login ?? null,
+    url: comment.html_url,
+    createdAt: comment.created_at,
   }
 }
 

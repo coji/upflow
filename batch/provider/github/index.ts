@@ -70,7 +70,7 @@ export const createGitHubProvider = (integration: Integration) => {
 
       // 個別PRのレビューコメント
       await logger.info(`${number} review comments`)
-      const discussions = await fetcher.reviewComments(number)
+      const discussions = await fetcher.comments(number)
       await store.save(store.path.discussionsJsonFilename(number), discussions)
 
       await setTimeout(delay) // 待つ
