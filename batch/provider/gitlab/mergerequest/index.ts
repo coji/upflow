@@ -52,7 +52,7 @@ export const buildMergeRequests = async (
 
       pulls.push({
         repo: String(m.projectId),
-        number: String(m.iid),
+        number: m.iid,
         sourceBranch: m.sourceBranch,
         targetBranch: m.targetBranch,
         state: m.state,

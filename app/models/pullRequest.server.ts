@@ -1,4 +1,4 @@
-import type { PullRequest } from '@prisma/client'
+import type { Company, PullRequest } from '@prisma/client'
 import { prisma } from '~/app/services/db.server'
 export type { PullRequest } from '@prisma/client'
 
@@ -17,7 +17,7 @@ export function getPullRequestSummary() {
   return prisma.$queryRaw<MergeRequestSummary[]>`SELECT author, count(*) as cnt FROM mergerequest GROUP BY author`
 }
 
-export function getPullRequestItem(repositoryId: string, number: string) {
+export function getPullRequestItem(repositoryId: PullRequest['repositoryId'], number: PullRequest['number']) {
   return prisma.pullRequest.findUniqueOrThrow({
     where: {
       repositoryId_number: {
@@ -41,7 +41,7 @@ export function upsertPullRequest(pullRequest: PullRequest) {
   })
 }
 
-export async function getPullRequestReport(companyId: string) {
+export async function getPullRequestReport(companyId: Company['id']) {
   return prisma.pullRequest.findMany({
     where: { repository: { companyId } },
     orderBy: { mergedAt: 'desc' },
