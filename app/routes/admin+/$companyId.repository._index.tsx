@@ -64,6 +64,10 @@ export default function CompanyRepositoryIndexPage() {
                 <TableCell>
                   <HStack>
                     <Button asChild size="xs" variant="outline">
+                      <Link to={`${repo.id}`}>Pulls</Link>
+                    </Button>
+
+                    <Button asChild size="xs" variant="outline">
                       <Link to={`${repo.id}/edit`}>Edit</Link>
                     </Button>
 

@@ -102,7 +102,7 @@ model Repository {
 
 model PullRequest {
   repo                 String
-  number               String
+  number               Int
   sourceBranch         String
   targetBranch         String
   state                String
