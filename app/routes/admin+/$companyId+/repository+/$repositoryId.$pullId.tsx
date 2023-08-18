@@ -1,4 +1,4 @@
-import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { z } from 'zod'
@@ -61,34 +61,6 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   }
 
   return json({ companyId, repositoryId, pull, storeData, fetchData })
-}
-
-export const action = async ({ request, params }: ActionArgs) => {
-  const { companyId, repositoryId, pullId } = zx.parseParams(params, {
-    companyId: z.string(),
-    repositoryId: z.string(),
-    pullId: zx.NumAsString,
-  })
-  const repository = await getRepository(repositoryId)
-  if (!repository) {
-    throw new Error('Repository not found')
-  }
-  invariant(repository.owner, 'Repository is not integrated')
-  invariant(repository.repo, 'Repository is not integrated')
-  invariant(repository.integration, 'Repository is not integrated')
-  invariant(repository.integration.privateToken, 'Repository is not integrated')
-
-  const fetcher = createFetcher({
-    owner: repository.owner,
-    repo: repository.repo,
-    token: repository.integration.privateToken,
-  })
-  const commits = await fetcher.commits(pullId)
-  const comments = await fetcher.comments(pullId)
-  const reviews = await fetcher.reviews(pullId)
-  const store = createStore({ companyId, repositoryId })
-
-  return null
 }
 
 const RepositoryPullsIndexPage = () => {
