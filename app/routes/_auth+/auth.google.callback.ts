@@ -1,9 +1,8 @@
 import { redirect, type LoaderArgs } from '@remix-run/node'
 import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
-import { createForwardedRequest } from '~/app/services/forwarded-request'
 
 export const loader = async ({ request, context }: LoaderArgs) => {
-  const user = await authenticator.authenticate('google', createForwardedRequest(request), {
+  const user = await authenticator.authenticate('google', request, {
     failureRedirect: '/login',
     context,
   })
