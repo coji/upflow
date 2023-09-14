@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { expect, test } from 'bun:test'
 import { createForwardedRequest } from './forwarded-request'
 
 test('forwarded-request https ヘッダなし', () => {
