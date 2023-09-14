@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { firstCommit } from './firstCommit'
 
 describe('firstCommit', () => {

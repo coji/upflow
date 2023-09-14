@@ -1,4 +1,4 @@
-import { describe, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { reviewTime } from './cycletime'
 
 describe('reviewTime', () => {

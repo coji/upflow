@@ -1,5 +1,5 @@
+import { describe, expect, test } from 'bun:test'
 import path from 'path'
-import { describe, expect, test } from 'vitest'
 import { createPathBuilder } from './path-builder'
 
 describe('path-builder', () => {
