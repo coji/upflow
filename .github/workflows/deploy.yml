@@ -17,40 +17,17 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
-      - name: ⎔ Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - uses: pnpm/action-setup@v2.2.4
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+      - uses: oven-sh/setup-bun@v1
+        name: Install bun
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Generate prisma client
-        run: pnpm prisma generate
+        run: bun run prisma generate
 
       - name: 🔬 Lint
-        run: pnpm run lint
+        run: bun run lint
 
   typecheck:
     name: ʦ TypeScript
@@ -62,39 +39,17 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v3
 
-      - name: ⎔ Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - uses: pnpm/action-setup@v2.2.4
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+      - uses: oven-sh/setup-bun@v1
+        name: Install bun
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Generate prisma client
-        run: pnpm prisma generate
+        run: bun run prisma generate
 
       - name: 🔎 Type check
-        run: pnpm run typecheck
+        run: bun run typecheck
 
   vitest:
     name: ⚡ Vitest
@@ -109,39 +64,17 @@ jobs:
       - name: 🏄 Copy test env vars
         run: cp .env.example .env
 
-      - name: ⎔ Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - uses: pnpm/action-setup@v2.2.4
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+      - uses: oven-sh/setup-bun@v1
+        name: Install bun
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: 🛠 Setup Database
-        run: pnpm prisma migrate reset --force
+        run: bun run prisma migrate reset --force
 
       - name: ⚡ Run vitest
-        run: pnpm run test -- --coverage
+        run: bun run test -- --coverage
 
   playwright:
     name: ⚫️ Playwright
@@ -156,45 +89,23 @@ jobs:
       - name: 🏄 Copy test env vars
         run: cp .env.example .env
 
-      - name: ⎔ Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - uses: pnpm/action-setup@v2.2.4
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+      - uses: oven-sh/setup-bun@v1
+        name: Install bun
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: 🛠 Setup Database
-        run: npx prisma migrate reset --force
+        run: bun run prisma migrate reset --force
 
       - name: ⚙️ Build
-        run: npm run build
+        run: bun run build
 
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: bunx playwright install --with-deps
 
       - name: 🌳Run Playwright tests
-        run: pnpm run test:e2e:run
+        run: bun run test:e2e:run
 
       - uses: actions/upload-artifact@v3
         if: always()

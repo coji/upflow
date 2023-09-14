@@ -7,7 +7,7 @@
     "build:server": "esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle",
     "build:remix": "remix build",
     "dev": "run-p dev:*",
-    "dev:build": "cross-env NODE_ENV=development pnpm run build:server --watch",
+    "dev:build": "cross-env NODE_ENV=development bun run build:server --watch",
     "dev:remix": "cross-env NODE_ENV=development remix watch",
     "dev:server": "cross-env NODE_ENV=development node --inspect --require ./node_modules/dotenv/config --require ./mocks/index.cjs ./build/server.js",
     "format": "prettier --write .",
@@ -130,7 +130,7 @@
     "typescript": "5.2.2",
     "vite": "4.4.9",
     "vite-tsconfig-paths": "4.2.1",
-    "vitest": "0.34.4"
+    "vitest": "^0.34.4"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
