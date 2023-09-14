@@ -12,7 +12,7 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [deploy]
-  release_command = "npx prisma migrate deploy"
+  release_command = "bunx prisma migrate deploy"
 
 [[mounts]]
   source = "database_machines"
