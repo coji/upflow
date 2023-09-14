@@ -14,7 +14,7 @@ const config: PlaywrightTestConfig = {
   reporter: 'html',
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'PORT=8811 pnpm run start',
+    command: 'PORT=8811 bun run start',
     port: 8811,
     reuseExistingServer: !process.env.CI,
   },
