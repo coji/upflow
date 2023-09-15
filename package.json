@@ -109,7 +109,7 @@
     "@types/node-schedule": "2.1.0",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
-    "@types/web": "^0.0.114",
+    "@types/web": "0.0.114",
     "autoprefixer": "10.4.15",
     "bun-types": "1.0.1",
     "esbuild": "0.19.3",
