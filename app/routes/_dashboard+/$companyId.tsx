@@ -1,4 +1,4 @@
-import { json, type LoaderArgs, type V2_MetaFunction } from '@remix-run/node'
+import { json, type LoaderFunctionArgs, type MetaFunction } from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, Tabs, TabsList, TabsTrigger }
 import { getCompany } from '~/app/models/admin/company.server'
 import { getPullRequestReport } from '~/app/models/pullRequest.server'
 
-export const meta: V2_MetaFunction<typeof loader> = ({ data }) => [{ title: `${data?.company.name} - Upflow Admin` }]
+export const meta: MetaFunction<typeof loader> = ({ data }) => [{ title: `${data?.company.name} - Upflow Admin` }]
 
 export const handle = {
   breadcrumb: ({ company }: { company: NonNullable<Awaited<ReturnType<typeof getCompany>>> }) => {
@@ -14,7 +14,7 @@ export const handle = {
   },
 }
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const company = await getCompany(companyId)
   if (!company) {

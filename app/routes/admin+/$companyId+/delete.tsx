@@ -1,4 +1,4 @@
-import { redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { useState } from 'react'
 import { z } from 'zod'
@@ -9,7 +9,7 @@ import { deleteCompany, getCompany } from '~/app/models/admin/company.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Delete Company' }) }
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const company = await getCompany(companyId)
   if (!company) {
@@ -18,7 +18,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   return { companyId, company }
 }
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   await deleteCompany(companyId)
   return redirect('/admin')

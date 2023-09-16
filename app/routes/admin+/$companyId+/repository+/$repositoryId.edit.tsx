@@ -1,6 +1,6 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { json, redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -42,7 +42,7 @@ const gitlabSchema = z.object({
   releaseDetectionKey: z.string().nonempty(),
 })
 
-export const loader = async ({ request, params }: LoaderArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   const repository = await getRepository(repositoryId)
   if (!repository) {
@@ -54,7 +54,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   return json({ companyId, repositoryId, repository, provider: repository.integration.provider })
 }
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   const formData = await request.formData()
   const entries = Object.fromEntries(formData.entries())

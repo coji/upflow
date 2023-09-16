@@ -1,6 +1,6 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { RiGithubFill, RiGitlabFill } from 'react-icons/ri'
 import { z } from 'zod'
@@ -29,12 +29,12 @@ const schema = z.object({
   token: z.string().min(1, { message: 'token is required' }),
 })
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   return { companyId }
 }
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const submission = await parse(await request.formData(), { schema })
   if (!submission.value) {
