@@ -11,9 +11,6 @@ kill_timeout = "5s"
 [experimental]
   auto_rollback = true
 
-[deploy]
-  release_command = "npx prisma migrate deploy"
-
 [[mounts]]
   source = "database_machines"
   destination = "/upflow/data"

@@ -6,5 +6,15 @@
 # Learn more: https://community.fly.io/t/sqlite-not-getting-setup-properly/4386
 
 set -ex
+
+# swap on
+fallocate -l 512M /swapfile
+chmod 0600 /swapfile
+mkswap /swapfile
+echo 10 > /proc/sys/vm/swappiness
+swapon /swapfile
+echo 1 > /proc/sys/vm/overcommit_memory
+
 echo "DATABASE_URL is $DATABASE_URL"
+bunx prisma migrate deploy
 NODE_ENV=production node ./build/server.js
