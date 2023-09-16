@@ -1,5 +1,5 @@
 import { ExternalLinkIcon } from '@radix-ui/react-icons'
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -17,7 +17,7 @@ import {
 } from '~/app/components/ui'
 import { getCompany } from '~/app/models/admin/company.server'
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const company = await getCompany(companyId)
   if (!company) {

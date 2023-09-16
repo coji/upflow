@@ -1,10 +1,10 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons'
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from '~/app/components/ui'
 import { listCompanies } from '~/app/models/admin/company.server'
 
-export const loader = async ({ request }: LoaderArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ companies: await listCompanies() })
 }
 

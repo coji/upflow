@@ -1,6 +1,6 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { json, redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -27,13 +27,13 @@ const schema = z.object({
   privateKey: z.string(),
 })
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const exportSetting = await getExportSetting(companyId)
   return json({ companyId, exportSetting })
 }
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const submission = parse(await request.formData(), { schema })
   if (!submission.value) {

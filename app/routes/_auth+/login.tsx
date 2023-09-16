@@ -1,4 +1,4 @@
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { AppLayout } from '~/app/components'
 import {
@@ -15,7 +15,7 @@ import {
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
 import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
 
-export const loader = async ({ request }: LoaderArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 認証済みならトップページにリダイレクト
   await authenticator.isAuthenticated(request, { successRedirect: '/admin' })
 

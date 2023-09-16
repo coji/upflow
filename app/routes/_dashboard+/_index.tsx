@@ -1,9 +1,9 @@
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { Center } from '~/app/components/ui'
 import { getUser } from '~/app/features/auth/services/user-session.server'
 
-export const loader = async ({ request }: LoaderArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await getUser(request)
   return json({ user })
 }

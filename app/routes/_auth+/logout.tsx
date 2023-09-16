@@ -1,10 +1,10 @@
-import type { ActionArgs } from '@remix-run/node'
+import type { ActionFunctionArgs } from '@remix-run/node'
 import { useFetcher } from '@remix-run/react'
 import React from 'react'
 import { Button, type ButtonProps } from '~/app/components/ui'
 import { authenticator } from '~/app/features/auth/services/authenticator.server'
 
-export const loader = async ({ request }: ActionArgs) => {
+export const loader = async ({ request }: ActionFunctionArgs) => {
   await authenticator.logout(request, { redirectTo: '/' })
 }
 

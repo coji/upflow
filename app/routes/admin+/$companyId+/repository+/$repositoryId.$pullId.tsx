@@ -1,4 +1,4 @@
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import invariant from 'tiny-invariant'
 import { z } from 'zod'
@@ -24,7 +24,7 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: LoaderArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId, repositoryId, pullId } = zx.parseParams(params, {
     companyId: z.string(),
     repositoryId: z.string(),

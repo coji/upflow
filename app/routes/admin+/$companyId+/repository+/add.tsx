@@ -1,6 +1,5 @@
 import { parse } from '@conform-to/zod'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
+import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, useFetcher, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -22,7 +21,7 @@ const RepoSchema = z.object({
   ),
 })
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const integration = await getIntegration(companyId)
   if (!integration) {
@@ -31,7 +30,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   return { integration }
 }
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
 
   const submission = parse(await request.formData(), { schema: RepoSchema })

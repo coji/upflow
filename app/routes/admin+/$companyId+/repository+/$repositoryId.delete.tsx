@@ -1,5 +1,5 @@
 import { useForm } from '@conform-to/react'
-import { json, redirect, type ActionArgs, type LoaderArgs } from '@remix-run/node'
+import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -8,7 +8,7 @@ import { deleteRepository, getRepository } from '~/app/models/admin/repository.s
 
 export const handle = { breadcrumb: () => ({ label: 'Delete Repository' }) }
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   const repository = await getRepository(repositoryId)
   if (!repository) {
@@ -20,7 +20,7 @@ export const loader = async ({ params }: LoaderArgs) => {
   return json({ companyId, repositoryId, repository })
 }
 
-export const action = async ({ params }: ActionArgs) => {
+export const action = async ({ params }: ActionFunctionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   await deleteRepository(repositoryId)
   return redirect(`/admin/${companyId}/repository`)

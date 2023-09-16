@@ -1,4 +1,4 @@
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -20,7 +20,7 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: LoaderArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
   const repository = await getRepository(repositoryId)
   if (!repository) {

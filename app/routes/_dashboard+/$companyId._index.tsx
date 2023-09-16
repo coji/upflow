@@ -1,4 +1,4 @@
-import { json, type LoaderArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~
 import dayjs from '~/app/libs/dayjs'
 import { getPullRequestReport } from '~/app/models/pullRequest.server'
 
-export const loader = async ({ params }: LoaderArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const pullRequests = await getPullRequestReport(companyId)
   return json({ companyId, pullRequests })

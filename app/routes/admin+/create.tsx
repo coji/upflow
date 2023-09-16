@@ -1,6 +1,6 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { json, redirect, type ActionArgs } from '@remix-run/node'
+import { json, redirect, type ActionFunctionArgs } from '@remix-run/node'
 import { Form, Link } from '@remix-run/react'
 import { z } from 'zod'
 import {
@@ -34,7 +34,7 @@ export const schema = z.object({
   teamName: z.string().min(1).max(20),
 })
 
-export const action = async ({ request }: ActionArgs) => {
+export const action = async ({ request }: ActionFunctionArgs) => {
   const submission = await parse(await request.formData(), { schema })
   if (!submission.value) {
     return json({ error: submission.error })
