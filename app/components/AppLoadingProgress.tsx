@@ -1,11 +1,10 @@
 import { useNavigation } from '@remix-run/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { Progress } from './ui'
 
 export const AppLoadingProgress = () => {
   const navigation = useNavigation()
-  const isRemixLoading = navigation.state === 'loading'
+  const isRemixLoading = navigation.state !== 'idle'
   const queryClient = useQueryClient()
   const isReactQueryLoading = !!queryClient.isFetching()
   const isLoading = isRemixLoading || isReactQueryLoading
@@ -23,24 +22,26 @@ export const AppLoadingProgress = () => {
           return v
         })
       }, 100)
-    } else {
-      setValue(100)
     }
 
     return () => {
       if (interval) {
         clearInterval(interval)
+        setValue(100)
+        setTimeout(() => {
+          setValue(0)
+        }, 500)
       }
     }
   }, [isLoading])
 
   return (
-    <div>
-      <Progress
-        className={`fixed left-0 right-0 top-0 h-0.5 transition-opacity duration-1000 ${
-          isLoading ? 'opacity-100' : 'opacity-0'
+    <div className="relative h-1 w-full overflow-hidden rounded-none">
+      <div
+        className={`h-full w-full flex-1 bg-primary transition-all duration-500 ${
+          !isLoading ? 'opacity-0' : 'opacity-100 '
         }`}
-        value={value}
+        style={{ width: `${value}%` }}
       />
     </div>
   )
