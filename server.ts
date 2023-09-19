@@ -2,8 +2,9 @@ import { createRequestHandler, logDevReady, type ServerBuild } from '@remix-run/
 import { type Serve } from 'bun'
 import { resolve } from 'node:path'
 import { createJobSchedular } from './batch/job-schedular'
-import * as build from './build/index'
 
+const buildIndex = './build/index'
+const build = await import(buildIndex)
 if (Bun.env.NODE_ENV === 'development') logDevReady(build as unknown as ServerBuild)
 
 export default {
