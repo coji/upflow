@@ -18,8 +18,11 @@ WORKDIR /upflow
 FROM base as production-deps
 
 COPY package.json bun.lockb ./
-RUN bun install --production --frozen-lockfile && bun patch-package
+RUN bun install --production --frozen-lockfile
 
+# bun が Request.clone を実装しておらず認証エラーになるのでパッチ。
+COPY patches /upflow/patches
+RUN bunx patch-package
 
 # Build the app
 FROM base as build
