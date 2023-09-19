@@ -1,5 +1,5 @@
 import { Link } from '@remix-run/react'
-import { AiOutlineGoogle } from 'react-icons/ai'
+import { AiOutlineGoogle } from 'react-icons/ai/index.js'
 import { Button, type ButtonProps } from '~/app/components/ui'
 
 interface GoogleLoginButtonProps extends ButtonProps {
