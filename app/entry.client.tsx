@@ -4,8 +4,7 @@ import { hydrateRoot } from 'react-dom/client'
 
 startTransition(() => {
   hydrateRoot(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    document.getElementById('root')!,
+    document,
     <StrictMode>
       <RemixBrowser />
     </StrictMode>,

@@ -1,4 +1,4 @@
-import { RiFileUnknowFill, RiGithubFill, RiGitlabFill } from 'react-icons/ri'
+import { RiFileUnknowFill, RiGithubFill, RiGitlabFill } from 'react-icons/ri/index.js'
 import { match } from 'ts-pattern'
 import { HStack } from '~/app/components/ui'
 

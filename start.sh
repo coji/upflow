@@ -17,4 +17,4 @@ echo 1 > /proc/sys/vm/overcommit_memory
 
 echo "DATABASE_URL is $DATABASE_URL"
 bunx prisma migrate deploy
-NODE_ENV=production node ./build/server.js
+NODE_ENV=production bun run start

@@ -3,7 +3,8 @@ import { logger } from './helper/logger'
 import { crawlJob } from './jobs/crawl'
 
 export const createJobSchedular = () => {
-  const start = () => {
+  const startSchedular = () => {
+    console.log('job schedular started.')
     let isRunning = false
 
     schedule.scheduleJob('30 * * * *', async () => {
@@ -23,5 +24,5 @@ export const createJobSchedular = () => {
     })
   }
 
-  return { start }
+  return { startSchedular }
 }

@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const { flatRoutes } = require('remix-flat-routes')
+import { flatRoutes } from 'remix-flat-routes'
 
 /**
  * @type {import('@remix-run/dev').AppConfig}
  */
-module.exports = {
+export default {
   ignoredRouteFiles: ['**/*'],
   routes: async (defineRoutes) => flatRoutes('routes', defineRoutes),
-  serverModuleFormat: 'cjs',
-  serverDependenciesToBundle: 'all',
+  serverModuleFormat: 'esm',
+  serverPlatform: 'node',
   watchPaths: ['tailwind.config.js', 'server.ts'],
 }

@@ -2,7 +2,7 @@ import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
 import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
-import { RiGithubFill, RiGitlabFill } from 'react-icons/ri'
+import { RiGithubFill, RiGitlabFill } from 'react-icons/ri/index.js'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
