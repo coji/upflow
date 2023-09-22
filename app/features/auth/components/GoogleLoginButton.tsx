@@ -1,5 +1,5 @@
 import { Link } from '@remix-run/react'
-import { AiOutlineGoogle } from 'react-icons/ai/index.js'
+import { RiGoogleFill } from 'react-icons/ri/index.js'
 import { Button, type ButtonProps } from '~/app/components/ui'
 
 interface GoogleLoginButtonProps extends ButtonProps {
@@ -10,7 +10,7 @@ export const GoogleLoginButton = ({ children, ...rest }: GoogleLoginButtonProps)
   return (
     <Button asChild type="submit" variant="outline" {...rest}>
       <Link to="/auth/google">
-        <AiOutlineGoogle className="mr-2" />
+        <RiGoogleFill className="mr-2" />
         {children ?? 'Google'}
       </Link>
     </Button>
