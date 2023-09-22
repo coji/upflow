@@ -13,7 +13,7 @@ export default {
     const { pathname } = new URL(request.url)
     const file = Bun.file(resolve(__dirname, './public/', `.${pathname}`))
     if (await file.exists()) return new Response(file)
-    return createRequestHandler(build as unknown as ServerBuild, 'development')(request)
+    return createRequestHandler(build as unknown as ServerBuild, Bun.env.NODE_ENV)(request)
   },
 } satisfies Serve
 
