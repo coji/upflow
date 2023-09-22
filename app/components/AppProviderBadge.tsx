@@ -1,6 +1,7 @@
-import { RiFileUnknowFill, RiGithubFill, RiGitlabFill } from 'react-icons/ri/index.js'
 import { match } from 'ts-pattern'
 import { HStack } from '~/app/components/ui'
+import Github from './icons/Github'
+import Gitlab from './icons/Gitlab'
 
 interface AppProviderBadgeProps {
   provider: 'github' | 'gitlab' | string
@@ -9,19 +10,19 @@ export const AppProviderBadge = ({ provider }: AppProviderBadgeProps) => {
   const { label, icon, textClass, borderClass } = match(provider)
     .with('github', () => ({
       label: 'GitHub',
-      icon: <RiGithubFill className="block text-github" />,
+      icon: <Github />,
       textClass: 'text-github',
       borderClass: 'border-github border',
     }))
     .with('gitlab', () => ({
       label: 'GitLab',
-      icon: <RiGitlabFill className="block text-gitlab" />,
+      icon: <Gitlab />,
       textClass: 'text-gitlab',
       borderClass: 'border-gitlab border',
     }))
     .otherwise(() => ({
       label: 'Unknown',
-      icon: <RiFileUnknowFill className="block text-secondary" />,
+      icon: <div>?</div>,
       textClass: 'text-secondary',
       borderClass: 'border-secondary border',
     }))

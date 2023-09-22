@@ -2,9 +2,10 @@ import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
 import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
-import { RiGithubFill, RiGitlabFill } from 'react-icons/ri/index.js'
 import { z } from 'zod'
 import { zx } from 'zodix'
+import Github from '~/app/components/icons/Github'
+import Gitlab from '~/app/components/icons/Gitlab'
 import {
   Button,
   Card,
@@ -76,7 +77,7 @@ const AddIntegrationPage = () => {
                   <RadioGroupItem id="github" value="github"></RadioGroupItem>
                   <Label htmlFor="github">
                     <HStack className="gap-1 text-github">
-                      <RiGithubFill />
+                      <Github />
                       <span>GitHub</span>
                     </HStack>
                   </Label>
@@ -85,7 +86,7 @@ const AddIntegrationPage = () => {
                   <RadioGroupItem id="gitlab" value="gitlab"></RadioGroupItem>
                   <Label htmlFor="gitlab">
                     <HStack className="gap-1 text-gitlab">
-                      <RiGitlabFill />
+                      <Gitlab />
                       <span>GitLab</span>
                     </HStack>
                   </Label>
