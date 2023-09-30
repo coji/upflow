@@ -46,6 +46,5 @@ COPY --from=build /upflow/tsconfig.json /upflow/tsconfig.json
 COPY --from=build /upflow/start.sh /upflow/start.sh
 COPY --from=build /upflow/app /upflow/app
 COPY --from=build /upflow/batch /upflow/batch
-COPY --from=build /upflow/server.ts /upflow/server.ts
 
 CMD [ "sh", "./start.sh" ]
