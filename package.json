@@ -80,7 +80,7 @@
     "remeda": "1.27.0",
     "remix-auth": "3.6.0",
     "remix-auth-google": "1.2.0",
-    "remix-auth-oauth2": "1.9.0",
+    "remix-auth-oauth2": "1.11.0",
     "remix-island": "0.1.2",
     "tailwind-merge": "1.14.0",
     "tailwindcss-animate": "1.0.7",
@@ -125,5 +125,10 @@
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "remix-auth-google@1.2.0": "patches/remix-auth-google@1.2.0.patch"
+    }
   }
 }
