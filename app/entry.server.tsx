@@ -1,101 +1,30 @@
-import type { EntryContext } from '@remix-run/node'
+import type { AppLoadContext, EntryContext } from '@remix-run/node'
 import { RemixServer } from '@remix-run/react'
-import { Response } from '@remix-run/web-fetch'
 import isbot from 'isbot'
-import { renderToPipeableStream } from 'react-dom/server'
-import { renderHeadToString } from 'remix-island'
-import { PassThrough } from 'stream'
-import { Head } from './root'
+import { renderToReadableStream } from 'react-dom/server'
 
-const ABORT_DELAY = 5000
-
-const handleRequest = (
+export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
-) =>
-  isbot(request.headers.get('user-agent'))
-    ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext)
-    : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext)
-export default handleRequest
-
-const handleBotRequest = (
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  remixContext: EntryContext,
-) =>
-  new Promise((resolve, reject) => {
-    let didError = false
-
-    const stream = renderToPipeableStream(<RemixServer context={remixContext} url={request.url} />, {
-      onAllReady: () => {
-        const head = renderHeadToString({ request, remixContext, Head })
-        const body = new PassThrough()
-
-        responseHeaders.set('Content-Type', 'text/html')
-
-        resolve(
-          new Response(body, {
-            headers: responseHeaders,
-            status: didError ? 500 : responseStatusCode,
-          }),
-        )
-        const bodyWithStyles = `<!DOCTYPE html><html><head>${head}</head><body><div id="root">`
-        body.write(bodyWithStyles)
-        stream.pipe(body)
-        body.write(`</div></body></html>`)
-      },
-      onShellError: (error: unknown) => {
-        reject(error)
-      },
-      onError: (error: unknown) => {
-        didError = true
-        console.error(error)
-      },
-    })
-
-    setTimeout(() => stream.abort(), ABORT_DELAY)
+  loadContext: AppLoadContext,
+) {
+  const body = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
+    signal: request.signal,
+    onError(error: unknown) {
+      console.error(error)
+      responseStatusCode = 500
+    },
   })
 
-const handleBrowserRequest = (
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  remixContext: EntryContext,
-) =>
-  new Promise((resolve, reject) => {
-    let didError = false
+  if (isbot(request.headers.get('user-agent'))) {
+    await body.allReady
+  }
 
-    const stream = renderToPipeableStream(<RemixServer context={remixContext} url={request.url} />, {
-      onShellReady: () => {
-        const head = renderHeadToString({ request, remixContext, Head })
-        const body = new PassThrough()
-
-        responseHeaders.set('Content-Type', 'text/html')
-
-        resolve(
-          new Response(body, {
-            headers: responseHeaders,
-            status: didError ? 500 : responseStatusCode,
-          }),
-        )
-
-        const bodyWithStyles = `<!DOCTYPE html><html><head>${head}</head><body><div id="root">`
-        body.write(bodyWithStyles)
-        stream.pipe(body)
-        body.write(`</div></body></html>`)
-      },
-      onShellError: (error: unknown) => {
-        reject(error)
-      },
-      onError: (error: unknown) => {
-        didError = true
-
-        console.error(error)
-      },
-    })
-
-    setTimeout(() => stream.abort(), ABORT_DELAY)
+  responseHeaders.set('Content-Type', 'text/html')
+  return new Response(body, {
+    headers: responseHeaders,
+    status: responseStatusCode,
   })
+}
