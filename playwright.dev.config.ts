@@ -4,7 +4,7 @@ import config from './playwright.config'
 const devConfig: PlaywrightTestConfig = {
   ...config,
   webServer: {
-    command: 'PORT=8811 bun run server',
+    command: 'PORT=8811 pnpm run server',
     port: 8811,
     reuseExistingServer: !process.env.CI,
   },

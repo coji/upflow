@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'bun:test'
 import { fileURLToPath } from 'node:url'
 import path from 'path'
+import { describe, expect, test } from 'vitest'
 import { createPathBuilder } from './path-builder'
 
 const __filename = fileURLToPath(import.meta.url)
