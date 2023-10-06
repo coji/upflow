@@ -16,5 +16,5 @@ swapon /swapfile
 echo 1 > /proc/sys/vm/overcommit_memory
 
 echo "DATABASE_URL is $DATABASE_URL"
-bunx prisma migrate deploy
-NODE_ENV=production bun run --smol server.ts
+npx prisma migrate deploy
+pnpm run start
