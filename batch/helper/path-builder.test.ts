@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
+import { fileURLToPath } from 'node:url'
 import path from 'path'
 import { createPathBuilder } from './path-builder'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 describe('path-builder', () => {
   test('jsonPath', () => {
