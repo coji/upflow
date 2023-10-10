@@ -36,7 +36,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     throw new Error('Repository not found')
   }
 
-  const pull = await getPullRequest(pullId)
+  const pull = await getPullRequest(repository.id, pullId)
   const store = createStore({ companyId, repositoryId })
   const storeData = {
     commits: await store.loader.commits(pullId),
