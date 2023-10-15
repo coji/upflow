@@ -124,10 +124,5 @@
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "remix-auth-google@1.2.0": "patches/remix-auth-google@1.2.0.patch"
-    }
   }
 }
