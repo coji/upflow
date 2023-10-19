@@ -181,20 +181,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
       - name: Install dependencies
         run: pnpm install
 
       - name: 🛠 Setup Database
-        run: npx prisma migrate reset --force
-
-      - name: ⚙️ Build
-        run: npm run build
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: pnpm prisma migrate reset --force
 
       - name: 🌳Run Playwright tests
-        run: pnpm run test:e2e:run
+        run: pnpm run test:e2e
 
       - uses: actions/upload-artifact@v3
         if: always()

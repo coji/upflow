@@ -13,7 +13,9 @@
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "setup": "prisma generate && prisma migrate deploy && prisma db seed",
     "test": "vitest --run",
-    "test:e2e:run": "cross-env NODE_ENV=production CI=true playwright test --config=playwright.config.ts",
+    "test:e2e": "run-s test:e2e:build test:e2e:run",
+    "test:e2e:build": "run-s build",
+    "test:e2e:run": "playwright test",
     "typecheck": "tsc -b",
     "validate": "run-p test lint typecheck"
   },
