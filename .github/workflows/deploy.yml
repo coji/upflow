@@ -181,11 +181,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-
       - name: Install dependencies
         run: pnpm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
 
       - name: 🛠 Setup Database
         run: pnpm prisma migrate reset --force
