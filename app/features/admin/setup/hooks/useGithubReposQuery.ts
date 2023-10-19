@@ -4,7 +4,9 @@ import { sortBy } from 'remeda'
 import { listGithubRepos } from '../services/listGithubRepos'
 
 export const useGithubRepoQuery = (integration: Integration) =>
-  useQuery(['integration', integration.id], () => listGithubRepos(integration?.privateToken ?? ''), {
+  useQuery({
+    queryKey: ['integration', integration.id],
+    queryFn: () => listGithubRepos(integration?.privateToken ?? ''),
     enabled: !!integration?.privateToken,
     select: (repos) => sortBy(repos, [(repo) => repo.pushedAt ?? '2000-01-01T00:00:00Z', 'desc']),
   })
