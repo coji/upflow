@@ -39,7 +39,7 @@ export const OrgRepositoryList = ({ orgRepos, checkedRepos, onCheck }: OrgReposi
                   : 'bg-gray-100 hover:cursor-auto hover:bg-gray-100'
               }
               onClick={(e) => {
-                if (isActive) onCheck(repo.id) // 行クリックでも発動
+                onCheck(repo.id) // 行クリックでも発動
               }}
             >
               <TableCell className="w-64 whitespace-break-spaces break-all">
