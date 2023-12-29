@@ -1,14 +1,19 @@
 # base node image
 FROM node:20-bullseye-slim as base
-ARG PNPM_VERSION=8.10.2
+ARG PNPM_VERSION=8.13.1
 
 # Install openssl for Prisma
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps \
+  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip \
   && apt-get clean \
   && npm i -g pnpm@${PNPM_VERSION} \
   && rm -rf /var/lib/apt/lists/* 
 
+# duckdb のインストール
+RUN curl -L -o /tmp/duckdb.zip -O "https://github.com/duckdb/duckdb/releases/download/v0.9.2/duckdb_cli-linux-amd64.zip" \
+ && unzip /tmp/duckdb.zip -d /tmp \
+ && mv /tmp/duckdb /usr/local/bin/duckdb \
+ && duckdb /tmp/dummy "install sqlite"
 
 # Install all node_modules, including dev dependencies
 FROM base as deps
