@@ -11,9 +11,6 @@ dependencies:
   '@conform-to/zod':
     specifier: 0.9.1
     version: 0.9.1(@conform-to/dom@0.9.1)(zod@3.22.4)
-  '@gitbeaker/rest':
-    specifier: 39.27.1
-    version: 39.27.1
   '@googleapis/sheets':
     specifier: 5.0.5
     version: 5.0.5
@@ -1421,33 +1418,6 @@ packages:
 
   /@floating-ui/utils@0.1.6:
     resolution: {integrity: sha512-OfX7E2oUDYxtBvsuS4e/jSn4Q9Qb6DzgeYtsAdkPZ47znpoNsMgZw0+tVijiv3uGNR6dgNlty6r9rzIzHjtd/A==}
-    dev: false
-
-  /@gitbeaker/core@39.27.1:
-    resolution: {integrity: sha512-19tX4kXEvl2ZnVpcKufEUPZiSzDL58AaWmD3XM9EatPwBMMi/WNVYgR0ufD6k/L5QPPpmIAH8zrjlE4I/mNdLg==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@gitbeaker/requester-utils': 39.27.1
-      qs: 6.11.2
-      xcase: 2.0.1
-    dev: false
-
-  /@gitbeaker/requester-utils@39.27.1:
-    resolution: {integrity: sha512-/v+1Td+HtIVPfNVDIeP1Zd/Pw9YIeR2xjgtkxwkUi1DmpP0JPxGeUDzjlScAmkNNJ+/bmijGC8L5rhcQIDoV3Q==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      async-sema: 3.1.1
-      micromatch: 4.0.5
-      qs: 6.11.2
-      xcase: 2.0.1
-    dev: false
-
-  /@gitbeaker/rest@39.27.1:
-    resolution: {integrity: sha512-6BXeg8fqi4hFXR/5p+zMuJ+hbspB5xVJQJ6fewmYJwAmHMZe6Kk0SG8OytkxGH4salZheOwMopUX1RIxoPsjzQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@gitbeaker/core': 39.27.1
-      '@gitbeaker/requester-utils': 39.27.1
     dev: false
 
   /@googleapis/sheets@5.0.5:
@@ -4374,10 +4344,6 @@ packages:
     resolution: {integrity: sha512-ISvCdHdlTDlH5IpxQJIex7BWBywFWgjJSVdwst+/iQCoEYnyOaQ95+X1JGshuBjGp6nxKUy1jMgE3zPqN7fQdg==}
     hasBin: true
     dev: true
-
-  /async-sema@3.1.1:
-    resolution: {integrity: sha512-tLRNUXati5MFePdAk8dw7Qt7DpxPB60ofAgn8WRhW6a2rcimZnYBP9oxHiv0OHy+Wz7kPMG+t4LGdt31+4EmGg==}
-    dev: false
 
   /asynciterator.prototype@1.0.0:
     resolution: {integrity: sha512-wwHYEIS0Q80f5mosx3L/dfG5t5rjEa9Ft51GTaNt862EnpyGHpgz2RkZvLPp1oF5TnAiTohkEKVEu8pQPJI7Vg==}
@@ -10392,10 +10358,6 @@ packages:
       utf-8-validate:
         optional: true
     dev: true
-
-  /xcase@2.0.1:
-    resolution: {integrity: sha512-UmFXIPU+9Eg3E9m/728Bii0lAIuoc+6nbrNUKaRPJOFp91ih44qqGlWtxMB6kXFrRD6po+86ksHM5XHCfk6iPw==}
-    dev: false
 
   /xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}

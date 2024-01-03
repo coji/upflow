@@ -30,7 +30,7 @@ const fetch = command(
         description: 'exclude repository id',
       },
     },
-    help: { description: 'Fetch all resources from gitlab api.' },
+    help: { description: 'Fetch all resources from provider api.' },
   },
   (argv) => {
     const { help, ...rest } = argv.flags

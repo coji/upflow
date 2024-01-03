@@ -1,9 +1,8 @@
 import { parse } from '@conform-to/zod'
 import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
-import { Form, useFetcher, useLoaderData } from '@remix-run/react'
+import { useFetcher, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label } from '~/app/components/ui'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
 import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
 import { getIntegration } from '~/app/models/admin/integration.server'
@@ -73,24 +72,6 @@ const AddRepositoryModal = () => {
   return (
     <>
       {integration.provider === 'github' && RepositoryAddModal}
-
-      {integration.provider === 'gitlab' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add GitLab Repositories</CardTitle>
-          </CardHeader>
-          <CardContent></CardContent>
-          <CardFooter>
-            <Form method="POST">
-              GitLab
-              <fieldset>
-                <Label htmlFor="projectId">Project ID</Label>
-                <Input id="projectId" name="repos[0].projectId"></Input>
-              </fieldset>
-            </Form>
-          </CardFooter>
-        </Card>
-      )}
       <fetcher.Form method="post"></fetcher.Form>
     </>
   )

@@ -45,7 +45,6 @@ export default function CompanyRepositoryIndexPage() {
           {company.repositories.map((repo) => {
             const repoUrl = match(repo.provider)
               .with('github', () => `https://github.com/${repo.owner}/${repo.repo}`) // TODO: retrieve url from github api
-              .with('gitlab', () => 'https://gitlab.com') // TODO: add gitlab url
               .otherwise(() => '')
             return (
               <TableRow key={repo.id}>

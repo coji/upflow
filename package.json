@@ -22,7 +22,6 @@
   "dependencies": {
     "@conform-to/react": "0.9.1",
     "@conform-to/zod": "0.9.1",
-    "@gitbeaker/rest": "39.27.1",
     "@googleapis/sheets": "5.0.5",
     "@octokit/plugin-rest-endpoint-methods": "10.2.0",
     "@prisma/client": "5.7.1",

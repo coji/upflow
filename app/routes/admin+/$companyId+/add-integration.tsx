@@ -5,7 +5,6 @@ import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import Github from '~/app/components/icons/Github'
-import Gitlab from '~/app/components/icons/Gitlab'
 import {
   Button,
   Card,
@@ -25,7 +24,7 @@ import { createIntegration } from '~/app/models/admin/integration.server'
 export const handle = { breadcrumb: () => ({ label: 'Add Integration' }) }
 
 const schema = z.object({
-  provider: z.enum(['github', 'gitlab'], { required_error: 'provider is required' }),
+  provider: z.enum(['github'], { required_error: 'provider is required' }),
   method: z.enum(['token'], { required_error: 'token is required' }),
   token: z.string().min(1, { message: 'token is required' }),
 })
@@ -79,15 +78,6 @@ const AddIntegrationPage = () => {
                     <HStack className="gap-1 text-github">
                       <Github />
                       <span>GitHub</span>
-                    </HStack>
-                  </Label>
-                </HStack>
-                <HStack>
-                  <RadioGroupItem id="gitlab" value="gitlab"></RadioGroupItem>
-                  <Label htmlFor="gitlab">
-                    <HStack className="gap-1 text-gitlab">
-                      <Gitlab />
-                      <span>GitLab</span>
                     </HStack>
                   </Label>
                 </HStack>

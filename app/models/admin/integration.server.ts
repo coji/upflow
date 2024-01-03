@@ -4,7 +4,7 @@ export const getIntegration = async (companyId: string) => await prisma.integrat
 
 interface addIntegrationProps {
   companyId: string
-  provider: 'github' | 'gitlab'
+  provider: 'github'
   method: string
   privateToken: string
 }

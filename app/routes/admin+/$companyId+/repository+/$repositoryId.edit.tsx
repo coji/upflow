@@ -29,17 +29,10 @@ export const handle = { breadcrumb: () => ({ label: 'Edit Repository' }) }
 
 const githubSchema = z.object({
   provider: z.literal('github'),
-  owner: z.string().nonempty(),
-  repo: z.string().nonempty(),
+  owner: z.string().min(1),
+  repo: z.string().min(1),
   releaseDetectionMethod: z.enum(['branch', 'tags']),
-  releaseDetectionKey: z.string().nonempty(),
-})
-
-const gitlabSchema = z.object({
-  provider: z.literal('gitlab'),
-  projectId: z.string().nonempty(),
-  releaseDetectionMethod: z.enum(['branch', 'tags']),
-  releaseDetectionKey: z.string().nonempty(),
+  releaseDetectionKey: z.string().min(1),
 })
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -119,62 +112,10 @@ const GithubRepositoryForm = ({
   )
 }
 
-const GitLabRepositoryForm = ({
-  repository,
-}: {
-  repository: NonNullable<Awaited<ReturnType<typeof getRepository>>>
-}) => {
-  const [form, { projectId, releaseDetectionKey, releaseDetectionMethod }] = useForm({
-    id: 'repository-edit-form',
-    onValidate: ({ formData }) => parse(formData, { schema: gitlabSchema }),
-    defaultValue: repository,
-  })
-
-  return (
-    <Form method="POST" {...form.props}>
-      <Stack>
-        <fieldset>
-          <AppProviderBadge provider="gitlab" />
-          <input type="hidden" name="provider" value="gitlab" />
-        </fieldset>
-
-        <fieldset>
-          <Label htmlFor={projectId.id}>ProjectID</Label>
-          <Input {...conform.input(projectId)} />
-          <div className="text-destructive">{projectId.error}</div>
-        </fieldset>
-
-        <fieldset>
-          <Label htmlFor={releaseDetectionMethod.id}>Release Detection Method</Label>
-          <Select name={releaseDetectionMethod.name} defaultValue={releaseDetectionMethod.defaultValue}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a method"></SelectValue>
-            </SelectTrigger>
-            <SelectContent {...conform.select(releaseDetectionMethod)}>
-              <SelectGroup>
-                <SelectItem value="branch">Branch</SelectItem>
-                <SelectItem value="tags">Tags</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <div className="text-destructive">{releaseDetectionMethod.error}</div>
-        </fieldset>
-
-        <fieldset>
-          <Label htmlFor="releaseDetectionKey">Release Detection Key</Label>
-          <Input {...conform.input(releaseDetectionKey)} />
-          <div className="text-destructive">{releaseDetectionKey.error}</div>
-        </fieldset>
-      </Stack>
-    </Form>
-  )
-}
-
 const EditRepositoryModal = () => {
   const { companyId, repository, provider } = useLoaderData<typeof loader>()
   const form = match(provider)
     .with('github', () => <GithubRepositoryForm repository={repository} />)
-    .with('gitlab', () => <GitLabRepositoryForm repository={repository} />)
     .otherwise(() => <></>)
 
   return (

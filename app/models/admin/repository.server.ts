@@ -29,21 +29,6 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
     })
   }
 
-  if (integration.provider === 'gitlab') {
-    invariant(projectId, 'gitlab repo must specify projectId')
-    return await prisma.repository.create({
-      data: {
-        companyId,
-        integrationId: integration.id,
-        provider: integration.provider,
-        projectId,
-        name: `${projectId}`,
-        releaseDetectionKey: company.releaseDetectionKey,
-        releaseDetectionMethod: company.releaseDetectionMethod,
-      },
-    })
-  }
-
   return null
 }
 
