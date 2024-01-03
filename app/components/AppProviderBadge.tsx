@@ -1,10 +1,9 @@
 import { match } from 'ts-pattern'
 import { HStack } from '~/app/components/ui'
 import Github from './icons/Github'
-import Gitlab from './icons/Gitlab'
 
 interface AppProviderBadgeProps {
-  provider: 'github' | 'gitlab' | string
+  provider: 'github' | string
 }
 export const AppProviderBadge = ({ provider }: AppProviderBadgeProps) => {
   const { label, icon, textClass, borderClass } = match(provider)
@@ -13,12 +12,6 @@ export const AppProviderBadge = ({ provider }: AppProviderBadgeProps) => {
       icon: <Github />,
       textClass: 'text-github',
       borderClass: 'border-github border',
-    }))
-    .with('gitlab', () => ({
-      label: 'GitLab',
-      icon: <Gitlab />,
-      textClass: 'text-gitlab',
-      borderClass: 'border-gitlab border',
     }))
     .otherwise(() => ({
       label: 'Unknown',
