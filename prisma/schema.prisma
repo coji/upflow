@@ -55,13 +55,14 @@ model CompanyUser {
 }
 
 model Team {
-  id        String     @id @default(cuid())
-  name      String
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  createdAt DateTime   @default(now()) @map("created_at")
-  companyId String     @map("company_id")
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  teamUser  TeamUser[]
+  id             String           @id @default(cuid())
+  name           String
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  companyId      String           @map("company_id")
+  company        Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  teamUser       TeamUser[]
+  TeamRepository TeamRepository[]
 
   @@map("teams")
 }
@@ -93,22 +94,35 @@ model Integration {
 }
 
 model Repository {
-  id                     String        @id @default(cuid())
-  integrationId          String        @map("integration_id")
+  id                     String           @id @default(cuid())
+  integrationId          String           @map("integration_id")
   provider               String
-  name                   String        @default("")
-  projectId              String?       @map("project_id")
+  name                   String           @default("")
+  projectId              String?          @map("project_id")
   owner                  String?
   repo                   String?
-  releaseDetectionMethod String        @default("branch") @map("release_detection_method")
-  releaseDetectionKey    String        @default("production") @map("release_detection_key")
-  companyId              String        @map("company_id")
-  integration            Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  mergerequest           PullRequest[]
+  releaseDetectionMethod String           @default("branch") @map("release_detection_method")
+  releaseDetectionKey    String           @default("production") @map("release_detection_key")
+  companyId              String           @map("company_id")
+  integration            Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  company                Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  pullrequest            PullRequest[]
+  teamRepository         TeamRepository[]
 
   @@unique([integrationId, provider, projectId, owner, repo])
   @@map("repositories")
+}
+
+model TeamRepository {
+  teamId       String     @map("team_id")
+  repositoryId String     @map("repository_id")
+  team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@id([teamId, repositoryId])
+  @@map("team_repositories")
 }
 
 model PullRequest {
