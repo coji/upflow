@@ -4,16 +4,19 @@ ARG PNPM_VERSION=8.13.1
 
 # Install openssl for Prisma
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip \
+  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip vim \
   && apt-get clean \
   && npm i -g pnpm@${PNPM_VERSION} \
   && rm -rf /var/lib/apt/lists/* 
 
 # duckdb のインストール
-RUN curl -L -o /tmp/duckdb.zip -O "https://github.com/duckdb/duckdb/releases/download/v0.9.2/duckdb_cli-linux-amd64.zip" \
- && unzip /tmp/duckdb.zip -d /tmp \
- && mv /tmp/duckdb /usr/local/bin/duckdb \
- && duckdb /tmp/dummy "install sqlite"
+RUN if [ "$(uname -m)" = 'aarch64' ]; then \
+    curl -L -o /tmp/duckdb.zip -O "https://github.com/duckdb/duckdb/releases/download/v0.9.2/duckdb_cli-linux-aarch64.zip"; \
+  else \
+    curl -L -o /tmp/duckdb.zip -O "https://github.com/duckdb/duckdb/releases/download/v0.9.2/duckdb_cli-linux-amd64.zip"; \
+  fi
+RUN unzip /tmp/duckdb.zip -d /tmp \
+  && mv /tmp/duckdb /usr/local/bin/duckdb
 
 # Install all node_modules, including dev dependencies
 FROM base as deps
@@ -73,6 +76,6 @@ COPY --from=build /upflow/tsconfig.json /upflow/tsconfig.json
 COPY --from=build /upflow/start.sh /upflow/start.sh
 COPY --from=build /upflow/app /upflow/app
 COPY --from=build /upflow/batch /upflow/batch
-COPY --from=build /upflow/server.ts /upflow/server.ts
+COPY --from=build /upflow/server.mjs /upflow/server.mjs
 
 CMD [ "sh", "./start.sh" ]
