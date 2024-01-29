@@ -10,139 +10,143 @@ datasource db {
 model User {
   id          String        @id @default(cuid())
   email       String        @unique
-  displayName String
-  pictureUrl  String?
+  displayName String        @map("display_name")
+  pictureUrl  String?       @map("picture_url")
   locale      String
   role        String        @default("user")
-  updatedAt   DateTime      @updatedAt
-  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
   companies   CompanyUser[]
   teamUser    TeamUser[]
+
+  @@map("users")
 }
 
 model Company {
   id                     String         @id @default(cuid())
   name                   String
-  releaseDetectionMethod String         @default("branch")
-  releaseDetectionKey    String         @default("production")
-  updatedAt              DateTime       @updatedAt
-  createdAt              DateTime       @default(now())
-  isActive               Boolean        @default(true)
+  releaseDetectionMethod String         @default("branch") @map("release_detection_method")
+  releaseDetectionKey    String         @default("production") @map("release_detection_key")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  isActive               Boolean        @default(true) @map("is_active")
   users                  CompanyUser[]
   exportSetting          ExportSetting?
   integration            Integration?
   repositories           Repository[]
   teams                  Team[]
+
+  @@map("companies")
 }
 
 model CompanyUser {
-  companyId   String
-  userId      String
+  companyId   String    @map("company_id")
+  userId      String    @map("user_id")
   role        String
-  invitedAt   DateTime?
-  activatedAt DateTime?
-  updatedAt   DateTime  @updatedAt
-  createdAt   DateTime  @default(now())
+  invitedAt   DateTime? @map("invited_at")
+  activatedAt DateTime? @map("activated_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
   company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([companyId, userId])
+  @@map("company_users")
 }
 
 model Team {
   id        String     @id @default(cuid())
   name      String
-  updatedAt DateTime   @updatedAt
-  createdAt DateTime   @default(now())
-  companyId String
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+  companyId String     @map("company_id")
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   teamUser  TeamUser[]
+
+  @@map("teams")
 }
 
 model TeamUser {
-  teamId    String
-  userId    String
+  teamId    String   @map("team_id")
+  userId    String   @map("user_id")
   role      String
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([teamId, userId])
+  @@map("team_users")
 }
 
 model Integration {
   id           String       @id @default(cuid())
   provider     String
   method       String
-  privateToken String?
-  companyId    String       @unique
+  privateToken String?      @map("private_token")
+  companyId    String       @unique @map("company_id")
   company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   repositories Repository[]
+
+  @@map("integrations")
 }
 
 model Repository {
   id                     String        @id @default(cuid())
-  integrationId          String
+  integrationId          String        @map("integration_id")
   provider               String
   name                   String        @default("")
-  projectId              String?
+  projectId              String?       @map("project_id")
   owner                  String?
   repo                   String?
-  releaseDetectionMethod String        @default("branch")
-  releaseDetectionKey    String        @default("production")
-  companyId              String
+  releaseDetectionMethod String        @default("branch") @map("release_detection_method")
+  releaseDetectionKey    String        @default("production") @map("release_detection_key")
+  companyId              String        @map("company_id")
   integration            Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   mergerequest           PullRequest[]
 
   @@unique([integrationId, provider, projectId, owner, repo])
+  @@map("repositories")
 }
 
 model PullRequest {
   repo                 String
   number               Int
-  sourceBranch         String
-  targetBranch         String
+  sourceBranch         String     @map("source_branch")
+  targetBranch         String     @map("target_branch")
   state                String
   author               String
   title                String
   url                  String
-  firstCommittedAt     String?
-  pullRequestCreatedAt String
-  firstReviewedAt      String?
-  mergedAt             String?
-  releasedAt           String?
-  codingTime           Float?
-  pickupTime           Float?
-  reviewTime           Float?
-  deployTime           Float?
-  totalTime            Float?
-  repositoryId         String
-  updatedAt            String?
+  firstCommittedAt     String?    @map("first_committed_at")
+  pullRequestCreatedAt String     @map("pull_request_created_at")
+  firstReviewedAt      String?    @map("first_reviewed_at")
+  mergedAt             String?    @map("merged_at")
+  releasedAt           String?    @map("released_at")
+  codingTime           Float?     @map("coding_time")
+  pickupTime           Float?     @map("pickup_time")
+  reviewTime           Float?     @map("review_time")
+  deployTime           Float?     @map("deploy_time")
+  totalTime            Float?     @map("total_time")
+  repositoryId         String     @map("repository_id")
+  updatedAt            String?    @map("updated_at")
   repository           Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@id([repositoryId, number])
+  @@map("pull_requests")
 }
 
 model ExportSetting {
   id          String   @id @default(cuid())
-  companyId   String   @unique
-  sheetId     String
-  clientEmail String
-  privateKey  String
-  updatedAt   DateTime @updatedAt
-  createdAt   DateTime @default(now())
+  companyId   String   @unique @map("company_id")
+  sheetId     String   @map("sheet_id")
+  clientEmail String   @map("client_email")
+  privateKey  String   @map("private_key")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-}
 
-model Calendar {
-  d         DateTime @unique(map: "sqlite_autoindex_calendar_1")
-  dayofweek Int
-  weekday   String
-  quarter   Int
-  year      Int
-  month     Int
-  day       Int
+  @@map("export_settings")
 }
