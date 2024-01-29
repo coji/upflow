@@ -70,6 +70,8 @@ export const totalTime = ({
   )
   const firstTime = first(times)
   const lastTime = last(times)
-  if (firstTime && lastTime) return dayjs(lastTime).diff(firstTime, 'days', true)
-  else return null
+  if (firstTime && lastTime) {
+    return dayjs(lastTime).diff(firstTime, 'days', true)
+  }
+  return null
 }

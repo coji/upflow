@@ -72,7 +72,7 @@ const AddRepositoryModal = () => {
   return (
     <>
       {integration.provider === 'github' && RepositoryAddModal}
-      <fetcher.Form method="post"></fetcher.Form>
+      <fetcher.Form method="POST" />
     </>
   )
 }

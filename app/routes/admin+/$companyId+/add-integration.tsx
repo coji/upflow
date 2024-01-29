@@ -73,7 +73,7 @@ const AddIntegrationPage = () => {
               <Label htmlFor={provider.id}>Provider</Label>
               <RadioGroup {...conform.input(provider)}>
                 <HStack>
-                  <RadioGroupItem id="github" value="github"></RadioGroupItem>
+                  <RadioGroupItem id="github" value="github" />
                   <Label htmlFor="github">
                     <HStack className="gap-1 text-github">
                       <Github />
@@ -89,7 +89,7 @@ const AddIntegrationPage = () => {
               <Label htmlFor={method.id}>Method</Label>
               <RadioGroup {...conform.input(method)}>
                 <HStack>
-                  <RadioGroupItem id="token" value="token"></RadioGroupItem>
+                  <RadioGroupItem id="token" value="token" />
                   <Label htmlFor="token">トークン</Label>
                 </HStack>
               </RadioGroup>
@@ -98,7 +98,7 @@ const AddIntegrationPage = () => {
 
             <fieldset>
               <Label htmlFor={token.id}>Token</Label>
-              <Textarea {...conform.textarea(token)}></Textarea>
+              <Textarea {...conform.textarea(token)} />
               <div className="text-destructive">{token.error}</div>
             </fieldset>
           </Stack>

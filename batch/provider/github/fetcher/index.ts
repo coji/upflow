@@ -31,7 +31,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
   const pullrequests = async () => {
     let pulls: ShapedGitHubPullRequest[] = []
     let page = 1
-    do {
+    while (true) {
       const ret = await octokit.rest.pulls.list({
         owner,
         repo,
@@ -47,14 +47,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           .map((pr) => shapeGitHubPullRequest(pr)),
       ]
       page++
-    } while (true)
+    }
     return pulls
   }
 
   const commits = async (pullNumber: number) => {
     let allCommits: ShapedGitHubCommit[] = []
     let page = 1
-    do {
+    while (true) {
       const ret = await octokit.rest.pulls.listCommits({
         owner,
         repo,
@@ -65,14 +65,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       if (ret.data.length === 0) break
       allCommits = [...allCommits, ...ret.data.map((commit) => shapeGitHubCommit(commit))]
       page++
-    } while (true)
+    }
     return allCommits
   }
 
   const issueComments = async (pullNumber: number) => {
     const allComments: ShapedGitHubIssueComment[] = []
     let page = 1
-    do {
+    while (true) {
       const ret = await octokit.rest.issues.listComments({
         owner,
         repo,
@@ -83,14 +83,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       if (ret.data.length === 0) break
       allComments.push(...ret.data.map((comment) => shapeGitHubIssueComment(comment)))
       page++
-    } while (true)
+    }
     return allComments
   }
 
   const reviewComments = async (pullNumber: number) => {
     let allComments: ShapedGitHubReviewComment[] = []
     let page = 1
-    do {
+    while (true) {
       const ret = await octokit.rest.pulls.listReviewComments({
         owner,
         repo,
@@ -101,7 +101,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       if (ret.data.length === 0) break
       allComments = [...allComments, ...ret.data.map((comment) => shapeGitHubReviewComment(comment))]
       page++
-    } while (true)
+    }
     return allComments
   }
 
@@ -118,7 +118,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
   const reviews = async (pullNumber: number) => {
     let allReviews: ShapedGitHubReview[] = []
     let page = 1
-    do {
+    while (true) {
       const ret = await octokit.rest.pulls.listReviews({
         owner,
         repo,
@@ -129,7 +129,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       if (ret.data.length === 0) break
       allReviews = [...allReviews, ...ret.data.map((review) => shapeGitHubReview(review))]
       page++
-    } while (true)
+    }
     return allReviews
   }
 

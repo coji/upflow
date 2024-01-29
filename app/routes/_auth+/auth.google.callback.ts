@@ -15,7 +15,6 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   // admin なら管理画面に、一般ユーザはダッシュボードにリダイレクト
   if (user.role === 'admin') {
     return redirect('/admin', { headers })
-  } else {
-    return redirect('/', { headers })
   }
+  return redirect('/', { headers })
 }

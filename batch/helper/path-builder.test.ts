@@ -11,7 +11,6 @@ describe('path-builder', () => {
     const companyId = 'test-company'
     const repositoryId = 'test-repository'
     const pathBuilder = createPathBuilder({ companyId, repositoryId })
-    delete process.env.UPFLOW_DATA_DIR
 
     const dataDir = path.join(__dirname, '..', 'data', 'json') // App's root directory
     expect(pathBuilder.jsonPath('test.json')).toStrictEqual(`${dataDir}/test-company/test-repository/test.json`)
@@ -23,6 +22,6 @@ describe('path-builder', () => {
     const pathBuilder = createPathBuilder({ companyId, repositoryId })
     process.env.UPFLOW_DATA_DIR = '/'
 
-    expect(pathBuilder.jsonPath('test.json')).toStrictEqual(`/json/test-company/test-repository/test.json`)
+    expect(pathBuilder.jsonPath('test.json')).toStrictEqual('/json/test-company/test-repository/test.json')
   })
 })

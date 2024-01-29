@@ -29,9 +29,10 @@ export const useBreadcrumbs = () => {
       <nav className="inline-flex py-1 text-sm">
         <ul className="inline-flex gap-2">
           {breadcrumbs.map((item, idx) => {
+            const i = idx
             const isLast = idx === breadcrumbs.length - 1
             return (
-              <React.Fragment key={idx}>
+              <React.Fragment key={i}>
                 <li>
                   {item.to && !item.isCurrentPage ? <Link to={item.to}>{item.label}</Link> : <span>{item.label}</span>}
                 </li>

@@ -25,6 +25,7 @@ function handleBotRequest(
   responseHeaders: Headers,
   remixContext: EntryContext,
 ) {
+  let statusCode = responseStatusCode
   return new Promise((resolve, reject) => {
     let shellRendered = false
     const { pipe, abort } = renderToPipeableStream(
@@ -40,7 +41,7 @@ function handleBotRequest(
           resolve(
             new Response(stream, {
               headers: responseHeaders,
-              status: responseStatusCode,
+              status: statusCode,
             }),
           )
 
@@ -50,7 +51,7 @@ function handleBotRequest(
           reject(error)
         },
         onError(error: unknown) {
-          responseStatusCode = 500
+          statusCode = 500
           // Log streaming rendering errors from inside the shell.  Don't log
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
@@ -71,6 +72,7 @@ function handleBrowserRequest(
   responseHeaders: Headers,
   remixContext: EntryContext,
 ) {
+  let statusCode = responseStatusCode
   return new Promise((resolve, reject) => {
     let shellRendered = false
     const { pipe, abort } = renderToPipeableStream(
@@ -86,7 +88,7 @@ function handleBrowserRequest(
           resolve(
             new Response(stream, {
               headers: responseHeaders,
-              status: responseStatusCode,
+              status: statusCode,
             }),
           )
 
@@ -96,7 +98,7 @@ function handleBrowserRequest(
           reject(error)
         },
         onError(error: unknown) {
-          responseStatusCode = 500
+          statusCode = 500
           // Log streaming rendering errors from inside the shell.  Don't log
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.

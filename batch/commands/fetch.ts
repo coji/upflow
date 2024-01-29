@@ -13,7 +13,7 @@ interface FetchCommandProps {
 
 export async function fetchCommand(props: FetchCommandProps) {
   if (!props.companyId) {
-    console.log(`Error: company id should specify`)
+    console.log('Error: company id should specify')
     console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
     return
   }

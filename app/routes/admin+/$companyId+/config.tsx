@@ -85,7 +85,7 @@ const EditCompany = () => {
               <Label htmlFor={releaseDetectionMethod.id}>Release Detection Method</Label>
               <Select name={releaseDetectionMethod.name} defaultValue={releaseDetectionMethod.defaultValue}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a method"></SelectValue>
+                  <SelectValue placeholder="Select a method" />
                 </SelectTrigger>
                 <SelectContent {...conform.select(releaseDetectionMethod)}>
                   <SelectGroup>
@@ -106,7 +106,7 @@ const EditCompany = () => {
             <fieldset>
               <HStack>
                 <Label htmlFor={isActive.id}>Active</Label>
-                <Switch name={isActive.name} id={isActive.id} defaultChecked={!!isActive.defaultValue}></Switch>
+                <Switch name={isActive.name} id={isActive.id} defaultChecked={!!isActive.defaultValue} />
               </HStack>
               <div className="text-destructive">{isActive.error}</div>
             </fieldset>
