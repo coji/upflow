@@ -17,4 +17,4 @@ echo 1 > /proc/sys/vm/overcommit_memory
 
 echo "DATABASE_URL is $DATABASE_URL"
 npx prisma migrate deploy
-pnpm run start
+node server.mjs

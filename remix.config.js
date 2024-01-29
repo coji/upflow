@@ -7,7 +7,5 @@ import { flatRoutes } from 'remix-flat-routes'
 export default {
   ignoredRouteFiles: ['**/*'],
   routes: async (defineRoutes) => flatRoutes('routes', defineRoutes),
-  serverModuleFormat: 'esm',
-  serverPlatform: 'node',
   watchPaths: ['tailwind.config.js', 'server.ts'],
 }

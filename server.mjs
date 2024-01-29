@@ -1,21 +1,20 @@
 import { createRequestHandler } from '@remix-run/express'
+import { installGlobals } from '@remix-run/node'
 import compression from 'compression'
 import express from 'express'
 import morgan from 'morgan'
-import path from 'path'
-import { createJobSchedular } from './batch/job-schedular'
+import { createJobSchedular } from './build/job-schedular.js'
 
-function purgeRequireCache() {
-  for (const key in require.cache) {
-    if (key.startsWith(BUILD_DIR)) {
-      delete require.cache[key]
-    }
-  }
-}
+installGlobals()
 
-const MODE = process.env.NODE_ENV
-const BUILD_DIR = path.join(process.cwd(), 'build', 'index.js')
-const build = await import(BUILD_DIR)
+const viteDevServer =
+  process.env.NODE_ENV === 'production'
+    ? undefined
+    : await import('vite').then((vite) =>
+        vite.createServer({
+          server: { middlewareMode: true },
+        }),
+      )
 
 const app = express()
 
@@ -35,25 +34,34 @@ app.use((req, res, next) => {
 
 app.use(compression())
 app.disable('x-powered-by')
-app.use('/build', express.static('public/build', { immutable: true, maxAge: '1y' }))
 app.use(express.static('public', { maxAge: '1h' }))
 app.use(morgan('tiny'))
 
+// handle asset requests
+if (viteDevServer) {
+  app.use(viteDevServer.middlewares)
+} else {
+  app.use(
+    '/assets',
+    express.static('build/client/assets', {
+      immutable: true,
+      maxAge: '1y',
+    }),
+  )
+}
+app.use(express.static('build/client', { maxAge: '1h' }))
+
+// handle SSR requests
 app.all(
   '*',
-  MODE === 'production'
-    ? createRequestHandler({ build })
-    : (...args) => {
-        purgeRequireCache()
-        const requestHandler = createRequestHandler({
-          build,
-          mode: MODE,
-        })
-        return requestHandler(...args)
-      },
+  createRequestHandler({
+    build: viteDevServer
+      ? () => viteDevServer.ssrLoadModule('virtual:remix/server-build')
+      : await import('./build/server/index.js'),
+  }),
 )
-const port = process.env.PORT || 3000
 
+const port = process.env.PORT || 3000
 app.listen(port, async () => {
   console.log(`Express server listening on port ${port}`)
 })
