@@ -7,7 +7,7 @@ import { listCompanies } from '~/app/models/admin/company.server'
 export const meta: MetaFunction = () => [{ title: 'Upflow Admin' }]
 
 export const handle = {
-  breadcrumb: () => ({ label: 'Admin', to: `/admin` }),
+  breadcrumb: () => ({ label: 'Admin', to: '/admin' }),
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

@@ -33,14 +33,14 @@ export const createGitHubProvider = (integration: Integration) => {
     await logger.info(`last fetched at: ${lastFetchedAt}`)
 
     // 全プルリク情報をダウンロード
-    await logger.info(`fetching all pullrequests...`)
+    await logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
     await store.save('pullrequests.json', allPullRequests)
-    await logger.info(`fetching all pullrequests completed.`)
+    await logger.info('fetching all pullrequests completed.')
 
     // 全タグを情報をダウンロード
     if (repository.releaseDetectionMethod === 'tags') {
-      await logger.info(`fetching all tags...`)
+      await logger.info('fetching all tags...')
       const allTags = await fetcher.tags()
       await store.save('tags.json', allTags)
       await logger.info('fetching all tags completed.')

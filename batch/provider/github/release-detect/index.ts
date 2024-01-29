@@ -7,7 +7,7 @@ const mergedPullRequests = (allPullRequests: ShapedGitHubPullRequest[], targetBr
   return R.pipe(
     allPullRequests,
     R.filter((pr) => pr.targetBranch === targetBranch && pr.state === 'closed' && pr.mergedAt !== null), // 一旦mainブランチ固定
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     R.sortBy((pr) => pr.mergedAt!),
   )
 }
@@ -53,7 +53,7 @@ const findReleaseDateByTag = async (
   const tagRegexp = new RegExp(tagCondition)
   const allReleaseTags = (await store.loader.tags())
     .filter((t) => tagRegexp.test(t.name)) // リリース用のタグを抽出
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     .sort((a, b) => dayjs(a.committedAt!).unix() - dayjs(b.committedAt!).unix()) // 古い順に並べる
 
   for (const releaseTag of allReleaseTags) {

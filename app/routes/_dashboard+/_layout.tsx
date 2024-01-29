@@ -5,7 +5,7 @@ import { getUser } from '~/app/features/auth/services/user-session.server'
 import { listCompanies } from '~/app/models/admin/company.server'
 
 export const handle = {
-  breadcrumb: () => ({ label: 'Dashboard', to: `/` }),
+  breadcrumb: () => ({ label: 'Dashboard', to: '/' }),
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

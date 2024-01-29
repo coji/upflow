@@ -69,19 +69,19 @@ const ExportSetting = () => {
           <Stack>
             <fieldset>
               <Label htmlFor={sheetId.id}>Sheet Id</Label>
-              <Input {...conform.input(sheetId)}></Input>
+              <Input {...conform.input(sheetId)} />
               <div className="text-destructive">{sheetId.error}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={clientEmail.id}>Client Email</Label>
-              <Input {...conform.input(clientEmail)}></Input>
+              <Input {...conform.input(clientEmail)} />
               <div className="text-destructive">{clientEmail.error}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={privateKey.id}>Private Key</Label>
-              <Textarea {...conform.input(privateKey)}></Textarea>
+              <Textarea {...conform.input(privateKey)} />
               <div className="text-destructive">{privateKey.error}</div>
             </fieldset>
           </Stack>

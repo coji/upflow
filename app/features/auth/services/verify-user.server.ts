@@ -34,7 +34,7 @@ export const verifyUser: StrategyVerifyCallback<
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        errorMessages.push('すでに登録されているメールアドレスです: ' + email)
+        errorMessages.push(`すでに登録されているメールアドレスです: ${email}`)
       } else {
         errorMessages.push(`${error.code}`)
       }

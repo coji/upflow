@@ -1,22 +1,25 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
+import { LoaderFunctionArgs } from '@remix-run/node'
+import { Outlet } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { listTeams } from '~/app/models/admin/team.server'
+import { Stack } from '~/app/components/ui'
+
+export const handle = {
+  breadcrumb: ({ companyId }: { companyId: string }) => ({
+    label: 'チーム',
+    to: `/admin/${companyId}/team`,
+  }),
+}
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const teams = await listTeams(companyId)
-  return json({ companyId, teams })
+  return { companyId }
 }
-export default function TeamPage() {
-  const { teams } = useLoaderData<typeof loader>()
 
+export default function TeamPage() {
   return (
-    <div>
-      {teams.map((team) => (
-        <div key={team.id}>{team.name}</div>
-      ))}
-    </div>
+    <Stack>
+      <Outlet />
+    </Stack>
   )
 }
