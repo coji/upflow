@@ -22,13 +22,11 @@ export const handle = { breadcrumb: () => ({ label: 'Create Company' }) }
 export const schema = z.object({
   companyId: z
     .string()
-    .min(1)
     .max(20)
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
   companyName: z.string().min(1).max(20),
   teamId: z
     .string()
-    .min(1)
     .max(20)
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
   teamName: z.string().max(20),

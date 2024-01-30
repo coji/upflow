@@ -1,7 +1,8 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from '@remix-run/node'
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from '@remix-run/node'
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
+import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -52,12 +53,18 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
 
   const { intent, ...value } = submission.value
+  let toastMessage = ''
   if (intent === 'delete') {
     await deleteTeam(teamId)
-  } else if (intent === 'update') {
-    await updateTeam(teamId, value)
+    toastMessage = `Team ${teamId} deleted`
   }
-  return redirect(`/admin/${params.companyId}/team`)
+
+  if (intent === 'update') {
+    await updateTeam(teamId, value)
+    toastMessage = `Team ${teamId} updated`
+  }
+
+  return redirectWithSuccess(`/admin/${params.companyId}/team`, toastMessage)
 }
 
 export default function TeamDetailPage() {

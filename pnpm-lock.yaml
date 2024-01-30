@@ -194,6 +194,9 @@ dependencies:
   remix-island:
     specifier: 0.1.2
     version: 0.1.2(@remix-run/react@2.5.1)(@remix-run/server-runtime@2.5.1)(react-dom@18.2.0)(react@18.2.0)
+  remix-toast:
+    specifier: 1.1.0
+    version: 1.1.0(@remix-run/server-runtime@2.5.1)
   tailwind-merge:
     specifier: 2.2.0
     version: 2.2.0
@@ -9026,6 +9029,15 @@ packages:
       '@remix-run/server-runtime': 2.5.1(typescript@5.3.3)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
+    dev: false
+
+  /remix-toast@1.1.0(@remix-run/server-runtime@2.5.1):
+    resolution: {integrity: sha512-F7Nd/AncB8Jt+4p0k+ylhS091clMfmgWPwee6d+YWHSFX4lLt6vwwu6EB8V1lrxzNOSxrwJ87tUXE0gQy3Occg==}
+    peerDependencies:
+      '@remix-run/server-runtime': '>=1.15'
+    dependencies:
+      '@remix-run/server-runtime': 2.5.1(typescript@5.3.3)
+      zod: 3.22.4
     dev: false
 
   /require-directory@2.1.1:

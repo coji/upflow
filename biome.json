@@ -13,7 +13,7 @@
     "rules": { "recommended": true }
   },
   "formatter": {
-    "enabled": false
+    "enabled": true
   },
   "javascript": {
     "formatter": {

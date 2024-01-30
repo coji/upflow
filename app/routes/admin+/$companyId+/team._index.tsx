@@ -2,7 +2,17 @@ import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Button, Stack, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/app/components/ui'
+import {
+  Button,
+  HStack,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/app/components/ui'
 import { listCompanyTeams } from '~/app/models/admin/team.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
@@ -16,6 +26,12 @@ export default function TeamIndexPage() {
 
   return (
     <Stack>
+      <HStack>
+        <Button asChild>
+          <Link to="add">Add Team</Link>
+        </Button>
+      </HStack>
+
       <Table>
         <TableHeader>
           <TableRow>
