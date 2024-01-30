@@ -28,15 +28,13 @@ async function getSessionUser(request: Request) {
  * @param request
  * @returns
  */
-export async function getUser(request: Request) {
+export const requireUser = async (request: Request) => {
   const sessionUser = await getSessionUser(request)
   if (sessionUser === undefined) throw redirect('/login')
   return sessionUser
 }
-export async function getAdminUser(request: Request) {
-  const sessionUser = await getUser(request)
-  if (sessionUser.role !== 'admin') {
-    throw redirect('/')
-  }
+export const requireAdminUser = async (request: Request) => {
+  const sessionUser = await requireUser(request)
+  if (sessionUser.role !== 'admin') throw redirect('/')
   return sessionUser
 }
