@@ -69,7 +69,7 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
                 <HStack>
                   <div>
                     <p className="text-sm">{user.displayName}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                    <p className="text-gray-500 text-xs">{user.email}</p>
                   </div>
                   <Spacer />
                   <Badge
@@ -96,8 +96,8 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
         )}
       </header>
 
-      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 pb-2 md:px-0">
-        <div className="flex flex-1 flex-col px-2 md:container">
+      <main className="flex max-w-screen flex-col overflow-auto bg-gray-200 pb-2 md:px-0">
+        <div className="flex-1 flex flex-col px-2 md:container">
           <AppBreadcrumbs />
           <div className="flex-1">{children}</div>
         </div>

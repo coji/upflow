@@ -52,7 +52,7 @@ export default function TeamAddPage() {
   return (
     <Form method="POST" {...form.props}>
       <Stack>
-        <h3 className="text-md font-bold">Add Team</h3>
+        <h3 className="font-bold text-md">Add Team</h3>
 
         <fieldset>
           <Label htmlFor={id.id}>ID</Label>

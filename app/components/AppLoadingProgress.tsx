@@ -39,7 +39,7 @@ export const AppLoadingProgress = () => {
     <div className="relative h-1 w-full overflow-hidden rounded-none">
       <div
         className={`h-full w-full flex-1 bg-primary transition-all duration-500 ${
-          !isLoading ? 'opacity-0' : 'opacity-100 '
+          !isLoading ? 'opacity-0' : 'opacity-100'
         }`}
         style={{ width: `${value}%` }}
       />
