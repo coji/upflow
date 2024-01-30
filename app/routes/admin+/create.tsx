@@ -31,7 +31,7 @@ export const schema = z.object({
     .min(1)
     .max(20)
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
-  teamName: z.string().min(1).max(20),
+  teamName: z.string().max(20),
 })
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -48,10 +48,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const CompanyNewPage = () => {
   const [form, { companyId, companyName, teamId, teamName }] = useForm({
-    onValidate({ formData }) {
-      return parse(formData, { schema })
-    },
     id: 'company-add-form',
+    defaultValue: {
+      teamId: 'developers',
+      teamName: 'Developers',
+    },
+    onValidate: ({ formData }) => parse(formData, { schema }),
   })
   return (
     <Card>

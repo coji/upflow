@@ -1,7 +1,7 @@
-import type { Company } from '@prisma/client'
+import type { Company, Prisma, Team } from '@prisma/client'
 import { prisma } from '~/app/services/db.server'
 
-export const listTeams = async (companyId: Company['id']) => {
+export const listCompanyTeams = async (companyId: Company['id']) => {
   return await prisma.team.findMany({
     where: { companyId },
     include: {
@@ -15,8 +15,21 @@ export const listTeams = async (companyId: Company['id']) => {
   })
 }
 
-export const getTeam = async (id: string) => {
+export const getTeam = async (id: Team['id']) => {
   return await prisma.team.findUnique({
+    where: { id },
+  })
+}
+
+export const updateTeam = async (id: Team['id'], team: Prisma.TeamUpdateInput) => {
+  return await prisma.team.update({
+    where: { id },
+    data: team,
+  })
+}
+
+export const deleteTeam = async (id: Team['id']) => {
+  return await prisma.team.delete({
     where: { id },
   })
 }
