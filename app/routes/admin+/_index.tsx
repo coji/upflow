@@ -1,7 +1,14 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from '~/app/components/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '~/app/components/ui'
 import { listCompanies } from '~/app/models/admin/company.server'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -19,7 +26,11 @@ const AdminCompanyIndex = () => {
         </CardHeader>
         <CardContent>
           {companies.map((company) => (
-            <Link key={company.id} className="block rounded p-2 hover:bg-secondary" to={`${company.id}`}>
+            <Link
+              key={company.id}
+              className="block rounded p-2 hover:bg-secondary"
+              to={`${company.id}`}
+            >
               {company.name}
             </Link>
           ))}

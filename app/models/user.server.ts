@@ -5,7 +5,14 @@ export type { User } from '@prisma/client'
 export async function getUserById(id: User['id']) {
   return prisma.user.findUnique({
     where: { id },
-    select: { id: true, email: true, displayName: true, pictureUrl: true, locale: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      pictureUrl: true,
+      locale: true,
+      role: true,
+    },
   })
 }
 
@@ -26,7 +33,14 @@ export async function upsertUserByEmail({
 }) {
   return prisma.user.upsert({
     where: { email },
-    select: { id: true, email: true, displayName: true, pictureUrl: true, locale: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      pictureUrl: true,
+      locale: true,
+      role: true,
+    },
     create: { email, displayName, pictureUrl, locale },
     update: { displayName, pictureUrl, locale },
   })

@@ -2,11 +2,22 @@ import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Heading, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/app/components/ui'
+import {
+  Heading,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/app/components/ui'
 import { listPullRequests } from '~/app/models/admin/pull-requests.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  const { companyId, repositoryId } = zx.parseParams(params, {
+    companyId: z.string(),
+    repositoryId: z.string(),
+  })
   const pulls = await listPullRequests(repositoryId)
   return json({ companyId, repositoryId, pulls })
 }

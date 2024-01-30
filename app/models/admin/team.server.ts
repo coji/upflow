@@ -27,7 +27,10 @@ export const addTeam = async (team: Prisma.TeamCreateInput) => {
   })
 }
 
-export const updateTeam = async (id: Team['id'], team: Prisma.TeamUpdateInput) => {
+export const updateTeam = async (
+  id: Team['id'],
+  team: Prisma.TeamUpdateInput,
+) => {
   return await prisma.team.update({
     where: { id },
     data: team,

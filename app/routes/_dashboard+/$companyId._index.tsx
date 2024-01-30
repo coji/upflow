@@ -1,8 +1,15 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { type LoaderFunctionArgs, json } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/app/components/ui'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import { getPullRequestReport } from '~/app/models/pullRequest.server'
 
@@ -37,7 +44,8 @@ export default function CompanyIndexPage() {
                 <TableCell>{pr.author}</TableCell>
                 <TableCell>{pr.title}</TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {pr.pullRequestCreatedAt && dayjs(pr.pullRequestCreatedAt).format('YYYY-MM-DD')}
+                  {pr.pullRequestCreatedAt &&
+                    dayjs(pr.pullRequestCreatedAt).format('YYYY-MM-DD')}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   {pr.mergedAt && dayjs(pr.mergedAt).format('YYYY-MM-DD')}

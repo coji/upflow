@@ -5,9 +5,14 @@ interface codingTimeProps {
   firstCommittedAt: string | null
   pullRequestCreatedAt: string | null
 }
-export const codingTime = ({ firstCommittedAt, pullRequestCreatedAt }: codingTimeProps) => {
+export const codingTime = ({
+  firstCommittedAt,
+  pullRequestCreatedAt,
+}: codingTimeProps) => {
   if (firstCommittedAt && pullRequestCreatedAt) {
-    return Math.abs(dayjs(pullRequestCreatedAt).diff(firstCommittedAt, 'days', true))
+    return Math.abs(
+      dayjs(pullRequestCreatedAt).diff(firstCommittedAt, 'days', true),
+    )
   }
   return null
 }
@@ -17,9 +22,15 @@ interface pickupTimeProps {
   firstReviewedAt: string | null
   mergedAt: string | null
 }
-export const pickupTime = ({ pullRequestCreatedAt, firstReviewedAt, mergedAt }: pickupTimeProps) => {
+export const pickupTime = ({
+  pullRequestCreatedAt,
+  firstReviewedAt,
+  mergedAt,
+}: pickupTimeProps) => {
   if (firstReviewedAt) {
-    return Math.abs(dayjs(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true))
+    return Math.abs(
+      dayjs(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true),
+    )
   }
   if (mergedAt) {
     return Math.abs(dayjs(mergedAt).diff(pullRequestCreatedAt, 'days', true))
@@ -64,7 +75,13 @@ export const totalTime = ({
   releasedAt,
 }: totalTimeProps) => {
   const times = pipe(
-    [firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt],
+    [
+      firstCommittedAt,
+      pullRequestCreatedAt,
+      firstReviewedAt,
+      mergedAt,
+      releasedAt,
+    ],
     filter((x) => !!x),
     sortBy((x) => dayjs(x).unix()),
   )

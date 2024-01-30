@@ -19,7 +19,9 @@ async function getSession(request: Request) {
  */
 async function getSessionUser(request: Request) {
   const session = await getSession(request)
-  const sessionUser = session.get(authenticator.sessionKey) as SessionUser | undefined
+  const sessionUser = session.get(authenticator.sessionKey) as
+    | SessionUser
+    | undefined
   return sessionUser
 }
 

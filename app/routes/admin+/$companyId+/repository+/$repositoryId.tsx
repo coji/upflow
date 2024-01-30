@@ -21,7 +21,10 @@ export const handle = {
 }
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  const { companyId, repositoryId } = zx.parseParams(params, {
+    companyId: z.string(),
+    repositoryId: z.string(),
+  })
   const repository = await getRepository(repositoryId)
   if (!repository) {
     throw new Error('repository not found')

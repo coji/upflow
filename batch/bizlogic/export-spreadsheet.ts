@@ -10,7 +10,10 @@ const escapeTabString = (str: string) => {
  * @param pullrequests
  * @param exportSetting
  */
-export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], exportSetting: ExportSetting) => {
+export const exportPullsToSpreadsheet = async (
+  pullrequests: PullRequest[],
+  exportSetting: ExportSetting,
+) => {
   const tz = 'Asia/Tokyo'
   const sheet = createSheetApi({
     spreadsheetId: exportSetting.sheetId,
@@ -43,7 +46,9 @@ export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], expo
   const data = [
     header,
     ...pullrequests
-      .filter((pr) => pr.updatedAt && dayjs(pr.updatedAt) > dayjs().add(-90, 'days'))
+      .filter(
+        (pr) => pr.updatedAt && dayjs(pr.updatedAt) > dayjs().add(-90, 'days'),
+      )
       .map((pr) => {
         // １行タブ区切り x 改行区切りで全行まとめてペースト
         return Object.values({
@@ -74,7 +79,13 @@ export const exportPullsToSpreadsheet = async (pullrequests: PullRequest[], expo
 }
 
 export const exportReviewResponsesToSpreadsheet = async (
-  reviewResponses: { repo: string; number: string; author: string; createdAt: string; responseTime: number }[],
+  reviewResponses: {
+    repo: string
+    number: string
+    author: string
+    createdAt: string
+    responseTime: number
+  }[],
   exportSetting: ExportSetting,
 ) => {
   const tz = 'Asia/Tokyo'
@@ -84,7 +95,9 @@ export const exportReviewResponsesToSpreadsheet = async (
     clientEmail: exportSetting.clientEmail,
     privateKey: exportSetting.privateKey,
   })
-  const header = ['repo', 'number', 'author', 'createdAt', 'responseTime'].join('\t')
+  const header = ['repo', 'number', 'author', 'createdAt', 'responseTime'].join(
+    '\t',
+  )
 
   const data = [
     header,

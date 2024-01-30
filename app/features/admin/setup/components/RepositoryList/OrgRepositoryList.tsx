@@ -17,7 +17,11 @@ interface OrgRepositoryListProps {
   checkedRepos: CheckedRepositories
   onCheck: (id: string) => void
 }
-export const OrgRepositoryList = ({ orgRepos, checkedRepos, onCheck }: OrgRepositoryListProps) => {
+export const OrgRepositoryList = ({
+  orgRepos,
+  checkedRepos,
+  onCheck,
+}: OrgRepositoryListProps) => {
   return (
     <Table>
       <TableHeader>
@@ -66,10 +70,16 @@ export const OrgRepositoryList = ({ orgRepos, checkedRepos, onCheck }: OrgReposi
 
               <TableCell className="w-40 text-center text-sm text-gray-500">
                 <div>
-                  {isActive ? <Badge variant="default">Active</Badge> : <Badge variant="outline">Inactive</Badge>}
+                  {isActive ? (
+                    <Badge variant="default">Active</Badge>
+                  ) : (
+                    <Badge variant="outline">Inactive</Badge>
+                  )}
                 </div>
 
-                <div className="text-xs">{dayjs(repo.pushedAt).format('YYYY-MM-DD')}</div>
+                <div className="text-xs">
+                  {dayjs(repo.pushedAt).format('YYYY-MM-DD')}
+                </div>
               </TableCell>
 
               <TableCell className="w-40 text-center text-xs text-gray-500">

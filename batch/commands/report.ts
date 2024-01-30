@@ -11,7 +11,11 @@ interface reportCommandProps {
 export async function reportCommand({ companyId }: reportCommandProps) {
   if (!companyId) {
     console.log('config should specified')
-    console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
+    console.log(
+      (await allConfigs())
+        .map((c) => `${c.companyName}\t${c.companyId}`)
+        .join('\n'),
+    )
     return
   }
 

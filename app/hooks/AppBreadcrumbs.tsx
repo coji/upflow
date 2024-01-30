@@ -7,13 +7,22 @@ interface AppBreadcrumbItem {
   isCurrentPage?: boolean
 }
 
-function isBreadcrumbHandle(handle: unknown): handle is { breadcrumb: (params: unknown) => object } {
-  return typeof handle === 'object' && !!handle && 'breadcrumb' in handle && typeof handle.breadcrumb === 'function'
+function isBreadcrumbHandle(
+  handle: unknown,
+): handle is { breadcrumb: (params: unknown) => object } {
+  return (
+    typeof handle === 'object' &&
+    !!handle &&
+    'breadcrumb' in handle &&
+    typeof handle.breadcrumb === 'function'
+  )
 }
 
 export const useBreadcrumbs = () => {
   const matches = useMatches()
-  const breadcrumbMatches = matches.filter((match) => isBreadcrumbHandle(match.handle))
+  const breadcrumbMatches = matches.filter((match) =>
+    isBreadcrumbHandle(match.handle),
+  )
   const breadcrumbs = breadcrumbMatches.map((match, idx) => {
     if (!isBreadcrumbHandle(match.handle)) {
       return null
@@ -34,7 +43,11 @@ export const useBreadcrumbs = () => {
             return (
               <React.Fragment key={i}>
                 <li>
-                  {item.to && !item.isCurrentPage ? <Link to={item.to}>{item.label}</Link> : <span>{item.label}</span>}
+                  {item.to && !item.isCurrentPage ? (
+                    <Link to={item.to}>{item.label}</Link>
+                  ) : (
+                    <span>{item.label}</span>
+                  )}
                 </li>
                 {!isLast && <li>/</li>}
               </React.Fragment>

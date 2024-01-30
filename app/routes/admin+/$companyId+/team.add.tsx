@@ -57,13 +57,17 @@ export default function TeamAddPage() {
         <fieldset>
           <Label htmlFor={id.id}>ID</Label>
           <Input {...conform.input(id)} />
-          {id.error && <div className="text-destructive text-sm">{id.error}</div>}
+          {id.error && (
+            <div className="text-destructive text-sm">{id.error}</div>
+          )}
         </fieldset>
 
         <fieldset>
           <Label>Name</Label>
           <Input {...conform.input(name)} />
-          {name.error && <div className="text-destructive text-sm">{name.error}</div>}
+          {name.error && (
+            <div className="text-destructive text-sm">{name.error}</div>
+          )}
         </fieldset>
 
         <HStack>

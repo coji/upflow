@@ -1,7 +1,12 @@
 import dayjs from 'dayjs'
 import React, { useCallback, useState } from 'react'
 import { uniq } from 'remeda'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/app/components/ui'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '~/app/components/ui'
 import type { CheckedRepositories, GithubRepo } from '../../interfaces/model'
 import { OrgListItem } from './OrgListItem'
 import { OrgRepositoryList } from './OrgRepositoryList'
@@ -16,7 +21,8 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
 
   // 選択されたリポジトリリスト。IDのハッシュから配列にする。
   const selectedRepos = useCallback(
-    (checked: CheckedRepositories) => allRepos.filter((repo) => Object.keys(checked).includes(repo.id)) || [],
+    (checked: CheckedRepositories) =>
+      allRepos.filter((repo) => Object.keys(checked).includes(repo.id)) || [],
     [allRepos],
   )
 
@@ -24,7 +30,11 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
   const handleClickOrgCheckbox = useCallback(
     (org: string, isPrevChecked: boolean) => {
       const orgRepos =
-        allRepos.filter((repo) => repo.owner === org && dayjs(repo.pushedAt) > dayjs().add(-90, 'days')) || []
+        allRepos.filter(
+          (repo) =>
+            repo.owner === org &&
+            dayjs(repo.pushedAt) > dayjs().add(-90, 'days'),
+        ) || []
       const newCheckedRepos = { ...checkedRepos }
       for (const repo of orgRepos) {
         if (isPrevChecked) {
@@ -56,9 +66,12 @@ export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
       {!!orgs &&
         orgs.map((org) => {
           const orgRepos = allRepos.filter((repo) => repo.owner === org) || []
-          const checkedRepoNum = orgRepos.filter((repo) => !!checkedRepos[repo.id]).length
+          const checkedRepoNum = orgRepos.filter(
+            (repo) => !!checkedRepos[repo.id],
+          ).length
           const isOrgChecked = checkedRepoNum > 0
-          const isOrgIndeterminate = checkedRepoNum > 0 && checkedRepoNum !== orgRepos.length
+          const isOrgIndeterminate =
+            checkedRepoNum > 0 && checkedRepoNum !== orgRepos.length
 
           return (
             <React.Fragment key={org}>

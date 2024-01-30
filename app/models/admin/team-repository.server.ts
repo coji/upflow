@@ -7,7 +7,10 @@ export const listTeamRepository = async (teamId: string) => {
   })
 }
 
-export const addTeamRepository = async (teamId: string, repositoryId: string) => {
+export const addTeamRepository = async (
+  teamId: string,
+  repositoryId: string,
+) => {
   return await prisma.teamRepository.create({
     data: {
       teamId,
@@ -16,7 +19,10 @@ export const addTeamRepository = async (teamId: string, repositoryId: string) =>
   })
 }
 
-export const removeTeamRepository = async (teamId: string, repositoryId: string) => {
+export const removeTeamRepository = async (
+  teamId: string,
+  repositoryId: string,
+) => {
   return await prisma.teamRepository.delete({
     where: { teamId_repositoryId: { teamId, repositoryId } },
   })

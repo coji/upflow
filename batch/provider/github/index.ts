@@ -1,4 +1,9 @@
-import type { Company, Integration, PullRequest, Repository } from '@prisma/client'
+import type {
+  Company,
+  Integration,
+  PullRequest,
+  Repository,
+} from '@prisma/client'
 import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { logger } from '~/batch/helper/logger'
@@ -14,21 +19,36 @@ export const createGitHubProvider = (integration: Integration) => {
     halt?: boolean
     delay?: number
   }
-  const fetch = async (repository: Repository, { refresh = false, halt = false, delay = 0 }: FetchOptions) => {
+  const fetch = async (
+    repository: Repository,
+    { refresh = false, halt = false, delay = 0 }: FetchOptions,
+  ) => {
     invariant(repository.repo, 'private token not specified')
     invariant(repository.owner, 'private token not specified')
     invariant(integration.privateToken, 'private token not specified')
 
-    const fetcher = createFetcher({ owner: repository.owner, repo: repository.repo, token: integration.privateToken })
+    const fetcher = createFetcher({
+      owner: repository.owner,
+      repo: repository.repo,
+      token: integration.privateToken,
+    })
     const aggregator = createAggregator()
-    const store = createStore({ companyId: repository.companyId, repositoryId: repository.id })
-    const pathBuilder = createPathBuilder({ companyId: repository.companyId, repositoryId: repository.id })
+    const store = createStore({
+      companyId: repository.companyId,
+      repositoryId: repository.id,
+    })
+    const pathBuilder = createPathBuilder({
+      companyId: repository.companyId,
+      repositoryId: repository.id,
+    })
 
     await logger.info('fetch started: ', repository.name)
     await logger.info('path: ', pathBuilder.jsonPath(''))
 
     // PR の最終更新日時を起点とする
-    const leastMergeRequest = aggregator.leastUpdatedPullRequest(await store.loader.pullrequests().catch(() => []))
+    const leastMergeRequest = aggregator.leastUpdatedPullRequest(
+      await store.loader.pullrequests().catch(() => []),
+    )
     const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
     await logger.info(`last fetched at: ${lastFetchedAt}`)
 
@@ -107,8 +127,10 @@ export const createGitHubProvider = (integration: Integration) => {
         {
           companyId: repository.companyId,
           repositoryId: repository.id,
-          releaseDetectionMethod: repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
-          releaseDetectionKey: repository.releaseDetectionKey ?? company.releaseDetectionKey,
+          releaseDetectionMethod:
+            repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
+          releaseDetectionKey:
+            repository.releaseDetectionKey ?? company.releaseDetectionKey,
         },
         await store.loader.pullrequests(),
       )

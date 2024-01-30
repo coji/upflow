@@ -6,7 +6,12 @@ interface createSheetApiParams {
   clientEmail: string
   privateKey: string
 }
-export const createSheetApi = ({ spreadsheetId, sheetTitle, clientEmail, privateKey }: createSheetApiParams) => {
+export const createSheetApi = ({
+  spreadsheetId,
+  sheetTitle,
+  clientEmail,
+  privateKey,
+}: createSheetApiParams) => {
   const paste = async (data: string) => {
     const jwt = new auth.JWT({
       email: clientEmail,
@@ -20,13 +25,19 @@ export const createSheetApi = ({ spreadsheetId, sheetTitle, clientEmail, private
       auth: jwt,
     })
 
-    const res = await sheet.spreadsheets.get({ spreadsheetId, fields: 'sheets.properties' })
+    const res = await sheet.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets.properties',
+    })
     if (!res || !res.data.sheets) {
       throw new Error('invalid sheet')
     }
 
     let destSheet = res.data.sheets
-      .map((sheet) => ({ sheetId: sheet.properties?.sheetId, title: sheet.properties?.title }))
+      .map((sheet) => ({
+        sheetId: sheet.properties?.sheetId,
+        title: sheet.properties?.title,
+      }))
       .filter((sheet) => sheet.title === sheetTitle)
       .at(0)
 

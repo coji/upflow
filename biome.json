@@ -13,15 +13,15 @@
     "rules": { "recommended": true }
   },
   "formatter": {
-    "enabled": true
+    "enabled": true,
+    "indentStyle": "space"
   },
   "javascript": {
     "formatter": {
       "enabled": true,
       "quoteStyle": "single",
       "semicolons": "asNeeded",
-      "trailingComma": "all",
-      "indentStyle": "space"
+      "trailingComma": "all"
     }
   }
 }

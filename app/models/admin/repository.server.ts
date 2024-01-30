@@ -8,9 +8,18 @@ interface createRepositoryProps {
   owner?: string
   repo?: string
 }
-export const createRepository = async ({ companyId, projectId, owner, repo }: createRepositoryProps) => {
-  const company = await prisma.company.findFirstOrThrow({ where: { id: companyId } })
-  const integration = await prisma.integration.findFirstOrThrow({ where: { companyId } })
+export const createRepository = async ({
+  companyId,
+  projectId,
+  owner,
+  repo,
+}: createRepositoryProps) => {
+  const company = await prisma.company.findFirstOrThrow({
+    where: { id: companyId },
+  })
+  const integration = await prisma.integration.findFirstOrThrow({
+    where: { companyId },
+  })
   if (integration.provider === 'github') {
     invariant(owner, 'github repo must specify owner')
     invariant(repo, 'github repo must specify repo')
@@ -32,7 +41,10 @@ export const createRepository = async ({ companyId, projectId, owner, repo }: cr
   return null
 }
 
-export const updateRepository = async (repositoryId: string, data: Partial<Repository>) => {
+export const updateRepository = async (
+  repositoryId: string,
+  data: Partial<Repository>,
+) => {
   return await prisma.repository.update({ data, where: { id: repositoryId } })
 }
 
@@ -40,4 +52,7 @@ export const deleteRepository = async (repositoryId: string) =>
   await prisma.repository.delete({ where: { id: repositoryId } })
 
 export const getRepository = async (repositoryId: string) =>
-  await prisma.repository.findFirst({ where: { id: repositoryId }, include: { integration: true } })
+  await prisma.repository.findFirst({
+    where: { id: repositoryId },
+    include: { integration: true },
+  })

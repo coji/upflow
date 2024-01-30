@@ -1,9 +1,23 @@
-import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
+import {
+  redirect,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { useState } from 'react'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label, Stack } from '~/app/components/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Stack,
+} from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import { deleteCompany, getCompany } from '~/app/models/admin/company.server'
 
@@ -62,7 +76,12 @@ const CompanyDeletePage = () => {
       </CardContent>
       <CardFooter>
         <Stack direction="row">
-          <Button type="submit" disabled={!isEnabled} form="conform-form" variant="destructive">
+          <Button
+            type="submit"
+            disabled={!isEnabled}
+            form="conform-form"
+            variant="destructive"
+          >
             DELETE
           </Button>
 

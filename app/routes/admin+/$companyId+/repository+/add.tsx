@@ -1,5 +1,9 @@
 import { parse } from '@conform-to/zod'
-import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
+import {
+  redirect,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from '@remix-run/node'
 import { useFetcher, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -63,7 +67,10 @@ const AddRepositoryModal = () => {
     fetcher.submit(keyValues, { method: 'post' })
     return true
   }
-  const { RepositoryAddModal } = useRepositoryAddModal({ integration, onSubmit: handleAddRepository })
+  const { RepositoryAddModal } = useRepositoryAddModal({
+    integration,
+    onSubmit: handleAddRepository,
+  })
 
   if (!integration) {
     return <p>integration not found</p>
