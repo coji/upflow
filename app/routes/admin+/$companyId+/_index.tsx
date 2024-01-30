@@ -33,7 +33,9 @@ const CompanyPage = () => {
 
         {!company.exportSetting && (
           <Button asChild>
-            <Link to="export-setting">{company.exportSetting ? 'Export Settings' : 'Add Export Setting'}</Link>
+            <Link to="export-setting">
+              {company.exportSetting ? 'Export Settings' : 'Add Export Setting'}
+            </Link>
           </Button>
         )}
       </HStack>

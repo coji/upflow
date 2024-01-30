@@ -34,7 +34,11 @@ const fetch = command(
   },
   (argv) => {
     const { help, ...rest } = argv.flags
-    fetchCommand({ companyId: argv._.companyId, repositoryId: argv._.repositoryId, ...rest })
+    fetchCommand({
+      companyId: argv._.companyId,
+      repositoryId: argv._.repositoryId,
+      ...rest,
+    })
   },
 )
 

@@ -1,5 +1,17 @@
-import { json, type LoaderFunctionArgs, type MetaFunction } from '@remix-run/node'
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from '@remix-run/react'
+import {
+  json,
+  type LoaderFunctionArgs,
+  type MetaFunction,
+} from '@remix-run/node'
+import {
+  Links,
+  LiveReload,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+  useLoaderData,
+} from '@remix-run/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useEffect } from 'react'

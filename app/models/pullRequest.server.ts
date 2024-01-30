@@ -14,10 +14,15 @@ interface MergeRequestSummary {
   cnt: number
 }
 export function getPullRequestSummary() {
-  return prisma.$queryRaw<MergeRequestSummary[]>`SELECT author, count(*) as cnt FROM mergerequest GROUP BY author`
+  return prisma.$queryRaw<
+    MergeRequestSummary[]
+  >`SELECT author, count(*) as cnt FROM mergerequest GROUP BY author`
 }
 
-export function getPullRequestItem(repositoryId: PullRequest['repositoryId'], number: PullRequest['number']) {
+export function getPullRequestItem(
+  repositoryId: PullRequest['repositoryId'],
+  number: PullRequest['number'],
+) {
   return prisma.pullRequest.findUniqueOrThrow({
     where: {
       repositoryId_number: {

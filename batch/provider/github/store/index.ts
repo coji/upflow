@@ -32,16 +32,26 @@ export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
    */
   const save = async (filename: string, content: unknown) => {
     // ディレクトリがなければ作成
-    await fs.mkdir(path.dirname(pathBuilder.jsonPath(filename)), { recursive: true })
-    await fs.writeFile(pathBuilder.jsonPath(filename), JSON.stringify(content, null, 2))
+    await fs.mkdir(path.dirname(pathBuilder.jsonPath(filename)), {
+      recursive: true,
+    })
+    await fs.writeFile(
+      pathBuilder.jsonPath(filename),
+      JSON.stringify(content, null, 2),
+    )
   }
 
   // loaders
-  const commits = async (number: number) => load<ShapedGitHubCommit[]>(pathBuilder.commitsJsonFilename(number))
+  const commits = async (number: number) =>
+    load<ShapedGitHubCommit[]>(pathBuilder.commitsJsonFilename(number))
   const discussions = async (number: number) =>
-    load<ShapedGitHubReviewComment[]>(pathBuilder.discussionsJsonFilename(number))
-  const reviews = async (number: number) => load<ShapedGitHubReview[]>(pathBuilder.reviewJsonFilename(number))
-  const pullrequests = async () => load<ShapedGitHubPullRequest[]>('pullrequests.json')
+    load<ShapedGitHubReviewComment[]>(
+      pathBuilder.discussionsJsonFilename(number),
+    )
+  const reviews = async (number: number) =>
+    load<ShapedGitHubReview[]>(pathBuilder.reviewJsonFilename(number))
+  const pullrequests = async () =>
+    load<ShapedGitHubPullRequest[]>('pullrequests.json')
   const tags = async () => load<ShapedGitHubTag[]>('tags.json')
 
   return {

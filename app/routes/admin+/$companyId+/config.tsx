@@ -1,6 +1,10 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
+import {
+  redirect,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -59,7 +63,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 const EditCompany = () => {
   const { companyId, company } = useLoaderData<typeof loader>()
 
-  const [form, { isActive, name, releaseDetectionKey, releaseDetectionMethod }] = useForm({
+  const [
+    form,
+    { isActive, name, releaseDetectionKey, releaseDetectionMethod },
+  ] = useForm({
     id: 'edit-company-form',
     onValidate({ formData }) {
       return parse(formData, { schema })
@@ -82,8 +89,13 @@ const EditCompany = () => {
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={releaseDetectionMethod.id}>Release Detection Method</Label>
-              <Select name={releaseDetectionMethod.name} defaultValue={releaseDetectionMethod.defaultValue}>
+              <Label htmlFor={releaseDetectionMethod.id}>
+                Release Detection Method
+              </Label>
+              <Select
+                name={releaseDetectionMethod.name}
+                defaultValue={releaseDetectionMethod.defaultValue}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a method" />
                 </SelectTrigger>
@@ -94,19 +106,29 @@ const EditCompany = () => {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-              <div className="text-destructive">{releaseDetectionMethod.error}</div>
+              <div className="text-destructive">
+                {releaseDetectionMethod.error}
+              </div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={releaseDetectionKey.id}>Release Detection Key</Label>
+              <Label htmlFor={releaseDetectionKey.id}>
+                Release Detection Key
+              </Label>
               <Input {...conform.input(releaseDetectionKey)} />
-              <div className="text-destructive">{releaseDetectionKey.error}</div>
+              <div className="text-destructive">
+                {releaseDetectionKey.error}
+              </div>
             </fieldset>
 
             <fieldset>
               <HStack>
                 <Label htmlFor={isActive.id}>Active</Label>
-                <Switch name={isActive.name} id={isActive.id} defaultChecked={!!isActive.defaultValue} />
+                <Switch
+                  name={isActive.name}
+                  id={isActive.id}
+                  defaultChecked={!!isActive.defaultValue}
+                />
               </HStack>
               <div className="text-destructive">{isActive.error}</div>
             </fieldset>

@@ -1,6 +1,11 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
+import {
+  json,
+  redirect,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -23,7 +28,10 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import { getRepository, updateRepository } from '~/app/models/admin/repository.server'
+import {
+  getRepository,
+  updateRepository,
+} from '~/app/models/admin/repository.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Edit Repository' }) }
 
@@ -36,7 +44,10 @@ const githubSchema = z.object({
 })
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  const { companyId, repositoryId } = zx.parseParams(params, {
+    companyId: z.string(),
+    repositoryId: z.string(),
+  })
   const repository = await getRepository(repositoryId)
   if (!repository) {
     throw new Error('repository not found')
@@ -44,11 +55,19 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!repository.integration) {
     throw new Error('repository.integration not found')
   }
-  return json({ companyId, repositoryId, repository, provider: repository.integration.provider })
+  return json({
+    companyId,
+    repositoryId,
+    repository,
+    provider: repository.integration.provider,
+  })
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { companyId, repositoryId } = zx.parseParams(params, { companyId: z.string(), repositoryId: z.string() })
+  const { companyId, repositoryId } = zx.parseParams(params, {
+    companyId: z.string(),
+    repositoryId: z.string(),
+  })
   const formData = await request.formData()
   const entries = Object.fromEntries(formData.entries())
   await updateRepository(repositoryId, entries)
@@ -60,11 +79,12 @@ const GithubRepositoryForm = ({
 }: {
   repository: NonNullable<Awaited<ReturnType<typeof getRepository>>>
 }) => {
-  const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] = useForm({
-    id: 'repository-edit-form',
-    onValidate: ({ formData }) => parse(formData, { schema: githubSchema }),
-    defaultValue: repository,
-  })
+  const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] =
+    useForm({
+      id: 'repository-edit-form',
+      onValidate: ({ formData }) => parse(formData, { schema: githubSchema }),
+      defaultValue: repository,
+    })
 
   return (
     <Form method="POST" {...form.props}>
@@ -87,8 +107,13 @@ const GithubRepositoryForm = ({
         </fieldset>
 
         <fieldset>
-          <Label htmlFor={releaseDetectionMethod.id}>Release Detection Method</Label>
-          <Select name={releaseDetectionMethod.name} defaultValue={releaseDetectionMethod.defaultValue}>
+          <Label htmlFor={releaseDetectionMethod.id}>
+            Release Detection Method
+          </Label>
+          <Select
+            name={releaseDetectionMethod.name}
+            defaultValue={releaseDetectionMethod.defaultValue}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select a method" />
             </SelectTrigger>

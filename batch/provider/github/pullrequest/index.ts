@@ -1,7 +1,13 @@
 import type { PullRequest } from '@prisma/client'
 import { first } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import { codingTime, deployTime, pickupTime, reviewTime, totalTime } from '~/batch/bizlogic/cycletime'
+import {
+  codingTime,
+  deployTime,
+  pickupTime,
+  reviewTime,
+  totalTime,
+} from '~/batch/bizlogic/cycletime'
 import { logger } from '~/batch/helper/logger'
 import type { ShapedGitHubPullRequest } from '../model'
 import { findReleaseDate } from '../release-detect'
@@ -13,14 +19,24 @@ const nullOrDate = (dateStr?: Date | string | null) => {
 }
 
 export const buildPullRequests = async (
-  config: { companyId: string; repositoryId: string; releaseDetectionMethod: string; releaseDetectionKey: string },
+  config: {
+    companyId: string
+    repositoryId: string
+    releaseDetectionMethod: string
+    releaseDetectionKey: string
+  },
   pullrequests: ShapedGitHubPullRequest[],
 ) => {
   const store = createStore(config)
 
   const pulls: PullRequest[] = []
-  const reviewResponses: { repo: string; number: string; author: string; createdAt: string; responseTime: number }[] =
-    []
+  const reviewResponses: {
+    repo: string
+    number: string
+    author: string
+    createdAt: string
+    responseTime: number
+  }[] = []
   for (const pr of pullrequests) {
     try {
       // コミット履歴
@@ -46,13 +62,17 @@ export const buildPullRequests = async (
       )
 
       // 初期コミット日時
-      const firstCommittedAt = nullOrDate(commits.length > 0 ? commits[0].date : null)
+      const firstCommittedAt = nullOrDate(
+        commits.length > 0 ? commits[0].date : null,
+      )
 
       // プルリク作成日時
       const pullRequestCreatedAt = nullOrDate(pr.createdAt) ?? ''
 
       // レビュー開始日時
-      const firstReviewedAt = nullOrDate(first(discussions)?.createdAt ?? first(reviews)?.submittedAt) // レビュー開始 = コメント最新 or レビュー submit 最新
+      const firstReviewedAt = nullOrDate(
+        first(discussions)?.createdAt ?? first(reviews)?.submittedAt,
+      ) // レビュー開始 = コメント最新 or レビュー submit 最新
 
       // マージ日時
       const mergedAt = nullOrDate(pr.mergedAt)
@@ -60,7 +80,13 @@ export const buildPullRequests = async (
       // リリース日時
       const releasedAt =
         pr.mergedAt && pr.mergeCommitSha
-          ? await findReleaseDate(pullrequests, store, pr, config.releaseDetectionMethod, config.releaseDetectionKey)
+          ? await findReleaseDate(
+              pullrequests,
+              store,
+              pr,
+              config.releaseDetectionMethod,
+              config.releaseDetectionKey,
+            )
           : null
 
       pulls.push({
@@ -78,15 +104,31 @@ export const buildPullRequests = async (
         mergedAt,
         releasedAt,
         codingTime: codingTime({ firstCommittedAt, pullRequestCreatedAt }),
-        pickupTime: pickupTime({ pullRequestCreatedAt, firstReviewedAt, mergedAt }),
+        pickupTime: pickupTime({
+          pullRequestCreatedAt,
+          firstReviewedAt,
+          mergedAt,
+        }),
         reviewTime: reviewTime({ firstReviewedAt, mergedAt }),
         deployTime: deployTime({ mergedAt, releasedAt }),
-        totalTime: totalTime({ firstCommittedAt, pullRequestCreatedAt, firstReviewedAt, mergedAt, releasedAt }),
+        totalTime: totalTime({
+          firstCommittedAt,
+          pullRequestCreatedAt,
+          firstReviewedAt,
+          mergedAt,
+          releasedAt,
+        }),
         repositoryId: config.repositoryId,
         updatedAt: nullOrDate(pr.updatedAt),
       })
     } catch (e) {
-      await logger.error('analyze failure:', config.companyId, config.repositoryId, pr.number, e)
+      await logger.error(
+        'analyze failure:',
+        config.companyId,
+        config.repositoryId,
+        pr.number,
+        e,
+      )
     }
   }
   return { pulls, reviewResponses }

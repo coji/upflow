@@ -16,7 +16,9 @@ import type {
  * @param pr
  * @returns
  */
-export const shapeGitHubPullRequest: (pr: GitHubPullRequest) => ShapedGitHubPullRequest = (pr) => {
+export const shapeGitHubPullRequest: (
+  pr: GitHubPullRequest,
+) => ShapedGitHubPullRequest = (pr) => {
   return {
     number: pr.number,
     state: pr.state,
@@ -38,7 +40,9 @@ export const shapeGitHubPullRequest: (pr: GitHubPullRequest) => ShapedGitHubPull
  * @param commit
  * @returns
  */
-export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (commit) => {
+export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (
+  commit,
+) => {
   return {
     sha: commit.sha,
     url: commit.html_url,
@@ -50,7 +54,9 @@ export const shapeGitHubCommit: (commit: GitHubCommit) => ShapedGitHubCommit = (
 /**
  * GitHubIssueComment を集計に必要な props のみに shape する
  */
-export const shapeGitHubIssueComment: (comment: GithubIssueComment) => ShapedGitHubIssueComment = (comment) => {
+export const shapeGitHubIssueComment: (
+  comment: GithubIssueComment,
+) => ShapedGitHubIssueComment = (comment) => {
   return {
     id: comment.id,
     user: comment.user?.login ?? null,
@@ -64,7 +70,9 @@ export const shapeGitHubIssueComment: (comment: GithubIssueComment) => ShapedGit
  * @param comment
  * @returns
  */
-export const shapeGitHubReviewComment: (comment: GitHubReviewComment) => ShapedGitHubReviewComment = (comment) => {
+export const shapeGitHubReviewComment: (
+  comment: GitHubReviewComment,
+) => ShapedGitHubReviewComment = (comment) => {
   return {
     id: comment.id,
     user: comment.user?.login ?? null,
@@ -78,7 +86,9 @@ export const shapeGitHubReviewComment: (comment: GitHubReviewComment) => ShapedG
  * @param review
  * @returns
  */
-export const shapeGitHubReview: (review: GitHubReview) => ShapedGitHubReview = (review) => {
+export const shapeGitHubReview: (review: GitHubReview) => ShapedGitHubReview = (
+  review,
+) => {
   return {
     id: review.id,
     user: review.user?.login ?? null,

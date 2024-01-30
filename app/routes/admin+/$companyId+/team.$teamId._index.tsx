@@ -25,14 +25,23 @@ import {
 import { deleteTeam, getTeam, updateTeam } from '~/app/models/admin/team.server'
 
 export const handle = {
-  breadcrumb: ({ companyId, team }: { companyId: string; team: NonNullable<Awaited<ReturnType<typeof getTeam>>> }) => ({
+  breadcrumb: ({
+    companyId,
+    team,
+  }: {
+    companyId: string
+    team: NonNullable<Awaited<ReturnType<typeof getTeam>>>
+  }) => ({
     label: team.name,
     to: `/admin/${companyId}/team/${team.id}`,
   }),
 }
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const { companyId, teamId } = zx.parseParams(params, { companyId: z.string(), teamId: z.string() })
+  const { companyId, teamId } = zx.parseParams(params, {
+    companyId: z.string(),
+    teamId: z.string(),
+  })
   const team = await getTeam(teamId)
   if (!team) {
     throw new Error('チームが見つかりません')
@@ -41,7 +50,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 }
 
 const schema = z.object({
-  name: z.string({ required_error: '必須です' }).max(20, { message: '20文字以内です' }),
+  name: z
+    .string({ required_error: '必須です' })
+    .max(20, { message: '20文字以内です' }),
   intent: z.enum(['update', 'delete']),
 })
 
@@ -89,7 +100,9 @@ export default function TeamDetailPage() {
           <fieldset>
             <Label htmlFor={name.id}>Name</Label>
             <Input {...conform.input(name)} />
-            {name.error && <div className="text-destructive text-sm">{name.error}</div>}
+            {name.error && (
+              <div className="text-destructive text-sm">{name.error}</div>
+            )}
           </fieldset>
 
           <HStack>
@@ -111,12 +124,18 @@ export default function TeamDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. It will permanently delete your team and all associated data.
+                    This action cannot be undone. It will permanently delete
+                    your team and all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction form={form.id} name="intent" value="delete" type="submit">
+                  <AlertDialogAction
+                    form={form.id}
+                    name="intent"
+                    value="delete"
+                    type="submit"
+                  >
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>

@@ -2,7 +2,11 @@ import dayjs from '~/app/libs/dayjs'
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 const log = async (type: string, ...args: any[]) => {
-  console.log(`${dayjs().utc().format('YYYY-MM-DD HH:mm:ss.SSS')}`, type, ...args)
+  console.log(
+    `${dayjs().utc().format('YYYY-MM-DD HH:mm:ss.SSS')}`,
+    type,
+    ...args,
+  )
 }
 export const logger = {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

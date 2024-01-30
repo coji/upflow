@@ -19,10 +19,18 @@ const headingVariants = cva('font-bold', {
     size: '2xl',
   },
 })
-interface HeadingProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof headingVariants> {
+interface HeadingProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof headingVariants> {
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 }
-const Heading = ({ as = 'h2', size, className, children, ...rest }: HeadingProps) => {
+const Heading = ({
+  as = 'h2',
+  size,
+  className,
+  children,
+  ...rest
+}: HeadingProps) => {
   const As = as
   return (
     <As className={cn(headingVariants({ size }), className)} {...rest}>

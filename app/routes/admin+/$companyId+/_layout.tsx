@@ -1,5 +1,9 @@
 import { GearIcon } from '@radix-ui/react-icons'
-import { json, type LoaderFunctionArgs, type MetaFunction } from '@remix-run/node'
+import {
+  json,
+  type LoaderFunctionArgs,
+  type MetaFunction,
+} from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -21,10 +25,14 @@ import {
 } from '~/app/components/ui'
 import { getCompany } from '~/app/models/admin/company.server'
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => [{ title: `${data?.company.name} - Upflow Admin` }]
+export const meta: MetaFunction<typeof loader> = ({ data }) => [
+  { title: `${data?.company.name} - Upflow Admin` },
+]
 
 export const handle = {
-  breadcrumb: ({ company }: { company: NonNullable<Awaited<ReturnType<typeof getCompany>>> }) => {
+  breadcrumb: ({
+    company,
+  }: { company: NonNullable<Awaited<ReturnType<typeof getCompany>>> }) => {
     return { label: company.name, to: `/admin/${company.id}` }
   },
 }
@@ -62,7 +70,11 @@ export default function CompanyLayout() {
               </DropdownMenuItem>
               {company.exportSetting && (
                 <DropdownMenuItem asChild>
-                  <Link to="export-setting">{company.exportSetting ? 'Export Settings' : 'Add Export Setting'}</Link>
+                  <Link to="export-setting">
+                    {company.exportSetting
+                      ? 'Export Settings'
+                      : 'Add Export Setting'}
+                  </Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>

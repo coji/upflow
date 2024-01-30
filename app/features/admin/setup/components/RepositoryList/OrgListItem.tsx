@@ -8,7 +8,13 @@ interface OrgListItemProps {
   orgRepoNum: number
   onChange: (org: string, isChecked: boolean) => void
 }
-export const OrgListItem = ({ org, isChecked, checkedRepoNum, orgRepoNum, onChange }: OrgListItemProps) => {
+export const OrgListItem = ({
+  org,
+  isChecked,
+  checkedRepoNum,
+  orgRepoNum,
+  onChange,
+}: OrgListItemProps) => {
   return (
     <HStack className="flex-1">
       <Checkbox

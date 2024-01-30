@@ -9,7 +9,12 @@ interface upsertExportSettingProps {
   clientEmail: string
   privateKey: string
 }
-export const upsertExportSetting = async ({ companyId, sheetId, clientEmail, privateKey }: upsertExportSettingProps) =>
+export const upsertExportSetting = async ({
+  companyId,
+  sheetId,
+  clientEmail,
+  privateKey,
+}: upsertExportSettingProps) =>
   await prisma.exportSetting.upsert({
     where: {
       companyId,

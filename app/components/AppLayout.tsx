@@ -17,7 +17,11 @@ import {
 } from '~/app/components/ui'
 import type { SessionUser } from '~/app/features/auth/types/types'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
-import { TeamSwitcher, type Companies, type Team } from '~/app/routes/company-switcher'
+import {
+  type Companies,
+  type Team,
+  TeamSwitcher,
+} from '~/app/routes/company-switcher'
 
 interface AppLayoutProps {
   user?: SessionUser
@@ -37,7 +41,8 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
         <HStack>
           <Heading>
             <Link to={isAdmin ? '/admin' : '/'}>
-              UpFlow {isAdmin && <span className="text-destructive">Admin</span>}
+              UpFlow{' '}
+              {isAdmin && <span className="text-destructive">Admin</span>}
             </Link>
           </Heading>
 
@@ -51,7 +56,10 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src={user.pictureUrl ?? undefined} alt={user.displayName} />
+                  <AvatarImage
+                    src={user.pictureUrl ?? undefined}
+                    alt={user.displayName}
+                  />
                   <AvatarFallback>{user.displayName}</AvatarFallback>
                 </Avatar>
               </Button>
@@ -64,12 +72,20 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <Spacer />
-                  <Badge variant={user.role === 'admin' ? 'destructive' : 'default'}>{user.role}</Badge>
+                  <Badge
+                    variant={user.role === 'admin' ? 'destructive' : 'default'}
+                  >
+                    {user.role}
+                  </Badge>
                 </HStack>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                {isAdmin ? <Link to="/">ユーザー画面</Link> : <Link to="/admin">管理画面</Link>}
+                {isAdmin ? (
+                  <Link to="/">ユーザー画面</Link>
+                ) : (
+                  <Link to="/admin">管理画面</Link>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

@@ -39,7 +39,12 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
-      if (ret.data.filter((pr) => dayjs(pr.updated_at) > dayjs().utc().add(-90, 'days')).length === 0) break
+      if (
+        ret.data.filter(
+          (pr) => dayjs(pr.updated_at) > dayjs().utc().add(-90, 'days'),
+        ).length === 0
+      )
+        break
       pulls = [
         ...pulls,
         ...ret.data
@@ -63,7 +68,10 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100,
       })
       if (ret.data.length === 0) break
-      allCommits = [...allCommits, ...ret.data.map((commit) => shapeGitHubCommit(commit))]
+      allCommits = [
+        ...allCommits,
+        ...ret.data.map((commit) => shapeGitHubCommit(commit)),
+      ]
       page++
     }
     return allCommits
@@ -81,7 +89,9 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100,
       })
       if (ret.data.length === 0) break
-      allComments.push(...ret.data.map((comment) => shapeGitHubIssueComment(comment)))
+      allComments.push(
+        ...ret.data.map((comment) => shapeGitHubIssueComment(comment)),
+      )
       page++
     }
     return allComments
@@ -99,7 +109,10 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100,
       })
       if (ret.data.length === 0) break
-      allComments = [...allComments, ...ret.data.map((comment) => shapeGitHubReviewComment(comment))]
+      allComments = [
+        ...allComments,
+        ...ret.data.map((comment) => shapeGitHubReviewComment(comment)),
+      ]
       page++
     }
     return allComments
@@ -111,7 +124,9 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     const review = await reviewComments(pullNumber)
 
     const allComments = [...issue, ...review]
-    allComments.sort((a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix())
+    allComments.sort(
+      (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
+    )
     return allComments
   }
 
@@ -127,28 +142,47 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         per_page: 100,
       })
       if (ret.data.length === 0) break
-      allReviews = [...allReviews, ...ret.data.map((review) => shapeGitHubReview(review))]
+      allReviews = [
+        ...allReviews,
+        ...ret.data.map((review) => shapeGitHubReview(review)),
+      ]
       page++
     }
     return allReviews
   }
 
-  type PickPartial<T, K extends keyof T, G extends Exclude<keyof T, K>> = Required<Pick<T, K>> & Partial<Pick<T, G>>
+  type PickPartial<
+    T,
+    K extends keyof T,
+    G extends Exclude<keyof T, K>,
+  > = Required<Pick<T, K>> & Partial<Pick<T, G>>
 
   const tags = async () => {
     let tags: PickPartial<ShapedGitHubTag, 'name' | 'sha', 'committedAt'>[] = []
     let page = 1
     // タグの一覧を取得
     while (true) {
-      const ret = await octokit.rest.repos.listTags({ owner, repo, page, per_page: 100 })
+      const ret = await octokit.rest.repos.listTags({
+        owner,
+        repo,
+        page,
+        per_page: 100,
+      })
       if (ret.data.length === 0) break
-      tags = [...tags, ...ret.data.map((tag) => ({ name: tag.name, sha: tag.commit.sha }))]
+      tags = [
+        ...tags,
+        ...ret.data.map((tag) => ({ name: tag.name, sha: tag.commit.sha })),
+      ]
       page++
     }
 
     // タグのコミット日時を補完
     for (const tag of tags) {
-      const tagCommit = await octokit.rest.repos.getCommit({ owner, repo, ref: tag.sha })
+      const tagCommit = await octokit.rest.repos.getCommit({
+        owner,
+        repo,
+        ref: tag.sha,
+      })
       tag.committedAt = tagCommit.data.commit.committer?.date
     }
     return tags.filter((tag) => !!tag.committedAt) as ShapedGitHubTag[] // コミット日時がないものは除外 (通常ないけど)

@@ -2,19 +2,29 @@ import { Prisma } from '@prisma/client'
 import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
 import invariant from 'tiny-invariant'
-import { getUserByEmail, upsertUserByEmail, type User } from '~/app/models/user.server'
+import {
+  type User,
+  getUserByEmail,
+  upsertUserByEmail,
+} from '~/app/models/user.server'
 import type { SessionUser } from '../types/types'
 import {
-  isSupportedSocialProvider,
   type SupportedSocialProviderExtraParams,
   type SupportedSocialProviderProfile,
+  isSupportedSocialProvider,
 } from './supported-social-provider.server'
 
 export const verifyUser: StrategyVerifyCallback<
   SessionUser,
-  OAuth2StrategyVerifyParams<SupportedSocialProviderProfile, SupportedSocialProviderExtraParams>
+  OAuth2StrategyVerifyParams<
+    SupportedSocialProviderProfile,
+    SupportedSocialProviderExtraParams
+  >
 > = async ({ profile }) => {
-  invariant(isSupportedSocialProvider(profile.provider), 'provider not supported')
+  invariant(
+    isSupportedSocialProvider(profile.provider),
+    'provider not supported',
+  )
   invariant(profile.emails?.[0].value, 'profile.email is required')
   const email = profile.emails[0].value
 

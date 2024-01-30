@@ -1,7 +1,16 @@
 import type { Integration } from '@prisma/client'
 import { Link } from '@remix-run/react'
 import { useCallback, useState } from 'react'
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, HStack, Spacer } from '~/app/components/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Spacer,
+} from '~/app/components/ui'
 import { RepositoryList } from '../components/RepositoryList'
 import type { GithubRepo } from '../interfaces/model'
 import { useGithubRepoQuery } from './useGithubReposQuery'
@@ -10,7 +19,10 @@ interface useRepositoryAddModalProps {
   integration: Integration
   onSubmit: (repos: GithubRepo[]) => Promise<boolean>
 }
-export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAddModalProps) => {
+export const useRepositoryAddModal = ({
+  integration,
+  onSubmit,
+}: useRepositoryAddModalProps) => {
   const { data, isLoading } = useGithubRepoQuery(integration)
   const [checkedRepos, setCheckedRepos] = useState<GithubRepo[]>([])
 
@@ -24,7 +36,14 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
         <CardTitle>Add GitHub Repositories</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading...</p> : <RepositoryList allRepos={data ?? []} onChange={handleChangeCheckedRepos} />}
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <RepositoryList
+            allRepos={data ?? []}
+            onChange={handleChangeCheckedRepos}
+          />
+        )}
       </CardContent>
       <CardFooter>
         <HStack>
@@ -46,7 +65,11 @@ export const useRepositoryAddModal = ({ integration, onSubmit }: useRepositoryAd
         </HStack>
 
         <Spacer />
-        {checkedRepos.length > 0 && <p className="text-sm text-secondary">{checkedRepos.length} repos selected</p>}
+        {checkedRepos.length > 0 && (
+          <p className="text-sm text-secondary">
+            {checkedRepos.length} repos selected
+          </p>
+        )}
       </CardFooter>
     </Card>
   )

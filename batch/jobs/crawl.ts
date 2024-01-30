@@ -1,6 +1,9 @@
 import { upsertPullRequest } from '~/app/models/pullRequest.server'
 import { prisma } from '~/app/services/db.server'
-import { exportPullsToSpreadsheet, exportReviewResponsesToSpreadsheet } from '../bizlogic/export-spreadsheet'
+import {
+  exportPullsToSpreadsheet,
+  exportReviewResponsesToSpreadsheet,
+} from '../bizlogic/export-spreadsheet'
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
 
@@ -29,7 +32,12 @@ export const crawlJob = async () => {
 
     const provider = createProvider(integration)
     if (!provider) {
-      await logger.error('provider cant detected', company.id, company.name, integration.provider)
+      await logger.error(
+        'provider cant detected',
+        company.id,
+        company.name,
+        integration.provider,
+      )
       continue
     }
 
@@ -42,7 +50,10 @@ export const crawlJob = async () => {
 
     // analyze
     await logger.info('analyze started...')
-    const { pulls, reviewResponses } = await provider.analyze(company, company.repositories)
+    const { pulls, reviewResponses } = await provider.analyze(
+      company,
+      company.repositories,
+    )
     await logger.info('analyze completed.')
 
     // upsert
@@ -56,7 +67,10 @@ export const crawlJob = async () => {
     if (company.exportSetting) {
       await logger.info('exporting to spreadsheet...')
       await exportPullsToSpreadsheet(pulls, company.exportSetting)
-      await exportReviewResponsesToSpreadsheet(reviewResponses, company.exportSetting)
+      await exportReviewResponsesToSpreadsheet(
+        reviewResponses,
+        company.exportSetting,
+      )
       await logger.info('export to spreadsheet done')
     }
   }

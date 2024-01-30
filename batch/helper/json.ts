@@ -6,7 +6,8 @@ import { jsonPath } from './path'
  *
  * @param filename
  */
-export const load = <T>(filename: string) => JSON.parse(fs.readFileSync(jsonPath(filename)).toString()) as T
+export const load = <T>(filename: string) =>
+  JSON.parse(fs.readFileSync(jsonPath(filename)).toString()) as T
 
 /**
  * JSON ファイルの保存

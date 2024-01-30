@@ -4,7 +4,10 @@ import invariant from 'tiny-invariant'
 import type { SessionUser } from '../types/types'
 import { strategy as GoogleStrategy } from './google-auth.server'
 
-invariant(process.env.SESSION_SECRET, 'SESSION_SECRET environment variable should defined')
+invariant(
+  process.env.SESSION_SECRET,
+  'SESSION_SECRET environment variable should defined',
+)
 
 export const sessionStorage = createCookieSessionStorage({
   cookie: {

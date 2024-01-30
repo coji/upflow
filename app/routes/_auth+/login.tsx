@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { type LoaderFunctionArgs, json } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { AppLayout } from '~/app/components'
 import {
@@ -13,19 +13,30 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
-import { authenticator, sessionStorage } from '~/app/features/auth/services/authenticator.server'
+import {
+  authenticator,
+  sessionStorage,
+} from '~/app/features/auth/services/authenticator.server'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 認証済みならトップページにリダイレクト
   await authenticator.isAuthenticated(request, { successRedirect: '/admin' })
 
   // ログイン時のエラーメッセージがもしあればそれを表示する
-  const session = await sessionStorage.getSession(request.headers.get('Cookie') || '')
-  const error = session.get(authenticator.sessionErrorKey) as { message: string } | undefined
+  const session = await sessionStorage.getSession(
+    request.headers.get('Cookie') || '',
+  )
+  const error = session.get(authenticator.sessionErrorKey) as
+    | { message: string }
+    | undefined
 
   return json(
     { errorMessage: error?.message },
-    { headers: new Headers({ 'Set-Cookie': await sessionStorage.commitSession(session) }) }, // flash messageを削除するためにセッションを更新
+    {
+      headers: new Headers({
+        'Set-Cookie': await sessionStorage.commitSession(session),
+      }),
+    }, // flash messageを削除するためにセッションを更新
   )
 }
 

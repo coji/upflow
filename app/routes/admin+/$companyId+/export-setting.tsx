@@ -1,6 +1,11 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
-import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node'
+import {
+  json,
+  redirect,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -17,7 +22,10 @@ import {
   Stack,
   Textarea,
 } from '~/app/components/ui'
-import { getExportSetting, upsertExportSetting } from '~/app/models/admin/export-setting.server'
+import {
+  getExportSetting,
+  upsertExportSetting,
+} from '~/app/models/admin/export-setting.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Export Settings' }) }
 

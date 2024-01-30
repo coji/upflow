@@ -21,7 +21,14 @@ export const allConfigs = async () => {
   const configs = (
     await prisma.company.findMany({
       include: {
-        integration: { select: { id: true, provider: true, method: true, privateToken: true } },
+        integration: {
+          select: {
+            id: true,
+            provider: true,
+            method: true,
+            privateToken: true,
+          },
+        },
         repositories: { select: { id: true, projectId: true } },
       },
     })

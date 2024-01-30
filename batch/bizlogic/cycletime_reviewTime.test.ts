@@ -4,8 +4,12 @@ import { reviewTime } from './cycletime'
 describe('reviewTime', () => {
   test('null', () => {
     expect(reviewTime({ firstReviewedAt: null, mergedAt: null })).toBeNull()
-    expect(reviewTime({ firstReviewedAt: '2022-08-01 10:00', mergedAt: null })).toBeNull()
-    expect(reviewTime({ firstReviewedAt: null, mergedAt: '2022-08-01 10:00' })).toBeNull()
+    expect(
+      reviewTime({ firstReviewedAt: '2022-08-01 10:00', mergedAt: null }),
+    ).toBeNull()
+    expect(
+      reviewTime({ firstReviewedAt: null, mergedAt: '2022-08-01 10:00' }),
+    ).toBeNull()
   })
 
   test('reviews 24 hours', () => {

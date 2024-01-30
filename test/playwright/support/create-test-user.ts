@@ -1,6 +1,8 @@
 import { upsertUserByEmail } from '~/app/models/user.server'
 
-export const createTestUser = async (props: Parameters<typeof upsertUserByEmail>[0]) => {
+export const createTestUser = async (
+  props: Parameters<typeof upsertUserByEmail>[0],
+) => {
   if (!props.email) {
     throw new Error('email required for login')
   }

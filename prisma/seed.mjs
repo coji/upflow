@@ -24,7 +24,9 @@ const cleanup = async (email) => {
     where: { id: repository.companyId },
   })
   if (!company) return { repository: repository.id }
-  await prisma.company.delete({ where: { id: company.id } }).catch((e) => console.log(e))
+  await prisma.company
+    .delete({ where: { id: company.id } })
+    .catch((e) => console.log(e))
 
   return {
     companyId: company?.id,

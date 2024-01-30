@@ -1,6 +1,9 @@
 import invariant from 'tiny-invariant'
 import { prisma } from '~/app/services/db.server'
-import { exportPullsToSpreadsheet, exportReviewResponsesToSpreadsheet } from '../bizlogic/export-spreadsheet'
+import {
+  exportPullsToSpreadsheet,
+  exportReviewResponsesToSpreadsheet,
+} from '../bizlogic/export-spreadsheet'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider/index'
 
@@ -10,7 +13,11 @@ interface UpsertCommandProps {
 export async function upsertCommand({ companyId }: UpsertCommandProps) {
   if (!companyId) {
     console.log('config should specified')
-    console.log((await allConfigs()).map((c) => `${c.companyName}\t${c.companyId}`).join('\n'))
+    console.log(
+      (await allConfigs())
+        .map((c) => `${c.companyName}\t${c.companyId}`)
+        .join('\n'),
+    )
     return
   }
 
@@ -23,7 +30,10 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
   const provider = createProvider(company.integration)
   invariant(provider, `unknown provider ${company.integration.provider}`)
 
-  const { pulls, reviewResponses } = await provider.analyze(company, company.repositories)
+  const { pulls, reviewResponses } = await provider.analyze(
+    company,
+    company.repositories,
+  )
 
   // upsert
   await prisma.$transaction(
@@ -43,6 +53,9 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
 
   if (company.exportSetting) {
     await exportPullsToSpreadsheet(pulls, company.exportSetting) // google spreadsheet にエクスポート
-    await exportReviewResponsesToSpreadsheet(reviewResponses, company.exportSetting)
+    await exportReviewResponsesToSpreadsheet(
+      reviewResponses,
+      company.exportSetting,
+    )
   }
 }

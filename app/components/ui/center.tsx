@@ -5,7 +5,10 @@ export interface CenterProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 export const Center = ({ className, children, ...rest }: CenterProps) => {
   return (
-    <div className={cn('flex h-full items-center justify-center', className)} {...rest}>
+    <div
+      className={cn('flex h-full items-center justify-center', className)}
+      {...rest}
+    >
       {children}
     </div>
   )

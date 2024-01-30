@@ -2,7 +2,9 @@ import { sortBy } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
 import type { ShapedGitHubReviewComment } from '../model'
 
-export const analyzeReviewResponse = (comments: ShapedGitHubReviewComment[]) => {
+export const analyzeReviewResponse = (
+  comments: ShapedGitHubReviewComment[],
+) => {
   let lastRes: ShapedGitHubReviewComment | null = null
   const responses = []
 
@@ -15,7 +17,10 @@ export const analyzeReviewResponse = (comments: ShapedGitHubReviewComment[]) => 
       responses.push({
         author: res.user,
         createdAt: res.createdAt,
-        responseTime: (dayjs(res.createdAt).unix() - dayjs(lastRes.createdAt).unix()) / 60 / 60,
+        responseTime:
+          (dayjs(res.createdAt).unix() - dayjs(lastRes.createdAt).unix()) /
+          60 /
+          60,
       })
     }
     lastRes = res
