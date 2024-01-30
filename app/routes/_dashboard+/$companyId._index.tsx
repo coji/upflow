@@ -8,12 +8,13 @@ import { getPullRequestReport } from '~/app/models/pullRequest.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  console.log({ companyId })
   const pullRequests = await getPullRequestReport(companyId)
   return json({ companyId, pullRequests })
 }
 
 export default function CompanyIndexPage() {
-  const { pullRequests } = useLoaderData<typeof loader>()
+  const { companyId, pullRequests } = useLoaderData<typeof loader>()
 
   return (
     <div>
@@ -31,7 +32,7 @@ export default function CompanyIndexPage() {
           </TableHeader>
           <TableBody>
             {pullRequests.map((pr) => (
-              <TableRow key={pr.number}>
+              <TableRow key={`${companyId}-${pr.repo}-${pr.number}`}>
                 <TableCell>{pr.number}</TableCell>
                 <TableCell>{pr.author}</TableCell>
                 <TableCell>{pr.title}</TableCell>

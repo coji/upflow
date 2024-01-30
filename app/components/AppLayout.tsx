@@ -36,7 +36,9 @@ const AppLayout = ({ user, children, companies = [] }: AppLayoutProps) => {
       <header className="flex items-center px-2 py-1 md:container">
         <HStack>
           <Heading>
-            <Link to="/admin">UpFlow {isAdmin && ' Admin'}</Link>
+            <Link to={isAdmin ? '/admin' : '/'}>
+              UpFlow {isAdmin && <span className="text-destructive">Admin</span>}
+            </Link>
           </Heading>
 
           {user && <TeamSwitcher companies={companies} isAdmin={isAdmin} />}
