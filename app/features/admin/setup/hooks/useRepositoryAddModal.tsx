@@ -66,7 +66,7 @@ export const useRepositoryAddModal = ({
 
         <Spacer />
         {checkedRepos.length > 0 && (
-          <p className="text-sm text-secondary">
+          <p className="text-secondary text-sm">
             {checkedRepos.length} repos selected
           </p>
         )}
