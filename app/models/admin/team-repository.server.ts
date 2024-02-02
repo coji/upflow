@@ -1,7 +1,7 @@
 import { prisma } from '~/app/services/db.server'
 
 export const listTeamRepository = async (teamId: string) => {
-  return prisma.teamRepository.findMany({
+  return await prisma.teamRepository.findMany({
     where: { teamId },
     orderBy: { createdAt: 'desc' },
   })

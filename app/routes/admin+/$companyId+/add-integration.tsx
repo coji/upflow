@@ -1,9 +1,9 @@
 import { conform, useForm } from '@conform-to/react'
 import { parse } from '@conform-to/zod'
 import {
-  redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  redirect,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
@@ -33,7 +33,7 @@ const schema = z.object({
   token: z.string().min(1, { message: 'token is required' }),
 })
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   return { companyId }
 }

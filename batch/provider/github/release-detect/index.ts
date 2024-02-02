@@ -84,7 +84,7 @@ export const findReleaseDate = async (
   releaseDetectionKey: string,
 ) => {
   if (releaseDetectionMethod === 'branch') {
-    return findReleaseDateByBranch(
+    return await findReleaseDateByBranch(
       allPullRequests,
       store,
       pr,
@@ -92,7 +92,12 @@ export const findReleaseDate = async (
     )
   }
   if (releaseDetectionMethod === 'tags') {
-    return findReleaseDateByTag(allPullRequests, store, pr, releaseDetectionKey)
+    return await findReleaseDateByTag(
+      allPullRequests,
+      store,
+      pr,
+      releaseDetectionKey,
+    )
   }
   return null
 }

@@ -3,7 +3,7 @@ import { prisma } from '~/app/services/db.server'
 export type { User } from '@prisma/client'
 
 export async function getUserById(id: User['id']) {
-  return prisma.user.findUnique({
+  return await prisma.user.findUnique({
     where: { id },
     select: {
       id: true,
@@ -17,7 +17,7 @@ export async function getUserById(id: User['id']) {
 }
 
 export async function getUserByEmail({ email }: { email: User['email'] }) {
-  return prisma.user.findUniqueOrThrow({ where: { email } })
+  return await prisma.user.findUniqueOrThrow({ where: { email } })
 }
 
 export async function upsertUserByEmail({
@@ -31,7 +31,7 @@ export async function upsertUserByEmail({
   pictureUrl: User['pictureUrl']
   locale: User['locale']
 }) {
-  return prisma.user.upsert({
+  return await prisma.user.upsert({
     where: { email },
     select: {
       id: true,
@@ -47,5 +47,5 @@ export async function upsertUserByEmail({
 }
 
 export async function deleteUserByEmail(email: User['email']) {
-  return prisma.user.delete({ where: { email } })
+  return await prisma.user.delete({ where: { email } })
 }

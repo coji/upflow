@@ -11,15 +11,15 @@ export const createJobSchedular = () => {
       try {
         if (isRunning) throw new Error('crawl job already running.')
         isRunning = true
-        await logger.info('crawl job started.')
+        logger.info('crawl job started.')
 
         await crawlJob()
 
         isRunning = false
-        await logger.info('crawl job completed.')
+        logger.info('crawl job completed.')
       } catch (e) {
         isRunning = false
-        await logger.error(e)
+        logger.error(e)
       }
     })
   }
