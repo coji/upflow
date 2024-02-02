@@ -11,7 +11,7 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   return { companyId }
 }

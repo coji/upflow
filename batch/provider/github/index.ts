@@ -1,10 +1,10 @@
+import { setTimeout } from 'node:timers/promises'
 import type {
   Company,
   Integration,
   PullRequest,
   Repository,
 } from '@prisma/client'
-import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
@@ -42,61 +42,61 @@ export const createGitHubProvider = (integration: Integration) => {
       repositoryId: repository.id,
     })
 
-    await logger.info('fetch started: ', repository.name)
-    await logger.info('path: ', pathBuilder.jsonPath(''))
+    logger.info('fetch started: ', repository.name)
+    logger.info('path: ', pathBuilder.jsonPath(''))
 
     // PR の最終更新日時を起点とする
     const leastMergeRequest = aggregator.leastUpdatedPullRequest(
       await store.loader.pullrequests().catch(() => []),
     )
     const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
-    await logger.info(`last fetched at: ${lastFetchedAt}`)
+    logger.info(`last fetched at: ${lastFetchedAt}`)
 
     // 全プルリク情報をダウンロード
-    await logger.info('fetching all pullrequests...')
+    logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
     await store.save('pullrequests.json', allPullRequests)
-    await logger.info('fetching all pullrequests completed.')
+    logger.info('fetching all pullrequests completed.')
 
     // 全タグを情報をダウンロード
     if (repository.releaseDetectionMethod === 'tags') {
-      await logger.info('fetching all tags...')
+      logger.info('fetching all tags...')
       const allTags = await fetcher.tags()
       await store.save('tags.json', allTags)
-      await logger.info('fetching all tags completed.')
+      logger.info('fetching all tags completed.')
     }
 
     // 個別のPR
     for (const pr of allPullRequests) {
       if (halt) {
-        await logger.fatal('halted')
+        logger.fatal('halted')
         return
       }
 
       const isUpdated = pr.updatedAt > lastFetchedAt
       // 前回以前fetchしたときから更新されていないPRの場合はスキップ
       if (!refresh && !isUpdated) {
-        await logger.debug('skip', pr.number, pr.state, pr.updatedAt)
+        logger.debug('skip', pr.number, pr.state, pr.updatedAt)
         continue
       }
       const number = pr.number
 
       // 個別PRの全コミット
-      await logger.info(`${number} commits`)
+      logger.info(`${number} commits`)
       const allCommits = await fetcher.commits(number)
       await store.save(store.path.commitsJsonFilename(number), allCommits)
 
       await setTimeout(delay) // 待つ
 
       // 個別PRのレビューコメント
-      await logger.info(`${number} review comments`)
+      logger.info(`${number} review comments`)
       const discussions = await fetcher.comments(number)
       await store.save(store.path.discussionsJsonFilename(number), discussions)
 
       await setTimeout(delay) // 待つ
 
       // 個別PRのレビュー
-      await logger.info(`${number} reviews`)
+      logger.info(`${number} reviews`)
       const reviews = await fetcher.reviews(number)
       await store.save(store.path.reviewJsonFilename(number), reviews)
 
@@ -105,7 +105,7 @@ export const createGitHubProvider = (integration: Integration) => {
 
     // 全プルリク情報を保存
     await store.save('pullrequests.json', allPullRequests)
-    await logger.info('fetch completed: ', repository.name)
+    logger.info('fetch completed: ', repository.name)
   }
 
   const analyze = async (company: Company, repositories: Repository[]) => {

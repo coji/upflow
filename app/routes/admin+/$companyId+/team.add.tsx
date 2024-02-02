@@ -19,7 +19,7 @@ const schema = z.object({
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
 })
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   return json({ companyId })
 }

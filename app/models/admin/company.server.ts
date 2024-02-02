@@ -3,7 +3,7 @@ import { prisma } from '~/app/services/db.server'
 export type { Company, Team } from '@prisma/client'
 
 export const listCompanies = async () => {
-  return prisma.company.findMany({
+  return await prisma.company.findMany({
     select: {
       id: true,
       name: true,

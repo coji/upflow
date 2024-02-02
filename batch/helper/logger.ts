@@ -1,7 +1,7 @@
 import dayjs from '~/app/libs/dayjs'
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-const log = async (type: string, ...args: any[]) => {
+const log = (type: string, ...args: any[]) => {
   console.log(
     `${dayjs().utc().format('YYYY-MM-DD HH:mm:ss.SSS')}`,
     type,
@@ -10,13 +10,13 @@ const log = async (type: string, ...args: any[]) => {
 }
 export const logger = {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  info: async (...args: any[]): Promise<any> => await log('INFO', ...args),
+  info: async (...args: any[]) => log('INFO', ...args),
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  warn: async (...args: any[]): Promise<any> => log('WARN', ...args),
+  warn: async (...args: any[]) => log('WARN', ...args),
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  debug: async (...args: any[]): Promise<any> => log('DEBUG', ...args),
+  debug: async (...args: any[]) => log('DEBUG', ...args),
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  error: async (...args: any[]): Promise<any> => log('ERROR', ...args),
+  error: async (...args: any[]) => log('ERROR', ...args),
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  fatal: async (...args: any[]): Promise<any> => log('FATAL', ...args),
+  fatal: async (...args: any[]) => log('FATAL', ...args),
 }

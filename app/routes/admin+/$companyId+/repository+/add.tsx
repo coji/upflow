@@ -1,8 +1,8 @@
 import { parse } from '@conform-to/zod'
 import {
-  redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  redirect,
 } from '@remix-run/node'
 import { useFetcher, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
@@ -58,7 +58,7 @@ const AddRepositoryModal = () => {
   const fetcher = useFetcher()
   const { integration } = useLoaderData<typeof loader>()
 
-  const handleAddRepository = async (repos: GithubRepo[]) => {
+  const handleAddRepository = (repos: GithubRepo[]) => {
     const keyValues: Record<string, string> = {}
     for (const [idx, repo] of repos.entries()) {
       keyValues[`repos[${idx}].owner`] = repo.owner

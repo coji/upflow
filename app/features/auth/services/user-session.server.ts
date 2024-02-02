@@ -9,7 +9,7 @@ import { authenticator, sessionStorage } from './authenticator.server'
  */
 async function getSession(request: Request) {
   const cookie = request.headers.get('Cookie')
-  return sessionStorage.getSession(cookie)
+  return await sessionStorage.getSession(cookie)
 }
 
 /**

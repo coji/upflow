@@ -17,7 +17,7 @@ import { useGithubRepoQuery } from './useGithubReposQuery'
 
 interface useRepositoryAddModalProps {
   integration: Integration
-  onSubmit: (repos: GithubRepo[]) => Promise<boolean>
+  onSubmit: (repos: GithubRepo[]) => boolean
 }
 export const useRepositoryAddModal = ({
   integration,
