@@ -1,9 +1,12 @@
-import { conform, useForm } from '@conform-to/react'
-import { parse } from '@conform-to/zod'
-import { json, redirect, type ActionFunctionArgs } from '@remix-run/node'
-import { Form, Link } from '@remix-run/react'
+import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
+import { type ActionFunctionArgs, json, redirect } from '@remix-run/node'
+import { Form, Link, useActionData } from '@remix-run/react'
 import { z } from 'zod'
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -33,57 +36,74 @@ export const schema = z.object({
 })
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const submission = await parse(await request.formData(), { schema })
-  if (!submission.value) {
-    return json({ error: submission.error })
+  const submission = await parseWithZod(await request.formData(), { schema })
+  if (submission.status !== 'success') {
+    return json(submission.reply())
   }
   const company = await createCompany(submission.value)
   if (!company) {
-    throw new Error('Failed to create company')
+    return json(
+      submission.reply({
+        formErrors: ['Failed to create company'],
+      }),
+    )
   }
   return redirect(`/admin/${company.id}`)
 }
 
 const CompanyNewPage = () => {
+  const lastResult = useActionData<typeof action>()
   const [form, { companyId, companyName, teamId, teamName }] = useForm({
     id: 'company-add-form',
     defaultValue: {
       teamId: 'developers',
       teamName: 'Developers',
     },
-    onValidate: ({ formData }) => parse(formData, { schema }),
+    lastResult,
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Create a new company</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form method="POST" {...form.props}>
+        <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
               <Label htmlFor={companyId.id}>Company ID</Label>
-              <Input autoFocus {...conform.input(companyId)} />
-              <div className="text-destructive">{companyId.error}</div>
+              <Input
+                autoFocus
+                {...getInputProps(companyId, { type: 'text' })}
+              />
+              <div className="text-destructive">{companyId.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={companyName.id}>Company name</Label>
-              <Input {...conform.input(companyName)} />
-              <div className="text-destructive">{companyName.error}</div>
+              <Input {...getInputProps(companyName, { type: 'text' })} />
+              <div className="text-destructive">{companyName.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={teamId.id}>Team ID</Label>
-              <Input {...conform.input(teamId)} />
-              <div className="text-destructive">{teamId.error}</div>
+              <Input {...getInputProps(teamId, { type: 'text' })} />
+              <div className="text-destructive">{teamId.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={teamName.id}>Initial team name</Label>
-              <Input {...conform.input(teamName)} />
-              <div className="text-destructive">{teamName.error}</div>
+              <Input {...getInputProps(teamName, { type: 'text' })} />
+              <div className="text-destructive">{teamName.errors}</div>
             </fieldset>
+
+            {form.errors && (
+              <Alert variant="destructive">
+                <AlertTitle>システムエラー</AlertTitle>
+                <AlertDescription>{form.errors}</AlertDescription>
+              </Alert>
+            )}
           </Stack>
         </Form>
       </CardContent>

@@ -1,11 +1,13 @@
-import { conform, useForm } from '@conform-to/react'
-import { parse } from '@conform-to/zod'
+import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from '@remix-run/node'
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
 import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
+  Alert,
+  AlertDescription,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -15,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  AlertTitle,
   Button,
   HStack,
   Input,
@@ -58,21 +61,29 @@ const schema = z.object({
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { teamId } = zx.parseParams(params, { teamId: z.string() })
-  const submission = parse(await request.formData(), { schema })
-  if (!submission.value) {
-    return { submission }
+  const submission = parseWithZod(await request.formData(), { schema })
+  if (submission.status !== 'success') {
+    return json(submission.reply())
   }
 
   const { intent, ...value } = submission.value
   let toastMessage = ''
-  if (intent === 'delete') {
-    await deleteTeam(teamId)
-    toastMessage = `Team ${teamId} deleted`
-  }
+  try {
+    if (intent === 'delete') {
+      await deleteTeam(teamId)
+      toastMessage = `Team ${teamId} deleted`
+    }
 
-  if (intent === 'update') {
-    await updateTeam(teamId, value)
-    toastMessage = `Team ${teamId} updated`
+    if (intent === 'update') {
+      await updateTeam(teamId, value)
+      toastMessage = `Team ${teamId} updated`
+    }
+  } catch (e) {
+    return json(
+      submission.reply({
+        formErrors: [`Failed to ${intent} team: ${String(e)}`],
+      }),
+    )
   }
 
   return redirectWithSuccess(`/admin/${params.companyId}/team`, toastMessage)
@@ -80,17 +91,17 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
 export default function TeamDetailPage() {
   const { team } = useLoaderData<typeof loader>()
-  const actionData = useActionData<typeof action>()
+  const lastResult = useActionData<typeof action>()
   const [form, { name }] = useForm({
     id: 'team-detail',
     defaultValue: team,
-    lastSubmission: actionData?.submission,
-    onValidate: ({ formData }) => parse(formData, { schema }),
+    lastResult,
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
   return (
     <div>
-      <Form method="POST" {...form.props}>
+      <Form method="POST" {...getFormProps(form)}>
         <Stack>
           <fieldset>
             <Label>TeamID</Label>
@@ -99,11 +110,16 @@ export default function TeamDetailPage() {
 
           <fieldset>
             <Label htmlFor={name.id}>Name</Label>
-            <Input {...conform.input(name)} />
-            {name.error && (
-              <div className="text-destructive text-sm">{name.error}</div>
-            )}
+            <Input {...getInputProps(name, { type: 'text' })} />
+            <div className="text-destructive text-sm">{name.errors}</div>
           </fieldset>
+
+          {form.errors && (
+            <Alert variant="destructive">
+              <AlertTitle>システムエラー</AlertTitle>
+              <AlertDescription>{form.errors}</AlertDescription>
+            </Alert>
+          )}
 
           <HStack>
             <Button type="submit" name="intent" value="update">

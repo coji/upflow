@@ -1,15 +1,18 @@
-import { conform, useForm } from '@conform-to/react'
-import { parse } from '@conform-to/zod'
+import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
 import {
-  json,
-  redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  json,
+  redirect,
 } from '@remix-run/node'
-import { Form, Link, useLoaderData } from '@remix-run/react'
+import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -43,23 +46,33 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const submission = parse(await request.formData(), { schema })
-  if (!submission.value) {
-    throw new Error('Invalid form data')
+  const submission = parseWithZod(await request.formData(), { schema })
+  if (submission.status !== 'success') {
+    return json(submission.reply())
   }
-  const { sheetId, clientEmail, privateKey } = submission.value
-  await upsertExportSetting({ companyId, sheetId, clientEmail, privateKey })
+
+  try {
+    const { sheetId, clientEmail, privateKey } = submission.value
+    await upsertExportSetting({ companyId, sheetId, clientEmail, privateKey })
+  } catch (e) {
+    return json(
+      submission.reply({
+        formErrors: [`Error saving export settings: ${String(e)}`],
+      }),
+    )
+  }
+
   return redirect(`/admin/${params.companyId}`)
 }
 
 const ExportSetting = () => {
   const { companyId, exportSetting } = useLoaderData<typeof loader>()
+  const lastResult = useActionData<typeof action>()
 
   const [form, { sheetId, clientEmail, privateKey }] = useForm({
     id: 'export-setting-form',
-    onValidate({ formData }) {
-      return parse(formData, { schema })
-    },
+    lastResult,
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
     defaultValue: {
       sheetId: exportSetting?.sheetId,
       clientEmail: exportSetting?.clientEmail,
@@ -73,26 +86,33 @@ const ExportSetting = () => {
         <CardTitle>Export Settings</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form method="POST" {...form.props}>
+        <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
               <Label htmlFor={sheetId.id}>Sheet Id</Label>
-              <Input {...conform.input(sheetId)} />
-              <div className="text-destructive">{sheetId.error}</div>
+              <Input {...getInputProps(sheetId, { type: 'text' })} />
+              <div className="text-destructive">{sheetId.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={clientEmail.id}>Client Email</Label>
-              <Input {...conform.input(clientEmail)} />
-              <div className="text-destructive">{clientEmail.error}</div>
+              <Input {...getInputProps(clientEmail, { type: 'text' })} />
+              <div className="text-destructive">{clientEmail.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={privateKey.id}>Private Key</Label>
-              <Textarea {...conform.input(privateKey)} />
-              <div className="text-destructive">{privateKey.error}</div>
+              <Textarea {...getInputProps(privateKey, { type: 'text' })} />
+              <div className="text-destructive">{privateKey.errors}</div>
             </fieldset>
           </Stack>
+
+          {form.errors && (
+            <Alert variant="destructive">
+              <AlertTitle>システムエラー</AlertTitle>
+              <AlertDescription>{form.errors}</AlertDescription>
+            </Alert>
+          )}
         </Form>
       </CardContent>
       <CardFooter>

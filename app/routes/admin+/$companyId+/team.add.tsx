@@ -1,11 +1,20 @@
-import { conform, useForm } from '@conform-to/react'
-import { parse } from '@conform-to/zod'
+import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from '@remix-run/node'
-import { Form, Link } from '@remix-run/react'
+import { Form, Link, useActionData } from '@remix-run/react'
 import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  HStack,
+  Input,
+  Label,
+  Stack,
+} from '~/app/components/ui'
 import { addTeam } from '~/app/models/admin/team.server'
 
 const schema = z.object({
@@ -26,49 +35,60 @@ export const loader = ({ params }: LoaderFunctionArgs) => {
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const submission = await parse(await request.formData(), { schema })
-  if (!submission.value) {
-    return submission
+  const submission = await parseWithZod(await request.formData(), { schema })
+  if (submission.status !== 'success') {
+    return json(submission.reply())
   }
 
   const { id, name } = submission.value
-  await addTeam({
-    id,
-    name,
-    company: { connect: { id: companyId } },
-  })
+  try {
+    await addTeam({
+      id,
+      name,
+      company: { connect: { id: companyId } },
+    })
+  } catch (e) {
+    return json(
+      submission.reply({
+        formErrors: [`Error saving team: ${String(e)}`],
+      }),
+    )
+  }
 
   return redirectWithSuccess('..', `Team ${id} ${name} created`)
 }
 
 export default function TeamAddPage() {
+  const lastResult = useActionData<typeof action>()
   const [form, { id, name }] = useForm({
     id: 'team-add',
-    onValidate: ({ formData }) => {
-      return parse(formData, { schema })
-    },
+    lastResult,
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
   return (
-    <Form method="POST" {...form.props}>
+    <Form method="POST" {...getFormProps(form)}>
       <Stack>
         <h3 className="font-bold text-md">Add Team</h3>
 
         <fieldset>
           <Label htmlFor={id.id}>ID</Label>
-          <Input {...conform.input(id)} />
-          {id.error && (
-            <div className="text-destructive text-sm">{id.error}</div>
-          )}
+          <Input {...getInputProps(id, { type: 'text' })} />
+          <div className="text-destructive text-sm">{id.errors}</div>
         </fieldset>
 
         <fieldset>
           <Label>Name</Label>
-          <Input {...conform.input(name)} />
-          {name.error && (
-            <div className="text-destructive text-sm">{name.error}</div>
-          )}
+          <Input {...getInputProps(name, { type: 'text' })} />
+          <div className="text-destructive text-sm">{name.errors}</div>
         </fieldset>
+
+        {form.errors && (
+          <Alert variant="destructive">
+            <AlertTitle>システムエラー</AlertTitle>
+            <AlertDescription>{form.errors}</AlertDescription>
+          </Alert>
+        )}
 
         <HStack>
           <Button asChild variant="ghost">

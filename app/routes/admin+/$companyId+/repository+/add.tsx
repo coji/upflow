@@ -1,7 +1,8 @@
-import { parse } from '@conform-to/zod'
+import { parseWithZod } from '@conform-to/zod'
 import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  json,
   redirect,
 } from '@remix-run/node'
 import { useFetcher, useLoaderData } from '@remix-run/react'
@@ -36,20 +37,29 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
 
-  const submission = parse(await request.formData(), { schema: RepoSchema })
-  if (!submission.value) {
-    throw new Error('invalid submission')
+  const submission = parseWithZod(await request.formData(), {
+    schema: RepoSchema,
+  })
+  if (submission.status !== 'success') {
+    return json(submission.reply())
   }
-  const repos = submission.value.repos
-  console.log('repos', repos)
 
-  for (const repo of repos) {
-    await createRepository({
-      companyId,
-      projectId: repo.projectId,
-      owner: repo.owner,
-      repo: repo.repo,
-    })
+  try {
+    const repos = submission.value.repos
+    for (const repo of repos) {
+      await createRepository({
+        companyId,
+        projectId: repo.projectId,
+        owner: repo.owner,
+        repo: repo.repo,
+      })
+    }
+  } catch (e) {
+    return json(
+      submission.reply({
+        formErrors: ['Failed to add repository'],
+      }),
+    )
   }
   return redirect(`/admin/${params.companyId}/repository`)
 }
@@ -76,11 +86,6 @@ const AddRepositoryModal = () => {
     return <p>integration not found</p>
   }
 
-  return (
-    <>
-      {integration.provider === 'github' && RepositoryAddModal}
-      <fetcher.Form method="POST" />
-    </>
-  )
+  return <>{integration.provider === 'github' && RepositoryAddModal}</>
 }
 export default AddRepositoryModal
