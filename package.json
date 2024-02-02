@@ -4,7 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "run-p build:*",
+    "build": "run-s build:remix build:job",
     "build:job": "esbuild --platform=node --format=esm ./batch/job-schedular.ts --outdir=build --bundle --packages=external",
     "build:remix": "remix vite:build",
     "dev": "remix vite:dev",
