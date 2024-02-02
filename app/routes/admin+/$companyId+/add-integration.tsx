@@ -1,15 +1,24 @@
-import { conform, useForm } from '@conform-to/react'
-import { parse } from '@conform-to/zod'
+import {
+  getFormProps,
+  getInputProps,
+  getTextareaProps,
+  useForm,
+} from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
 import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  json,
   redirect,
 } from '@remix-run/node'
-import { Form, Link, useLoaderData } from '@remix-run/react'
+import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import Github from '~/app/components/icons/Github'
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -40,30 +49,38 @@ export const loader = ({ params }: LoaderFunctionArgs) => {
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const submission = await parse(await request.formData(), { schema })
-  if (!submission.value) {
-    throw new Error('Failed to parse form data')
+  const submission = await parseWithZod(await request.formData(), { schema })
+  if (submission.status !== 'success') {
+    return json(submission.reply())
   }
-  await createIntegration({
-    companyId,
-    provider: submission.value.provider,
-    method: submission.value.method,
-    privateToken: submission.value.token,
-  })
+
+  try {
+    await createIntegration({
+      companyId,
+      provider: submission.value.provider,
+      method: submission.value.method,
+      privateToken: submission.value.token,
+    })
+  } catch (e) {
+    return submission.reply({
+      formErrors: [`Integration creation failed: ${String(e)}`],
+    })
+  }
+
   return redirect(`/admin/${companyId}`)
 }
 
 const AddIntegrationPage = () => {
   const { companyId } = useLoaderData<typeof loader>()
+  const lastResult = useActionData<typeof action>()
   const [form, { provider, method, token }] = useForm({
     id: 'add-integration-form',
-    onValidate({ form, formData }) {
-      return parse(formData, { schema })
-    },
+    lastResult,
     defaultValue: {
       provider: 'github',
       method: 'token',
     },
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
   return (
     <Card>
@@ -71,11 +88,11 @@ const AddIntegrationPage = () => {
         <CardTitle>Add integration</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form method="POST" {...form.props}>
+        <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
               <Label htmlFor={provider.id}>Provider</Label>
-              <RadioGroup {...conform.input(provider)}>
+              <RadioGroup {...getInputProps(provider, { type: 'text' })}>
                 <HStack>
                   <RadioGroupItem id="github" value="github" />
                   <Label htmlFor="github">
@@ -86,25 +103,32 @@ const AddIntegrationPage = () => {
                   </Label>
                 </HStack>
               </RadioGroup>
-              <div className="text-destructive">{provider.error}</div>
+              <div className="text-destructive">{provider.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={method.id}>Method</Label>
-              <RadioGroup {...conform.input(method)}>
+              <RadioGroup {...getInputProps(method, { type: 'text' })}>
                 <HStack>
                   <RadioGroupItem id="token" value="token" />
                   <Label htmlFor="token">トークン</Label>
                 </HStack>
               </RadioGroup>
-              <div className="text-destructive">{method.error}</div>
+              <div className="text-destructive">{method.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label htmlFor={token.id}>Token</Label>
-              <Textarea {...conform.textarea(token)} />
-              <div className="text-destructive">{token.error}</div>
+              <Textarea {...getTextareaProps(token)} />
+              <div className="text-destructive">{token.errors}</div>
             </fieldset>
+
+            {form.errors && (
+              <Alert variant="destructive">
+                <AlertTitle>システムエラー</AlertTitle>
+                <AlertDescription>{form.errors}</AlertDescription>
+              </Alert>
+            )}
           </Stack>
         </Form>
       </CardContent>

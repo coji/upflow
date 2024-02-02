@@ -1,14 +1,23 @@
-import { conform, useForm } from '@conform-to/react'
-import { parse } from '@conform-to/zod'
 import {
-  redirect,
+  getFormProps,
+  getInputProps,
+  getSelectProps,
+  useForm,
+} from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
+import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  json,
+  redirect,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -52,12 +61,22 @@ const schema = z.object({
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const submission = await parse(await request.formData(), { schema })
-  if (!submission.value) {
-    throw new Error('Invalid submission')
+  const submission = await parseWithZod(await request.formData(), { schema })
+  if (submission.status !== 'success') {
+    return json(submission.reply())
   }
-  const company = await updateCompany(companyId, submission.value)
-  return redirect(`/admin/${company.id}`)
+
+  try {
+    await updateCompany(companyId, submission.value)
+  } catch (e) {
+    return json(
+      submission.reply({
+        formErrors: ['Failed to update company'],
+      }),
+    )
+  }
+
+  return redirect(`/admin/${companyId}`)
 }
 
 const EditCompany = () => {
@@ -68,9 +87,7 @@ const EditCompany = () => {
     { isActive, name, releaseDetectionKey, releaseDetectionMethod },
   ] = useForm({
     id: 'edit-company-form',
-    onValidate({ formData }) {
-      return parse(formData, { schema })
-    },
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
     defaultValue: company,
   })
 
@@ -80,12 +97,12 @@ const EditCompany = () => {
         <CardTitle>Company Config</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form method="POST" {...form.props}>
+        <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
               <Label htmlFor={name.id}>Company Name</Label>
-              <Input {...conform.input(name)} />
-              <div className="text-destructive">{name.error}</div>
+              <Input {...getInputProps(name, { type: 'text' })} />
+              <div className="text-destructive">{name.errors}</div>
             </fieldset>
 
             <fieldset>
@@ -94,12 +111,12 @@ const EditCompany = () => {
               </Label>
               <Select
                 name={releaseDetectionMethod.name}
-                defaultValue={releaseDetectionMethod.defaultValue}
+                defaultValue={releaseDetectionMethod.initialValue}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a method" />
                 </SelectTrigger>
-                <SelectContent {...conform.select(releaseDetectionMethod)}>
+                <SelectContent {...getSelectProps(releaseDetectionMethod)}>
                   <SelectGroup>
                     <SelectItem value="branch">Branch</SelectItem>
                     <SelectItem value="tags">Tags</SelectItem>
@@ -107,7 +124,7 @@ const EditCompany = () => {
                 </SelectContent>
               </Select>
               <div className="text-destructive">
-                {releaseDetectionMethod.error}
+                {releaseDetectionMethod.errors}
               </div>
             </fieldset>
 
@@ -115,9 +132,11 @@ const EditCompany = () => {
               <Label htmlFor={releaseDetectionKey.id}>
                 Release Detection Key
               </Label>
-              <Input {...conform.input(releaseDetectionKey)} />
+              <Input
+                {...getInputProps(releaseDetectionKey, { type: 'text' })}
+              />
               <div className="text-destructive">
-                {releaseDetectionKey.error}
+                {releaseDetectionKey.errors}
               </div>
             </fieldset>
 
@@ -127,11 +146,18 @@ const EditCompany = () => {
                 <Switch
                   name={isActive.name}
                   id={isActive.id}
-                  defaultChecked={!!isActive.defaultValue}
+                  defaultChecked={!!isActive.initialValue}
                 />
               </HStack>
-              <div className="text-destructive">{isActive.error}</div>
+              <div className="text-destructive">{isActive.errors}</div>
             </fieldset>
+
+            {form.errors && (
+              <Alert variant="destructive">
+                <AlertTitle>システムエラー</AlertTitle>
+                <AlertDescription>{form.errors}</AlertDescription>
+              </Alert>
+            )}
           </Stack>
         </Form>
       </CardContent>

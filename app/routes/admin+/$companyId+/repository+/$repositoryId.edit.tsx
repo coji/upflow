@@ -1,10 +1,15 @@
-import { conform, useForm } from '@conform-to/react'
-import { parse } from '@conform-to/zod'
 import {
-  json,
-  redirect,
+  getFormProps,
+  getInputProps,
+  getSelectProps,
+  useForm,
+} from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod'
+import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  json,
+  redirect,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
@@ -82,12 +87,13 @@ const GithubRepositoryForm = ({
   const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] =
     useForm({
       id: 'repository-edit-form',
-      onValidate: ({ formData }) => parse(formData, { schema: githubSchema }),
+      onValidate: ({ formData }) =>
+        parseWithZod(formData, { schema: githubSchema }),
       defaultValue: repository,
     })
 
   return (
-    <Form method="POST" {...form.props}>
+    <Form method="POST" {...getFormProps(form)}>
       <Stack>
         <fieldset>
           <AppProviderBadge provider="github" />
@@ -96,14 +102,14 @@ const GithubRepositoryForm = ({
 
         <fieldset>
           <Label htmlFor={owner.id}>Owner</Label>
-          <Input {...conform.input(owner)} />
-          <div className="text-destructive">{owner.error}</div>
+          <Input {...getInputProps(owner, { type: 'text' })} />
+          <div className="text-destructive">{owner.errors}</div>
         </fieldset>
 
         <fieldset>
           <Label htmlFor={repo.id}>Repo</Label>
-          <Input {...conform.input(repo)} />
-          <div className="text-destructive">{repo.error}</div>
+          <Input {...getInputProps(repo, { type: 'text' })} />
+          <div className="text-destructive">{repo.errors}</div>
         </fieldset>
 
         <fieldset>
@@ -112,25 +118,27 @@ const GithubRepositoryForm = ({
           </Label>
           <Select
             name={releaseDetectionMethod.name}
-            defaultValue={releaseDetectionMethod.defaultValue}
+            defaultValue={releaseDetectionMethod.initialValue}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a method" />
             </SelectTrigger>
-            <SelectContent {...conform.select(releaseDetectionMethod)}>
+            <SelectContent {...getSelectProps(releaseDetectionMethod)}>
               <SelectGroup>
                 <SelectItem value="branch">Branch</SelectItem>
                 <SelectItem value="tags">Tags</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
-          <div className="text-destructive">{releaseDetectionMethod.error}</div>
+          <div className="text-destructive">
+            {releaseDetectionMethod.errors}
+          </div>
         </fieldset>
 
         <fieldset>
           <Label htmlFor={releaseDetectionKey.id}>Release Detection Key</Label>
-          <Input {...conform.input(releaseDetectionKey)} />
-          <div className="text-destructive">{releaseDetectionKey.error}</div>
+          <Input {...getInputProps(releaseDetectionKey, { type: 'text' })} />
+          <div className="text-destructive">{releaseDetectionKey.errors}</div>
         </fieldset>
       </Stack>
     </Form>

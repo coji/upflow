@@ -1,9 +1,9 @@
-import { useForm } from '@conform-to/react'
+import { getFormProps, useForm } from '@conform-to/react'
 import {
-  json,
-  redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  json,
+  redirect,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
@@ -60,7 +60,7 @@ const AddRepositoryModal = () => {
         <CardTitle>Delete repository</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form method="POST" {...form.props}>
+        <Form method="POST" {...getFormProps(form)}>
           <Label>Name</Label>
           <Input readOnly disabled defaultValue={repository.name} />
         </Form>
