@@ -6,6 +6,7 @@ import type {
   Repository,
 } from '@prisma/client'
 import invariant from 'tiny-invariant'
+import { crawlerDb } from '~/batch/db/crawler-db.server'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
@@ -55,9 +56,45 @@ export const createGitHubProvider = (integration: Integration) => {
     // 全プルリク情報をダウンロード
     logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
-    await store.save('pullrequests.json', allPullRequests)
+
+    for (const pr of allPullRequests) {
+      await crawlerDb
+        .insertInto('pull_requests')
+        .values({
+          organization: pr.organization,
+          repo: pr.repo,
+          number: pr.number,
+          state: pr.state,
+          url: pr.url,
+          author: pr.author,
+          title: pr.title,
+          source_branch: pr.sourceBranch,
+          target_branch: pr.targetBranch,
+          merged_at: pr.mergedAt,
+          merge_commit_sha: pr.mergeCommitSha,
+          created_at: pr.createdAt,
+          updated_at: pr.updatedAt,
+        })
+        .onConflict((oc) =>
+          oc.columns(['organization', 'repo', 'number']).doUpdateSet({
+            state: (eb) => eb.ref('excluded.state'),
+            url: (eb) => eb.ref('excluded.url'),
+            author: (eb) => eb.ref('excluded.author'),
+            title: (eb) => eb.ref('excluded.title'),
+            source_branch: (eb) => eb.ref('excluded.source_branch'),
+            target_branch: (eb) => eb.ref('excluded.target_branch'),
+            merged_at: (eb) => eb.ref('excluded.merged_at'),
+            merge_commit_sha: (eb) => eb.ref('excluded.merge_commit_sha'),
+            created_at: (eb) => eb.ref('excluded.created_at'),
+            updated_at: (eb) => eb.ref('excluded.updated_at'),
+          }),
+        )
+        .execute()
+    }
+
     logger.info('fetching all pullrequests completed.')
 
+    return
     // 全タグを情報をダウンロード
     if (repository.releaseDetectionMethod === 'tags') {
       logger.info('fetching all tags...')

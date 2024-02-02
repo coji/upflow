@@ -28,6 +28,7 @@ export const shapeGitHubPullRequest: (
     sourceBranch: pr.head.ref,
     targetBranch: pr.base.ref,
     repo: pr.base.repo.name,
+    organization: pr.base.repo.owner.login,
     createdAt: pr.created_at,
     updatedAt: pr.updated_at,
     mergedAt: pr.merged_at,

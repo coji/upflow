@@ -13,6 +13,7 @@ export type GitHubReviewComment =
 export type GitHubUser = GitHubPullRequest['user']
 
 export interface ShapedGitHubPullRequest {
+  organization: GitHubPullRequest['base']['repo']['owner']['login']
   repo: GitHubPullRequest['base']['repo']['name']
   number: GitHubPullRequest['number']
   state: GitHubPullRequest['state']
