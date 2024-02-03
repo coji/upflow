@@ -111,10 +111,13 @@
     "@types/react": "18.2.51",
     "@types/react-dom": "18.2.18",
     "autoprefixer": "10.4.17",
+    "aws-sdk": "2.1550.0",
     "dotenv-cli": "7.3.0",
     "esbuild": "0.20.0",
     "esbuild-plugin-clean": "1.0.1",
+    "mock-aws-s3": "4.0.2",
     "msw": "2.1.5",
+    "nock": "13.5.1",
     "npm-run-all": "4.1.5",
     "postcss": "8.4.33",
     "prisma": "5.9.1",
@@ -128,10 +131,5 @@
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "@mapbox/node-pre-gyp@1.0.11": "patches/@mapbox__node-pre-gyp@1.0.11.patch"
-    }
   }
 }

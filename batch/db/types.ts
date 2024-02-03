@@ -1,14 +1,6 @@
-import {
-  ColumnType,
-  Generated,
-  Insertable,
-  JSONColumnType,
-  Selectable,
-  Updateable,
-} from 'kysely'
-
 export interface DB {
   pull_requests: {
+    id: number
     organization: string
     repo: string
     number: number
@@ -16,6 +8,9 @@ export interface DB {
     title: string
     url: string
     author: string | null
+    assignees: string[]
+    reviewers: string[]
+    draft: boolean
     source_branch: string
     target_branch: string
     created_at: string
