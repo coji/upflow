@@ -1,6 +1,6 @@
 import path from 'node:path'
 import DuckDB from 'duckdb'
-import { Kysely } from 'kysely'
+import { Kysely, RawBuilder, sql } from 'kysely'
 import { DuckDbDialect } from 'kysely-duckdb'
 import type { DB } from './types'
 export { sql } from 'kysely'
@@ -14,3 +14,7 @@ export const crawlerDb = new Kysely<DB>({
     tableMappings: {},
   }),
 })
+
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export const listValue = <T>(values: T[]): RawBuilder<any[]> =>
+  sql`list_value(${values.length === 0 ? '' : sql.join(values)})`

@@ -6,7 +6,7 @@ import type {
   Repository,
 } from '@prisma/client'
 import invariant from 'tiny-invariant'
-import { crawlerDb, sql } from '~/batch/db/crawler-db.server'
+import { crawlerDb, listValue } from '~/batch/db/crawler-db.server'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
@@ -68,8 +68,8 @@ export const createGitHubProvider = (integration: Integration) => {
           state: pr.state,
           url: pr.url,
           author: pr.author,
-          assignees: sql`${JSON.stringify(pr.assignees)}`,
-          reviewers: sql`${JSON.stringify(pr.reviewers)}`,
+          assignees: listValue(pr.assignees),
+          reviewers: listValue(pr.reviewers),
           draft: pr.draft,
           title: pr.title,
           source_branch: pr.sourceBranch,
@@ -87,6 +87,8 @@ export const createGitHubProvider = (integration: Integration) => {
             state: (eb) => eb.ref('excluded.state'),
             url: (eb) => eb.ref('excluded.url'),
             author: (eb) => eb.ref('excluded.author'),
+            assignees: (eb) => eb.ref('excluded.assignees'),
+            reviewers: (eb) => eb.ref('excluded.reviewers'),
             title: (eb) => eb.ref('excluded.title'),
             source_branch: (eb) => eb.ref('excluded.source_branch'),
             target_branch: (eb) => eb.ref('excluded.target_branch'),
