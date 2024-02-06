@@ -1,5 +1,6 @@
 import type { Company, Prisma, Team } from '@prisma/client'
 import { prisma } from '~/app/services/db.server'
+export type { Team }
 
 export const listCompanyTeams = async (companyId: Company['id']) => {
   return await prisma.team.findMany({

@@ -3,6 +3,7 @@ import { prisma } from '~/app/services/db.server'
 export const listTeamUsers = async (teamId: string) => {
   return await prisma.teamUser.findMany({
     where: { teamId },
+    include: { user: true },
     orderBy: { createdAt: 'desc' },
   })
 }

@@ -1,8 +1,8 @@
 import { GearIcon } from '@radix-ui/react-icons'
 import {
-  json,
   type LoaderFunctionArgs,
   type MetaFunction,
+  json,
 } from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
 import { z } from 'zod'
@@ -85,19 +85,20 @@ export default function CompanyLayout() {
             </DropdownMenuContent>
           </DropdownMenu>
         </Stack>
+
         <Tabs value={tabValue}>
           <TabsList>
             <TabsTrigger value="company" asChild>
               <Link to=".">Company</Link>
             </TabsTrigger>
-            <TabsTrigger value="team" asChild>
-              <Link to="team">Team</Link>
+            <TabsTrigger value="teams" asChild>
+              <Link to="teams">Teams</Link>
             </TabsTrigger>
-            <TabsTrigger value="repository" asChild>
-              <Link to="repository">Repository</Link>
+            <TabsTrigger value="repositories" asChild>
+              <Link to="repositories">Repositories</Link>
             </TabsTrigger>
-            <TabsTrigger value="user" asChild>
-              <Link to="user">User</Link>
+            <TabsTrigger value="users" asChild>
+              <Link to="users">Users</Link>
             </TabsTrigger>
           </TabsList>
         </Tabs>

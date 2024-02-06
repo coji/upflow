@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { type LoaderFunctionArgs, json } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -52,7 +52,7 @@ export default function TeamIndexPage() {
               <TableCell>{team._count.TeamRepository}</TableCell>
               <TableCell>
                 <Button size="xs" variant="outline" asChild>
-                  <Link to={`./${team.id}`}>設定</Link>
+                  <Link to={`./${team.id}`}>詳細</Link>
                 </Button>
               </TableCell>
             </TableRow>
