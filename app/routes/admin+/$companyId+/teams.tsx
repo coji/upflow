@@ -6,7 +6,7 @@ import { Stack } from '~/app/components/ui'
 
 export const handle = {
   breadcrumb: ({ companyId }: { companyId: string }) => ({
-    label: 'チーム',
+    label: 'Team',
     to: `/admin/${companyId}/team`,
   }),
 }

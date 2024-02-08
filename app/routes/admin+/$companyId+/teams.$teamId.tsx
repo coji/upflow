@@ -3,7 +3,24 @@ import { type LoaderFunctionArgs, json } from '@remix-run/node'
 import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { Badge, HStack, Stack, Tabs, TabsTrigger } from '~/app/components/ui'
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Spacer,
+  Stack,
+  Tabs,
+  TabsTrigger,
+} from '~/app/components/ui'
 import { listTeamRepository } from '~/app/models/admin/team-repository.server'
 import { listTeamUsers } from '~/app/models/admin/team-users.server'
 import { type Team, getTeam } from '~/app/models/admin/team.server'
@@ -41,7 +58,7 @@ export default function CompanyTeamIndex() {
   const { team, repositories, users } = useLoaderData<typeof loader>()
 
   return (
-    <div>
+    <Stack>
       <HStack>
         <h1 className="font-bold text-2xl">{team.name}</h1>
         <div>
@@ -49,27 +66,67 @@ export default function CompanyTeamIndex() {
         </div>
       </HStack>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Stack>
-          <div className="font-bold text-lg">Team Members</div>
-          {users.map((user) => (
-            <div key={user.userId}>
-              {user.role} {user.user.displayName}
-            </div>
-          ))}
-        </Stack>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Members</CardTitle>
+            <CardDescription>Manage your team members.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Stack>
+              {users.map((user) => (
+                <div key={user.userId}>
+                  <HStack>
+                    <Avatar>
+                      <AvatarImage src={user.user.pictureUrl ?? undefined} />
+                      <AvatarFallback>{user.user.displayName}</AvatarFallback>
+                    </Avatar>
+                    <h3 className="font-medium">{user.user.displayName}</h3>
+                    <Badge variant="secondary">{user.role}</Badge>
 
-        <Stack>
-          <div className="font-bold text-lg">Team Repositories</div>
-          {repositories.map((repository) => (
-            <div key={repository.repositoryId}>{repository.teamId}</div>
-          ))}
-        </Stack>
+                    <Spacer />
+                    <Button type="button" variant="outline" size="sm">
+                      Remove
+                    </Button>
+                  </HStack>
+                </div>
+              ))}
+            </Stack>
+          </CardContent>
+          <CardFooter>
+            <div>
+              <Button type="button" variant="outline">
+                Add Member
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Repositories</CardTitle>
+            <CardDescription>Manage your team repositories.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Stack>
+              {repositories.map((repository) => (
+                <div key={repository.repositoryId}>{repository.teamId}</div>
+              ))}
+            </Stack>
+          </CardContent>
+          <CardFooter>
+            <div>
+              <Button type="button" variant="outline">
+                Add Repository
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
       </div>
 
       <div>
         <Outlet />
       </div>
-    </div>
+    </Stack>
   )
 }
