@@ -16,6 +16,11 @@ describe('leastCreatedMergeRequest', () => {
     author: '',
     sourceBranch: '',
     targetBranch: '',
+    assignees: [],
+    reviewers: [],
+    draft: false,
+    id: 0,
+    organization: '',
   }
 
   test('should return a least updated_at object', () => {
