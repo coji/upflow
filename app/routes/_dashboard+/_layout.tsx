@@ -1,6 +1,6 @@
 import { type LoaderFunctionArgs, json } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
-import { AppLayout } from '~/app/components'
+import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/user-session.server'
 import { listCompanies } from '~/app/models/admin/company.server'
 
@@ -16,8 +16,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const DashboardLayoutPage = () => {
   const { user, companies } = useLoaderData<typeof loader>()
+
   return (
-    <AppLayout user={user} companies={companies}>
+    <AppLayout header={<AppHeader user={user} companies={companies} />}>
       <Outlet />
     </AppLayout>
   )

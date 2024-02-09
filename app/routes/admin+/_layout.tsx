@@ -1,10 +1,7 @@
-import {
-  json,
-  type LoaderFunctionArgs,
-  type MetaFunction,
-} from '@remix-run/node'
+import { json } from '@remix-run/node'
+import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
-import { AppLayout } from '~/app/components'
+import { AppHeader, AppLayout } from '~/app/components'
 import { requireAdminUser } from '~/app/features/auth/services/user-session.server'
 import { listCompanies } from '~/app/models/admin/company.server'
 
@@ -24,7 +21,9 @@ const AdminLayoutPage = () => {
   const { adminUser, companies } = useLoaderData<typeof loader>()
 
   return (
-    <AppLayout user={adminUser} companies={companies}>
+    <AppLayout
+      header={<AppHeader companies={companies} isAdmin user={adminUser} />}
+    >
       <Outlet />
     </AppLayout>
   )
