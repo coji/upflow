@@ -8,8 +8,8 @@ export interface DB {
     title: string
     url: string
     author: string | null
-    assignees: string[]
-    reviewers: string[]
+    assignees: string
+    reviewers: string
     draft: boolean
     source_branch: string
     target_branch: string

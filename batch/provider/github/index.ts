@@ -57,8 +57,9 @@ export const createGitHubProvider = (integration: Integration) => {
     logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
 
+    const db = crawlerDb(repository.companyId)
     for (const pr of allPullRequests) {
-      await crawlerDb
+      await db
         .insertInto('pull_requests')
         .values({
           id: pr.id,
@@ -68,8 +69,8 @@ export const createGitHubProvider = (integration: Integration) => {
           state: pr.state,
           url: pr.url,
           author: pr.author,
-          assignees: listValue(pr.assignees),
-          reviewers: listValue(pr.reviewers),
+          assignees: JSON.stringify(pr.assignees),
+          reviewers: JSON.stringify(pr.reviewers),
           draft: pr.draft,
           title: pr.title,
           source_branch: pr.sourceBranch,
@@ -102,10 +103,8 @@ export const createGitHubProvider = (integration: Integration) => {
     }
 
     // 全プルリク情報を保存
-    await store.save('pullrequests.json', allPullRequests)
     logger.info('fetching all pullrequests completed.')
 
-    return
     // 全タグを情報をダウンロード
     if (repository.releaseDetectionMethod === 'tags') {
       logger.info('fetching all tags...')

@@ -11,6 +11,9 @@ dependencies:
   '@conform-to/zod':
     specifier: 1.0.0
     version: 1.0.0(zod@3.22.4)
+  '@epic-web/remember':
+    specifier: 1.0.2
+    version: 1.0.2
   '@googleapis/sheets':
     specifier: 5.0.5
     version: 5.0.5
@@ -807,6 +810,10 @@ packages:
   /@emotion/hash@0.9.1:
     resolution: {integrity: sha512-gJB6HLm5rYwSLI6PQa+X1t5CFGrv1J1TWG+sOyMCeKz2ojaj6Fnl/rZEspogG+cvqbt4AE/2eIyD2QfLKTBNlQ==}
     dev: true
+
+  /@epic-web/remember@1.0.2:
+    resolution: {integrity: sha512-K7DcGoRPqVkjVhPEMQzqw7W/c3hq/3LuiI74he6SkXwR6A49aUmXpxmdb6o+NldY4FFtG42U7nL8PrqNGRxXuQ==}
+    dev: false
 
   /@esbuild/aix-ppc64@0.19.11:
     resolution: {integrity: sha512-FnzU0LyE3ySQk7UntJO4+qIiQgI7KoODnZg5xzXIrFJlKd2P2gwHsHY4927xj9y5PJmJSzULiUCWmv7iWnNa7g==}

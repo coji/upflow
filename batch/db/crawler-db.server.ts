@@ -1,19 +1,33 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import DuckDB from 'duckdb'
 import { Kysely, RawBuilder, sql } from 'kysely'
 import { DuckDbDialect } from 'kysely-duckdb'
 import type { DB } from './types'
 export { sql } from 'kysely'
+import { remember } from '@epic-web/remember'
 
-const dbURL = new URL(process.env.DATABASE_URL)
-const dbPath = `${path.dirname(dbURL.pathname)}/crawler.duckdb`
+export const getCompanyDbPath = (companyId: string) => {
+  const dbURL = new URL(process.env.DATABASE_URL)
+  const dbDir = path.join(path.dirname(dbURL.pathname), 'crawler')
+  fs.mkdirSync(dbDir, { recursive: true })
+  return path.join(dbDir, `${companyId}.duckdb`)
+}
 
-export const crawlerDb = new Kysely<DB>({
-  dialect: new DuckDbDialect({
-    database: new DuckDB.Database(dbPath),
-    tableMappings: {},
-  }),
-})
+export const crawlerDb = (companyId: string) => {
+  const dbPath = getCompanyDbPath(companyId)
+
+  return remember(
+    `crawler-db-${companyId}`,
+    () =>
+      new Kysely<DB>({
+        dialect: new DuckDbDialect({
+          database: new DuckDB.Database(dbPath),
+          tableMappings: {},
+        }),
+      }),
+  )
+}
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export const listValue = <T>(values: T[]): RawBuilder<any[]> =>

@@ -23,6 +23,7 @@
   "dependencies": {
     "@conform-to/react": "1.0.0",
     "@conform-to/zod": "1.0.0",
+    "@epic-web/remember": "1.0.2",
     "@googleapis/sheets": "5.0.5",
     "@octokit/plugin-rest-endpoint-methods": "10.2.0",
     "@prisma/client": "5.9.1",
