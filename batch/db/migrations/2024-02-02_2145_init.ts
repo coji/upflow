@@ -1,6 +1,7 @@
 import { Kysely, sql } from 'kysely'
 
-export const up = async (db) => {
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export const up = async (db: Kysely<any>) => {
   await db.schema
     .createTable('pull_requests')
     .addColumn('id', 'integer', (col) => col.notNull())
@@ -54,6 +55,7 @@ export const up = async (db) => {
     .execute()
 }
 
-export const down = async (db) => {
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export const down = async (db: Kysely<any>) => {
   await db.schema.dropTable('pull_requests').execute()
 }
