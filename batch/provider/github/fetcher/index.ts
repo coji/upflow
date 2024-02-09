@@ -39,18 +39,9 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
-      if (
-        ret.data.filter(
-          (pr) => dayjs(pr.updated_at) > dayjs().utc().add(-90, 'days'),
-        ).length === 0
-      )
-        break
-      pulls = [
-        ...pulls,
-        ...ret.data
-          .filter((pr) => dayjs(pr.updated_at) > dayjs().utc().add(-90, 'days')) // 90日以上前のは除外
-          .map((pr) => shapeGitHubPullRequest(pr)),
-      ]
+
+      if (ret.data.length === 0) break
+      pulls = [...pulls, ...ret.data.map((pr) => shapeGitHubPullRequest(pr))]
       page++
     }
     return pulls

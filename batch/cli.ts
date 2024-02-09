@@ -1,7 +1,8 @@
-import { cli, command } from 'cleye'
-import 'dotenv/config'
 import { fileURLToPath } from 'node:url'
 import path from 'path'
+import { cli, command } from 'cleye'
+import 'dotenv/config'
+import { migrateDbCommand, resetDbCommand } from './commands/db'
 import { fetchCommand } from './commands/fetch'
 import { reportCommand } from './commands/report'
 import { upsertCommand } from './commands/upsert'
@@ -66,6 +67,18 @@ const upsert = command(
   },
 )
 
+const migrateDb = command(
+  { name: 'db-migrate', help: { description: 'Migrate crawler database.' } },
+  async () => await migrateDbCommand(),
+)
+
+const resetDb = command(
+  { name: 'db-reset', help: { description: 'Reset crawler database.' } },
+  async () => {
+    await resetDbCommand()
+  },
+)
+
 cli({
-  commands: [fetch, report, upsert],
+  commands: [fetch, report, upsert, migrateDb, resetDb],
 })

@@ -4,6 +4,7 @@ import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,
 } from '../bizlogic/export-spreadsheet'
+import { migrateToLatest } from '../db/migration'
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
 
@@ -11,6 +12,8 @@ const options = { refresh: false, halt: false, delay: 800 }
 
 export const crawlJob = async () => {
   logger.info('crawl started.')
+
+  await migrateToLatest()
 
   const companies = await prisma.company.findMany({
     include: { integration: true, repositories: true, exportSetting: true },

@@ -13,12 +13,17 @@ export type GitHubReviewComment =
 export type GitHubUser = GitHubPullRequest['user']
 
 export interface ShapedGitHubPullRequest {
+  id: GitHubPullRequest['id']
+  organization: GitHubPullRequest['base']['repo']['owner']['login']
   repo: GitHubPullRequest['base']['repo']['name']
   number: GitHubPullRequest['number']
   state: GitHubPullRequest['state']
   title: GitHubPullRequest['title']
   url: GitHubPullRequest['html_url']
   author: NonNullable<GitHubPullRequest['user']>['login'] | null
+  assignees: string[]
+  reviewers: string[]
+  draft: boolean
   sourceBranch: GitHubPullRequest['head']['ref']
   targetBranch: GitHubPullRequest['base']['ref']
   createdAt: GitHubPullRequest['created_at']
