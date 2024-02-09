@@ -16,7 +16,7 @@ export const migrateToLatest = async () => {
       provider: new FileMigrationProvider({
         fs,
         path,
-        migrationFolder: path.join(__dirname, 'migrations'),
+        migrationFolder: path.join(process.cwd(), 'batch', 'db', 'migrations'),
       }),
     })
 
