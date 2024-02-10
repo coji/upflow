@@ -9,7 +9,7 @@
     "build:remix": "remix vite:build",
     "dev": "remix vite:dev",
     "start": "node server.mjs",
-    "format": "prettier --ignore-path .gitignore --cache -c .",
+    "format": "prettier --cache -c .",
     "lint": "biome lint .",
     "setup": "prisma generate && prisma migrate deploy && prisma db seed",
     "migrate:crawler": "dotenv -e .env tsx batch/db/migration.ts",
