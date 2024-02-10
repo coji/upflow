@@ -67,19 +67,19 @@ export const buildPullRequests = async (
       )
 
       // プルリク作成日時
-      const pullRequestCreatedAt = nullOrDate(pr.createdAt) ?? ''
+      const pullRequestCreatedAt = nullOrDate(pr.created_at) ?? ''
 
       // レビュー開始日時
       const firstReviewedAt = nullOrDate(
-        first(discussions)?.createdAt ?? first(reviews)?.submittedAt,
+        first(discussions)?.created_at ?? first(reviews)?.submitted_at,
       ) // レビュー開始 = コメント最新 or レビュー submit 最新
 
       // マージ日時
-      const mergedAt = nullOrDate(pr.mergedAt)
+      const mergedAt = nullOrDate(pr.merged_at)
 
       // リリース日時
       const releasedAt =
-        pr.mergedAt && pr.mergeCommitSha
+        pr.merged_at && pr.merge_commit_sha
           ? await findReleaseDate(
               pullrequests,
               store,
@@ -92,9 +92,9 @@ export const buildPullRequests = async (
       pulls.push({
         repo: pr.repo,
         number: pr.number,
-        sourceBranch: pr.sourceBranch,
-        targetBranch: pr.targetBranch,
-        state: pr.state === 'closed' && !!pr.mergedAt ? 'merged' : pr.state, // github は api では merged にならないので
+        sourceBranch: pr.source_branch,
+        targetBranch: pr.target_branch,
+        state: pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state, // github は api では merged にならないので
         author: pr.author ?? '',
         title: pr.title,
         url: pr.url,
@@ -119,7 +119,7 @@ export const buildPullRequests = async (
           releasedAt,
         }),
         repositoryId: config.repositoryId,
-        updatedAt: nullOrDate(pr.updatedAt),
+        updatedAt: nullOrDate(pr.updated_at),
       })
     } catch (e) {
       logger.error(

@@ -1,21 +1,33 @@
+import {
+  ShapedGitHubCommit,
+  ShapedGitHubIssueComment,
+  ShapedGitHubPullRequest,
+  ShapedGitHubReview,
+  ShapedGitHubTag,
+} from '../provider/github/model'
 export interface DB {
   pull_requests: {
-    id: number
-    organization: string
-    repo: string
-    number: number
-    state: string
-    title: string
-    url: string
-    author: string | null
-    assignees: string
-    reviewers: string
-    draft: boolean
-    source_branch: string
-    target_branch: string
-    created_at: string
-    updated_at: string
-    merged_at: string | null
-    merge_commit_sha: string | null
-  }
+    repo_id: string
+    assignees: string // JSON (array of strings)
+    reviewers: string // JSON (array of strings)
+  } & Omit<ShapedGitHubPullRequest, 'assignees' | 'reviewers'>
+
+  tags: {
+    repo_id: string
+  } & ShapedGitHubTag
+
+  commits: {
+    repo_id: string
+    pull_request_id: number
+  } & ShapedGitHubCommit
+
+  issue_comments: {
+    repo_id: string
+    pull_request_id: number
+  } & ShapedGitHubIssueComment
+
+  reviews: {
+    repo_id: string
+    pull_request_id: number
+  } & ShapedGitHubReview
 }

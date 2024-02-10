@@ -6,6 +6,6 @@ export const leastUpdatedPullRequest = (
 ) =>
   pipe(
     pullrequests,
-    sortBy((x) => x.updatedAt),
+    sortBy((x) => x.updated_at),
     last(),
   ) ?? null

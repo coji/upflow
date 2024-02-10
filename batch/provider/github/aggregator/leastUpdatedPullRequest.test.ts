@@ -8,14 +8,14 @@ describe('leastCreatedMergeRequest', () => {
     number: 0,
     state: '',
     title: '',
-    createdAt: '',
-    updatedAt: '',
-    mergedAt: '',
-    mergeCommitSha: '',
+    created_at: '',
+    updated_at: '',
+    merged_at: '',
+    merge_commit_sha: '',
     url: '',
     author: '',
-    sourceBranch: '',
-    targetBranch: '',
+    source_branch: '',
+    target_branch: '',
     assignees: [],
     reviewers: [],
     draft: false,
@@ -25,9 +25,9 @@ describe('leastCreatedMergeRequest', () => {
 
   test('should return a least updated_at object', () => {
     const ret = leastUpdatedPullRequest([
-      { ...prototype, number: 1, updatedAt: '2022-01-01T00:00:0.0Z' },
-      { ...prototype, number: 2, updatedAt: '2022-01-02T00:00:0.0Z' },
-      { ...prototype, number: 3, updatedAt: '2022-01-01T00:00:0.0Z' },
+      { ...prototype, number: 1, updated_at: '2022-01-01T00:00:0.0Z' },
+      { ...prototype, number: 2, updated_at: '2022-01-02T00:00:0.0Z' },
+      { ...prototype, number: 3, updated_at: '2022-01-01T00:00:0.0Z' },
     ])
     expect(ret?.number).toEqual(2) // 最新のもの１件
   })

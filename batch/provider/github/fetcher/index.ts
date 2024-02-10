@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises'
 import { Octokit } from 'octokit'
 import dayjs from '~/app/libs/dayjs'
 import type {
@@ -20,8 +21,14 @@ interface createFetcherProps {
   owner: string
   repo: string
   token: string
+  delay: number
 }
-export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
+export const createFetcher = ({
+  owner,
+  repo,
+  token,
+  delay,
+}: createFetcherProps) => {
   const octokit = new Octokit({ auth: token })
 
   /**
@@ -39,7 +46,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
-
+      await setTimeout(delay)
       if (ret.data.length === 0) break
       pulls = [...pulls, ...ret.data.map((pr) => shapeGitHubPullRequest(pr))]
       page++
@@ -58,6 +65,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
+      await setTimeout(delay)
       if (ret.data.length === 0) break
       allCommits = [
         ...allCommits,
@@ -79,6 +87,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
+      await setTimeout(delay)
       if (ret.data.length === 0) break
       allComments.push(
         ...ret.data.map((comment) => shapeGitHubIssueComment(comment)),
@@ -99,6 +108,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
+      await setTimeout(delay)
       if (ret.data.length === 0) break
       allComments = [
         ...allComments,
@@ -116,7 +126,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
 
     const allComments = [...issue, ...review]
     allComments.sort(
-      (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
+      (a, b) => dayjs(a.created_at).unix() - dayjs(b.created_at).unix(),
     )
     return allComments
   }
@@ -132,6 +142,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
+      await setTimeout(delay)
       if (ret.data.length === 0) break
       allReviews = [
         ...allReviews,
@@ -149,7 +160,8 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
   > = Required<Pick<T, K>> & Partial<Pick<T, G>>
 
   const tags = async () => {
-    let tags: PickPartial<ShapedGitHubTag, 'name' | 'sha', 'committedAt'>[] = []
+    let tags: PickPartial<ShapedGitHubTag, 'name' | 'sha', 'committed_at'>[] =
+      []
     let page = 1
     // タグの一覧を取得
     while (true) {
@@ -159,6 +171,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         page,
         per_page: 100,
       })
+      await setTimeout(delay)
       if (ret.data.length === 0) break
       tags = [
         ...tags,
@@ -174,9 +187,9 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         repo,
         ref: tag.sha,
       })
-      tag.committedAt = tagCommit.data.commit.committer?.date
+      tag.committed_at = tagCommit.data.commit.committer?.date
     }
-    return tags.filter((tag) => !!tag.committedAt) as ShapedGitHubTag[] // コミット日時がないものは除外 (通常ないけど)
+    return tags.filter((tag) => !!tag.committed_at) as ShapedGitHubTag[] // コミット日時がないものは除外 (通常ないけど)
   }
 
   return { pullrequests, commits, comments, reviews, tags }

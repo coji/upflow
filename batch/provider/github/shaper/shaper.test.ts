@@ -48,7 +48,7 @@ describe('shapeGitHubReview', () => {
       user: 'coji',
       state: 'state',
       url: 'html_url',
-      submittedAt: '2022-01-01',
+      submitted_at: '2022-01-01',
     })
   })
 
@@ -79,7 +79,7 @@ describe('shapeGitHubReview', () => {
       user: null,
       state: 'state',
       url: 'html_url',
-      submittedAt: '2022-01-01',
+      submitted_at: '2022-01-01',
     })
   })
 })

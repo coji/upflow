@@ -24,12 +24,12 @@ export interface ShapedGitHubPullRequest {
   assignees: string[]
   reviewers: string[]
   draft: boolean
-  sourceBranch: GitHubPullRequest['head']['ref']
-  targetBranch: GitHubPullRequest['base']['ref']
-  createdAt: GitHubPullRequest['created_at']
-  updatedAt: GitHubPullRequest['updated_at']
-  mergedAt: GitHubPullRequest['merged_at'] | null
-  mergeCommitSha: GitHubPullRequest['merge_commit_sha'] | null
+  source_branch: GitHubPullRequest['head']['ref']
+  target_branch: GitHubPullRequest['base']['ref']
+  created_at: GitHubPullRequest['created_at']
+  updated_at: GitHubPullRequest['updated_at']
+  merged_at: GitHubPullRequest['merged_at'] | null
+  merge_commit_sha: GitHubPullRequest['merge_commit_sha'] | null
 }
 
 export interface ShapedGitHubCommit {
@@ -43,14 +43,14 @@ export interface ShapedGitHubIssueComment {
   id: GithubIssueComment['id']
   user: NonNullable<GithubIssueComment['user']>['login'] | null
   url: GithubIssueComment['html_url']
-  createdAt: GithubIssueComment['created_at']
+  created_at: GithubIssueComment['created_at']
 }
 
 export interface ShapedGitHubReviewComment {
   id: GitHubReviewComment['id']
   user: GitHubReviewComment['user']['login']
   url: GitHubReviewComment['html_url']
-  createdAt: GitHubReviewComment['created_at']
+  created_at: GitHubReviewComment['created_at']
 }
 
 export interface ShapedGitHubReview {
@@ -58,12 +58,12 @@ export interface ShapedGitHubReview {
   user: NonNullable<GitHubReview['user']>['login'] | null
   state: GitHubReview['state']
   url: GitHubReview['html_url']
-  submittedAt: NonNullable<GitHubReview['submitted_at']> | null
+  submitted_at: NonNullable<GitHubReview['submitted_at']> | null
 }
 
 // タグ
 export interface ShapedGitHubTag {
   name: string
   sha: string
-  committedAt: string
+  committed_at: string
 }

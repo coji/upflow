@@ -31,12 +31,12 @@ export const shapeGitHubPullRequest: (
     assignees: pr.assignees?.map((assignee) => assignee.login) ?? [],
     reviewers: pr.requested_reviewers?.map((reviewer) => reviewer.login) ?? [],
     draft: pr.draft ? true : false,
-    sourceBranch: pr.head.ref,
-    targetBranch: pr.base.ref,
-    createdAt: pr.created_at,
-    updatedAt: pr.updated_at,
-    mergedAt: pr.merged_at,
-    mergeCommitSha: pr.merge_commit_sha,
+    source_branch: pr.head.ref,
+    target_branch: pr.base.ref,
+    created_at: pr.created_at,
+    updated_at: pr.updated_at,
+    merged_at: pr.merged_at,
+    merge_commit_sha: pr.merge_commit_sha,
   }
 }
 
@@ -66,7 +66,7 @@ export const shapeGitHubIssueComment: (
     id: comment.id,
     user: comment.user?.login ?? null,
     url: comment.html_url,
-    createdAt: comment.created_at,
+    created_at: comment.created_at,
   }
 }
 
@@ -82,7 +82,7 @@ export const shapeGitHubReviewComment: (
     id: comment.id,
     user: comment.user?.login ?? null,
     url: comment.html_url,
-    createdAt: comment.created_at,
+    created_at: comment.created_at,
   }
 }
 
@@ -99,6 +99,6 @@ export const shapeGitHubReview: (review: GitHubReview) => ShapedGitHubReview = (
     user: review.user?.login ?? null,
     state: review.state,
     url: review.html_url,
-    submittedAt: review.submitted_at ?? null,
+    submitted_at: review.submitted_at ?? null,
   }
 }
