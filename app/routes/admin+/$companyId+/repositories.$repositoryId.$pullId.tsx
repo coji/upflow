@@ -53,6 +53,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     owner: repository.owner,
     repo: repository.repo,
     token: repository.integration.privateToken,
+    delay: 500,
   })
   const fetchData = {
     commits: await fetcher.commits(pullId),
