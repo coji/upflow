@@ -111,7 +111,7 @@ export default function TeamDetailPage() {
           <fieldset>
             <Label htmlFor={name.id}>Name</Label>
             <Input {...getInputProps(name, { type: 'text' })} />
-            <div className="text-destructive text-sm">{name.errors}</div>
+            <div className="text-sm text-destructive">{name.errors}</div>
           </fieldset>
 
           {form.errors && (

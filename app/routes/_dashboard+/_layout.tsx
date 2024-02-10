@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, json } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/user-session.server'

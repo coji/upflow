@@ -13,18 +13,12 @@
     "rules": {
       "recommended": true,
       "nursery": {
-        "useAwait": "error",
-        "useSortedClasses": {
-          "options": {
-            "attributes": ["className"],
-            "functions": ["clsx", "cva", "cn"]
-          }
-        }
+        "useAwait": "error"
       }
     }
   },
   "formatter": {
-    "enabled": true,
+    "enabled": false,
     "indentStyle": "space"
   },
   "javascript": {

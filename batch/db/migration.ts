@@ -1,7 +1,7 @@
+import { FileMigrationProvider, Migrator } from 'kysely'
 import fs from 'node:fs/promises'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { FileMigrationProvider, Migrator } from 'kysely'
 import { prisma } from '~/app/services/db.server'
 import { crawlerDb } from './crawler-db.server'
 

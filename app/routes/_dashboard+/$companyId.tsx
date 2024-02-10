@@ -25,7 +25,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => [
 export const handle = {
   breadcrumb: ({
     company,
-  }: { company: NonNullable<Awaited<ReturnType<typeof getCompany>>> }) => {
+  }: {
+    company: NonNullable<Awaited<ReturnType<typeof getCompany>>>
+  }) => {
     return { label: company.name, to: `/${company.id}` }
   },
 }

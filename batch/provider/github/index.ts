@@ -1,12 +1,12 @@
-import { setTimeout } from 'node:timers/promises'
 import type {
   Company,
   Integration,
   PullRequest,
   Repository,
 } from '@prisma/client'
+import { setTimeout } from 'node:timers/promises'
 import invariant from 'tiny-invariant'
-import { crawlerDb, listValue } from '~/batch/db/crawler-db.server'
+import { crawlerDb } from '~/batch/db/crawler-db.server'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'

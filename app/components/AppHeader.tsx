@@ -1,4 +1,4 @@
-import { Link, useLocation } from '@remix-run/react'
+import { Link } from '@remix-run/react'
 import {
   Avatar,
   AvatarFallback,
@@ -17,9 +17,9 @@ import {
 } from '~/app/components/ui'
 import type { SessionUser } from '~/app/features/auth/types/types'
 import {
+  TeamSwitcher,
   type Companies,
   type Team,
-  TeamSwitcher,
 } from '~/app/routes/company-switcher'
 
 interface AppHeaderProps {
@@ -66,7 +66,7 @@ export const AppHeader = ({
               <HStack>
                 <div>
                   <p className="text-sm">{user.displayName}</p>
-                  <p className="text-gray-500 text-xs">{user.email}</p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
                 </div>
                 <Spacer />
                 <Badge

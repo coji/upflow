@@ -1,11 +1,11 @@
-import fs from 'node:fs'
-import path from 'node:path'
+import { remember } from '@epic-web/remember'
 import DuckDB from 'duckdb'
 import { Kysely, RawBuilder, sql } from 'kysely'
 import { DuckDbDialect } from 'kysely-duckdb'
+import fs from 'node:fs'
+import path from 'node:path'
 import type { DB } from './types'
 export { sql } from 'kysely'
-import { remember } from '@epic-web/remember'
 
 export const getCompanyDbPath = (companyId: string) => {
   const dbURL = new URL(process.env.DATABASE_URL)

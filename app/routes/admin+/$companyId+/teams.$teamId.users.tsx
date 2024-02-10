@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, json } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { z } from 'zod'
 import { zx } from 'zodix'
 

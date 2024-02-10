@@ -1,8 +1,8 @@
 import { GearIcon } from '@radix-ui/react-icons'
 import {
+  json,
   type LoaderFunctionArgs,
   type MetaFunction,
-  json,
 } from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
 import { z } from 'zod'
@@ -32,7 +32,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => [
 export const handle = {
   breadcrumb: ({
     company,
-  }: { company: NonNullable<Awaited<ReturnType<typeof getCompany>>> }) => {
+  }: {
+    company: NonNullable<Awaited<ReturnType<typeof getCompany>>>
+  }) => {
     return { label: company.name, to: `/admin/${company.id}` }
   },
 }

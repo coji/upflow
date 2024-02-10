@@ -1,6 +1,5 @@
-import { TabsList } from '@radix-ui/react-tabs'
-import { type LoaderFunctionArgs, json } from '@remix-run/node'
-import { NavLink, Outlet, useLoaderData } from '@remix-run/react'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { Outlet, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -18,12 +17,10 @@ import {
   HStack,
   Spacer,
   Stack,
-  Tabs,
-  TabsTrigger,
 } from '~/app/components/ui'
 import { listTeamRepository } from '~/app/models/admin/team-repository.server'
 import { listTeamUsers } from '~/app/models/admin/team-users.server'
-import { type Team, getTeam } from '~/app/models/admin/team.server'
+import { getTeam, type Team } from '~/app/models/admin/team.server'
 
 export const handle = {
   breadcrumb: ({ team }: { team: Team }) => ({
@@ -60,7 +57,7 @@ export default function CompanyTeamIndex() {
   return (
     <Stack>
       <HStack>
-        <h1 className="font-bold text-2xl">{team.name}</h1>
+        <h1 className="text-2xl font-bold">{team.name}</h1>
         <div>
           <Badge variant="outline">Team</Badge>
         </div>

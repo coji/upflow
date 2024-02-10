@@ -68,7 +68,7 @@ export const OrgRepositoryList = ({
                 {repo.full_name}
               </TableCell>
 
-              <TableCell className="w-40 text-center text-gray-500 text-sm">
+              <TableCell className="w-40 text-center text-sm text-gray-500">
                 <div>
                   {isActive ? (
                     <Badge variant="default">Active</Badge>
@@ -82,7 +82,7 @@ export const OrgRepositoryList = ({
                 </div>
               </TableCell>
 
-              <TableCell className="w-40 text-center text-gray-500 text-xs">
+              <TableCell className="w-40 text-center text-xs text-gray-500">
                 {dayjs(repo.createdAt).format('YYYY-MM-DD')}
               </TableCell>
             </TableRow>

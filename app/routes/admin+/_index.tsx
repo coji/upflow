@@ -1,6 +1,6 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons'
-import { json } from '@remix-run/node'
 import type { LoaderFunctionArgs } from '@remix-run/node'
+import { json } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import {
   Button,

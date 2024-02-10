@@ -69,18 +69,18 @@ export default function TeamAddPage() {
   return (
     <Form method="POST" {...getFormProps(form)}>
       <Stack>
-        <h3 className="font-bold text-md">Add Team</h3>
+        <h3 className="text-md font-bold">Add Team</h3>
 
         <fieldset>
           <Label htmlFor={id.id}>ID</Label>
           <Input {...getInputProps(id, { type: 'text' })} />
-          <div className="text-destructive text-sm">{id.errors}</div>
+          <div className="text-sm text-destructive">{id.errors}</div>
         </fieldset>
 
         <fieldset>
           <Label>Name</Label>
           <Input {...getInputProps(name, { type: 'text' })} />
-          <div className="text-destructive text-sm">{name.errors}</div>
+          <div className="text-sm text-destructive">{name.errors}</div>
         </fieldset>
 
         {form.errors && (

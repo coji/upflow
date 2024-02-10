@@ -28,7 +28,7 @@ export const OrgListItem = ({
       <Label htmlFor={`org-${org}`}>{org}</Label>
 
       <Spacer />
-      <div className="font-normal text-sm">
+      <div className="text-sm font-normal">
         {checkedRepoNum} / {orgRepoNum} repos
       </div>
     </HStack>

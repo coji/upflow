@@ -3,15 +3,15 @@ import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
 import invariant from 'tiny-invariant'
 import {
-  type User,
   getUserByEmail,
   upsertUserByEmail,
+  type User,
 } from '~/app/models/user.server'
 import type { SessionUser } from '../types/types'
 import {
+  isSupportedSocialProvider,
   type SupportedSocialProviderExtraParams,
   type SupportedSocialProviderProfile,
-  isSupportedSocialProvider,
 } from './supported-social-provider.server'
 
 export const verifyUser: StrategyVerifyCallback<
