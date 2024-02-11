@@ -21,7 +21,7 @@ import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 
 const upsertPullRequest = async (
-  db: ReturnType<typeof crawlerDb>,
+  db: ReturnType<typeof crawlerDb>['db'],
   repositoryId: string,
   pr: ShapedGitHubPullRequest,
 ) => {
@@ -74,7 +74,7 @@ const upsertPullRequest = async (
 }
 
 const upsertTag = async (
-  db: ReturnType<typeof crawlerDb>,
+  db: ReturnType<typeof crawlerDb>['db'],
   repositoryId: string,
   tag: ShapedGitHubTag,
 ) => {
@@ -100,7 +100,7 @@ const upsertTag = async (
 }
 
 const upsertCommit = async (
-  db: ReturnType<typeof crawlerDb>,
+  db: ReturnType<typeof crawlerDb>['db'],
   repositoryId: string,
   pull_request_id: number,
   commit: ShapedGitHubCommit,
@@ -123,7 +123,7 @@ const upsertCommit = async (
 }
 
 const upsertIssueComment = async (
-  db: ReturnType<typeof crawlerDb>,
+  db: ReturnType<typeof crawlerDb>['db'],
   repositoryId: string,
   pull_request_id: number,
   reviewComment: ShapedGitHubIssueComment,
@@ -153,7 +153,7 @@ const upsertIssueComment = async (
 }
 
 const upsertReview = async (
-  db: ReturnType<typeof crawlerDb>,
+  db: ReturnType<typeof crawlerDb>['db'],
   repositoryId: string,
   pull_request_id: number,
   review: ShapedGitHubReview,
@@ -225,7 +225,8 @@ export const createGitHubProvider = (integration: Integration) => {
     logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
 
-    const db = crawlerDb(repository.companyId)
+    using crawler = crawlerDb(repository.companyId)
+    const { db } = crawler
     for (const pr of allPullRequests) {
       await upsertPullRequest(db, repository.id, pr)
     }

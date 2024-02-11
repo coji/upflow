@@ -1,4 +1,3 @@
-import { remember } from '@epic-web/remember'
 import DuckDB from 'duckdb'
 import { Kysely, RawBuilder, sql } from 'kysely'
 import { DuckDbDialect } from 'kysely-duckdb'
@@ -17,16 +16,17 @@ export const getCompanyDbPath = (companyId: string) => {
 export const crawlerDb = (companyId: string) => {
   const dbPath = getCompanyDbPath(companyId)
 
-  return remember(
-    `crawler-db-${companyId}`,
-    () =>
-      new Kysely<DB>({
-        dialect: new DuckDbDialect({
-          database: new DuckDB.Database(dbPath),
-          tableMappings: {},
-        }),
-      }),
-  )
+  const db = new Kysely<DB>({
+    dialect: new DuckDbDialect({
+      database: new DuckDB.Database(dbPath),
+      tableMappings: {},
+    }),
+  })
+
+  return {
+    db,
+    [Symbol.dispose]: () => db.destroy(),
+  }
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
