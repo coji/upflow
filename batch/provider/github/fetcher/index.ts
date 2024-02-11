@@ -46,7 +46,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay)
+      await setTimeout(delay * ret.data.length)
       if (ret.data.length === 0) break
       pulls = [...pulls, ...ret.data.map((pr) => shapeGitHubPullRequest(pr))]
       page++
@@ -65,7 +65,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay)
+      await setTimeout(delay * ret.data.length)
       if (ret.data.length === 0) break
       allCommits = [
         ...allCommits,
@@ -87,7 +87,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay)
+      await setTimeout(delay * ret.data.length)
       if (ret.data.length === 0) break
       allComments.push(
         ...ret.data.map((comment) => shapeGitHubIssueComment(comment)),
@@ -108,7 +108,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay)
+      await setTimeout(delay * ret.data.length)
       if (ret.data.length === 0) break
       allComments = [
         ...allComments,
@@ -142,7 +142,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay)
+      await setTimeout(delay * ret.data.length)
       if (ret.data.length === 0) break
       allReviews = [
         ...allReviews,
@@ -171,7 +171,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay)
+      await setTimeout(delay * ret.data.length)
       if (ret.data.length === 0) break
       tags = [
         ...tags,
