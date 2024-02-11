@@ -10,8 +10,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname)
 export const migrateToLatest = async () => {
   const companies = await prisma.company.findMany({ select: { id: true } })
   for (const company of companies) {
-    using crawler = crawlerDb(company.id)
-    const { db } = crawler
+    const db = crawlerDb(company.id)
     const migrator = new Migrator({
       db,
       provider: new FileMigrationProvider({

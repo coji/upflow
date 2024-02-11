@@ -21,7 +21,7 @@ import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 
 const upsertPullRequest = async (
-  db: ReturnType<typeof crawlerDb>['db'],
+  db: ReturnType<typeof crawlerDb>,
   repositoryId: string,
   pr: ShapedGitHubPullRequest,
 ) => {
@@ -74,7 +74,7 @@ const upsertPullRequest = async (
 }
 
 const upsertTag = async (
-  db: ReturnType<typeof crawlerDb>['db'],
+  db: ReturnType<typeof crawlerDb>,
   repositoryId: string,
   tag: ShapedGitHubTag,
 ) => {
@@ -100,7 +100,7 @@ const upsertTag = async (
 }
 
 const upsertCommit = async (
-  db: ReturnType<typeof crawlerDb>['db'],
+  db: ReturnType<typeof crawlerDb>,
   repositoryId: string,
   pull_request_id: number,
   commit: ShapedGitHubCommit,
@@ -123,7 +123,7 @@ const upsertCommit = async (
 }
 
 const upsertIssueComment = async (
-  db: ReturnType<typeof crawlerDb>['db'],
+  db: ReturnType<typeof crawlerDb>,
   repositoryId: string,
   pull_request_id: number,
   reviewComment: ShapedGitHubIssueComment,
@@ -153,7 +153,7 @@ const upsertIssueComment = async (
 }
 
 const upsertReview = async (
-  db: ReturnType<typeof crawlerDb>['db'],
+  db: ReturnType<typeof crawlerDb>,
   repositoryId: string,
   pull_request_id: number,
   review: ShapedGitHubReview,
@@ -225,73 +225,76 @@ export const createGitHubProvider = (integration: Integration) => {
     logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
 
-    using crawler = crawlerDb(repository.companyId)
-    const { db } = crawler
-    for (const pr of allPullRequests) {
-      await upsertPullRequest(db, repository.id, pr)
+    const db = crawlerDb(repository.companyId)
+    try {
+      for (const pr of allPullRequests) {
+        await upsertPullRequest(db, repository.id, pr)
+      }
+      logger.info('fetching all pullrequests completed.')
+
+      // 全タグを情報をダウンロード
+      if (repository.releaseDetectionMethod === 'tags') {
+        logger.info('fetching all tags...')
+        const allTags = await fetcher.tags()
+        await store.save('tags.json', allTags)
+        for (const tag of allTags) {
+          await upsertTag(db, repository.id, tag)
+        }
+
+        logger.info('fetching all tags completed.')
+      }
+
+      // 個別のPR
+      for (const pr of allPullRequests) {
+        if (halt) {
+          logger.fatal('halted')
+          return
+        }
+
+        const isUpdated = pr.updated_at > lastFetchedAt
+        // 前回以前fetchしたときから更新されていないPRの場合はスキップ
+        if (!refresh && !isUpdated) {
+          logger.debug('skip', pr.number, pr.state, pr.updated_at)
+          continue
+        }
+
+        // 個別PRの全コミット
+        logger.info(`${pr.number} commits`)
+        const allCommits = await fetcher.commits(pr.number)
+        await store.save(store.path.commitsJsonFilename(pr.number), allCommits)
+        for (const commit of allCommits) {
+          await upsertCommit(db, repository.id, pr.id, commit)
+        }
+
+        // 個別PRのレビューコメント
+        logger.info(`${pr.number} review comments`)
+        const discussions = await fetcher.comments(pr.number)
+        await store.save(
+          store.path.discussionsJsonFilename(pr.number),
+          discussions,
+        )
+        for (const reviewComment of discussions) {
+          await upsertIssueComment(db, repository.id, pr.id, reviewComment)
+        }
+
+        // 個別PRのレビュー
+        logger.info(`${pr.number} reviews`)
+        const reviews = await fetcher.reviews(pr.number)
+        await store.save(store.path.reviewJsonFilename(pr.number), reviews)
+        for (const review of reviews) {
+          await upsertReview(db, repository.id, pr.id, review)
+        }
+      }
+
+      // 全プルリク情報を保存
+      await store.save('pullrequests.json', allPullRequests)
+      logger.info('fetch completed: ', repository.name)
+
+      // duckdb の wal が残ってしまうので明示的に閉じる
+      await sql`CHECKPOINT`.execute(db)
+    } finally {
+      await db.destroy()
     }
-    logger.info('fetching all pullrequests completed.')
-
-    // 全タグを情報をダウンロード
-    if (repository.releaseDetectionMethod === 'tags') {
-      logger.info('fetching all tags...')
-      const allTags = await fetcher.tags()
-      await store.save('tags.json', allTags)
-      for (const tag of allTags) {
-        await upsertTag(db, repository.id, tag)
-      }
-
-      logger.info('fetching all tags completed.')
-    }
-
-    // 個別のPR
-    for (const pr of allPullRequests) {
-      if (halt) {
-        logger.fatal('halted')
-        return
-      }
-
-      const isUpdated = pr.updated_at > lastFetchedAt
-      // 前回以前fetchしたときから更新されていないPRの場合はスキップ
-      if (!refresh && !isUpdated) {
-        logger.debug('skip', pr.number, pr.state, pr.updated_at)
-        continue
-      }
-
-      // 個別PRの全コミット
-      logger.info(`${pr.number} commits`)
-      const allCommits = await fetcher.commits(pr.number)
-      await store.save(store.path.commitsJsonFilename(pr.number), allCommits)
-      for (const commit of allCommits) {
-        await upsertCommit(db, repository.id, pr.id, commit)
-      }
-
-      // 個別PRのレビューコメント
-      logger.info(`${pr.number} review comments`)
-      const discussions = await fetcher.comments(pr.number)
-      await store.save(
-        store.path.discussionsJsonFilename(pr.number),
-        discussions,
-      )
-      for (const reviewComment of discussions) {
-        await upsertIssueComment(db, repository.id, pr.id, reviewComment)
-      }
-
-      // 個別PRのレビュー
-      logger.info(`${pr.number} reviews`)
-      const reviews = await fetcher.reviews(pr.number)
-      await store.save(store.path.reviewJsonFilename(pr.number), reviews)
-      for (const review of reviews) {
-        await upsertReview(db, repository.id, pr.id, review)
-      }
-    }
-
-    // 全プルリク情報を保存
-    await store.save('pullrequests.json', allPullRequests)
-    logger.info('fetch completed: ', repository.name)
-
-    // duckdb の wal が残ってしまうので明示的に閉じる
-    await sql`CHECKPOINT`.execute(db)
   }
 
   const analyze = async (company: Company, repositories: Repository[]) => {

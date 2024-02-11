@@ -15,18 +15,12 @@ export const getCompanyDbPath = (companyId: string) => {
 
 export const crawlerDb = (companyId: string) => {
   const dbPath = getCompanyDbPath(companyId)
-
-  const db = new Kysely<DB>({
+  return new Kysely<DB>({
     dialect: new DuckDbDialect({
       database: new DuckDB.Database(dbPath),
       tableMappings: {},
     }),
   })
-
-  return {
-    db,
-    [Symbol.dispose]: () => db.destroy(),
-  }
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
