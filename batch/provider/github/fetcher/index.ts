@@ -17,6 +17,10 @@ import {
   shapeGitHubReviewComment,
 } from '../shaper'
 
+const wait = async ({ count, delay }: { count: number; delay: number }) => {
+  await setTimeout(count === 0 ? 1 : count, delay)
+}
+
 interface createFetcherProps {
   owner: string
   repo: string
@@ -46,7 +50,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay * ret.data.length)
+      await wait({ count: ret.data.length, delay })
       if (ret.data.length === 0) break
       pulls = [...pulls, ...ret.data.map((pr) => shapeGitHubPullRequest(pr))]
       page++
@@ -65,7 +69,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay * ret.data.length)
+      await wait({ count: ret.data.length, delay })
       if (ret.data.length === 0) break
       allCommits = [
         ...allCommits,
@@ -87,7 +91,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay * ret.data.length)
+      await wait({ count: ret.data.length, delay })
       if (ret.data.length === 0) break
       allComments.push(
         ...ret.data.map((comment) => shapeGitHubIssueComment(comment)),
@@ -108,7 +112,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay * ret.data.length)
+      await wait({ count: ret.data.length, delay })
       if (ret.data.length === 0) break
       allComments = [
         ...allComments,
@@ -142,7 +146,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay * ret.data.length)
+      await wait({ count: ret.data.length, delay })
       if (ret.data.length === 0) break
       allReviews = [
         ...allReviews,
@@ -171,7 +175,7 @@ export const createFetcher = ({
         page,
         per_page: 100,
       })
-      await setTimeout(delay * ret.data.length)
+      await wait({ count: ret.data.length, delay })
       if (ret.data.length === 0) break
       tags = [
         ...tags,
