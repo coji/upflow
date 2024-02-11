@@ -5,7 +5,7 @@ import type {
   Repository,
 } from '@prisma/client'
 import invariant from 'tiny-invariant'
-import { crawlerDb } from '~/batch/db/crawler-db.server'
+import { crawlerDb, sql } from '~/batch/db/crawler-db.server'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
@@ -288,6 +288,9 @@ export const createGitHubProvider = (integration: Integration) => {
     // 全プルリク情報を保存
     await store.save('pullrequests.json', allPullRequests)
     logger.info('fetch completed: ', repository.name)
+
+    // duckdb の wal が残ってしまうので明示的に閉じる
+    await sql`CHECKPOINT`.execute(db)
   }
 
   const analyze = async (company: Company, repositories: Repository[]) => {
