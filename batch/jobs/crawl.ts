@@ -7,7 +7,7 @@ import {
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
 
-const options = { refresh: false, halt: false, delay: 800 }
+const options = { refresh: false, halt: false, delay: 1000 }
 
 export const crawlJob = async () => {
   logger.info('crawl started.')

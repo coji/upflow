@@ -225,6 +225,9 @@ export const createGitHubProvider = (integration: Integration) => {
     logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
 
+    // 一旦保存する: クロールしなおしたときに quota が溢れちゃうので一旦。
+    await store.save('pullrequests.json', allPullRequests)
+
     // const db = crawlerDb(repository.companyId)
     try {
       // for (const pr of allPullRequests) {
