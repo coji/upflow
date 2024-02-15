@@ -5,7 +5,7 @@ import type {
   Repository,
 } from '@prisma/client'
 import invariant from 'tiny-invariant'
-import { crawlerDb, sql } from '~/batch/db/crawler-db.server'
+import { crawlerDb } from '~/batch/db/crawler-db.server'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
@@ -225,11 +225,11 @@ export const createGitHubProvider = (integration: Integration) => {
     logger.info('fetching all pullrequests...')
     const allPullRequests = await fetcher.pullrequests()
 
-    const db = crawlerDb(repository.companyId)
+    // const db = crawlerDb(repository.companyId)
     try {
-      for (const pr of allPullRequests) {
-        await upsertPullRequest(db, repository.id, pr)
-      }
+      // for (const pr of allPullRequests) {
+      //   await upsertPullRequest(db, repository.id, pr)
+      // }
       logger.info('fetching all pullrequests completed.')
 
       // 全タグを情報をダウンロード
@@ -237,9 +237,9 @@ export const createGitHubProvider = (integration: Integration) => {
         logger.info('fetching all tags...')
         const allTags = await fetcher.tags()
         await store.save('tags.json', allTags)
-        for (const tag of allTags) {
-          await upsertTag(db, repository.id, tag)
-        }
+        // for (const tag of allTags) {
+        //   await upsertTag(db, repository.id, tag)
+        // }
 
         logger.info('fetching all tags completed.')
       }
@@ -262,9 +262,9 @@ export const createGitHubProvider = (integration: Integration) => {
         logger.info(`${pr.number} commits`)
         const allCommits = await fetcher.commits(pr.number)
         await store.save(store.path.commitsJsonFilename(pr.number), allCommits)
-        for (const commit of allCommits) {
-          await upsertCommit(db, repository.id, pr.id, commit)
-        }
+        // for (const commit of allCommits) {
+        //   await upsertCommit(db, repository.id, pr.id, commit)
+        // }
 
         // 個別PRのレビューコメント
         logger.info(`${pr.number} review comments`)
@@ -273,17 +273,17 @@ export const createGitHubProvider = (integration: Integration) => {
           store.path.discussionsJsonFilename(pr.number),
           discussions,
         )
-        for (const reviewComment of discussions) {
-          await upsertIssueComment(db, repository.id, pr.id, reviewComment)
-        }
+        // for (const reviewComment of discussions) {
+        //   await upsertIssueComment(db, repository.id, pr.id, reviewComment)
+        // }
 
         // 個別PRのレビュー
         logger.info(`${pr.number} reviews`)
         const reviews = await fetcher.reviews(pr.number)
         await store.save(store.path.reviewJsonFilename(pr.number), reviews)
-        for (const review of reviews) {
-          await upsertReview(db, repository.id, pr.id, review)
-        }
+        // for (const review of reviews) {
+        //   await upsertReview(db, repository.id, pr.id, review)
+        // }
       }
 
       // 全プルリク情報を保存
@@ -291,9 +291,9 @@ export const createGitHubProvider = (integration: Integration) => {
       logger.info('fetch completed: ', repository.name)
 
       // duckdb の wal が残ってしまうので明示的に閉じる
-      await sql`CHECKPOINT`.execute(db)
+      // await sql`CHECKPOINT`.execute(db)
     } finally {
-      await db.destroy()
+      // await db.destroy()
     }
   }
 
