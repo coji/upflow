@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 
 interface AppLayoutProps {

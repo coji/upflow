@@ -1,5 +1,5 @@
 import { useFetcher } from '@remix-run/react'
-import React from 'react'
+import type React from 'react'
 import { Button, type ButtonProps } from '~/app/components/ui'
 
 interface LogoutButtonProps extends ButtonProps {

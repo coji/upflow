@@ -1,5 +1,5 @@
-import fs from 'fs/promises'
-import path from 'path'
+import fs from 'node:fs/promises'
+import path from 'node:path'
 import { createPathBuilder } from '~/batch/helper/path-builder'
 import type {
   ShapedGitHubCommit,

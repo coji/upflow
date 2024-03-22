@@ -1,5 +1,5 @@
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import path from 'path'
 import { describe, expect, test } from 'vitest'
 import { createPathBuilder } from './path-builder'
 

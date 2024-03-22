@@ -1,6 +1,10 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from '@remix-run/node'
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from '@remix-run/node'
 import { Form, Link, useActionData } from '@remix-run/react'
 import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'

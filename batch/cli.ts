@@ -1,7 +1,7 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import path from 'path'
 import { migrateDbCommand, resetDbCommand } from './commands/db'
 import { fetchCommand } from './commands/fetch'
 import { reportCommand } from './commands/report'
