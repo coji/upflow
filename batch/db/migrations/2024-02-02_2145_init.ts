@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export const up = async (db: Kysely<any>) => {

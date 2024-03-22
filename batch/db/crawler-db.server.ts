@@ -1,5 +1,5 @@
 import DuckDB from 'duckdb'
-import { Kysely, RawBuilder, sql } from 'kysely'
+import { Kysely, sql, type RawBuilder } from 'kysely'
 import { DuckDbDialect } from 'kysely-duckdb'
 import fs from 'node:fs'
 import path from 'node:path'
