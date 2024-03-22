@@ -1,12 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 // JSON データの保存場所
 const JSON_DIR = path.join(
-  process.env.UPFLOW_DATA_DIR ?? path.join(__dirname, '..', '..', 'data'),
+  process.env.UPFLOW_DATA_DIR ??
+    path.join(import.meta.dirname, '..', '..', 'data'),
   'json',
 )
 

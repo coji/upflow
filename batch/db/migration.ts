@@ -5,8 +5,6 @@ import { fileURLToPath } from 'node:url'
 import { prisma } from '~/app/services/db.server'
 import { crawlerDb } from './crawler-db.server'
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname)
-
 export const migrateToLatest = async () => {
   const companies = await prisma.company.findMany({ select: { id: true } })
   for (const company of companies) {
@@ -16,7 +14,7 @@ export const migrateToLatest = async () => {
       provider: new FileMigrationProvider({
         fs,
         path,
-        migrationFolder: path.join(__dirname, 'migrations'),
+        migrationFolder: path.join(import.meta.dirname, 'migrations'),
       }),
     })
 

@@ -1,15 +1,12 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { migrateDbCommand, resetDbCommand } from './commands/db'
 import { fetchCommand } from './commands/fetch'
 import { reportCommand } from './commands/report'
 import { upsertCommand } from './commands/upsert'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-process.env.UPFLOW_DATA_DIR = path.join(__dirname, '..', 'data')
+process.env.UPFLOW_DATA_DIR = path.join(import.meta.dirname, '..', 'data')
 
 const fetch = command(
   {
