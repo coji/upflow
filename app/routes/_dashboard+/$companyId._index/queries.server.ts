@@ -1,8 +1,8 @@
 import type { Company } from '@prisma/client'
+import { pipe, sortBy } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
 import { prisma } from '~/app/services/db.server'
 export type { PullRequest } from '@prisma/client'
-
 export const getMergedPullRequestReport = async (
   companyId: Company['id'],
   startDate: string,
@@ -16,15 +16,16 @@ export const getMergedPullRequestReport = async (
     orderBy: [{ mergedAt: 'desc' }, { pullRequestCreatedAt: 'desc' }],
   })
 
-  return pullrequests.map((pr) => {
-    return {
-      ...pr,
-      createAndMergeDiff: pr.mergedAt
-        ? (
-            dayjs(pr.mergedAt).diff(dayjs(pr.pullRequestCreatedAt), 'hours') /
-            24
-          ).toFixed(1)
-        : null,
-    }
-  })
+  return pipe(
+    pullrequests.map((pr) => {
+      return {
+        ...pr,
+        createAndMergeDiff: pr.mergedAt
+          ? // 最初のコミットからマージまでの日数を計算
+            dayjs(pr.mergedAt).diff(dayjs(pr.firstCommittedAt), 'hours') / 24
+          : null,
+      }
+    }),
+    sortBy((pr) => (pr.createAndMergeDiff ? -pr.createAndMergeDiff : 0)),
+  )
 }

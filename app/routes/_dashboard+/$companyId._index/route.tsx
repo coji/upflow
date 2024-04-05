@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import dayjs from '~/app/libs/dayjs'
 import { getCompany } from '~/app/models/admin/company.server'
 import { getMergedPullRequestReport } from './queries.server'
 import { getStartOfWeek } from './utils'
@@ -44,10 +43,8 @@ export default function CompanyLayout() {
               <TableHead>PR</TableHead>
               <TableHead>Author</TableHead>
               <TableHead>Title</TableHead>
-              <TableHead>マージまで</TableHead>
-              <TableHead>PR Created</TableHead>
-              <TableHead>PR Merged</TableHead>
-              <TableHead>Deployed</TableHead>
+              <TableHead>URL</TableHead>
+              <TableHead className="whitespace-nowrap">マージまで</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -65,36 +62,11 @@ export default function CompanyLayout() {
                 </TableCell>
                 <TableCell>{pr.author}</TableCell>
                 <TableCell>
-                  <a
-                    href={pr.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:underline"
-                  >
-                    {pr.title}
-                  </a>
+                  [{pr.title}]({pr.url})
                 </TableCell>
                 <TableCell className="pr-4 text-right">
-                  {pr.mergedAt && pr.createAndMergeDiff}
+                  {pr.mergedAt && pr.createAndMergeDiff?.toFixed(1)}
                   <small>日</small>
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-xs">
-                  {dayjs(pr.pullRequestCreatedAt).format('YYYY-MM-DD')}
-                  <small>
-                    {' '}
-                    ({dayjs(pr.pullRequestCreatedAt).format('ddd')})
-                  </small>
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-xs">
-                  {pr.mergedAt && dayjs(pr.mergedAt).format('YYYY-MM-DD')}
-                  <small> ({dayjs(pr.mergedAt).format('ddd')})</small>
-                </TableCell>
-                <TableCell className="text-xs">
-                  {pr.releasedAt &&
-                    `${dayjs(pr.releasedAt).format('YYYY-MM-DD')}`}
-                  {pr.releasedAt && (
-                    <small> ({dayjs(pr.releasedAt).format('ddd')})</small>
-                  )}
                 </TableCell>
               </TableRow>
             ))}
