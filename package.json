@@ -90,6 +90,7 @@
     "remix-auth-oauth2": "1.11.2",
     "remix-island": "0.2.0",
     "remix-toast": "1.2.0",
+    "remix-typedjson": "0.4.1",
     "tailwind-merge": "2.2.2",
     "tailwindcss-animate": "1.0.7",
     "tiny-invariant": "1.3.3",

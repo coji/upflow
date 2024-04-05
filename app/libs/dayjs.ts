@@ -1,12 +1,21 @@
 import dayjs from 'dayjs'
-import duration from 'dayjs/plugin/duration.js'
-import relativeTime from 'dayjs/plugin/relativeTime.js'
-import timezone from 'dayjs/plugin/timezone.js'
-import utc from 'dayjs/plugin/utc.js'
 
+import duration from 'dayjs/plugin/duration.js'
 dayjs.extend(duration)
+
+import relativeTime from 'dayjs/plugin/relativeTime.js'
 dayjs.extend(relativeTime)
-dayjs.extend(utc)
+
+import timezone from 'dayjs/plugin/timezone.js'
 dayjs.extend(timezone)
+
+import utc from 'dayjs/plugin/utc.js'
+dayjs.extend(utc)
+
+import weekday from 'dayjs/plugin/weekday'
+dayjs.extend(weekday)
+
+import 'dayjs/locale/ja'
+dayjs.locale('ja')
 
 export default dayjs

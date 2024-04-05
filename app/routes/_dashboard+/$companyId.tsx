@@ -16,7 +16,6 @@ import {
   TabsTrigger,
 } from '~/app/components/ui'
 import { getCompany } from '~/app/models/admin/company.server'
-import { getPullRequestReport } from '~/app/models/pullRequest.server'
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: `${data?.company.name} - Upflow Admin` },
@@ -38,8 +37,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-  const pullRequests = getPullRequestReport(companyId)
-  return json({ company, pullRequests })
+  return json({ company })
 }
 
 export default function CompanyLayout() {
