@@ -12,10 +12,10 @@ dayjs.extend(timezone)
 import utc from 'dayjs/plugin/utc.js'
 dayjs.extend(utc)
 
-import weekday from 'dayjs/plugin/weekday'
+import weekday from 'dayjs/plugin/weekday.js'
 dayjs.extend(weekday)
 
-import 'dayjs/locale/ja'
+import 'dayjs/locale/ja.js'
 dayjs.locale('ja')
 
 export default dayjs
