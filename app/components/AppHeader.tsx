@@ -20,7 +20,7 @@ import {
   TeamSwitcher,
   type Companies,
   type Team,
-} from '~/app/routes/company-switcher'
+} from '~/app/routes/team-switcher'
 
 interface AppHeaderProps {
   user?: SessionUser

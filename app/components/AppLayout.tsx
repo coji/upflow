@@ -11,7 +11,7 @@ const AppLayout = ({ header, children }: AppLayoutProps) => {
   return (
     <div
       className={`grid min-h-screen ${
-        header ? 'grid-rows-[auto_1fr_auto]' : 'grid-rows-[1fr_auto]'
+        header ? 'grid-rows-[auto_1fr]' : 'grid-rows-[1fr_auto]'
       }`}
     >
       {header}
@@ -22,18 +22,6 @@ const AppLayout = ({ header, children }: AppLayoutProps) => {
           <div className="flex-1">{children}</div>
         </div>
       </main>
-
-      <footer className="p-2 text-center text-sm shadow">
-        Copyright&copy;{' '}
-        <a
-          href="https://www.techtalk.jp/"
-          target="_blank"
-          rel="noreferrer"
-          className="hover:text-primary hover:underline"
-        >
-          TechTalk Inc.
-        </a>
-      </footer>
     </div>
   )
 }

@@ -20,7 +20,7 @@ import {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 認証済みならトップページにリダイレクト
-  await authenticator.isAuthenticated(request, { successRedirect: '/admin' })
+  await authenticator.isAuthenticated(request, { successRedirect: '/' })
 
   // ログイン時のエラーメッセージがもしあればそれを表示する
   const session = await sessionStorage.getSession(

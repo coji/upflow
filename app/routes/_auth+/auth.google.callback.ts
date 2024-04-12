@@ -17,9 +17,5 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     'Set-Cookie': await sessionStorage.commitSession(session),
   })
 
-  // admin なら管理画面に、一般ユーザはダッシュボードにリダイレクト
-  if (user.role === 'admin') {
-    return redirect('/admin', { headers })
-  }
   return redirect('/', { headers })
 }

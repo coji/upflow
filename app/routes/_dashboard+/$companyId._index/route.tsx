@@ -42,8 +42,7 @@ export default function CompanyLayout() {
             <TableRow>
               <TableHead>PR</TableHead>
               <TableHead>Author</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>URL</TableHead>
+              <TableHead>Title / URL</TableHead>
               <TableHead className="whitespace-nowrap">マージまで</TableHead>
             </TableRow>
           </TableHeader>
