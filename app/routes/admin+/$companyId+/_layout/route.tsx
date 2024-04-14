@@ -9,7 +9,6 @@ import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
-  Badge,
   Button,
   Card,
   CardTitle,
@@ -59,14 +58,9 @@ export default function CompanyLayout() {
   return (
     <div className="grid min-h-full grid-cols-[auto_1fr] gap-2">
       <div>
-        <Card className="flex w-48 flex-col gap-2 py-2">
+        <Card className="flex w-48 flex-col gap-0.5 py-2">
           <HStack className="items-start px-4">
-            <CardTitle>
-              <HStack>
-                <div>{company.name}</div>
-                <Badge variant="outline">Company</Badge>
-              </HStack>
-            </CardTitle>
+            <CardTitle>{company.name}</CardTitle>
 
             <Spacer />
 
@@ -105,7 +99,7 @@ export default function CompanyLayout() {
 
           <Separator />
 
-          <Stack className="flex-1 gap-0.5">
+          <Stack className="flex-1 gap-0 overflow-hidden bg-popover text-popover-foreground transition-colors">
             <CompanyNavLink
               to={$path('/admin/:companyId/users', { companyId })}
             >
