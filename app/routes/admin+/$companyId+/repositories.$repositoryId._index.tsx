@@ -3,7 +3,10 @@ import { Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
-  Heading,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Table,
   TableBody,
   TableCell,
@@ -26,35 +29,45 @@ const RepositoryPullsIndexPage = () => {
   const { pulls } = useLoaderData<typeof loader>()
 
   return (
-    <div>
-      <Heading>Pull Requests</Heading>
-      <div className="overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>number</TableHead>
-              <TableHead>state</TableHead>
-              <TableHead>author</TableHead>
-              <TableHead>title</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pulls.map((pull) => {
-              return (
-                <TableRow key={pull.number}>
-                  <TableCell>{pull.number}</TableCell>
-                  <TableCell>{pull.state}</TableCell>
-                  <TableCell>{pull.author}</TableCell>
-                  <TableCell>
-                    <Link to={`${pull.number}`}>{pull.title}</Link>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Pull Requests</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-lg border shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>number</TableHead>
+                <TableHead>state</TableHead>
+                <TableHead>author</TableHead>
+                <TableHead>title</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pulls.map((pull) => {
+                return (
+                  <TableRow key={pull.number}>
+                    <TableCell>{pull.number}</TableCell>
+                    <TableCell>{pull.state}</TableCell>
+                    <TableCell>{pull.author}</TableCell>
+                    <TableCell
+                      style={{
+                        lineBreak: 'strict',
+                        wordBreak: 'normal',
+                        overflowWrap: 'anywhere',
+                      }}
+                    >
+                      <Link to={`${pull.number}`}>{pull.title}</Link>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 export default RepositoryPullsIndexPage

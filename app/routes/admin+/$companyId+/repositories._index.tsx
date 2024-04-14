@@ -6,8 +6,12 @@ import { z } from 'zod'
 import { zx } from 'zodix'
 import {
   Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
   HStack,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -30,65 +34,75 @@ export default function CompanyRepositoryIndexPage() {
   const { company } = useLoaderData<typeof loader>()
 
   return (
-    <Stack>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Owner</TableHead>
-            <TableHead>Repo</TableHead>
-            <TableHead>Method</TableHead>
-            <TableHead>Key</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {company.repositories.map((repo) => {
-            const repoUrl = match(repo.provider)
-              .with(
-                'github',
-                () => `https://github.com/${repo.owner}/${repo.repo}`,
-              ) // TODO: retrieve url from github api
-              .otherwise(() => '')
-            return (
-              <TableRow key={repo.id}>
-                <TableCell>{repo.owner}</TableCell>
-
-                <TableCell>
-                  <Link to={repoUrl} target="_blank" className="">
-                    {repo.repo} <ExternalLinkIcon className="inline" />
-                  </Link>
-                </TableCell>
-
-                <TableCell>{repo.releaseDetectionKey}</TableCell>
-
-                <TableCell>{repo.releaseDetectionMethod}</TableCell>
-
-                <TableCell>
-                  <HStack>
-                    <Button asChild size="xs" variant="outline">
-                      <Link to={`${repo.id}`}>Pulls</Link>
-                    </Button>
-
-                    <Button asChild size="xs" variant="outline">
-                      <Link to={`${repo.id}/edit`}>Edit</Link>
-                    </Button>
-
-                    <Button asChild size="xs" variant="destructive">
-                      <Link to={`${repo.id}/delete`}>Delete</Link>
-                    </Button>
-                  </HStack>
-                </TableCell>
+    <Card>
+      <CardHeader>
+        <CardTitle>Repositories</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-lg border shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Owner</TableHead>
+                <TableHead>Repo</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Key</TableHead>
+                <TableHead>Action</TableHead>
               </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {company.repositories.map((repo) => {
+                const repoUrl = match(repo.provider)
+                  .with(
+                    'github',
+                    () => `https://github.com/${repo.owner}/${repo.repo}`,
+                  ) // TODO: retrieve url from github api
+                  .otherwise(() => '')
+                return (
+                  <TableRow key={repo.id}>
+                    <TableCell>{repo.owner}</TableCell>
 
-      {company.integration && (
-        <Button className="w-full" asChild>
-          <Link to="add">Add Repositories</Link>
-        </Button>
-      )}
-    </Stack>
+                    <TableCell>
+                      <Link to={repoUrl} target="_blank" className="">
+                        {repo.repo} <ExternalLinkIcon className="inline" />
+                      </Link>
+                    </TableCell>
+
+                    <TableCell>{repo.releaseDetectionKey}</TableCell>
+
+                    <TableCell>{repo.releaseDetectionMethod}</TableCell>
+
+                    <TableCell>
+                      <HStack>
+                        <Button asChild size="xs" variant="outline">
+                          <Link to={`${repo.id}`}>Pulls</Link>
+                        </Button>
+
+                        <Button asChild size="xs" variant="outline">
+                          <Link to={`${repo.id}/edit`}>Edit</Link>
+                        </Button>
+
+                        <Button asChild size="xs" variant="destructive">
+                          <Link to={`${repo.id}/delete`}>Delete</Link>
+                        </Button>
+                      </HStack>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <HStack>
+          {company.integration && (
+            <Button className="w-full" asChild>
+              <Link to="add">Add Repositories</Link>
+            </Button>
+          )}
+        </HStack>
+      </CardFooter>
+    </Card>
   )
 }

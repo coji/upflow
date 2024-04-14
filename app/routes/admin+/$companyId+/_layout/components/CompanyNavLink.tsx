@@ -12,7 +12,7 @@ export const CompanyNavLink = ({
       to={to}
       className={({ isActive }) =>
         cn(
-          'block w-full rounded-md px-4 py-2 hover:bg-secondary/50',
+          'block w-full px-4 py-1 hover:bg-secondary/50',
           isActive && 'bg-secondary hover:bg-secondary',
           className,
         )

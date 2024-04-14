@@ -3,6 +3,7 @@ import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/user-session.server'
+import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 import { listCompanies } from '~/app/models/admin/company.server'
 
 export const handle = {
@@ -17,9 +18,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const DashboardLayoutPage = () => {
   const { user, companies } = useLoaderData<typeof loader>()
+  const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (
-    <AppLayout header={<AppHeader user={user} companies={companies} />}>
+    <AppLayout
+      header={<AppHeader user={user} companies={companies} />}
+      breadcrumbs={<AppBreadcrumbs />}
+    >
       <Outlet />
     </AppLayout>
   )

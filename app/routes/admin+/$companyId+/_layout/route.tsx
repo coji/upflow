@@ -3,7 +3,7 @@ import {
   type LoaderFunctionArgs,
   type MetaFunction,
 } from '@remix-run/node'
-import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
+import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { SettingsIcon } from 'lucide-react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -12,20 +12,19 @@ import {
   Badge,
   Button,
   Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
   CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
+  Separator,
   Spacer,
   Stack,
 } from '~/app/components/ui'
+import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 import { getCompany } from '~/app/models/admin/company.server'
-import { CompanyNavLink } from './components/'
+import { CompanyNavLink } from './components'
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: `${data?.company.name} - Upflow Admin` },
@@ -50,94 +49,99 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-  return json({ company })
+  return json({ companyId, company })
 }
 
 export default function CompanyLayout() {
-  const { company } = useLoaderData<typeof loader>()
-  const companyId = company.id
-  const location = useLocation()
-  const tabValue = location.pathname.split('/')?.[3] ?? 'company'
+  const { companyId, company } = useLoaderData<typeof loader>()
+  const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (
-    <div className="grid grid-cols-[auto_1fr] gap-4">
+    <div className="grid min-h-full grid-cols-[auto_1fr] gap-2">
       <div>
-        <Card className="w-60">
-          <CardHeader>
-            <Stack direction="row" className="items-start">
-              <CardTitle>
-                <HStack>
-                  <div>{company.name}</div>
-                  <Badge variant="outline">Company</Badge>
-                </HStack>
-              </CardTitle>
+        <Card className="flex w-48 flex-col gap-2 py-2">
+          <HStack className="items-start px-4">
+            <CardTitle>
+              <HStack>
+                <div>{company.name}</div>
+                <Badge variant="outline">Company</Badge>
+              </HStack>
+            </CardTitle>
 
-              <Spacer />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost">
-                    <SettingsIcon className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
+            <Spacer />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost">
+                  <SettingsIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link to={$path('/admin/:companyId/settings', { companyId })}>
+                    Config
+                  </Link>
+                </DropdownMenuItem>
+                {company.exportSetting && (
                   <DropdownMenuItem asChild>
-                    <Link to={$path('/admin/:companyId/config', { companyId })}>
-                      Config
+                    <Link to="export-setting">
+                      {company.exportSetting
+                        ? 'Export Settings'
+                        : 'Add Export Setting'}
                     </Link>
                   </DropdownMenuItem>
-                  {company.exportSetting && (
-                    <DropdownMenuItem asChild>
-                      <Link to="export-setting">
-                        {company.exportSetting
-                          ? 'Export Settings'
-                          : 'Add Export Setting'}
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={$path('/admin/:companyId/delete', { companyId })}
-                      className="text-destructive"
-                    >
-                      Delete
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </Stack>
-          </CardHeader>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={$path('/admin/:companyId/delete', { companyId })}
+                    className="text-destructive"
+                  >
+                    Delete
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </HStack>
 
-          <CardContent className="px-4">
-            <Stack>
-              <CompanyNavLink
-                to={$path('/admin/:companyId/teams', { companyId })}
-              >
-                Teams
-              </CompanyNavLink>
+          <Separator />
 
-              <CompanyNavLink
-                to={$path('/admin/:companyId/repositories', { companyId })}
-              >
-                Repositories
-              </CompanyNavLink>
+          <Stack className="flex-1 gap-0.5">
+            <CompanyNavLink
+              to={$path('/admin/:companyId/users', { companyId })}
+            >
+              Users
+            </CompanyNavLink>
 
-              <CompanyNavLink
-                to={$path('/admin/:companyId/users', { companyId })}
-              >
-                Users
-              </CompanyNavLink>
-            </Stack>
-          </CardContent>
+            <CompanyNavLink
+              to={$path('/admin/:companyId/teams', { companyId })}
+            >
+              Teams
+            </CompanyNavLink>
+
+            <CompanyNavLink
+              to={$path('/admin/:companyId/repositories', { companyId })}
+            >
+              Repositories
+            </CompanyNavLink>
+          </Stack>
+
+          <Separator />
+
+          <Stack>
+            <CompanyNavLink
+              to={$path('/admin/:companyId/settings', { companyId })}
+            >
+              Settings
+            </CompanyNavLink>
+          </Stack>
         </Card>
       </div>
 
       <div>
-        <Card>
-          <CardContent className="pt-6">
-            <Outlet />
-          </CardContent>
-          <CardFooter />
-        </Card>
+        <>
+          <AppBreadcrumbs />
+          <Outlet />
+        </>
       </div>
     </div>
   )
