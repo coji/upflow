@@ -2,6 +2,7 @@ import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
 import { json, redirect, type ActionFunctionArgs } from '@remix-run/node'
 import { Form, Link, useActionData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { z } from 'zod'
 import {
   Alert,
@@ -48,13 +49,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }),
     )
   }
-  return redirect(`/admin/${company.id}`)
+  return redirect($path('/admin/:companyId', { companyId: company.id }))
 }
 
 const CompanyNewPage = () => {
   const lastResult = useActionData<typeof action>()
   const [form, { companyId, companyName, teamId, teamName }] = useForm({
-    id: 'company-add-form',
     defaultValue: {
       teamId: 'developers',
       teamName: 'Developers',
@@ -114,7 +114,7 @@ const CompanyNewPage = () => {
           </Button>
 
           <Button asChild type="button" variant="ghost">
-            <Link to="/admin">Cancel</Link>
+            <Link to={$path('/admin')}>Cancel</Link>
           </Button>
         </HStack>
       </CardFooter>

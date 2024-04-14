@@ -4,6 +4,7 @@ import {
   type MetaFunction,
 } from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -27,7 +28,10 @@ export const handle = {
   }: {
     company: NonNullable<Awaited<ReturnType<typeof getCompany>>>
   }) => {
-    return { label: company.name, to: `/${company.id}` }
+    return {
+      label: company.name,
+      to: $path('/admin/:companyId', { companyId: company.id }),
+    }
   },
 }
 
@@ -53,7 +57,9 @@ export default function CompanyLayout() {
         <Tabs value={tabValue}>
           <TabsList>
             <TabsTrigger value="dashboard" asChild>
-              <Link to=".">Dashboard</Link>
+              <Link to={$path('/admin/:companyId', { companyId: company.id })}>
+                Dashboard
+              </Link>
             </TabsTrigger>
           </TabsList>
         </Tabs>

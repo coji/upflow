@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs } from '@remix-run/node'
 import { useFetcher } from '@remix-run/react'
 import type React from 'react'
+import { $path } from 'remix-routes'
 import { Button, type ButtonProps } from '~/app/components/ui'
 import { authenticator } from '~/app/features/auth/services/authenticator.server'
 
@@ -15,7 +16,7 @@ export const LogoutButton = ({ children, ...rest }: LogoutButtonProps) => {
   const fetcher = useFetcher()
 
   return (
-    <fetcher.Form method="GET" action="/logout">
+    <fetcher.Form method="GET" action={$path('/logout')}>
       <Button type="submit" variant="outline" {...rest}>
         {children ? children : 'ログアウト'}
       </Button>

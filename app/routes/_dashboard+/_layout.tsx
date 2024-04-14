@@ -1,11 +1,12 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/user-session.server'
 import { listCompanies } from '~/app/models/admin/company.server'
 
 export const handle = {
-  breadcrumb: () => ({ label: 'Dashboard', to: '/' }),
+  breadcrumb: () => ({ label: 'Dashboard', to: $path('/') }),
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

@@ -1,4 +1,5 @@
 import { redirect, type LoaderFunctionArgs } from '@remix-run/node'
+import { $path } from 'remix-routes'
 import {
   authenticator,
   sessionStorage,
@@ -6,7 +7,7 @@ import {
 
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const user = await authenticator.authenticate('google', request, {
-    failureRedirect: '/login',
+    failureRedirect: $path('/login'),
     context,
   })
 
@@ -17,5 +18,5 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     'Set-Cookie': await sessionStorage.commitSession(session),
   })
 
-  return redirect('/', { headers })
+  return redirect($path('/'), { headers })
 }

@@ -5,9 +5,11 @@ import {
   type MetaFunction,
 } from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -17,6 +19,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  HStack,
   Spacer,
   Stack,
   Tabs,
@@ -35,7 +38,10 @@ export const handle = {
   }: {
     company: NonNullable<Awaited<ReturnType<typeof getCompany>>>
   }) => {
-    return { label: company.name, to: `/admin/${company.id}` }
+    return {
+      label: company.name,
+      to: $path('/admin', { companyId: company.id }),
+    }
   },
 }
 
@@ -50,6 +56,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
 export default function CompanyLayout() {
   const { company } = useLoaderData<typeof loader>()
+  const companyId = company.id
   const location = useLocation()
   const tabValue = location.pathname.split('/')?.[3] ?? 'company'
 
@@ -57,7 +64,12 @@ export default function CompanyLayout() {
     <Card>
       <CardHeader>
         <Stack direction="row" className="items-start">
-          <CardTitle>{company.name}</CardTitle>
+          <CardTitle>
+            <HStack>
+              <div>{company.name}</div>
+              <Badge variant="outline">Company</Badge>
+            </HStack>
+          </CardTitle>
 
           <Spacer />
           <DropdownMenu>
@@ -68,7 +80,9 @@ export default function CompanyLayout() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
-                <Link to="config">Config</Link>
+                <Link to={$path('/admin/:companyId/config', { companyId })}>
+                  Config
+                </Link>
               </DropdownMenuItem>
               {company.exportSetting && (
                 <DropdownMenuItem asChild>
@@ -80,7 +94,10 @@ export default function CompanyLayout() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
-                <Link to="delete" className="text-destructive">
+                <Link
+                  to={$path('/admin/:companyId/delete', { companyId })}
+                  className="text-destructive"
+                >
                   Delete
                 </Link>
               </DropdownMenuItem>
@@ -91,16 +108,28 @@ export default function CompanyLayout() {
         <Tabs value={tabValue}>
           <TabsList>
             <TabsTrigger value="company" asChild>
-              <Link to=".">Company</Link>
+              <Link to={$path('/admin/:companyId', { companyId })}>
+                Company
+              </Link>
             </TabsTrigger>
             <TabsTrigger value="teams" asChild>
-              <Link to="teams">Teams</Link>
+              <Link to={$path('/admin/:companyId/teams', { companyId })}>
+                Teams
+              </Link>
             </TabsTrigger>
             <TabsTrigger value="repositories" asChild>
-              <Link to="repositories">Repositories</Link>
+              <Link
+                to={$path('/admin/:companyId/repositories', {
+                  companyId,
+                })}
+              >
+                Repositories
+              </Link>
             </TabsTrigger>
             <TabsTrigger value="users" asChild>
-              <Link to="users">Users</Link>
+              <Link to={$path('/admin/:companyId/users', { companyId })}>
+                Users
+              </Link>
             </TabsTrigger>
           </TabsList>
         </Tabs>

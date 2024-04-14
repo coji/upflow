@@ -89,6 +89,7 @@
     "remix-auth-google": "2.0.0",
     "remix-auth-oauth2": "1.11.2",
     "remix-island": "0.2.0",
+    "remix-routes": "1.7.2",
     "remix-toast": "1.2.0",
     "remix-typedjson": "0.4.1",
     "tailwind-merge": "2.2.2",

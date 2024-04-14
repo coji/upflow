@@ -1,5 +1,6 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { AppLayout } from '~/app/components'
 import {
   Alert,
@@ -20,7 +21,7 @@ import {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 認証済みならトップページにリダイレクト
-  await authenticator.isAuthenticated(request, { successRedirect: '/' })
+  await authenticator.isAuthenticated(request, { successRedirect: $path('/') })
 
   // ログイン時のエラーメッセージがもしあればそれを表示する
   const session = await sessionStorage.getSession(

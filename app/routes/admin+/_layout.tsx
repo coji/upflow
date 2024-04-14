@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireAdminUser } from '~/app/features/auth/services/user-session.server'
 import { listCompanies } from '~/app/models/admin/company.server'
@@ -8,7 +9,7 @@ import { listCompanies } from '~/app/models/admin/company.server'
 export const meta: MetaFunction = () => [{ title: 'Upflow Admin' }]
 
 export const handle = {
-  breadcrumb: () => ({ label: 'Admin', to: '/admin' }),
+  breadcrumb: () => ({ label: 'Admin', to: $path('/admin') }),
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
