@@ -2,6 +2,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator kysely {
+  provider     = "prisma-kysely"
+  output       = "../app/services/"
+  fileName     = "type.ts"
+}
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")

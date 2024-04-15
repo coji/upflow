@@ -1,12 +1,9 @@
 import { Prisma } from '@prisma/client'
+import { nanoid } from 'nanoid'
 import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
 import invariant from 'tiny-invariant'
-import {
-  getUserByEmail,
-  upsertUserByEmail,
-  type User,
-} from '~/app/models/user.server'
+import { db, type DB, type Selectable } from '~/app/services/db.server'
 import type { SessionUser } from '../types/types'
 import {
   isSupportedSocialProvider,
@@ -29,18 +26,31 @@ export const verifyUser: StrategyVerifyCallback<
   const email = profile.emails[0].value
 
   const errorMessages = []
-  let user: Omit<User, 'createdAt' | 'updatedAt'> | null = null
+  let user: Selectable<DB.User> | null = null
 
   try {
-    user = await getUserByEmail({ email })
-
     // ユーザを登録 / upsert
-    user = await upsertUserByEmail({
-      email,
-      displayName: profile.displayName,
-      pictureUrl: profile.photos?.[0].value,
-      locale: profile._json.locale ?? 'ja',
-    })
+    user = await db
+      .insertInto('users')
+      .values({
+        id: nanoid(),
+        email,
+        display_name: profile.displayName,
+        picture_url: profile.photos?.[0].value,
+        locale: profile._json.locale,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      })
+      .onConflict((oc) =>
+        oc.column('email').doUpdateSet({
+          display_name: profile.displayName,
+          picture_url: profile.photos?.[0].value,
+          locale: profile._json.locale,
+          updated_at: new Date().toISOString(),
+        }),
+      )
+      .returningAll()
+      .executeTakeFirstOrThrow()
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
@@ -57,5 +67,12 @@ export const verifyUser: StrategyVerifyCallback<
     throw new Error(errorMessages.join('\n'))
   }
 
-  return user
+  return {
+    displayName: user.display_name,
+    email: user.email,
+    id: user.id,
+    locale: user.locale,
+    pictureUrl: user.picture_url,
+    role: user.role,
+  } satisfies SessionUser
 }
