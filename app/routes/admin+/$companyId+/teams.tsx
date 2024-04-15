@@ -1,13 +1,14 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { Stack } from '~/app/components/ui'
 
 export const handle = {
   breadcrumb: ({ companyId }: { companyId: string }) => ({
-    label: 'Team',
-    to: `/admin/${companyId}/team`,
+    label: 'Teams',
+    to: $path('/admin/:companyId/teams', { companyId }),
   }),
 }
 

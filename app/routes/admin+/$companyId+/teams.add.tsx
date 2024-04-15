@@ -1,11 +1,12 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
-import { parseWithZod } from '@conform-to/zod'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import {
   json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from '@remix-run/node'
-import { Form, Link, useActionData } from '@remix-run/react'
+import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -46,11 +47,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const { id, name } = submission.value
   try {
-    await addTeam({
-      id,
-      name,
-      company: { connect: { id: companyId } },
-    })
+    await addTeam({ id, name, company: { connect: { id: companyId } } })
   } catch (e) {
     return json(
       submission.reply({
@@ -59,14 +56,19 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     )
   }
 
-  return redirectWithSuccess('..', `Team ${id} ${name} created`)
+  return redirectWithSuccess(
+    $path('/admin/:companyId/teams/:teamId', { companyId, teamId: id }),
+    `Team ${id} ${name} created`,
+  )
 }
 
 export default function TeamAddPage() {
+  const { companyId } = useLoaderData<typeof loader>()
   const lastResult = useActionData<typeof action>()
   const [form, { id, name }] = useForm({
     id: 'team-add',
     lastResult,
+    constraint: getZodConstraint(schema),
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
@@ -96,7 +98,7 @@ export default function TeamAddPage() {
 
         <HStack>
           <Button asChild variant="ghost">
-            <Link to="..">Cancel</Link>
+            <Link to={$path('/admin/:companyId', { companyId })}>Cancel</Link>
           </Button>
           <Button type="submit">Create</Button>
         </HStack>

@@ -55,15 +55,14 @@ export default function CompanyTeamIndex() {
   const { team, repositories, users } = useLoaderData<typeof loader>()
 
   return (
-    <Stack>
-      <HStack>
-        <h1 className="text-2xl font-bold">{team.name}</h1>
-        <div>
-          <Badge variant="outline">Team</Badge>
-        </div>
-      </HStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {team.name} <Badge variant="outline">Team</Badge>
+        </CardTitle>
+      </CardHeader>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Members</CardTitle>
@@ -119,11 +118,11 @@ export default function CompanyTeamIndex() {
             </div>
           </CardFooter>
         </Card>
-      </div>
+      </CardContent>
 
       <div>
         <Outlet />
       </div>
-    </Stack>
+    </Card>
   )
 }

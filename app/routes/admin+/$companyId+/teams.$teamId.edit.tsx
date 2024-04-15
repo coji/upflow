@@ -6,6 +6,7 @@ import {
   type LoaderFunctionArgs,
 } from '@remix-run/node'
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -40,7 +41,10 @@ export const handle = {
     team: NonNullable<Awaited<ReturnType<typeof getTeam>>>
   }) => ({
     label: team.name,
-    to: `/admin/${companyId}/team/${team.id}`,
+    to: $path('/admin/:companyId/teams/:teamId', {
+      companyId,
+      teamId: team.id,
+    }),
   }),
 }
 
@@ -64,7 +68,10 @@ const schema = z.object({
 })
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { teamId } = zx.parseParams(params, { teamId: z.string() })
+  const { companyId, teamId } = zx.parseParams(params, {
+    companyId: z.string(),
+    teamId: z.string(),
+  })
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return json(submission.reply())
@@ -90,7 +97,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     )
   }
 
-  return redirectWithSuccess(`/admin/${params.companyId}/team`, toastMessage)
+  return redirectWithSuccess(
+    $path('/admin/:companyId/teams', { companyId }),
+    toastMessage,
+  )
 }
 
 export default function TeamDetailPage() {

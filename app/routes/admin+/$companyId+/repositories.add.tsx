@@ -6,6 +6,7 @@ import {
   type LoaderFunctionArgs,
 } from '@remix-run/node'
 import { useFetcher, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
@@ -61,7 +62,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       }),
     )
   }
-  return redirect(`/admin/${params.companyId}/repository`)
+  return redirect($path('/admin/:companyId/repositories', { companyId }))
 }
 
 const AddRepositoryModal = () => {

@@ -1,13 +1,11 @@
 import type React from 'react'
-import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 
 interface AppLayoutProps {
   header?: React.ReactNode
   children: React.ReactNode
+  breadcrumbs?: React.ReactNode
 }
-const AppLayout = ({ header, children }: AppLayoutProps) => {
-  const { AppBreadcrumbs } = useBreadcrumbs()
-
+const AppLayout = ({ header, breadcrumbs, children }: AppLayoutProps) => {
   return (
     <div
       className={`grid min-h-screen ${
@@ -16,9 +14,9 @@ const AppLayout = ({ header, children }: AppLayoutProps) => {
     >
       {header}
 
-      <main className="max-w-screen flex flex-col overflow-auto bg-gray-200 pb-2 md:px-0">
-        <div className="flex flex-1 flex-col px-2 md:container">
-          <AppBreadcrumbs />
+      <main className="flex flex-col overflow-auto bg-slate-200 py-2">
+        <div className="flex flex-1 flex-col px-4">
+          {breadcrumbs}
           <div className="flex-1">{children}</div>
         </div>
       </main>

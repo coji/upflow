@@ -6,6 +6,7 @@ import {
   type LoaderFunctionArgs,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -24,7 +25,7 @@ import {
   getRepository,
 } from '~/app/models/admin/repository.server'
 
-export const handle = { breadcrumb: () => ({ label: 'Delete Repository' }) }
+export const handle = { breadcrumb: () => ({ label: 'Delete' }) }
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, {
@@ -46,8 +47,10 @@ export const action = async ({ params }: ActionFunctionArgs) => {
     companyId: z.string(),
     repositoryId: z.string(),
   })
+
   await deleteRepository(repositoryId)
-  return redirect(`/admin/${companyId}/repository`)
+
+  return redirect($path('/admin/:companyId/repositories', { companyId }))
 }
 
 const AddRepositoryModal = () => {
@@ -71,7 +74,9 @@ const AddRepositoryModal = () => {
             Delete
           </Button>
           <Button asChild variant="ghost">
-            <Link to={`/admin/${companyId}/repository`}>Cancel</Link>
+            <Link to={$path('/admin/:companyId/repositories', { companyId })}>
+              Cancel
+            </Link>
           </Button>
         </HStack>
       </CardFooter>

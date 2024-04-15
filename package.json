@@ -77,6 +77,7 @@
     "isbot": "5.1.4",
     "kysely": "0.27.3",
     "kysely-duckdb": "0.1.0",
+    "lucide-react": "0.368.0",
     "morgan": "1.10.0",
     "node-schedule": "2.1.1",
     "octokit": "3.2.0",

@@ -94,7 +94,7 @@ const EditCompany = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Company Config</CardTitle>
+        <CardTitle>Company Settings</CardTitle>
       </CardHeader>
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
