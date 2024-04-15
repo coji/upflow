@@ -11,13 +11,15 @@ import { zx } from 'zodix'
 import {
   Button,
   Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
   CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  Separator,
   Spacer,
   Stack,
 } from '~/app/components/ui'
@@ -58,76 +60,78 @@ export default function CompanyLayout() {
   return (
     <div className="grid min-h-full grid-cols-[auto_1fr] gap-2">
       <div>
-        <Card className="flex w-48 flex-col gap-0.5 py-2">
-          <HStack className="items-start px-4">
-            <CardTitle>{company.name}</CardTitle>
+        <Card className="w-60">
+          <CardHeader>
+            <HStack className="items-start">
+              <CardTitle>{company.name}</CardTitle>
 
-            <Spacer />
+              <Spacer />
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost">
-                  <SettingsIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <Link to={$path('/admin/:companyId/settings', { companyId })}>
-                    Config
-                  </Link>
-                </DropdownMenuItem>
-                {company.exportSetting && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost">
+                    <SettingsIcon className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
                   <DropdownMenuItem asChild>
-                    <Link to="export-setting">
-                      {company.exportSetting
-                        ? 'Export Settings'
-                        : 'Add Export Setting'}
+                    <Link
+                      to={$path('/admin/:companyId/settings', { companyId })}
+                    >
+                      Config
                     </Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link
-                    to={$path('/admin/:companyId/delete', { companyId })}
-                    className="text-destructive"
-                  >
-                    Delete
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </HStack>
+                  {company.exportSetting && (
+                    <DropdownMenuItem asChild>
+                      <Link to="export-setting">
+                        {company.exportSetting
+                          ? 'Export Settings'
+                          : 'Add Export Setting'}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={$path('/admin/:companyId/delete', { companyId })}
+                      className="text-destructive"
+                    >
+                      Delete
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </HStack>
+          </CardHeader>
 
-          <Separator />
+          <CardContent>
+            <Stack className="flex-1 gap-0 overflow-hidden bg-popover text-popover-foreground transition-colors">
+              <CompanyNavLink
+                to={$path('/admin/:companyId/users', { companyId })}
+              >
+                Users
+              </CompanyNavLink>
 
-          <Stack className="flex-1 gap-0 overflow-hidden bg-popover text-popover-foreground transition-colors">
-            <CompanyNavLink
-              to={$path('/admin/:companyId/users', { companyId })}
-            >
-              Users
-            </CompanyNavLink>
+              <CompanyNavLink
+                to={$path('/admin/:companyId/teams', { companyId })}
+              >
+                Teams
+              </CompanyNavLink>
 
-            <CompanyNavLink
-              to={$path('/admin/:companyId/teams', { companyId })}
-            >
-              Teams
-            </CompanyNavLink>
+              <CompanyNavLink
+                to={$path('/admin/:companyId/repositories', { companyId })}
+              >
+                Repositories
+              </CompanyNavLink>
+            </Stack>
+          </CardContent>
 
-            <CompanyNavLink
-              to={$path('/admin/:companyId/repositories', { companyId })}
-            >
-              Repositories
-            </CompanyNavLink>
-          </Stack>
-
-          <Separator />
-
-          <Stack>
+          <CardFooter>
             <CompanyNavLink
               to={$path('/admin/:companyId/settings', { companyId })}
             >
               Settings
             </CompanyNavLink>
-          </Stack>
+          </CardFooter>
         </Card>
       </div>
 

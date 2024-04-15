@@ -14,8 +14,8 @@ const AppLayout = ({ header, breadcrumbs, children }: AppLayoutProps) => {
     >
       {header}
 
-      <main className="max-w-screen flex flex-col overflow-auto bg-slate-200 py-2">
-        <div className="flex flex-1 flex-col md:container">
+      <main className="flex flex-col overflow-auto bg-slate-200 py-2">
+        <div className="flex flex-1 flex-col px-4">
           {breadcrumbs}
           <div className="flex-1">{children}</div>
         </div>

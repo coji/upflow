@@ -1,12 +1,15 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
+  Badge,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  HStack,
   Table,
   TableBody,
   TableCell,
@@ -15,23 +18,54 @@ import {
   TableRow,
 } from '~/app/components/ui'
 import { listPullRequests } from '~/app/models/admin/pull-requests.server'
+import { getRepository } from '~/app/models/admin/repository.server'
+
+export const handle = {
+  breadcrumb: ({
+    companyId,
+    repositoryId,
+    repository,
+  }: {
+    companyId: string
+    repositoryId: string
+    repository: Awaited<ReturnType<typeof getRepository>>
+  }) => ({
+    label: repository?.name,
+    to: $path('/admin/:companyId/repositories/:repositoryId', {
+      companyId,
+      repositoryId,
+    }),
+  }),
+}
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId, repositoryId } = zx.parseParams(params, {
     companyId: z.string(),
     repositoryId: z.string(),
   })
+
+  const repository = await getRepository(repositoryId)
+  if (!repository) {
+    throw new Response('repository not found', { status: 404 })
+  }
   const pulls = await listPullRequests(repositoryId)
-  return json({ companyId, repositoryId, pulls })
+
+  return json({ companyId, repositoryId, repository, pulls })
 }
 
 const RepositoryPullsIndexPage = () => {
-  const { pulls } = useLoaderData<typeof loader>()
+  const { companyId, repositoryId, repository, pulls } =
+    useLoaderData<typeof loader>()
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Pull Requests</CardTitle>
+        <CardTitle>
+          <HStack>
+            <div>{repository.name}</div>
+            <Badge variant="outline">repository</Badge>
+          </HStack>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="rounded-lg border shadow-sm">
@@ -58,7 +92,15 @@ const RepositoryPullsIndexPage = () => {
                         overflowWrap: 'anywhere',
                       }}
                     >
-                      <Link to={`${pull.number}`}>{pull.title}</Link>
+                      <Link
+                        className="underline"
+                        to={$path(
+                          '/admin/:companyId/repositories/:repositoryId/:pullId',
+                          { companyId, repositoryId, pullId: pull.number },
+                        )}
+                      >
+                        {pull.title}
+                      </Link>
                     </TableCell>
                   </TableRow>
                 )

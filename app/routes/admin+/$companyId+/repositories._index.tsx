@@ -1,6 +1,7 @@
 import { ExternalLinkIcon } from '@radix-ui/react-icons'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -27,11 +28,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-  return json({ company })
+  return json({ companyId, company })
 }
 
 export default function CompanyRepositoryIndexPage() {
-  const { company } = useLoaderData<typeof loader>()
+  const { companyId, company } = useLoaderData<typeof loader>()
 
   return (
     <Card>
@@ -75,15 +76,42 @@ export default function CompanyRepositoryIndexPage() {
                     <TableCell>
                       <HStack>
                         <Button asChild size="xs" variant="outline">
-                          <Link to={`${repo.id}`}>Pulls</Link>
+                          <Link
+                            to={$path(
+                              '/admin/:companyId/repositories/:repositoryId',
+                              {
+                                companyId,
+                                repositoryId: repo.id,
+                              },
+                            )}
+                          >
+                            Pulls
+                          </Link>
                         </Button>
 
                         <Button asChild size="xs" variant="outline">
-                          <Link to={`${repo.id}/edit`}>Edit</Link>
+                          <Link
+                            to={$path(
+                              '/admin/:companyId/repositories/:repositoryId/settings',
+                              {
+                                companyId,
+                                repositoryId: repo.id,
+                              },
+                            )}
+                          >
+                            Settings
+                          </Link>
                         </Button>
 
                         <Button asChild size="xs" variant="destructive">
-                          <Link to={`${repo.id}/delete`}>Delete</Link>
+                          <Link
+                            to={$path(
+                              '/admin/:companyId/repositories/:repositoryId/delete',
+                              { companyId, repositoryId: repo.id },
+                            )}
+                          >
+                            Delete
+                          </Link>
                         </Button>
                       </HStack>
                     </TableCell>

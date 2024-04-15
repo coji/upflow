@@ -12,6 +12,7 @@ import {
   type LoaderFunctionArgs,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
+import { $path } from 'remix-routes'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -38,7 +39,7 @@ import {
   updateRepository,
 } from '~/app/models/admin/repository.server'
 
-export const handle = { breadcrumb: () => ({ label: 'Edit Repository' }) }
+export const handle = { breadcrumb: () => ({ label: 'Edit' }) }
 
 const githubSchema = z.object({
   provider: z.literal('github'),
@@ -75,8 +76,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   })
   const formData = await request.formData()
   const entries = Object.fromEntries(formData.entries())
+
   await updateRepository(repositoryId, entries)
-  return redirect(`/admin/${companyId}`)
+
+  return redirect($path('/admin/:companyId/repositories', { companyId }))
 }
 
 const GithubRepositoryForm = ({
@@ -163,7 +166,9 @@ const EditRepositoryModal = () => {
             Update
           </Button>
           <Button asChild variant="ghost">
-            <Link to={`/admin/${companyId}/repository`}>Cancel</Link>
+            <Link to={$path('/admin/:companyId/repositories', { companyId })}>
+              Cancel
+            </Link>
           </Button>
         </Stack>
       </CardFooter>

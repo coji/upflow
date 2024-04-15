@@ -17,6 +17,7 @@ export const handle = {
   }: {
     companyId: string
     repositoryId: string
+    repository: Awaited<ReturnType<typeof getRepository>>
     pull: Awaited<ReturnType<typeof getPullRequest>>
   }) => ({
     label: pull?.number,
@@ -61,7 +62,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     reviews: await fetcher.reviews(pullId),
   }
 
-  return json({ companyId, repositoryId, pull, storeData, fetchData })
+  return json({
+    companyId,
+    repositoryId,
+    repository,
+    pull,
+    storeData,
+    fetchData,
+  })
 }
 
 const RepositoryPullsIndexPage = () => {
