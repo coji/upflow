@@ -36,7 +36,7 @@ import {
   Stack,
   Switch,
 } from '~/app/components/ui'
-import { getCompany, updateCompany } from '~/app/models/admin/company.server'
+import { getCompany, updateCompany } from './queries.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Config' }) }
 
@@ -46,17 +46,19 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('No company', { status: 404 })
   }
-  return { companyId, company }
+  console.log({ company })
+
+  return json({ companyId, company })
 }
 
 const schema = z.object({
   name: z.string().min(1, { message: 'name is required' }),
-  releaseDetectionMethod: z.enum(['branch', 'tags']),
-  releaseDetectionKey: z.string().nonempty(),
-  isActive: z
-    .string()
+  release_detection_method: z.enum(['branch', 'tags']),
+  release_detection_key: z.string(),
+  is_active: z
+    .literal('on')
     .optional()
-    .transform((val) => !!val),
+    .transform((val) => (val === 'on' ? 1 : 0)),
 })
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -84,9 +86,8 @@ const EditCompany = () => {
 
   const [
     form,
-    { isActive, name, releaseDetectionKey, releaseDetectionMethod },
+    { is_active, name, release_detection_key, release_detection_method },
   ] = useForm({
-    id: 'edit-company-form',
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
     defaultValue: company,
   })
@@ -106,17 +107,17 @@ const EditCompany = () => {
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={releaseDetectionMethod.id}>
+              <Label htmlFor={release_detection_method.id}>
                 Release Detection Method
               </Label>
               <Select
-                name={releaseDetectionMethod.name}
-                defaultValue={releaseDetectionMethod.initialValue}
+                name={release_detection_method.name}
+                defaultValue={release_detection_method.initialValue}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a method" />
                 </SelectTrigger>
-                <SelectContent {...getSelectProps(releaseDetectionMethod)}>
+                <SelectContent {...getSelectProps(release_detection_method)}>
                   <SelectGroup>
                     <SelectItem value="branch">Branch</SelectItem>
                     <SelectItem value="tags">Tags</SelectItem>
@@ -124,32 +125,32 @@ const EditCompany = () => {
                 </SelectContent>
               </Select>
               <div className="text-destructive">
-                {releaseDetectionMethod.errors}
+                {release_detection_method.errors}
               </div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={releaseDetectionKey.id}>
+              <Label htmlFor={release_detection_key.id}>
                 Release Detection Key
               </Label>
               <Input
-                {...getInputProps(releaseDetectionKey, { type: 'text' })}
+                {...getInputProps(release_detection_key, { type: 'text' })}
               />
               <div className="text-destructive">
-                {releaseDetectionKey.errors}
+                {release_detection_key.errors}
               </div>
             </fieldset>
 
             <fieldset>
               <HStack>
-                <Label htmlFor={isActive.id}>Active</Label>
+                <Label htmlFor={is_active.id}>Active</Label>
                 <Switch
-                  name={isActive.name}
-                  id={isActive.id}
-                  defaultChecked={!!isActive.initialValue}
+                  name={is_active.name}
+                  id={is_active.id}
+                  defaultChecked={is_active.initialValue === '1'}
                 />
               </HStack>
-              <div className="text-destructive">{isActive.errors}</div>
+              <div className="text-destructive">{is_active.errors}</div>
             </fieldset>
 
             {form.errors && (
