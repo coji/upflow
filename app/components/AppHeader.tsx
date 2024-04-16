@@ -25,7 +25,7 @@ import {
 interface AppHeaderProps {
   user?: SessionUser
   isAdmin?: boolean
-  companies?: Companies[]
+  companies?: Pick<Companies, 'id' | 'name'>[]
   selectedTeam?: Team
 }
 

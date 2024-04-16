@@ -26,7 +26,7 @@ export interface Team {
 
 interface TeamSwitcherProps
   extends React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger> {
-  companies: Companies[]
+  companies: Pick<Companies, 'id' | 'name'>[]
   selectedTeam?: Team
   isAdmin: boolean
 }
