@@ -19,7 +19,7 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
-import { createCompany } from '~/app/models/admin/company.server'
+import { createCompany } from './queries.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Create Company' }) }
 
@@ -41,15 +41,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (submission.status !== 'success') {
     return json(submission.reply())
   }
-  const company = await createCompany(submission.value)
-  if (!company) {
+  try {
+    const company = await createCompany(submission.value)
+    return redirect($path('/admin/:companyId', { companyId: company.id }))
+  } catch (e) {
     return json(
       submission.reply({
-        formErrors: ['Failed to create company'],
+        formErrors: [`Failed to create company: ${String(e)}`],
       }),
     )
   }
-  return redirect($path('/admin/:companyId', { companyId: company.id }))
 }
 
 const CompanyNewPage = () => {

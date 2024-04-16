@@ -1,4 +1,3 @@
-import type { Company, Team } from '@prisma/client'
 import { prisma } from '~/app/services/db.server'
 export type { Company, Team } from '@prisma/client'
 
@@ -11,25 +10,6 @@ export const getCompany = async (companyId: string) =>
       repositories: { orderBy: { name: 'asc' } },
       users: { include: { user: true } },
       exportSetting: true,
-    },
-  })
-
-export const createCompany = async ({
-  companyId,
-  companyName,
-  teamId,
-  teamName,
-}: {
-  companyId: Company['id']
-  companyName: Company['name']
-  teamId: Team['id']
-  teamName: Team['name']
-}) =>
-  prisma.company.create({
-    data: {
-      id: companyId,
-      name: companyName,
-      teams: { create: [{ id: teamName, name: teamName }] },
     },
   })
 
