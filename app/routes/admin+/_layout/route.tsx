@@ -4,7 +4,7 @@ import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireAdminUser } from '~/app/features/auth/services/user-session.server'
-import { listCompanies } from '~/app/models/admin/company.server'
+import { listCompanies } from './queries.server'
 
 export const meta: MetaFunction = () => [{ title: 'Upflow Admin' }]
 

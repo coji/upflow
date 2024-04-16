@@ -1,14 +1,6 @@
 import type { Company, Team } from '@prisma/client'
-import { db, prisma } from '~/app/services/db.server'
+import { prisma } from '~/app/services/db.server'
 export type { Company, Team } from '@prisma/client'
-
-export const listCompanies = async () => {
-  return await db
-    .selectFrom('companies')
-    .innerJoin('teams', 'companies.id', 'teams.company_id')
-    .select(['companies.id', 'companies.name', 'teams.id', 'teams.name'])
-    .execute()
-}
 
 export const getCompany = async (companyId: string) =>
   prisma.company.findUnique({

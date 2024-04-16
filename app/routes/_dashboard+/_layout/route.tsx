@@ -4,7 +4,7 @@ import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/user-session.server'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
-import { listCompanies } from '~/app/models/admin/company.server'
+import { listCompanies } from './queries.server'
 
 export const handle = {
   breadcrumb: () => ({ label: 'Dashboard', to: $path('/') }),

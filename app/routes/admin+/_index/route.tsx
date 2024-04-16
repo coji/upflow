@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '~/app/components/ui'
-import { listCompanies } from '~/app/models/admin/company.server'
+import { listCompanies } from './queries.server'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ companies: await listCompanies() })
