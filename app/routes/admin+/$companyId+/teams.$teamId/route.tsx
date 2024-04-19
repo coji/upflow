@@ -18,14 +18,17 @@ import {
   Spacer,
   Stack,
 } from '~/app/components/ui'
-import { listTeamRepository } from '~/app/models/admin/team-repository.server'
-import { listTeamUsers } from '~/app/models/admin/team-users.server'
-import { getTeam, type Team } from '~/app/models/admin/team.server'
+import {
+  getTeam,
+  listTeamRepositories,
+  listTeamUsers,
+  type Team,
+} from './queries.server'
 
 export const handle = {
   breadcrumb: ({ team }: { team: Team }) => ({
     label: team.name,
-    to: `/admin/${team.companyId}/team/${team.id}`,
+    to: `/admin/${team}/team/${team.id}`,
   }),
 }
 
@@ -35,17 +38,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     teamId: z.string(),
   })
 
-  const team = await getTeam(teamId)
+  const team = await getTeam(companyId, teamId)
   if (!team) {
-    throw new Response('Not Found', { status: 404 })
-  }
-  if (team.companyId !== companyId) {
     throw new Response('Not Found', { status: 404 })
   }
 
   const [users, repositories] = await Promise.all([
     listTeamUsers(teamId),
-    listTeamRepository(teamId),
+    listTeamRepositories(teamId),
   ])
 
   return json({ team, repositories, users })
@@ -71,13 +71,13 @@ export default function CompanyTeamIndex() {
           <CardContent>
             <Stack>
               {users.map((user) => (
-                <div key={user.userId}>
+                <div key={user.id}>
                   <HStack>
                     <Avatar>
-                      <AvatarImage src={user.user.pictureUrl ?? undefined} />
-                      <AvatarFallback>{user.user.displayName}</AvatarFallback>
+                      <AvatarImage src={user.picture_url ?? undefined} />
+                      <AvatarFallback>{user.display_name}</AvatarFallback>
                     </Avatar>
-                    <h3 className="font-medium">{user.user.displayName}</h3>
+                    <h3 className="font-medium">{user.display_name}</h3>
                     <Badge variant="secondary">{user.role}</Badge>
 
                     <Spacer />
@@ -106,7 +106,7 @@ export default function CompanyTeamIndex() {
           <CardContent>
             <Stack>
               {repositories.map((repository) => (
-                <div key={repository.repositoryId}>{repository.teamId}</div>
+                <div key={repository.repository_id}>{repository.team_id}</div>
               ))}
             </Stack>
           </CardContent>

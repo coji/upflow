@@ -15,12 +15,16 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   HStack,
   Input,
   Label,
   Stack,
 } from '~/app/components/ui'
-import { addTeam } from '~/app/models/admin/team.server'
+import { addTeam } from './mutations.server'
 
 const schema = z.object({
   id: z
@@ -47,7 +51,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const { id, name } = submission.value
   try {
-    await addTeam({ id, name, company: { connect: { id: companyId } } })
+    await addTeam({ id, name, company_id: companyId })
   } catch (e) {
     return json(
       submission.reply({
@@ -73,36 +77,43 @@ export default function TeamAddPage() {
   })
 
   return (
-    <Form method="POST" {...getFormProps(form)}>
-      <Stack>
-        <h3 className="text-md font-bold">Add Team</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Team</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form method="POST" {...getFormProps(form)}>
+          <Stack>
+            <fieldset>
+              <Label htmlFor={id.id}>ID</Label>
+              <Input {...getInputProps(id, { type: 'text' })} />
+              <div className="text-sm text-destructive">{id.errors}</div>
+            </fieldset>
 
-        <fieldset>
-          <Label htmlFor={id.id}>ID</Label>
-          <Input {...getInputProps(id, { type: 'text' })} />
-          <div className="text-sm text-destructive">{id.errors}</div>
-        </fieldset>
+            <fieldset>
+              <Label>Name</Label>
+              <Input {...getInputProps(name, { type: 'text' })} />
+              <div className="text-sm text-destructive">{name.errors}</div>
+            </fieldset>
 
-        <fieldset>
-          <Label>Name</Label>
-          <Input {...getInputProps(name, { type: 'text' })} />
-          <div className="text-sm text-destructive">{name.errors}</div>
-        </fieldset>
+            {form.errors && (
+              <Alert variant="destructive">
+                <AlertTitle>システムエラー</AlertTitle>
+                <AlertDescription>{form.errors}</AlertDescription>
+              </Alert>
+            )}
 
-        {form.errors && (
-          <Alert variant="destructive">
-            <AlertTitle>システムエラー</AlertTitle>
-            <AlertDescription>{form.errors}</AlertDescription>
-          </Alert>
-        )}
-
-        <HStack>
-          <Button asChild variant="ghost">
-            <Link to={$path('/admin/:companyId', { companyId })}>Cancel</Link>
-          </Button>
-          <Button type="submit">Create</Button>
-        </HStack>
-      </Stack>
-    </Form>
+            <HStack>
+              <Button asChild variant="ghost">
+                <Link to={$path('/admin/:companyId', { companyId })}>
+                  Cancel
+                </Link>
+              </Button>
+              <Button type="submit">Create</Button>
+            </HStack>
+          </Stack>
+        </Form>
+      </CardContent>
+    </Card>
   )
 }

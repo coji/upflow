@@ -30,7 +30,7 @@ import {
   Spacer,
   Stack,
 } from '~/app/components/ui'
-import { deleteTeam, getTeam, updateTeam } from '~/app/models/admin/team.server'
+import { deleteTeam, getTeam, updateTeam } from './functions.server'
 
 export const handle = {
   breadcrumb: ({
@@ -53,7 +53,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     companyId: z.string(),
     teamId: z.string(),
   })
-  const team = await getTeam(teamId)
+  const team = await getTeam(companyId, teamId)
   if (!team) {
     throw new Error('チームが見つかりません')
   }
@@ -107,7 +107,6 @@ export default function TeamDetailPage() {
   const { team } = useLoaderData<typeof loader>()
   const lastResult = useActionData<typeof action>()
   const [form, { name }] = useForm({
-    id: 'team-detail',
     defaultValue: team,
     lastResult,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
