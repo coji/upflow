@@ -20,19 +20,16 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import { getCompany } from '~/app/models/admin/company.server'
+import { listRepositories } from './queries.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const company = await getCompany(companyId)
-  if (!company) {
-    throw new Response('Company not found', { status: 404 })
-  }
-  return json({ companyId, company })
+  const repositories = await listRepositories(companyId)
+  return json({ companyId, repositories })
 }
 
 export default function CompanyRepositoryIndexPage() {
-  const { companyId, company } = useLoaderData<typeof loader>()
+  const { companyId, repositories } = useLoaderData<typeof loader>()
 
   return (
     <Card>
@@ -52,7 +49,7 @@ export default function CompanyRepositoryIndexPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {company.repositories.map((repo) => {
+              {repositories.map((repo) => {
                 const repoUrl = match(repo.provider)
                   .with(
                     'github',
@@ -69,9 +66,9 @@ export default function CompanyRepositoryIndexPage() {
                       </Link>
                     </TableCell>
 
-                    <TableCell>{repo.releaseDetectionKey}</TableCell>
+                    <TableCell>{repo.release_detection_key}</TableCell>
 
-                    <TableCell>{repo.releaseDetectionMethod}</TableCell>
+                    <TableCell>{repo.release_detection_method}</TableCell>
 
                     <TableCell>
                       <HStack>
@@ -124,11 +121,9 @@ export default function CompanyRepositoryIndexPage() {
       </CardContent>
       <CardFooter>
         <HStack>
-          {company.integration && (
-            <Button className="w-full" asChild>
-              <Link to="add">Add Repositories</Link>
-            </Button>
-          )}
+          <Button className="w-full" asChild>
+            <Link to="add">Add Repositories</Link>
+          </Button>
         </HStack>
       </CardFooter>
     </Card>
