@@ -1,11 +1,8 @@
-import {
-  json,
-  type LoaderFunctionArgs,
-  type MetaFunction,
-} from '@remix-run/node'
-import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
+import { Link, Outlet } from '@remix-run/react'
 import { SettingsIcon } from 'lucide-react'
 import { $path } from 'remix-routes'
+import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -24,8 +21,8 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
-import { getCompany } from '~/app/models/admin/company.server'
 import { CompanyNavLink } from './components'
+import { getCompany } from './functions.server'
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: `${data?.company.name} - Upflow Admin` },
@@ -39,7 +36,7 @@ export const handle = {
   }) => {
     return {
       label: company.name,
-      to: $path('/admin', { companyId: company.id }),
+      to: $path('/admin/:companyId', { companyId: company.id }),
     }
   },
 }
@@ -50,11 +47,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-  return json({ companyId, company })
+  return typedjson({ companyId, company })
 }
 
 export default function CompanyLayout() {
-  const { companyId, company } = useLoaderData<typeof loader>()
+  const { companyId, company } = useTypedLoaderData<typeof loader>()
   const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (
@@ -81,15 +78,10 @@ export default function CompanyLayout() {
                       Config
                     </Link>
                   </DropdownMenuItem>
-                  {company.exportSetting && (
-                    <DropdownMenuItem asChild>
-                      <Link to="export-setting">
-                        {company.exportSetting
-                          ? 'Export Settings'
-                          : 'Add Export Setting'}
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <Link to="export-setting">Export Settings</Link>
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem asChild>
                     <Link
                       to={$path('/admin/:companyId/delete', { companyId })}
