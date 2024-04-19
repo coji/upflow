@@ -4,7 +4,7 @@ import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { Card, CardContent, CardHeader, CardTitle } from '~/app/components/ui'
-import { listCompanyUsers } from '~/app/models/admin/company-users.server'
+import { listCompanyUsers } from './queries.server'
 
 export const handle = {
   breadcrumb: ({ companyId }: { companyId: string }) => ({
