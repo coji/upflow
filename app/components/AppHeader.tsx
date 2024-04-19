@@ -33,7 +33,7 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
           </Link>
         </Heading>
 
-        {user && <CompanySwitcher isAdmin={isAdmin} currentCompanyId="iris" />}
+        {user && <CompanySwitcher isAdmin={isAdmin} />}
       </HStack>
 
       <Spacer />
