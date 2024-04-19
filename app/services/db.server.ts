@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import SQLite from 'better-sqlite3'
+import createDebug from 'debug'
 import {
   Kysely,
   SqliteDialect,
@@ -10,6 +11,8 @@ import {
 } from 'kysely'
 import type * as DB from './type'
 
+const debug = createDebug('app:db')
+
 export { sql }
 export type { DB, Insertable, Selectable, Updateable }
 
@@ -17,6 +20,7 @@ export const db = new Kysely<DB.DB>({
   dialect: new SqliteDialect({
     database: new SQLite(new URL(process.env.DATABASE_URL).pathname),
   }),
+  log: (event) => debug(event.query.sql, event.query.parameters),
 })
 
 export const prisma = new PrismaClient({
@@ -27,5 +31,5 @@ export const prisma = new PrismaClient({
 })
 
 prisma.$on('query', (e) => {
-  console.log(`${e.query} ${e.params}`)
+  debug(`${e.query} ${e.params}`)
 })

@@ -1,7 +1,8 @@
 import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu'
 import { CaretSortIcon } from '@radix-ui/react-icons'
-import { Link } from '@remix-run/react'
-import { useState } from 'react'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { Link, useFetcher } from '@remix-run/react'
+import { useEffect, useState } from 'react'
 import {
   Avatar,
   AvatarFallback,
@@ -11,33 +12,38 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/app/components/ui'
+import { requireUser } from '~/app/features/auth/services/user-session.server'
 import { cn } from '~/app/libs/utils'
-
-export interface Companies {
-  id: string
-  name: string
-  teams: Team[]
-}
-
-export interface Team {
-  id: string
-  name: string
-}
+import { listUserCompanies } from './functions.server'
 
 interface TeamSwitcherProps
   extends React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger> {
-  companies: Pick<Companies, 'id' | 'name'>[]
-  selectedTeam?: Team
+  currentCompanyId?: string
   isAdmin: boolean
 }
 
-export const TeamSwitcher = ({
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const user = await requireUser(request)
+  const companies = await listUserCompanies(user.id)
+  return json({ user, companies })
+}
+
+export const CompanySwitcher = ({
   className,
-  companies,
-  selectedTeam,
+  currentCompanyId,
   isAdmin,
 }: TeamSwitcherProps) => {
+  const fetcher = useFetcher<typeof loader>()
   const [open, setOpen] = useState(false)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    fetcher.load('/resources/company')
+  }, [])
+
+  const currentCompany = fetcher.data?.companies.find(
+    (company) => company.id === currentCompanyId,
+  )
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -49,12 +55,12 @@ export const TeamSwitcher = ({
           aria-label="Select a team"
           className={cn('w-[10rem] justify-between md:w-[12rem]', className)}
         >
-          {selectedTeam ? (
+          {currentCompany ? (
             <>
               <Avatar className="mr-2 h-5 w-5">
-                <AvatarFallback>{selectedTeam.name}</AvatarFallback>
+                <AvatarFallback>{currentCompany.name}</AvatarFallback>
               </Avatar>
-              {selectedTeam.name}
+              {currentCompany.name}
               <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
             </>
           ) : (
@@ -63,7 +69,7 @@ export const TeamSwitcher = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[10rem] p-0 md:w-[12rem]">
-        {companies.map((company) => (
+        {fetcher.data?.companies.map((company) => (
           <DropdownMenuGroup key={company.id}>
             <DropdownMenuItem asChild>
               <Link to={isAdmin ? `/admin/${company.id}` : `/${company.id}`}>

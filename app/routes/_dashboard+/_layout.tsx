@@ -4,7 +4,6 @@ import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/user-session.server'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
-import { listCompanies } from './queries.server'
 
 export const handle = {
   breadcrumb: () => ({ label: 'Dashboard', to: $path('/') }),
@@ -12,17 +11,16 @@ export const handle = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request)
-  const companies = await listCompanies()
-  return json({ user, companies })
+  return json({ user })
 }
 
 const DashboardLayoutPage = () => {
-  const { user, companies } = useLoaderData<typeof loader>()
+  const { user } = useLoaderData<typeof loader>()
   const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (
     <AppLayout
-      header={<AppHeader user={user} companies={companies} />}
+      header={<AppHeader user={user} />}
       breadcrumbs={<AppBreadcrumbs />}
     >
       <Outlet />

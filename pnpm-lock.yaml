@@ -158,6 +158,9 @@ importers:
       dayjs:
         specifier: 1.11.10
         version: 1.11.10
+      debug:
+        specifier: 4.3.4
+        version: 4.3.4
       dotenv:
         specifier: 16.4.5
         version: 16.4.5
@@ -273,6 +276,9 @@ importers:
       '@types/compression':
         specifier: 1.7.5
         version: 1.7.5
+      '@types/debug':
+        specifier: 4.1.12
+        version: 4.1.12
       '@types/express':
         specifier: 4.17.21
         version: 4.17.21

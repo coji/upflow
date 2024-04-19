@@ -12,7 +12,7 @@ import {
   type SupportedSocialProviderProfile,
 } from './supported-social-provider.server'
 
-acceptLanguage.languages(['ja', 'en'])  
+acceptLanguage.languages(['ja', 'en'])
 
 export const verifyUser: StrategyVerifyCallback<
   SessionUser,
@@ -40,7 +40,10 @@ export const verifyUser: StrategyVerifyCallback<
         email,
         display_name: profile.displayName,
         picture_url: profile.photos?.[0].value,
-        locale: profile._json.locale ?? acceptLanguage.get(request.headers.get('accept-language')) ?? 'en',
+        locale:
+          profile._json.locale ??
+          acceptLanguage.get(request.headers.get('accept-language')) ??
+          'en',
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
       })
