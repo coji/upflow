@@ -5,13 +5,10 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import {
-  json,
-  redirect,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from '@remix-run/node'
-import { Form, Link, useLoaderData } from '@remix-run/react'
+import { json, type ActionFunctionArgs } from '@remix-run/node'
+import { Form } from '@remix-run/react'
+import { $path } from 'remix-routes'
+import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -36,20 +33,8 @@ import {
   Stack,
   Switch,
 } from '~/app/components/ui'
-import { getCompany, updateCompany } from './queries.server'
-
-export const handle = { breadcrumb: () => ({ label: 'Config' }) }
-
-export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const company = await getCompany(companyId)
-  if (!company) {
-    throw new Response('No company', { status: 404 })
-  }
-  console.log({ company })
-
-  return json({ companyId, company })
-}
+import type { DB, Selectable } from '~/app/services/db.server'
+import { updateCompany } from './mutations.server'
 
 const schema = z.object({
   name: z.string().min(1, { message: 'name is required' }),
@@ -71,23 +56,23 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   try {
     await updateCompany(companyId, submission.value)
   } catch (e) {
-    return json(
-      submission.reply({
-        formErrors: ['Failed to update company'],
-      }),
-    )
+    return json(submission.reply({ formErrors: ['Failed to update company'] }))
   }
 
-  return redirect(`/admin/${companyId}`)
+  return redirectWithSuccess(
+    $path('/admin/:companyId/settings', { companyId }),
+    {
+      message: 'Company updated successfully',
+    },
+  )
 }
 
-const EditCompany = () => {
-  const { companyId, company } = useLoaderData<typeof loader>()
-
-  const [
-    form,
-    { is_active, name, release_detection_key, release_detection_method },
-  ] = useForm({
+export const CompanySettings = ({
+  company,
+}: {
+  company: Selectable<DB.Company>
+}) => {
+  const [form, fields] = useForm({
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
     defaultValue: company,
   })
@@ -95,29 +80,37 @@ const EditCompany = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Company Settings</CardTitle>
+        <CardTitle>Company</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form method="POST" {...getFormProps(form)}>
+        <Form
+          method="POST"
+          action={$path('/admin/:companyId/settings/company', {
+            companyId: company.id,
+          })}
+          {...getFormProps(form)}
+        >
           <Stack>
             <fieldset>
-              <Label htmlFor={name.id}>Company Name</Label>
-              <Input {...getInputProps(name, { type: 'text' })} />
-              <div className="text-destructive">{name.errors}</div>
+              <Label htmlFor={fields.name.id}>Company Name</Label>
+              <Input {...getInputProps(fields.name, { type: 'text' })} />
+              <div className="text-destructive">{fields.name.errors}</div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={release_detection_method.id}>
+              <Label htmlFor={fields.release_detection_method.id}>
                 Release Detection Method
               </Label>
               <Select
-                name={release_detection_method.name}
-                defaultValue={release_detection_method.initialValue}
+                name={fields.release_detection_method.name}
+                defaultValue={fields.release_detection_method.initialValue}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a method" />
                 </SelectTrigger>
-                <SelectContent {...getSelectProps(release_detection_method)}>
+                <SelectContent
+                  {...getSelectProps(fields.release_detection_method)}
+                >
                   <SelectGroup>
                     <SelectItem value="branch">Branch</SelectItem>
                     <SelectItem value="tags">Tags</SelectItem>
@@ -125,32 +118,34 @@ const EditCompany = () => {
                 </SelectContent>
               </Select>
               <div className="text-destructive">
-                {release_detection_method.errors}
+                {fields.release_detection_method.errors}
               </div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={release_detection_key.id}>
+              <Label htmlFor={fields.release_detection_key.id}>
                 Release Detection Key
               </Label>
               <Input
-                {...getInputProps(release_detection_key, { type: 'text' })}
+                {...getInputProps(fields.release_detection_key, {
+                  type: 'text',
+                })}
               />
               <div className="text-destructive">
-                {release_detection_key.errors}
+                {fields.release_detection_key.errors}
               </div>
             </fieldset>
 
             <fieldset>
               <HStack>
-                <Label htmlFor={is_active.id}>Active</Label>
+                <Label htmlFor={fields.is_active.id}>Active</Label>
                 <Switch
-                  name={is_active.name}
-                  id={is_active.id}
-                  defaultChecked={is_active.initialValue === '1'}
+                  name={fields.is_active.name}
+                  id={fields.is_active.id}
+                  defaultChecked={fields.is_active.initialValue === '1'}
                 />
               </HStack>
-              <div className="text-destructive">{is_active.errors}</div>
+              <div className="text-destructive">{fields.is_active.errors}</div>
             </fieldset>
 
             {form.errors && (
@@ -167,13 +162,8 @@ const EditCompany = () => {
           <Button type="submit" form={form.id}>
             Update
           </Button>
-
-          <Button variant="ghost" asChild>
-            <Link to={`/admin/${companyId}`}>Cancel</Link>
-          </Button>
         </Stack>
       </CardFooter>
     </Card>
   )
 }
-export default EditCompany

@@ -73,13 +73,21 @@ export default function CompanyLayout() {
                 <DropdownMenuContent>
                   <DropdownMenuItem asChild>
                     <Link
-                      to={$path('/admin/:companyId/settings', { companyId })}
+                      to={$path('/admin/:companyId/settings', {
+                        companyId,
+                      })}
                     >
-                      Config
+                      Settings
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="export-setting">Export Settings</Link>
+                    <Link
+                      to={$path('/admin/:companyId/settings/export', {
+                        companyId,
+                      })}
+                    >
+                      Export Settings
+                    </Link>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem asChild>
