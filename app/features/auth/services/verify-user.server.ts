@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client'
+import acceptLanguage from 'accept-language'
 import { nanoid } from 'nanoid'
 import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
@@ -11,13 +12,15 @@ import {
   type SupportedSocialProviderProfile,
 } from './supported-social-provider.server'
 
+acceptLanguage.languages(['ja', 'en'])  
+
 export const verifyUser: StrategyVerifyCallback<
   SessionUser,
   OAuth2StrategyVerifyParams<
     SupportedSocialProviderProfile,
     SupportedSocialProviderExtraParams
   >
-> = async ({ profile }) => {
+> = async ({ request, profile }) => {
   invariant(
     isSupportedSocialProvider(profile.provider),
     'provider not supported',
@@ -37,7 +40,7 @@ export const verifyUser: StrategyVerifyCallback<
         email,
         display_name: profile.displayName,
         picture_url: profile.photos?.[0].value,
-        locale: profile._json.locale,
+        locale: profile._json.locale ?? acceptLanguage.get(request.headers.get('accept-language')) ?? 'en',
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
       })
