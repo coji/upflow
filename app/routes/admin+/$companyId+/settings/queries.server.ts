@@ -12,7 +12,6 @@ export const updateCompany = async (
   companyId: DB.Company['id'],
   data: Updateable<DB.Company>,
 ) => {
-  console.log({ data })
   return await db
     .updateTable('companies')
     .where('id', '==', companyId)
