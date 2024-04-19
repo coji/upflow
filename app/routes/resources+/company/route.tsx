@@ -4,8 +4,6 @@ import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
 import { useEffect, useState } from 'react'
 import {
-  Avatar,
-  AvatarFallback,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -15,12 +13,7 @@ import {
 import { requireUser } from '~/app/features/auth/services/user-session.server'
 import { cn } from '~/app/libs/utils'
 import { listUserCompanies } from './functions.server'
-
-interface TeamSwitcherProps
-  extends React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger> {
-  currentCompanyId?: string
-  isAdmin: boolean
-}
+import { useCurrentCompany } from './hooks/useCurrentCompany'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request)
@@ -28,11 +21,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ user, companies })
 }
 
+interface CompanySwitcherProps
+  extends React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger> {
+  isAdmin: boolean
+}
 export const CompanySwitcher = ({
   className,
-  currentCompanyId,
   isAdmin,
-}: TeamSwitcherProps) => {
+}: CompanySwitcherProps) => {
   const fetcher = useFetcher<typeof loader>()
   const [open, setOpen] = useState(false)
 
@@ -40,6 +36,8 @@ export const CompanySwitcher = ({
   useEffect(() => {
     fetcher.load('/resources/company')
   }, [])
+
+  const currentCompanyId = useCurrentCompany()
 
   const currentCompany = fetcher.data?.companies.find(
     (company) => company.id === currentCompanyId,
@@ -55,17 +53,10 @@ export const CompanySwitcher = ({
           aria-label="Select a team"
           className={cn('w-[10rem] justify-between md:w-[12rem]', className)}
         >
-          {currentCompany ? (
-            <>
-              <Avatar className="mr-2 h-5 w-5">
-                <AvatarFallback>{currentCompany.name}</AvatarFallback>
-              </Avatar>
-              {currentCompany.name}
-              <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-            </>
-          ) : (
-            <div>Select Company...</div>
-          )}
+          <div>
+            {currentCompany ? currentCompany.name : 'Select Company...'}
+          </div>
+          <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[10rem] p-0 md:w-[12rem]">
