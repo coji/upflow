@@ -11,8 +11,8 @@ import { z } from 'zod'
 import { zx } from 'zodix'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
 import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
-import { getIntegration } from '~/app/models/admin/integration.server'
 import { createRepository } from '~/app/models/admin/repository.server'
+import { getIntegration } from './queries.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
