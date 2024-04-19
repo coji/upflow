@@ -3,6 +3,7 @@ import { pipe, sortBy } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
 import { prisma } from '~/app/services/db.server'
 export type { PullRequest } from '@prisma/client'
+
 export const getMergedPullRequestReport = async (
   companyId: Company['id'],
   startDate: string,

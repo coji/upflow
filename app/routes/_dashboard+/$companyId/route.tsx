@@ -16,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '~/app/components/ui'
-import { getCompany } from '~/app/models/admin/company.server'
+import { getCompany } from './queries.server'
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: `${data?.company.name} - Upflow Admin` },
@@ -57,7 +57,7 @@ export default function CompanyLayout() {
         <Tabs value={tabValue}>
           <TabsList>
             <TabsTrigger value="dashboard" asChild>
-              <Link to={$path('/admin/:companyId', { companyId: company.id })}>
+              <Link to={$path('/:companyId', { companyId: company.id })}>
                 Dashboard
               </Link>
             </TabsTrigger>

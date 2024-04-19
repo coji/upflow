@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -10,28 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import { getCompany } from '~/app/models/admin/company.server'
-import { getMergedPullRequestReport } from './queries.server'
-import { getStartOfWeek } from './utils'
-
-export const meta: MetaFunction<typeof loader> = ({ data }) => [
-  { title: `${data?.company.name} - Upflow Admin` },
-]
+import { getMergedPullRequestReport, getStartOfWeek } from './functions.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const company = await getCompany(companyId)
-  if (!company) {
-    throw new Response('Company not found', { status: 404 })
-  }
   const startOfWeek = getStartOfWeek()
   const pullRequests = await getMergedPullRequestReport(companyId, startOfWeek)
-  return typedjson({ company, pullRequests, startOfWeek })
+  return typedjson({ companyId, pullRequests, startOfWeek })
 }
 
 export default function CompanyLayout() {
-  const { company, pullRequests, startOfWeek } =
-    useTypedLoaderData<typeof loader>()
+  const { companyId, pullRequests } = useTypedLoaderData<typeof loader>()
 
   return (
     <div>
@@ -48,7 +37,7 @@ export default function CompanyLayout() {
           </TableHeader>
           <TableBody>
             {pullRequests.map((pr) => (
-              <TableRow key={`${company.id}-${pr.repo}-${pr.number}`}>
+              <TableRow key={`${companyId}-${pr.repo}-${pr.number}`}>
                 <TableCell>
                   <a
                     href={pr.url}
