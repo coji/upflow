@@ -27,3 +27,28 @@ export const getIntegration = async (companyId: DB.Company['id']) => {
 export const createIntegration = async (data: Insertable<DB.Integration>) => {
   return await db.insertInto('integrations').values(data).execute()
 }
+
+export const insertExportSetting = async (
+  data: Insertable<DB.ExportSetting>,
+) => {
+  return await db
+    .insertInto('export_settings')
+    .values(data)
+    .onConflict((oc) =>
+      oc
+        .column('id')
+        .doUpdateSet({ ...data, updated_at: new Date().toISOString() }),
+    )
+    .execute()
+}
+
+export const updateExportSetting = async (
+  id: DB.ExportSetting['id'],
+  data: Updateable<DB.ExportSetting>,
+) => {
+  return await db
+    .updateTable('export_settings')
+    .where('id', '==', id)
+    .set({ ...data, updated_at: new Date().toISOString() })
+    .execute()
+}

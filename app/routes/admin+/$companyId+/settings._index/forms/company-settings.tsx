@@ -5,12 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { json, type ActionFunctionArgs } from '@remix-run/node'
-import { Form } from '@remix-run/react'
-import { $path } from 'remix-routes'
-import { redirectWithSuccess } from 'remix-toast'
-import { z } from 'zod'
-import { zx } from 'zodix'
+import { Form, useActionData } from '@remix-run/react'
 import {
   Alert,
   AlertDescription,
@@ -34,47 +29,22 @@ import {
   Switch,
 } from '~/app/components/ui'
 import type { DB, Selectable } from '~/app/services/db.server'
-import { updateCompany } from './mutations.server'
-
-const schema = z.object({
-  name: z.string().min(1, { message: 'name is required' }),
-  release_detection_method: z.enum(['branch', 'tags']),
-  release_detection_key: z.string(),
-  is_active: z
-    .literal('on')
-    .optional()
-    .transform((val) => (val === 'on' ? 1 : 0)),
-})
-
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const submission = await parseWithZod(await request.formData(), { schema })
-  if (submission.status !== 'success') {
-    return json(submission.reply())
-  }
-
-  try {
-    await updateCompany(companyId, submission.value)
-  } catch (e) {
-    return json(submission.reply({ formErrors: ['Failed to update company'] }))
-  }
-
-  return redirectWithSuccess(
-    $path('/admin/:companyId/settings', { companyId }),
-    {
-      message: 'Company updated successfully',
-    },
-  )
-}
+import { INTENTS, companySettingsSchema as schema } from '../types'
+import type { action } from './company-settings.action.server'
 
 export const CompanySettings = ({
   company,
 }: {
   company: Selectable<DB.Company>
 }) => {
+  const actionData = useActionData<typeof action>()
   const [form, fields] = useForm({
-    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
+    lastResult:
+      (actionData?.intent === INTENTS.companySettings &&
+        actionData?.lastResult) ||
+      undefined,
     defaultValue: company,
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
   return (
@@ -83,13 +53,7 @@ export const CompanySettings = ({
         <CardTitle>Company</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form
-          method="POST"
-          action={$path('/admin/:companyId/settings/company', {
-            companyId: company.id,
-          })}
-          {...getFormProps(form)}
-        >
+        <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
               <Label htmlFor={fields.name.id}>Company Name</Label>
@@ -159,7 +123,12 @@ export const CompanySettings = ({
       </CardContent>
       <CardFooter>
         <Stack direction="row">
-          <Button type="submit" form={form.id}>
+          <Button
+            type="submit"
+            form={form.id}
+            name="intent"
+            value={INTENTS.companySettings}
+          >
             Update
           </Button>
         </Stack>
