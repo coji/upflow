@@ -16,6 +16,10 @@ export const updateCompany = async (
     .execute()
 }
 
+export const deleteCompany = async (id: DB.Company['id']) => {
+  return await db.deleteFrom('companies').where('id', '==', id).execute()
+}
+
 export const createIntegration = async (data: Insertable<DB.Integration>) => {
   return await db.insertInto('integrations').values(data).execute()
 }

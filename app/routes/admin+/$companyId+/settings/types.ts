@@ -24,10 +24,18 @@ export const exportSettingsSchema = z.object({
   private_key: z.string(),
 })
 
+export const deleteCompanySchema = z.object({
+  company_id: z.string(),
+  confirm: z.string().regex(/delete this company/, {
+    message: 'type "delete this company" to confirm',
+  }),
+})
+
 export enum INTENTS {
   companySettings = 'company-settings',
   integrationSettings = 'integration-settings',
   exportSettings = 'export-settings',
+  deleteCompany = 'delete-company',
 }
 
 export const intentsSchema = z.nativeEnum(INTENTS)

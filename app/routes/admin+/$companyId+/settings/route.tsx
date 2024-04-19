@@ -4,12 +4,18 @@ import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { Stack } from '~/app/components/ui'
-import { CompanySettings } from './forms/company-settings'
-import { action as companySettingsAction } from './forms/company-settings.action.server'
-import { ExportSettings } from './forms/export-settings'
-import { action as exportSettingsAction } from './forms/export-settings.action.server'
-import { IntegrationSettings } from './forms/integration-settings'
-import { action as integrationSettingsAction } from './forms/integration-settings.action.server'
+import {
+  CompanySettings,
+  DeleteCompany,
+  ExportSettings,
+  IntegrationSettings,
+} from './forms'
+import {
+  companySettingsAction,
+  deleteCompanyAction,
+  exportSettingsAction,
+  integrationSettingsAction,
+} from './forms/actions.server'
 import {
   getCompany,
   getExportSetting,
@@ -51,7 +57,9 @@ export const action = async ({
     .with(INTENTS.exportSettings, () =>
       exportSettingsAction({ request, params, context }),
     )
-
+    .with(INTENTS.deleteCompany, () =>
+      deleteCompanyAction({ request, params, context }),
+    )
     .exhaustive()
 }
 
@@ -63,6 +71,7 @@ export default function CompanySettingsPage() {
       <CompanySettings company={company} />
       <IntegrationSettings integration={integration} />
       <ExportSettings exportSetting={exportSetting} />
+      <DeleteCompany company={company} />
     </Stack>
   )
 }
