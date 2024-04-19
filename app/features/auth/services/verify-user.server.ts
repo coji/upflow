@@ -39,7 +39,7 @@ export const verifyUser: StrategyVerifyCallback<
       email,
       displayName: profile.displayName,
       pictureUrl: profile.photos?.[0].value,
-      locale: profile._json.locale,
+      locale: profile._json.locale ?? 'ja',
     })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
