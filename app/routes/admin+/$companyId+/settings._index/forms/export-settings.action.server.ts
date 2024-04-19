@@ -5,16 +5,14 @@ import { jsonWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { insertExportSetting, updateExportSetting } from '../functions.server'
-import { exportSettingsSchema as schema } from '../types'
-
-const intent = 'export-settings' as const
+import { INTENTS, exportSettingsSchema as schema } from '../types'
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return json({
-      intent,
+      intent: INTENTS.exportSettings,
       lastResult: submission.reply(),
     })
   }
@@ -42,7 +40,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
   } catch (e) {
     return json({
-      intent,
+      intent: INTENTS.exportSettings,
       lastResult: submission.reply({
         formErrors: [`Error saving export settings: ${String(e)}`],
       }),
@@ -50,7 +48,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
   return jsonWithSuccess(
     {
-      intent,
+      intent: INTENTS.exportSettings,
       lastResult: submission.reply(),
     },
     {

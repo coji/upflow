@@ -1,23 +1,15 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { Link, Outlet } from '@remix-run/react'
-import { SettingsIcon } from 'lucide-react'
+import { Outlet } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
-  Button,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  HStack,
-  Spacer,
   Stack,
 } from '~/app/components/ui'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
@@ -59,48 +51,7 @@ export default function CompanyLayout() {
       <div>
         <Card className="w-60">
           <CardHeader>
-            <HStack className="items-start">
-              <CardTitle>{company.name}</CardTitle>
-
-              <Spacer />
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost">
-                    <SettingsIcon className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={$path('/admin/:companyId/settings', {
-                        companyId,
-                      })}
-                    >
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={$path('/admin/:companyId/settings/export', {
-                        companyId,
-                      })}
-                    >
-                      Export Settings
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={$path('/admin/:companyId/delete', { companyId })}
-                      className="text-destructive"
-                    >
-                      Delete
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </HStack>
+            <CardTitle>{company.name}</CardTitle>
           </CardHeader>
 
           <CardContent>

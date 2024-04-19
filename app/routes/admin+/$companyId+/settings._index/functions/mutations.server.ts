@@ -16,14 +16,6 @@ export const updateCompany = async (
     .execute()
 }
 
-export const getIntegration = async (companyId: DB.Company['id']) => {
-  return await db
-    .selectFrom('integrations')
-    .selectAll()
-    .where('company_id', '==', companyId)
-    .executeTakeFirst()
-}
-
 export const createIntegration = async (data: Insertable<DB.Integration>) => {
   return await db.insertInto('integrations').values(data).execute()
 }
@@ -31,15 +23,7 @@ export const createIntegration = async (data: Insertable<DB.Integration>) => {
 export const insertExportSetting = async (
   data: Insertable<DB.ExportSetting>,
 ) => {
-  return await db
-    .insertInto('export_settings')
-    .values(data)
-    .onConflict((oc) =>
-      oc
-        .column('id')
-        .doUpdateSet({ ...data, updated_at: new Date().toISOString() }),
-    )
-    .execute()
+  return await db.insertInto('export_settings').values(data).execute()
 }
 
 export const updateExportSetting = async (
@@ -50,5 +34,20 @@ export const updateExportSetting = async (
     .updateTable('export_settings')
     .where('id', '==', id)
     .set({ ...data, updated_at: new Date().toISOString() })
+    .execute()
+}
+
+export const insertIntegration = async (data: Insertable<DB.Integration>) => {
+  return await db.insertInto('integrations').values(data).execute()
+}
+
+export const updateIntegration = async (
+  id: DB.Integration['id'],
+  data: Updateable<DB.Integration>,
+) => {
+  return await db
+    .updateTable('integrations')
+    .where('id', '==', id)
+    .set(data)
     .execute()
 }

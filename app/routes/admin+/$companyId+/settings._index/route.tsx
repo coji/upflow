@@ -8,7 +8,13 @@ import { CompanySettings } from './forms/company-settings'
 import { action as companySettingsAction } from './forms/company-settings.action.server'
 import { ExportSettings } from './forms/export-settings'
 import { action as exportSettingsAction } from './forms/export-settings.action.server'
-import { getCompany, getExportSetting } from './functions/queries.server'
+import { IntegrationSettings } from './forms/integration-settings'
+import { action as integrationSettingsAction } from './forms/integration-settings.action.server'
+import {
+  getCompany,
+  getExportSetting,
+  getIntegration,
+} from './functions/queries.server'
 import { INTENTS, intentsSchema } from './types'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
@@ -18,7 +24,8 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     throw new Response('Company not found', { status: 404 })
   }
   const exportSetting = await getExportSetting(companyId)
-  return typedjson({ company, exportSetting })
+  const integration = await getIntegration(companyId)
+  return typedjson({ company, exportSetting, integration })
 }
 
 export const action = async ({
@@ -34,17 +41,27 @@ export const action = async ({
     .with(INTENTS.companySettings, () =>
       companySettingsAction({ request, params, context }),
     )
+    .with(INTENTS.integrationSettings, () =>
+      integrationSettingsAction({
+        request,
+        params,
+        context,
+      }),
+    )
     .with(INTENTS.exportSettings, () =>
       exportSettingsAction({ request, params, context }),
     )
+
     .exhaustive()
 }
 
 export default function CompanySettingsPage() {
-  const { company, exportSetting } = useTypedLoaderData<typeof loader>()
+  const { company, exportSetting, integration } =
+    useTypedLoaderData<typeof loader>()
   return (
     <Stack>
       <CompanySettings company={company} />
+      <IntegrationSettings integration={integration} />
       <ExportSettings exportSetting={exportSetting} />
     </Stack>
   )

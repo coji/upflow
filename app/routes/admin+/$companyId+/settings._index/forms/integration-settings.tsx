@@ -5,15 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import {
-  json,
-  redirect,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from '@remix-run/node'
-import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
-import { z } from 'zod'
-import { zx } from 'zodix'
+import { Form, useActionData } from '@remix-run/react'
 import Github from '~/app/components/icons/Github'
 import {
   Alert,
@@ -32,56 +24,27 @@ import {
   Stack,
   Textarea,
 } from '~/app/components/ui'
-import { createIntegration } from '~/app/models/admin/integration.server'
+import type { DB, Selectable } from '~/app/services/db.server'
+import { INTENTS, integrationSettingsSchema as schema } from '../types'
+import type { action } from './integration-settings.action.server'
 
-export const handle = { breadcrumb: () => ({ label: 'Add Integration' }) }
-
-const schema = z.object({
-  provider: z.enum(['github'], { required_error: 'provider is required' }),
-  method: z.enum(['token'], { required_error: 'token is required' }),
-  token: z.string().min(1, { message: 'token is required' }),
-})
-
-export const loader = ({ params }: LoaderFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  return { companyId }
+interface IntegrationSettingsProps {
+  integration?: Selectable<DB.Integration>
 }
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const submission = await parseWithZod(await request.formData(), { schema })
-  if (submission.status !== 'success') {
-    return json(submission.reply())
-  }
-
-  try {
-    await createIntegration({
-      companyId,
-      provider: submission.value.provider,
-      method: submission.value.method,
-      privateToken: submission.value.token,
-    })
-  } catch (e) {
-    return submission.reply({
-      formErrors: [`Integration creation failed: ${String(e)}`],
-    })
-  }
-
-  return redirect(`/admin/${companyId}`)
-}
-
-const AddIntegrationPage = () => {
-  const { companyId } = useLoaderData<typeof loader>()
-  const lastResult = useActionData<typeof action>()
-  const [form, { provider, method, token }] = useForm({
-    id: 'add-integration-form',
-    lastResult,
-    defaultValue: {
-      provider: 'github',
-      method: 'token',
-    },
+export const IntegrationSettings = ({
+  integration,
+}: IntegrationSettingsProps) => {
+  const actionData = useActionData<typeof action>()
+  const [form, { provider, method, private_token }] = useForm({
+    lastResult:
+      actionData?.intent === INTENTS.integrationSettings
+        ? actionData.lastResult
+        : undefined,
+    defaultValue: integration,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
+
   return (
     <Card>
       <CardHeader>
@@ -89,6 +52,12 @@ const AddIntegrationPage = () => {
       </CardHeader>
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
+          <input
+            type="hidden"
+            name="intent"
+            value={INTENTS.integrationSettings}
+          />
+          <input type="hidden" name="id" value={integration?.id} />
           <Stack>
             <fieldset>
               <Label htmlFor={provider.id}>Provider</Label>
@@ -118,9 +87,9 @@ const AddIntegrationPage = () => {
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={token.id}>Token</Label>
-              <Textarea {...getTextareaProps(token)} />
-              <div className="text-destructive">{token.errors}</div>
+              <Label htmlFor={private_token.id}>Private Token</Label>
+              <Textarea {...getTextareaProps(private_token)} />
+              <div className="text-destructive">{private_token.errors}</div>
             </fieldset>
 
             {form.errors && (
@@ -136,15 +105,10 @@ const AddIntegrationPage = () => {
       <CardFooter>
         <Stack direction="row">
           <Button type="submit" form={form.id}>
-            Add
-          </Button>
-          <Button asChild variant="ghost">
-            <Link to={`/admin/${companyId}`}>Cancel</Link>
+            Update
           </Button>
         </Stack>
       </CardFooter>
     </Card>
   )
 }
-AddIntegrationPage.displayName = 'AddIntegrationPage'
-export default AddIntegrationPage
