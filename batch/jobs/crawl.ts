@@ -1,5 +1,4 @@
-import { prisma } from '~/app/services/db.server'
-import { upsertPullRequest } from '~/batch/db/index'
+import { listAllCompanies, upsertPullRequest } from '~/batch/db'
 import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,
@@ -12,9 +11,7 @@ const options = { refresh: false, halt: false, delay: 1000 }
 export const crawlJob = async () => {
   logger.info('crawl started.')
 
-  const companies = await prisma.company.findMany({
-    include: { integration: true, repositories: true, exportSetting: true },
-  })
+  const companies = await listAllCompanies()
 
   for (const company of companies) {
     logger.info('company: ', company.name)

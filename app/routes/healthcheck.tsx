@@ -1,5 +1,5 @@
 import type { LoaderFunction } from '@remix-run/node'
-import { prisma } from '~/app/services/db.server'
+import { db, sql } from '~/app/services/db.server'
 
 export const loader: LoaderFunction = async ({ request }) => {
   const host =
@@ -10,7 +10,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     // if we can connect to the database and make a simple query
     // and make a HEAD request to ourselves, then we're good.
     await Promise.all([
-      prisma.$queryRaw`SELECT 1`,
+      sql`SELECT 1`.execute(db),
       fetch(url.toString(), { method: 'HEAD' }).then((r) => {
         if (!r.ok) return Promise.reject(r)
       }),

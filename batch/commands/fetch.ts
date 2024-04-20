@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant'
-import { prisma } from '~/app/services/db.server'
+import { getCompany } from '~/batch/db'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider'
 
@@ -22,10 +22,7 @@ export async function fetchCommand(props: FetchCommandProps) {
     return
   }
 
-  const company = await prisma.company.findFirstOrThrow({
-    where: { id: props.companyId },
-    include: { integration: true, repositories: true },
-  })
+  const company = await getCompany(props.companyId)
   invariant(company.integration, 'integration should related')
 
   const provider = createProvider(company.integration)

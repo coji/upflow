@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client'
 import SQLite from 'better-sqlite3'
 import createDebug from 'debug'
 import {
@@ -23,15 +22,4 @@ export const db = new Kysely<DB.DB>({
   }),
   log: (event) => debug(event.query.sql, event.query.parameters),
   plugins: [new CamelCasePlugin()],
-})
-
-export const prisma = new PrismaClient({
-  log:
-    process.env.NODE_ENV === 'production'
-      ? []
-      : [{ emit: 'event', level: 'query' }],
-})
-
-prisma.$on('query', (e) => {
-  debug(`${e.query} ${e.params}`)
 })

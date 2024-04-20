@@ -1,68 +1,73 @@
-import { PrismaClient } from '@prisma/client'
 import { nanoid } from 'nanoid'
-
-const prisma = new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })
-prisma.$on('query', (e) => {
-  console.log(`${e.query} ${e.params}`)
-})
+import { db, sql } from '~/app/services/db.server'
 
 async function seed() {
   const email = 'coji@techtalk.jp'
 
   // user
-  const user = await prisma.user.create({
-    data: {
+  const user = await db
+    .insertInto('users')
+    .values({
+      id: nanoid(),
       email,
       displayName: 'Coji Mizoguchi',
       locale: 'ja',
       role: 'admin',
-    },
-  })
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
 
   // company
-  const company = await prisma.company.create({
-    data: { id: 'techtalk', name: 'TechTalk' },
-  })
+  const company = await db
+    .insertInto('companies')
+    .values({
+      id: 'techtalk',
+      name: 'TechTalk',
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
 
   // company user
-  await prisma.companyUser.create({
-    data: {
-      company: { connect: { id: company.id } },
-      user: { connect: { id: user.id } },
+  await db
+    .insertInto('companyUsers')
+    .values({
+      companyId: company.id,
+      userId: user.id,
       role: 'admin',
-    },
-  })
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .execute()
 
   // integration
-  const integration = await prisma.integration.create({
-    data: {
+  const integration = await db
+    .insertInto('integrations')
+    .values({
+      id: nanoid(),
       provider: 'github',
       method: 'token',
       privateToken: process.env.INTEGRATION_PRIVATE_TOKEN,
-      company: { connect: { id: company.id } },
-    },
-  })
+      companyId: company.id,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
 
   // repository
-  await prisma.repository.create({
-    data: {
-      id: nanoid(),
-      provider: 'github',
-      owner: 'test',
-      repo: 'test',
-      integration: { connect: { id: integration.id } },
-      company: { connect: { id: company.id } },
-    },
+  await db.insertInto('repositories').values({
+    id: nanoid(),
+    provider: 'github',
+    owner: 'test',
+    repo: 'test',
+    integrationId: integration.id,
+    companyId: company.id,
+    updatedAt: sql`CURRENT_TIMESTAMP`,
   })
 
   console.log('Database has been seeded. 🌱')
 }
 
-seed()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+seed().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

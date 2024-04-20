@@ -1,4 +1,4 @@
-import { prisma } from '~/app/services/db.server'
+import { listAllCompanies } from '~/batch/db'
 
 export interface Config {
   companyId: string
@@ -9,35 +9,16 @@ export interface Config {
     method: string
     privateToken: string | null
   } | null
-  repositories: [
-    {
-      id: string
-      projectId: string
-    },
-  ]
+  repositories: { id: string }[]
 }
 
 export const allConfigs = async () => {
-  const configs = (
-    await prisma.company.findMany({
-      include: {
-        integration: {
-          select: {
-            id: true,
-            provider: true,
-            method: true,
-            privateToken: true,
-          },
-        },
-        repositories: { select: { id: true } },
-      },
-    })
-  ).map((company) => {
+  const configs = (await listAllCompanies()).map((company) => {
     return {
       companyId: company.id,
       companyName: company.name,
       integraiton: company.integration,
-      repositories: company.repositories,
+      repositories: company.repositories.map((repo) => ({ id: repo.id })),
     } as Config
   })
   return configs

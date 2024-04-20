@@ -1,21 +1,21 @@
-import type { Company } from '@prisma/client'
 import { pipe, sortBy } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import { prisma } from '~/app/services/db.server'
-export type { PullRequest } from '@prisma/client'
+import { db, type DB } from '~/app/services/db.server'
 
 export const getMergedPullRequestReport = async (
-  companyId: Company['id'],
+  companyId: DB.Company['id'],
   startDate: string,
 ) => {
-  const pullrequests = await prisma.pullRequest.findMany({
-    where: {
-      repository: { companyId },
-      mergedAt: { gt: startDate },
-      author: { not: { contains: '[bot]' } },
-    },
-    orderBy: [{ mergedAt: 'desc' }, { pullRequestCreatedAt: 'desc' }],
-  })
+  const pullrequests = await db
+    .selectFrom('pullRequests')
+    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .where('repositories.companyId', '==', companyId)
+    .where('mergedAt', '>', startDate)
+    .where('author', 'not like', '[bot]')
+    .orderBy('mergedAt', 'desc')
+    .orderBy('pullRequestCreatedAt', 'desc')
+    .selectAll('pullRequests')
+    .execute()
 
   return pipe(
     pullrequests.map((pr) => {

@@ -26,7 +26,6 @@
     "@epic-web/remember": "1.0.2",
     "@googleapis/sheets": "5.0.5",
     "@octokit/plugin-rest-endpoint-methods": "12.2.2",
-    "@prisma/client": "5.12.1",
     "@radix-ui/react-accordion": "1.1.2",
     "@radix-ui/react-alert-dialog": "1.0.5",
     "@radix-ui/react-aspect-ratio": "1.0.3",

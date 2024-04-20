@@ -1,6 +1,5 @@
 import invariant from 'tiny-invariant'
-import { prisma } from '~/app/services/db.server'
-import { getPullRequestReport } from '~/batch/db'
+import { getCompany, getPullRequestReport } from '~/batch/db'
 import { allConfigs } from '../config'
 import { timeFormat } from '../helper/timeformat'
 
@@ -19,10 +18,7 @@ export async function reportCommand({ companyId }: reportCommandProps) {
     return
   }
 
-  const company = await prisma.company.findFirstOrThrow({
-    where: { id: companyId },
-    include: { integration: true, repositories: true },
-  })
+  const company = await getCompany(companyId)
   invariant(company.integration, 'integration should related')
 
   console.log(

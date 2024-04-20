@@ -1,6 +1,6 @@
-import type { ExportSetting, PullRequest } from '@prisma/client'
 import dayjs from '~/app/libs/dayjs'
 import { createSheetApi } from '~/app/libs/sheets'
+import type { DB, Selectable } from '~/app/services/db.server'
 import { timeFormat } from '../helper/timeformat'
 
 const escapeTabString = (str: string) => {
@@ -11,8 +11,8 @@ const escapeTabString = (str: string) => {
  * @param exportSetting
  */
 export const exportPullsToSpreadsheet = async (
-  pullrequests: PullRequest[],
-  exportSetting: ExportSetting,
+  pullrequests: Selectable<DB.PullRequest>[],
+  exportSetting: Selectable<DB.ExportSetting>,
 ) => {
   const tz = 'Asia/Tokyo'
   const sheet = createSheetApi({
@@ -86,7 +86,7 @@ export const exportReviewResponsesToSpreadsheet = async (
     createdAt: string
     responseTime: number
   }[],
-  exportSetting: ExportSetting,
+  exportSetting: Selectable<DB.ExportSetting>,
 ) => {
   const tz = 'Asia/Tokyo'
   const sheet = createSheetApi({
