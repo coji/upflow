@@ -1,5 +1,7 @@
+import { config } from 'dotenv'
 import { nanoid } from 'nanoid'
 import { db, sql } from '~/app/services/db.server'
+config()
 
 async function seed() {
   const email = 'coji@techtalk.jp'
