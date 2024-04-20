@@ -1,5 +1,5 @@
-import { upsertPullRequest } from '~/app/models/pullRequest.server'
 import { prisma } from '~/app/services/db.server'
+import { upsertPullRequest } from '~/batch/db/index'
 import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,

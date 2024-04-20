@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant'
-import { getPullRequestReport } from '~/app/models/pullRequest.server'
 import { prisma } from '~/app/services/db.server'
+import { getPullRequestReport } from '~/batch/db'
 import { allConfigs } from '../config'
 import { timeFormat } from '../helper/timeformat'
 
