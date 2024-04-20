@@ -1,5 +1,7 @@
+import { nanoid } from 'nanoid'
 import {
   db,
+  sql,
   type DB,
   type Insertable,
   type Updateable,
@@ -24,34 +26,37 @@ export const createIntegration = async (data: Insertable<DB.Integration>) => {
   return await db.insertInto('integrations').values(data).execute()
 }
 
-export const insertExportSetting = async (
-  data: Insertable<DB.ExportSetting>,
-) => {
-  return await db.insertInto('exportSettings').values(data).execute()
-}
-
-export const updateExportSetting = async (
-  id: DB.ExportSetting['id'],
-  data: Updateable<DB.ExportSetting>,
+export const upsertIntegration = async (
+  id: DB.Integration['id'] | undefined,
+  data: Omit<Insertable<DB.Integration>, 'id'>,
 ) => {
   return await db
-    .updateTable('exportSettings')
-    .where('id', '==', id)
-    .set({ ...data, updatedAt: new Date().toISOString() })
+    .insertInto('integrations')
+    .values({ id: id ?? nanoid(), ...data })
+    .onConflict((oc) =>
+      oc.column('id').doUpdateSet((eb) => ({
+        provider: eb.ref('excluded.provider'),
+        method: eb.ref('excluded.method'),
+        privateToken: eb.ref('excluded.privateToken'),
+      })),
+    )
     .execute()
 }
 
-export const insertIntegration = async (data: Insertable<DB.Integration>) => {
-  return await db.insertInto('integrations').values(data).execute()
-}
-
-export const updateIntegration = async (
-  id: DB.Integration['id'],
-  data: Updateable<DB.Integration>,
+export const upsertExportSetting = async (
+  id: DB.ExportSetting['id'] | undefined,
+  data: Omit<Insertable<DB.ExportSetting>, 'id' | 'updatedAt'>,
 ) => {
   return await db
-    .updateTable('integrations')
-    .where('id', '==', id)
-    .set(data)
+    .insertInto('exportSettings')
+    .values({ id: id ?? nanoid(), ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
+    .onConflict((oc) =>
+      oc.column('id').doUpdateSet((eb) => ({
+        sheetId: eb.ref('excluded.sheetId'),
+        clientEmail: eb.ref('excluded.clientEmail'),
+        privateKey: eb.ref('excluded.privateKey'),
+        updatedAt: eb.ref('excluded.updatedAt'),
+      })),
+    )
     .execute()
 }

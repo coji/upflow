@@ -1,10 +1,9 @@
 import { parseWithZod } from '@conform-to/zod'
 import { json, type ActionFunctionArgs } from '@remix-run/node'
-import { nanoid } from 'nanoid'
 import { jsonWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { insertExportSetting, updateExportSetting } from '../functions.server'
+import { upsertExportSetting } from '../functions.server'
 import { INTENTS, exportSettingsSchema as schema } from '../types'
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -19,25 +18,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   try {
     const { id, sheetId, clientEmail, privateKey } = submission.value
-    if (id) {
-      await updateExportSetting(id, {
-        companyId,
-        sheetId,
-        clientEmail,
-        privateKey,
-        updatedAt: new Date().toISOString(),
-      })
-    } else {
-      await insertExportSetting({
-        id: nanoid(),
-        companyId,
-        sheetId,
-        clientEmail,
-        privateKey,
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      })
-    }
+    await upsertExportSetting(id, {
+      companyId,
+      sheetId,
+      clientEmail,
+      privateKey,
+    })
   } catch (e) {
     return json({
       intent: INTENTS.exportSettings,

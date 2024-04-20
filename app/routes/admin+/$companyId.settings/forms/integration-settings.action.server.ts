@@ -1,10 +1,9 @@
 import { parseWithZod } from '@conform-to/zod'
 import { json, type ActionFunctionArgs } from '@remix-run/node'
-import { nanoid } from 'nanoid'
 import { jsonWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { insertIntegration, updateIntegration } from '../functions.server'
+import { upsertIntegration } from '../functions.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../types'
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -19,16 +18,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   try {
     const { id, ...rest } = submission.value
-    if (id) {
-      await updateIntegration(id, rest)
-    } else {
-      await insertIntegration({ id: nanoid(), companyId, ...rest })
-    }
+    await upsertIntegration(id, { ...rest, companyId })
   } catch (e) {
     return json({
       intent: INTENTS.integrationSettings,
       lastResult: submission.reply({
-        formErrors: [`Integration creation failed: ${String(e)}`],
+        formErrors: [`Integration upsert failed: ${String(e)}`],
       }),
     })
   }
