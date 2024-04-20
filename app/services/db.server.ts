@@ -16,6 +16,8 @@ const debug = createDebug('app:db')
 export { sql }
 export type { DB, Insertable, Selectable, Updateable }
 
+console.log(process.env.DATABASE_URL)
+
 export const db = new Kysely<DB.DB>({
   dialect: new SqliteDialect({
     database: new SQLite(new URL(process.env.DATABASE_URL).pathname),
