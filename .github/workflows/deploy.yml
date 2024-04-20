@@ -26,7 +26,7 @@ jobs:
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 8
+          version: 9
           run_install: false
 
       - name: Get pnpm store directory
@@ -71,7 +71,7 @@ jobs:
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 8
+          version: 9
           run_install: false
 
       - name: Get pnpm store directory
@@ -121,7 +121,7 @@ jobs:
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 8
+          version: 9
           run_install: false
 
       - name: Get pnpm store directory
@@ -141,7 +141,7 @@ jobs:
         run: pnpm install
 
       - name: 🛠 Setup Database
-        run: pnpm prisma migrate reset --force
+        run: pnpm prisma migrate reset --force --skip-generate
 
       - name: ⚡ Run vitest
         run: pnpm run test

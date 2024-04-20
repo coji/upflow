@@ -56,15 +56,18 @@ async function seed() {
     .executeTakeFirstOrThrow()
 
   // repository
-  await db.insertInto('repositories').values({
-    id: nanoid(),
-    provider: 'github',
-    owner: 'test',
-    repo: 'test',
-    integrationId: integration.id,
-    companyId: company.id,
-    updatedAt: sql`CURRENT_TIMESTAMP`,
-  })
+  await db
+    .insertInto('repositories')
+    .values({
+      id: nanoid(),
+      provider: 'github',
+      owner: 'test',
+      repo: 'test',
+      integrationId: integration.id,
+      companyId: company.id,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .execute()
 
   console.log('Database has been seeded. 🌱')
 }
