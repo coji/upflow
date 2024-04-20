@@ -51,7 +51,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const { id, name } = submission.value
   try {
-    await addTeam({ id, name, company_id: companyId })
+    await addTeam({ id, name, companyId })
   } catch (e) {
     return json(
       submission.reply({
@@ -116,4 +116,7 @@ export default function TeamAddPage() {
       </CardContent>
     </Card>
   )
+}
+function jsonWithRedirect(arg0: string, arg1: string) {
+  throw new Error('Function not implemented.')
 }

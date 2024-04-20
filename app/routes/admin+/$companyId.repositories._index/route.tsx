@@ -66,9 +66,9 @@ export default function CompanyRepositoryIndexPage() {
                       </Link>
                     </TableCell>
 
-                    <TableCell>{repo.release_detection_key}</TableCell>
+                    <TableCell>{repo.releaseDetectionKey}</TableCell>
 
-                    <TableCell>{repo.release_detection_method}</TableCell>
+                    <TableCell>{repo.releaseDetectionMethod}</TableCell>
 
                     <TableCell>
                       <HStack>

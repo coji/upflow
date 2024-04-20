@@ -38,21 +38,21 @@ export const verifyUser: StrategyVerifyCallback<
       .values({
         id: nanoid(),
         email,
-        display_name: profile.displayName,
-        picture_url: profile.photos?.[0].value,
+        displayName: profile.displayName,
+        pictureUrl: profile.photos?.[0].value,
         locale:
           profile._json.locale ??
           acceptLanguage.get(request.headers.get('accept-language')) ??
           'en',
-        updated_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       })
       .onConflict((oc) =>
         oc.column('email').doUpdateSet({
-          display_name: profile.displayName,
-          picture_url: profile.photos?.[0].value,
+          displayName: profile.displayName,
+          pictureUrl: profile.photos?.[0].value,
           locale: profile._json.locale,
-          updated_at: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         }),
       )
       .returningAll()
@@ -73,12 +73,5 @@ export const verifyUser: StrategyVerifyCallback<
     throw new Error(errorMessages.join('\n'))
   }
 
-  return {
-    displayName: user.display_name,
-    email: user.email,
-    id: user.id,
-    locale: user.locale,
-    pictureUrl: user.picture_url,
-    role: user.role,
-  } satisfies SessionUser
+  return user
 }

@@ -4,6 +4,6 @@ export const getIntegration = async (companyId: DB.Company['id']) => {
   return await db
     .selectFrom('integrations')
     .selectAll()
-    .where('company_id', '==', companyId)
+    .where('companyId', '==', companyId)
     .executeTakeFirst()
 }

@@ -4,6 +4,6 @@ export const listRepositories = async (companyId: DB.Company['id']) => {
   return await db
     .selectFrom('repositories')
     .selectAll()
-    .where('repositories.company_id', '==', companyId)
+    .where('repositories.companyId', '==', companyId)
     .execute()
 }

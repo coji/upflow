@@ -27,7 +27,7 @@ interface ExportSettingsProps {
 
 export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
   const actionData = useActionData<typeof action>()
-  const [form, { id, sheet_id, client_email, private_key }] = useForm({
+  const [form, { id, sheetId, clientEmail, privateKey }] = useForm({
     lastResult:
       (actionData?.intent === INTENTS.exportSettings &&
         actionData?.lastResult) ||
@@ -46,21 +46,21 @@ export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
           <input type="hidden" name="id" defaultValue={id.value} />
           <Stack>
             <fieldset>
-              <Label htmlFor={sheet_id.id}>Sheet Id</Label>
-              <Input {...getInputProps(sheet_id, { type: 'text' })} />
-              <div className="text-destructive">{sheet_id.errors}</div>
+              <Label htmlFor={sheetId.id}>Sheet Id</Label>
+              <Input {...getInputProps(sheetId, { type: 'text' })} />
+              <div className="text-destructive">{sheetId.errors}</div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={client_email.id}>Client Email</Label>
-              <Input {...getInputProps(client_email, { type: 'text' })} />
-              <div className="text-destructive">{client_email.errors}</div>
+              <Label htmlFor={clientEmail.id}>Client Email</Label>
+              <Input {...getInputProps(clientEmail, { type: 'text' })} />
+              <div className="text-destructive">{clientEmail.errors}</div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={private_key.id}>Private Key</Label>
-              <Textarea {...getInputProps(private_key, { type: 'text' })} />
-              <div className="text-destructive">{private_key.errors}</div>
+              <Label htmlFor={privateKey.id}>Private Key</Label>
+              <Textarea {...getInputProps(privateKey, { type: 'text' })} />
+              <div className="text-destructive">{privateKey.errors}</div>
             </fieldset>
           </Stack>
 

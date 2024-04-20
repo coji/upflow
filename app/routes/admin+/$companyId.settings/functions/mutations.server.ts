@@ -12,7 +12,7 @@ export const updateCompany = async (
   return await db
     .updateTable('companies')
     .where('id', '==', id)
-    .set({ ...data, updated_at: new Date().toISOString() })
+    .set({ ...data, updatedAt: new Date().toISOString() })
     .execute()
 }
 
@@ -27,7 +27,7 @@ export const createIntegration = async (data: Insertable<DB.Integration>) => {
 export const insertExportSetting = async (
   data: Insertable<DB.ExportSetting>,
 ) => {
-  return await db.insertInto('export_settings').values(data).execute()
+  return await db.insertInto('exportSettings').values(data).execute()
 }
 
 export const updateExportSetting = async (
@@ -35,9 +35,9 @@ export const updateExportSetting = async (
   data: Updateable<DB.ExportSetting>,
 ) => {
   return await db
-    .updateTable('export_settings')
+    .updateTable('exportSettings')
     .where('id', '==', id)
-    .set({ ...data, updated_at: new Date().toISOString() })
+    .set({ ...data, updatedAt: new Date().toISOString() })
     .execute()
 }
 

@@ -62,18 +62,18 @@ export const CompanySettings = ({
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={fields.release_detection_method.id}>
+              <Label htmlFor={fields.releaseDetectionMethod.id}>
                 Release Detection Method
               </Label>
               <Select
-                name={fields.release_detection_method.name}
-                defaultValue={fields.release_detection_method.initialValue}
+                name={fields.releaseDetectionMethod.name}
+                defaultValue={fields.releaseDetectionMethod.initialValue}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a method" />
                 </SelectTrigger>
                 <SelectContent
-                  {...getSelectProps(fields.release_detection_method)}
+                  {...getSelectProps(fields.releaseDetectionMethod)}
                 >
                   <SelectGroup>
                     <SelectItem value="branch">Branch</SelectItem>
@@ -82,34 +82,34 @@ export const CompanySettings = ({
                 </SelectContent>
               </Select>
               <div className="text-destructive">
-                {fields.release_detection_method.errors}
+                {fields.releaseDetectionMethod.errors}
               </div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={fields.release_detection_key.id}>
+              <Label htmlFor={fields.releaseDetectionKey.id}>
                 Release Detection Key
               </Label>
               <Input
-                {...getInputProps(fields.release_detection_key, {
+                {...getInputProps(fields.releaseDetectionKey, {
                   type: 'text',
                 })}
               />
               <div className="text-destructive">
-                {fields.release_detection_key.errors}
+                {fields.releaseDetectionKey.errors}
               </div>
             </fieldset>
 
             <fieldset>
               <HStack>
-                <Label htmlFor={fields.is_active.id}>Active</Label>
+                <Label htmlFor={fields.isActive.id}>Active</Label>
                 <Switch
-                  name={fields.is_active.name}
-                  id={fields.is_active.id}
-                  defaultChecked={fields.is_active.initialValue === '1'}
+                  name={fields.isActive.name}
+                  id={fields.isActive.id}
+                  defaultChecked={fields.isActive.initialValue === '1'}
                 />
               </HStack>
-              <div className="text-destructive">{fields.is_active.errors}</div>
+              <div className="text-destructive">{fields.isActive.errors}</div>
             </fieldset>
 
             {form.errors && (

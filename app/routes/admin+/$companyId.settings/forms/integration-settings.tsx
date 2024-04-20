@@ -36,7 +36,7 @@ export const IntegrationSettings = ({
   integration,
 }: IntegrationSettingsProps) => {
   const actionData = useActionData<typeof action>()
-  const [form, { provider, method, private_token }] = useForm({
+  const [form, { provider, method, privateToken }] = useForm({
     lastResult:
       actionData?.intent === INTENTS.integrationSettings
         ? actionData.lastResult
@@ -48,7 +48,7 @@ export const IntegrationSettings = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add integration</CardTitle>
+        <CardTitle>Integration</CardTitle>
       </CardHeader>
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
@@ -87,9 +87,9 @@ export const IntegrationSettings = ({
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={private_token.id}>Private Token</Label>
-              <Textarea {...getTextareaProps(private_token)} />
-              <div className="text-destructive">{private_token.errors}</div>
+              <Label htmlFor={privateToken.id}>Private Token</Label>
+              <Textarea {...getTextareaProps(privateToken)} />
+              <div className="text-destructive">{privateToken.errors}</div>
             </fieldset>
 
             {form.errors && (

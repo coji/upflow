@@ -3,35 +3,35 @@ import { db, type DB, type Selectable } from '~/app/services/db.server'
 export type Team = Selectable<DB.Team>
 
 export const getTeam = async (
-  companyId: DB.Team['company_id'],
+  companyId: DB.Team['companyId'],
   teamId: DB.Team['id'],
 ) => {
   return await db
     .selectFrom('teams')
     .selectAll()
-    .where('company_id', '==', companyId)
+    .where('companyId', '==', companyId)
     .where('id', '==', teamId)
     .executeTakeFirst()
 }
 
 export const listTeamUsers = async (teamId: DB.Team['id']) => {
   return await db
-    .selectFrom('team_users')
-    .innerJoin('users', 'team_users.user_id', 'users.id')
+    .selectFrom('teamUsers')
+    .innerJoin('users', 'teamUsers.userId', 'users.id')
     .select([
       'users.id as id',
-      'users.display_name as display_name',
-      'users.picture_url as picture_url',
-      'team_users.role as role',
+      'users.displayName as displayName',
+      'users.pictureUrl as pictureUrl',
+      'teamUsers.role as role',
     ])
-    .where('team_id', '==', teamId)
+    .where('teamId', '==', teamId)
     .execute()
 }
 
 export const listTeamRepositories = async (teamId: DB.Team['id']) => {
   return await db
-    .selectFrom('team_repositories')
+    .selectFrom('teamRepositories')
     .selectAll()
-    .where('team_id', '==', teamId)
+    .where('teamId', '==', teamId)
     .execute()
 }

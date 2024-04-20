@@ -29,7 +29,7 @@ export const DeleteCompany = ({ company }: DeleteCompanyProps) => {
       (actionData?.intent === INTENTS.deleteCompany && actionData.lastResult) ||
       undefined,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
-    shouldRevalidate: 'onInput',
+    shouldValidate: 'onInput',
   })
 
   return (
@@ -47,14 +47,14 @@ export const DeleteCompany = ({ company }: DeleteCompanyProps) => {
             <div> {company.name}</div>
 
             <Label>Updated At</Label>
-            <div> {dayjs(company.updated_at).fromNow()}</div>
+            <div> {dayjs(company.updatedAt).fromNow()}</div>
 
             <Label>Created At</Label>
-            <div> {dayjs(company.created_at).fromNow()}</div>
+            <div> {dayjs(company.createdAt).fromNow()}</div>
           </div>
 
           <Form method="POST" {...getFormProps(form)}>
-            <input type="hidden" name="company_id" value={company.id} />
+            <input type="hidden" name="companyId" value={company.id} />
             <Input
               {...getInputProps(confirm, { type: 'text' })}
               placeholder="type 'delete this company' here"

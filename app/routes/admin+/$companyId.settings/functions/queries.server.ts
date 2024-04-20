@@ -10,9 +10,9 @@ export const getCompany = async (companyId: DB.Company['id']) => {
 
 export const getExportSetting = async (companyId: DB.Company['id']) => {
   return await db
-    .selectFrom('export_settings')
+    .selectFrom('exportSettings')
     .selectAll()
-    .where('company_id', '==', companyId)
+    .where('companyId', '==', companyId)
     .executeTakeFirst()
 }
 
@@ -20,6 +20,6 @@ export const getIntegration = async (companyId: DB.Company['id']) => {
   return await db
     .selectFrom('integrations')
     .selectAll()
-    .where('company_id', '==', companyId)
+    .where('companyId', '==', companyId)
     .executeTakeFirst()
 }

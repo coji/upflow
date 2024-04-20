@@ -13,7 +13,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     })
   }
 
-  await deleteCompany(submission.value.company_id)
+  await deleteCompany(submission.value.companyId)
 
   return redirect($path('/admin'))
 }

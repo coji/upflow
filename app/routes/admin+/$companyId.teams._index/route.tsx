@@ -54,8 +54,8 @@ export default function TeamIndexPage() {
                   <TableRow key={team.id}>
                     <TableCell>{team.id}</TableCell>
                     <TableCell>{team.name}</TableCell>
-                    <TableCell>{team.user_count}</TableCell>
-                    <TableCell>{team.repository_count}</TableCell>
+                    <TableCell>{team.userCount}</TableCell>
+                    <TableCell>{team.repositoryCount}</TableCell>
                     <TableCell>
                       <Button size="xs" variant="outline" asChild>
                         <Link to={`./${team.id}`}>詳細</Link>

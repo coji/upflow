@@ -22,7 +22,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     if (id) {
       await updateIntegration(id, rest)
     } else {
-      await insertIntegration({ id: nanoid(), company_id: companyId, ...rest })
+      await insertIntegration({ id: nanoid(), companyId, ...rest })
     }
   } catch (e) {
     return json({

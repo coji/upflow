@@ -4,7 +4,7 @@ export const listUserCompanies = async (userId: string) => {
   const teams = await db
     .selectFrom('companies')
     .select(['id', 'name'])
-    .orderBy('companies.created_at')
+    .orderBy('companies.createdAt')
     .execute()
   return teams
 }

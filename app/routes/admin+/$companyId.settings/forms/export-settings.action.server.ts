@@ -18,24 +18,24 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
 
   try {
-    const { id, sheet_id, client_email, private_key } = submission.value
+    const { id, sheetId, clientEmail, privateKey } = submission.value
     if (id) {
       await updateExportSetting(id, {
-        company_id: companyId,
-        sheet_id,
-        client_email,
-        private_key,
-        updated_at: new Date().toISOString(),
+        companyId,
+        sheetId,
+        clientEmail,
+        privateKey,
+        updatedAt: new Date().toISOString(),
       })
     } else {
       await insertExportSetting({
         id: nanoid(),
-        company_id: companyId,
-        sheet_id,
-        client_email,
-        private_key,
-        updated_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
+        companyId,
+        sheetId,
+        clientEmail,
+        privateKey,
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       })
     }
   } catch (e) {

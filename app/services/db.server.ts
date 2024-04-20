@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import SQLite from 'better-sqlite3'
 import createDebug from 'debug'
 import {
+  CamelCasePlugin,
   Kysely,
   SqliteDialect,
   sql,
@@ -21,6 +22,7 @@ export const db = new Kysely<DB.DB>({
     database: new SQLite(new URL(process.env.DATABASE_URL).pathname),
   }),
   log: (event) => debug(event.query.sql, event.query.parameters),
+  plugins: [new CamelCasePlugin()],
 })
 
 export const prisma = new PrismaClient({

@@ -74,10 +74,10 @@ export default function CompanyTeamIndex() {
                 <div key={user.id}>
                   <HStack>
                     <Avatar>
-                      <AvatarImage src={user.picture_url ?? undefined} />
-                      <AvatarFallback>{user.display_name}</AvatarFallback>
+                      <AvatarImage src={user.pictureUrl ?? undefined} />
+                      <AvatarFallback>{user.displayName}</AvatarFallback>
                     </Avatar>
-                    <h3 className="font-medium">{user.display_name}</h3>
+                    <h3 className="font-medium">{user.displayName}</h3>
                     <Badge variant="secondary">{user.role}</Badge>
 
                     <Spacer />
@@ -106,7 +106,7 @@ export default function CompanyTeamIndex() {
           <CardContent>
             <Stack>
               {repositories.map((repository) => (
-                <div key={repository.repository_id}>{repository.team_id}</div>
+                <div key={repository.repositoryId}>{repository.teamId}</div>
               ))}
             </Stack>
           </CardContent>

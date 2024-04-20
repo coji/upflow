@@ -17,7 +17,7 @@ export const createCompany = async ({
       .values({
         id: companyId,
         name: companyName,
-        updated_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .returningAll()
       .executeTakeFirstOrThrow()
@@ -25,10 +25,10 @@ export const createCompany = async ({
     const team = await tsx
       .insertInto('teams')
       .values({
-        company_id: companyId,
+        companyId: companyId,
         id: teamId,
         name: teamName,
-        updated_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .returningAll()
       .executeTakeFirstOrThrow()
