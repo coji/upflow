@@ -5,7 +5,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from '@remix-run/node'
-import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
+import { Form, useActionData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
@@ -17,14 +17,21 @@ import {
   Button,
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  HStack,
   Input,
   Label,
   Stack,
 } from '~/app/components/ui'
 import { addTeam } from './mutations.server'
+
+export const handle = {
+  breadcrumb: ({ companyId }: { companyId: string }) => ({
+    label: 'Create a team',
+    to: $path('/admin/:companyId/teams/add', { companyId }),
+  }),
+}
 
 const schema = z.object({
   id: z
@@ -67,7 +74,6 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 }
 
 export default function TeamAddPage() {
-  const { companyId } = useLoaderData<typeof loader>()
   const lastResult = useActionData<typeof action>()
   const [form, { id, name }] = useForm({
     id: 'team-add',
@@ -79,7 +85,7 @@ export default function TeamAddPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add Team</CardTitle>
+        <CardTitle>Create a team</CardTitle>
       </CardHeader>
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
@@ -102,21 +108,14 @@ export default function TeamAddPage() {
                 <AlertDescription>{form.errors}</AlertDescription>
               </Alert>
             )}
-
-            <HStack>
-              <Button asChild variant="ghost">
-                <Link to={$path('/admin/:companyId', { companyId })}>
-                  Cancel
-                </Link>
-              </Button>
-              <Button type="submit">Create</Button>
-            </HStack>
           </Stack>
         </Form>
       </CardContent>
+      <CardFooter>
+        <Button type="submit" form={form.id}>
+          Create
+        </Button>
+      </CardFooter>
     </Card>
   )
-}
-function jsonWithRedirect(arg0: string, arg1: string) {
-  throw new Error('Function not implemented.')
 }
