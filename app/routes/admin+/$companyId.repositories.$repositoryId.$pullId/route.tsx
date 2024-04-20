@@ -1,13 +1,11 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
-import invariant from 'tiny-invariant'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { HStack, Heading, Stack } from '~/app/components/ui'
-import { getPullRequest } from '~/app/models/admin/pull-requests.server'
-import { getRepository } from '~/app/models/admin/repository.server'
 import { createFetcher } from '~/batch/provider/github/fetcher'
 import { createStore } from '~/batch/provider/github/store'
+import { getPullRequest, getRepository } from './queries.server'
 
 export const handle = {
   breadcrumb: ({
@@ -18,7 +16,7 @@ export const handle = {
     companyId: string
     repositoryId: string
     repository: Awaited<ReturnType<typeof getRepository>>
-    pull: Awaited<ReturnType<typeof getPullRequest>>
+    pull: NonNullable<Awaited<ReturnType<typeof getPullRequest>>>
   }) => ({
     label: pull?.number,
     to: `/admin/${companyId}/repository/${repositoryId}/${pull.number}`,
@@ -34,21 +32,28 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const repository = await getRepository(repositoryId)
   if (!repository) {
-    throw new Error('Repository not found')
+    throw new Response('Repository not found', { status: 404 })
+  }
+  if (
+    repository.owner === null ||
+    repository.repo === null ||
+    repository.integration === null ||
+    repository.integration.privateToken === null
+  ) {
+    throw new Error('Repository is not integrated')
   }
 
   const pull = await getPullRequest(repository.id, pullId)
+  if (!pull) {
+    throw new Response('Pull request not found', { status: 404 })
+  }
+
   const store = createStore({ companyId, repositoryId })
   const storeData = {
     commits: await store.loader.commits(pullId),
     comments: await store.loader.discussions(pullId),
     reviews: await store.loader.reviews(pullId),
   }
-
-  invariant(repository.owner, 'Repository is not integrated')
-  invariant(repository.repo, 'Repository is not integrated')
-  invariant(repository.integration, 'Repository is not integrated')
-  invariant(repository.integration.privateToken, 'Repository is not integrated')
 
   const fetcher = createFetcher({
     owner: repository.owner,

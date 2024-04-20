@@ -17,8 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import { listPullRequests } from '~/app/models/admin/pull-requests.server'
-import { getRepository } from '~/app/models/admin/repository.server'
+import { getRepository, listPullRequests } from './queries.server'
 
 export const handle = {
   breadcrumb: ({
