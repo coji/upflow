@@ -101,22 +101,22 @@ model Integration {
 }
 
 model Repository {
-  id                     String           @id @default(cuid())
+  id                     String           @id
+  companyId              String           @map("company_id")
   integrationId          String           @map("integration_id")
   provider               String
-  name                   String           @default("")
-  projectId              String?          @map("project_id")
-  owner                  String?
-  repo                   String?
+  owner                  String
+  repo                   String
   releaseDetectionMethod String           @default("branch") @map("release_detection_method")
   releaseDetectionKey    String           @default("production") @map("release_detection_key")
-  companyId              String           @map("company_id")
+  updatedAt              DateTime         @updatedAt @map("updated_at")
+  createdAt              DateTime         @default(now()) @map("created_at")
   integration            Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   company                Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   pullrequest            PullRequest[]
   teamRepository         TeamRepository[]
 
-  @@unique([integrationId, provider, projectId, owner, repo])
+  @@unique([companyId, integrationId, owner, repo])
   @@map("repositories")
 }
 

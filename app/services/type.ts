@@ -62,15 +62,15 @@ export type PullRequest = {
 };
 export type Repository = {
     id: string;
+    companyId: string;
     integrationId: string;
     provider: string;
-    name: Generated<string>;
-    projectId: string | null;
-    owner: string | null;
-    repo: string | null;
+    owner: string;
+    repo: string;
     releaseDetectionMethod: Generated<string>;
     releaseDetectionKey: Generated<string>;
-    companyId: string;
+    updatedAt: string;
+    createdAt: Generated<string>;
 };
 export type Team = {
     id: string;

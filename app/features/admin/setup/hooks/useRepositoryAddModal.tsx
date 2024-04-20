@@ -48,8 +48,7 @@ export const useRepositoryAddModal = ({
       <CardFooter>
         <HStack>
           <Button
-            type="submit"
-            form="form"
+            type="button"
             disabled={checkedRepos.length === 0}
             onClick={async () => {
               if (await onSubmit(checkedRepos)) {

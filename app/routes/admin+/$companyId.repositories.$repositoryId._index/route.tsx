@@ -27,9 +27,9 @@ export const handle = {
   }: {
     companyId: string
     repositoryId: string
-    repository: Awaited<ReturnType<typeof getRepository>>
+    repository: NonNullable<Awaited<ReturnType<typeof getRepository>>>
   }) => ({
-    label: repository?.name,
+    label: `${repository.owner}/${repository.repo}`,
     to: $path('/admin/:companyId/repositories/:repositoryId', {
       companyId,
       repositoryId,
@@ -61,7 +61,9 @@ const RepositoryPullsIndexPage = () => {
       <CardHeader>
         <CardTitle>
           <HStack>
-            <div>{repository.name}</div>
+            <div>
+              {repository.owner}/{repository.repo}
+            </div>
             <Badge variant="outline">repository</Badge>
           </HStack>
         </CardTitle>

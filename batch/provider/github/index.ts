@@ -42,7 +42,7 @@ export const createGitHubProvider = (integration: Integration) => {
       repositoryId: repository.id,
     })
 
-    logger.info('fetch started: ', repository.name)
+    logger.info('fetch started: ', `${repository.owner}/${repository.repo}`)
     logger.info('path: ', pathBuilder.jsonPath(''))
 
     // PR の最終更新日時を起点とする
@@ -104,7 +104,7 @@ export const createGitHubProvider = (integration: Integration) => {
 
       // 全プルリク情報を保存
       await store.save('pullrequests.json', allPullRequests)
-      logger.info('fetch completed: ', repository.name)
+      logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
     }
   }
 

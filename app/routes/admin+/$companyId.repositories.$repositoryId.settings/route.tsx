@@ -35,9 +35,10 @@ import {
   Stack,
 } from '~/app/components/ui'
 import {
+  getIntegration,
   getRepository,
   updateRepository,
-} from '~/app/models/admin/repository.server'
+} from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Edit' }) }
 
@@ -56,16 +57,18 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   })
   const repository = await getRepository(repositoryId)
   if (!repository) {
-    throw new Error('repository not found')
+    throw new Response('repository not found', { status: 404 })
   }
-  if (!repository.integration) {
-    throw new Error('repository.integration not found')
+  const integration = await getIntegration(companyId)
+  if (!integration) {
+    throw new Error('company integration setted up')
   }
+
   return json({
     companyId,
     repositoryId,
     repository,
-    provider: repository.integration.provider,
+    provider: integration.provider,
   })
 }
 
@@ -148,7 +151,7 @@ const GithubRepositoryForm = ({
   )
 }
 
-const EditRepositoryModal = () => {
+export default function EditRepositoryModal() {
   const { companyId, repository, provider } = useLoaderData<typeof loader>()
   const form = match(provider)
     .with('github', () => <GithubRepositoryForm repository={repository} />)
@@ -175,4 +178,3 @@ const EditRepositoryModal = () => {
     </Card>
   )
 }
-export default EditRepositoryModal

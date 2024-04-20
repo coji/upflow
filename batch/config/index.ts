@@ -29,7 +29,7 @@ export const allConfigs = async () => {
             privateToken: true,
           },
         },
-        repositories: { select: { id: true, projectId: true } },
+        repositories: { select: { id: true } },
       },
     })
   ).map((company) => {

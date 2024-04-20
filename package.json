@@ -140,6 +140,6 @@
     "vitest": "1.5.0"
   },
   "prisma": {
-    "seed": "node prisma/seed.mjs"
+    "seed": "tsx prisma/seed.ts"
   }
 }

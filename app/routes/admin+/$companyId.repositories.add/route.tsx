@@ -11,17 +11,16 @@ import { z } from 'zod'
 import { zx } from 'zodix'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
 import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
-import { createRepository } from '~/app/models/admin/repository.server'
-import { getIntegration } from './queries.server'
+
+import { addRepository, getIntegration } from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
 const RepoSchema = z.object({
   repos: z.array(
     z.object({
-      projectId: z.string().optional(),
-      owner: z.string().optional(),
-      repo: z.string().optional(),
+      owner: z.string(),
+      repo: z.string(),
     }),
   ),
 })
@@ -45,12 +44,15 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     return json(submission.reply())
   }
 
+  const integraiton = await getIntegration(companyId)
+  if (!integraiton) {
+    throw new Error('integration not created')
+  }
+
   try {
     const repos = submission.value.repos
     for (const repo of repos) {
-      await createRepository({
-        companyId,
-        projectId: repo.projectId,
+      await addRepository(companyId, {
         owner: repo.owner,
         repo: repo.repo,
       })
@@ -65,7 +67,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   return redirect($path('/admin/:companyId/repositories', { companyId }))
 }
 
-const AddRepositoryModal = () => {
+export default function AddRepositoryPage() {
   const fetcher = useFetcher()
   const { integration } = useLoaderData<typeof loader>()
 
@@ -75,7 +77,7 @@ const AddRepositoryModal = () => {
       keyValues[`repos[${idx}].owner`] = repo.owner
       keyValues[`repos[${idx}].repo`] = repo.name
     }
-    fetcher.submit(keyValues, { method: 'post' })
+    fetcher.submit(keyValues, { method: 'POST' })
     return true
   }
   const { RepositoryAddModal } = useRepositoryAddModal({
@@ -89,4 +91,3 @@ const AddRepositoryModal = () => {
 
   return <>{integration.provider === 'github' && RepositoryAddModal}</>
 }
-export default AddRepositoryModal

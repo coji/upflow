@@ -20,10 +20,7 @@ import {
   Input,
   Label,
 } from '~/app/components/ui'
-import {
-  deleteRepository,
-  getRepository,
-} from '~/app/models/admin/repository.server'
+import { deleteRepository, getRepository } from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Delete' }) }
 
@@ -35,9 +32,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const repository = await getRepository(repositoryId)
   if (!repository) {
     throw new Error('repository not found')
-  }
-  if (!repository.integration) {
-    throw new Error('repository.integration not found')
   }
   return json({ companyId, repositoryId, repository })
 }
@@ -65,7 +59,11 @@ const AddRepositoryModal = () => {
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
           <Label>Name</Label>
-          <Input readOnly disabled defaultValue={repository.name} />
+          <Input
+            readOnly
+            disabled
+            defaultValue={`${repository.owner}/${repository.repo}`}
+          />
         </Form>
       </CardContent>
       <CardFooter>
