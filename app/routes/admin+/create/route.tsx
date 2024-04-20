@@ -19,7 +19,7 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
-import { createCompany } from './queries.server'
+import { createCompany } from './mutations.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Create Company' }) }
 
@@ -42,7 +42,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json(submission.reply())
   }
   try {
-    const company = await createCompany(submission.value)
+    const { company } = await createCompany(submission.value)
     return redirect($path('/admin/:companyId', { companyId: company.id }))
   } catch (e) {
     return json(

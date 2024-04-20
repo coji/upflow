@@ -1,4 +1,4 @@
-import { db, type DB } from '~/app/services/db.server'
+import { db, sql, type DB } from '~/app/services/db.server'
 
 export const createCompany = async ({
   companyId,
@@ -17,7 +17,7 @@ export const createCompany = async ({
       .values({
         id: companyId,
         name: companyName,
-        updatedAt: new Date().toISOString(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .returningAll()
       .executeTakeFirstOrThrow()
@@ -28,11 +28,11 @@ export const createCompany = async ({
         companyId: companyId,
         id: teamId,
         name: teamName,
-        updatedAt: new Date().toISOString(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .returningAll()
       .executeTakeFirstOrThrow()
 
-    return company
+    return { company, team }
   })
 }
