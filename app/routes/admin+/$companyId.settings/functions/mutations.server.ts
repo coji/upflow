@@ -9,12 +9,12 @@ import {
 
 export const updateCompany = async (
   id: DB.Company['id'],
-  data: Updateable<DB.Company>,
+  data: Omit<Updateable<DB.Company>, 'createdAt' | 'updatedAt'>,
 ) => {
   return await db
     .updateTable('companies')
     .where('id', '==', id)
-    .set({ ...data, updatedAt: new Date().toISOString() })
+    .set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
     .execute()
 }
 
