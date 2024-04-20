@@ -1,10 +1,9 @@
-import { Prisma } from '@prisma/client'
 import acceptLanguage from 'accept-language'
 import { nanoid } from 'nanoid'
 import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
 import invariant from 'tiny-invariant'
-import { db, type DB, type Selectable } from '~/app/services/db.server'
+import { db, sql, type DB, type Selectable } from '~/app/services/db.server'
 import type { SessionUser } from '../types/types'
 import {
   isSupportedSocialProvider,
@@ -44,27 +43,20 @@ export const verifyUser: StrategyVerifyCallback<
           profile._json.locale ??
           acceptLanguage.get(request.headers.get('accept-language')) ??
           'en',
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .onConflict((oc) =>
-        oc.column('email').doUpdateSet({
-          displayName: profile.displayName,
-          pictureUrl: profile.photos?.[0].value,
-          locale: profile._json.locale,
-          updatedAt: new Date().toISOString(),
-        }),
+        oc.column('email').doUpdateSet((eb) => ({
+          displayName: eb.ref('excluded.displayName'),
+          pictureUrl: eb.ref('excluded.pictureUrl'),
+          locale: eb.ref('excluded.locale'),
+          updatedAt: eb.ref('excluded.updatedAt'),
+        })),
       )
       .returningAll()
       .executeTakeFirstOrThrow()
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        errorMessages.push(`すでに登録されているメールアドレスです: ${email}`)
-      } else {
-        errorMessages.push(`${error.code}`)
-      }
-    } else if (error instanceof Error) {
+    if (error instanceof Error) {
       errorMessages.push(error.message)
     } else {
       errorMessages.push('不明なエラー:', String(error))
