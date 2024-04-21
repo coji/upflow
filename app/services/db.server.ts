@@ -3,6 +3,7 @@ import createDebug from 'debug'
 import {
   CamelCasePlugin,
   Kysely,
+  ParseJSONResultsPlugin,
   SqliteDialect,
   sql,
   type Insertable,
@@ -21,5 +22,5 @@ export const db = new Kysely<DB.DB>({
     database: new SQLite(`./${new URL(process.env.DATABASE_URL).pathname}`),
   }),
   log: (event) => debug(event.query.sql, event.query.parameters),
-  plugins: [new CamelCasePlugin()],
+  plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
 })

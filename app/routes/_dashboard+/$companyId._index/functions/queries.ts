@@ -11,7 +11,7 @@ export const getMergedPullRequestReport = async (
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .where('repositories.companyId', '==', companyId)
     .where('mergedAt', '>', startDate)
-    .where('author', 'not like', '[bot]')
+    .where('author', 'not like', '%[bot]')
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
     .selectAll('pullRequests')

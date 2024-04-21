@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant'
-import { getCompany, upsertPullRequest } from '~/batch/db/'
+import { getCompany, upsertPullRequest } from '~/batch/db'
 import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,

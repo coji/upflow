@@ -40,8 +40,8 @@ export const listAllCompanies = async () => {
             'provider',
             'releaseDetectionKey',
             'releaseDetectionMethod',
-            'repositories.updatedAt',
-            'repositories.createdAt',
+            'updatedAt',
+            'createdAt',
           ])
           .whereRef('repositories.companyId', '==', 'companies.id'),
       ).as('repositories'),

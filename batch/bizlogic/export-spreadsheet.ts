@@ -1,7 +1,7 @@
 import dayjs from '~/app/libs/dayjs'
 import { createSheetApi } from '~/app/libs/sheets'
 import type { DB, Selectable } from '~/app/services/db.server'
-import { timeFormat } from '../helper/timeformat'
+import { timeFormatTz } from '../helper/timeformat'
 
 const escapeTabString = (str: string) => {
   return str.replaceAll('\t', '\\t')
@@ -65,12 +65,12 @@ export const exportPullsToSpreadsheet = async (
           reviewTime: pr.reviewTime,
           deployTime: pr.deployTime,
           totalTime: pr.totalTime,
-          firstCommitedAt: timeFormat(pr.firstCommittedAt, tz), // ISO形式から YYYY-MM-DD HH:mm:ss に変換。TODO: タイムゾーン対応?
-          pullRequestCreatedAt: timeFormat(pr.pullRequestCreatedAt, tz),
-          firstReviewedAt: timeFormat(pr.firstReviewedAt, tz),
-          mergedAt: timeFormat(pr.mergedAt, tz),
-          releasedAt: timeFormat(pr.releasedAt, tz),
-          updatedAt: timeFormat(pr.updatedAt, tz),
+          firstCommitedAt: timeFormatTz(pr.firstCommittedAt, tz), // ISO形式から YYYY-MM-DD HH:mm:ss に変換。TODO: タイムゾーン対応?
+          pullRequestCreatedAt: timeFormatTz(pr.pullRequestCreatedAt, tz),
+          firstReviewedAt: timeFormatTz(pr.firstReviewedAt, tz),
+          mergedAt: timeFormatTz(pr.mergedAt, tz),
+          releasedAt: timeFormatTz(pr.releasedAt, tz),
+          updatedAt: timeFormatTz(pr.updatedAt, tz),
         }).join('\t')
       }),
   ].join('\n')
@@ -107,7 +107,7 @@ export const exportReviewResponsesToSpreadsheet = async (
         repo: res.repo,
         number: res.number,
         author: res.author,
-        createdAt: timeFormat(res.createdAt, tz),
+        createdAt: timeFormatTz(res.createdAt, tz),
         responseTime: res.responseTime,
       }).join('\t')
     }),

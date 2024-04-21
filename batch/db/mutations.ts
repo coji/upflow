@@ -1,9 +1,25 @@
 import { db, type DB, type Insertable } from '~/app/services/db.server'
+import { timeFormatUTC } from '../helper/timeformat'
 
 export function upsertPullRequest(data: Insertable<DB.PullRequest>) {
+  const firstCommittedAt = timeFormatUTC(data.firstCommittedAt)
+  const pullRequestCreatedAt = timeFormatUTC(data.pullRequestCreatedAt)
+  const firstReviewedAt = timeFormatUTC(data.firstReviewedAt)
+  const mergedAt = timeFormatUTC(data.mergedAt)
+  const releasedAt = timeFormatUTC(data.mergedAt)
+  const updatedAt = timeFormatUTC(data.mergedAt)
+
   return db
     .insertInto('pullRequests')
-    .values(data)
+    .values({
+      ...data,
+      firstCommittedAt,
+      pullRequestCreatedAt,
+      firstReviewedAt,
+      mergedAt,
+      releasedAt,
+      updatedAt,
+    })
     .onConflict((oc) =>
       oc.columns(['repositoryId', 'number']).doUpdateSet((eb) => ({
         repo: eb.ref('excluded.repo'),

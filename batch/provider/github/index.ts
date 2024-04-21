@@ -101,8 +101,9 @@ export const createGitHubProvider = (
 
       // 全プルリク情報を保存
       await store.save('pullrequests.json', allPullRequests)
-      logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
     }
+
+    logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
   }
 
   const analyze = async (

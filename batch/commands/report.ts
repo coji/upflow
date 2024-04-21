@@ -1,7 +1,7 @@
 import invariant from 'tiny-invariant'
 import { getCompany, getPullRequestReport } from '~/batch/db'
 import { allConfigs } from '../config'
-import { timeFormat } from '../helper/timeformat'
+import { timeFormatTz } from '../helper/timeformat'
 
 interface reportCommandProps {
   companyId?: string
@@ -43,6 +43,7 @@ export async function reportCommand({ companyId }: reportCommandProps) {
       'total time',
     ].join('\t'),
   )
+  const tz = 'Asia/Tokyo'
 
   const prList = await getPullRequestReport(company.id)
   for (const pr of prList) {
@@ -56,11 +57,11 @@ export async function reportCommand({ companyId }: reportCommandProps) {
         pr.author,
         pr.title,
         pr.url,
-        timeFormat(pr.firstCommittedAt),
-        timeFormat(pr.pullRequestCreatedAt),
-        timeFormat(pr.firstReviewedAt),
-        timeFormat(pr.mergedAt),
-        timeFormat(pr.releasedAt),
+        timeFormatTz(pr.firstCommittedAt, tz),
+        timeFormatTz(pr.pullRequestCreatedAt, tz),
+        timeFormatTz(pr.firstReviewedAt, tz),
+        timeFormatTz(pr.mergedAt, tz),
+        timeFormatTz(pr.releasedAt, tz),
         pr.codingTime,
         pr.pickupTime,
         pr.reviewTime,

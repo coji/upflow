@@ -13,7 +13,8 @@ export interface Config {
 }
 
 export const allConfigs = async () => {
-  const configs = (await listAllCompanies()).map((company) => {
+  const companies = await listAllCompanies()
+  const configs = companies.map((company) => {
     return {
       companyId: company.id,
       companyName: company.name,
