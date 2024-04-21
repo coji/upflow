@@ -1,6 +1,6 @@
-import type { PullRequest } from '@prisma/client'
 import { first } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
+import type { DB, Selectable } from '~/app/services/db.server'
 import {
   codingTime,
   deployTime,
@@ -29,7 +29,7 @@ export const buildPullRequests = async (
 ) => {
   const store = createStore(config)
 
-  const pulls: PullRequest[] = []
+  const pulls: Selectable<DB.PullRequest>[] = []
   const reviewResponses: {
     repo: string
     number: string

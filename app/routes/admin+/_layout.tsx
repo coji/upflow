@@ -4,7 +4,6 @@ import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireAdminUser } from '~/app/features/auth/services/user-session.server'
-import { listCompanies } from '~/app/models/admin/company.server'
 
 export const meta: MetaFunction = () => [{ title: 'Upflow Admin' }]
 
@@ -14,17 +13,14 @@ export const handle = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminUser = await requireAdminUser(request)
-  const companies = await listCompanies()
-  return json({ adminUser, companies })
+  return json({ adminUser })
 }
 
 const AdminLayoutPage = () => {
-  const { adminUser, companies } = useLoaderData<typeof loader>()
+  const { adminUser } = useLoaderData<typeof loader>()
 
   return (
-    <AppLayout
-      header={<AppHeader companies={companies} isAdmin user={adminUser} />}
-    >
+    <AppLayout header={<AppHeader isAdmin user={adminUser} />}>
       <Outlet />
     </AppLayout>
   )

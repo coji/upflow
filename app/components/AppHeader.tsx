@@ -16,24 +16,14 @@ import {
   Spacer,
 } from '~/app/components/ui'
 import type { SessionUser } from '~/app/features/auth/types/types'
-import {
-  TeamSwitcher,
-  type Companies,
-  type Team,
-} from '~/app/routes/team-switcher'
+import { CompanySwitcher } from '~/app/routes/resources+/company/route'
 
 interface AppHeaderProps {
   user?: SessionUser
   isAdmin?: boolean
-  companies?: Companies[]
-  selectedTeam?: Team
 }
 
-export const AppHeader = ({
-  user,
-  isAdmin = false,
-  companies = [],
-}: AppHeaderProps) => {
+export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
   return (
     <header className="flex items-center px-2 py-1 md:container">
       <HStack>
@@ -43,7 +33,7 @@ export const AppHeader = ({
           </Link>
         </Heading>
 
-        {user && <TeamSwitcher companies={companies} isAdmin={isAdmin} />}
+        {user && <CompanySwitcher isAdmin={isAdmin} />}
       </HStack>
 
       <Spacer />

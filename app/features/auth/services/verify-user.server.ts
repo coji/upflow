@@ -1,12 +1,9 @@
-import { Prisma } from '@prisma/client'
+import acceptLanguage from 'accept-language'
+import { nanoid } from 'nanoid'
 import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
 import invariant from 'tiny-invariant'
-import {
-  getUserByEmail,
-  upsertUserByEmail,
-  type User,
-} from '~/app/models/user.server'
+import { db, sql, type DB, type Selectable } from '~/app/services/db.server'
 import type { SessionUser } from '../types/types'
 import {
   isSupportedSocialProvider,
@@ -14,13 +11,15 @@ import {
   type SupportedSocialProviderProfile,
 } from './supported-social-provider.server'
 
+acceptLanguage.languages(['ja', 'en'])
+
 export const verifyUser: StrategyVerifyCallback<
   SessionUser,
   OAuth2StrategyVerifyParams<
     SupportedSocialProviderProfile,
     SupportedSocialProviderExtraParams
   >
-> = async ({ profile }) => {
+> = async ({ request, profile }) => {
   invariant(
     isSupportedSocialProvider(profile.provider),
     'provider not supported',
@@ -29,26 +28,35 @@ export const verifyUser: StrategyVerifyCallback<
   const email = profile.emails[0].value
 
   const errorMessages = []
-  let user: Omit<User, 'createdAt' | 'updatedAt'> | null = null
+  let user: Selectable<DB.User> | null = null
 
   try {
-    user = await getUserByEmail({ email })
-
     // ユーザを登録 / upsert
-    user = await upsertUserByEmail({
-      email,
-      displayName: profile.displayName,
-      pictureUrl: profile.photos?.[0].value,
-      locale: profile._json.locale ?? 'ja',
-    })
+    user = await db
+      .insertInto('users')
+      .values({
+        id: nanoid(),
+        email,
+        displayName: profile.displayName,
+        pictureUrl: profile.photos?.[0].value,
+        locale:
+          profile._json.locale ??
+          acceptLanguage.get(request.headers.get('accept-language')) ??
+          'en',
+        updatedAt: sql`CURRENT_TIMESTAMP`,
+      })
+      .onConflict((oc) =>
+        oc.column('email').doUpdateSet((eb) => ({
+          displayName: eb.ref('excluded.displayName'),
+          pictureUrl: eb.ref('excluded.pictureUrl'),
+          locale: eb.ref('excluded.locale'),
+          updatedAt: eb.ref('excluded.updatedAt'),
+        })),
+      )
+      .returningAll()
+      .executeTakeFirstOrThrow()
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        errorMessages.push(`すでに登録されているメールアドレスです: ${email}`)
-      } else {
-        errorMessages.push(`${error.code}`)
-      }
-    } else if (error instanceof Error) {
+    if (error instanceof Error) {
       errorMessages.push(error.message)
     } else {
       errorMessages.push('不明なエラー:', String(error))

@@ -1,10 +1,10 @@
-import type { User } from '@prisma/client'
+import type { DB, Selectable } from '~/app/services/db.server'
 
 export interface SessionUser {
-  id: User['id']
-  email: User['email']
-  displayName: User['displayName']
-  pictureUrl: User['pictureUrl']
-  locale: User['locale']
-  role: User['role']
+  id: Selectable<DB.User>['id']
+  email: Selectable<DB.User>['email']
+  displayName: Selectable<DB.User>['displayName']
+  pictureUrl: Selectable<DB.User>['pictureUrl']
+  locale: Selectable<DB.User>['locale']
+  role: Selectable<DB.User>['role']
 }

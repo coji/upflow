@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant'
-import { prisma } from '~/app/services/db.server'
+import { getCompany } from '~/batch/db'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider'
 
@@ -22,36 +22,22 @@ export async function fetchCommand(props: FetchCommandProps) {
     return
   }
 
-  const company = await prisma.company.findFirstOrThrow({
-    where: { id: props.companyId },
-    include: { integration: true, repositories: true },
-  })
+  const company = await getCompany(props.companyId)
   invariant(company.integration, 'integration should related')
 
   const provider = createProvider(company.integration)
   invariant(provider, `unknown provider: ${company.integration.provider}`)
 
-  if (props.repositoryId) {
-    const repository = company.repositories.find(
-      (repository) =>
-        repository.id === props.repositoryId && repository.id !== props.exclude,
-    )
-    if (repository)
-      await provider.fetch(repository, {
-        refresh: props.refresh,
-        halt: false,
-        delay: props.delay,
-      })
-    else console.log('no such repository:', props.repositoryId)
-  } else {
-    for (const repository of company.repositories.filter(
-      (repository) => repository.id !== props.exclude,
-    )) {
-      await provider.fetch(repository, {
-        refresh: props.refresh,
-        halt: false,
-        delay: props.delay,
-      })
-    }
+  const repositories = company.repositories.filter((repo) => {
+    return props.repositoryId
+      ? repo.id === props.repositoryId
+      : repo.id !== props.exclude
+  })
+  for (const repository of repositories) {
+    await provider.fetch(repository, {
+      refresh: props.refresh,
+      halt: false,
+      delay: props.delay,
+    })
   }
 }

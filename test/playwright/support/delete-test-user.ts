@@ -1,12 +1,9 @@
-import { prisma } from '~/app/services/db.server'
+import { db } from '~/app/services/db.server'
 
 export const deleteTestUser = async (email: string) => {
-  if (!email) {
-    throw new Error('email required for login')
-  }
   if (!email.endsWith('@example.com')) {
-    throw new Error('All test emails must end in @example.com')
+    throw new Error('All test emails should be end in @example.com')
   }
 
-  await prisma.user.delete({ where: { email } })
+  await db.deleteFrom('users').where('email', '==', email).execute()
 }

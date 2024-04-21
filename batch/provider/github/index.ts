@@ -1,10 +1,5 @@
-import type {
-  Company,
-  Integration,
-  PullRequest,
-  Repository,
-} from '@prisma/client'
 import invariant from 'tiny-invariant'
+import type { DB, Selectable } from '~/app/services/db.server'
 import { logger } from '~/batch/helper/logger'
 import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
@@ -12,14 +7,16 @@ import { createFetcher } from './fetcher'
 import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 
-export const createGitHubProvider = (integration: Integration) => {
+export const createGitHubProvider = (
+  integration: Selectable<DB.Integration>,
+) => {
   interface FetchOptions {
     refresh?: boolean
     halt?: boolean
     delay?: number
   }
   const fetch = async (
-    repository: Repository,
+    repository: Selectable<DB.Repository>,
     { refresh = false, halt = false, delay = 0 }: FetchOptions,
   ) => {
     invariant(repository.repo, 'private token not specified')
@@ -42,7 +39,7 @@ export const createGitHubProvider = (integration: Integration) => {
       repositoryId: repository.id,
     })
 
-    logger.info('fetch started: ', repository.name)
+    logger.info('fetch started: ', `${repository.owner}/${repository.repo}`)
     logger.info('path: ', pathBuilder.jsonPath(''))
 
     // PR の最終更新日時を起点とする
@@ -104,12 +101,16 @@ export const createGitHubProvider = (integration: Integration) => {
 
       // 全プルリク情報を保存
       await store.save('pullrequests.json', allPullRequests)
-      logger.info('fetch completed: ', repository.name)
     }
+
+    logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
   }
 
-  const analyze = async (company: Company, repositories: Repository[]) => {
-    let allPulls: PullRequest[] = []
+  const analyze = async (
+    company: Selectable<DB.Company>,
+    repositories: Selectable<DB.Repository>[],
+  ) => {
+    let allPulls: Selectable<DB.PullRequest>[] = []
     let allReviewResponses: {
       repo: string
       number: string

@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant'
-import { prisma } from '~/app/services/db.server'
+import { getCompany, upsertPullRequest } from '~/batch/db'
 import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,
@@ -21,10 +21,7 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
     return
   }
 
-  const company = await prisma.company.findFirstOrThrow({
-    where: { id: companyId },
-    include: { integration: true, repositories: true, exportSetting: true },
-  })
+  const company = await getCompany(companyId)
   invariant(company.integration, 'integration should related')
 
   const provider = createProvider(company.integration)
@@ -36,20 +33,9 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
   )
 
   // upsert
-  await prisma.$transaction(
-    pulls.map((pr) =>
-      prisma.pullRequest.upsert({
-        where: {
-          repositoryId_number: {
-            repositoryId: pr.repositoryId,
-            number: pr.number,
-          },
-        },
-        create: pr,
-        update: pr,
-      }),
-    ),
-  )
+  for (const pr of pulls) {
+    await upsertPullRequest(pr)
+  }
 
   if (company.exportSetting) {
     await exportPullsToSpreadsheet(pulls, company.exportSetting) // google spreadsheet にエクスポート

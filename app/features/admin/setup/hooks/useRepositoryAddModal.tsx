@@ -1,4 +1,3 @@
-import type { Integration } from '@prisma/client'
 import { Link } from '@remix-run/react'
 import { useCallback, useState } from 'react'
 import {
@@ -11,12 +10,13 @@ import {
   HStack,
   Spacer,
 } from '~/app/components/ui'
+import type { DB, Selectable } from '~/app/services/db.server'
 import { RepositoryList } from '../components/RepositoryList'
 import type { GithubRepo } from '../interfaces/model'
 import { useGithubRepoQuery } from './useGithubReposQuery'
 
 interface useRepositoryAddModalProps {
-  integration: Integration
+  integration: Selectable<DB.Integration>
   onSubmit: (repos: GithubRepo[]) => boolean
 }
 export const useRepositoryAddModal = ({
@@ -48,8 +48,7 @@ export const useRepositoryAddModal = ({
       <CardFooter>
         <HStack>
           <Button
-            type="submit"
-            form="form"
+            type="button"
             disabled={checkedRepos.length === 0}
             onClick={async () => {
               if (await onSubmit(checkedRepos)) {
