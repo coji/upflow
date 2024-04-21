@@ -47,10 +47,22 @@ export const DeleteCompany = ({ company }: DeleteCompanyProps) => {
             <div> {company.name}</div>
 
             <Label>Updated At</Label>
-            <div> {dayjs(company.updatedAt).fromNow()}</div>
+            <div>
+              {' '}
+              {dayjs
+                .utc(company.updatedAt)
+                .tz('asia/tokyo')
+                .format('YYYY-MM-DD HH:mm:ss')}
+            </div>
 
             <Label>Created At</Label>
-            <div> {dayjs(company.createdAt).fromNow()}</div>
+            <div>
+              {' '}
+              {dayjs
+                .utc(company.createdAt)
+                .tz('asia/tokyo')
+                .format('YYYY-MM-DD HH:mm:ss')}
+            </div>
           </div>
 
           <Form method="POST" {...getFormProps(form)}>

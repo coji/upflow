@@ -32,6 +32,7 @@ export default function CompanyLayout() {
               <TableHead>PR</TableHead>
               <TableHead>Author</TableHead>
               <TableHead>Title / URL</TableHead>
+              <TableHead>Merged At</TableHead>
               <TableHead className="whitespace-nowrap">マージまで</TableHead>
             </TableRow>
           </TableHeader>
@@ -52,6 +53,7 @@ export default function CompanyLayout() {
                 <TableCell>
                   [{pr.title}]({pr.url})
                 </TableCell>
+                <TableCell>{pr.mergedAt}</TableCell>
                 <TableCell className="pr-4 text-right">
                   {pr.mergedAt && pr.createAndMergeDiff?.toFixed(1)}
                   <small>日</small>
