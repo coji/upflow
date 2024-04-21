@@ -19,7 +19,9 @@ export type { DB, Insertable, Selectable, Updateable }
 
 export const db = new Kysely<DB.DB>({
   dialect: new SqliteDialect({
-    database: new SQLite(`./${new URL(process.env.DATABASE_URL).pathname}`),
+    database: new SQLite(
+      `${process.env.NODE_ENV === 'development' ? './' : ''}${new URL(process.env.DATABASE_URL).pathname}`,
+    ),
   }),
   log: (event) => debug(event.query.sql, event.query.parameters),
   plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
