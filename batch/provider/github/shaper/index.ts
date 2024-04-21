@@ -30,7 +30,7 @@ export const shapeGitHubPullRequest: (
     author: pr.user?.login ?? null,
     assignees: pr.assignees?.map((assignee) => assignee.login) ?? [],
     reviewers: pr.requested_reviewers?.map((reviewer) => reviewer.login) ?? [],
-    draft: pr.draft ? true : false,
+    draft: !!pr.draft,
     source_branch: pr.head.ref,
     target_branch: pr.base.ref,
     created_at: pr.created_at,
