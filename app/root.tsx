@@ -9,7 +9,9 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  isRouteErrorResponse,
   useLoaderData,
+  useRouteError,
 } from '@remix-run/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
@@ -31,6 +33,29 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const queryClient = new QueryClient()
 
+export const Layout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <QueryClientProvider client={queryClient}>
+          <Toaster />
+          <AppLoadingProgress />
+          {children}
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  )
+}
+
 export default function App() {
   const { toastData } = useLoaderData<typeof loader>()
   const { toast } = useToast()
@@ -44,24 +69,31 @@ export default function App() {
     }
   }, [toastData, toast])
 
+  return <Outlet />
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError()
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <main className="p-8">
+        <h1 className="text-2xl font-bold">
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </main>
+    )
+  }
+
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <QueryClientProvider client={queryClient}>
-          <Toaster />
-          <AppLoadingProgress />
-          <Outlet />
-          <ReactQueryDevtools initialIsOpen={false} />
-        </QueryClientProvider>
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
+    <main className="p-8">
+      <h1 className="text-2xl font-bold">Error!</h1>
+      <p>
+        {error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'Unknown error'}
+      </p>
+    </main>
   )
 }
