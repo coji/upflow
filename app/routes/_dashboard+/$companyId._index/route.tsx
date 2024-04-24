@@ -1,4 +1,11 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table'
 import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -19,8 +26,50 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return typedjson({ companyId, pullRequests, startOfWeek })
 }
 
+export type PullRequest = Awaited<
+  ReturnType<typeof getMergedPullRequestReport>
+>[0]
+const columnHelper = createColumnHelper<PullRequest>()
+
+const columns: ColumnDef<PullRequest>[] = [
+  {
+    accessorKey: 'number',
+    cell: (info) => (
+      <a
+        href={info.row.original.url}
+        className="overflow:underline text-blue-500"
+        target="_blank"
+        rel="noreferrer noopener"
+      >
+        {info.renderValue<string>()}
+      </a>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: 'author',
+    cell: ({ cell }) => cell.getValue(),
+  },
+  {
+    accessorKey: 'title',
+    cell: ({ row }) => `[${row.original.title}](${row.original.url})`,
+  },
+  {
+    header: 'マージまで',
+    cell: ({ row }) => `${row.original.createAndMergeDiff?.toFixed(1)}日`,
+  },
+]
+
 export default function CompanyLayout() {
   const { companyId, pullRequests } = useTypedLoaderData<typeof loader>()
+
+  const table = useReactTable({
+    data: pullRequests,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => `${row.repo}-${row.number}`,
+  })
 
   return (
     <div>
@@ -28,36 +77,27 @@ export default function CompanyLayout() {
       <div className="overflow-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>PR</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Title / URL</TableHead>
-              <TableHead>Merged At</TableHead>
-              <TableHead className="whitespace-nowrap">マージまで</TableHead>
-            </TableRow>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="capitalize">
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
           </TableHeader>
           <TableBody>
-            {pullRequests.map((pr) => (
-              <TableRow key={`${companyId}-${pr.repo}-${pr.number}`}>
-                <TableCell>
-                  <a
-                    href={pr.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:underline"
-                  >
-                    {pr.number}
-                  </a>
-                </TableCell>
-                <TableCell>{pr.author}</TableCell>
-                <TableCell>
-                  [{pr.title}]({pr.url})
-                </TableCell>
-                <TableCell>{pr.mergedAt}</TableCell>
-                <TableCell className="pr-4 text-right">
-                  {pr.mergedAt && pr.createAndMergeDiff?.toFixed(1)}
-                  <small>日</small>
-                </TableCell>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getAllCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>
