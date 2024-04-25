@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
+import dayjs from '~/app/libs/dayjs'
 import { getOngoingPullRequestReport, getStartOfWeek } from './functions.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
@@ -53,7 +54,32 @@ const columns: ColumnDef<PullRequest>[] = [
   },
   {
     accessorKey: 'title',
-    cell: ({ row }) => `[${row.original.title}](${row.original.url})`,
+    cell: ({ row }) => (
+      <div className="w-80 truncate">{`[${row.original.title}](${row.original.url})`}</div>
+    ),
+  },
+
+  {
+    header: '初コミット',
+    accessorKey: 'firstCommittedAt',
+    cell: ({ row }) =>
+      row.original.firstCommittedAt
+        ? dayjs
+            .utc(row.original.firstCommittedAt)
+            .tz('Asia/Tokyo')
+            .format('YYYY-MM-DD HH:mm')
+        : '',
+  },
+  {
+    header: 'PR作成',
+    accessorKey: 'pullRequestCreatedAt',
+    cell: ({ row }) =>
+      row.original.pullRequestCreatedAt
+        ? dayjs
+            .utc(row.original.pullRequestCreatedAt)
+            .tz('Asia/Tokyo')
+            .format('YYYY-MM-DD HH:mm')
+        : '',
   },
   {
     header: 'duration',
