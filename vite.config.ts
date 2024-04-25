@@ -17,5 +17,4 @@ export default defineConfig({
     remixRoutes(),
     tsconfigPaths(),
   ],
-  optimizeDeps: { exclude: ['@mapbox/node-pre-gyp'] },
 })
