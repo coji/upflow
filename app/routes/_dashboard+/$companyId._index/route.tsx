@@ -1,22 +1,9 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-} from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/app/components/ui'
+import { AppDataTable } from '~/app/components'
 import dayjs from '~/app/libs/dayjs'
 import { getMergedPullRequestReport, getStartOfWeek } from './functions.server'
 
@@ -30,7 +17,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>
 >[0]
-const columnHelper = createColumnHelper<PullRequest>()
 
 const columns: ColumnDef<PullRequest>[] = [
   {
@@ -45,18 +31,19 @@ const columns: ColumnDef<PullRequest>[] = [
         {info.renderValue<string>()}
       </a>
     ),
-    enableSorting: false,
     enableHiding: false,
   },
   {
     accessorKey: 'author',
     cell: ({ cell }) => cell.getValue(),
+    enableHiding: false,
   },
   {
     accessorKey: 'title',
     cell: ({ row }) => (
       <div className="w-80 truncate">{`[${row.original.title}](${row.original.url})`}</div>
     ),
+    enableHiding: false,
   },
   {
     header: '初コミット',
@@ -109,49 +96,20 @@ const columns: ColumnDef<PullRequest>[] = [
 ]
 
 export default function CompanyIndex() {
-  const { companyId, pullRequests } = useTypedLoaderData<typeof loader>()
-
-  const table = useReactTable({
-    data: pullRequests,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => `${row.repo}-${row.number}`,
-  })
+  const { pullRequests } = useTypedLoaderData<typeof loader>()
 
   return (
     <div>
-      <div>
-        今週マージされたプルリクエスト {pullRequests.length} <small>件</small>
-      </div>
-      <div className="overflow-auto">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="capitalize">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getAllCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <AppDataTable
+        title={
+          <div>
+            今週マージされたプルリクエスト {pullRequests.length}{' '}
+            <small>件</small>
+          </div>
+        }
+        columns={columns}
+        data={pullRequests}
+      />
     </div>
   )
 }
