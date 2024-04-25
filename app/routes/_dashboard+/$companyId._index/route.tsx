@@ -81,6 +81,17 @@ const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
+    accessorKey: 'firstReviewedAt',
+    header: '初レビュー',
+    cell: ({ row }) =>
+      row.original.firstReviewedAt
+        ? dayjs
+            .utc(row.original.firstReviewedAt)
+            .tz('Asia/Tokyo')
+            .format('YYYY-MM-DD HH:mm')
+        : '',
+  },
+  {
     header: 'マージ',
     accessorKey: 'mergedAt',
     cell: ({ row }) =>
