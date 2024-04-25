@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { AppDataTable } from '~/app/components'
+import { AppDataTable, AppSortableHeader } from '~/app/components'
 import dayjs from '~/app/libs/dayjs'
 import { getOngoingPullRequestReport, getStartOfWeek } from './functions.server'
 
@@ -21,6 +21,9 @@ export type PullRequest = Awaited<
 const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'number',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="number" />
+    ),
     cell: (info) => (
       <a
         href={info.row.original.url}
@@ -31,16 +34,19 @@ const columns: ColumnDef<PullRequest>[] = [
         {info.renderValue<string>()}
       </a>
     ),
-    enableSorting: false,
     enableHiding: false,
   },
   {
     accessorKey: 'author',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="author" />
+    ),
     cell: ({ cell }) => cell.getValue(),
     enableHiding: false,
   },
   {
     accessorKey: 'title',
+    header: ({ column }) => <AppSortableHeader column={column} title="title" />,
     cell: ({ row }) => (
       <div className="w-80 truncate">{`[${row.original.title}](${row.original.url})`}</div>
     ),
@@ -48,8 +54,11 @@ const columns: ColumnDef<PullRequest>[] = [
   },
 
   {
-    header: '初コミット',
     accessorKey: 'firstCommittedAt',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="初コミット" />
+    ),
+    id: '初コミット',
     cell: ({ row }) =>
       row.original.firstCommittedAt
         ? dayjs
@@ -59,8 +68,11 @@ const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
-    header: 'PR作成',
     accessorKey: 'pullRequestCreatedAt',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="PR作成" />
+    ),
+    id: 'PR作成',
     cell: ({ row }) =>
       row.original.pullRequestCreatedAt
         ? dayjs
@@ -71,7 +83,10 @@ const columns: ColumnDef<PullRequest>[] = [
   },
   {
     accessorKey: 'firstReviewedAt',
-    header: '初レビュー',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="初レビュー" />
+    ),
+    id: '初レビュー',
     cell: ({ row }) =>
       row.original.firstReviewedAt
         ? dayjs
@@ -81,13 +96,18 @@ const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
-    header: 'duration',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="マージまで" />
+    ),
+    id: 'マージまで',
+    accessorFn: ({ createAndNowDiff }) => createAndNowDiff,
     cell: ({ row }) => (
       <span className="whitespace-nowrap">
         {row.original.createAndNowDiff.toFixed(1)}
         <small>日</small>
       </span>
     ),
+    enableHiding: false,
   },
 ]
 

@@ -1,5 +1,6 @@
 import { MixerHorizontalIcon } from '@radix-ui/react-icons'
 import type { Table } from '@tanstack/react-table'
+import { match, P } from 'ts-pattern'
 import {
   Button,
   DropdownMenu,
@@ -37,6 +38,11 @@ export function AppDataTableViewOptions<TData>({
             <DropdownMenuLabel>列の表示</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {hideableColumns.map((column) => {
+              const title = match(column.columnDef.header)
+                .with(P.string, () => String(column.columnDef.header))
+                .with(P.nullish, () => column.id)
+                .otherwise(() => column.id)
+
               return (
                 <DropdownMenuCheckboxItem
                   key={column.id}
@@ -44,8 +50,7 @@ export function AppDataTableViewOptions<TData>({
                   checked={column.getIsVisible()}
                   onCheckedChange={(value) => column.toggleVisibility(!!value)}
                 >
-                  {column.columnDef.header?.toString() ?? ''}
-                  {/* {column.columnDef.header?.toString() ?? column.id} */}
+                  {title}
                 </DropdownMenuCheckboxItem>
               )
             })}

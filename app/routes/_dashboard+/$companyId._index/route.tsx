@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { AppDataTable } from '~/app/components'
+import { AppDataTable, AppSortableHeader } from '~/app/components'
 import dayjs from '~/app/libs/dayjs'
 import { getMergedPullRequestReport, getStartOfWeek } from './functions.server'
 
@@ -21,6 +21,9 @@ export type PullRequest = Awaited<
 const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'number',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="number" />
+    ),
     cell: (info) => (
       <a
         href={info.row.original.url}
@@ -35,18 +38,25 @@ const columns: ColumnDef<PullRequest>[] = [
   },
   {
     accessorKey: 'author',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="author" />
+    ),
     cell: ({ cell }) => cell.getValue(),
     enableHiding: false,
   },
   {
     accessorKey: 'title',
+    header: ({ column }) => <AppSortableHeader column={column} title="title" />,
     cell: ({ row }) => (
       <div className="w-80 truncate">{`[${row.original.title}](${row.original.url})`}</div>
     ),
     enableHiding: false,
   },
   {
-    header: '初コミット',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="初コミット" />
+    ),
+    id: '初コミット',
     accessorKey: 'firstCommittedAt',
     cell: ({ row }) =>
       row.original.firstCommittedAt
@@ -57,8 +67,11 @@ const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
-    header: 'PR作成',
     accessorKey: 'pullRequestCreatedAt',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="PR作成" />
+    ),
+    id: 'PR作成',
     cell: ({ row }) =>
       row.original.pullRequestCreatedAt
         ? dayjs
@@ -69,7 +82,10 @@ const columns: ColumnDef<PullRequest>[] = [
   },
   {
     accessorKey: 'firstReviewedAt',
-    header: '初レビュー',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="初レビュー" />
+    ),
+    id: '初レビュー',
     cell: ({ row }) =>
       row.original.firstReviewedAt
         ? dayjs
@@ -79,8 +95,11 @@ const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
-    header: 'マージ',
-    accessorKey: 'mergedAt',
+    accessorKey: 'firstReviewedAt',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="マージ" />
+    ),
+    id: 'マージ',
     cell: ({ row }) =>
       row.original.mergedAt
         ? dayjs
@@ -90,8 +109,12 @@ const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
-    header: 'マージまで',
+    accessorKey: 'createAndMergeDiff',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="マージまで" />
+    ),
     cell: ({ row }) => `${row.original.createAndMergeDiff?.toFixed(1)}日`,
+    enableHiding: false,
   },
 ]
 
