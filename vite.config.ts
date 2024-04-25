@@ -5,7 +5,7 @@ import { remixRoutes } from 'remix-routes/vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
 
-installGlobals()
+installGlobals({ nativeFetch: true })
 
 export default defineConfig({
   server: { port: 3000 },
