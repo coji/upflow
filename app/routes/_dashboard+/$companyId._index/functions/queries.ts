@@ -23,7 +23,10 @@ export const getMergedPullRequestReport = async (
         ...pr,
         createAndMergeDiff: pr.mergedAt
           ? // 最初のコミットからマージまでの日数を計算
-            calculateBusinessHours(pr.mergedAt, new Date().toISOString()) / 24
+            calculateBusinessHours(
+              pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
+              pr.mergedAt,
+            ) / 24
           : null,
       }
     }),
