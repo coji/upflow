@@ -47,7 +47,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export default function CompanyLayout() {
   const { company } = useLoaderData<typeof loader>()
   const location = useLocation()
-  const tabValue = location.pathname.split('/')?.[3] ?? 'dashboard'
+  const tabValue = location.pathname.split('/')?.[2] ?? 'dashboard'
 
   return (
     <Card>
@@ -59,6 +59,13 @@ export default function CompanyLayout() {
             <TabsTrigger value="dashboard" asChild>
               <Link to={$path('/:companyId', { companyId: company.id })}>
                 Dashboard
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="ongoing" asChild>
+              <Link
+                to={$path('/:companyId/ongoing', { companyId: company.id })}
+              >
+                Ongoing
               </Link>
             </TabsTrigger>
           </TabsList>

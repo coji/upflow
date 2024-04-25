@@ -17,17 +17,17 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import { getMergedPullRequestReport, getStartOfWeek } from './functions.server'
+import { getOngoingPullRequestReport, getStartOfWeek } from './functions.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const startOfWeek = getStartOfWeek()
-  const pullRequests = await getMergedPullRequestReport(companyId, startOfWeek)
+  const pullRequests = await getOngoingPullRequestReport(companyId, startOfWeek)
   return typedjson({ companyId, pullRequests, startOfWeek })
 }
 
 export type PullRequest = Awaited<
-  ReturnType<typeof getMergedPullRequestReport>
+  ReturnType<typeof getOngoingPullRequestReport>
 >[0]
 const columnHelper = createColumnHelper<PullRequest>()
 
@@ -56,12 +56,17 @@ const columns: ColumnDef<PullRequest>[] = [
     cell: ({ row }) => `[${row.original.title}](${row.original.url})`,
   },
   {
-    header: 'マージまで',
-    cell: ({ row }) => `${row.original.createAndMergeDiff?.toFixed(1)}日`,
+    header: 'duration',
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        {row.original.createAndNowDiff.toFixed(1)}
+        <small>日</small>
+      </span>
+    ),
   },
 ]
 
-export default function CompanyIndex() {
+export default function OngoingPage() {
   const { companyId, pullRequests } = useTypedLoaderData<typeof loader>()
 
   const table = useReactTable({
@@ -74,7 +79,8 @@ export default function CompanyIndex() {
   return (
     <div>
       <div>
-        今週マージされたプルリクエスト {pullRequests.length} <small>件</small>
+        進行中のプルリクエスト {pullRequests.length}
+        <small>件</small>
       </div>
       <div className="overflow-auto">
         <Table>

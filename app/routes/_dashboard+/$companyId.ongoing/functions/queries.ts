@@ -2,7 +2,7 @@ import { pipe, sortBy } from 'remeda'
 import { db, type DB } from '~/app/services/db.server'
 import { calculateBusinessHours } from './utils'
 
-export const getMergedPullRequestReport = async (
+export const getOngoingPullRequestReport = async (
   companyId: DB.Company['id'],
   startDate: string,
 ) => {
@@ -10,9 +10,9 @@ export const getMergedPullRequestReport = async (
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .where('repositories.companyId', '==', companyId)
-    .where('mergedAt', '>', startDate)
+    .where('mergedAt', 'is', null)
+    .where('state', '==', 'open')
     .where('author', 'not like', '%[bot]')
-    .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
     .selectAll('pullRequests')
     .execute()
@@ -21,12 +21,13 @@ export const getMergedPullRequestReport = async (
     pullrequests.map((pr) => {
       return {
         ...pr,
-        createAndMergeDiff: pr.mergedAt
-          ? // 最初のコミットからマージまでの日数を計算
-            calculateBusinessHours(pr.mergedAt, new Date().toISOString()) / 24
-          : null,
+        createAndNowDiff:
+          calculateBusinessHours(
+            pr.pullRequestCreatedAt,
+            new Date().toISOString(),
+          ) / 24, // 作成日からの経過時間（営業時間のみカウント）
       }
     }),
-    sortBy((pr) => (pr.createAndMergeDiff ? -pr.createAndMergeDiff : 0)),
+    sortBy((pr) => (pr.createAndNowDiff ? -pr.createAndNowDiff : 0)),
   )
 }
