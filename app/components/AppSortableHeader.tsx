@@ -1,5 +1,6 @@
 import type { Column } from '@tanstack/react-table'
 import { ArrowDownAZIcon, ArrowUpAZIcon } from 'lucide-react'
+import { match } from 'ts-pattern'
 
 import { Button, type ButtonProps } from '~/app/components/ui'
 
@@ -13,7 +14,11 @@ export const AppSortableHeader = <TData,>({
   ...rest
 }: AppSortableHeaderProps<TData>) => {
   const handleSort = () => {
-    column.toggleSorting(column.getIsSorted() === 'asc')
+    match(column.getIsSorted())
+      .with(false, () => column.toggleSorting(false))
+      .with('asc', () => column.toggleSorting(true))
+      .with('desc', () => column.clearSorting())
+      .exhaustive()
   }
 
   return (

@@ -29,7 +29,9 @@ const columns: ColumnDef<PullRequest>[] = [
   },
   {
     accessorKey: 'number',
-    header: 'No',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="初コミット" />
+    ),
     cell: ({ cell }) => cell.getValue(),
     enableHiding: false,
   },
