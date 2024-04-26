@@ -5,6 +5,7 @@ import {
   useReactTable,
   type ColumnDef,
   type SortingState,
+  type VisibilityState,
 } from '@tanstack/react-table'
 import React from 'react'
 
@@ -32,14 +33,27 @@ export function AppDataTable<TData, TValue>({
   data,
 }: AppDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
-
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>(
+      columns
+        .filter(
+          (column) => 'accessorKey' in column && column.enableHiding !== false,
+        )
+        .reduce(
+          // @ts-ignore
+          // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+          (acc, obj) => ({ ...acc, [obj.id ?? obj.accessorKey]: false }),
+          {},
+        ),
+    )
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    state: { sorting },
+    onColumnVisibilityChange: setColumnVisibility,
+    state: { sorting, columnVisibility },
   })
 
   return (

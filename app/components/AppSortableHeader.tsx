@@ -17,16 +17,24 @@ export const AppSortableHeader = <TData,>({
   }
 
   return (
-    <Button variant="ghost" className="w-full" onClick={handleSort} {...rest}>
-      <span className="capitalize">{title}</span>
-      <span className="ml-2">
-        {column.getIsSorted() === 'asc' && (
-          <ArrowDownAZIcon className="h-4 w-4 text-muted-foreground" />
-        )}
-        {column.getIsSorted() === 'desc' && (
-          <ArrowUpAZIcon className="h-4 w-4 text-muted-foreground" />
-        )}
-      </span>
+    <Button
+      variant="ghost"
+      className="w-full cursor-pointer select-none"
+      onClick={handleSort}
+      {...rest}
+      asChild
+    >
+      <div>
+        <span className="capitalize">{title}</span>
+        <span className="ml-2">
+          {column.getIsSorted() === 'asc' && (
+            <ArrowDownAZIcon className="h-4 w-4 text-muted-foreground" />
+          )}
+          {column.getIsSorted() === 'desc' && (
+            <ArrowUpAZIcon className="h-4 w-4 text-muted-foreground" />
+          )}
+        </span>
+      </div>
     </Button>
   )
 }

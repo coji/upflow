@@ -20,23 +20,6 @@ export type PullRequest = Awaited<
 
 const columns: ColumnDef<PullRequest>[] = [
   {
-    accessorKey: 'number',
-    header: ({ column }) => (
-      <AppSortableHeader column={column} title="number" />
-    ),
-    cell: (info) => (
-      <a
-        href={info.row.original.url}
-        className="overflow:underline text-blue-500"
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        {info.renderValue<string>()}
-      </a>
-    ),
-    enableHiding: false,
-  },
-  {
     accessorKey: 'author',
     header: ({ column }) => (
       <AppSortableHeader column={column} title="author" />
@@ -45,14 +28,26 @@ const columns: ColumnDef<PullRequest>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: 'number',
+    header: 'No',
+    cell: ({ cell }) => cell.getValue(),
+    enableHiding: false,
+  },
+  {
     accessorKey: 'title',
     header: ({ column }) => <AppSortableHeader column={column} title="title" />,
     cell: ({ row }) => (
-      <div className="w-80 truncate">{`[${row.original.title}](${row.original.url})`}</div>
+      <a
+        href={row.original.url}
+        className="overflow:underline block w-96 truncate text-blue-500"
+        target="_blank"
+        rel="noreferrer noopener"
+      >
+        <span>{row.original.title}</span>
+      </a>
     ),
     enableHiding: false,
   },
-
   {
     accessorKey: 'firstCommittedAt',
     header: ({ column }) => (
