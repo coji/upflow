@@ -97,9 +97,9 @@ const columns: ColumnDef<PullRequest>[] = [
   },
   {
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="マージまで" />
+      <AppSortableHeader column={column} title="Duration" />
     ),
-    id: 'マージまで',
+    id: 'Duration',
     accessorFn: ({ createAndNowDiff }) => createAndNowDiff,
     cell: ({ row }) => (
       <span className="whitespace-nowrap">
