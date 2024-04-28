@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { z } from 'zod'
 import { zx } from 'zodix'
 
@@ -7,7 +7,7 @@ export const loader = ({ request, params }: LoaderFunctionArgs) => {
     companyId: z.string(),
     teamId: z.string(),
   })
-  return json({ companyId, teamId })
+  return { companyId, teamId }
 }
 
 export default function TeamUsers() {

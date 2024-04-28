@@ -1,6 +1,5 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import {
-  json,
   redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
@@ -33,7 +32,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!repository) {
     throw new Error('repository not found')
   }
-  return json({ companyId, repositoryId, repository })
+  return { companyId, repositoryId, repository }
 }
 
 export const action = async ({ params }: ActionFunctionArgs) => {

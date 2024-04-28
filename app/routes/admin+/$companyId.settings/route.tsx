@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
-import { typedjson, useTypedLoaderData } from 'remix-typedjson'
+import { useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -31,7 +31,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   }
   const exportSetting = await getExportSetting(companyId)
   const integration = await getIntegration(companyId)
-  return typedjson({ company, exportSetting, integration })
+  return { company, exportSetting, integration }
 }
 
 export const action = async ({
@@ -64,8 +64,7 @@ export const action = async ({
 }
 
 export default function CompanySettingsPage() {
-  const { company, exportSetting, integration } =
-    useTypedLoaderData<typeof loader>()
+  const { company, exportSetting, integration } = useLoaderData<typeof loader>()
   return (
     <Stack>
       <CompanySettings company={company} />

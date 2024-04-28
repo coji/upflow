@@ -1,10 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from '@remix-run/node'
+import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
@@ -57,7 +53,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!team) {
     throw new Error('チームが見つかりません')
   }
-  return json({ companyId, team })
+  return { companyId, team }
 }
 
 const schema = z.object({
@@ -74,7 +70,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   })
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
-    return json(submission.reply())
+    return submission.reply()
   }
 
   const { intent, ...value } = submission.value
@@ -90,11 +86,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       toastMessage = `Team ${teamId} updated`
     }
   } catch (e) {
-    return json(
-      submission.reply({
-        formErrors: [`Failed to ${intent} team: ${String(e)}`],
-      }),
-    )
+    return submission.reply({
+      formErrors: [`Failed to ${intent} team: ${String(e)}`],
+    })
   }
 
   return redirectWithSuccess(

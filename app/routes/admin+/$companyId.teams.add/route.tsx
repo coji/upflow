@@ -1,10 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from '@remix-run/node'
+import type { ActionFunctionArgs } from '@remix-run/node'
 import { Form, useActionData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
@@ -44,27 +40,20 @@ const schema = z.object({
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
 })
 
-export const loader = ({ params }: LoaderFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  return json({ companyId })
-}
-
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
-    return json(submission.reply())
+    return submission.reply()
   }
 
   const { id, name } = submission.value
   try {
     await addTeam({ id, name, companyId })
   } catch (e) {
-    return json(
-      submission.reply({
-        formErrors: [`Error saving team: ${String(e)}`],
-      }),
-    )
+    return submission.reply({
+      formErrors: [`Error saving team: ${String(e)}`],
+    })
   }
 
   return redirectWithSuccess(

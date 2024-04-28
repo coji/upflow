@@ -1,7 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { Outlet } from '@remix-run/react'
+import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
-import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -39,11 +38,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-  return typedjson({ companyId, company })
+  return { companyId, company }
 }
 
 export default function CompanyLayout() {
-  const { companyId, company } = useTypedLoaderData<typeof loader>()
+  const { companyId, company } = useLoaderData<typeof loader>()
   const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (

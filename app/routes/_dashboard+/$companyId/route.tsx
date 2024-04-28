@@ -1,8 +1,4 @@
-import {
-  json,
-  type LoaderFunctionArgs,
-  type MetaFunction,
-} from '@remix-run/node'
+import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import { Link, Outlet, useLoaderData, useLocation } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -41,7 +37,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
-  return json({ company })
+  return { company }
 }
 
 export default function CompanyLayout() {

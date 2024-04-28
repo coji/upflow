@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -48,7 +48,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     listTeamRepositories(teamId),
   ])
 
-  return json({ team, repositories, users })
+  return { team, repositories, users }
 }
 
 export default function CompanyTeamIndex() {
