@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
@@ -13,7 +12,7 @@ export const handle = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminUser = await requireAdminUser(request)
-  return json({ adminUser })
+  return { adminUser }
 }
 
 const AdminLayoutPage = () => {

@@ -1,8 +1,4 @@
-import {
-  json,
-  type LoaderFunctionArgs,
-  type MetaFunction,
-} from '@remix-run/node'
+import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import {
   Links,
   Meta,
@@ -26,9 +22,13 @@ export const meta: MetaFunction = () => [
   { name: 'description', content: 'Cycletime metrics reports.' },
 ]
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, response }: LoaderFunctionArgs) => {
   const { toast, headers } = await getToast(request)
-  return json({ toastData: toast }, { headers })
+  const cookie = headers.get('Set-Cookie')
+  if (toast && cookie) {
+    response?.headers.set('Set-Cookie', cookie)
+  }
+  return { toastData: toast }
 }
 
 const queryClient = new QueryClient()

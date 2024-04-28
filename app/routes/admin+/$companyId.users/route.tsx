@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -17,7 +17,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     companyId: z.string(),
   })
   const users = await listCompanyUsers(companyId)
-  return json({ companyId, users })
+  return { companyId, users }
 }
 
 export default function CompanyUsersPage() {

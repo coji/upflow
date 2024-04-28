@@ -1,6 +1,5 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons'
 import type { LoaderFunctionArgs } from '@remix-run/node'
-import { json } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import {
@@ -14,7 +13,7 @@ import {
 import { listCompanies } from './queries.server'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return json({ companies: await listCompanies() })
+  return { companies: await listCompanies() }
 }
 
 const AdminCompanyIndex = () => {

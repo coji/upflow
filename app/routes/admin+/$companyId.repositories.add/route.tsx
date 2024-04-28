@@ -1,6 +1,5 @@
 import { parseWithZod } from '@conform-to/zod'
 import {
-  json,
   redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
@@ -41,7 +40,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     schema: RepoSchema,
   })
   if (submission.status !== 'success') {
-    return json(submission.reply())
+    return submission.reply()
   }
 
   const integraiton = await getIntegration(companyId)
@@ -58,11 +57,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       })
     }
   } catch (e) {
-    return json(
-      submission.reply({
-        formErrors: ['Failed to add repository'],
-      }),
-    )
+    return submission.reply({
+      formErrors: ['Failed to add repository'],
+    })
   }
   return redirect($path('/admin/:companyId/repositories', { companyId }))
 }

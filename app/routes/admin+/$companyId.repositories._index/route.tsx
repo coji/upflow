@@ -1,5 +1,5 @@
 import { ExternalLinkIcon } from '@radix-ui/react-icons'
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { match } from 'ts-pattern'
@@ -25,7 +25,7 @@ import { listRepositories } from './queries.server'
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const repositories = await listRepositories(companyId)
-  return json({ companyId, repositories })
+  return { companyId, repositories }
 }
 
 export default function CompanyRepositoryIndexPage() {

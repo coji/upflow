@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -23,7 +23,7 @@ import { listCompanyTeams } from './queries.server'
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const teams = await listCompanyTeams(companyId)
-  return json({ companyId, teams })
+  return { companyId, teams }
 }
 
 export default function TeamIndexPage() {

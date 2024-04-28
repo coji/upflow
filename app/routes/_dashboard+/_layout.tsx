@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
@@ -11,7 +11,7 @@ export const handle = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request)
-  return json({ user })
+  return { user }
 }
 
 const DashboardLayoutPage = () => {

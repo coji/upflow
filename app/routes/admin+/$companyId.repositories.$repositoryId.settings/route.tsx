@@ -6,7 +6,6 @@ import {
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
 import {
-  json,
   redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
@@ -64,12 +63,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     throw new Error('company integration setted up')
   }
 
-  return json({
+  return {
     companyId,
     repositoryId,
     repository,
     provider: integration.provider,
-  })
+  }
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {

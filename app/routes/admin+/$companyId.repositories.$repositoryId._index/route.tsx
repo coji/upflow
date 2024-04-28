@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -49,7 +49,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   }
   const pulls = await listPullRequests(repositoryId)
 
-  return json({ companyId, repositoryId, repository, pulls })
+  return { companyId, repositoryId, repository, pulls }
 }
 
 const RepositoryPullsIndexPage = () => {

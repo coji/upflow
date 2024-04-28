@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -67,14 +67,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     reviews: await fetcher.reviews(pullId),
   }
 
-  return json({
+  return {
     companyId,
     repositoryId,
     repository,
     pull,
     storeData,
     fetchData,
-  })
+  }
 }
 
 const RepositoryPullsIndexPage = () => {

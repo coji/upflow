@@ -13,6 +13,9 @@ export default defineConfig({
     remix({
       ignoredRouteFiles: ['**/*'],
       routes: async (defineRoutes) => flatRoutes('routes', defineRoutes),
+      future: {
+        unstable_singleFetch: true,
+      },
     }),
     remixRoutes(),
     tsconfigPaths(),

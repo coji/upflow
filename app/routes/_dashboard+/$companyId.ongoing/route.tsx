@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { typedjson, useTypedLoaderData } from 'remix-typedjson'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable, AppSortableHeader } from '~/app/components'
@@ -11,7 +11,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
   const startOfWeek = getStartOfWeek()
   const pullRequests = await getOngoingPullRequestReport(companyId, startOfWeek)
-  return typedjson({ companyId, pullRequests, startOfWeek })
+  return { companyId, pullRequests, startOfWeek }
 }
 
 export type PullRequest = Awaited<
@@ -107,7 +107,7 @@ const columns: ColumnDef<PullRequest>[] = [
 ]
 
 export default function OngoingPage() {
-  const { pullRequests } = useTypedLoaderData<typeof loader>()
+  const { pullRequests } = useLoaderData<typeof loader>()
 
   return (
     <div>

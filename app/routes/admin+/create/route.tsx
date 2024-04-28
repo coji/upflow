@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { json, redirect, type ActionFunctionArgs } from '@remix-run/node'
+import { redirect, type ActionFunctionArgs } from '@remix-run/node'
 import { Form, Link, useActionData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -39,17 +39,15 @@ export const schema = z.object({
 export const action = async ({ request }: ActionFunctionArgs) => {
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
-    return json(submission.reply())
+    return submission.reply()
   }
   try {
     const { company } = await createCompany(submission.value)
     return redirect($path('/admin/:companyId', { companyId: company.id }))
   } catch (e) {
-    return json(
-      submission.reply({
-        formErrors: [`Failed to create company: ${String(e)}`],
-      }),
-    )
+    return submission.reply({
+      formErrors: [`Failed to create company: ${String(e)}`],
+    })
   }
 }
 

@@ -1,6 +1,6 @@
 import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu'
 import { CaretSortIcon } from '@radix-ui/react-icons'
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
 import { useEffect, useState } from 'react'
 import {
@@ -18,7 +18,7 @@ import { useCurrentCompany } from './hooks/useCurrentCompany'
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request)
   const companies = await listUserCompanies(user.id)
-  return json({ user, companies })
+  return { user, companies }
 }
 
 interface CompanySwitcherProps
