@@ -1,12 +1,12 @@
-import { DropdownMenuGroup } from '@radix-ui/react-dropdown-menu'
-import { CaretSortIcon } from '@radix-ui/react-icons'
 import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
+import { ChevronsUpDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/app/components/ui'
@@ -56,7 +56,7 @@ export const CompanySwitcher = ({
           <div>
             {currentCompany ? currentCompany.name : 'Select Company...'}
           </div>
-          <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDownIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[10rem] p-0 md:w-[12rem]">

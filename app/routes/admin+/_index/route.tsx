@@ -1,6 +1,6 @@
-import { PlusCircledIcon } from '@radix-ui/react-icons'
 import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, Outlet, useLoaderData } from '@remix-run/react'
+import { PlusCircleIcon } from 'lucide-react'
 import { $path } from 'remix-routes'
 import {
   Button,
@@ -39,7 +39,7 @@ const AdminCompanyIndex = () => {
         <CardFooter>
           <Button asChild className="w-full" variant="outline">
             <Link to={$path('/admin/create')}>
-              <PlusCircledIcon className="mr-2" />
+              <PlusCircleIcon className="mr-2" />
               新規作成
             </Link>
           </Button>

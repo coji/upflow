@@ -1,5 +1,5 @@
-import { MixerHorizontalIcon } from '@radix-ui/react-icons'
 import type { Table } from '@tanstack/react-table'
+import { Settings2Icon } from 'lucide-react'
 import { match, P } from 'ts-pattern'
 import {
   Button,
@@ -28,7 +28,7 @@ export function AppDataTableViewOptions<TData>({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
-          <MixerHorizontalIcon className="mr-2 h-4 w-4" />
+          <Settings2Icon className="mr-2 h-4 w-4" />
           オプション
         </Button>
       </DropdownMenuTrigger>
