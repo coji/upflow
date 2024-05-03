@@ -69,4 +69,4 @@ COPY --from=build /upflow/app /upflow/app
 COPY --from=build /upflow/batch /upflow/batch
 COPY --from=build /upflow/server.mjs /upflow/server.mjs
 
-CMD [ "sh", "./start.sh" ]
+CMD [ "node", "server.mjs" ]
