@@ -1,6 +1,6 @@
 # base node image
-FROM node:20-bullseye-slim as base
-ARG PNPM_VERSION=9.0.4
+FROM node:20-bookworm-slim as base
+ARG PNPM_VERSION=9.0.6
 
 # Install openssl for Prisma
 RUN apt-get update \
@@ -8,15 +8,6 @@ RUN apt-get update \
   && apt-get clean \
   && npm i -g pnpm@${PNPM_VERSION} \
   && rm -rf /var/lib/apt/lists/* 
-
-# duckdb のインストール
-RUN if [ "$(uname -m)" = 'aarch64' ]; then \
-    curl -L -o /tmp/duckdb.zip -O "https://github.com/duckdb/duckdb/releases/download/v0.9.2/duckdb_cli-linux-aarch64.zip"; \
-  else \
-    curl -L -o /tmp/duckdb.zip -O "https://github.com/duckdb/duckdb/releases/download/v0.9.2/duckdb_cli-linux-amd64.zip"; \
-  fi
-RUN unzip /tmp/duckdb.zip -d /tmp \
-  && mv /tmp/duckdb /usr/local/bin/duckdb
 
 # Install all node_modules, including dev dependencies
 FROM base as deps
