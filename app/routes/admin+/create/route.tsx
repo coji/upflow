@@ -43,7 +43,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
   try {
     const { company } = await createCompany(submission.value)
-    return redirect($path('/admin/:companyId', { companyId: company.id }))
+    return redirect($path('/admin/:company', { company: company.id }))
   } catch (e) {
     return submission.reply({
       formErrors: [`Failed to create company: ${String(e)}`],
