@@ -15,7 +15,4 @@ dayjs.extend(utc)
 import weekday from 'dayjs/plugin/weekday.js'
 dayjs.extend(weekday)
 
-import 'dayjs/locale/ja.js'
-dayjs.locale('ja')
-
 export default dayjs

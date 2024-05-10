@@ -4,15 +4,9 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable, AppSortableHeader } from '~/app/components'
+import { Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import { getMergedPullRequestReport, getStartOfWeek } from './functions.server'
-
-export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const startOfWeek = getStartOfWeek()
-  const pullRequests = await getMergedPullRequestReport(companyId, startOfWeek)
-  return { companyId, pullRequests, startOfWeek }
-}
 
 export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>
@@ -103,6 +97,7 @@ const columns: ColumnDef<PullRequest>[] = [
             .tz('Asia/Tokyo')
             .format('YYYY-MM-DD HH:mm')
         : '',
+    enableHiding: false,
   },
   {
     accessorKey: 'createAndMergeDiff',
@@ -114,11 +109,25 @@ const columns: ColumnDef<PullRequest>[] = [
   },
 ]
 
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const from = getStartOfWeek().toISOString()
+  const to = dayjs().utc().toISOString()
+  const pullRequests = await getMergedPullRequestReport(companyId, from, to)
+  return { companyId, pullRequests, from, to }
+}
+
 export default function CompanyIndex() {
-  const { pullRequests } = useLoaderData<typeof loader>()
+  const { pullRequests, from, to } = useLoaderData<typeof loader>()
 
   return (
-    <div>
+    <Stack>
+      <div className="grid grid-cols-2">
+        <div>From</div>
+        <div>{from}</div>
+        <div>To</div>
+        <div>{to}</div>
+      </div>
       <AppDataTable
         title={
           <div>
@@ -129,6 +138,6 @@ export default function CompanyIndex() {
         columns={columns}
         data={pullRequests}
       />
-    </div>
+    </Stack>
   )
 }

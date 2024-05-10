@@ -1,12 +1,12 @@
 import dayjs from '~/app/libs/dayjs'
 
-export function getStartOfWeek() {
+export function getStartOfWeek(timezone = 'Asia/Tokyo') {
   // 現在の日付
-  const today = dayjs()
+  const today = dayjs().utc().tz(timezone)
   // 今週の月曜日を取得
-  const monday = today.weekday(1)
+  const monday = today.weekday(1).startOf('day')
 
-  return monday.format('YYYY-MM-DD')
+  return monday
 }
 
 // 2つの日時間の時間を計算する関数（土日を除外）

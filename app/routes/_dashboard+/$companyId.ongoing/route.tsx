@@ -4,14 +4,17 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable, AppSortableHeader } from '~/app/components'
+import { Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
-import { getOngoingPullRequestReport, getStartOfWeek } from './functions.server'
+import { getOngoingPullRequestReport } from './functions.server'
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { companyId } = zx.parseParams(params, { companyId: z.string() })
-  const startOfWeek = getStartOfWeek()
-  const pullRequests = await getOngoingPullRequestReport(companyId, startOfWeek)
-  return { companyId, pullRequests, startOfWeek }
+  const from = null
+  const to = dayjs().utc().toISOString()
+
+  const pullRequests = await getOngoingPullRequestReport(companyId, from, to)
+  return { companyId, pullRequests, from, to }
 }
 
 export type PullRequest = Awaited<
@@ -75,6 +78,7 @@ const columns: ColumnDef<PullRequest>[] = [
             .tz('Asia/Tokyo')
             .format('YYYY-MM-DD HH:mm')
         : '',
+    enableHiding: false,
   },
   {
     accessorKey: 'firstReviewedAt',
@@ -107,10 +111,16 @@ const columns: ColumnDef<PullRequest>[] = [
 ]
 
 export default function OngoingPage() {
-  const { pullRequests } = useLoaderData<typeof loader>()
+  const { pullRequests, from, to } = useLoaderData<typeof loader>()
 
   return (
-    <div>
+    <Stack>
+      <div className="grid grid-cols-2">
+        <div>From</div>
+        <div>{from}</div>
+        <div>To</div>
+        <div>{to}</div>
+      </div>
       <AppDataTable
         title={
           <div>
@@ -121,6 +131,6 @@ export default function OngoingPage() {
         columns={columns}
         data={pullRequests}
       />
-    </div>
+    </Stack>
   )
 }

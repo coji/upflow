@@ -4,12 +4,19 @@ import { calculateBusinessHours } from './utils'
 
 export const getOngoingPullRequestReport = async (
   companyId: DB.Company['id'],
-  startDate: string,
+  fromDateTime: string | null,
+  toDateTime: string | null,
 ) => {
   const pullrequests = await db
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .where('repositories.companyId', '==', companyId)
+    .$if(fromDateTime !== null, (qb) =>
+      qb.where('pullRequestCreatedAt', '>=', fromDateTime),
+    )
+    .$if(toDateTime !== null, (qb) =>
+      qb.where('pullRequestCreatedAt', '<=', toDateTime),
+    )
     .where('mergedAt', 'is', null)
     .where('state', '==', 'open')
     .where('author', 'not like', '%[bot]')

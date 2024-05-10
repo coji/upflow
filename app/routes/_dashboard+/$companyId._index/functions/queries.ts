@@ -4,13 +4,17 @@ import { calculateBusinessHours } from './utils'
 
 export const getMergedPullRequestReport = async (
   companyId: DB.Company['id'],
-  startDate: string,
+  fromDateTime: string | null,
+  toDateTime: string | null,
 ) => {
   const pullrequests = await db
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .where('repositories.companyId', '==', companyId)
-    .where('mergedAt', '>', startDate)
+    .$if(fromDateTime !== null, (qb) =>
+      qb.where('mergedAt', '>=', fromDateTime),
+    )
+    .$if(toDateTime !== null, (qb) => qb.where('mergedAt', '<=', toDateTime))
     .where('author', 'not like', '%[bot]')
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
