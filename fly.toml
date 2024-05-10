@@ -14,9 +14,6 @@ swap_size_mb = 512
 
 [build]
 
-[deploy]
-  release_command = "npx prisma migrate deploy"
-
 [[mounts]]
   source = "data"
   destination = "/upflow/data"

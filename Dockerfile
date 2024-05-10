@@ -64,8 +64,9 @@ COPY --from=build /upflow/public /upflow/public
 COPY --from=build /upflow/prisma /upflow/prisma
 COPY --from=build /upflow/package.json /upflow/package.json
 COPY --from=build /upflow/tsconfig.json /upflow/tsconfig.json
+COPY --from=build /upflow/start.sh /upflow/start.sh
 COPY --from=build /upflow/app /upflow/app
 COPY --from=build /upflow/batch /upflow/batch
 COPY --from=build /upflow/server.mjs /upflow/server.mjs
 
-CMD [ "node", "server.mjs" ]
+CMD [ "sh", "./start.sh" ]
