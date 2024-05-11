@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
@@ -8,14 +8,14 @@ import { Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import { getOngoingPullRequestReport } from './functions.server'
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ params }) => {
   const { company: companyId } = zx.parseParams(params, { company: z.string() })
   const from = null
   const to = dayjs().utc().toISOString()
 
   const pullRequests = await getOngoingPullRequestReport(companyId, from, to)
   return { companyId, pullRequests, from, to }
-}
+})
 
 export type PullRequest = Awaited<
   ReturnType<typeof getOngoingPullRequestReport>

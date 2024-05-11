@@ -1,4 +1,7 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
+import {
+  unstable_defineLoader as defineLoader,
+  type ActionFunctionArgs,
+} from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -23,7 +26,7 @@ import {
 } from './functions/queries.server'
 import { INTENTS, intentsSchema } from './types'
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ params }) => {
   const { company: companyId } = zx.parseParams(params, { company: z.string() })
   const company = await getCompany(companyId)
   if (!company) {
@@ -32,16 +35,22 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const exportSetting = await getExportSetting(companyId)
   const integration = await getIntegration(companyId)
   return { company, exportSetting, integration }
-}
+})
 
 export const action = async ({
   request,
   params,
   context,
 }: ActionFunctionArgs) => {
-  const { intent } = await zx.parseForm(await request.clone().formData(), {
-    intent: intentsSchema,
-  })
+  const { intent } = await zx.parseForm(
+    await request.clone().formData(),
+    {
+      intent: intentsSchema,
+    },
+    {
+      message: 'hoge',
+    },
+  )
 
   return await match(intent)
     .with(INTENTS.companySettings, () =>

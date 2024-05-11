@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -12,13 +12,13 @@ export const handle = {
     to: $path('/admin/:company/users', { company: companyId }),
   }),
 }
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ request, params }) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
   const users = await listCompanyUsers(companyId)
   return { companyId, users }
-}
+})
 
 export default function CompanyUsersPage() {
   const { users } = useLoaderData<typeof loader>()

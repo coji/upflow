@@ -1,6 +1,9 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import type { ActionFunctionArgs } from '@remix-run/node'
+import {
+  unstable_defineLoader as defineLoader,
+  type ActionFunctionArgs,
+} from '@remix-run/node'
 import { Form, useActionData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
@@ -38,6 +41,11 @@ const schema = z.object({
     .string()
     .max(20)
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
+})
+
+export const loader = defineLoader(({ params }) => {
+  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+  return { companyId }
 })
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {

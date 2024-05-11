@@ -12,7 +12,7 @@ export default defineConfig({
   plugins: [
     remix({
       ignoredRouteFiles: ['**/*'],
-      routes: async (defineRoutes) => flatRoutes('routes', defineRoutes),
+      routes: (defineRoutes) => flatRoutes('routes', defineRoutes),
       future: {
         unstable_singleFetch: true,
       },

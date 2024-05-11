@@ -1,11 +1,14 @@
-import { redirect, type LoaderFunctionArgs } from '@remix-run/node'
+import {
+  unstable_defineLoader as defineLoader,
+  redirect,
+} from '@remix-run/node'
 import { $path } from 'remix-routes'
 import {
   authenticator,
   sessionStorage,
 } from '~/app/features/auth/services/authenticator.server'
 
-export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ request, context }) => {
   const user = await authenticator.authenticate('google', request, {
     failureRedirect: $path('/login'),
     context,
@@ -19,4 +22,4 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   })
 
   return redirect($path('/'), { headers })
-}
+})

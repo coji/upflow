@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppLayout } from '~/app/components'
@@ -19,7 +19,7 @@ import {
   sessionStorage,
 } from '~/app/features/auth/services/authenticator.server'
 
-export const loader = async ({ request, response }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ request, response }) => {
   // 認証済みならトップページにリダイレクト
   await authenticator.isAuthenticated(request, { successRedirect: $path('/') })
 
@@ -37,7 +37,7 @@ export const loader = async ({ request, response }: LoaderFunctionArgs) => {
   )
 
   return { errorMessage: error?.message }
-}
+})
 
 export default function LoginPage() {
   const { errorMessage } = useLoaderData<typeof loader>()

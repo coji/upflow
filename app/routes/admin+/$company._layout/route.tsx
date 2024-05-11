@@ -1,5 +1,9 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { Outlet, useLoaderData } from '@remix-run/react'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
+import {
+  Outlet,
+  useLoaderData,
+  type MetaArgs_SingleFetch,
+} from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -15,7 +19,7 @@ import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 import { CompanyNavLink } from './components'
 import { getCompany } from './functions.server'
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => [
+export const meta = ({ data }: MetaArgs_SingleFetch<typeof loader>) => [
   { title: `${data?.company.name} - Upflow Admin` },
 ]
 
@@ -32,14 +36,14 @@ export const handle = {
   },
 }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ params }) => {
   const { company: companyId } = zx.parseParams(params, { company: z.string() })
   const company = await getCompany(companyId)
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
   return { companyId, company }
-}
+})
 
 export default function CompanyLayout() {
   const { companyId, company } = useLoaderData<typeof loader>()

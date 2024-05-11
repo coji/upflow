@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -28,7 +28,7 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ request, params }) => {
   const {
     company: companyId,
     repository: repositoryId,
@@ -84,7 +84,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     storeData,
     fetchData,
   }
-}
+})
 
 const RepositoryPullsIndexPage = () => {
   const { pull, storeData, fetchData } = useLoaderData<typeof loader>()

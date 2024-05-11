@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { Link, useFetcher } from '@remix-run/react'
 import { ChevronsUpDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -15,11 +15,11 @@ import { cn } from '~/app/libs/utils'
 import { listUserCompanies } from './functions.server'
 import { useCurrentCompany } from './hooks/useCurrentCompany'
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ request }) => {
   const user = await requireUser(request)
   const companies = await listUserCompanies(user.id)
   return { user, companies }
-}
+})
 
 interface CompanySwitcherProps
   extends React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger> {

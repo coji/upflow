@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { Outlet } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -12,10 +12,10 @@ export const handle = {
   }),
 }
 
-export const loader = ({ params }: LoaderFunctionArgs) => {
+export const loader = defineLoader(({ params }) => {
   const { company: companyId } = zx.parseParams(params, { company: z.string() })
   return { companyId }
-}
+})
 
 export default function TeamPage() {
   return (

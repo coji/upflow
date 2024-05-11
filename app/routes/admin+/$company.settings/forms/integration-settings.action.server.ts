@@ -7,7 +7,7 @@ import { upsertIntegration } from '../functions.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../types'
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const { company: companyId } = zx.parseParams(params, { company: z.string() })
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {
