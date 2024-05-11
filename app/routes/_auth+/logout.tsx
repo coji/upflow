@@ -1,19 +1,19 @@
-import type { ActionFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { useFetcher } from '@remix-run/react'
 import type React from 'react'
 import { $path } from 'remix-routes'
 import { Button, type ButtonProps } from '~/app/components/ui'
 import { authenticator } from '~/app/features/auth/services/authenticator.server'
 
-export const loader = async ({ request }: ActionFunctionArgs) => {
-  await authenticator.logout(request, { redirectTo: '/' })
-}
+export const loader = defineLoader(async ({ request }) => {
+  return await authenticator.logout(request, { redirectTo: '/' })
+})
 
 interface LogoutButtonProps extends ButtonProps {
   children?: React.ReactNode
 }
 export const LogoutButton = ({ children, ...rest }: LogoutButtonProps) => {
-  const fetcher = useFetcher()
+  const fetcher = useFetcher<typeof loader>()
 
   return (
     <fetcher.Form method="GET" action={$path('/logout')}>

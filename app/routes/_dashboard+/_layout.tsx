@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
@@ -9,10 +9,10 @@ export const handle = {
   breadcrumb: () => ({ label: 'Dashboard', to: $path('/') }),
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ request }) => {
   const user = await requireUser(request)
   return { user }
-}
+})
 
 const DashboardLayoutPage = () => {
   const { user } = useLoaderData<typeof loader>()

@@ -7,7 +7,7 @@ import { upsertExportSetting } from '../functions.server'
 import { INTENTS, exportSettingsSchema as schema } from '../types'
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { companyId } = zx.parseParams(params, { companyId: z.string() })
+  const { company: companyId } = zx.parseParams(params, { company: z.string() })
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {

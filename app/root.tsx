@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
+import { unstable_defineLoader as defineLoader } from '@remix-run/node'
 import {
   Links,
   Meta,
@@ -17,19 +17,19 @@ import { Toaster, useToast } from '~/app/components/ui'
 import { AppLoadingProgress } from './components'
 import './styles/globals.css'
 
-export const meta: MetaFunction = () => [
+export const meta = () => [
   { title: 'UpFlow' },
   { name: 'description', content: 'Cycletime metrics reports.' },
 ]
 
-export const loader = async ({ request, response }: LoaderFunctionArgs) => {
+export const loader = defineLoader(async ({ request, response }) => {
   const { toast, headers } = await getToast(request)
   const cookie = headers.get('Set-Cookie')
   if (toast && cookie) {
     response?.headers.set('Set-Cookie', cookie)
   }
   return { toastData: toast }
-}
+})
 
 const queryClient = new QueryClient()
 

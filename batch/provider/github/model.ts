@@ -12,7 +12,7 @@ export type GitHubReviewComment =
   RestEndpointMethodTypes['pulls']['listReviewComments']['response']['data'][0]
 export type GitHubUser = GitHubPullRequest['user']
 
-export interface ShapedGitHubPullRequest {
+export type ShapedGitHubPullRequest = {
   id: GitHubPullRequest['id']
   organization: GitHubPullRequest['base']['repo']['owner']['login']
   repo: GitHubPullRequest['base']['repo']['name']
@@ -32,28 +32,28 @@ export interface ShapedGitHubPullRequest {
   merge_commit_sha: GitHubPullRequest['merge_commit_sha'] | null
 }
 
-export interface ShapedGitHubCommit {
+export type ShapedGitHubCommit = {
   sha: GitHubCommit['sha']
   url: GitHubCommit['html_url']
   committer: NonNullable<GitHubCommit['author']>['login'] | null
   date: NonNullable<GitHubCommit['commit']['author']>['date'] | null
 }
 
-export interface ShapedGitHubIssueComment {
+export type ShapedGitHubIssueComment = {
   id: GithubIssueComment['id']
   user: NonNullable<GithubIssueComment['user']>['login'] | null
   url: GithubIssueComment['html_url']
   created_at: GithubIssueComment['created_at']
 }
 
-export interface ShapedGitHubReviewComment {
+export type ShapedGitHubReviewComment = {
   id: GitHubReviewComment['id']
   user: GitHubReviewComment['user']['login']
   url: GitHubReviewComment['html_url']
   created_at: GitHubReviewComment['created_at']
 }
 
-export interface ShapedGitHubReview {
+export type ShapedGitHubReview = {
   id: GitHubReview['id']
   user: NonNullable<GitHubReview['user']>['login'] | null
   state: GitHubReview['state']
@@ -62,7 +62,7 @@ export interface ShapedGitHubReview {
 }
 
 // タグ
-export interface ShapedGitHubTag {
+export type ShapedGitHubTag = {
   name: string
   sha: string
   committed_at: string

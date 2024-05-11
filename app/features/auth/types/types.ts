@@ -1,6 +1,6 @@
 import type { DB, Selectable } from '~/app/services/db.server'
 
-export interface SessionUser {
+export type SessionUser = {
   id: Selectable<DB.User>['id']
   email: Selectable<DB.User>['email']
   displayName: Selectable<DB.User>['displayName']
