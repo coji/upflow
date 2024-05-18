@@ -42,15 +42,9 @@ export const action = async ({
   params,
   context,
 }: ActionFunctionArgs) => {
-  const { intent } = await zx.parseForm(
-    await request.clone().formData(),
-    {
-      intent: intentsSchema,
-    },
-    {
-      message: 'hoge',
-    },
-  )
+  const { intent } = await zx.parseForm(await request.clone().formData(), {
+    intent: intentsSchema,
+  })
 
   return await match(intent)
     .with(INTENTS.companySettings, () =>
