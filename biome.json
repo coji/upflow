@@ -17,17 +17,5 @@
         "noRedeclare": "off"
       }
     }
-  },
-  "formatter": {
-    "enabled": false,
-    "indentStyle": "space"
-  },
-  "javascript": {
-    "formatter": {
-      "enabled": true,
-      "quoteStyle": "single",
-      "semicolons": "asNeeded",
-      "trailingComma": "all"
-    }
   }
 }

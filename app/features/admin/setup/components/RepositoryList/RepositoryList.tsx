@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import React, { useCallback, useState } from 'react'
-import { uniq } from 'remeda'
+import { unique } from 'remeda'
 import {
   Accordion,
   AccordionContent,
@@ -17,7 +17,7 @@ interface RepositoryListProps {
 }
 export const RepositoryList = ({ allRepos, onChange }: RepositoryListProps) => {
   const [checkedRepos, setCheckedRepos] = useState<CheckedRepositories>({})
-  const orgs = uniq(allRepos.map((repo) => repo.owner) ?? [])
+  const orgs = unique(allRepos.map((repo) => repo.owner) ?? [])
 
   // 選択されたリポジトリリスト。IDのハッシュから配列にする。
   const selectedRepos = useCallback(
