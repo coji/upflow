@@ -1,11 +1,14 @@
 import { vitePlugin as remix } from '@remix-run/dev'
-import { installGlobals } from '@remix-run/node'
 import { flatRoutes } from 'remix-flat-routes'
 import { remixRoutes } from 'remix-routes/vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
 
-installGlobals({ nativeFetch: true })
+declare module '@remix-run/server-runtime' {
+  interface Future {
+    unstable_singleFetch: true
+  }
+}
 
 export default defineConfig({
   server: { port: 3000 },
@@ -18,7 +21,8 @@ export default defineConfig({
         v3_relativeSplatPath: true,
         v3_throwAbortReason: true,
         unstable_singleFetch: true,
-        unstable_fogOfWar: true,
+        unstable_lazyRouteDiscovery: true,
+        unstable_optimizeDeps: true,
       },
     }),
     remixRoutes(),

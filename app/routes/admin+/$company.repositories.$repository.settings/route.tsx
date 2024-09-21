@@ -6,8 +6,8 @@ import {
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
 import {
-  unstable_defineAction as defineAction,
-  unstable_defineLoader as defineLoader,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
   redirect,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
@@ -49,7 +49,7 @@ const githubSchema = z.object({
   releaseDetectionKey: z.string().min(1),
 })
 
-export const loader = defineLoader(async ({ params }) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -72,9 +72,9 @@ export const loader = defineLoader(async ({ params }) => {
     repository,
     provider: integration.provider,
   }
-})
+}
 
-export const action = defineAction(async ({ request, params }) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -88,7 +88,7 @@ export const action = defineAction(async ({ request, params }) => {
   await updateRepository(repositoryId, entries)
 
   return redirect($path('/admin/:company/repositories', { company: companyId }))
-})
+}
 
 const GithubRepositoryForm = ({
   repository,

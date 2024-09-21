@@ -1,7 +1,4 @@
-import {
-  unstable_defineLoader as defineLoader,
-  type ActionFunctionArgs,
-} from '@remix-run/node'
+import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -26,8 +23,10 @@ import {
 } from './functions/queries.server'
 import { INTENTS, intentsSchema } from './types'
 
-export const loader = defineLoader(async ({ params }) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const { company: companyId } = zx.parseParams(params, {
+    company: z.string(),
+  })
   const company = await getCompany(companyId)
   if (!company) {
     throw new Response('Company not found', { status: 404 })
@@ -35,7 +34,7 @@ export const loader = defineLoader(async ({ params }) => {
   const exportSetting = await getExportSetting(companyId)
   const integration = await getIntegration(companyId)
   return { company, exportSetting, integration }
-})
+}
 
 export const action = async ({
   request,

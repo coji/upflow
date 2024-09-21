@@ -1,10 +1,10 @@
-import { unstable_defineLoader as defineLoader } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import {
   Link,
   Outlet,
   useLoaderData,
   useLocation,
-  type MetaArgs_SingleFetch,
+  type MetaArgs,
 } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
@@ -20,7 +20,7 @@ import {
 } from '~/app/components/ui'
 import { getCompany } from './queries.server'
 
-export const meta = ({ data }: MetaArgs_SingleFetch<typeof loader>) => [
+export const meta = ({ data }: MetaArgs<typeof loader>) => [
   { title: `${data?.company.name} - Upflow Admin` },
 ]
 
@@ -37,14 +37,16 @@ export const handle = {
   },
 }
 
-export const loader = defineLoader(async ({ params }) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const { company: companyId } = zx.parseParams(params, {
+    company: z.string(),
+  })
   const company = await getCompany(companyId)
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
   return { company }
-})
+}
 
 export default function CompanyLayout() {
   const { company } = useLoaderData<typeof loader>()

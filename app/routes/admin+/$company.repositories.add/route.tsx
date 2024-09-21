@@ -1,8 +1,8 @@
 import { parseWithZod } from '@conform-to/zod'
 import {
-  unstable_defineLoader as defineLoader,
   redirect,
   type ActionFunctionArgs,
+  type LoaderFunctionArgs,
 } from '@remix-run/node'
 import { useFetcher, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
@@ -24,17 +24,21 @@ const RepoSchema = z.object({
   ),
 })
 
-export const loader = defineLoader(async ({ params }) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const { company: companyId } = zx.parseParams(params, {
+    company: z.string(),
+  })
   const integration = await getIntegration(companyId)
   if (!integration) {
     throw new Error('integration not created')
   }
   return { integration }
-})
+}
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+  const { company: companyId } = zx.parseParams(params, {
+    company: z.string(),
+  })
 
   const submission = parseWithZod(await request.formData(), {
     schema: RepoSchema,

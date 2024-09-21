@@ -1,9 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import {
-  unstable_defineLoader as defineLoader,
-  type ActionFunctionArgs,
-} from '@remix-run/node'
+import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
@@ -47,7 +44,7 @@ export const handle = {
   }),
 }
 
-export const loader = defineLoader(async ({ params }) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { company: companyId, team: teamId } = zx.parseParams(params, {
     company: z.string(),
     team: z.string(),
@@ -57,7 +54,7 @@ export const loader = defineLoader(async ({ params }) => {
     throw new Error('チームが見つかりません')
   }
   return { companyId, team }
-})
+}
 
 const schema = z.object({
   name: z

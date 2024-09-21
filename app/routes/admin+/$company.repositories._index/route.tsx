@@ -1,4 +1,4 @@
-import { unstable_defineLoader as defineLoader } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
 import { ExternalLinkIcon } from 'lucide-react'
 import { $path } from 'remix-routes'
@@ -22,11 +22,13 @@ import {
 } from '~/app/components/ui'
 import { listRepositories } from './queries.server'
 
-export const loader = defineLoader(async ({ params }) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const { company: companyId } = zx.parseParams(params, {
+    company: z.string(),
+  })
   const repositories = await listRepositories(companyId)
   return { companyId, repositories }
-})
+}
 
 export default function CompanyRepositoryIndexPage() {
   const { companyId, repositories } = useLoaderData<typeof loader>()

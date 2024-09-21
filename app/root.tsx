@@ -1,4 +1,4 @@
-import { unstable_defineLoader as defineLoader } from '@remix-run/node'
+import { unstable_data, type LoaderFunctionArgs } from '@remix-run/node'
 import {
   Links,
   Meta,
@@ -22,14 +22,10 @@ export const meta = () => [
   { name: 'description', content: 'Cycletime metrics reports.' },
 ]
 
-export const loader = defineLoader(async ({ request, response }) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { toast, headers } = await getToast(request)
-  const cookie = headers.get('Set-Cookie')
-  if (toast && cookie) {
-    response?.headers.set('Set-Cookie', cookie)
-  }
-  return { toastData: toast }
-})
+  return unstable_data({ toastData: toast }, { headers })
+}
 
 const queryClient = new QueryClient()
 

@@ -1,4 +1,4 @@
-import { unstable_defineLoader as defineLoader } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
@@ -10,10 +10,10 @@ export const handle = {
   breadcrumb: () => ({ label: 'Admin', to: $path('/admin') }),
 }
 
-export const loader = defineLoader(async ({ request }) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminUser = await requireAdminUser(request)
   return { adminUser }
-})
+}
 
 const AdminLayoutPage = () => {
   const { adminUser } = useLoaderData<typeof loader>()

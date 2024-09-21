@@ -1,7 +1,7 @@
 import { getFormProps, useForm } from '@conform-to/react'
 import {
-  unstable_defineAction as defineAction,
-  unstable_defineLoader as defineLoader,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
   redirect,
 } from '@remix-run/node'
 import { Form, Link, useLoaderData } from '@remix-run/react'
@@ -23,7 +23,7 @@ import { deleteRepository, getRepository } from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Delete' }) }
 
-export const loader = defineLoader(async ({ params }) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -36,9 +36,9 @@ export const loader = defineLoader(async ({ params }) => {
     throw new Error('repository not found')
   }
   return { companyId, repositoryId, repository }
-})
+}
 
-export const action = defineAction(async ({ params }) => {
+export const action = async ({ params }: ActionFunctionArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -50,7 +50,7 @@ export const action = defineAction(async ({ params }) => {
   await deleteRepository(repositoryId)
 
   return redirect($path('/admin/:company/repositories', { company: companyId }))
-})
+}
 
 const AddRepositoryModal = () => {
   const { companyId, repository } = useLoaderData<typeof loader>()

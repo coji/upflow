@@ -1,4 +1,4 @@
-import { unstable_defineLoader as defineLoader } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -32,7 +32,7 @@ export const handle = {
   }),
 }
 
-export const loader = defineLoader(async ({ params }) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { company: companyId, team: teamId } = zx.parseParams(params, {
     company: z.string(),
     team: z.string(),
@@ -49,7 +49,7 @@ export const loader = defineLoader(async ({ params }) => {
   ])
 
   return { team, repositories, users }
-})
+}
 
 export default function CompanyTeamIndex() {
   const { team, repositories, users } = useLoaderData<typeof loader>()

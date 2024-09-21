@@ -1,4 +1,4 @@
-import { unstable_defineLoader as defineLoader } from '@remix-run/node'
+import type { LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
@@ -108,13 +108,15 @@ const columns: ColumnDef<PullRequest>[] = [
   },
 ]
 
-export const loader = defineLoader(async ({ params }) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const { company: companyId } = zx.parseParams(params, {
+    company: z.string(),
+  })
   const from = getStartOfWeek().toISOString()
   const to = dayjs().utc().toISOString()
   const pullRequests = await getMergedPullRequestReport(companyId, from, to)
   return { companyId, pullRequests, from, to }
-})
+}
 
 export default function CompanyIndex() {
   const { pullRequests, from, to } = useLoaderData<typeof loader>()
