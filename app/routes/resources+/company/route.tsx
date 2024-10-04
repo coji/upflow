@@ -48,7 +48,6 @@ export const CompanySwitcher = ({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          role="combobox"
           aria-expanded={open}
           aria-label="Select a team"
           className={cn('w-[10rem] justify-between md:w-[12rem]', className)}
