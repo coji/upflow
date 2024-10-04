@@ -25,7 +25,7 @@ interface AppHeaderProps {
 
 export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
   return (
-    <header className="flex items-center px-2 py-1 md:container">
+    <header className="flex items-center px-4 py-1">
       <HStack>
         <Heading>
           <Link to={isAdmin ? '/admin' : '/'}>
