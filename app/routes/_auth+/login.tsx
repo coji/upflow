@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, unstable_data } from '@remix-run/node'
+import { type LoaderFunctionArgs, json } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppLayout } from '~/app/components'
@@ -34,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const headers = new Headers()
   headers.set('Set-Cookie', await sessionStorage.commitSession(session))
 
-  return unstable_data({ errorMessage: error?.message }, { headers })
+  return json({ errorMessage: error?.message }, { headers })
 }
 
 export default function LoginPage() {

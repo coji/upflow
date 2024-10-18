@@ -1,4 +1,4 @@
-import { unstable_data, type LoaderFunctionArgs } from '@remix-run/node'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import {
   Links,
   Meta,
@@ -24,7 +24,7 @@ export const meta = () => [
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { toast, headers } = await getToast(request)
-  return unstable_data({ toastData: toast }, { headers })
+  return json({ toastData: toast }, { headers })
 }
 
 const queryClient = new QueryClient()
