@@ -1,4 +1,4 @@
-import type { GoogleExtraParams, GoogleProfile } from 'remix-auth-google'
+import type { GoogleExtraParams, GoogleProfile } from '@coji/remix-auth-google'
 
 const SocialProvider = {
   GOOGLE: 'google',

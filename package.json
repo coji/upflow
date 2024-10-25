@@ -20,6 +20,7 @@
     "validate": "run-s lint format typecheck build test"
   },
   "dependencies": {
+    "@coji/remix-auth-google": "3.0.3",
     "@conform-to/react": "1.2.2",
     "@conform-to/zod": "1.2.2",
     "@epic-web/remember": "1.1.0",
@@ -88,8 +89,7 @@
     "react-dom": "18.3.1",
     "remeda": "2.16.0",
     "remix-auth": "3.7.0",
-    "remix-auth-google": "2.0.0",
-    "remix-auth-oauth2": "1.11.2",
+    "remix-auth-oauth2": "2.4.0",
     "remix-toast": "1.2.2",
     "tailwind-merge": "2.5.4",
     "tailwindcss-animate": "1.0.7",
