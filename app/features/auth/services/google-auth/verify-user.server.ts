@@ -1,29 +1,19 @@
+import type { GoogleExtraParams, GoogleProfile } from '@coji/remix-auth-google'
 import acceptLanguage from 'accept-language'
 import { nanoid } from 'nanoid'
 import type { StrategyVerifyCallback } from 'remix-auth'
 import type { OAuth2StrategyVerifyParams } from 'remix-auth-oauth2'
 import invariant from 'tiny-invariant'
 import { db, sql, type DB, type Selectable } from '~/app/services/db.server'
-import type { SessionUser } from '../types/types'
-import {
-  isSupportedSocialProvider,
-  type SupportedSocialProviderExtraParams,
-  type SupportedSocialProviderProfile,
-} from './supported-social-provider.server'
+import type { SessionUser } from '../../types/types'
 
 acceptLanguage.languages(['ja', 'en'])
 
 export const verifyUser: StrategyVerifyCallback<
   SessionUser,
-  OAuth2StrategyVerifyParams<
-    SupportedSocialProviderProfile,
-    SupportedSocialProviderExtraParams
-  >
+  OAuth2StrategyVerifyParams<GoogleProfile, GoogleExtraParams>
 > = async ({ request, profile }) => {
-  invariant(
-    isSupportedSocialProvider(profile.provider),
-    'provider not supported',
-  )
+  invariant(profile.provider === 'google', 'provider not supported')
   invariant(profile.emails?.[0].value, 'profile.email is required')
   const email = profile.emails[0].value
 

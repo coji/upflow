@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/app/components/ui'
-import { requireUser } from '~/app/features/auth/services/user-session.server'
+import { requireUser } from '~/app/features/auth/services/auth'
 import { cn } from '~/app/libs/utils'
 import { listUserCompanies } from './functions.server'
 import { useCurrentCompany } from './hooks/useCurrentCompany'

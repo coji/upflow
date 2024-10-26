@@ -2,7 +2,7 @@ import { createCookieSessionStorage } from '@remix-run/node'
 import { Authenticator } from 'remix-auth'
 import invariant from 'tiny-invariant'
 import type { SessionUser } from '../types/types'
-import { strategy as GoogleStrategy } from './google-auth.server'
+import { strategy as GoogleStrategy } from './google-auth/google-auth.server'
 
 invariant(
   process.env.SESSION_SECRET,

@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs } from '@remix-run/node'
 import { Outlet, useLoaderData } from '@remix-run/react'
 import { $path } from 'remix-routes'
 import { AppHeader, AppLayout } from '~/app/components'
-import { requireUser } from '~/app/features/auth/services/user-session.server'
+import { requireUser } from '~/app/features/auth/services/auth'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 
 export const handle = {
