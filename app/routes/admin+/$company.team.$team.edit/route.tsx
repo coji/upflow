@@ -1,7 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
-import { Form, Link, useActionData, useLoaderData } from '@remix-run/react'
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
+import { Form, Link, useActionData, useLoaderData } from 'react-router'
 import { $path } from 'remix-routes'
 import { redirectWithSuccess } from 'remix-toast'
 import { z } from 'zod'
@@ -102,7 +102,7 @@ export default function TeamDetailPage() {
   const lastResult = useActionData<typeof action>()
   const [form, { name }] = useForm({
     defaultValue: team,
-    lastResult,
+    // lastResult,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 

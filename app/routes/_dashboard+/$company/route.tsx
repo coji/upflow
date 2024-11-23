@@ -1,11 +1,11 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
+import type { LoaderFunctionArgs } from 'react-router'
 import {
   Link,
   Outlet,
   useLoaderData,
   useLocation,
   type MetaArgs,
-} from '@remix-run/react'
+} from 'react-router'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'

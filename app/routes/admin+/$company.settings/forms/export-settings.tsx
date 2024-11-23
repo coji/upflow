@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, useActionData } from '@remix-run/react'
+import { Form, useActionData } from 'react-router'
 import {
   Alert,
   AlertDescription,
@@ -28,10 +28,10 @@ interface ExportSettingsProps {
 export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
   const actionData = useActionData<typeof action>()
   const [form, { id, sheetId, clientEmail, privateKey }] = useForm({
-    lastResult:
-      (actionData?.intent === INTENTS.exportSettings &&
-        actionData?.lastResult) ||
-      undefined,
+    // lastResult:
+    //   (actionData?.intent === INTENTS.exportSettings &&
+    //     actionData?.lastResult) ||
+    //   undefined,
     defaultValue: exportSetting,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })

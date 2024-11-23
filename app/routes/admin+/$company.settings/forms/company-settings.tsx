@@ -5,7 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, useActionData } from '@remix-run/react'
+import { Form, useActionData } from 'react-router'
 import {
   Alert,
   AlertDescription,
@@ -39,10 +39,10 @@ export const CompanySettings = ({
 }) => {
   const actionData = useActionData<typeof action>()
   const [form, fields] = useForm({
-    lastResult:
-      (actionData?.intent === INTENTS.companySettings &&
-        actionData?.lastResult) ||
-      undefined,
+    // lastResult:
+    //   (actionData?.intent === INTENTS.companySettings &&
+    //     actionData?.lastResult) ||
+    //   undefined,
     defaultValue: company,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })

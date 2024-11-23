@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, Link, useActionData } from '@remix-run/react'
+import { Form, Link, useActionData } from 'react-router'
 import { $path } from 'remix-routes'
 import {
   Button,
@@ -25,9 +25,9 @@ interface DeleteCompanyProps {
 export const DeleteCompany = ({ company }: DeleteCompanyProps) => {
   const actionData = useActionData<typeof action>()
   const [form, { confirm }] = useForm({
-    lastResult:
-      (actionData?.intent === INTENTS.deleteCompany && actionData.lastResult) ||
-      undefined,
+    // lastResult:
+    //   (actionData?.intent === INTENTS.deleteCompany && actionData.lastResult) ||
+    //   undefined,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
     shouldValidate: 'onInput',
   })

@@ -7,10 +7,12 @@ import {
 import { parseWithZod } from '@conform-to/zod'
 import {
   type ActionFunctionArgs,
+  Form,
+  Link,
   type LoaderFunctionArgs,
   redirect,
-} from '@remix-run/node'
-import { Form, Link, useLoaderData } from '@remix-run/react'
+  useLoaderData,
+} from 'react-router'
 import { $path } from 'remix-routes'
 import { match } from 'ts-pattern'
 import { z } from 'zod'

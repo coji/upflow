@@ -1,9 +1,8 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { Stack } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import {
   CompanySettings,
   DeleteCompany,
@@ -23,7 +22,7 @@ import {
 } from './functions/queries.server'
 import { INTENTS, intentsSchema } from './types'
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -40,7 +39,7 @@ export const action = async ({
   request,
   params,
   context,
-}: ActionFunctionArgs) => {
+}: Route.ActionArgs) => {
   const { intent } = await zx.parseForm(await request.clone().formData(), {
     intent: intentsSchema,
   })
@@ -65,8 +64,9 @@ export const action = async ({
     .exhaustive()
 }
 
-export default function CompanySettingsPage() {
-  const { company, exportSetting, integration } = useLoaderData<typeof loader>()
+export default function CompanySettingsPage({
+  loaderData: { company, exportSetting, integration },
+}: Route.ComponentProps) {
   return (
     <Stack>
       <CompanySettings company={company} />

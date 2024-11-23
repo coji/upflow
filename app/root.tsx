@@ -1,17 +1,18 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { useEffect } from 'react'
 import {
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  data,
   isRouteErrorResponse,
   useLoaderData,
   useRouteError,
-} from '@remix-run/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useEffect } from 'react'
+  type LoaderFunctionArgs,
+} from 'react-router'
 import { getToast } from 'remix-toast'
 import { Toaster, useToast } from '~/app/components/ui'
 import { AppLoadingProgress } from './components'
@@ -24,7 +25,7 @@ export const meta = () => [
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { toast, headers } = await getToast(request)
-  return json({ toastData: toast }, { headers })
+  return data({ toastData: toast }, { headers })
 }
 
 const queryClient = new QueryClient()

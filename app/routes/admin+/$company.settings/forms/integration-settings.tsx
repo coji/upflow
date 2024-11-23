@@ -5,7 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, useActionData } from '@remix-run/react'
+import { Form, useActionData } from 'react-router'
 import Github from '~/app/components/icons/Github'
 import {
   Alert,
@@ -37,10 +37,10 @@ export const IntegrationSettings = ({
 }: IntegrationSettingsProps) => {
   const actionData = useActionData<typeof action>()
   const [form, { provider, method, privateToken }] = useForm({
-    lastResult:
-      actionData?.intent === INTENTS.integrationSettings
-        ? actionData.lastResult
-        : undefined,
+    // lastResult:
+    //   actionData?.intent === INTENTS.integrationSettings
+    //     ? actionData.lastResult
+    //     : undefined,
     defaultValue: integration,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })

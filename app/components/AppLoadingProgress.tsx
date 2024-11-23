@@ -1,6 +1,6 @@
-import { useNavigation } from '@remix-run/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { useNavigation } from 'react-router'
 
 export const AppLoadingProgress = () => {
   const navigation = useNavigation()

@@ -1,4 +1,4 @@
-import { Link } from '@remix-run/react'
+import { Link } from 'react-router'
 import { Button, type ButtonProps } from '~/app/components/ui'
 
 interface GoogleLoginButtonProps extends ButtonProps {

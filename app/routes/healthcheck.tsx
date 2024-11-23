@@ -1,4 +1,4 @@
-import type { LoaderFunction } from '@remix-run/node'
+import type { LoaderFunction } from 'react-router'
 import { db, sql } from '~/app/services/db.server'
 
 export const loader: LoaderFunction = async ({ request }) => {

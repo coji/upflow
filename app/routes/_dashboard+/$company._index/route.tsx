@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
 import type { ColumnDef } from '@tanstack/react-table'
+import type { LoaderFunctionArgs } from 'react-router'
+import { useLoaderData } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable, AppSortableHeader } from '~/app/components'

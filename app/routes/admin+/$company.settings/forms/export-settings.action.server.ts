@@ -1,13 +1,10 @@
 import { parseWithZod } from '@conform-to/zod'
-import type { ActionFunctionArgs } from '@remix-run/node'
 import { jsonWithSuccess } from 'remix-toast'
-import { z } from 'zod'
-import { zx } from 'zodix'
 import { upsertExportSetting } from '../functions.server'
 import { INTENTS, exportSettingsSchema as schema } from '../types'
+import type { Route } from './+types'
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {
@@ -19,7 +16,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   try {
     const { id, sheetId, clientEmail, privateKey } = submission.value
     await upsertExportSetting(id, {
-      companyId,
+      companyId: params.company,
       sheetId,
       clientEmail,
       privateKey,

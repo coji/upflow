@@ -1,4 +1,4 @@
-import { createCookieSessionStorage } from '@remix-run/node'
+import { createCookieSessionStorage } from 'react-router'
 import { Authenticator } from 'remix-auth'
 import invariant from 'tiny-invariant'
 import type { SessionUser } from '../types/types'

@@ -1,7 +1,7 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
-import { Link, useFetcher } from '@remix-run/react'
 import { ChevronsUpDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { LoaderFunctionArgs } from 'react-router'
+import { Link, useFetcher } from 'react-router'
 import {
   Button,
   DropdownMenu,

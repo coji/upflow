@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, redirect } from '@remix-run/node'
+import { type LoaderFunctionArgs, redirect } from 'react-router'
 import { $path } from 'remix-routes'
 import {
   authenticator,

@@ -1,4 +1,4 @@
-import { NavLink } from '@remix-run/react'
+import { NavLink } from 'react-router'
 import { cn } from '~/app/libs/utils'
 
 export const CompanyNavLink = ({

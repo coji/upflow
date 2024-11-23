@@ -1,16 +1,11 @@
 import { parseWithZod } from '@conform-to/zod'
-import {
-  redirect,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from '@remix-run/node'
-import { useFetcher, useLoaderData } from '@remix-run/react'
+import { redirect, useFetcher } from 'react-router'
 import { $path } from 'remix-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
 import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
-
+import type { Route } from './+types/route'
 import { addRepository, getIntegration } from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
@@ -24,7 +19,7 @@ const RepoSchema = z.object({
   ),
 })
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -35,11 +30,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { integration }
 }
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { company: companyId } = zx.parseParams(params, {
-    company: z.string(),
-  })
-
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const submission = parseWithZod(await request.formData(), {
     schema: RepoSchema,
   })
@@ -47,7 +38,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     return submission.reply()
   }
 
-  const integraiton = await getIntegration(companyId)
+  const integraiton = await getIntegration(params.company)
   if (!integraiton) {
     throw new Error('integration not created')
   }
@@ -55,7 +46,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   try {
     const repos = submission.value.repos
     for (const repo of repos) {
-      await addRepository(companyId, {
+      await addRepository(params.company, {
         owner: repo.owner,
         repo: repo.repo,
       })
@@ -65,12 +56,15 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       formErrors: ['Failed to add repository'],
     })
   }
-  return redirect($path('/admin/:company/repositories', { company: companyId }))
+  return redirect(
+    $path('/admin/:company/repositories', { company: params.company }),
+  )
 }
 
-export default function AddRepositoryPage() {
+export default function AddRepositoryPage({
+  loaderData: { integration },
+}: Route.ComponentProps) {
   const fetcher = useFetcher<typeof action>()
-  const { integration } = useLoaderData<typeof loader>()
 
   const handleAddRepository = (repos: GithubRepo[]) => {
     const keyValues: Record<string, string> = {}

@@ -1,13 +1,10 @@
 import { parseWithZod } from '@conform-to/zod'
-import type { ActionFunctionArgs } from '@remix-run/node'
 import { jsonWithSuccess } from 'remix-toast'
-import { z } from 'zod'
-import { zx } from 'zodix'
 import { upsertIntegration } from '../functions.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../types'
+import type { Route } from './+types'
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { company: companyId } = zx.parseParams(params, { company: z.string() })
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {
@@ -18,7 +15,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   try {
     const { id, ...rest } = submission.value
-    await upsertIntegration(id, { ...rest, companyId })
+    await upsertIntegration(id, { ...rest, companyId: params.company })
   } catch (e) {
     return {
       intent: INTENTS.integrationSettings,

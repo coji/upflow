@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
-import { Link, useLoaderData } from '@remix-run/react'
 import { ExternalLinkIcon } from 'lucide-react'
+import type { LoaderFunctionArgs } from 'react-router'
+import { Link, useLoaderData } from 'react-router'
 import { $path } from 'remix-routes'
 import { match } from 'ts-pattern'
 import { z } from 'zod'

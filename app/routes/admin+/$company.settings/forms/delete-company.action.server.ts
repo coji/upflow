@@ -1,10 +1,11 @@
 import { parseWithZod } from '@conform-to/zod'
-import { redirect, type ActionFunctionArgs } from '@remix-run/node'
+import { redirect } from 'react-router'
 import { $path } from 'remix-routes'
 import { deleteCompany } from '../functions.server'
 import { INTENTS, deleteCompanySchema as schema } from '../types'
+import type { Route } from './+types'
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {
@@ -13,7 +14,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
-  await deleteCompany(submission.value.companyId)
+  await deleteCompany(params.company)
 
   return redirect($path('/admin'))
 }

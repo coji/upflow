@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from '@remix-run/node'
-import { Link, Outlet, useLoaderData } from '@remix-run/react'
 import { PlusCircleIcon } from 'lucide-react'
+import type { LoaderFunctionArgs } from 'react-router'
+import { Link, Outlet, useLoaderData } from 'react-router'
 import { $path } from 'remix-routes'
 import {
   Button,
