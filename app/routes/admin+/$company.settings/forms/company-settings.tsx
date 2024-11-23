@@ -39,10 +39,10 @@ export const CompanySettings = ({
 }) => {
   const actionData = useActionData<typeof action>()
   const [form, fields] = useForm({
-    // lastResult:
-    //   (actionData?.intent === INTENTS.companySettings &&
-    //     actionData?.lastResult) ||
-    //   undefined,
+    lastResult:
+      (actionData?.intent === INTENTS.companySettings &&
+        actionData?.lastResult) ||
+      undefined,
     defaultValue: company,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })

@@ -1,5 +1,5 @@
 import { parseWithZod } from '@conform-to/zod'
-import { jsonWithSuccess } from 'remix-toast'
+import { dataWithSuccess } from 'remix-toast'
 import { updateCompany } from '../functions/mutations.server'
 import { INTENTS, companySettingsSchema as schema } from '../types'
 import type { Route } from './+types'
@@ -24,7 +24,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     }
   }
 
-  return jsonWithSuccess(
+  return dataWithSuccess(
     {
       intent: INTENTS.companySettings,
       lastResult: submission.reply(),

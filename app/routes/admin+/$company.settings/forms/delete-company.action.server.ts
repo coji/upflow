@@ -16,5 +16,5 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   await deleteCompany(params.company)
 
-  return redirect($path('/admin'))
+  throw redirect($path('/admin'))
 }

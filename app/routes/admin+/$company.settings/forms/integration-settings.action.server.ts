@@ -1,5 +1,5 @@
 import { parseWithZod } from '@conform-to/zod'
-import { jsonWithSuccess } from 'remix-toast'
+import { dataWithSuccess } from 'remix-toast'
 import { upsertIntegration } from '../functions.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../types'
 import type { Route } from './+types'
@@ -25,7 +25,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     }
   }
 
-  return jsonWithSuccess(
+  return dataWithSuccess(
     {
       intent: INTENTS.integrationSettings,
       lastResult: submission.reply(),

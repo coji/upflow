@@ -25,9 +25,9 @@ interface DeleteCompanyProps {
 export const DeleteCompany = ({ company }: DeleteCompanyProps) => {
   const actionData = useActionData<typeof action>()
   const [form, { confirm }] = useForm({
-    // lastResult:
-    //   (actionData?.intent === INTENTS.deleteCompany && actionData.lastResult) ||
-    //   undefined,
+    lastResult:
+      (actionData?.intent === INTENTS.deleteCompany && actionData.lastResult) ||
+      undefined,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
     shouldValidate: 'onInput',
   })

@@ -37,10 +37,10 @@ export const IntegrationSettings = ({
 }: IntegrationSettingsProps) => {
   const actionData = useActionData<typeof action>()
   const [form, { provider, method, privateToken }] = useForm({
-    // lastResult:
-    //   actionData?.intent === INTENTS.integrationSettings
-    //     ? actionData.lastResult
-    //     : undefined,
+    lastResult:
+      actionData?.intent === INTENTS.integrationSettings
+        ? actionData.lastResult
+        : undefined,
     defaultValue: integration,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
