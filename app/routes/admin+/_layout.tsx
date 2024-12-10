@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from 'react-router'
 import { Outlet, useLoaderData } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireAdminUser } from '~/app/features/auth/services/auth'
 

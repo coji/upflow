@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from 'react-router'
 import { useLoaderData } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { HStack, Heading, Stack } from '~/app/components/ui'

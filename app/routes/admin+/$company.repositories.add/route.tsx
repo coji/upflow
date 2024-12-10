@@ -1,6 +1,6 @@
 import { parseWithZod } from '@conform-to/zod'
 import { redirect, useFetcher } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'

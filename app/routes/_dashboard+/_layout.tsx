@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from 'react-router'
 import { Outlet, useLoaderData } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/auth'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'

@@ -1,6 +1,6 @@
 import { parseWithZod } from '@conform-to/zod'
 import { redirect } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { deleteCompany } from '../functions.server'
 import { INTENTS, deleteCompanySchema as schema } from '../types'
 import type { Route } from './+types'

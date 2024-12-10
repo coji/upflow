@@ -1,5 +1,5 @@
 import { type LoaderFunctionArgs, redirect } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { saveSession } from '~/app/features/auth/services/auth'
 import { authenticator } from '~/app/features/auth/services/authenticator.server'
 

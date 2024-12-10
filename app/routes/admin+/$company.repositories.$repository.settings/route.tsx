@@ -13,7 +13,7 @@ import {
   redirect,
   useLoaderData,
 } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'

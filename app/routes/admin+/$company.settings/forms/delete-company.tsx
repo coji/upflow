@@ -1,7 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
 import { Form, Link, useActionData } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import {
   Button,
   Card,

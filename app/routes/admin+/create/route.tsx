@@ -7,7 +7,7 @@ import {
   useActionData,
   type ActionFunctionArgs,
 } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { z } from 'zod'
 import {
   Alert,

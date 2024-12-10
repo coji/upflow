@@ -1,6 +1,6 @@
 import type React from 'react'
 import { redirect, useFetcher } from 'react-router'
-import { $path } from 'remix-routes'
+import { $path } from 'safe-routes'
 import { Button, type ButtonProps } from '~/app/components/ui'
 import { getSession, sessionStorage } from '~/app/features/auth/services/auth'
 import type { Route } from './+types/logout'
