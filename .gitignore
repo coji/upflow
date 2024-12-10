@@ -43,3 +43,4 @@ dist
 /playwright/.cache/
 
 .react-router
+tsconfig.tsbuildinfo
