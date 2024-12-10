@@ -1,12 +1,15 @@
 import type React from 'react'
-import { useFetcher } from 'react-router'
+import { redirect, useFetcher } from 'react-router'
 import { $path } from 'remix-routes'
 import { Button, type ButtonProps } from '~/app/components/ui'
-import { authenticator } from '~/app/features/auth/services/authenticator.server'
+import { getSession, sessionStorage } from '~/app/features/auth/services/auth'
 import type { Route } from './+types/logout'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  return await authenticator.logout(request, { redirectTo: '/' })
+  const session = await getSession(request)
+  const headers = new Headers()
+  headers.append('Set-Cookie', await sessionStorage.destroySession(session))
+  throw redirect('/login', { headers })
 }
 
 interface LogoutButtonProps extends ButtonProps {

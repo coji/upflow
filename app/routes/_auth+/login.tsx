@@ -1,10 +1,6 @@
-import { type LoaderFunctionArgs, data, useLoaderData } from 'react-router'
-import { $path } from 'remix-routes'
+import { type LoaderFunctionArgs, redirect } from 'react-router'
 import { AppLayout } from '~/app/components'
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   Card,
   CardContent,
   CardHeader,
@@ -13,32 +9,18 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
-import {
-  authenticator,
-  sessionStorage,
-} from '~/app/features/auth/services/authenticator.server'
+import { getSessionUser } from '~/app/features/auth/services/auth'
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 認証済みならトップページにリダイレクト
-  await authenticator.isAuthenticated(request, { successRedirect: $path('/') })
-
-  // ログイン時のエラーメッセージがもしあればそれを表示する
-  const session = await sessionStorage.getSession(
-    request.headers.get('Cookie') || '',
-  )
-  const error = session.get(authenticator.sessionErrorKey) as
-    | { message: string }
-    | undefined
-
-  const headers = new Headers()
-  headers.set('Set-Cookie', await sessionStorage.commitSession(session))
-
-  return data({ errorMessage: error?.message }, { headers })
+  const user = await getSessionUser(request)
+  if (user) {
+    throw redirect('/')
+  }
+  return
 }
 
 export default function LoginPage() {
-  const { errorMessage } = useLoaderData<typeof loader>()
-
   return (
     <AppLayout>
       <Center>
@@ -53,12 +35,12 @@ export default function LoginPage() {
                 Googleでログイン
               </GoogleLoginButton>
 
-              {errorMessage && (
+              {/* {errorMessage && (
                 <Alert>
                   <AlertTitle>ログインができません</AlertTitle>
                   <AlertDescription>{errorMessage}</AlertDescription>
                 </Alert>
-              )}
+              )} */}
             </Stack>
           </CardContent>
         </Card>
