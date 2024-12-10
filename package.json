@@ -20,7 +20,7 @@
     "validate": "run-s lint format typecheck build test"
   },
   "dependencies": {
-    "@coji/remix-auth-google": "4.0.0",
+    "@coji/remix-auth-google": "4.1.0",
     "@conform-to/react": "1.2.2",
     "@conform-to/zod": "1.2.2",
     "@epic-web/remember": "1.1.0",

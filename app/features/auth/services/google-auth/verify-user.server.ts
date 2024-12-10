@@ -1,4 +1,4 @@
-import type { GoogleProfile } from '@coji/remix-auth-google'
+import { GoogleStrategy } from '@coji/remix-auth-google'
 import acceptLanguage from 'accept-language'
 import { nanoid } from 'nanoid'
 import type { OAuth2Strategy } from 'remix-auth-oauth2'
@@ -9,38 +9,11 @@ import type { SessionUser } from '../../types/types'
 
 acceptLanguage.languages(['ja', 'en'])
 
-async function userProfile(accessToken: string): Promise<GoogleProfile> {
-  const response = await fetch(
-    'https://www.googleapis.com/oauth2/v3/userinfo',
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  )
-  if (!response.ok) {
-    throw new Error(`Failed to fetch user profile: ${response.statusText}`)
-  }
-  const raw: GoogleProfile['_json'] = await response.json()
-  const profile: GoogleProfile = {
-    id: raw.sub,
-    displayName: raw.name,
-    name: {
-      familyName: raw.family_name,
-      givenName: raw.given_name,
-    },
-    emails: [{ value: raw.email }],
-    photos: [{ value: raw.picture }],
-    _json: raw,
-  }
-  return profile
-}
-
 export const verifyUser: Strategy.VerifyFunction<
   SessionUser,
   OAuth2Strategy.VerifyOptions
 > = async ({ request, tokens }) => {
-  const profile = await userProfile(tokens.accessToken())
+  const profile = await GoogleStrategy.userProfile(tokens)
   invariant(profile.emails?.[0].value, 'profile.email is required')
   const email = profile.emails[0].value
 
