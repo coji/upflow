@@ -65,7 +65,7 @@ export const IntegrationSettings = ({
                 <HStack>
                   <RadioGroupItem id="github" value="github" />
                   <Label htmlFor="github">
-                    <HStack className="gap-1 text-github">
+                    <HStack className="text-github gap-1">
                       <Github />
                       <span>GitHub</span>
                     </HStack>

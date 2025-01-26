@@ -56,7 +56,7 @@ export default function CompanyLayout() {
           </CardHeader>
 
           <CardContent>
-            <Stack className="flex-1 gap-0 overflow-hidden bg-popover text-popover-foreground transition-colors">
+            <Stack className="bg-popover text-popover-foreground flex-1 gap-0 overflow-hidden transition-colors">
               <CompanyNavLink
                 to={$path('/admin/:company/users', { company: companyId })}
               >

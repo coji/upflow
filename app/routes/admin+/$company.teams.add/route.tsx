@@ -91,13 +91,13 @@ export default function TeamAddPage() {
             <fieldset>
               <Label htmlFor={id.id}>ID</Label>
               <Input {...getInputProps(id, { type: 'text' })} />
-              <div className="text-sm text-destructive">{id.errors}</div>
+              <div className="text-destructive text-sm">{id.errors}</div>
             </fieldset>
 
             <fieldset>
               <Label>Name</Label>
               <Input {...getInputProps(name, { type: 'text' })} />
-              <div className="text-sm text-destructive">{name.errors}</div>
+              <div className="text-destructive text-sm">{name.errors}</div>
             </fieldset>
 
             {form.errors && (

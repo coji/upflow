@@ -39,7 +39,7 @@ export default function CompanyRepositoryIndexPage() {
         <CardTitle>Repositories</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg border shadow-sm">
+        <div className="rounded-lg border shadow-xs">
           <Table>
             <TableHeader>
               <TableRow>

@@ -39,7 +39,7 @@ export default function TeamIndexPage() {
 
       <CardContent>
         <Stack>
-          <div className="rounded-lg border shadow-sm">
+          <div className="rounded-lg border shadow-xs">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -29,7 +29,7 @@ const AdminCompanyIndex = () => {
           {companies.map((company) => (
             <Link
               key={company.id}
-              className="block rounded p-2 hover:bg-secondary"
+              className="hover:bg-secondary block rounded p-2"
               to={`${company.id}`}
             >
               {company.name}

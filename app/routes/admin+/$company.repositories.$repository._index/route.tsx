@@ -72,7 +72,7 @@ const RepositoryPullsIndexPage = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg border shadow-sm">
+        <div className="rounded-lg border shadow-xs">
           <Table>
             <TableHeader>
               <TableRow>
