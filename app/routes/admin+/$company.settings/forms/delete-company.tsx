@@ -71,7 +71,7 @@ export const DeleteCompany = ({ company }: DeleteCompanyProps) => {
               {...getInputProps(confirm, { type: 'text' })}
               placeholder="type 'delete this company' here"
             />
-            <div id={confirm.errorId} className="text-sm text-destructive">
+            <div id={confirm.errorId} className="text-destructive text-sm">
               {confirm.errors}
             </div>
           </Form>

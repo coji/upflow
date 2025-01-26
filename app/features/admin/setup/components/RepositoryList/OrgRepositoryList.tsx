@@ -46,7 +46,7 @@ export const OrgRepositoryList = ({
                 onCheck(repo.id) // 行クリックでも発動
               }}
             >
-              <TableCell className="w-64 whitespace-break-spaces break-all">
+              <TableCell className="w-64 break-all whitespace-break-spaces">
                 <HStack>
                   {/* Checkbox はアニメーションするためまとめて変更するとめっちゃ遅いので数が多いこれは input に */}
                   <Checkbox
@@ -64,7 +64,7 @@ export const OrgRepositoryList = ({
                 </HStack>
               </TableCell>
 
-              <TableCell className="gray-500 w-64 whitespace-break-spaces break-all text-xs">
+              <TableCell className="gray-500 w-64 text-xs break-all whitespace-break-spaces">
                 {repo.full_name}
               </TableCell>
 

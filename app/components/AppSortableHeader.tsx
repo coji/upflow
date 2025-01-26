@@ -33,10 +33,10 @@ export const AppSortableHeader = <TData,>({
         <span className="capitalize">{title}</span>
         <span className="ml-2">
           {column.getIsSorted() === 'asc' && (
-            <ArrowDownAZIcon className="h-4 w-4 text-muted-foreground" />
+            <ArrowDownAZIcon className="text-muted-foreground h-4 w-4" />
           )}
           {column.getIsSorted() === 'desc' && (
-            <ArrowUpAZIcon className="h-4 w-4 text-muted-foreground" />
+            <ArrowUpAZIcon className="text-muted-foreground h-4 w-4" />
           )}
         </span>
       </div>
