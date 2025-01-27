@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@coji/remix-auth-google':
-        specifier: 4.1.0
-        version: 4.1.0
+        specifier: 4.2.0
+        version: 4.2.0
       '@conform-to/react':
         specifier: 1.2.2
         version: 1.2.2(react@19.0.0)
@@ -564,8 +564,8 @@ packages:
   '@chevrotain/utils@10.5.0':
     resolution: {integrity: sha512-hBzuU5+JjB2cqNZyszkDHZgOSrUUT8V3dhgRl8Q9Gp6dAj/H5+KILGjbhDpc3Iy9qmqlm/akuOI2ut9VUtzJxQ==}
 
-  '@coji/remix-auth-google@4.1.0':
-    resolution: {integrity: sha512-v79RDPLEcj14pVEgi3MXUZPqXIzweQNxoBP0EYk5d0OBqHySFGEKLZo4CM8PD4XQwXP2pQg/L8CMJr579Ps1Cw==}
+  '@coji/remix-auth-google@4.2.0':
+    resolution: {integrity: sha512-H9i3fvVz0GE18GUZHpz7p7FQjuiuloTIBAPjW7cfv7lUEk+mI6WRTVLEHJBLLuTlAF1+0EbzvPRYKutxZiFdfw==}
 
   '@conform-to/dom@1.2.2':
     resolution: {integrity: sha512-f05EClpNP31o6lX4LYmmLqgsiTOHdGfY7z2XXK6U6rRp+EtxrkUBdrFlIGsfkf7e9AFO19h3/Cb/cXHVd1k1FA==}
@@ -5306,7 +5306,7 @@ snapshots:
 
   '@chevrotain/utils@10.5.0': {}
 
-  '@coji/remix-auth-google@4.1.0': {}
+  '@coji/remix-auth-google@4.2.0': {}
 
   '@conform-to/dom@1.2.2': {}
 
