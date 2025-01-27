@@ -11,20 +11,17 @@ import {
   isRouteErrorResponse,
   useLoaderData,
   useRouteError,
-  type LinksFunction,
   type LoaderFunctionArgs,
 } from 'react-router'
 import { getToast } from 'remix-toast'
 import { Toaster, useToast } from '~/app/components/ui'
 import { AppLoadingProgress } from './components'
-import styles from './styles/globals.css?url'
+import './styles/globals.css'
 
 export const meta = () => [
   { title: 'UpFlow' },
   { name: 'description', content: 'Cycletime metrics reports.' },
 ]
-
-export const links: LinksFunction = () => [{ rel: 'stylesheet', href: styles }]
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { toast, headers } = await getToast(request)
