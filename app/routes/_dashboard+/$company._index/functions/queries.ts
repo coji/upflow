@@ -6,7 +6,7 @@ export const getMergedPullRequestReport = async (
   companyId: DB.Company['id'],
   fromDateTime: string | null,
   toDateTime: string | null,
-  objectvie: number,
+  objective: number,
 ) => {
   const pullrequests = await db
     .selectFrom('pullRequests')
@@ -32,7 +32,7 @@ export const getMergedPullRequestReport = async (
           ) / 24
         : null
       const achivement = createAndMergeDiff
-        ? createAndMergeDiff < objectvie
+        ? createAndMergeDiff < objective
         : false
       return {
         ...pr,

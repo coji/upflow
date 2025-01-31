@@ -29,7 +29,8 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   )
 
   const achivementCount = pullRequests.filter((pr) => pr.achivement).length
-  const achievementRate = (achivementCount / pullRequests.length) * 100
+  const achievementRate =
+    pullRequests.length > 0 ? (achivementCount / pullRequests.length) * 100 : 0
 
   return {
     companyId,
