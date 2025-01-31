@@ -1,15 +1,18 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { useLoaderData } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
 import { Button, HStack, Stack, useToast } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
+import type { Route } from './+types/route'
 import { columns } from './columns'
 import { getOngoingPullRequestReport } from './functions.server'
 import { generateMarkdown } from './functions/generate-markdown'
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export type PullRequest = Awaited<
+  ReturnType<typeof getOngoingPullRequestReport>
+>[0]
+
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -20,12 +23,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { companyId, pullRequests, from, to }
 }
 
-export type PullRequest = Awaited<
-  ReturnType<typeof getOngoingPullRequestReport>
->[0]
-
-export default function OngoingPage() {
-  const { pullRequests, from, to } = useLoaderData<typeof loader>()
+export default function OngoingPage({
+  loaderData: { pullRequests, from, to },
+}: Route.ComponentProps) {
   const toast = useToast()
 
   return (
