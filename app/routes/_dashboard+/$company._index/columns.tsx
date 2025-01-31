@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
-import { HStack } from '~/app/components/ui'
+import { Badge, HStack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import type { PullRequest } from './route'
 
@@ -97,8 +97,8 @@ export const columns: ColumnDef<PullRequest>[] = [
     ),
     cell: ({ row }) => (
       <HStack>
-        <div>{`${row.original.createAndMergeDiff?.toFixed(1)}日`} </div>
-        <div>{!row.original.achivement && <div>未達</div>}</div>
+        <div>{row.original.createAndMergeDiff?.toFixed(1)}日</div>
+        {!row.original.achivement && <Badge variant="destructive">超過</Badge>}
       </HStack>
     ),
     enableHiding: false,
