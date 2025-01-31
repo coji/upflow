@@ -98,7 +98,7 @@ export const columns: ColumnDef<PullRequest>[] = [
     cell: ({ row }) => (
       <HStack>
         <div>{row.original.createAndMergeDiff?.toFixed(1)}日</div>
-        {!row.original.achivement && <Badge variant="destructive">超過</Badge>}
+        {!row.original.achievement && <Badge variant="destructive">超過</Badge>}
       </HStack>
     ),
     enableHiding: false,

@@ -28,9 +28,9 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
     objective,
   )
 
-  const achivementCount = pullRequests.filter((pr) => pr.achivement).length
+  const achievementCount = pullRequests.filter((pr) => pr.achievement).length
   const achievementRate =
-    pullRequests.length > 0 ? (achivementCount / pullRequests.length) * 100 : 0
+    pullRequests.length > 0 ? (achievementCount / pullRequests.length) * 100 : 0
 
   return {
     companyId,
@@ -38,7 +38,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
     from,
     to,
     objective,
-    achivementCount,
+    achievementCount,
     achievementRate,
   }
 }
@@ -49,7 +49,7 @@ export default function CompanyIndex({
     from,
     to,
     objective,
-    achivementCount,
+    achievementCount,
     achievementRate,
   },
 }: Route.ComponentProps) {
@@ -89,7 +89,7 @@ export default function CompanyIndex({
             <div>達成率</div>
             <div>
               {achievementRate.toFixed(1)}
-              <small>% ({achivementCount.toLocaleString()}件)</small>
+              <small>% ({achievementCount.toLocaleString()}件)</small>
             </div>
           </div>
         </div>

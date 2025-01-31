@@ -31,13 +31,13 @@ export const getMergedPullRequestReport = async (
             pr.mergedAt,
           ) / 24
         : null
-      const achivement = createAndMergeDiff
+      const achievement = createAndMergeDiff
         ? createAndMergeDiff < objective
         : false
       return {
         ...pr,
         createAndMergeDiff,
-        achivement,
+        achievement,
       }
     }),
     sortBy((pr) => (pr.createAndMergeDiff ? -pr.createAndMergeDiff : 0)),
