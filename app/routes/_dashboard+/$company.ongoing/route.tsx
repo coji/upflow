@@ -1,7 +1,8 @@
+import { CopyIcon } from 'lucide-react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
-import { Button, HStack, Stack, useToast } from '~/app/components/ui'
+import { Button, Stack, useToast } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { columns } from './columns'
@@ -30,26 +31,21 @@ export default function OngoingPage({
 
   return (
     <Stack>
-      <HStack>
-        <div className="grid flex-1 grid-cols-2">
-          <div>From</div>
-          <div>{from}</div>
-          <div>To</div>
-          <div>{to}</div>
-        </div>
+      <div className="text-right">
         <Button
           type="button"
           variant="outline"
           size="sm"
+          className="w-full md:w-auto"
           onClick={() => {
             // markdown 表形式でコピー
             navigator.clipboard.writeText(generateMarkdown(pullRequests))
             toast.toast({ title: `Copied ${pullRequests.length} rows` })
           }}
         >
-          Copy
+          <CopyIcon size="16" />
         </Button>
-      </HStack>
+      </div>
 
       <AppDataTable
         title={
