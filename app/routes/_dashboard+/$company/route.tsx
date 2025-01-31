@@ -1,11 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import {
-  Link,
-  Outlet,
-  useLoaderData,
-  useLocation,
-  type MetaArgs,
-} from 'react-router'
+import { Link, Outlet, useLocation } from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -18,9 +11,10 @@ import {
   TabsList,
   TabsTrigger,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { getCompany } from './queries.server'
 
-export const meta = ({ data }: MetaArgs<typeof loader>) => [
+export const meta = ({ data }: Route.MetaArgs) => [
   { title: `${data?.company.name} - Upflow Admin` },
 ]
 
@@ -37,7 +31,7 @@ export const handle = {
   },
 }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -45,11 +39,13 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!company) {
     throw new Response('Company not found', { status: 404 })
   }
+
   return { company }
 }
 
-export default function CompanyLayout() {
-  const { company } = useLoaderData<typeof loader>()
+export default function CompanyLayout({
+  loaderData: { company },
+}: Route.ComponentProps) {
   const location = useLocation()
   const tabValue = location.pathname.split('/')?.[2] ?? 'dashboard'
 
