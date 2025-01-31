@@ -6,6 +6,7 @@ export const getMergedPullRequestReport = async (
   companyId: DB.Company['id'],
   fromDateTime: string | null,
   toDateTime: string | null,
+  objectvie: number,
 ) => {
   const pullrequests = await db
     .selectFrom('pullRequests')
@@ -23,15 +24,20 @@ export const getMergedPullRequestReport = async (
 
   return pipe(
     pullrequests.map((pr) => {
+      const createAndMergeDiff = pr.mergedAt
+        ? // 最初のコミットからマージまでの日数を計算
+          calculateBusinessHours(
+            pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
+            pr.mergedAt,
+          ) / 24
+        : null
+      const achivement = createAndMergeDiff
+        ? createAndMergeDiff < objectvie
+        : false
       return {
         ...pr,
-        createAndMergeDiff: pr.mergedAt
-          ? // 最初のコミットからマージまでの日数を計算
-            calculateBusinessHours(
-              pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
-              pr.mergedAt,
-            ) / 24
-          : null,
+        createAndMergeDiff,
+        achivement,
       }
     }),
     sortBy((pr) => (pr.createAndMergeDiff ? -pr.createAndMergeDiff : 0)),

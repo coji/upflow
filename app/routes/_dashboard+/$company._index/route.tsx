@@ -1,7 +1,8 @@
+import { CopyIcon } from 'lucide-react'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
-import { Button, HStack, Stack, useToast } from '~/app/components/ui'
+import { Badge, Button, Label, Stack, useToast } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { columns } from './columns'
@@ -13,43 +14,99 @@ export type PullRequest = Awaited<
 >[0]
 
 export const loader = async ({ params }: Route.LoaderArgs) => {
-  const { company: companyId } = zx.parseParams(params, {
+  const { company: companyId, objective } = zx.parseParams(params, {
     company: z.string(),
+    objective: z.number().min(0.1).max(30).optional().default(2.0),
   })
+
   const from = getStartOfWeek().toISOString()
   const to = dayjs().utc().toISOString()
-  const pullRequests = await getMergedPullRequestReport(companyId, from, to)
-  return { companyId, pullRequests, from, to }
+  const pullRequests = await getMergedPullRequestReport(
+    companyId,
+    from,
+    to,
+    objective,
+  )
+
+  const achivementCount = pullRequests.filter((pr) => pr.achivement).length
+  const achievementRate = (achivementCount / pullRequests.length) * 100
+
+  return {
+    companyId,
+    pullRequests,
+    from,
+    to,
+    objective,
+    achivementCount,
+    achievementRate,
+  }
 }
 
 export default function CompanyIndex({
-  loaderData: { pullRequests, from, to },
+  loaderData: {
+    pullRequests,
+    from,
+    to,
+    objective,
+    achivementCount,
+    achievementRate,
+  },
 }: Route.ComponentProps) {
   const toast = useToast()
 
   return (
     <Stack>
-      <HStack>
-        <div className="grid flex-1 grid-cols-2">
-          <div>From</div>
-          <div>{from}</div>
-          <div>To</div>
-          <div>{to}</div>
+      <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
+        <div>
+          <Label>期間</Label>
+          <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+            <div className="text-right">
+              <Badge variant="outline">From</Badge>
+            </div>
+            <div className="text-sm">
+              {dayjs(from).format('YYYY-MM-DD HH:mm')}
+            </div>
+            <div className="text-right">
+              <Badge variant="outline">To</Badge>
+            </div>
+            <div className="text-sm">
+              {dayjs(to).format('YYYY-MM-DD HH:mm')}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1" />
+
+        <div>
+          <Label>目標</Label>
+          <div className="grid grid-cols-2 gap-x-4">
+            <div>マージまで</div>
+            <div>
+              {objective.toFixed(1)}
+              <small>日未満</small>
+            </div>
+            <div>達成率</div>
+            <div>
+              {achievementRate.toFixed(1)}
+              <small>% ({achivementCount.toLocaleString()}件)</small>
+            </div>
+          </div>
         </div>
 
         <Button
           type="button"
           variant="outline"
           size="sm"
+          className="w-full md:w-auto"
           onClick={() => {
             // markdown 表形式でコピー
             navigator.clipboard.writeText(generateMarkdown(pullRequests))
             toast.toast({ title: `Copied ${pullRequests.length} rows` })
           }}
         >
-          Copy
+          <CopyIcon size="16" />
         </Button>
-      </HStack>
+      </div>
 
       <AppDataTable
         title={

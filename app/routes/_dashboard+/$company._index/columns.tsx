@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
+import { HStack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import type { PullRequest } from './route'
 
@@ -94,7 +95,12 @@ export const columns: ColumnDef<PullRequest>[] = [
     header: ({ column }) => (
       <AppSortableHeader column={column} title="マージまで" />
     ),
-    cell: ({ row }) => `${row.original.createAndMergeDiff?.toFixed(1)}日`,
+    cell: ({ row }) => (
+      <HStack>
+        <div>{`${row.original.createAndMergeDiff?.toFixed(1)}日`} </div>
+        <div>{!row.original.achivement && <div>未達</div>}</div>
+      </HStack>
+    ),
     enableHiding: false,
   },
 ]
