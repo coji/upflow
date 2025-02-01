@@ -1,12 +1,26 @@
 import { parseWithZod } from '@conform-to/zod'
-import { redirect, useFetcher } from 'react-router'
+import { LockIcon } from 'lucide-react'
+import React from 'react'
+import { Await, Form, redirect, useSearchParams } from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
-import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Input,
+  Stack,
+} from '~/app/components/ui'
+import dayjs from '~/app/libs/dayjs'
+import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/route'
 import { addRepository, getIntegration } from './functions.server'
+import { listGithubRepos } from './functions/listGithubRepos'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
@@ -19,28 +33,42 @@ const RepoSchema = z.object({
   ),
 })
 
-export const loader = async ({ params }: Route.LoaderArgs) => {
-  const { company: companyId } = zx.parseParams(params, {
-    company: z.string(),
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  const { page, perPage, query } = zx.parseQuery(request, {
+    page: z.string().optional().default('1').transform(Number),
+    perPage: z.string().optional().default('10').transform(Number),
+    query: z.string().optional(),
   })
-  const integration = await getIntegration(companyId)
+
+  const integration = await getIntegration(params.company)
   if (!integration) {
     throw new Error('integration not created')
   }
-  return { integration }
+  if (!integration.privateToken) {
+    throw new Error('integration not configured')
+  }
+
+  const repos = listGithubRepos({
+    token: integration.privateToken,
+    page,
+    perPage,
+    query,
+  })
+
+  return { page, perPage, query, integration, repos }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
+  const integraiton = await getIntegration(params.company)
+  if (!integraiton) {
+    throw new Error('integration not created')
+  }
+
   const submission = parseWithZod(await request.formData(), {
     schema: RepoSchema,
   })
   if (submission.status !== 'success') {
     return submission.reply()
-  }
-
-  const integraiton = await getIntegration(params.company)
-  if (!integraiton) {
-    throw new Error('integration not created')
   }
 
   try {
@@ -62,27 +90,148 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 }
 
 export default function AddRepositoryPage({
-  loaderData: { integration },
+  loaderData: { integration, repos, page, perPage },
 }: Route.ComponentProps) {
-  const fetcher = useFetcher<typeof action>()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const handleAddRepository = (repos: GithubRepo[]) => {
-    const keyValues: Record<string, string> = {}
-    for (const [idx, repo] of repos.entries()) {
-      keyValues[`repos[${idx}].owner`] = repo.owner
-      keyValues[`repos[${idx}].repo`] = repo.name
-    }
-    fetcher.submit(keyValues, { method: 'POST' })
-    return true
-  }
-  const { RepositoryAddModal } = useRepositoryAddModal({
-    integration,
-    onSubmit: handleAddRepository,
-  })
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Repositories</CardTitle>
+        <CardDescription>Add repositories to the company</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Stack>
+          <Form>
+            <Input name="query" placeholder="Search repositories..." />
+          </Form>
 
-  if (!integration) {
-    return <p>integration not found</p>
-  }
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Await
+              resolve={repos}
+              errorElement={<div>Could not load repositories</div>}
+            >
+              {(repos) => {
+                return (
+                  <>
+                    <div className="rounded border">
+                      <div>
+                        {repos.data.map((repo, index) => {
+                          const isFirst = index === 0
+                          const isLast = index === repos.data.length - 1
 
-  return <>{integration.provider === 'github' && RepositoryAddModal}</>
+                          return (
+                            <HStack
+                              key={repo.id}
+                              className={cn(
+                                'px-4 py-1',
+                                isFirst && 'border-b',
+                                !isFirst && !isLast && 'border-b',
+                              )}
+                            >
+                              <div className="text-sm">{repo.full_name}</div>
+                              {repo.visibility === 'private' && (
+                                <div>
+                                  <LockIcon className="text-muted-foreground h-3 w-3" />
+                                </div>
+                              )}
+                              <div className="text-muted-foreground">·</div>
+                              <div className="text-muted-foreground text-xs">
+                                {dayjs(repo.pushedAt).fromNow()}
+                              </div>
+                              <div className="flex-1" />
+                              <div>
+                                <Button type="button" size="xs" variant="link">
+                                  Add
+                                </Button>
+                              </div>
+                            </HStack>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* pagination */}
+                    <HStack className="justify-between">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="link"
+                        disabled={!repos.link.prev}
+                        onClick={() => {
+                          if (repos.link.prev) {
+                            setSearchParams(
+                              (prev) => {
+                                return {
+                                  ...prev,
+                                  page: repos.link.prev,
+                                }
+                              },
+                              {
+                                preventScrollReset: true,
+                              },
+                            )
+                          }
+                        }}
+                      >
+                        Previous
+                      </Button>
+
+                      <div className="text-xs">
+                        Page {page} / {repos.link.last}
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="link"
+                        disabled={!repos.link.next}
+                        onClick={() => {
+                          if (repos.link.next) {
+                            setSearchParams(
+                              (prev) => {
+                                return {
+                                  ...prev,
+                                  page: repos.link.next,
+                                }
+                              },
+                              {
+                                preventScrollReset: true,
+                              },
+                            )
+                          }
+                        }}
+                      >
+                        Next
+                      </Button>
+                    </HStack>
+                  </>
+                )
+              }}
+            </Await>
+          </React.Suspense>
+        </Stack>
+      </CardContent>
+    </Card>
+  )
+
+  // const handleAddRepository = (repos:  GithubRepo[]) => {
+  //   const keyValues: Record<string, string> = {}
+  //   for (const [idx, repo] of repos.entries()) {
+  //     keyValues[`repos[${idx}].owner`] = repo.owner
+  //     keyValues[`repos[${idx}].repo`] = repo.name
+  //   }
+  //   fetcher.submit(keyValues, { method: 'POST' })
+  //   return true
+  // }
+  // const { RepositoryAddModal } = useRepositoryAddModal({
+  //   integration,
+  //   onSubmit: handleAddRepository,
+  // })
+
+  // if (!integration) {
+  //   return <p>integration not found</p>
+  // }
+
+  // return <>{integration.provider === 'github' && RepositoryAddModal}</>
 }
