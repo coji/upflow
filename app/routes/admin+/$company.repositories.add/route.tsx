@@ -52,7 +52,6 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     token: integration.privateToken,
     page,
     perPage,
-    query,
   })
 
   return { page, perPage, query, integration, repos }

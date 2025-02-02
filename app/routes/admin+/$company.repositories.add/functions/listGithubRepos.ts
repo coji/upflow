@@ -6,13 +6,11 @@ interface listGithubReposProps {
   token: string
   page?: number
   perPage?: number
-  query?: string
 }
 export const listGithubRepos = async ({
   token,
   page = 1,
   perPage = 10,
-  query,
 }: listGithubReposProps) => {
   const octokit = new Octokit({
     auth: token,
@@ -21,8 +19,8 @@ export const listGithubRepos = async ({
   const repos = await octokit.rest.repos.listForAuthenticatedUser({
     page,
     per_page: perPage,
-    query,
-    sort: 'pushed',
+    sort: 'updated',
+    affiliation: 'owner,collaborator,organization_member',
   })
 
   const link = parseLinkHeader(repos.headers.link)
