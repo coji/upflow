@@ -7,9 +7,11 @@ import type { Repository } from '../functions/get-repositories-by-owner-and-keyw
 
 export const RepositoryItem = ({
   repo,
+  isAdded,
   isLast,
 }: {
   repo: Repository
+  isAdded: boolean
   isLast: boolean
 }) => {
   const fetcher = useFetcher({
@@ -40,9 +42,9 @@ export const RepositoryItem = ({
           type="submit"
           size="xs"
           variant="outline"
-          disabled={fetcher.state !== 'idle'}
+          disabled={isAdded || fetcher.state !== 'idle'}
         >
-          Add
+          {isAdded ? 'Added' : 'Add'}
         </Button>
       </fetcher.Form>
     </HStack>

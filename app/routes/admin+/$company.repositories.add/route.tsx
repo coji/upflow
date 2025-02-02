@@ -27,7 +27,6 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { RepositoryItem } from './components/repository-item'
 import { RepositoryList } from './components/repository-list'
@@ -71,34 +70,34 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     keyword: query ?? '',
   })
 
-  return { pageInfo, query, owner, owners, repos }
+  return { integration, pageInfo, query, owner, owners, repos }
 }
 
-export const clientLoader = async ({
-  request,
-  serverLoader,
-}: Route.ClientLoaderArgs) => {
-  const { owner, cursor, query } = zx.parseQuery(request, {
-    owner: z.string().optional(),
-    cursor: z.string().optional(),
-    query: z.string().optional(),
-  })
-  const queryKey = [
-    'repositories',
-    owner,
-    query,
-    cursor,
-    dayjs().format('YYYY-MM-DD HH:00'),
-  ]
-  let cache: Awaited<ReturnType<typeof serverLoader>> | undefined =
-    queryClient.getQueryData(queryKey)
-  if (!cache) {
-    cache = await serverLoader()
-    queryClient.setQueryData(queryKey, cache)
-  }
-  return cache
-}
-clientLoader.hydrate = true
+// export const clientLoader = async ({
+//   request,
+//   serverLoader,
+// }: Route.ClientLoaderArgs) => {
+//   const { owner, cursor, query } = zx.parseQuery(request, {
+//     owner: z.string().optional(),
+//     cursor: z.string().optional(),
+//     query: z.string().optional(),
+//   })
+//   const queryKey = [
+//     'repositories',
+//     owner,
+//     query,
+//     cursor,
+//     dayjs().format('YYYY-MM-DD HH:00'),
+//   ]
+//   let cache: Awaited<ReturnType<typeof serverLoader>> | undefined =
+//     queryClient.getQueryData(queryKey)
+//   if (!cache) {
+//     cache = await serverLoader()
+//     queryClient.setQueryData(queryKey, cache)
+//   }
+//   return cache
+// }
+// clientLoader.hydrate = true
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const integraiton = await getIntegration(params.company)
@@ -134,7 +133,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 }
 
 export default function AddRepositoryPage({
-  loaderData: { pageInfo, query, owner, owners, repos },
+  loaderData: { integration, pageInfo, query, owner, owners, repos },
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -216,6 +215,9 @@ export default function AddRepositoryPage({
                 <RepositoryItem
                   key={repo.id}
                   repo={repo}
+                  isAdded={integration.repositories.some(
+                    (r) => r.owner === repo.owner && r.repo === repo.name,
+                  )}
                   isLast={index === repos.length - 1}
                 />
               ))
