@@ -152,11 +152,17 @@ export default function AddRepositoryPage({
               })
             }}
           >
-            <Input
-              name="query"
-              placeholder="Search repositories..."
-              defaultValue={query}
-            />
+            <HStack>
+              <Input
+                name="query"
+                type="search"
+                placeholder="Search repositories..."
+                defaultValue={query}
+              />
+              <Button type="submit" variant="outline">
+                Search
+              </Button>
+            </HStack>
           </Form>
 
           <RepositoryList>
