@@ -30,7 +30,9 @@ export const RepositoryItem = ({
       <div className="text-muted-foreground text-xs">
         {dayjs(repo.pushedAt).fromNow()}
       </div>
+
       <div className="flex-1" />
+
       <fetcher.Form method="POST">
         <input type="hidden" name="owner" value={repo.owner} />
         <input type="hidden" name="name" value={repo.name} />
