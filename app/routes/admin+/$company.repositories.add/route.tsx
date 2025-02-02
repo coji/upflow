@@ -27,11 +27,13 @@ import {
   Stack,
 } from '~/app/components/ui'
 import type { Route } from './+types/route'
-import { RepositoryItem } from './components/repository-item'
-import { RepositoryList } from './components/repository-list'
-import { addRepository, getIntegration } from './functions.server'
-import { getRepositoriesByOwnerAndKeyword } from './functions/get-repositories-by-owner-and-keyword'
-import { getUniqueOwners } from './functions/get-unique-owners'
+import { RepositoryItem, RepositoryList } from './components'
+import {
+  addRepository,
+  getIntegration,
+  getRepositoriesByOwnerAndKeyword,
+  getUniqueOwners,
+} from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
