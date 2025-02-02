@@ -28,6 +28,7 @@ import {
 } from '~/app/components/ui'
 import type { Route } from './+types/route'
 import { RepositoryItem } from './components/repository-item'
+import { RepositoryList } from './components/repository-list'
 import { addRepository, getIntegration } from './functions.server'
 import { getRepositoriesByOwnerAndKeyword } from './functions/get-repositories-by-owner-and-keyword'
 import { getUniqueOwners } from './functions/get-unique-owners'
@@ -158,7 +159,7 @@ export default function AddRepositoryPage({
             />
           </Form>
 
-          <div className="rounded border">
+          <RepositoryList>
             {repos.length === 0 ? (
               <div className="text-muted-foreground p-4 text-center text-sm">
                 No repositories found
@@ -172,7 +173,7 @@ export default function AddRepositoryPage({
                 />
               ))
             )}
-          </div>
+          </RepositoryList>
 
           <HStack>
             <Button
@@ -212,26 +213,6 @@ export default function AddRepositoryPage({
       </CardContent>
     </Card>
   )
-
-  // const handleAddRepository = (repos:  GithubRepo[]) => {
-  //   const keyValues: Record<string, string> = {}
-  //   for (const [idx, repo] of repos.entries()) {
-  //     keyValues[`repos[${idx}].owner`] = repo.owner
-  //     keyValues[`repos[${idx}].repo`] = repo.name
-  //   }
-  //   fetcher.submit(keyValues, { method: 'POST' })
-  //   return true
-  // }
-  // const { RepositoryAddModal } = useRepositoryAddModal({
-  //   integration,
-  //   onSubmit: handleAddRepository,
-  // })
-
-  // if (!integration) {
-  //   return <p>integration not found</p>
-  // }
-
-  // return <>{integration.provider === 'github' && RepositoryAddModal}</>
 }
 
 export const ErrorBoundary = () => {
