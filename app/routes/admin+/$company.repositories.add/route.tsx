@@ -1,5 +1,4 @@
 import { parseWithZod } from '@conform-to/zod'
-import { QueryClient } from '@tanstack/react-query'
 import { ChevronRightIcon, ChevronsLeftIcon } from 'lucide-react'
 import {
   Form,
@@ -35,7 +34,6 @@ import { getRepositoriesByOwnerAndKeyword } from './functions/get-repositories-b
 import { getUniqueOwners } from './functions/get-unique-owners'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
-const queryClient = new QueryClient()
 
 const AddRepoSchema = z.object({
   owner: z.string(),
@@ -46,7 +44,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { owner, cursor, query } = zx.parseQuery(request, {
     owner: z.string().optional(),
     cursor: z.string().optional(),
-    query: z.string().optional(),
+    query: z.string().optional().default(''),
   })
 
   const integration = await getIntegration(params.company)
@@ -67,37 +65,11 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     token: integration.privateToken,
     cursor,
     owner,
-    keyword: query ?? '',
+    keyword: query,
   })
 
   return { integration, pageInfo, query, owner, owners, repos }
 }
-
-// export const clientLoader = async ({
-//   request,
-//   serverLoader,
-// }: Route.ClientLoaderArgs) => {
-//   const { owner, cursor, query } = zx.parseQuery(request, {
-//     owner: z.string().optional(),
-//     cursor: z.string().optional(),
-//     query: z.string().optional(),
-//   })
-//   const queryKey = [
-//     'repositories',
-//     owner,
-//     query,
-//     cursor,
-//     dayjs().format('YYYY-MM-DD HH:00'),
-//   ]
-//   let cache: Awaited<ReturnType<typeof serverLoader>> | undefined =
-//     queryClient.getQueryData(queryKey)
-//   if (!cache) {
-//     cache = await serverLoader()
-//     queryClient.setQueryData(queryKey, cache)
-//   }
-//   return cache
-// }
-// clientLoader.hydrate = true
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const integraiton = await getIntegration(params.company)
