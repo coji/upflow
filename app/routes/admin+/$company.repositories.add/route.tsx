@@ -1,5 +1,11 @@
 import { parseWithZod } from '@conform-to/zod'
-import { LockIcon } from 'lucide-react'
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  LockIcon,
+} from 'lucide-react'
 import React from 'react'
 import { Await, Form, redirect, useSearchParams } from 'react-router'
 import { $path } from 'safe-routes'
@@ -151,58 +157,109 @@ export default function AddRepositoryPage({
                     </div>
 
                     {/* pagination */}
-                    <HStack className="justify-between">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="link"
-                        disabled={!repos.link.prev}
-                        onClick={() => {
-                          if (repos.link.prev) {
-                            setSearchParams(
-                              (prev) => {
-                                return {
-                                  ...prev,
-                                  page: repos.link.prev,
-                                }
-                              },
-                              {
-                                preventScrollReset: true,
-                              },
-                            )
-                          }
-                        }}
-                      >
-                        Previous
-                      </Button>
-
+                    <HStack className="justify-end">
                       <div className="text-xs">
                         Page {page} / {repos.link.last}
                       </div>
 
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="link"
-                        disabled={!repos.link.next}
-                        onClick={() => {
-                          if (repos.link.next) {
+                      <HStack>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          disabled={!repos.link.first}
+                          onClick={() => {
+                            if (repos.link.prev) {
+                              setSearchParams(
+                                (prev) => {
+                                  prev.delete('page')
+                                  return prev
+                                },
+                                {
+                                  preventScrollReset: true,
+                                },
+                              )
+                            }
+                          }}
+                        >
+                          <ChevronsLeftIcon className="h-4 w-4" />
+                          <span className="sr-only">First</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          disabled={!repos.link.prev}
+                          onClick={() => {
                             setSearchParams(
                               (prev) => {
-                                return {
-                                  ...prev,
-                                  page: repos.link.next,
+                                if (
+                                  repos.link.prev === undefined ||
+                                  repos.link.prev === '1'
+                                ) {
+                                  prev.delete('page')
+                                } else {
+                                  prev.set('page', repos.link.prev)
                                 }
+                                return prev
                               },
                               {
                                 preventScrollReset: true,
                               },
                             )
-                          }
-                        }}
-                      >
-                        Next
-                      </Button>
+                          }}
+                        >
+                          <ChevronLeftIcon className="h-4 w-4" />
+                          <span className="sr-only">Previous</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          disabled={!repos.link.next}
+                          onClick={() => {
+                            setSearchParams(
+                              (prev) => {
+                                if (repos.link.next) {
+                                  prev.set('page', repos.link.next)
+                                }
+                                return prev
+                              },
+                              {
+                                preventScrollReset: true,
+                              },
+                            )
+                          }}
+                        >
+                          <ChevronRightIcon className="h-4 w-4" />
+                          <span className="sr-only">Next</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          disabled={!repos.link.last}
+                          onClick={() => {
+                            setSearchParams(
+                              (prev) => {
+                                if (repos.link.last) {
+                                  prev.set('page', repos.link.last)
+                                }
+                                return prev
+                              },
+                              {
+                                preventScrollReset: true,
+                              },
+                            )
+                          }}
+                        >
+                          <ChevronsRightIcon className="h-4 w-4" />
+                          <span className="sr-only">Last</span>
+                        </Button>
+                      </HStack>
                     </HStack>
                   </>
                 )
