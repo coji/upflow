@@ -1,12 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import {
-  Form,
-  Link,
-  redirect,
-  useActionData,
-  type ActionFunctionArgs,
-} from 'react-router'
+import { Form, Link, redirect } from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import {
@@ -24,6 +18,7 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { createCompany } from './mutations.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Create Company' }) }
@@ -41,29 +36,31 @@ export const schema = z.object({
   teamName: z.string().max(20),
 })
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request }: Route.ActionArgs) => {
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
-    return submission.reply()
+    return { lastResult: submission.reply() }
   }
+
   try {
     const { company } = await createCompany(submission.value)
-    throw redirect($path('/admin/:company', { company: company.id }))
+    return redirect($path('/admin/:company', { company: company.id }))
   } catch (e) {
-    return submission.reply({
-      formErrors: [`Failed to create company: ${String(e)}`],
-    })
+    return {
+      lastResult: submission.reply({
+        formErrors: [`Failed to create company: ${String(e)}`],
+      }),
+    }
   }
 }
 
-const CompanyNewPage = () => {
-  const lastResult = useActionData<typeof action>()
+const CompanyNewPage = ({ actionData }: Route.ComponentProps) => {
   const [form, { companyId, companyName, teamId, teamName }] = useForm({
+    lastResult: actionData?.lastResult,
     defaultValue: {
       teamId: 'developers',
       teamName: 'Developers',
     },
-    lastResult,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
@@ -105,7 +102,9 @@ const CompanyNewPage = () => {
             {form.errors && (
               <Alert variant="destructive">
                 <AlertTitle>システムエラー</AlertTitle>
-                <AlertDescription>{form.errors}</AlertDescription>
+                <AlertDescription>
+                  {JSON.stringify(form.errors)}
+                </AlertDescription>
               </Alert>
             )}
           </Stack>
