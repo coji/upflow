@@ -1,11 +1,5 @@
 import { parseWithZod } from '@conform-to/zod'
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
-  LockIcon,
-} from 'lucide-react'
+import { LockIcon } from 'lucide-react'
 import React from 'react'
 import { Await, Form, redirect, useSearchParams } from 'react-router'
 import { $path } from 'safe-routes'
@@ -25,9 +19,9 @@ import {
 import dayjs from '~/app/libs/dayjs'
 import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/route'
+import { RepositoriesPagination } from './components/repositories-pagniation'
 import { addRepository, getIntegration } from './functions.server'
 import { listGithubRepos } from './functions/listGithubRepos'
-
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
 const RepoSchema = z.object({
@@ -119,148 +113,50 @@ export default function AddRepositoryPage({
               {(repos) => {
                 return (
                   <>
-                    <div className="rounded border">
-                      <div>
-                        {repos.data.map((repo, index) => {
-                          const isFirst = index === 0
-                          const isLast = index === repos.data.length - 1
+                    <div>
+                      <div className="rounded border">
+                        <div>
+                          {repos.data.map((repo, index) => {
+                            const isFirst = index === 0
+                            const isLast = index === repos.data.length - 1
 
-                          return (
-                            <HStack
-                              key={repo.id}
-                              className={cn(
-                                'px-4 py-1',
-                                isFirst && 'border-b',
-                                !isFirst && !isLast && 'border-b',
-                              )}
-                            >
-                              <div className="text-sm">{repo.full_name}</div>
-                              {repo.visibility === 'private' && (
-                                <div>
-                                  <LockIcon className="text-muted-foreground h-3 w-3" />
+                            return (
+                              <HStack
+                                key={repo.id}
+                                className={cn(
+                                  'px-4 py-1',
+                                  isFirst && 'border-b',
+                                  !isFirst && !isLast && 'border-b',
+                                )}
+                              >
+                                <div className="text-sm">{repo.full_name}</div>
+                                {repo.visibility === 'private' && (
+                                  <div>
+                                    <LockIcon className="text-muted-foreground h-3 w-3" />
+                                  </div>
+                                )}
+                                <div className="text-muted-foreground">·</div>
+                                <div className="text-muted-foreground text-xs">
+                                  {dayjs(repo.pushedAt).fromNow()}
                                 </div>
-                              )}
-                              <div className="text-muted-foreground">·</div>
-                              <div className="text-muted-foreground text-xs">
-                                {dayjs(repo.pushedAt).fromNow()}
-                              </div>
-                              <div className="flex-1" />
-                              <div>
-                                <Button type="button" size="xs" variant="link">
-                                  Add
-                                </Button>
-                              </div>
-                            </HStack>
-                          )
-                        })}
+                                <div className="flex-1" />
+                                <div>
+                                  <Button
+                                    type="button"
+                                    size="xs"
+                                    variant="link"
+                                  >
+                                    Add
+                                  </Button>
+                                </div>
+                              </HStack>
+                            )
+                          })}
+                        </div>
                       </div>
                     </div>
 
-                    {/* pagination */}
-                    <HStack className="justify-end">
-                      <div className="text-xs">
-                        Page {page} / {repos.link.last}
-                      </div>
-
-                      <HStack>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          disabled={!repos.link.first}
-                          onClick={() => {
-                            if (repos.link.prev) {
-                              setSearchParams(
-                                (prev) => {
-                                  prev.delete('page')
-                                  return prev
-                                },
-                                {
-                                  preventScrollReset: true,
-                                },
-                              )
-                            }
-                          }}
-                        >
-                          <ChevronsLeftIcon className="h-4 w-4" />
-                          <span className="sr-only">First</span>
-                        </Button>
-
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          disabled={!repos.link.prev}
-                          onClick={() => {
-                            setSearchParams(
-                              (prev) => {
-                                if (
-                                  repos.link.prev === undefined ||
-                                  repos.link.prev === '1'
-                                ) {
-                                  prev.delete('page')
-                                } else {
-                                  prev.set('page', repos.link.prev)
-                                }
-                                return prev
-                              },
-                              {
-                                preventScrollReset: true,
-                              },
-                            )
-                          }}
-                        >
-                          <ChevronLeftIcon className="h-4 w-4" />
-                          <span className="sr-only">Previous</span>
-                        </Button>
-
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          disabled={!repos.link.next}
-                          onClick={() => {
-                            setSearchParams(
-                              (prev) => {
-                                if (repos.link.next) {
-                                  prev.set('page', repos.link.next)
-                                }
-                                return prev
-                              },
-                              {
-                                preventScrollReset: true,
-                              },
-                            )
-                          }}
-                        >
-                          <ChevronRightIcon className="h-4 w-4" />
-                          <span className="sr-only">Next</span>
-                        </Button>
-
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          disabled={!repos.link.last}
-                          onClick={() => {
-                            setSearchParams(
-                              (prev) => {
-                                if (repos.link.last) {
-                                  prev.set('page', repos.link.last)
-                                }
-                                return prev
-                              },
-                              {
-                                preventScrollReset: true,
-                              },
-                            )
-                          }}
-                        >
-                          <ChevronsRightIcon className="h-4 w-4" />
-                          <span className="sr-only">Last</span>
-                        </Button>
-                      </HStack>
-                    </HStack>
+                    <RepositoriesPagination page={page} link={repos.link} />
                   </>
                 )
               }}
