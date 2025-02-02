@@ -1,6 +1,12 @@
 import { parseWithZod } from '@conform-to/zod'
 import { ChevronRightIcon, ChevronsLeftIcon, LockIcon } from 'lucide-react'
-import { Form, redirect, useSearchParams } from 'react-router'
+import {
+  Form,
+  isRouteErrorResponse,
+  redirect,
+  useRouteError,
+  useSearchParams,
+} from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -39,7 +45,7 @@ const RepoSchema = z.object({
 })
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  let { owner, cursor, query } = zx.parseQuery(request, {
+  const { owner, cursor, query } = zx.parseQuery(request, {
     owner: z.string().optional(),
     cursor: z.string().optional(),
     query: z.string().optional(),
@@ -57,10 +63,6 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   if (owner && !owners.includes(owner)) {
     // invalid
     throw new Error('invalid owner')
-  }
-  // set default owner
-  if (!owner && owners.length > 0) {
-    owner = owners[0]
   }
 
   const { pageInfo, repos } = await getRepositoriesByOwnerAndKeyword({
@@ -130,7 +132,7 @@ export default function AddRepositoryPage({
             }}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select organization..." />
             </SelectTrigger>
             <SelectContent>
               {owners.map((owner) => (
@@ -160,37 +162,43 @@ export default function AddRepositoryPage({
           </Form>
 
           <div className="rounded border">
-            <div>
-              {repos.map((repo, index) => {
-                const isLast = index === repos.length - 1
+            {repos.length === 0 ? (
+              <div className="text-muted-foreground p-4 text-center text-sm">
+                No repositories found
+              </div>
+            ) : (
+              <div>
+                {repos.map((repo, index) => {
+                  const isLast = index === repos.length - 1
 
-                return (
-                  <HStack
-                    key={repo.id}
-                    className={cn('px-4 py-1', !isLast && 'border-b')}
-                  >
-                    <div className="text-sm">
-                      {repo.owner}/{repo.name}
-                    </div>
-                    {repo.visibility === 'PRIVATE' && (
-                      <div>
-                        <LockIcon className="text-muted-foreground h-3 w-3" />
+                  return (
+                    <HStack
+                      key={repo.id}
+                      className={cn('px-4 py-1', !isLast && 'border-b')}
+                    >
+                      <div className="text-sm">
+                        {repo.owner}/{repo.name}
                       </div>
-                    )}
-                    <div className="text-muted-foreground">·</div>
-                    <div className="text-muted-foreground text-xs">
-                      {dayjs(repo.pushedAt).fromNow()}
-                    </div>
-                    <div className="flex-1" />
-                    <div>
-                      <Button type="button" size="xs" variant="link">
-                        Add
-                      </Button>
-                    </div>
-                  </HStack>
-                )
-              })}
-            </div>
+                      {repo.visibility === 'PRIVATE' && (
+                        <div>
+                          <LockIcon className="text-muted-foreground h-3 w-3" />
+                        </div>
+                      )}
+                      <div className="text-muted-foreground">·</div>
+                      <div className="text-muted-foreground text-xs">
+                        {dayjs(repo.pushedAt).fromNow()}
+                      </div>
+                      <div className="flex-1" />
+                      <div>
+                        <Button type="button" size="xs" variant="link">
+                          Add
+                        </Button>
+                      </div>
+                    </HStack>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <HStack>
@@ -251,4 +259,30 @@ export default function AddRepositoryPage({
   // }
 
   // return <>{integration.provider === 'github' && RepositoryAddModal}</>
+}
+
+export const ErrorBoundary = () => {
+  const error = useRouteError()
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <main className="p-8">
+        <h1 className="text-2xl font-bold">
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </main>
+    )
+  }
+
+  return (
+    <main className="p-8">
+      <h1 className="text-2xl font-bold">Error!</h1>
+      <p>
+        {error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'Unknown error'}
+      </p>
+    </main>
+  )
 }
