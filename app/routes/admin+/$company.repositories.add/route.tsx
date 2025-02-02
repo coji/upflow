@@ -1,13 +1,12 @@
 import { parseWithZod } from '@conform-to/zod'
-import { ChevronRightIcon, ChevronsLeftIcon, LockIcon } from 'lucide-react'
+import { ChevronRightIcon, ChevronsLeftIcon } from 'lucide-react'
 import {
   Form,
   isRouteErrorResponse,
-  redirect,
   useRouteError,
   useSearchParams,
 } from 'react-router'
-import { $path } from 'safe-routes'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -27,21 +26,17 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import dayjs from '~/app/libs/dayjs'
-import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/route'
+import { RepositoryRow } from './components/repository-row'
 import { addRepository, getIntegration } from './functions.server'
 import { getRepositoriesByOwnerAndKeyword } from './functions/get-repositories-by-owner-and-keyword'
 import { getUniqueOwners } from './functions/get-unique-owners'
+
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
-const RepoSchema = z.object({
-  repos: z.array(
-    z.object({
-      owner: z.string(),
-      repo: z.string(),
-    }),
-  ),
+const AddRepoSchema = z.object({
+  owner: z.string(),
+  name: z.string(),
 })
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
@@ -82,27 +77,28 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   const submission = parseWithZod(await request.formData(), {
-    schema: RepoSchema,
+    schema: AddRepoSchema,
   })
   if (submission.status !== 'success') {
     return submission.reply()
   }
 
   try {
-    const repos = submission.value.repos
-    for (const repo of repos) {
-      await addRepository(params.company, {
-        owner: repo.owner,
-        repo: repo.repo,
-      })
-    }
-  } catch (e) {
-    return submission.reply({
-      formErrors: ['Failed to add repository'],
+    await addRepository(params.company, {
+      owner: submission.value.owner,
+      repo: submission.value.name,
     })
+  } catch (e) {
+    return dataWithError(
+      {},
+      { message: `Failed to add repository: ${String(e)}` },
+    )
   }
-  return redirect(
-    $path('/admin/:company/repositories', { company: params.company }),
+  return dataWithSuccess(
+    {},
+    {
+      message: `Repository added: ${submission.value.owner}/${submission.value.name}`,
+    },
   )
 }
 
@@ -167,37 +163,13 @@ export default function AddRepositoryPage({
                 No repositories found
               </div>
             ) : (
-              <div>
-                {repos.map((repo, index) => {
-                  const isLast = index === repos.length - 1
-
-                  return (
-                    <HStack
-                      key={repo.id}
-                      className={cn('px-4 py-1', !isLast && 'border-b')}
-                    >
-                      <div className="text-sm">
-                        {repo.owner}/{repo.name}
-                      </div>
-                      {repo.visibility === 'PRIVATE' && (
-                        <div>
-                          <LockIcon className="text-muted-foreground h-3 w-3" />
-                        </div>
-                      )}
-                      <div className="text-muted-foreground">·</div>
-                      <div className="text-muted-foreground text-xs">
-                        {dayjs(repo.pushedAt).fromNow()}
-                      </div>
-                      <div className="flex-1" />
-                      <div>
-                        <Button type="button" size="xs" variant="link">
-                          Add
-                        </Button>
-                      </div>
-                    </HStack>
-                  )
-                })}
-              </div>
+              repos.map((repo, index) => (
+                <RepositoryRow
+                  key={repo.id}
+                  repo={repo}
+                  isLast={index === repos.length - 1}
+                />
+              ))
             )}
           </div>
 
