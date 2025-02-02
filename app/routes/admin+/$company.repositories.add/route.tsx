@@ -1,4 +1,5 @@
 import { parseWithZod } from '@conform-to/zod'
+import { QueryClient } from '@tanstack/react-query'
 import { ChevronRightIcon, ChevronsLeftIcon } from 'lucide-react'
 import {
   Form,
@@ -26,6 +27,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
+import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { RepositoryItem } from './components/repository-item'
 import { RepositoryList } from './components/repository-list'
@@ -34,6 +36,7 @@ import { getRepositoriesByOwnerAndKeyword } from './functions/get-repositories-b
 import { getUniqueOwners } from './functions/get-unique-owners'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
+const queryClient = new QueryClient()
 
 const AddRepoSchema = z.object({
   owner: z.string(),
@@ -70,6 +73,32 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   return { pageInfo, query, owner, owners, repos }
 }
+
+export const clientLoader = async ({
+  request,
+  serverLoader,
+}: Route.ClientLoaderArgs) => {
+  const { owner, cursor, query } = zx.parseQuery(request, {
+    owner: z.string().optional(),
+    cursor: z.string().optional(),
+    query: z.string().optional(),
+  })
+  const queryKey = [
+    'repositories',
+    owner,
+    query,
+    cursor,
+    dayjs().format('YYYY-MM-DD HH:00'),
+  ]
+  let cache: Awaited<ReturnType<typeof serverLoader>> | undefined =
+    queryClient.getQueryData(queryKey)
+  if (!cache) {
+    cache = await serverLoader()
+    queryClient.setQueryData(queryKey, cache)
+  }
+  return cache
+}
+clientLoader.hydrate = true
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const integraiton = await getIntegration(params.company)
@@ -121,12 +150,18 @@ export default function AddRepositoryPage({
           <Select
             defaultValue={owner}
             onValueChange={(value) => {
-              setSearchParams((prev) => {
-                prev.set('owner', value)
-                prev.delete('cursor')
-                prev.delete('query')
-                return prev
-              })
+              setSearchParams(
+                (prev) => {
+                  prev.set('owner', value)
+                  prev.delete('cursor')
+                  prev.delete('query')
+                  prev.delete('refresh')
+                  return prev
+                },
+                {
+                  preventScrollReset: true,
+                },
+              )
             }}
           >
             <SelectTrigger>
@@ -146,10 +181,16 @@ export default function AddRepositoryPage({
               event.preventDefault()
               const formData = new FormData(event.currentTarget)
               const query = formData.get('query') as string
-              setSearchParams((prev) => {
-                prev.set('query', query)
-                return prev
-              })
+              setSearchParams(
+                (prev) => {
+                  prev.set('query', query)
+                  prev.delete('refresh')
+                  return prev
+                },
+                {
+                  preventScrollReset: true,
+                },
+              )
             }}
           >
             <HStack>
@@ -188,10 +229,16 @@ export default function AddRepositoryPage({
               size="icon"
               disabled={searchParams.get('cursor') === null}
               onClick={() => {
-                setSearchParams((prev) => {
-                  prev.delete('cursor')
-                  return prev
-                })
+                setSearchParams(
+                  (prev) => {
+                    prev.delete('cursor')
+                    prev.delete('refresh')
+                    return prev
+                  },
+                  {
+                    preventScrollReset: true,
+                  },
+                )
               }}
             >
               <ChevronsLeftIcon className="h-4 w-4" />
@@ -202,14 +249,20 @@ export default function AddRepositoryPage({
               size="icon"
               disabled={!pageInfo.hasNextPage}
               onClick={() => {
-                setSearchParams((prev) => {
-                  if (pageInfo.endCursor) {
-                    prev.set('cursor', pageInfo.endCursor)
-                  } else {
-                    prev.delete('cursor')
-                  }
-                  return prev
-                })
+                setSearchParams(
+                  (prev) => {
+                    if (pageInfo.endCursor) {
+                      prev.set('cursor', pageInfo.endCursor)
+                    } else {
+                      prev.delete('cursor')
+                    }
+                    prev.delete('refresh')
+                    return prev
+                  },
+                  {
+                    preventScrollReset: true,
+                  },
+                )
               }}
             >
               <ChevronRightIcon className="h-4 w-4" />
