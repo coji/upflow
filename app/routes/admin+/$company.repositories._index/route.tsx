@@ -43,7 +43,6 @@ export default function CompanyRepositoryIndexPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Owner</TableHead>
                 <TableHead>Repo</TableHead>
                 <TableHead>Method</TableHead>
                 <TableHead>Key</TableHead>
@@ -60,11 +59,10 @@ export default function CompanyRepositoryIndexPage() {
                   .otherwise(() => '')
                 return (
                   <TableRow key={repo.id}>
-                    <TableCell>{repo.owner}</TableCell>
-
                     <TableCell>
                       <Link to={repoUrl} target="_blank" className="">
-                        {repo.repo} <ExternalLinkIcon className="inline" />
+                        {repo.owner}/{repo.repo}{' '}
+                        <ExternalLinkIcon className="inline-block h-4 w-4" />
                       </Link>
                     </TableCell>
 
@@ -74,7 +72,7 @@ export default function CompanyRepositoryIndexPage() {
 
                     <TableCell>
                       <HStack>
-                        <Button asChild size="xs" variant="outline">
+                        <Button asChild size="xs" variant="link">
                           <Link
                             to={$path(
                               '/admin/:company/repositories/:repository',
@@ -88,7 +86,7 @@ export default function CompanyRepositoryIndexPage() {
                           </Link>
                         </Button>
 
-                        <Button asChild size="xs" variant="outline">
+                        <Button asChild size="xs" variant="link">
                           <Link
                             to={$path(
                               '/admin/:company/repositories/:repository/settings',
@@ -102,7 +100,7 @@ export default function CompanyRepositoryIndexPage() {
                           </Link>
                         </Button>
 
-                        <Button asChild size="xs" variant="destructive">
+                        <Button asChild size="xs" variant="link">
                           <Link
                             to={$path(
                               '/admin/:company/repositories/:repository/delete',
