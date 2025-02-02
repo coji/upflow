@@ -6,7 +6,7 @@ import type { AppLoadContext, EntryContext } from 'react-router'
 import { ServerRouter } from 'react-router'
 import '~/app/libs/dotenv.server'
 
-const ABORT_DELAY = 5_000
+export const streamTimeout = 30000
 
 export default function handleRequest(
   request: Request,
@@ -117,7 +117,5 @@ function handleBrowserRequest(
         },
       },
     )
-
-    setTimeout(abort, ABORT_DELAY)
   })
 }

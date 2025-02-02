@@ -1,13 +1,9 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useNavigation } from 'react-router'
 
 export const AppLoadingProgress = () => {
   const navigation = useNavigation()
-  const isRemixLoading = navigation.state !== 'idle'
-  const queryClient = useQueryClient()
-  const isReactQueryLoading = !!queryClient.isFetching()
-  const isLoading = isRemixLoading || isReactQueryLoading
+  const isLoading = navigation.state !== 'idle'
   const [value, setValue] = useState(0)
 
   useEffect(() => {

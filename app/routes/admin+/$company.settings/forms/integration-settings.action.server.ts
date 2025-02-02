@@ -1,8 +1,8 @@
 import { parseWithZod } from '@conform-to/zod'
 import { dataWithSuccess } from 'remix-toast'
+import type { Route } from '../+types/route'
 import { upsertIntegration } from '../functions.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../types'
-import type { Route } from './+types'
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const submission = await parseWithZod(await request.formData(), { schema })

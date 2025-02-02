@@ -3,7 +3,7 @@ import { listAllCompanies } from '~/batch/db'
 export interface Config {
   companyId: string
   companyName: string
-  integraiton: {
+  integration: {
     id: string
     provider: string
     method: string
@@ -18,9 +18,9 @@ export const allConfigs = async () => {
     return {
       companyId: company.id,
       companyName: company.name,
-      integraiton: company.integration,
+      integration: company.integration,
       repositories: company.repositories.map((repo) => ({ id: repo.id })),
-    } as Config
+    } satisfies Config
   })
   return configs
 }

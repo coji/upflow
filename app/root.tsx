@@ -1,5 +1,3 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useEffect } from 'react'
 import {
   Links,
@@ -28,8 +26,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return data({ toastData: toast }, { headers })
 }
 
-const queryClient = new QueryClient()
-
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
@@ -40,12 +36,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <Links />
       </head>
       <body>
-        <QueryClientProvider client={queryClient}>
-          <Toaster />
-          <AppLoadingProgress />
-          {children}
-          <ReactQueryDevtools initialIsOpen={false} />
-        </QueryClientProvider>
+        <Toaster />
+        <AppLoadingProgress />
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -1,88 +1,277 @@
 import { parseWithZod } from '@conform-to/zod'
-import { redirect, useFetcher } from 'react-router'
-import { $path } from 'safe-routes'
+import { ChevronRightIcon, ChevronsLeftIcon } from 'lucide-react'
+import {
+  Form,
+  isRouteErrorResponse,
+  useRouteError,
+  useSearchParams,
+} from 'react-router'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import { zx } from 'zodix'
-import { useRepositoryAddModal } from '~/app/features/admin/setup/hooks/useRepositoryAddModal'
-import type { GithubRepo } from '~/app/features/admin/setup/interfaces/model'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  HStack,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Stack,
+} from '~/app/components/ui'
 import type { Route } from './+types/route'
-import { addRepository, getIntegration } from './functions.server'
+import { RepositoryItem, RepositoryList } from './components'
+import {
+  addRepository,
+  getIntegration,
+  getRepositoriesByOwnerAndKeyword,
+  getUniqueOwners,
+} from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
-const RepoSchema = z.object({
-  repos: z.array(
-    z.object({
-      owner: z.string(),
-      repo: z.string(),
-    }),
-  ),
+const AddRepoSchema = z.object({
+  owner: z.string(),
+  name: z.string(),
 })
 
-export const loader = async ({ params }: Route.LoaderArgs) => {
-  const { company: companyId } = zx.parseParams(params, {
-    company: z.string(),
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  const { owner, cursor, query } = zx.parseQuery(request, {
+    owner: z.string().optional(),
+    cursor: z.string().optional(),
+    query: z.string().optional().default(''),
   })
-  const integration = await getIntegration(companyId)
+
+  const integration = await getIntegration(params.company)
   if (!integration) {
     throw new Error('integration not created')
   }
-  return { integration }
+  if (!integration.privateToken) {
+    throw new Error('integration not configured')
+  }
+
+  const owners = await getUniqueOwners(integration.privateToken)
+  if (owner && !owners.includes(owner)) {
+    // invalid
+    throw new Error('invalid owner')
+  }
+
+  const { pageInfo, repos } = await getRepositoriesByOwnerAndKeyword({
+    token: integration.privateToken,
+    cursor,
+    owner,
+    keyword: query,
+  })
+
+  return { integration, pageInfo, query, owner, owners, repos }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  const submission = parseWithZod(await request.formData(), {
-    schema: RepoSchema,
-  })
-  if (submission.status !== 'success') {
-    return submission.reply()
-  }
-
   const integraiton = await getIntegration(params.company)
   if (!integraiton) {
     throw new Error('integration not created')
   }
 
-  try {
-    const repos = submission.value.repos
-    for (const repo of repos) {
-      await addRepository(params.company, {
-        owner: repo.owner,
-        repo: repo.repo,
-      })
-    }
-  } catch (e) {
-    return submission.reply({
-      formErrors: ['Failed to add repository'],
-    })
+  const submission = parseWithZod(await request.formData(), {
+    schema: AddRepoSchema,
+  })
+  if (submission.status !== 'success') {
+    return dataWithError({}, { message: 'Invalid form submission' })
   }
-  return redirect(
-    $path('/admin/:company/repositories', { company: params.company }),
+
+  try {
+    await addRepository(params.company, {
+      owner: submission.value.owner,
+      repo: submission.value.name,
+    })
+  } catch (e) {
+    return dataWithError(
+      {},
+      { message: `Failed to add repository: ${String(e)}` },
+    )
+  }
+
+  return dataWithSuccess(
+    {},
+    {
+      message: `Repository added: ${submission.value.owner}/${submission.value.name}`,
+    },
   )
 }
 
 export default function AddRepositoryPage({
-  loaderData: { integration },
+  loaderData: { integration, pageInfo, query, owner, owners, repos },
 }: Route.ComponentProps) {
-  const fetcher = useFetcher<typeof action>()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const handleAddRepository = (repos: GithubRepo[]) => {
-    const keyValues: Record<string, string> = {}
-    for (const [idx, repo] of repos.entries()) {
-      keyValues[`repos[${idx}].owner`] = repo.owner
-      keyValues[`repos[${idx}].repo`] = repo.name
-    }
-    fetcher.submit(keyValues, { method: 'POST' })
-    return true
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Repositories</CardTitle>
+        <CardDescription>Add repositories to the company</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Stack>
+          <Label>Organization</Label>
+          <Select
+            defaultValue={owner}
+            onValueChange={(value) => {
+              setSearchParams(
+                (prev) => {
+                  prev.set('owner', value)
+                  prev.delete('cursor')
+                  prev.delete('query')
+                  prev.delete('refresh')
+                  return prev
+                },
+                {
+                  preventScrollReset: true,
+                },
+              )
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select organization..." />
+            </SelectTrigger>
+            <SelectContent>
+              {owners.map((owner) => (
+                <SelectItem key={owner} value={owner}>
+                  {owner}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Form
+            onSubmit={(event) => {
+              event.preventDefault()
+              const formData = new FormData(event.currentTarget)
+              const query = formData.get('query') as string
+              setSearchParams(
+                (prev) => {
+                  prev.set('query', query)
+                  prev.delete('refresh')
+                  return prev
+                },
+                {
+                  preventScrollReset: true,
+                },
+              )
+            }}
+          >
+            <HStack>
+              <Input
+                name="query"
+                type="search"
+                placeholder="Search repositories..."
+                defaultValue={query}
+              />
+              <Button type="submit" variant="outline">
+                Search
+              </Button>
+            </HStack>
+          </Form>
+
+          <RepositoryList>
+            {repos.length === 0 ? (
+              <div className="text-muted-foreground p-4 text-center text-sm">
+                No repositories found
+              </div>
+            ) : (
+              repos.map((repo, index) => (
+                <RepositoryItem
+                  key={repo.id}
+                  repo={repo}
+                  isAdded={integration.repositories.some(
+                    (r) => r.owner === repo.owner && r.repo === repo.name,
+                  )}
+                  isLast={index === repos.length - 1}
+                />
+              ))
+            )}
+          </RepositoryList>
+
+          <HStack>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={searchParams.get('cursor') === null}
+              onClick={() => {
+                setSearchParams(
+                  (prev) => {
+                    prev.delete('cursor')
+                    prev.delete('refresh')
+                    return prev
+                  },
+                  {
+                    preventScrollReset: true,
+                  },
+                )
+              }}
+            >
+              <ChevronsLeftIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={!pageInfo.hasNextPage}
+              onClick={() => {
+                setSearchParams(
+                  (prev) => {
+                    if (pageInfo.endCursor) {
+                      prev.set('cursor', pageInfo.endCursor)
+                    } else {
+                      prev.delete('cursor')
+                    }
+                    prev.delete('refresh')
+                    return prev
+                  },
+                  {
+                    preventScrollReset: true,
+                  },
+                )
+              }}
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </HStack>
+        </Stack>
+      </CardContent>
+    </Card>
+  )
+}
+
+export const ErrorBoundary = () => {
+  const error = useRouteError()
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <main className="p-8">
+        <h1 className="text-2xl font-bold">
+          {error.status} {error.statusText}
+        </h1>
+        <p>{error.data}</p>
+      </main>
+    )
   }
-  const { RepositoryAddModal } = useRepositoryAddModal({
-    integration,
-    onSubmit: handleAddRepository,
-  })
 
-  if (!integration) {
-    return <p>integration not found</p>
-  }
-
-  return <>{integration.provider === 'github' && RepositoryAddModal}</>
+  return (
+    <main className="p-8">
+      <h1 className="text-2xl font-bold">Error!</h1>
+      <p>
+        {error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'Unknown error'}
+      </p>
+    </main>
+  )
 }
