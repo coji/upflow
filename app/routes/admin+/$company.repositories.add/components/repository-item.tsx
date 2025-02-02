@@ -5,7 +5,7 @@ import dayjs from '~/app/libs/dayjs'
 import { cn } from '~/app/libs/utils'
 import type { Repository } from '../functions/get-repositories-by-owner-and-keyword'
 
-export const RepositoryRow = ({
+export const RepositoryItem = ({
   repo,
   isLast,
 }: {

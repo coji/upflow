@@ -27,7 +27,7 @@ import {
   Stack,
 } from '~/app/components/ui'
 import type { Route } from './+types/route'
-import { RepositoryRow } from './components/repository-row'
+import { RepositoryItem } from './components/repository-item'
 import { addRepository, getIntegration } from './functions.server'
 import { getRepositoriesByOwnerAndKeyword } from './functions/get-repositories-by-owner-and-keyword'
 import { getUniqueOwners } from './functions/get-unique-owners'
@@ -80,7 +80,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     schema: AddRepoSchema,
   })
   if (submission.status !== 'success') {
-    return submission.reply()
+    return dataWithError({}, { message: 'Invalid form submission' })
   }
 
   try {
@@ -94,6 +94,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       { message: `Failed to add repository: ${String(e)}` },
     )
   }
+
   return dataWithSuccess(
     {},
     {
@@ -164,7 +165,7 @@ export default function AddRepositoryPage({
               </div>
             ) : (
               repos.map((repo, index) => (
-                <RepositoryRow
+                <RepositoryItem
                   key={repo.id}
                   repo={repo}
                   isLast={index === repos.length - 1}
