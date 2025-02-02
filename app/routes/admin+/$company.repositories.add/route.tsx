@@ -1,7 +1,6 @@
 import { parseWithZod } from '@conform-to/zod'
-import { LockIcon } from 'lucide-react'
-import React from 'react'
-import { Await, Form, redirect, useSearchParams } from 'react-router'
+import { ChevronRightIcon, ChevronsLeftIcon, LockIcon } from 'lucide-react'
+import { Form, redirect, useSearchParams } from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -14,14 +13,20 @@ import {
   CardTitle,
   HStack,
   Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Stack,
 } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/route'
-import { RepositoriesPagination } from './components/repositories-pagniation'
 import { addRepository, getIntegration } from './functions.server'
-import { listGithubRepos } from './functions/listGithubRepos'
+import { getRepositoriesByOwnerAndKeyword } from './functions/get-repositories-by-owner-and-keyword'
+import { getUniqueOwners } from './functions/get-unique-owners'
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
 const RepoSchema = z.object({
@@ -34,9 +39,9 @@ const RepoSchema = z.object({
 })
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { page, perPage, query } = zx.parseQuery(request, {
-    page: z.string().optional().default('1').transform(Number),
-    perPage: z.string().optional().default('10').transform(Number),
+  let { owner, cursor, query } = zx.parseQuery(request, {
+    owner: z.string().optional(),
+    cursor: z.string().optional(),
     query: z.string().optional(),
   })
 
@@ -48,13 +53,24 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw new Error('integration not configured')
   }
 
-  const repos = listGithubRepos({
+  const owners = await getUniqueOwners(integration.privateToken)
+  if (owner && !owners.includes(owner)) {
+    // invalid
+    throw new Error('invalid owner')
+  }
+  // set default owner
+  if (!owner && owners.length > 0) {
+    owner = owners[0]
+  }
+
+  const { pageInfo, repos } = await getRepositoriesByOwnerAndKeyword({
     token: integration.privateToken,
-    page,
-    perPage,
+    cursor,
+    owner,
+    keyword: query ?? '',
   })
 
-  return { page, perPage, query, integration, repos }
+  return { pageInfo, query, owner, owners, repos }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
@@ -89,7 +105,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 }
 
 export default function AddRepositoryPage({
-  loaderData: { integration, repos, page, perPage },
+  loaderData: { pageInfo, query, owner, owners, repos },
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -101,67 +117,116 @@ export default function AddRepositoryPage({
       </CardHeader>
       <CardContent>
         <Stack>
-          <Form>
-            <Input name="query" placeholder="Search repositories..." />
+          <Label>Organization</Label>
+          <Select
+            defaultValue={owner}
+            onValueChange={(value) => {
+              setSearchParams((prev) => {
+                prev.set('owner', value)
+                prev.delete('cursor')
+                prev.delete('query')
+                return prev
+              })
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {owners.map((owner) => (
+                <SelectItem key={owner} value={owner}>
+                  {owner}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Form
+            onSubmit={(event) => {
+              event.preventDefault()
+              const formData = new FormData(event.currentTarget)
+              const query = formData.get('query') as string
+              setSearchParams((prev) => {
+                prev.set('query', query)
+                return prev
+              })
+            }}
+          >
+            <Input
+              name="query"
+              placeholder="Search repositories..."
+              defaultValue={query}
+            />
           </Form>
 
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <Await
-              resolve={repos}
-              errorElement={<div>Could not load repositories</div>}
-            >
-              {(repos) => {
+          <div className="rounded border">
+            <div>
+              {repos.map((repo, index) => {
+                const isLast = index === repos.length - 1
+
                 return (
-                  <>
-                    <div>
-                      <div className="rounded border">
-                        <div>
-                          {repos.data.map((repo, index) => {
-                            const isFirst = index === 0
-                            const isLast = index === repos.data.length - 1
-
-                            return (
-                              <HStack
-                                key={repo.id}
-                                className={cn(
-                                  'px-4 py-1',
-                                  isFirst && 'border-b',
-                                  !isFirst && !isLast && 'border-b',
-                                )}
-                              >
-                                <div className="text-sm">{repo.full_name}</div>
-                                {repo.visibility === 'private' && (
-                                  <div>
-                                    <LockIcon className="text-muted-foreground h-3 w-3" />
-                                  </div>
-                                )}
-                                <div className="text-muted-foreground">·</div>
-                                <div className="text-muted-foreground text-xs">
-                                  {dayjs(repo.pushedAt).fromNow()}
-                                </div>
-                                <div className="flex-1" />
-                                <div>
-                                  <Button
-                                    type="button"
-                                    size="xs"
-                                    variant="link"
-                                  >
-                                    Add
-                                  </Button>
-                                </div>
-                              </HStack>
-                            )
-                          })}
-                        </div>
-                      </div>
+                  <HStack
+                    key={repo.id}
+                    className={cn('px-4 py-1', !isLast && 'border-b')}
+                  >
+                    <div className="text-sm">
+                      {repo.owner}/{repo.name}
                     </div>
-
-                    <RepositoriesPagination page={page} link={repos.link} />
-                  </>
+                    {repo.visibility === 'PRIVATE' && (
+                      <div>
+                        <LockIcon className="text-muted-foreground h-3 w-3" />
+                      </div>
+                    )}
+                    <div className="text-muted-foreground">·</div>
+                    <div className="text-muted-foreground text-xs">
+                      {dayjs(repo.pushedAt).fromNow()}
+                    </div>
+                    <div className="flex-1" />
+                    <div>
+                      <Button type="button" size="xs" variant="link">
+                        Add
+                      </Button>
+                    </div>
+                  </HStack>
                 )
+              })}
+            </div>
+          </div>
+
+          <HStack>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={searchParams.get('cursor') === null}
+              onClick={() => {
+                setSearchParams((prev) => {
+                  prev.delete('cursor')
+                  return prev
+                })
               }}
-            </Await>
-          </React.Suspense>
+            >
+              <ChevronsLeftIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={!pageInfo.hasNextPage}
+              onClick={() => {
+                setSearchParams((prev) => {
+                  if (pageInfo.endCursor) {
+                    prev.set('cursor', pageInfo.endCursor)
+                  } else {
+                    prev.delete('cursor')
+                  }
+                  return prev
+                })
+              }}
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </HStack>
         </Stack>
       </CardContent>
     </Card>

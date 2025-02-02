@@ -44,7 +44,10 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           <Toaster />
           <AppLoadingProgress />
           {children}
-          <ReactQueryDevtools initialIsOpen={false} />
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            buttonPosition="bottom-left"
+          />
         </QueryClientProvider>
         <ScrollRestoration />
         <Scripts />
