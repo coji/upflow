@@ -1,8 +1,9 @@
 import { parseWithZod } from '@conform-to/zod'
-import { ChevronRightIcon, ChevronsLeftIcon } from 'lucide-react'
+import { ChevronRightIcon, ChevronsLeftIcon, RefreshCwIcon } from 'lucide-react'
 import {
   Form,
   isRouteErrorResponse,
+  redirect,
   useRouteError,
   useSearchParams,
 } from 'react-router'
@@ -26,6 +27,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
+import { clearAllCache, getCachedData } from '~/app/services/cache.server'
 import type { Route } from './+types/route'
 import { RepositoryItem, RepositoryList } from './components'
 import {
@@ -43,11 +45,21 @@ const AddRepoSchema = z.object({
 })
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { owner, cursor, query } = zx.parseQuery(request, {
+  const { owner, cursor, query, refresh } = zx.parseQuery(request, {
     owner: z.string().optional(),
     cursor: z.string().optional(),
     query: z.string().optional().default(''),
+    refresh: z.string().optional(),
   })
+
+  if (refresh) {
+    const searchParams = new URL(request.url).searchParams
+    searchParams.delete('refresh')
+    clearAllCache()
+    throw redirect(
+      `/admin/${params.company}/repositories/add?${searchParams.toString()}`,
+    )
+  }
 
   const integration = await getIntegration(params.company)
   if (!integration) {
@@ -56,19 +68,28 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   if (!integration.privateToken) {
     throw new Error('integration not configured')
   }
-
-  const owners = await getUniqueOwners(integration.privateToken)
+  const token = integration.privateToken
+  const owners = await getCachedData(
+    'owners',
+    () => getUniqueOwners(token),
+    300000, // 5 minutes
+  )
   if (owner && !owners.includes(owner)) {
     // invalid
     throw new Error('invalid owner')
   }
 
-  const { pageInfo, repos } = await getRepositoriesByOwnerAndKeyword({
-    token: integration.privateToken,
-    cursor,
-    owner,
-    keyword: query,
-  })
+  const { pageInfo, repos } = await getCachedData(
+    `repos-${owner}-${cursor}-${query}`,
+    () =>
+      getRepositoriesByOwnerAndKeyword({
+        token,
+        cursor,
+        owner,
+        keyword: query,
+      }),
+    300000, // 5 minutes
+  )
 
   return { integration, pageInfo, query, owner, owners, repos }
 }
@@ -114,8 +135,22 @@ export default function AddRepositoryPage({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add Repositories</CardTitle>
-        <CardDescription>Add repositories to the company</CardDescription>
+        <HStack>
+          <div className="flex-1">
+            <CardTitle>Add Repositories</CardTitle>
+            <CardDescription>Add repositories to the company</CardDescription>
+          </div>
+          <Form method="get">
+            {/* 既存のURLパラメタをすべてつける */}
+            {[...searchParams.entries()].map(([key, value]) => (
+              <input key={key} type="hidden" name={key} value={value} />
+            ))}
+            <input type="hidden" name="refresh" value="true" />
+            <Button type="submit" variant="outline" size="icon">
+              <RefreshCwIcon className="text-muted-foreground scale-70" />
+            </Button>
+          </Form>
+        </HStack>
       </CardHeader>
       <CardContent>
         <Stack>
@@ -150,6 +185,7 @@ export default function AddRepositoryPage({
           </Select>
 
           <Form
+            method="get"
             onSubmit={(event) => {
               event.preventDefault()
               const formData = new FormData(event.currentTarget)
