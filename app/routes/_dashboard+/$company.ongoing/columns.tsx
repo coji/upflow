@@ -13,6 +13,12 @@ export const columns: ColumnDef<PullRequest>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: 'repo',
+    header: ({ column }) => <AppSortableHeader column={column} title="repo" />,
+    cell: ({ cell }) => cell.getValue(),
+    enableHiding: false,
+  },
+  {
     accessorKey: 'number',
     header: ({ column }) => <AppSortableHeader column={column} title="No" />,
     cell: ({ cell }) => cell.getValue(),
