@@ -9,7 +9,6 @@ import {
 import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
-  server: { port: 3000 },
   plugins: [tailwindcss(), reactRouter(), safeRoutes(), tsconfigPaths()],
   resolve: { conditions: [...defaultClientConditions] },
   ssr: {
