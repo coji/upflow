@@ -11,6 +11,11 @@ export const getMergedPullRequestReport = async (
   const pullrequests = await db
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .leftJoin(
+      'companyGithubUsers',
+      'pullRequests.author',
+      'companyGithubUsers.login',
+    )
     .where('repositories.companyId', '==', companyId)
     .$if(fromDateTime !== null, (qb) =>
       qb.where('mergedAt', '>=', fromDateTime),
@@ -20,6 +25,7 @@ export const getMergedPullRequestReport = async (
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
     .selectAll('pullRequests')
+    .select('companyGithubUsers.displayName as authorDisplayName')
     .execute()
 
   return pipe(

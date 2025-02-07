@@ -42,6 +42,7 @@ model Company {
   integration            Integration?
   repositories           Repository[]
   teams                  Team[]
+  GithubUser             CompanyGithubUser[]
 
   @@map("companies")
 }
@@ -170,4 +171,21 @@ model ExportSetting {
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("export_settings")
+}
+
+model CompanyGithubUser {
+  companyId   String   @map("company_id")
+  userId      String?  @map("user_id")
+  login       String
+  name        String?
+  email       String?
+  pictureUrl  String?  @map("picture_url")
+  displayName String   @map("display_name")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  Company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, login])
+  @@map("company_github_users")
 }

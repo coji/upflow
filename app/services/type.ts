@@ -13,6 +13,17 @@ export type Company = {
     createdAt: Generated<string>;
     isActive: Generated<number>;
 };
+export type CompanyGithubUser = {
+    companyId: string;
+    userId: string | null;
+    login: string;
+    name: string | null;
+    email: string | null;
+    pictureUrl: string | null;
+    displayName: string;
+    updatedAt: string;
+    createdAt: Generated<string>;
+};
 export type CompanyUser = {
     companyId: string;
     userId: string;
@@ -104,6 +115,7 @@ export type User = {
 };
 export type DB = {
     companies: Company;
+    companyGithubUsers: CompanyGithubUser;
     companyUsers: CompanyUser;
     exportSettings: ExportSetting;
     integrations: Integration;

@@ -67,6 +67,7 @@ export const requireUser = async (request: Request) => {
  */
 export const requireAdminUser = async (request: Request) => {
   const sessionUser = await requireUser(request)
+
   if (sessionUser?.role !== 'admin') throw redirect('/')
   return sessionUser
 }
