@@ -6,7 +6,7 @@ export function generateMarkdown(pulls: PullRequest[]) {
   const body = pulls
     .map(
       (row) =>
-        `|${row.author}|${row.repo}|${row.number}|[${row.title}](${row.url})|${row.createAndNowDiff?.toFixed(1)}日|`,
+        `|${row.authorDisplayName ?? row.author}|${row.repo}|${row.number}|[${row.title}](${row.url})|${row.createAndNowDiff?.toFixed(1)}日|`,
     )
     .join('\n')
   return `${header1}${header2}${body}`
