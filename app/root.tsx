@@ -12,7 +12,9 @@ import {
   type LoaderFunctionArgs,
 } from 'react-router'
 import { getToast } from 'remix-toast'
-import { Toaster, useToast } from '~/app/components/ui'
+import { toast } from 'sonner'
+import { match } from 'ts-pattern'
+import { Toaster } from '~/app/components/ui'
 import { AppLoadingProgress } from './components'
 import './styles/globals.css'
 
@@ -48,16 +50,21 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 
 export default function App() {
   const { toastData } = useLoaderData<typeof loader>()
-  const { toast } = useToast()
 
   useEffect(() => {
     if (toastData) {
-      toast({
-        variant: toastData.type === 'error' ? 'destructive' : 'default',
-        description: toastData.message,
+      const toastFn = match(toastData.type)
+        .with('success', () => toast.success)
+        .with('error', () => toast.error)
+        .with('info', () => toast.info)
+        .with('warning', () => toast.warning)
+        .exhaustive()
+      toastFn(toastData.message, {
+        duration: toastData.duration,
+        description: toastData.description,
       })
     }
-  }, [toastData, toast])
+  }, [toastData])
 
   return <Outlet />
 }

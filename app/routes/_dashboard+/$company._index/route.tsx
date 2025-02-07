@@ -1,8 +1,9 @@
 import { CopyIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
-import { Badge, Button, Label, Stack, useToast } from '~/app/components/ui'
+import { Badge, Button, Label, Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { columns } from './columns'
@@ -53,8 +54,6 @@ export default function CompanyIndex({
     achievementRate,
   },
 }: Route.ComponentProps) {
-  const toast = useToast()
-
   return (
     <Stack>
       <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
@@ -102,7 +101,7 @@ export default function CompanyIndex({
           onClick={() => {
             // markdown 表形式でコピー
             navigator.clipboard.writeText(generateMarkdown(pullRequests))
-            toast.toast({ title: `Copied ${pullRequests.length} rows` })
+            toast.info(`Copied ${pullRequests.length} rows`)
           }}
         >
           <CopyIcon size="16" />

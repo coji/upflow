@@ -1,8 +1,9 @@
 import { CopyIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
-import { Button, Stack, useToast } from '~/app/components/ui'
+import { Button, Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { columns } from './columns'
@@ -27,8 +28,6 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 export default function OngoingPage({
   loaderData: { pullRequests, from, to },
 }: Route.ComponentProps) {
-  const toast = useToast()
-
   return (
     <Stack>
       <div className="text-right">
@@ -40,7 +39,7 @@ export default function OngoingPage({
           onClick={() => {
             // markdown 表形式でコピー
             navigator.clipboard.writeText(generateMarkdown(pullRequests))
-            toast.toast({ title: `Copied ${pullRequests.length} rows` })
+            toast.info(`Copied ${pullRequests.length} rows`)
           }}
         >
           <CopyIcon size="16" />
