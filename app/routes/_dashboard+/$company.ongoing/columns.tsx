@@ -9,7 +9,7 @@ export const columns: ColumnDef<PullRequest>[] = [
     header: ({ column }) => (
       <AppSortableHeader column={column} title="author" />
     ),
-    cell: ({ cell }) => cell.getValue(),
+    cell: ({ cell }) => cell.row.original.authorDisplayName || cell.getValue(),
     enableHiding: false,
   },
   {

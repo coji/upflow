@@ -10,6 +10,11 @@ export const getOngoingPullRequestReport = async (
   const pullrequests = await db
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .leftJoin(
+      'companyGithubUsers',
+      'pullRequests.author',
+      'companyGithubUsers.login',
+    )
     .where('repositories.companyId', '==', companyId)
     .$if(fromDateTime !== null, (qb) =>
       qb.where('pullRequestCreatedAt', '>=', fromDateTime),
@@ -22,6 +27,7 @@ export const getOngoingPullRequestReport = async (
     .where('author', 'not like', '%[bot]')
     .orderBy('pullRequestCreatedAt', 'desc')
     .selectAll('pullRequests')
+    .select('companyGithubUsers.displayName as authorDisplayName')
     .execute()
 
   return pipe(
