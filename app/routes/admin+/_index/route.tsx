@@ -1,6 +1,5 @@
 import { PlusCircleIcon } from 'lucide-react'
-import type { LoaderFunctionArgs } from 'react-router'
-import { Link, Outlet, useLoaderData } from 'react-router'
+import { Link, Outlet } from 'react-router'
 import { $path } from 'safe-routes'
 import {
   Button,
@@ -10,15 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { listCompanies } from './queries.server'
 
-export const loader = async ({ request }: LoaderFunctionArgs) => ({
+export const loader = async ({ request }: Route.LoaderArgs) => ({
   companies: await listCompanies(),
 })
 
-const AdminCompanyIndex = () => {
-  const { companies } = useLoaderData<typeof loader>()
-
+const AdminCompanyIndex = ({
+  loaderData: { companies },
+}: Route.ComponentProps) => {
   return (
     <div className="grid grid-cols-[15rem_1fr] gap-4">
       <Card>
