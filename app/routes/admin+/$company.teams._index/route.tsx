@@ -1,5 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { Link, useLoaderData } from 'react-router'
+import { Link } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -18,9 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { listCompanyTeams } from './queries.server'
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -28,9 +28,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { companyId, teams }
 }
 
-export default function TeamIndexPage() {
-  const { teams } = useLoaderData<typeof loader>()
-
+export default function TeamIndexPage({
+  loaderData: { teams },
+}: Route.ComponentProps) {
   return (
     <Card>
       <CardHeader>
