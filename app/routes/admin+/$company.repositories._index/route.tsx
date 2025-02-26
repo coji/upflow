@@ -1,6 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
-import type { LoaderFunctionArgs } from 'react-router'
-import { Link, useLoaderData } from 'react-router'
+import { Link } from 'react-router'
 import { $path } from 'safe-routes'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -20,9 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { listRepositories } from './queries.server'
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -30,9 +30,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { companyId, repositories }
 }
 
-export default function CompanyRepositoryIndexPage() {
-  const { companyId, repositories } = useLoaderData<typeof loader>()
-
+export default function CompanyRepositoryIndexPage({
+  loaderData: { companyId, repositories },
+}: Route.ComponentProps) {
   return (
     <Card>
       <CardHeader>
