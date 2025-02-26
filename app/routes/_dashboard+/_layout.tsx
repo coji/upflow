@@ -1,12 +1,11 @@
-import { Outlet } from 'react-router'
-import { $path } from 'safe-routes'
+import { Outlet, href } from 'react-router'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireUser } from '~/app/features/auth/services/auth'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
 import type { Route } from './+types/_layout'
 
 export const handle = {
-  breadcrumb: () => ({ label: 'Dashboard', to: $path('/') }),
+  breadcrumb: () => ({ label: 'Dashboard', to: href('/') }),
 }
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
