@@ -1,6 +1,5 @@
 import { PlusCircleIcon } from 'lucide-react'
-import { Link, Outlet } from 'react-router'
-import { $path } from 'safe-routes'
+import { Link, Outlet, href } from 'react-router'
 import {
   Button,
   Card,
@@ -38,7 +37,7 @@ const AdminCompanyIndex = ({
         </CardContent>
         <CardFooter>
           <Button asChild className="w-full" variant="outline">
-            <Link to={$path('/admin/create')}>
+            <Link to={href('/admin/create')}>
               <PlusCircleIcon />
               新規作成
             </Link>
