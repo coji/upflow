@@ -1,5 +1,4 @@
-import { Outlet } from 'react-router'
-import { $path } from 'safe-routes'
+import { Outlet, href } from 'react-router'
 import { AppHeader, AppLayout } from '~/app/components'
 import { requireAdminUser } from '~/app/features/auth/services/auth'
 import type { Route } from './+types/_layout'
@@ -7,7 +6,7 @@ import type { Route } from './+types/_layout'
 export const meta = () => [{ title: 'Upflow Admin' }]
 
 export const handle = {
-  breadcrumb: () => ({ label: 'Admin', to: $path('/admin') }),
+  breadcrumb: () => ({ label: 'Admin', to: href('/admin') }),
 }
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
