@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { href, Link } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -29,7 +29,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 }
 
 export default function TeamIndexPage({
-  loaderData: { teams },
+  loaderData: { companyId, teams },
 }: Route.ComponentProps) {
   return (
     <Card>
@@ -60,7 +60,14 @@ export default function TeamIndexPage({
                     <TableCell>{team.repositoryCount}</TableCell>
                     <TableCell>
                       <Button size="xs" variant="outline" asChild>
-                        <Link to={`./${team.id}`}>詳細</Link>
+                        <Link
+                          to={href('/admin/:company/teams/:team', {
+                            company: companyId,
+                            team: team.id,
+                          })}
+                        >
+                          詳細
+                        </Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -74,7 +81,11 @@ export default function TeamIndexPage({
       <CardFooter>
         <HStack>
           <Button asChild>
-            <Link to="add">Add Team</Link>
+            <Link
+              to={href('/admin/:company/teams/add', { company: companyId })}
+            >
+              Add Team
+            </Link>
           </Button>
         </HStack>
       </CardFooter>

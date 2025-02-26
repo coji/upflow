@@ -130,7 +130,14 @@ export default function TeamDetailPage({
             </Button>
 
             <Button variant="ghost" asChild>
-              <Link to="..">Cancel</Link>
+              <Link
+                to={href('/admin/:company/teams/:team', {
+                  company: team.companyId,
+                  team: team.id,
+                })}
+              >
+                Cancel
+              </Link>
             </Button>
 
             <Spacer />

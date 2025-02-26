@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { href, Link } from 'react-router'
 import {
   Avatar,
   AvatarFallback,
@@ -11,8 +11,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  HStack,
   Heading,
+  HStack,
   Spacer,
 } from '~/app/components/ui'
 import type { SessionUser } from '~/app/features/auth/types/types'
@@ -28,7 +28,7 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
     <header className="flex items-center px-4 py-1">
       <HStack>
         <Heading>
-          <Link to={isAdmin ? '/admin' : '/'}>
+          <Link to={isAdmin ? href('/admin') : href('/')}>
             UpFlow {isAdmin && <span className="text-destructive">Admin</span>}
           </Link>
         </Heading>
@@ -69,14 +69,14 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               {isAdmin ? (
-                <Link to="/">ユーザー画面</Link>
+                <Link to={href('/')}>ユーザー画面</Link>
               ) : (
-                <Link to="/admin">管理画面</Link>
+                <Link to={href('/admin')}>管理画面</Link>
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/logout">ログアウト</Link>
+              <Link to={href('/logout')}>ログアウト</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
