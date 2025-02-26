@@ -5,14 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import {
-  type ActionFunctionArgs,
-  Form,
-  Link,
-  type LoaderFunctionArgs,
-  redirect,
-  useLoaderData,
-} from 'react-router'
+import { Form, Link, redirect } from 'react-router'
 import { $path } from 'safe-routes'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -35,6 +28,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import {
   getIntegration,
   getRepository,
@@ -51,7 +45,7 @@ const githubSchema = z.object({
   releaseDetectionKey: z.string().min(1),
 })
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -76,7 +70,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   }
 }
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -158,8 +152,9 @@ const GithubRepositoryForm = ({
   )
 }
 
-export default function EditRepositoryModal() {
-  const { companyId, repository, provider } = useLoaderData<typeof loader>()
+export default function EditRepositoryModal({
+  loaderData: { companyId, repository, provider },
+}: Route.ComponentProps) {
   const form = match(provider)
     .with('github', () => <GithubRepositoryForm repository={repository} />)
     .otherwise(() => <></>)
