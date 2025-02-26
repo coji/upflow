@@ -18,11 +18,7 @@ export const meta = ({ data }: Route.MetaArgs) => [
 ]
 
 export const handle = {
-  breadcrumb: ({
-    company,
-  }: {
-    company: NonNullable<Awaited<ReturnType<typeof getCompany>>>
-  }) => {
+  breadcrumb: ({ company }: Awaited<ReturnType<typeof loader>>) => {
     return {
       label: company.name,
       to: href('/admin/:company', { company: company.id }),

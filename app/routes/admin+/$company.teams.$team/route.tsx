@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router'
+import { href, Outlet } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -28,7 +28,10 @@ import {
 export const handle = {
   breadcrumb: ({ team }: { team: Team }) => ({
     label: team.name,
-    to: `/admin/${team}/team/${team.id}`,
+    to: href('/admin/:company/teams/:team', {
+      company: team.companyId,
+      team: team.id,
+    }),
   }),
 }
 
