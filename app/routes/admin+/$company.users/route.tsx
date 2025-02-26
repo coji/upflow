@@ -1,4 +1,4 @@
-import { $path } from 'safe-routes'
+import { href } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { Card, CardContent, CardHeader, CardTitle } from '~/app/components/ui'
@@ -8,7 +8,7 @@ import { listCompanyUsers } from './queries.server'
 export const handle = {
   breadcrumb: ({ companyId }: Awaited<ReturnType<typeof loader>>) => ({
     label: 'Users',
-    to: $path('/admin/:company/users', { company: companyId }),
+    to: href('/admin/:company/users', { company: companyId }),
   }),
 }
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
