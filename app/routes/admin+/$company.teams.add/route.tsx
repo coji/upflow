@@ -1,8 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { Form } from 'react-router'
+import { Form, href } from 'react-router'
 import { redirectWithSuccess } from 'remix-toast'
-import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -25,7 +24,7 @@ import { addTeam } from './mutations.server'
 export const handle = {
   breadcrumb: ({ companyId }: Awaited<ReturnType<typeof loader>>) => ({
     label: 'Create a team',
-    to: $path('/admin/:company/teams/add', { company: companyId }),
+    to: href('/admin/:company/teams/add', { company: companyId }),
   }),
 }
 
@@ -68,7 +67,7 @@ export const action = async ({ params, request }: Route.ActionArgs) => {
   }
 
   return redirectWithSuccess(
-    $path('/admin/:company/teams/:team', { company: companyId, team: id }),
+    href('/admin/:company/teams/:team', { company: companyId, team: id }),
     `Team ${id} ${name} created`,
   )
 }
