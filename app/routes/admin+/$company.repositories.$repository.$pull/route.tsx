@@ -1,11 +1,10 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { useLoaderData } from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { HStack, Heading, Stack } from '~/app/components/ui'
 import { createFetcher } from '~/batch/provider/github/fetcher'
 import { createStore } from '~/batch/provider/github/store'
+import type { Route } from './+types/route'
 import { getPullRequest, getRepository } from './queries.server'
 
 export const handle = {
@@ -13,12 +12,7 @@ export const handle = {
     companyId,
     repositoryId,
     pull,
-  }: {
-    companyId: string
-    repositoryId: string
-    repository: Awaited<ReturnType<typeof getRepository>>
-    pull: NonNullable<Awaited<ReturnType<typeof getPullRequest>>>
-  }) => ({
+  }: Awaited<ReturnType<typeof loader>>) => ({
     label: pull?.number,
     to: $path('/admin/:company/repositories/:repository/:pull', {
       company: companyId,
@@ -28,7 +22,7 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const {
     company: companyId,
     repository: repositoryId,
@@ -86,9 +80,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
 }
 
-const RepositoryPullsIndexPage = () => {
-  const { pull, storeData, fetchData } = useLoaderData<typeof loader>()
-
+const RepositoryPullsIndexPage = ({
+  loaderData: { pull, storeData, fetchData },
+}: Route.ComponentProps) => {
   return (
     <Stack>
       <div>
