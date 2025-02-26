@@ -1,5 +1,4 @@
-import { Outlet } from 'react-router'
-import { $path } from 'safe-routes'
+import { href, Outlet } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -23,7 +22,7 @@ export const handle = {
   breadcrumb: ({ company }: Awaited<ReturnType<typeof loader>>) => {
     return {
       label: company.name,
-      to: $path('/admin/:company', { company: company.id }),
+      to: href('/admin/:company', { company: company.id }),
     }
   },
 }
@@ -55,19 +54,19 @@ export default function CompanyLayout({
           <CardContent>
             <Stack className="bg-popover text-popover-foreground flex-1 gap-0 overflow-hidden transition-colors">
               <CompanyNavLink
-                to={$path('/admin/:company/users', { company: companyId })}
+                to={href('/admin/:company/users', { company: companyId })}
               >
                 Users
               </CompanyNavLink>
 
               <CompanyNavLink
-                to={$path('/admin/:company/teams', { company: companyId })}
+                to={href('/admin/:company/teams', { company: companyId })}
               >
                 Teams
               </CompanyNavLink>
 
               <CompanyNavLink
-                to={$path('/admin/:company/repositories', {
+                to={href('/admin/:company/repositories', {
                   company: companyId,
                 })}
               >
@@ -78,7 +77,7 @@ export default function CompanyLayout({
 
           <CardFooter>
             <CompanyNavLink
-              to={$path('/admin/:company/settings', { company: companyId })}
+              to={href('/admin/:company/settings', { company: companyId })}
             >
               Settings
             </CompanyNavLink>
