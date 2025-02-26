@@ -121,7 +121,13 @@ export default function CompanyRepositoryIndexPage({
       <CardFooter>
         <HStack>
           <Button className="w-full" asChild>
-            <Link to="add">Add Repositories</Link>
+            <Link
+              to={href('/admin/:company/repositories/add', {
+                company: companyId,
+              })}
+            >
+              Add Repositories
+            </Link>
           </Button>
         </HStack>
       </CardFooter>
