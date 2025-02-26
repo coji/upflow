@@ -1,6 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
-import { Link } from 'react-router'
-import { $path } from 'safe-routes'
+import { Link, href } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -74,7 +73,7 @@ export default function CompanyRepositoryIndexPage({
                       <HStack>
                         <Button asChild size="xs" variant="link">
                           <Link
-                            to={$path(
+                            to={href(
                               '/admin/:company/repositories/:repository',
                               {
                                 company: companyId,
@@ -88,7 +87,7 @@ export default function CompanyRepositoryIndexPage({
 
                         <Button asChild size="xs" variant="link">
                           <Link
-                            to={$path(
+                            to={href(
                               '/admin/:company/repositories/:repository/settings',
                               {
                                 company: companyId,
@@ -102,7 +101,7 @@ export default function CompanyRepositoryIndexPage({
 
                         <Button asChild size="xs" variant="link">
                           <Link
-                            to={$path(
+                            to={href(
                               '/admin/:company/repositories/:repository/delete',
                               { company: companyId, repository: repo.id },
                             )}
