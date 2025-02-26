@@ -1,5 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router'
-import { $path } from 'safe-routes'
+import { href, Link, Outlet, useLocation } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -26,7 +25,7 @@ export const handle = {
   }) => {
     return {
       label: company.name,
-      to: $path('/admin/:company', { company: company.id }),
+      to: href('/admin/:company', { company: company.id }),
     }
   },
 }
@@ -57,12 +56,12 @@ export default function CompanyLayout({
         <Tabs value={tabValue}>
           <TabsList>
             <TabsTrigger value="dashboard" asChild>
-              <Link to={$path('/:company', { company: company.id })}>
+              <Link to={href('/:company', { company: company.id })}>
                 Dashboard
               </Link>
             </TabsTrigger>
             <TabsTrigger value="ongoing" asChild>
-              <Link to={$path('/:company/ongoing', { company: company.id })}>
+              <Link to={href('/:company/ongoing', { company: company.id })}>
                 Ongoing
               </Link>
             </TabsTrigger>
