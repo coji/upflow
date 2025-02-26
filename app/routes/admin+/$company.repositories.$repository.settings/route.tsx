@@ -5,8 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, Link, redirect } from 'react-router'
-import { $path } from 'safe-routes'
+import { Form, href, Link, redirect } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -83,7 +82,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   await updateRepository(repositoryId, entries)
 
-  return redirect($path('/admin/:company/repositories', { company: companyId }))
+  return redirect(href('/admin/:company/repositories', { company: companyId }))
 }
 
 const GithubRepositoryForm = ({
@@ -172,7 +171,7 @@ export default function EditRepositoryModal({
           </Button>
           <Button asChild variant="ghost">
             <Link
-              to={$path('/admin/:company/repositories', { company: companyId })}
+              to={href('/admin/:company/repositories', { company: companyId })}
             >
               Cancel
             </Link>
