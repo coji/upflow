@@ -1,5 +1,4 @@
-import { Outlet } from 'react-router'
-import { $path } from 'safe-routes'
+import { href, Outlet } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { Stack } from '~/app/components/ui'
@@ -8,7 +7,7 @@ import type { Route } from './+types/$company.teams'
 export const handle = {
   breadcrumb: ({ companyId }: Awaited<ReturnType<typeof loader>>) => ({
     label: 'Teams',
-    to: $path('/admin/:company/teams', { company: companyId }),
+    to: href('/admin/:company/teams', { company: companyId }),
   }),
 }
 
