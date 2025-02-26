@@ -40,7 +40,7 @@ export const RepositoryItem = ({
         <input type="hidden" name="name" value={repo.name} />
         <Button
           type="submit"
-          size="xs"
+          size="sm"
           variant="outline"
           disabled={isAdded || fetcher.state !== 'idle'}
         >

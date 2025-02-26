@@ -59,7 +59,7 @@ export default function TeamIndexPage({
                     <TableCell>{team.userCount}</TableCell>
                     <TableCell>{team.repositoryCount}</TableCell>
                     <TableCell>
-                      <Button size="xs" variant="outline" asChild>
+                      <Button size="sm" variant="outline" asChild>
                         <Link
                           to={href('/admin/:company/teams/:team', {
                             company: companyId,

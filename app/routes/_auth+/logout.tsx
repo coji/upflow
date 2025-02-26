@@ -1,6 +1,7 @@
 import type React from 'react'
+import type { ComponentProps } from 'react'
 import { href, redirect, useFetcher } from 'react-router'
-import { Button, type ButtonProps } from '~/app/components/ui'
+import { Button } from '~/app/components/ui'
 import { getSession, sessionStorage } from '~/app/features/auth/services/auth'
 import type { Route } from './+types/logout'
 
@@ -11,7 +12,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   throw redirect(href('/login'), { headers })
 }
 
-interface LogoutButtonProps extends ButtonProps {
+interface LogoutButtonProps extends ComponentProps<typeof Button> {
   children?: React.ReactNode
 }
 export const LogoutButton = ({ children, ...rest }: LogoutButtonProps) => {

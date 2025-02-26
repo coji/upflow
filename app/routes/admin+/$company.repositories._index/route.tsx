@@ -71,7 +71,7 @@ export default function CompanyRepositoryIndexPage({
 
                     <TableCell>
                       <HStack>
-                        <Button asChild size="xs" variant="link">
+                        <Button asChild size="sm" variant="link">
                           <Link
                             to={href(
                               '/admin/:company/repositories/:repository',
@@ -85,7 +85,7 @@ export default function CompanyRepositoryIndexPage({
                           </Link>
                         </Button>
 
-                        <Button asChild size="xs" variant="link">
+                        <Button asChild size="sm" variant="link">
                           <Link
                             to={href(
                               '/admin/:company/repositories/:repository/settings',
@@ -99,7 +99,7 @@ export default function CompanyRepositoryIndexPage({
                           </Link>
                         </Button>
 
-                        <Button asChild size="xs" variant="link">
+                        <Button asChild size="sm" variant="link">
                           <Link
                             to={href(
                               '/admin/:company/repositories/:repository/delete',
