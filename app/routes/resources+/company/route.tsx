@@ -1,6 +1,6 @@
 import { ChevronsUpDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { href, Link, useFetcher } from 'react-router'
 import {
   Button,
   DropdownMenu,
@@ -34,7 +34,7 @@ export const CompanySwitcher = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    fetcher.load('/resources/company')
+    fetcher.load(href('/resources/company'))
   }, [])
 
   const currentCompanyId = useCurrentCompany()
@@ -62,7 +62,13 @@ export const CompanySwitcher = ({
         {fetcher.data?.companies.map((company) => (
           <DropdownMenuGroup key={company.id}>
             <DropdownMenuItem asChild>
-              <Link to={isAdmin ? `/admin/${company.id}` : `/${company.id}`}>
+              <Link
+                to={
+                  isAdmin
+                    ? href('/admin/:company', { company: company.id })
+                    : href('/:company', { company: company.id })
+                }
+              >
                 {company.name}
               </Link>
             </DropdownMenuItem>
