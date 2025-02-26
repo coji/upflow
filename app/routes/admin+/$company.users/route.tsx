@@ -1,9 +1,8 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { useLoaderData } from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { Card, CardContent, CardHeader, CardTitle } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { listCompanyUsers } from './queries.server'
 
 export const handle = {
@@ -12,7 +11,7 @@ export const handle = {
     to: $path('/admin/:company/users', { company: companyId }),
   }),
 }
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -20,9 +19,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return { companyId, users }
 }
 
-export default function CompanyUsersPage() {
-  const { users } = useLoaderData<typeof loader>()
-
+export default function CompanyUsersPage({
+  loaderData: { users },
+}: Route.ComponentProps) {
   return (
     <Card>
       <CardHeader>
