@@ -1,6 +1,5 @@
 import { ChevronsUpDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { LoaderFunctionArgs } from 'react-router'
 import { Link, useFetcher } from 'react-router'
 import {
   Button,
@@ -12,10 +11,11 @@ import {
 } from '~/app/components/ui'
 import { requireUser } from '~/app/features/auth/services/auth'
 import { cn } from '~/app/libs/utils'
+import type { Route } from './+types/route'
 import { listUserCompanies } from './functions.server'
 import { useCurrentCompany } from './hooks/useCurrentCompany'
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   const user = await requireUser(request)
   const companies = await listUserCompanies(user.id)
   return { user, companies }
