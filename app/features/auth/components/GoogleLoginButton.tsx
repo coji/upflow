@@ -13,7 +13,6 @@ export const GoogleLoginButton = ({
     <Button asChild type="submit" variant="outline" {...rest}>
       <Link to="/auth/google">
         <svg
-          className="mr-2"
           xmlns="http://www.w3.org/2000/svg"
           width="24"
           height="24"

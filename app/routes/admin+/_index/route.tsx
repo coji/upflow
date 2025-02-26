@@ -39,7 +39,7 @@ const AdminCompanyIndex = () => {
         <CardFooter>
           <Button asChild className="w-full" variant="outline">
             <Link to={$path('/admin/create')}>
-              <PlusCircleIcon className="mr-2" />
+              <PlusCircleIcon />
               新規作成
             </Link>
           </Button>
