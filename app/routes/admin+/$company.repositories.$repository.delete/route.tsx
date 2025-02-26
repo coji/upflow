@@ -1,6 +1,5 @@
 import { getFormProps, useForm } from '@conform-to/react'
-import { Form, Link, redirect } from 'react-router'
-import { $path } from 'safe-routes'
+import { Form, href, Link, redirect } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -45,7 +44,7 @@ export const action = async ({ params }: Route.ActionArgs) => {
 
   await deleteRepository(repositoryId)
 
-  return redirect($path('/admin/:company/repositories', { company: companyId }))
+  return redirect(href('/admin/:company/repositories', { company: companyId }))
 }
 
 const AddRepositoryModal = ({
@@ -75,7 +74,7 @@ const AddRepositoryModal = ({
           </Button>
           <Button asChild variant="ghost">
             <Link
-              to={$path('/admin/:company/repositories', { company: companyId })}
+              to={href('/admin/:company/repositories', { company: companyId })}
             >
               Cancel
             </Link>
