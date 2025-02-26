@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { href, Link } from 'react-router'
 import { Button, type ButtonProps } from '~/app/components/ui'
 
 interface GoogleLoginButtonProps extends ButtonProps {
@@ -11,7 +11,7 @@ export const GoogleLoginButton = ({
 }: GoogleLoginButtonProps) => {
   return (
     <Button asChild type="submit" variant="outline" {...rest}>
-      <Link to="/auth/google">
+      <Link to={href('/auth/google')}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
