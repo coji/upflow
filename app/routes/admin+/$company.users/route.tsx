@@ -6,7 +6,7 @@ import type { Route } from './+types/route'
 import { listCompanyUsers } from './queries.server'
 
 export const handle = {
-  breadcrumb: ({ companyId }: { companyId: string }) => ({
+  breadcrumb: ({ companyId }: Awaited<ReturnType<typeof loader>>) => ({
     label: 'Users',
     to: $path('/admin/:company/users', { company: companyId }),
   }),
