@@ -1,12 +1,5 @@
 import { getFormProps, useForm } from '@conform-to/react'
-import {
-  type ActionFunctionArgs,
-  Form,
-  Link,
-  type LoaderFunctionArgs,
-  redirect,
-  useLoaderData,
-} from 'react-router'
+import { Form, Link, redirect } from 'react-router'
 import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -21,11 +14,12 @@ import {
   Input,
   Label,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { deleteRepository, getRepository } from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Delete' }) }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -40,7 +34,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { companyId, repositoryId, repository }
 }
 
-export const action = async ({ params }: ActionFunctionArgs) => {
+export const action = async ({ params }: Route.ActionArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -54,8 +48,9 @@ export const action = async ({ params }: ActionFunctionArgs) => {
   return redirect($path('/admin/:company/repositories', { company: companyId }))
 }
 
-const AddRepositoryModal = () => {
-  const { companyId, repository } = useLoaderData<typeof loader>()
+const AddRepositoryModal = ({
+  loaderData: { companyId, repository },
+}: Route.ComponentProps) => {
   const [form] = useForm({ id: 'delete-repository-form' })
 
   return (
