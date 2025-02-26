@@ -1,4 +1,4 @@
-import { $path } from 'safe-routes'
+import { href } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { HStack, Heading, Stack } from '~/app/components/ui'
@@ -14,10 +14,10 @@ export const handle = {
     pull,
   }: Awaited<ReturnType<typeof loader>>) => ({
     label: pull?.number,
-    to: $path('/admin/:company/repositories/:repository/:pull', {
+    to: href('/admin/:company/repositories/:repository/:pull', {
       company: companyId,
       repository: repositoryId,
-      pull: pull.number,
+      pull: String(pull.number),
     }),
   }),
 }
