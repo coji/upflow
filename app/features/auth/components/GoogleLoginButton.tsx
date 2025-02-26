@@ -1,7 +1,8 @@
+import type { ComponentProps } from 'react'
 import { href, Link } from 'react-router'
-import { Button, type ButtonProps } from '~/app/components/ui'
+import { Button } from '~/app/components/ui'
 
-interface GoogleLoginButtonProps extends ButtonProps {
+interface GoogleLoginButtonProps extends ComponentProps<typeof Button> {
   children?: React.ReactNode
 }
 

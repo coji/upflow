@@ -2,9 +2,10 @@ import type { Column } from '@tanstack/react-table'
 import { ArrowDownAZIcon, ArrowUpAZIcon } from 'lucide-react'
 import { match } from 'ts-pattern'
 
-import { Button, type ButtonProps } from '~/app/components/ui'
+import { Button } from '~/app/components/ui'
 
-interface AppSortableHeaderProps<TData> extends ButtonProps {
+interface AppSortableHeaderProps<TData>
+  extends React.ComponentProps<typeof Button> {
   column: Column<TData>
   title: string
 }
