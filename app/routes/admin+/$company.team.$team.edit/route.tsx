@@ -1,8 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, Link } from 'react-router'
+import { Form, Link, href } from 'react-router'
 import { redirectWithSuccess } from 'remix-toast'
-import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -31,7 +30,7 @@ import { deleteTeam, getTeam, updateTeam } from './functions.server'
 export const handle = {
   breadcrumb: ({ companyId, team }: Awaited<ReturnType<typeof loader>>) => ({
     label: team.name,
-    to: $path('/admin/:company/teams/:team', {
+    to: href('/admin/:company/teams/:team', {
       company: companyId,
       team: team.id,
     }),
@@ -88,7 +87,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   return redirectWithSuccess(
-    $path('/admin/:company/teams', { company: companyId }),
+    href('/admin/:company/teams', { company: companyId }),
     toastMessage,
   )
 }
