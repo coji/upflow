@@ -1,5 +1,4 @@
-import { Link } from 'react-router'
-import { $path } from 'safe-routes'
+import { href, Link } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -26,7 +25,7 @@ export const handle = {
     repository,
   }: Awaited<ReturnType<typeof loader>>) => ({
     label: `${repository.owner}/${repository.repo}`,
-    to: $path('/admin/:company/repositories/:repository', {
+    to: href('/admin/:company/repositories/:repository', {
       company: companyId,
       repository: repositoryId,
     }),
@@ -93,12 +92,12 @@ export default function RepositoryPullsIndexPage({
                     >
                       <Link
                         className="underline"
-                        to={$path(
+                        to={href(
                           '/admin/:company/repositories/:repository/:pull',
                           {
                             company: companyId,
                             repository: repositoryId,
-                            pull: pull.number,
+                            pull: String(pull.number),
                           },
                         )}
                       >
