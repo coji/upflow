@@ -1,7 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, Link, redirect } from 'react-router'
-import { $path } from 'safe-routes'
+import { Form, href, Link, redirect } from 'react-router'
 import { z } from 'zod'
 import {
   Alert,
@@ -44,7 +43,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   try {
     const { company } = await createCompany(submission.value)
-    return redirect($path('/admin/:company', { company: company.id }))
+    return redirect(href('/admin/:company', { company: company.id }))
   } catch (e) {
     return {
       lastResult: submission.reply({
@@ -117,7 +116,7 @@ const CompanyNewPage = ({ actionData }: Route.ComponentProps) => {
           </Button>
 
           <Button asChild type="button" variant="ghost">
-            <Link to={$path('/admin')}>Cancel</Link>
+            <Link to={href('/admin')}>Cancel</Link>
           </Button>
         </HStack>
       </CardFooter>

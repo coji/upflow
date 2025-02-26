@@ -1,6 +1,5 @@
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
-import { safeRoutes } from 'safe-routes/vite'
 import {
   defaultClientConditions,
   defaultServerConditions,
@@ -9,7 +8,7 @@ import {
 import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), safeRoutes(), tsconfigPaths()],
+  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
   resolve: { conditions: [...defaultClientConditions] },
   ssr: {
     resolve: { conditions: [...defaultServerConditions] },

@@ -1,6 +1,5 @@
 import { parseWithZod } from '@conform-to/zod'
-import { redirect } from 'react-router'
-import { $path } from 'safe-routes'
+import { href, redirect } from 'react-router'
 import type { Route } from '../+types/route'
 import { deleteCompany } from '../functions.server'
 import { INTENTS, deleteCompanySchema as schema } from '../types'
@@ -16,5 +15,5 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   await deleteCompany(params.company)
 
-  throw redirect($path('/admin'))
+  throw redirect(href('/admin'))
 }

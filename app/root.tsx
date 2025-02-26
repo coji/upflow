@@ -7,23 +7,22 @@ import {
   ScrollRestoration,
   data,
   isRouteErrorResponse,
-  useLoaderData,
   useRouteError,
-  type LoaderFunctionArgs,
 } from 'react-router'
 import { getToast } from 'remix-toast'
 import { toast } from 'sonner'
 import { match } from 'ts-pattern'
 import { Toaster } from '~/app/components/ui'
+import type { Route } from './+types/root'
 import { AppLoadingProgress } from './components'
 import './styles/globals.css'
 
-export const meta = () => [
+export const meta: Route.MetaFunction = () => [
   { title: 'UpFlow' },
   { name: 'description', content: 'Cycletime metrics reports.' },
 ]
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   const { toast, headers } = await getToast(request)
   return data({ toastData: toast }, { headers })
 }
@@ -48,9 +47,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-export default function App() {
-  const { toastData } = useLoaderData<typeof loader>()
-
+export default function App({
+  loaderData: { toastData },
+}: Route.ComponentProps) {
   useEffect(() => {
     if (toastData) {
       const toastFn = match(toastData.type)

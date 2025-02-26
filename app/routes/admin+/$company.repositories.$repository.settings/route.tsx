@@ -5,15 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import {
-  type ActionFunctionArgs,
-  Form,
-  Link,
-  type LoaderFunctionArgs,
-  redirect,
-  useLoaderData,
-} from 'react-router'
-import { $path } from 'safe-routes'
+import { Form, href, Link, redirect } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -35,6 +27,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import {
   getIntegration,
   getRepository,
@@ -51,7 +44,7 @@ const githubSchema = z.object({
   releaseDetectionKey: z.string().min(1),
 })
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -76,7 +69,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   }
 }
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -89,7 +82,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   await updateRepository(repositoryId, entries)
 
-  return redirect($path('/admin/:company/repositories', { company: companyId }))
+  return redirect(href('/admin/:company/repositories', { company: companyId }))
 }
 
 const GithubRepositoryForm = ({
@@ -158,8 +151,9 @@ const GithubRepositoryForm = ({
   )
 }
 
-export default function EditRepositoryModal() {
-  const { companyId, repository, provider } = useLoaderData<typeof loader>()
+export default function EditRepositoryModal({
+  loaderData: { companyId, repository, provider },
+}: Route.ComponentProps) {
   const form = match(provider)
     .with('github', () => <GithubRepositoryForm repository={repository} />)
     .otherwise(() => <></>)
@@ -177,7 +171,7 @@ export default function EditRepositoryModal() {
           </Button>
           <Button asChild variant="ghost">
             <Link
-              to={$path('/admin/:company/repositories', { company: companyId })}
+              to={href('/admin/:company/repositories', { company: companyId })}
             >
               Cancel
             </Link>

@@ -1,6 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { Link, useLoaderData } from 'react-router'
-import { $path } from 'safe-routes'
+import { href, Link } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -17,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { getRepository, listPullRequests } from './queries.server'
 
 export const handle = {
@@ -24,20 +23,16 @@ export const handle = {
     companyId,
     repositoryId,
     repository,
-  }: {
-    companyId: string
-    repositoryId: string
-    repository: NonNullable<Awaited<ReturnType<typeof getRepository>>>
-  }) => ({
+  }: Awaited<ReturnType<typeof loader>>) => ({
     label: `${repository.owner}/${repository.repo}`,
-    to: $path('/admin/:company/repositories/:repository', {
+    to: href('/admin/:company/repositories/:repository', {
       company: companyId,
       repository: repositoryId,
     }),
   }),
 }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId, repository: repositoryId } = zx.parseParams(
     params,
     {
@@ -55,10 +50,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { companyId, repositoryId, repository, pulls }
 }
 
-const RepositoryPullsIndexPage = () => {
-  const { companyId, repositoryId, repository, pulls } =
-    useLoaderData<typeof loader>()
-
+export default function RepositoryPullsIndexPage({
+  loaderData: { companyId, repositoryId, repository, pulls },
+}: Route.ComponentProps) {
   return (
     <Card>
       <CardHeader>
@@ -98,12 +92,12 @@ const RepositoryPullsIndexPage = () => {
                     >
                       <Link
                         className="underline"
-                        to={$path(
+                        to={href(
                           '/admin/:company/repositories/:repository/:pull',
                           {
                             company: companyId,
                             repository: repositoryId,
-                            pull: pull.number,
+                            pull: String(pull.number),
                           },
                         )}
                       >
@@ -120,4 +114,3 @@ const RepositoryPullsIndexPage = () => {
     </Card>
   )
 }
-export default RepositoryPullsIndexPage

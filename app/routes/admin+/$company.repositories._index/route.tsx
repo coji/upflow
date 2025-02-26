@@ -1,7 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
-import type { LoaderFunctionArgs } from 'react-router'
-import { Link, useLoaderData } from 'react-router'
-import { $path } from 'safe-routes'
+import { Link, href } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -20,9 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { listRepositories } from './queries.server'
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -30,9 +29,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { companyId, repositories }
 }
 
-export default function CompanyRepositoryIndexPage() {
-  const { companyId, repositories } = useLoaderData<typeof loader>()
-
+export default function CompanyRepositoryIndexPage({
+  loaderData: { companyId, repositories },
+}: Route.ComponentProps) {
   return (
     <Card>
       <CardHeader>
@@ -74,7 +73,7 @@ export default function CompanyRepositoryIndexPage() {
                       <HStack>
                         <Button asChild size="xs" variant="link">
                           <Link
-                            to={$path(
+                            to={href(
                               '/admin/:company/repositories/:repository',
                               {
                                 company: companyId,
@@ -88,7 +87,7 @@ export default function CompanyRepositoryIndexPage() {
 
                         <Button asChild size="xs" variant="link">
                           <Link
-                            to={$path(
+                            to={href(
                               '/admin/:company/repositories/:repository/settings',
                               {
                                 company: companyId,
@@ -102,7 +101,7 @@ export default function CompanyRepositoryIndexPage() {
 
                         <Button asChild size="xs" variant="link">
                           <Link
-                            to={$path(
+                            to={href(
                               '/admin/:company/repositories/:repository/delete',
                               { company: companyId, repository: repo.id },
                             )}

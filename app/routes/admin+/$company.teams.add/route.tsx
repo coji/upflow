@@ -1,9 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { Form, useActionData } from 'react-router'
+import { Form, href } from 'react-router'
 import { redirectWithSuccess } from 'remix-toast'
-import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -20,12 +18,13 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { addTeam } from './mutations.server'
 
 export const handle = {
-  breadcrumb: ({ companyId }: { companyId: string }) => ({
+  breadcrumb: ({ companyId }: Awaited<ReturnType<typeof loader>>) => ({
     label: 'Create a team',
-    to: $path('/admin/:company/teams/add', { company: companyId }),
+    to: href('/admin/:company/teams/add', { company: companyId }),
   }),
 }
 
@@ -40,42 +39,43 @@ const schema = z.object({
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
 })
 
-export const loader = ({ params }: LoaderFunctionArgs) => {
+export const loader = ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
   return { companyId }
 }
 
-export const action = async ({ params, request }: ActionFunctionArgs) => {
+export const action = async ({ params, request }: Route.ActionArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
-    return submission.reply()
+    return { lastResult: submission.reply() }
   }
 
   const { id, name } = submission.value
   try {
     await addTeam({ id, name, companyId })
   } catch (e) {
-    return submission.reply({
-      formErrors: [`Error saving team: ${String(e)}`],
-    })
+    return {
+      lastResult: submission.reply({
+        formErrors: [`Error saving team: ${String(e)}`],
+      }),
+    }
   }
 
   return redirectWithSuccess(
-    $path('/admin/:company/teams/:team', { company: companyId, team: id }),
+    href('/admin/:company/teams/:team', { company: companyId, team: id }),
     `Team ${id} ${name} created`,
   )
 }
 
-export default function TeamAddPage() {
-  const lastResult = useActionData<typeof action>()
+export default function TeamAddPage({ actionData }: Route.ComponentProps) {
   const [form, { id, name }] = useForm({
     id: 'team-add',
-    // lastResult,
+    lastResult: actionData?.lastResult,
     constraint: getZodConstraint(schema),
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })

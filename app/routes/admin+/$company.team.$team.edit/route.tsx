@@ -1,9 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { Form, Link, useActionData, useLoaderData } from 'react-router'
+import { Form, Link, href } from 'react-router'
 import { redirectWithSuccess } from 'remix-toast'
-import { $path } from 'safe-routes'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -26,25 +24,20 @@ import {
   Spacer,
   Stack,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { deleteTeam, getTeam, updateTeam } from './functions.server'
 
 export const handle = {
-  breadcrumb: ({
-    companyId,
-    team,
-  }: {
-    companyId: string
-    team: NonNullable<Awaited<ReturnType<typeof getTeam>>>
-  }) => ({
+  breadcrumb: ({ companyId, team }: Awaited<ReturnType<typeof loader>>) => ({
     label: team.name,
-    to: $path('/admin/:company/teams/:team', {
+    to: href('/admin/:company/teams/:team', {
       company: companyId,
       team: team.id,
     }),
   }),
 }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId, team: teamId } = zx.parseParams(params, {
     company: z.string(),
     team: z.string(),
@@ -63,14 +56,14 @@ const schema = z.object({
   intent: z.enum(['update', 'delete']),
 })
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const { company: companyId, team: teamId } = zx.parseParams(params, {
     company: z.string(),
     team: z.string(),
   })
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
-    return submission.reply()
+    return { lastResult: submission.reply() }
   }
 
   const { intent, ...value } = submission.value
@@ -86,23 +79,26 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       toastMessage = `Team ${teamId} updated`
     }
   } catch (e) {
-    return submission.reply({
-      formErrors: [`Failed to ${intent} team: ${String(e)}`],
-    })
+    return {
+      lastResult: submission.reply({
+        formErrors: [`Failed to ${intent} team: ${String(e)}`],
+      }),
+    }
   }
 
   return redirectWithSuccess(
-    $path('/admin/:company/teams', { company: companyId }),
+    href('/admin/:company/teams', { company: companyId }),
     toastMessage,
   )
 }
 
-export default function TeamDetailPage() {
-  const { team } = useLoaderData<typeof loader>()
-  const lastResult = useActionData<typeof action>()
+export default function TeamDetailPage({
+  loaderData: { team },
+  actionData,
+}: Route.ComponentProps) {
   const [form, { name }] = useForm({
     defaultValue: team,
-    // lastResult,
+    lastResult: actionData?.lastResult,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 

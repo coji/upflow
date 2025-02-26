@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, redirect } from 'react-router'
+import { redirect } from 'react-router'
 import { AppLayout } from '~/app/components'
 import {
   Card,
@@ -10,8 +10,9 @@ import {
 } from '~/app/components/ui'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
 import { getSessionUser } from '~/app/features/auth/services/auth'
+import type { Route } from './+types/login'
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   // 認証済みならトップページにリダイレクト
   const user = await getSessionUser(request)
   if (user) {

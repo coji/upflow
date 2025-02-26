@@ -1,7 +1,5 @@
 import { PlusCircleIcon } from 'lucide-react'
-import type { LoaderFunctionArgs } from 'react-router'
-import { Link, Outlet, useLoaderData } from 'react-router'
-import { $path } from 'safe-routes'
+import { Link, Outlet, href } from 'react-router'
 import {
   Button,
   Card,
@@ -10,15 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import { listCompanies } from './queries.server'
 
-export const loader = async ({ request }: LoaderFunctionArgs) => ({
+export const loader = async ({ request }: Route.LoaderArgs) => ({
   companies: await listCompanies(),
 })
 
-const AdminCompanyIndex = () => {
-  const { companies } = useLoaderData<typeof loader>()
-
+const AdminCompanyIndex = ({
+  loaderData: { companies },
+}: Route.ComponentProps) => {
   return (
     <div className="grid grid-cols-[15rem_1fr] gap-4">
       <Card>
@@ -38,8 +37,8 @@ const AdminCompanyIndex = () => {
         </CardContent>
         <CardFooter>
           <Button asChild className="w-full" variant="outline">
-            <Link to={$path('/admin/create')}>
-              <PlusCircleIcon className="mr-2" />
+            <Link to={href('/admin/create')}>
+              <PlusCircleIcon />
               新規作成
             </Link>
           </Button>

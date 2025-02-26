@@ -1,6 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { Outlet, useLoaderData, type MetaArgs } from 'react-router'
-import { $path } from 'safe-routes'
+import { href, Outlet } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -12,27 +10,24 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
+import type { Route } from './+types/route'
 import { CompanyNavLink } from './components'
 import { getCompany } from './functions.server'
 
-export const meta = ({ data }: MetaArgs<typeof loader>) => [
+export const meta = ({ data }: Route.MetaArgs) => [
   { title: `${data?.company.name} - Upflow Admin` },
 ]
 
 export const handle = {
-  breadcrumb: ({
-    company,
-  }: {
-    company: NonNullable<Awaited<ReturnType<typeof getCompany>>>
-  }) => {
+  breadcrumb: ({ company }: Awaited<ReturnType<typeof loader>>) => {
     return {
       label: company.name,
-      to: $path('/admin/:company', { company: company.id }),
+      to: href('/admin/:company', { company: company.id }),
     }
   },
 }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId } = zx.parseParams(params, {
     company: z.string(),
   })
@@ -43,8 +38,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { companyId, company }
 }
 
-export default function CompanyLayout() {
-  const { companyId, company } = useLoaderData<typeof loader>()
+export default function CompanyLayout({
+  loaderData: { companyId, company },
+}: Route.ComponentProps) {
   const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (
@@ -58,19 +54,19 @@ export default function CompanyLayout() {
           <CardContent>
             <Stack className="bg-popover text-popover-foreground flex-1 gap-0 overflow-hidden transition-colors">
               <CompanyNavLink
-                to={$path('/admin/:company/users', { company: companyId })}
+                to={href('/admin/:company/users', { company: companyId })}
               >
                 Users
               </CompanyNavLink>
 
               <CompanyNavLink
-                to={$path('/admin/:company/teams', { company: companyId })}
+                to={href('/admin/:company/teams', { company: companyId })}
               >
                 Teams
               </CompanyNavLink>
 
               <CompanyNavLink
-                to={$path('/admin/:company/repositories', {
+                to={href('/admin/:company/repositories', {
                   company: companyId,
                 })}
               >
@@ -81,7 +77,7 @@ export default function CompanyLayout() {
 
           <CardFooter>
             <CompanyNavLink
-              to={$path('/admin/:company/settings', { company: companyId })}
+              to={href('/admin/:company/settings', { company: companyId })}
             >
               Settings
             </CompanyNavLink>
