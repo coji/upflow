@@ -14,7 +14,7 @@ FROM base as deps
 
 WORKDIR /upflow
 
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml ./
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
 RUN pnpm fetch
 
