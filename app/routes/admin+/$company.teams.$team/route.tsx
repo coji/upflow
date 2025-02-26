@@ -1,5 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { Outlet, useLoaderData } from 'react-router'
+import { Outlet } from 'react-router'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import {
@@ -18,6 +17,7 @@ import {
   Spacer,
   Stack,
 } from '~/app/components/ui'
+import type { Route } from './+types/route'
 import {
   getTeam,
   listTeamRepositories,
@@ -32,7 +32,7 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { company: companyId, team: teamId } = zx.parseParams(params, {
     company: z.string(),
     team: z.string(),
@@ -51,9 +51,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return { team, repositories, users }
 }
 
-export default function CompanyTeamIndex() {
-  const { team, repositories, users } = useLoaderData<typeof loader>()
-
+export default function CompanyTeamIndex({
+  loaderData: { team, repositories, users },
+}: Route.ComponentProps) {
   return (
     <Card>
       <CardHeader>
