@@ -1,7 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod'
-import { Form, Link, useActionData } from 'react-router'
-import { $path } from 'safe-routes'
+import { Form, href, Link, useActionData } from 'react-router'
 import {
   Button,
   Card,
@@ -92,7 +91,7 @@ export const DeleteCompany = ({ company }: DeleteCompanyProps) => {
 
           <Button asChild variant="ghost">
             <Link
-              to={$path('/admin/:company/settings', {
+              to={href('/admin/:company/settings', {
                 company: company.id,
               })}
             >
