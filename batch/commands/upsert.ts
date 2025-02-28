@@ -1,3 +1,4 @@
+import consola from 'consola'
 import invariant from 'tiny-invariant'
 import { getCompany, upsertPullRequest } from '~/batch/db'
 import {
@@ -12,8 +13,8 @@ interface UpsertCommandProps {
 }
 export async function upsertCommand({ companyId }: UpsertCommandProps) {
   if (!companyId) {
-    console.log('config should specified')
-    console.log(
+    consola.error('config should specified')
+    consola.info(
       (await allConfigs())
         .map((c) => `${c.companyName}\t${c.companyId}`)
         .join('\n'),

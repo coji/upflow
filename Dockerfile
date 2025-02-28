@@ -1,6 +1,6 @@
 # base node image
 FROM node:22-bookworm-slim as base
-ARG PNPM_VERSION=10.4.1
+ARG PNPM_VERSION=10.5.2
 
 # Install openssl for Prisma
 RUN apt-get update \

@@ -1,3 +1,4 @@
+import { consola } from 'consola'
 import { config } from 'dotenv'
 import { nanoid } from 'nanoid'
 import { db, sql } from '~/app/services/db.server'
@@ -100,10 +101,10 @@ async function seed() {
     })
     .execute()
 
-  console.log('Database has been seeded. 🌱')
+  consola.info('Database has been seeded. 🌱')
 }
 
 seed().catch((e) => {
-  console.error(e)
+  consola.error(e)
   process.exit(1)
 })

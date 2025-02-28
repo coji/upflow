@@ -146,6 +146,9 @@ importers:
       compression:
         specifier: 1.8.0
         version: 1.8.0
+      consola:
+        specifier: 3.4.0
+        version: 3.4.0
       cross-env:
         specifier: 7.0.3
         version: 7.0.3
@@ -2479,6 +2482,10 @@ packages:
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
+
+  consola@3.4.0:
+    resolution: {integrity: sha512-EiPU8G6dQG0GFHNR8ljnZFki/8a+cQwEQ+7wpxdChl02Q8HXlwEZWD5lqAF8vC2sEC3Tehr8hy7vErz88LHyUA==}
+    engines: {node: ^14.18.0 || >=16.10.0}
 
   content-disposition@0.5.4:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
@@ -7354,6 +7361,8 @@ snapshots:
       - supports-color
 
   concat-map@0.0.1: {}
+
+  consola@3.4.0: {}
 
   content-disposition@0.5.4:
     dependencies:

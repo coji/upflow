@@ -1,10 +1,11 @@
+import consola from 'consola'
 import schedule from 'node-schedule'
 import { logger } from './helper/logger'
 import { crawlJob } from './jobs/crawl'
 
 export const createJobSchedular = () => {
   const startSchedular = () => {
-    console.log('job schedular started.')
+    consola.info('job schedular started.')
     let isRunning = false
 
     schedule.scheduleJob('30 * * * *', async () => {

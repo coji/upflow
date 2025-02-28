@@ -1,4 +1,5 @@
 import { createReadableStreamFromReadable } from '@react-router/node'
+import { consola } from 'consola'
 import { isbot } from 'isbot'
 import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'
@@ -67,7 +68,7 @@ function handleBotRequest(
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
-            console.error(error)
+            consola.error(error)
           }
         },
       },
@@ -112,7 +113,7 @@ function handleBrowserRequest(
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
-            console.error(error)
+            consola.error(error)
           }
         },
       },

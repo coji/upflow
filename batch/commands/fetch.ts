@@ -1,3 +1,4 @@
+import consola from 'consola'
 import invariant from 'tiny-invariant'
 import { getCompany } from '~/batch/db'
 import { allConfigs } from '../config'
@@ -13,8 +14,8 @@ interface FetchCommandProps {
 
 export async function fetchCommand(props: FetchCommandProps) {
   if (!props.companyId) {
-    console.log('Error: company id should specify')
-    console.log(
+    consola.error('Error: company id should specify')
+    consola.info(
       (await allConfigs())
         .map((c) => `${c.companyName}\t${c.companyId}`)
         .join('\n'),

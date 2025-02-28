@@ -1,3 +1,4 @@
+import { consola } from 'consola'
 import type { LoaderFunction } from 'react-router'
 import { db, sql } from '~/app/services/db.server'
 
@@ -17,7 +18,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     ])
     return new Response('OK')
   } catch (error: unknown) {
-    console.log('healthcheck ❌', { error })
+    consola.error('healthcheck ❌', { error })
     return new Response('ERROR', { status: 500 })
   }
 }

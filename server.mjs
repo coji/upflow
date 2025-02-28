@@ -1,5 +1,6 @@
 import { createRequestHandler } from '@react-router/express'
 import compression from 'compression'
+import { consola } from 'consola'
 import express from 'express'
 import morgan from 'morgan'
 import { createJobSchedular } from './build/job-schedular.js'
@@ -60,7 +61,7 @@ app.all(
 
 const port = process.env.PORT || 3000
 app.listen(port, () => {
-  console.log(`Express server listening on port ${port}`)
+  consola.info(`Express server listening on port ${port}`)
 })
 
 if (process.env.NODE_ENV === 'production') {

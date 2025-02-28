@@ -1,3 +1,4 @@
+import consola from 'consola'
 import invariant from 'tiny-invariant'
 import { getCompany, getPullRequestReport } from '~/batch/db'
 import { allConfigs } from '../config'
@@ -9,8 +10,8 @@ interface reportCommandProps {
 
 export async function reportCommand({ companyId }: reportCommandProps) {
   if (!companyId) {
-    console.log('config should specified')
-    console.log(
+    consola.error('config should specified')
+    consola.info(
       (await allConfigs())
         .map((c) => `${c.companyName}\t${c.companyId}`)
         .join('\n'),

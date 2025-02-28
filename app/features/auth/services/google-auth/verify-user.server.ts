@@ -1,5 +1,6 @@
 import { GoogleStrategy } from '@coji/remix-auth-google'
 import acceptLanguage from 'accept-language'
+import { consola } from 'consola'
 import { nanoid } from 'nanoid'
 import type { OAuth2Strategy } from 'remix-auth-oauth2'
 import type { Strategy } from 'remix-auth/strategy'
@@ -51,7 +52,7 @@ export const verifyUser: Strategy.VerifyFunction<
     } else {
       errorMessages.push('不明なエラー:', String(error))
     }
-    console.log('Login error:', errorMessages.join('\n'))
+    consola.error('Login error:', errorMessages.join('\n'))
     throw new Error(errorMessages.join('\n'))
   }
 
