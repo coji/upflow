@@ -98,11 +98,10 @@ export const createGitHubProvider = (
       logger.info(`${pr.number} reviews`)
       const reviews = await fetcher.reviews(pr.number)
       await store.save(store.path.reviewJsonFilename(pr.number), reviews)
-
-      // 全プルリク情報を保存
-      await store.save('pullrequests.json', allPullRequests)
     }
 
+    // 全プルリク情報を保存
+    await store.save('pullrequests.json', allPullRequests)
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
   }
 
