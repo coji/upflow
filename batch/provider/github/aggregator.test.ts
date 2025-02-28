@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import type { ShapedGitHubPullRequest } from '../model'
-import { leastUpdatedPullRequest } from './leastUpdatedPullRequest'
+import { leastUpdatedPullRequest } from './aggregator'
+import type { ShapedGitHubPullRequest } from './model'
 
 describe('leastCreatedMergeRequest', () => {
   const prototype: ShapedGitHubPullRequest = {

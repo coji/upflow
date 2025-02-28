@@ -9,7 +9,7 @@ import type {
   ShapedGitHubPullRequest,
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
-} from '../model'
+} from './model'
 
 /**
  * GitHubPullRequest を集計に必要な props のみに shape する

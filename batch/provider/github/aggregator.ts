@@ -1,5 +1,11 @@
 import { last, pipe, sortBy } from 'remeda'
-import type { ShapedGitHubPullRequest } from '../model'
+import type { ShapedGitHubPullRequest } from './model'
+
+export const createAggregator = () => {
+  return {
+    leastUpdatedPullRequest,
+  }
+}
 
 export const leastUpdatedPullRequest = (
   pullrequests: ShapedGitHubPullRequest[],

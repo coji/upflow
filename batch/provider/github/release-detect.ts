@@ -1,7 +1,7 @@
 import * as R from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import type { ShapedGitHubPullRequest } from '../model'
-import type { createStore } from '../store'
+import type { ShapedGitHubPullRequest } from './model'
+import type { createStore } from './store'
 
 const mergedPullRequests = (
   allPullRequests: ShapedGitHubPullRequest[],

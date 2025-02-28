@@ -8,14 +8,14 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
-} from '../model'
+} from './model'
 import {
   shapeGitHubCommit,
   shapeGitHubIssueComment,
   shapeGitHubPullRequest,
   shapeGitHubReview,
   shapeGitHubReviewComment,
-} from '../shaper'
+} from './shaper'
 
 const wait = async ({ count, delay }: { count: number; delay: number }) => {
   await setTimeout(count === 0 ? 1 : count, delay)

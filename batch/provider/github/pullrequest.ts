@@ -9,10 +9,10 @@ import {
   totalTime,
 } from '~/batch/bizlogic/cycletime'
 import { logger } from '~/batch/helper/logger'
-import type { ShapedGitHubPullRequest } from '../model'
-import { findReleaseDate } from '../release-detect'
-import { analyzeReviewResponse } from '../review-response'
-import { createStore } from '../store'
+import type { ShapedGitHubPullRequest } from './model'
+import { findReleaseDate } from './release-detect'
+import { analyzeReviewResponse } from './review-response'
+import { createStore } from './store'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).utc().toISOString() : null

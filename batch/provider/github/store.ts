@@ -7,7 +7,7 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
-} from '../model'
+} from './model'
 
 interface createStoreProps {
   companyId: string

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { shapeGitHubReview } from './index'
+import { shapeGitHubReview } from './shaper'
 
 describe('shapeGitHubReview', () => {
   test('review user is not null', () => {
