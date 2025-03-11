@@ -1,6 +1,8 @@
-# base node image
-FROM node:22-bookworm-slim as base
+ARG NODE_VERSION=22.14.0
 ARG PNPM_VERSION=10.5.2
+
+# base node image
+FROM node:${NODE_VERSION}-slim AS base
 
 # Install openssl for Prisma
 RUN apt-get update \
@@ -10,7 +12,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* 
 
 # Install all node_modules, including dev dependencies
-FROM base as deps
+FROM base AS deps
 
 WORKDIR /upflow
 
@@ -20,7 +22,7 @@ RUN pnpm fetch
 
 
 # Setup production node_modules
-FROM base as production-deps
+FROM base AS production-deps
 
 ENV NODE_ENV production
 WORKDIR /upflow
@@ -31,7 +33,7 @@ RUN pnpm install --prod --offline --frozen-lockfile
 
 
 # Build the app
-FROM base as build
+FROM base AS build
 
 WORKDIR /upflow
 
