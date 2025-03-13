@@ -3,7 +3,8 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
-import { Badge, Button, Label, Stack } from '~/app/components/ui'
+import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
+import WeeklyCalendar from '~/app/components/week-calendar'
 import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { columns } from './columns'
@@ -57,23 +58,29 @@ export default function CompanyIndex({
   return (
     <Stack>
       <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
-        <div>
-          <Label>期間</Label>
-          <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
-            <div className="text-right">
-              <Badge variant="outline">From</Badge>
-            </div>
-            <div className="text-sm">
-              {dayjs(from).format('YYYY-MM-DD HH:mm')}
-            </div>
-            <div className="text-right">
-              <Badge variant="outline">To</Badge>
-            </div>
-            <div className="text-sm">
-              {dayjs(to).format('YYYY-MM-DD HH:mm')}
+        <HStack>
+          <div>
+            <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+              <div className="text-right">
+                <Badge variant="outline">From</Badge>
+              </div>
+              <div className="text-sm">
+                {dayjs(from).format('YYYY-MM-DD HH:mm')}
+              </div>
+              <div className="text-right">
+                <Badge variant="outline">To</Badge>
+              </div>
+              <div className="text-sm">
+                {dayjs(to).format('YYYY-MM-DD HH:mm')}
+              </div>
             </div>
           </div>
-        </div>
+          <WeeklyCalendar
+            onWeekChange={(start, end) => {
+              console.log('onWeekChange', { start, end })
+            }}
+          />
+        </HStack>
 
         <div className="flex-1" />
 
