@@ -75,11 +75,7 @@ export default function CompanyIndex({
               </div>
             </div>
           </div>
-          <WeeklyCalendar
-            onWeekChange={(start, end) => {
-              console.log('onWeekChange', { start, end })
-            }}
-          />
+          <WeeklyCalendar onWeekChange={(start, end) => {}} />
         </HStack>
 
         <div className="flex-1" />

@@ -40,7 +40,7 @@ interface WeeklyCalendarProps {
 const WeeklyCalendar = ({
   onWeekChange,
   initialDate = new Date(),
-  startDay = 6, // デフォルトは土曜日
+  startDay = 1, // デフォルトは月曜日
 }: WeeklyCalendarProps) => {
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate)
   const [weekInterval, setWeekInterval] = useState(
@@ -85,11 +85,10 @@ const WeeklyCalendar = ({
         ref={buttonRef}
         className={cn(
           className,
-          isSelected
-            ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none'
-            : '',
-          isWeekStart ? 'rounded-l-lg' : '',
-          isWeekEnd ? 'rounded-r-lg' : '',
+          isSelected &&
+            'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
+          isWeekStart && 'rounded-l-lg',
+          isWeekEnd && 'rounded-r-lg',
         )}
         {...rest}
       />
