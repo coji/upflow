@@ -37,9 +37,8 @@ export const getMergedPullRequestReport = async (
             pr.mergedAt,
           ) / 24
         : null
-      const achievement = createAndMergeDiff
-        ? createAndMergeDiff < objective
-        : false
+      const achievement =
+        createAndMergeDiff !== null ? createAndMergeDiff < objective : false
       return {
         ...pr,
         createAndMergeDiff,
