@@ -1,33 +1,96 @@
-import dayjs from '~/app/libs/dayjs'
+import { TZDate } from '@date-fns/tz'
+import {
+  addDays,
+  differenceInHours,
+  isWeekend,
+  parse,
+  parseISO,
+  subSeconds,
+} from 'date-fns'
 
-export function getStartOfWeek(timezone = 'Asia/Tokyo') {
-  // 現在の日付
-  const today = dayjs().utc().tz(timezone)
+export const parseDate = (date: string | null, timeZone = 'Asia/Tokyo') => {
+  const dt = date ? parse(date, 'yyyy-MM-dd', new Date()) : new Date()
+  return new TZDate(dt.getFullYear(), dt.getMonth(), dt.getDate(), timeZone)
+}
+
+export function getStartOfWeek(now = new Date(), timezone = 'Asia/Tokyo') {
+  const tzNow = new TZDate(now, timezone)
+
+  // 今日の日付 (00:00:00)
+  const today = new TZDate(
+    tzNow.getFullYear(),
+    tzNow.getMonth(),
+    tzNow.getDate(),
+    timezone,
+  )
+
   // 今週の月曜日を取得
-  const monday = today.weekday(1).startOf('day')
+  const dayOfWeek = today.getDay()
+  if (dayOfWeek === 1) {
+    // 今日が月曜日の場合
+    return today
+  }
+  if (dayOfWeek === 0) {
+    // 今日が日曜日の場合は6日前
+    return addDays(today, -6)
+  }
+  // それ以外の場合は、今週の月曜日を取得 (dayOfWeek=2なら1日前、3なら2日前...)
+  return addDays(today, -(dayOfWeek - 1))
+}
 
-  return monday
+export function getEndOfWeek(now = new Date(), timezone = 'Asia/Tokyo') {
+  const startOfWeek = getStartOfWeek(now, timezone)
+  return subSeconds(addDays(startOfWeek, 7), 1)
 }
 
 // 2つの日時間の時間を計算する関数（土日を除外）
-export const calculateBusinessHours = (start: string, end: string): number => {
-  let startTime = dayjs(start)
-  const endTime = dayjs(end)
+export const calculateBusinessHours = (
+  start: string,
+  end: string,
+  timezone = 'Asia/Tokyo',
+): number => {
+  // 開始/終了日時をタイムゾーンを考慮して解析
+  let startDate = new TZDate(parseISO(start), timezone)
+  const endDate = new TZDate(parseISO(end), timezone)
+
   let totalHours = 0
 
-  // 開始日から終了日までループ
-  while (startTime.isBefore(endTime)) {
-    // 土日を除外
-    if (startTime.weekday() !== 0 && startTime.weekday() !== 6) {
-      totalHours += 24 // 1日を時間で加算（必要に応じて調整）
-    }
-    startTime = startTime.add(1, 'day') // 次の日に進む
-  }
+  // 1日ずつ進めて計算
+  while (startDate < endDate) {
+    // 現在の日の終わり (23:59:59)
+    const dayEnd = new TZDate(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate(),
+      23,
+      59,
+      59,
+      timezone,
+    )
 
-  // 最終日の時間も計算する（終了時刻がその日のうちなら）
-  if (endTime.weekday() !== 0 && endTime.weekday() !== 6) {
-    const hoursLastDay = endTime.diff(endTime.startOf('day'), 'hour')
-    totalHours += hoursLastDay
+    // 今日の終わりか終了日時の早い方
+    const currentEnd = dayEnd < endDate ? dayEnd : endDate
+
+    // 土日を除外
+    if (!isWeekend(startDate)) {
+      totalHours += differenceInHours(currentEnd, startDate)
+
+      // 23:59:59 → 24:00:00の場合、1分を加算
+      if (currentEnd.getHours() === 23 && currentEnd.getMinutes() === 59) {
+        totalHours += 1 / 60
+      }
+    }
+
+    // 翌日の0時に設定
+    startDate = new TZDate(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate() + 1,
+      0,
+      0,
+      0,
+      timezone,
+    )
   }
 
   return totalHours
