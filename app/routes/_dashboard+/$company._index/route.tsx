@@ -17,14 +17,28 @@ export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>
 >[0]
 
-export const loader = async ({ params }: Route.LoaderArgs) => {
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { company: companyId, objective } = zx.parseParams(params, {
     company: z.string(),
     objective: z.number().min(0.1).max(30).optional().default(2.0),
   })
 
-  const from = getStartOfWeek().toISOString()
-  const to = dayjs().utc().toISOString()
+  const url = new URL(request.url)
+  const fromParam = url.searchParams.get('from')
+  const toParam = url.searchParams.get('to')
+
+  let from: string
+  let to: string
+  if (fromParam && toParam) {
+    // 検索パラメータの日付（JST）をUTCに変換
+    from = dayjs(fromParam).startOf('day').utc().toISOString()
+    to = dayjs(toParam).endOf('day').utc().toISOString()
+  } else {
+    // パラメータがない場合はデフォルト（現在の週）
+    from = getStartOfWeek().toISOString()
+    to = dayjs().utc().toISOString()
+  }
+
   const pullRequests = await getMergedPullRequestReport(
     companyId,
     from,
@@ -57,7 +71,10 @@ export default function CompanyIndex({
     achievementRate,
   },
 }: Route.ComponentProps) {
-  const [, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialDate = searchParams.has('from')
+    ? dayjs(searchParams.get('from')).toDate()
+    : new Date()
 
   return (
     <Stack>
@@ -80,6 +97,7 @@ export default function CompanyIndex({
             </div>
           </div>
           <WeeklyCalendar
+            initialDate={initialDate}
             onWeekChange={(start, end) => {
               setSearchParams((prev) => {
                 prev.set('from', format(start, 'yyyy-MM-dd'))
