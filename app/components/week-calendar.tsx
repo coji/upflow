@@ -2,7 +2,13 @@ import { addDays, isSameDay, isWithinInterval, startOfDay } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { useEffect, useRef, useState } from 'react'
 import { useDayRender, type DayProps } from 'react-day-picker'
-import { Calendar } from '~/app/components/ui'
+import {
+  Button,
+  Calendar,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '~/app/components/ui'
 import { cn } from '../libs/utils'
 
 // 指定された開始曜日に基づく週間間隔を取得
@@ -31,6 +37,7 @@ const WeeklyCalendar = ({
   initialDate = new Date(),
   startDay = 1, // デフォルトは月曜日
 }: WeeklyCalendarProps) => {
+  const [open, setOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate)
   const [weekInterval, setWeekInterval] = useState(
     getWeekInterval(initialDate, startDay),
@@ -50,6 +57,7 @@ const WeeklyCalendar = ({
     if (date) {
       setSelectedDate(date)
     }
+    setOpen(false)
   }
 
   // カレンダーのカスタム日付レンダリング
@@ -87,17 +95,28 @@ const WeeklyCalendar = ({
   }
 
   return (
-    <Calendar
-      mode="single"
-      selected={selectedDate}
-      onSelect={handleDateSelect}
-      weekStartsOn={startDay as 0 | 1 | 2 | 3 | 4 | 5 | 6}
-      locale={ja}
-      components={{
-        Day: DayComponent,
-      }}
-      className="rounded-lg border p-3"
-    />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" size="sm">
+          週を選択
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <div>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateSelect}
+            weekStartsOn={startDay as 0 | 1 | 2 | 3 | 4 | 5 | 6}
+            locale={ja}
+            components={{
+              Day: DayComponent,
+            }}
+            className="rounded-lg border p-3"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 
