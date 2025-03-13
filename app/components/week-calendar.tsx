@@ -38,11 +38,13 @@ const WeeklyCalendar = ({
 
   useEffect(() => {
     const interval = getWeekInterval(selectedDate, startDay)
-    setWeekInterval(interval)
-    if (onWeekChange) {
-      onWeekChange(interval.start, interval.end)
+    if (!isSameDay(interval.start, weekInterval.start)) {
+      setWeekInterval(interval)
+      if (onWeekChange) {
+        onWeekChange(interval.start, interval.end)
+      }
     }
-  }, [selectedDate, startDay, onWeekChange])
+  }, [selectedDate, startDay, weekInterval.start, onWeekChange])
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -75,7 +77,7 @@ const WeeklyCalendar = ({
         className={cn(
           className,
           isSelected &&
-            'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
+            'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground aria-selected:text-primary-foreground rounded-none',
           isWeekStart && 'rounded-l-lg',
           isWeekEnd && 'rounded-r-lg',
         )}

@@ -1,4 +1,6 @@
+import { format } from 'date-fns'
 import { CopyIcon } from 'lucide-react'
+import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { zx } from 'zodix'
@@ -55,6 +57,8 @@ export default function CompanyIndex({
     achievementRate,
   },
 }: Route.ComponentProps) {
+  const [, setSearchParams] = useSearchParams()
+
   return (
     <Stack>
       <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
@@ -75,7 +79,15 @@ export default function CompanyIndex({
               </div>
             </div>
           </div>
-          <WeeklyCalendar onWeekChange={(start, end) => {}} />
+          <WeeklyCalendar
+            onWeekChange={(start, end) => {
+              setSearchParams((prev) => {
+                prev.set('from', format(start, 'yyyy-MM-dd'))
+                prev.set('to', format(end, 'yyyy-MM-dd'))
+                return prev
+              })
+            }}
+          />
         </HStack>
 
         <div className="flex-1" />
