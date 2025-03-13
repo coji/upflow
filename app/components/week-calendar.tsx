@@ -5,17 +5,6 @@ import { useDayRender, type DayProps } from 'react-day-picker'
 import { Calendar } from '~/app/components/ui'
 import { cn } from '../libs/utils'
 
-// 曜日の設定
-const WEEKDAYS = [
-  { value: '6', label: '土曜日' },
-  { value: '0', label: '日曜日' },
-  { value: '1', label: '月曜日' },
-  { value: '2', label: '火曜日' },
-  { value: '3', label: '水曜日' },
-  { value: '4', label: '木曜日' },
-  { value: '5', label: '金曜日' },
-]
-
 // 指定された開始曜日に基づく週間間隔を取得
 const getWeekInterval = (date: Date, startOfWeekDay: number) => {
   const normalizedDate = startOfDay(date) // 00:00 に設定
