@@ -1,4 +1,5 @@
-import { format } from 'date-fns'
+import { TZDate } from '@date-fns/tz'
+import { addDays, format, subSeconds } from 'date-fns'
 import { CopyIcon } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -7,11 +8,15 @@ import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
 import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
 import WeeklyCalendar from '~/app/components/week-calendar'
-import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { columns } from './columns'
-import { getMergedPullRequestReport, getStartOfWeek } from './functions.server'
+import {
+  getEndOfWeek,
+  getMergedPullRequestReport,
+  getStartOfWeek,
+} from './functions.server'
 import { generateMarkdown } from './functions/generate-markdown'
+import { parseDate } from './functions/utils'
 
 export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>
@@ -27,22 +32,22 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const fromParam = url.searchParams.get('from')
   const toParam = url.searchParams.get('to')
 
-  let from: string
-  let to: string
+  let from: TZDate
+  let to: TZDate
   if (fromParam && toParam) {
     // 検索パラメータの日付（JST）をUTCに変換
-    from = dayjs(fromParam).startOf('day').utc().toISOString()
-    to = dayjs(toParam).endOf('day').utc().toISOString()
+    from = parseDate(fromParam)
+    to = subSeconds(addDays(parseDate(toParam), 1), 1)
   } else {
     // パラメータがない場合はデフォルト（現在の週）
-    from = getStartOfWeek().toISOString()
-    to = dayjs().utc().toISOString()
+    from = new TZDate(getStartOfWeek())
+    to = new TZDate(getEndOfWeek())
   }
 
   const pullRequests = await getMergedPullRequestReport(
     companyId,
-    from,
-    to,
+    from.withTimeZone('UTC').toISOString(),
+    to.withTimeZone('UTC').toISOString(),
     objective,
   )
 
@@ -71,10 +76,7 @@ export default function CompanyIndex({
     achievementRate,
   },
 }: Route.ComponentProps) {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const initialDate = searchParams.has('from')
-    ? dayjs(searchParams.get('from')).toDate()
-    : new Date()
+  const [, setSearchParams] = useSearchParams()
 
   return (
     <Stack>
@@ -85,19 +87,15 @@ export default function CompanyIndex({
               <div className="text-right">
                 <Badge variant="outline">From</Badge>
               </div>
-              <div className="text-sm">
-                {dayjs(from).format('YYYY-MM-DD HH:mm')}
-              </div>
+              <div className="text-sm">{format(from, 'yyyy-MM-dd HH:mm')}</div>
               <div className="text-right">
                 <Badge variant="outline">To</Badge>
               </div>
-              <div className="text-sm">
-                {dayjs(to).format('YYYY-MM-DD HH:mm')}
-              </div>
+              <div className="text-sm">{format(to, 'yyyy-MM-dd HH:mm')}</div>
             </div>
           </div>
           <WeeklyCalendar
-            initialDate={initialDate}
+            initialDate={from}
             onWeekChange={(start, end) => {
               setSearchParams((prev) => {
                 prev.set('from', format(start, 'yyyy-MM-dd'))
