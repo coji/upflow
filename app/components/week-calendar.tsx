@@ -29,7 +29,7 @@ const getWeekInterval = (date: Date, startOfWeekDay: number) => {
 interface WeeklyCalendarProps {
   onWeekChange?: (start: Date, end: Date) => void
   initialDate?: Date
-  startDay?: number // 初期の週開始曜日 (0-6)
+  startDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6 // 初期の週開始曜日 (0: Sunday - 6: Saturday)
 }
 
 const WeeklyCalendar = ({
@@ -74,7 +74,7 @@ const WeeklyCalendar = ({
     const isWeekEnd = isSameDay(date, weekInterval.end)
 
     // biome-ignore lint/a11y/useFocusableInteractive: <explanation>
-    if (dayRender.isHidden) return <div role="gridcell" />
+    if (dayRender.isHidden) return <div role="gridcell" aria-hidden="true" />
     if (!dayRender.isButton) return <div {...dayRender.divProps} />
 
     const { className, ...rest } = dayRender.buttonProps
@@ -107,7 +107,7 @@ const WeeklyCalendar = ({
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
-            weekStartsOn={startDay as 0 | 1 | 2 | 3 | 4 | 5 | 6}
+            weekStartsOn={startDay}
             locale={ja}
             components={{
               Day: DayComponent,
