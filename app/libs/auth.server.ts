@@ -5,6 +5,8 @@ import { href, redirect } from 'react-router'
 import { dialect } from '~/app/services/db.server'
 
 export const auth = betterAuth({
+  baseURL: process.env.BASE_URL,
+  secret: process.env.SESSION_SECRET,
   database: { dialect, type: 'sqlite' },
   socialProviders: {
     google: {
