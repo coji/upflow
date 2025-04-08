@@ -9,14 +9,14 @@ import {
   CardTitle,
 } from '~/app/components/ui'
 import type { Route } from './+types/route'
-import { listCompanies } from './queries.server'
+import { listOrganizations } from './queries.server'
 
 export const loader = async ({ request }: Route.LoaderArgs) => ({
-  companies: await listCompanies(),
+  organizations: await listOrganizations(),
 })
 
 const AdminCompanyIndex = ({
-  loaderData: { companies },
+  loaderData: { organizations },
 }: Route.ComponentProps) => {
   return (
     <div className="grid grid-cols-[15rem_1fr] gap-4">
@@ -25,13 +25,13 @@ const AdminCompanyIndex = ({
           <CardTitle>Companies</CardTitle>
         </CardHeader>
         <CardContent>
-          {companies.map((company) => (
+          {organizations.map((organization) => (
             <Link
-              key={company.id}
+              key={organization.id}
               className="hover:bg-secondary block rounded p-2"
-              to={`${company.id}`}
+              to={`${organization.id}`}
             >
-              {company.name}
+              {organization.name}
             </Link>
           ))}
         </CardContent>

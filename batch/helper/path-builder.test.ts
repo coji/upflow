@@ -4,9 +4,9 @@ import { createPathBuilder } from './path-builder'
 
 describe('path-builder', () => {
   test('jsonPath', () => {
-    const companyId = 'test-company'
+    const organizationId = 'test-company'
     const repositoryId = 'test-repository'
-    const pathBuilder = createPathBuilder({ companyId, repositoryId })
+    const pathBuilder = createPathBuilder({ organizationId, repositoryId })
 
     const dataDir = path.join(import.meta.dirname, '..', 'data', 'json') // App's root directory
     expect(pathBuilder.jsonPath('test.json')).toStrictEqual(
@@ -15,9 +15,9 @@ describe('path-builder', () => {
   })
 
   test('jsonPath defined UPFLOW_DATA_DIR', () => {
-    const companyId = 'test-company'
+    const organizationId = 'test-company'
     const repositoryId = 'test-repository'
-    const pathBuilder = createPathBuilder({ companyId, repositoryId })
+    const pathBuilder = createPathBuilder({ organizationId, repositoryId })
     process.env.UPFLOW_DATA_DIR = '/'
 
     expect(pathBuilder.jsonPath('test.json')).toStrictEqual(

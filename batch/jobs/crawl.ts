@@ -48,7 +48,7 @@ export const crawlJob = async () => {
     // analyze
     logger.info('analyze started...')
     const { pulls, reviewResponses } = await provider.analyze(
-      organization,
+      organization.organizationSetting,
       organization.repositories,
     )
     logger.info('analyze completed.')

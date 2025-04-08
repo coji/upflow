@@ -6,6 +6,7 @@ async function main() {
   console.log('Starting data migration from Company to Organization...')
 
   // Fetch all companies
+  // @ts-ignore
   const companies = await prisma.company.findMany({
     // Corrected: prisma.company (lowercase c)
     // Removed include block as relations are no longer on Company model in schema
@@ -54,6 +55,7 @@ async function main() {
 
       // Update Integration (1:1)
       const updatedIntegration = await prisma.integration.updateMany({
+        // @ts-ignore
         where: { companyId: company.id },
         data: { organizationId: organization.id },
       })
@@ -65,6 +67,7 @@ async function main() {
 
       // Update Repositories (1:N)
       const updatedRepositories = await prisma.repository.updateMany({
+        // @ts-ignore
         where: { companyId: company.id },
         data: { organizationId: organization.id },
       })
@@ -76,6 +79,7 @@ async function main() {
 
       // Update ExportSetting (1:1)
       const updatedExportSetting = await prisma.exportSetting.updateMany({
+        // @ts-ignore
         where: { companyId: company.id },
         data: { organizationId: organization.id },
       })
@@ -89,6 +93,7 @@ async function main() {
       // Note: The PK temporarily uses companyId, so we update based on that.
       const updatedGithubUsers = await prisma.companyGithubUser.updateMany({
         // Corrected: prisma.companyGithubUser
+        // @ts-ignore
         where: { companyId: company.id },
         data: { organizationId: organization.id },
       })

@@ -1,38 +1,22 @@
-import { db, sql, type DB } from '~/app/services/db.server'
+import { db, type DB } from '~/app/services/db.server'
 
-export const createCompany = async ({
-  companyId,
-  companyName,
-  teamId,
-  teamName,
+export const createOrganization = async ({
+  organizationId,
+  organizationName,
 }: {
-  companyId: DB.Company['id']
-  companyName: DB.Company['name']
-  teamId: DB.Team['id']
-  teamName: DB.Team['name']
+  organizationId: DB.Organization['id']
+  organizationName: DB.Organization['name']
 }) => {
   return await db.transaction().execute(async (tsx) => {
-    const company = await tsx
-      .insertInto('companies')
+    const organization = await tsx
+      .insertInto('organizations')
       .values({
-        id: companyId,
-        name: companyName,
-        updatedAt: sql`CURRENT_TIMESTAMP`,
+        id: organizationId,
+        name: organizationName,
       })
       .returningAll()
       .executeTakeFirstOrThrow()
 
-    const team = await tsx
-      .insertInto('teams')
-      .values({
-        companyId: companyId,
-        id: teamId,
-        name: teamName,
-        updatedAt: sql`CURRENT_TIMESTAMP`,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow()
-
-    return { company, team }
+    return { organization }
   })
 }
