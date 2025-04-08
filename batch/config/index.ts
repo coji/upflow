@@ -1,8 +1,8 @@
-import { listAllCompanies } from '~/batch/db'
+import { listAllOrganizations } from '~/batch/db'
 
 export interface Config {
-  companyId: string
-  companyName: string
+  organizationId: string
+  organizationName: string
   integration: {
     id: string
     provider: string
@@ -13,19 +13,19 @@ export interface Config {
 }
 
 export const allConfigs = async () => {
-  const companies = await listAllCompanies()
-  const configs = companies.map((company) => {
+  const organizations = await listAllOrganizations()
+  const configs = organizations.map((org) => {
     return {
-      companyId: company.id,
-      companyName: company.name,
-      integration: company.integration,
-      repositories: company.repositories.map((repo) => ({ id: repo.id })),
+      organizationId: org.id,
+      organizationName: org.name,
+      integration: org.integration,
+      repositories: org.repositories.map((repo) => ({ id: repo.id })),
     } satisfies Config
   })
   return configs
 }
 
-export const loadConfig = async (companyId: string) => {
+export const loadConfig = async (organizationId: string) => {
   const configs = await allConfigs()
-  return configs.find((config) => config.companyId === companyId)
+  return configs.find((config) => config.organizationId === organizationId)
 }

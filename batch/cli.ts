@@ -10,7 +10,7 @@ process.env.UPFLOW_DATA_DIR = path.join(import.meta.dirname, '..', 'data')
 const fetch = command(
   {
     name: 'fetch',
-    parameters: ['[company id]', '[repository id]'],
+    parameters: ['[organization id]', '[repository id]'],
     flags: {
       refresh: {
         type: Boolean,
@@ -32,7 +32,7 @@ const fetch = command(
   (argv) => {
     const { help, ...rest } = argv.flags
     fetchCommand({
-      companyId: argv._.companyId,
+      organizationId: argv._.organizationId,
       repositoryId: argv._.repositoryId,
       ...rest,
     })
@@ -42,24 +42,24 @@ const fetch = command(
 const report = command(
   {
     name: 'report',
-    parameters: ['[company id]'],
+    parameters: ['[organization id]'],
     help: { description: 'Report cycletime from fetched resources.' },
   },
   (argv) => {
     const { help, ...rest } = argv.flags
-    reportCommand({ companyId: argv._.companyId, ...rest })
+    reportCommand({ organizationId: argv._.organizationId, ...rest })
   },
 )
 
 const upsert = command(
   {
     name: 'upsert',
-    parameters: ['[company id]'],
+    parameters: ['[organization id]'],
     help: { description: 'upsert report data to frontend database.' },
   },
   (argv) => {
     const { help, ...rest } = argv.flags
-    upsertCommand({ companyId: argv._.companyId, ...rest })
+    upsertCommand({ organizationId: argv._.organizationId, ...rest })
   },
 )
 

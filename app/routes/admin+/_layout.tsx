@@ -1,6 +1,6 @@
 import { Outlet, href } from 'react-router'
 import { AppHeader, AppLayout } from '~/app/components'
-import { requireAdminUser } from '~/app/features/auth/services/auth'
+import { requireSuperAdmin } from '~/app/libs/auth.server'
 import type { Route } from './+types/_layout'
 
 export const meta = () => [{ title: 'Upflow Admin' }]
@@ -10,15 +10,12 @@ export const handle = {
 }
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const adminUser = await requireAdminUser(request)
-  return { adminUser }
+  await requireSuperAdmin(request)
 }
 
-const AdminLayoutPage = ({
-  loaderData: { adminUser },
-}: Route.ComponentProps) => {
+const AdminLayoutPage = () => {
   return (
-    <AppLayout header={<AppHeader isAdmin user={adminUser} />}>
+    <AppLayout header={<AppHeader isAdmin />}>
       <Outlet />
     </AppLayout>
   )

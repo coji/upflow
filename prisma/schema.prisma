@@ -15,122 +15,74 @@ datasource db {
 }
 
 model User {
-  id          String        @id @default(cuid())
-  email       String        @unique
-  displayName String        @map("display_name")
-  pictureUrl  String?       @map("picture_url")
-  locale      String
-  role        String        @default("user")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  companies   CompanyUser[]
-  teamUser    TeamUser[]
+  id            String    @id @default(cuid())
+  name          String
+  email         String
+  emailVerified Boolean   @map("email_verified")
+  image         String?
+  role          String
+  banned        Boolean?
+  banReason     String?   @map("ban_reason")
+  banExpires    DateTime? @map("ban_expires")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  sessions    Session[]
+  accounts    Account[]
+  members     Member[]
+  invitations Invitation[]
 
   @@map("users")
 }
 
-model Company {
-  id                     String         @id @default(cuid())
-  name                   String
-  releaseDetectionMethod String         @default("branch") @map("release_detection_method")
-  releaseDetectionKey    String         @default("production") @map("release_detection_key")
-  updatedAt              DateTime       @updatedAt @map("updated_at")
-  createdAt              DateTime       @default(now()) @map("created_at")
-  isActive               Boolean        @default(true) @map("is_active")
-  users                  CompanyUser[]
-  exportSetting          ExportSetting?
-  integration            Integration?
-  repositories           Repository[]
-  teams                  Team[]
-  GithubUser             CompanyGithubUser[]
+model OrganizationSetting {
+  id             String       @id @default(cuid())
+  organizationId String       @unique @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@map("companies")
-}
+  releaseDetectionMethod String   @default("branch") @map("release_detection_method")
+  releaseDetectionKey    String   @default("production") @map("release_detection_key")
+  isActive               Boolean  @default(true) @map("is_active")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  createdAt              DateTime @default(now()) @map("created_at")
 
-model CompanyUser {
-  companyId   String    @map("company_id")
-  userId      String    @map("user_id")
-  role        String
-  invitedAt   DateTime? @map("invited_at")
-  activatedAt DateTime? @map("activated_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([companyId, userId])
-  @@map("company_users")
-}
-
-model Team {
-  id             String           @id @default(cuid())
-  name           String
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-  createdAt      DateTime         @default(now()) @map("created_at")
-  companyId      String           @map("company_id")
-  company        Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  teamUser       TeamUser[]
-  TeamRepository TeamRepository[]
-
-  @@map("teams")
-}
-
-model TeamUser {
-  teamId    String   @map("team_id")
-  userId    String   @map("user_id")
-  role      String
-  updatedAt DateTime @updatedAt @map("updated_at")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([teamId, userId])
-  @@map("team_users")
+  @@map("organization_settings")
 }
 
 model Integration {
-  id           String       @id @default(cuid())
+  id           String  @id @default(cuid())
   provider     String
   method       String
-  privateToken String?      @map("private_token")
-  companyId    String       @unique @map("company_id")
-  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  privateToken String? @map("private_token")
+
+  organizationId String       @unique @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   repositories Repository[]
 
+  @@index([organizationId])
   @@map("integrations")
 }
 
 model Repository {
-  id                     String           @id
-  companyId              String           @map("company_id")
-  integrationId          String           @map("integration_id")
+  id                     String        @id
+  integrationId          String        @map("integration_id")
   provider               String
   owner                  String
   repo                   String
-  releaseDetectionMethod String           @default("branch") @map("release_detection_method")
-  releaseDetectionKey    String           @default("production") @map("release_detection_key")
-  updatedAt              DateTime         @updatedAt @map("updated_at")
-  createdAt              DateTime         @default(now()) @map("created_at")
-  integration            Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  company                Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  releaseDetectionMethod String        @default("branch") @map("release_detection_method")
+  releaseDetectionKey    String        @default("production") @map("release_detection_key")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+  createdAt              DateTime      @default(now()) @map("created_at")
+  integration            Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   pullrequest            PullRequest[]
-  teamRepository         TeamRepository[]
 
-  @@unique([companyId, integrationId, owner, repo])
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, integrationId, owner, repo])
+  @@index([organizationId])
   @@map("repositories")
-}
-
-model TeamRepository {
-  teamId       String     @map("team_id")
-  repositoryId String     @map("repository_id")
-  team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  createdAt    DateTime   @default(now()) @map("created_at")
-
-  @@id([teamId, repositoryId])
-  @@map("team_repositories")
 }
 
 model PullRequest {
@@ -162,19 +114,19 @@ model PullRequest {
 
 model ExportSetting {
   id          String   @id @default(cuid())
-  companyId   String   @unique @map("company_id")
   sheetId     String   @map("sheet_id")
   clientEmail String   @map("client_email")
   privateKey  String   @map("private_key")
   updatedAt   DateTime @updatedAt @map("updated_at")
   createdAt   DateTime @default(now()) @map("created_at")
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  organizationId String       @unique @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("export_settings")
 }
 
 model CompanyGithubUser {
-  companyId   String   @map("company_id")
   userId      String?  @map("user_id")
   login       String
   name        String?
@@ -184,8 +136,103 @@ model CompanyGithubUser {
   updatedAt   DateTime @updatedAt @map("updated_at")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  Company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@id([companyId, login])
+  @@id([organizationId, login])
+  @@index([organizationId])
   @@map("company_github_users")
+}
+
+model Session {
+  id                   String   @id
+  expiresAt            DateTime @map("expires_at")
+  token                String
+  createdAt            DateTime @map("created_at")
+  updatedAt            DateTime @map("updated_at")
+  ipAddress            String?  @map("ip_address")
+  userAgent            String?  @map("user_agent")
+  userId               String   @map("user_id")
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy       String?  @map("impersonated_by")
+  activeOrganizationId String?  @map("active_organization_id")
+
+  @@unique([token])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @map("created_at")
+  updatedAt             DateTime  @map("updated_at")
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime  @map("expires_at")
+  createdAt  DateTime? @map("created_at")
+  updatedAt  DateTime? @map("updated_at")
+
+  @@map("verifications")
+}
+
+model Organization {
+  id          String       @id
+  name        String
+  slug        String?
+  logo        String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  metadata    String?
+  members     Member[]
+  invitations Invitation[]
+
+  setting       OrganizationSetting?
+  exportSetting ExportSetting?
+  integration   Integration?
+  repositories  Repository[]
+  githubUsers   CompanyGithubUser[]
+
+  @@unique([slug])
+  @@map("organizations")
+}
+
+model Member {
+  id             String       @id
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String
+  createdAt      DateTime     @map("created_at")
+
+  @@map("members")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime     @map("expires_at")
+  inviterId      String       @map("inviter_id")
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
 }

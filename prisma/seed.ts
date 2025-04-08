@@ -13,35 +13,25 @@ async function seed() {
     .values({
       id: nanoid(),
       email,
-      displayName: 'Coji Mizoguchi',
-      locale: 'ja',
+      name: 'Coji Mizoguchi',
+      emailVerified: sql`CURRENT_TIMESTAMP`,
+      image: 'https://avatars.githubusercontent.com/u/12345678?v=4',
       role: 'admin',
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .returningAll()
     .executeTakeFirstOrThrow()
 
-  // company
-  const company = await db
-    .insertInto('companies')
+  // organization
+  const organization = await db
+    .insertInto('organizations')
     .values({
       id: 'techtalk',
       name: 'TechTalk',
-      updatedAt: sql`CURRENT_TIMESTAMP`,
+      slug: 'techtalk',
     })
     .returningAll()
     .executeTakeFirstOrThrow()
-
-  // company user
-  await db
-    .insertInto('companyUsers')
-    .values({
-      companyId: company.id,
-      userId: user.id,
-      role: 'admin',
-      updatedAt: sql`CURRENT_TIMESTAMP`,
-    })
-    .execute()
 
   // integration
   const integration = await db
@@ -51,7 +41,7 @@ async function seed() {
       provider: 'github',
       method: 'token',
       privateToken: process.env.INTEGRATION_PRIVATE_TOKEN,
-      companyId: company.id,
+      organizationId: organization.id,
     })
     .returningAll()
     .executeTakeFirstOrThrow()
@@ -65,7 +55,7 @@ async function seed() {
       owner: 'test',
       repo: 'test',
       integrationId: integration.id,
-      companyId: company.id,
+      organizationId: organization.id,
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .returningAll()
@@ -94,7 +84,7 @@ async function seed() {
   await db
     .insertInto('companyGithubUsers')
     .values({
-      companyId: company.id,
+      organizationId: organization.id,
       login: 'test_user',
       displayName: 'Test User',
       updatedAt: sql`CURRENT_TIMESTAMP`,

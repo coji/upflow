@@ -1,4 +1,4 @@
-import { listAllCompanies, upsertPullRequest } from '~/batch/db'
+import { listAllOrganizations, upsertPullRequest } from '~/batch/db'
 import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,
@@ -11,19 +11,19 @@ const options = { refresh: false, halt: false, delay: 1000 }
 export const crawlJob = async () => {
   logger.info('crawl started.')
 
-  const companies = await listAllCompanies()
+  const organizations = await listAllOrganizations()
 
-  for (const company of companies) {
-    logger.info('company: ', company.name)
+  for (const organization of organizations) {
+    logger.info('organization: ', organization.name)
 
-    if (!company.isActive) {
-      logger.info('company is not active.')
+    if (!organization.organizationSetting?.isActive) {
+      logger.info('organization is not active.')
       continue
     }
 
-    const integration = company.integration
+    const integration = organization.integration
     if (!integration) {
-      logger.error('integration not set:', company.id, company.name)
+      logger.error('integration not set:', organization.id, organization.name)
       continue
     }
 
@@ -31,15 +31,15 @@ export const crawlJob = async () => {
     if (!provider) {
       logger.error(
         'provider cant detected',
-        company.id,
-        company.name,
+        organization.id,
+        organization.name,
         integration.provider,
       )
       continue
     }
 
     // fetch
-    for (const repository of company.repositories) {
+    for (const repository of organization.repositories) {
       logger.info('fetch started...')
       await provider.fetch(repository, options)
       logger.info('fetch completed.')
@@ -48,8 +48,8 @@ export const crawlJob = async () => {
     // analyze
     logger.info('analyze started...')
     const { pulls, reviewResponses } = await provider.analyze(
-      company,
-      company.repositories,
+      organization.organizationSetting,
+      organization.repositories,
     )
     logger.info('analyze completed.')
 
@@ -61,12 +61,12 @@ export const crawlJob = async () => {
     logger.info('upsert completed.')
 
     // export
-    if (company.exportSetting) {
+    if (organization.exportSetting) {
       logger.info('exporting to spreadsheet...')
-      await exportPullsToSpreadsheet(pulls, company.exportSetting)
+      await exportPullsToSpreadsheet(pulls, organization.exportSetting)
       await exportReviewResponsesToSpreadsheet(
         reviewResponses,
-        company.exportSetting,
+        organization.exportSetting,
       )
       logger.info('export to spreadsheet done')
     }

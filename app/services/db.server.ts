@@ -17,12 +17,11 @@ const debug = createDebug('app:db')
 export { sql }
 export type { DB, Insertable, Selectable, Updateable }
 
+const filename = `${process.env.NODE_ENV === 'production' ? '' : '.'}${new URL(process.env.DATABASE_URL).pathname}`
+const database = new SQLite(filename)
+export const dialect = new SqliteDialect({ database })
 export const db = new Kysely<DB.DB>({
-  dialect: new SqliteDialect({
-    database: new SQLite(
-      `${process.env.NODE_ENV === 'production' ? '' : './'}${new URL(process.env.DATABASE_URL).pathname}`,
-    ),
-  }),
+  dialect,
   log: (event) => debug(event.query.sql, event.query.parameters),
   plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
 })

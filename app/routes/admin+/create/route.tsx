@@ -18,21 +18,16 @@ import {
   Stack,
 } from '~/app/components/ui'
 import type { Route } from './+types/route'
-import { createCompany } from './mutations.server'
+import { createOrganization } from './mutations.server'
 
-export const handle = { breadcrumb: () => ({ label: 'Create Company' }) }
+export const handle = { breadcrumb: () => ({ label: 'Create Organization' }) }
 
 export const schema = z.object({
-  companyId: z
+  organizationId: z
     .string()
     .max(20)
     .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
-  companyName: z.string().min(1).max(20),
-  teamId: z
-    .string()
-    .max(20)
-    .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
-  teamName: z.string().max(20),
+  organizationName: z.string().min(1).max(20),
 })
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -42,60 +37,46 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   try {
-    const { company } = await createCompany(submission.value)
-    return redirect(href('/admin/:company', { company: company.id }))
+    const { organization } = await createOrganization(submission.value)
+    return redirect(
+      href('/admin/:organization', { organization: organization.id }),
+    )
   } catch (e) {
     return {
       lastResult: submission.reply({
-        formErrors: [`Failed to create company: ${String(e)}`],
+        formErrors: [`Failed to create organization: ${String(e)}`],
       }),
     }
   }
 }
 
-const CompanyNewPage = ({ actionData }: Route.ComponentProps) => {
-  const [form, { companyId, companyName, teamId, teamName }] = useForm({
+const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
+  const [form, { organizationId, organizationName }] = useForm({
     lastResult: actionData?.lastResult,
-    defaultValue: {
-      teamId: 'developers',
-      teamName: 'Developers',
-    },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create a new company</CardTitle>
+        <CardTitle>Create a new organization</CardTitle>
       </CardHeader>
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
-              <Label htmlFor={companyId.id}>Company ID</Label>
+              <Label htmlFor={organizationId.id}>Organization ID</Label>
               <Input
                 autoFocus
-                {...getInputProps(companyId, { type: 'text' })}
+                {...getInputProps(organizationId, { type: 'text' })}
               />
-              <div className="text-destructive">{companyId.errors}</div>
+              <div className="text-destructive">{organizationId.errors}</div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={companyName.id}>Company name</Label>
-              <Input {...getInputProps(companyName, { type: 'text' })} />
-              <div className="text-destructive">{companyName.errors}</div>
-            </fieldset>
-
-            <fieldset>
-              <Label htmlFor={teamId.id}>Team ID</Label>
-              <Input {...getInputProps(teamId, { type: 'text' })} />
-              <div className="text-destructive">{teamId.errors}</div>
-            </fieldset>
-
-            <fieldset>
-              <Label htmlFor={teamName.id}>Initial team name</Label>
-              <Input {...getInputProps(teamName, { type: 'text' })} />
-              <div className="text-destructive">{teamName.errors}</div>
+              <Label htmlFor={organizationName.id}>Organization name</Label>
+              <Input {...getInputProps(organizationName, { type: 'text' })} />
+              <div className="text-destructive">{organizationName.errors}</div>
             </fieldset>
 
             {form.errors && (
@@ -123,4 +104,4 @@ const CompanyNewPage = ({ actionData }: Route.ComponentProps) => {
     </Card>
   )
 }
-export default CompanyNewPage
+export default OrganizationNewPage

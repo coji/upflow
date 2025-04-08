@@ -1,4 +1,4 @@
-import { href, Link } from 'react-router'
+import { href, Link, useNavigate } from 'react-router'
 import {
   Avatar,
   AvatarFallback,
@@ -15,15 +15,18 @@ import {
   HStack,
   Spacer,
 } from '~/app/components/ui'
-import type { SessionUser } from '~/app/features/auth/types/types'
-import { CompanySwitcher } from '~/app/routes/resources+/company/route'
+import { authClient } from '~/app/libs/auth-client'
+import { OrganizationSwitcher } from '~/app/routes/resources+/organization/route'
 
 interface AppHeaderProps {
-  user?: SessionUser
   isAdmin?: boolean
 }
 
-export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
+export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
+  const navigate = useNavigate()
+  const { data: session } = authClient.useSession()
+  const user = session?.user
+
   return (
     <header className="flex items-center px-4 py-1">
       <HStack>
@@ -33,7 +36,7 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
           </Link>
         </Heading>
 
-        {user && <CompanySwitcher isAdmin={isAdmin} />}
+        {session && <OrganizationSwitcher isAdmin={isAdmin} />}
       </HStack>
 
       <Spacer />
@@ -43,11 +46,8 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar>
-                <AvatarImage
-                  src={user.pictureUrl ?? undefined}
-                  alt={user.displayName}
-                />
-                <AvatarFallback>{user.displayName}</AvatarFallback>
+                <AvatarImage src={user.image ?? undefined} alt={user.name} />
+                <AvatarFallback>{user.name}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -55,7 +55,7 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
             <DropdownMenuLabel>
               <HStack>
                 <div>
-                  <p className="text-sm">{user.displayName}</p>
+                  <p className="text-sm">{user.name}</p>
                   <p className="text-xs text-gray-500">{user.email}</p>
                 </div>
                 <Spacer />
@@ -75,8 +75,18 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to={href('/logout')}>ログアウト</Link>
+            <DropdownMenuItem
+              onClick={() => {
+                authClient.signOut({
+                  fetchOptions: {
+                    onSuccess: () => {
+                      navigate(href('/'))
+                    },
+                  },
+                })
+              }}
+            >
+              ログアウト
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
