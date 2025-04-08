@@ -126,3 +126,14 @@ export const requireUser = async (request: Request) => {
 
   return session.user
 }
+
+export const requireSuperAdmin = async (request: Request) => {
+  const session = await auth.api.getSession(request)
+  if (!session?.user) {
+    throw redirect(href('/login'))
+  }
+  if (session.user.role !== 'admin') {
+    throw redirect(href('/'))
+  }
+  return session.user
+}

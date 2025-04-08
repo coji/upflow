@@ -1,7 +1,7 @@
 import { Outlet, href } from 'react-router'
 import { AppHeader, AppLayout } from '~/app/components'
-import { requireUser } from '~/app/features/auth/services/auth'
 import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
+import { requireUser } from '~/app/libs/auth.server'
 import type { Route } from './+types/_layout'
 
 export const handle = {
@@ -19,10 +19,7 @@ export default function DashboardLayoutPage({
   const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (
-    <AppLayout
-      header={<AppHeader user={user} />}
-      breadcrumbs={<AppBreadcrumbs />}
-    >
+    <AppLayout header={<AppHeader />} breadcrumbs={<AppBreadcrumbs />}>
       <Outlet />
     </AppLayout>
   )

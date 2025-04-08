@@ -15,15 +15,17 @@ import {
   HStack,
   Spacer,
 } from '~/app/components/ui'
-import type { SessionUser } from '~/app/features/auth/types/types'
 import { CompanySwitcher } from '~/app/routes/resources+/company/route'
+import { useSession } from '../libs/auth-client'
 
 interface AppHeaderProps {
-  user?: SessionUser
   isAdmin?: boolean
 }
 
-export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
+export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
+  const { data: session } = useSession()
+  const user = session?.user
+
   return (
     <header className="flex items-center px-4 py-1">
       <HStack>
@@ -33,7 +35,7 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
           </Link>
         </Heading>
 
-        {user && <CompanySwitcher isAdmin={isAdmin} />}
+        {session && <CompanySwitcher isAdmin={isAdmin} />}
       </HStack>
 
       <Spacer />
@@ -43,11 +45,8 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar>
-                <AvatarImage
-                  src={user.pictureUrl ?? undefined}
-                  alt={user.displayName}
-                />
-                <AvatarFallback>{user.displayName}</AvatarFallback>
+                <AvatarImage src={user.image ?? undefined} alt={user.name} />
+                <AvatarFallback>{user.name}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -55,7 +54,7 @@ export const AppHeader = ({ user, isAdmin = false }: AppHeaderProps) => {
             <DropdownMenuLabel>
               <HStack>
                 <div>
-                  <p className="text-sm">{user.displayName}</p>
+                  <p className="text-sm">{user.name}</p>
                   <p className="text-xs text-gray-500">{user.email}</p>
                 </div>
                 <Spacer />

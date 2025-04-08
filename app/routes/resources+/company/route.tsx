@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/app/components/ui'
-import { requireUser } from '~/app/features/auth/services/auth'
+import { requireUser } from '~/app/libs/auth.server'
 import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/route'
 import { listUserCompanies } from './functions.server'
