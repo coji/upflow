@@ -1,32 +1,47 @@
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite'
 import { db, type DB } from '~/app/services/db.server'
 
-export const getPullRequestReport = async (companyId: DB.Company['id']) => {
+export const getPullRequestReport = async (
+  organizationId: DB.Organization['id'],
+) => {
   return await db
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .where('repositories.companyId', '==', companyId)
+    .where('repositories.organizationId', '=', organizationId)
     .orderBy('mergedAt', 'desc')
     .selectAll('pullRequests')
     .execute()
 }
 
-export const listAllCompanies = async () => {
+export const listAllOrganizations = async () => {
   return await db
-    .selectFrom('companies')
+    .selectFrom('organizations')
     .select((eb) => [
       'id',
       'name',
-      'isActive',
-      'releaseDetectionKey',
-      'releaseDetectionMethod',
-      'updatedAt',
+      'slug',
       'createdAt',
       jsonObjectFrom(
         eb
+          .selectFrom('organizationSettings')
+          .selectAll()
+          .whereRef(
+            'organizationSettings.organizationId',
+            '==',
+            'organizations.id',
+          ),
+      ).as('organizationSetting'),
+      jsonObjectFrom(
+        eb
           .selectFrom('integrations')
-          .select(['id', 'companyId', 'method', 'provider', 'privateToken'])
-          .whereRef('integrations.companyId', '==', 'companies.id'),
+          .select([
+            'id',
+            'organizationId',
+            'method',
+            'provider',
+            'privateToken',
+          ])
+          .whereRef('integrations.organizationId', '==', 'organizations.id'),
       ).as('integration'),
       jsonArrayFrom(
         eb
@@ -35,7 +50,7 @@ export const listAllCompanies = async () => {
             'id',
             'repo',
             'owner',
-            'companyId',
+            'organizationId',
             'integrationId',
             'provider',
             'releaseDetectionKey',
@@ -43,42 +58,57 @@ export const listAllCompanies = async () => {
             'updatedAt',
             'createdAt',
           ])
-          .whereRef('repositories.companyId', '==', 'companies.id'),
+          .whereRef('repositories.organizationId', '=', 'organizations.id'),
       ).as('repositories'),
       jsonObjectFrom(
         eb
           .selectFrom('exportSettings')
           .select([
             'id',
-            'companyId',
+            'organizationId',
             'sheetId',
             'clientEmail',
             'privateKey',
             'updatedAt',
             'createdAt',
           ])
-          .whereRef('exportSettings.companyId', '==', 'companies.id'),
+          .whereRef('exportSettings.organizationId', '=', 'organizations.id'),
       ).as('exportSetting'),
     ])
     .execute()
 }
 
-export const getCompany = async (companyId: DB.Company['id']) => {
+export const getOrganization = async (
+  organizationId: DB.Organization['id'],
+) => {
   return await db
-    .selectFrom('companies')
+    .selectFrom('organizations')
     .select((eb) => [
       'id',
       'name',
-      'isActive',
-      'releaseDetectionKey',
-      'releaseDetectionMethod',
-      'updatedAt',
+      'slug',
       'createdAt',
       jsonObjectFrom(
         eb
+          .selectFrom('organizationSettings')
+          .selectAll()
+          .whereRef(
+            'organizationSettings.organizationId',
+            '==',
+            'organizations.id',
+          ),
+      ).as('organizationSetting'),
+      jsonObjectFrom(
+        eb
           .selectFrom('integrations')
-          .select(['id', 'companyId', 'method', 'provider', 'privateToken'])
-          .whereRef('integrations.companyId', '==', 'companies.id'),
+          .select([
+            'id',
+            'organizationId',
+            'method',
+            'provider',
+            'privateToken',
+          ])
+          .whereRef('integrations.organizationId', '=', 'organizations.id'),
       ).as('integration'),
       jsonArrayFrom(
         eb
@@ -87,7 +117,7 @@ export const getCompany = async (companyId: DB.Company['id']) => {
             'id',
             'repo',
             'owner',
-            'companyId',
+            'organizationId',
             'integrationId',
             'provider',
             'releaseDetectionKey',
@@ -95,23 +125,23 @@ export const getCompany = async (companyId: DB.Company['id']) => {
             'repositories.updatedAt',
             'repositories.createdAt',
           ])
-          .whereRef('repositories.companyId', '==', 'companies.id'),
+          .whereRef('repositories.organizationId', '=', 'organizations.id'),
       ).as('repositories'),
       jsonObjectFrom(
         eb
           .selectFrom('exportSettings')
           .select([
             'id',
-            'companyId',
+            'organizationId',
             'sheetId',
             'clientEmail',
             'privateKey',
             'updatedAt',
             'createdAt',
           ])
-          .whereRef('exportSettings.companyId', '==', 'companies.id'),
+          .whereRef('exportSettings.organizationId', '=', 'organizations.id'),
       ).as('exportSetting'),
     ])
-    .where('id', '==', companyId)
+    .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 }

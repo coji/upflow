@@ -31,11 +31,11 @@ export const createGitHubProvider = (
     })
     const aggregator = createAggregator()
     const store = createStore({
-      companyId: repository.companyId,
+      organizationId: repository.organizationId,
       repositoryId: repository.id,
     })
     const pathBuilder = createPathBuilder({
-      companyId: repository.companyId,
+      organizationId: repository.organizationId,
       repositoryId: repository.id,
     })
 
@@ -106,7 +106,7 @@ export const createGitHubProvider = (
   }
 
   const analyze = async (
-    company: Selectable<DB.Company>,
+    organizationSetting: Selectable<DB.OrganizationSetting>,
     repositories: Selectable<DB.Repository>[],
   ) => {
     let allPulls: Selectable<DB.PullRequest>[] = []
@@ -120,17 +120,19 @@ export const createGitHubProvider = (
 
     for (const repository of repositories) {
       const store = createStore({
-        companyId: repository.companyId,
+        organizationId: repository.organizationId,
         repositoryId: repository.id,
       })
       const { pulls, reviewResponses } = await buildPullRequests(
         {
-          companyId: repository.companyId,
+          organizationId: repository.organizationId,
           repositoryId: repository.id,
           releaseDetectionMethod:
-            repository.releaseDetectionMethod ?? company.releaseDetectionMethod,
+            repository.releaseDetectionMethod ??
+            organizationSetting.releaseDetectionMethod,
           releaseDetectionKey:
-            repository.releaseDetectionKey ?? company.releaseDetectionKey,
+            repository.releaseDetectionKey ??
+            organizationSetting.releaseDetectionKey,
         },
         await store.loader.pullrequests(),
       )

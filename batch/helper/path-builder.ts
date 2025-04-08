@@ -1,11 +1,11 @@
 import path from 'node:path'
 
 interface createPathBuilderProps {
-  companyId: string
+  organizationId: string
   repositoryId: string
 }
 export const createPathBuilder = ({
-  companyId,
+  organizationId,
   repositoryId,
 }: createPathBuilderProps) => {
   const jsonPath = (filename: string) => {
@@ -15,7 +15,7 @@ export const createPathBuilder = ({
         path.join(import.meta.dirname, '..', 'data'),
       'json',
     )
-    return path.join(JSON_DIR, companyId, repositoryId, filename)
+    return path.join(JSON_DIR, organizationId, repositoryId, filename)
   }
   const jsonFilename = (element: string, iid: number) =>
     `${element}/${iid}-${element}.json`

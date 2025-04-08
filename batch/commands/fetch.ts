@@ -1,11 +1,11 @@
 import consola from 'consola'
 import invariant from 'tiny-invariant'
-import { getCompany } from '~/batch/db'
+import { getOrganization } from '~/batch/db'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider'
 
 interface FetchCommandProps {
-  companyId?: string
+  organizationId?: string
   repositoryId?: string
   refresh: boolean
   delay?: number
@@ -13,23 +13,23 @@ interface FetchCommandProps {
 }
 
 export async function fetchCommand(props: FetchCommandProps) {
-  if (!props.companyId) {
-    consola.error('Error: company id should specify')
+  if (!props.organizationId) {
+    consola.error('Error: organization id should specify')
     consola.info(
       (await allConfigs())
-        .map((c) => `${c.companyName}\t${c.companyId}`)
+        .map((o) => `${o.organizationName}\t${o.organizationId}`)
         .join('\n'),
     )
     return
   }
 
-  const company = await getCompany(props.companyId)
-  invariant(company.integration, 'integration should related')
+  const organization = await getOrganization(props.organizationId)
+  invariant(organization.integration, 'integration should related')
 
-  const provider = createProvider(company.integration)
-  invariant(provider, `unknown provider: ${company.integration.provider}`)
+  const provider = createProvider(organization.integration)
+  invariant(provider, `unknown provider: ${organization.integration.provider}`)
 
-  const repositories = company.repositories.filter((repo) => {
+  const repositories = organization.repositories.filter((repo) => {
     return props.repositoryId
       ? repo.id === props.repositoryId
       : repo.id !== props.exclude

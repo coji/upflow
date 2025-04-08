@@ -1,26 +1,26 @@
 import consola from 'consola'
 import invariant from 'tiny-invariant'
-import { getCompany, getPullRequestReport } from '~/batch/db'
+import { getOrganization, getPullRequestReport } from '~/batch/db'
 import { allConfigs } from '../config'
 import { timeFormatTz } from '../helper/timeformat'
 
 interface reportCommandProps {
-  companyId?: string
+  organizationId?: string
 }
 
-export async function reportCommand({ companyId }: reportCommandProps) {
-  if (!companyId) {
+export async function reportCommand({ organizationId }: reportCommandProps) {
+  if (!organizationId) {
     consola.error('config should specified')
     consola.info(
       (await allConfigs())
-        .map((c) => `${c.companyName}\t${c.companyId}`)
+        .map((c) => `${c.organizationName}\t${c.organizationId}`)
         .join('\n'),
     )
     return
   }
 
-  const company = await getCompany(companyId)
-  invariant(company.integration, 'integration should related')
+  const organization = await getOrganization(organizationId)
+  invariant(organization.integration, 'integration should related')
 
   console.log(
     [
@@ -46,7 +46,7 @@ export async function reportCommand({ companyId }: reportCommandProps) {
   )
   const tz = 'Asia/Tokyo'
 
-  const prList = await getPullRequestReport(company.id)
+  const prList = await getPullRequestReport(organization.id)
   for (const pr of prList) {
     console.log(
       [

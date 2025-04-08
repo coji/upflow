@@ -1,6 +1,6 @@
 import consola from 'consola'
 import invariant from 'tiny-invariant'
-import { getCompany, upsertPullRequest } from '~/batch/db'
+import { getOrganization, upsertPullRequest } from '~/batch/db'
 import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,
@@ -9,28 +9,32 @@ import { allConfigs } from '../config'
 import { createProvider } from '../provider/index'
 
 interface UpsertCommandProps {
-  companyId?: string
+  organizationId?: string
 }
-export async function upsertCommand({ companyId }: UpsertCommandProps) {
-  if (!companyId) {
+export async function upsertCommand({ organizationId }: UpsertCommandProps) {
+  if (!organizationId) {
     consola.error('config should specified')
     consola.info(
       (await allConfigs())
-        .map((c) => `${c.companyName}\t${c.companyId}`)
+        .map((o) => `${o.organizationName}\t${o.organizationId}`)
         .join('\n'),
     )
     return
   }
 
-  const company = await getCompany(companyId)
-  invariant(company.integration, 'integration should related')
+  const organization = await getOrganization(organizationId)
+  invariant(organization.integration, 'integration should related')
 
-  const provider = createProvider(company.integration)
-  invariant(provider, `unknown provider ${company.integration.provider}`)
+  const provider = createProvider(organization.integration)
+  invariant(provider, `unknown provider ${organization.integration.provider}`)
+  invariant(
+    organization.organizationSetting,
+    'organization setting should related',
+  )
 
   const { pulls, reviewResponses } = await provider.analyze(
-    company,
-    company.repositories,
+    organization.organizationSetting,
+    organization.repositories,
   )
 
   // upsert
@@ -38,11 +42,11 @@ export async function upsertCommand({ companyId }: UpsertCommandProps) {
     await upsertPullRequest(pr)
   }
 
-  if (company.exportSetting) {
-    await exportPullsToSpreadsheet(pulls, company.exportSetting) // google spreadsheet にエクスポート
+  if (organization.exportSetting) {
+    await exportPullsToSpreadsheet(pulls, organization.exportSetting) // google spreadsheet にエクスポート
     await exportReviewResponsesToSpreadsheet(
       reviewResponses,
-      company.exportSetting,
+      organization.exportSetting,
     )
   }
 }

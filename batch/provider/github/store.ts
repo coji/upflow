@@ -10,11 +10,14 @@ import type {
 } from './model'
 
 interface createStoreProps {
-  companyId: string
+  organizationId: string
   repositoryId: string
 }
-export const createStore = ({ companyId, repositoryId }: createStoreProps) => {
-  const pathBuilder = createPathBuilder({ companyId, repositoryId })
+export const createStore = ({
+  organizationId,
+  repositoryId,
+}: createStoreProps) => {
+  const pathBuilder = createPathBuilder({ organizationId, repositoryId })
 
   /**
    * JSON ファイルの読み込み

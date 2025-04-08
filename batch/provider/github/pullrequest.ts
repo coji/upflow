@@ -20,7 +20,7 @@ const nullOrDate = (dateStr?: Date | string | null) => {
 
 export const buildPullRequests = async (
   config: {
-    companyId: string
+    organizationId: string
     repositoryId: string
     releaseDetectionMethod: string
     releaseDetectionKey: string
@@ -124,7 +124,7 @@ export const buildPullRequests = async (
     } catch (e) {
       logger.error(
         'analyze failure:',
-        config.companyId,
+        config.organizationId,
         config.repositoryId,
         pr.number,
         e,
