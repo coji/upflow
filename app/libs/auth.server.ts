@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { admin } from 'better-auth/plugins/admin'
+import { organization } from 'better-auth/plugins/organization'
 import { href, redirect } from 'react-router'
 import { dialect } from '~/app/services/db.server'
 
@@ -74,46 +75,46 @@ export const auth = betterAuth({
         },
       },
     }),
-    // organization({
-    //   schema: {
-    //     session: {
-    //       fields: {
-    //         activeOrganizationId: 'active_organization_id',
-    //       },
-    //     },
-    //     team: {
-    //       modelName: 'teams',
-    //       fields: {
-    //         organizationId: 'organization_id',
-    //         createdAt: 'created_at',
-    //         updatedAt: 'updated_at',
-    //       },
-    //     },
-    //     organization: {
-    //       modelName: 'organizations',
-    //       fields: {
-    //         organizationId: 'organization_id',
-    //         userId: 'user_id',
-    //         createdAt: 'created_at',
-    //       },
-    //     },
-    //     member: {
-    //       modelName: 'members',
-    //       fields: {
-    //         organizationId: 'organization_id',
-    //         userId: 'user_id',
-    //         createdAt: 'created_at',
-    //       },
-    //     },
-    //     invitation: {
-    //       modelName: 'invitations',
-    //       fields: {
-    //         organizationId: 'organization_id',
-    //         expiresAt: 'expires_at',
-    //       },
-    //     },
-    //   },
-    // }),
+    organization({
+      schema: {
+        session: {
+          fields: {
+            activeOrganizationId: 'active_organization_id',
+          },
+        },
+        team: {
+          modelName: 'teams',
+          fields: {
+            organizationId: 'organization_id',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at',
+          },
+        },
+        organization: {
+          modelName: 'organizations',
+          fields: {
+            organizationId: 'organization_id',
+            userId: 'user_id',
+            createdAt: 'created_at',
+          },
+        },
+        member: {
+          modelName: 'members',
+          fields: {
+            organizationId: 'organization_id',
+            userId: 'user_id',
+            createdAt: 'created_at',
+          },
+        },
+        invitation: {
+          modelName: 'invitations',
+          fields: {
+            organizationId: 'organization_id',
+            expiresAt: 'expires_at',
+          },
+        },
+      },
+    }),
   ],
 })
 
