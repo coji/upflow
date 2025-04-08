@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/app/components/ui'
+import { authClient } from '~/app/libs/auth-client'
 import { requireUser } from '~/app/libs/auth.server'
 import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/route'
@@ -18,6 +19,7 @@ import { useCurrentCompany } from './hooks/useCurrentCompany'
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const user = await requireUser(request)
   const companies = await listUserCompanies(user.id)
+
   return { user, companies }
 }
 
@@ -31,6 +33,8 @@ export const CompanySwitcher = ({
 }: CompanySwitcherProps) => {
   const fetcher = useFetcher<typeof loader>()
   const [open, setOpen] = useState(false)
+  const { data: organizations } = authClient.useListOrganizations()
+  const { data: activeOrganization } = authClient.useActiveOrganization()
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {

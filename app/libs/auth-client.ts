@@ -5,9 +5,7 @@ const baseURL = import.meta.env.DEV
   ? 'http://localhost:5173'
   : 'https://upflow.team'
 
-const authClient = createAuthClient({
+export const authClient = createAuthClient({
   baseURL,
   plugins: [adminClient(), organizationClient()],
 })
-
-export const { signIn, signOut, useSession } = authClient
