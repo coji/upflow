@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { admin } from 'better-auth/plugins/admin'
 import { organization } from 'better-auth/plugins/organization'
+import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { dialect } from '~/app/services/db.server'
 
@@ -13,6 +14,9 @@ export const auth = betterAuth({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     },
+  },
+  advanced: {
+    generateId: () => nanoid(),
   },
   user: {
     modelName: 'users',

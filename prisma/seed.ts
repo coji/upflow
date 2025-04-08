@@ -13,8 +13,9 @@ async function seed() {
     .values({
       id: nanoid(),
       email,
-      displayName: 'Coji Mizoguchi',
-      locale: 'ja',
+      name: 'Coji Mizoguchi',
+      emailVerified: sql`CURRENT_TIMESTAMP`,
+      image: 'https://avatars.githubusercontent.com/u/12345678?v=4',
       role: 'admin',
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
@@ -31,17 +32,6 @@ async function seed() {
     })
     .returningAll()
     .executeTakeFirstOrThrow()
-
-  // company user
-  await db
-    .insertInto('companyUsers')
-    .values({
-      companyId: company.id,
-      userId: user.id,
-      role: 'admin',
-      updatedAt: sql`CURRENT_TIMESTAMP`,
-    })
-    .execute()
 
   // integration
   const integration = await db
