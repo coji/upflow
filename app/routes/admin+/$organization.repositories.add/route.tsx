@@ -138,7 +138,9 @@ export default function AddRepositoryPage({
         <HStack>
           <div className="flex-1">
             <CardTitle>Add Repositories</CardTitle>
-            <CardDescription>Add repositories to the company</CardDescription>
+            <CardDescription>
+              Add repositories to the organization
+            </CardDescription>
           </div>
           <Form method="get">
             {/* 既存のURLパラメタをすべてつける */}

@@ -20,7 +20,7 @@ import {
 import type { Route } from './+types/route'
 import { createOrganization } from './mutations.server'
 
-export const handle = { breadcrumb: () => ({ label: 'Create Company' }) }
+export const handle = { breadcrumb: () => ({ label: 'Create Organization' }) }
 
 export const schema = z.object({
   organizationId: z
@@ -59,13 +59,13 @@ const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create a new company</CardTitle>
+        <CardTitle>Create a new organization</CardTitle>
       </CardHeader>
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
-              <Label htmlFor={organizationId.id}>Company ID</Label>
+              <Label htmlFor={organizationId.id}>Organization ID</Label>
               <Input
                 autoFocus
                 {...getInputProps(organizationId, { type: 'text' })}
@@ -74,7 +74,7 @@ const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={organizationName.id}>Company name</Label>
+              <Label htmlFor={organizationName.id}>Organization name</Label>
               <Input {...getInputProps(organizationName, { type: 'text' })} />
               <div className="text-destructive">{organizationName.errors}</div>
             </fieldset>
