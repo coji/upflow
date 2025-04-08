@@ -6,7 +6,7 @@ FROM node:${NODE_VERSION}-slim AS base
 
 # Install openssl for Prisma
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip vim \
+  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip vim build-essential python3 \
   && apt-get clean \
   && npm i -g pnpm@${PNPM_VERSION} \
   && rm -rf /var/lib/apt/lists/* 
@@ -39,7 +39,7 @@ WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --offline --frozen-lockfile
+RUN pnpm install --offline --frozen-lockfile && pnpm rebuild better-sqlite3
 
 COPY . .
 RUN pnpm exec prisma generate \

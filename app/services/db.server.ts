@@ -18,11 +18,7 @@ export { sql }
 export type { DB, Insertable, Selectable, Updateable }
 
 const filename = `${process.env.NODE_ENV === 'production' ? '' : '.'}${new URL(process.env.DATABASE_URL).pathname}`
-const database = new SQLite(filename, {
-  verbose: (message) => {
-    console.log(message)
-  },
-})
+const database = new SQLite(filename)
 export const dialect = new SqliteDialect({ database })
 export const db = new Kysely<DB.DB>({
   dialect,
