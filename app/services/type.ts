@@ -19,17 +19,7 @@ export type Account = {
     createdAt: string;
     updatedAt: string;
 };
-export type Company = {
-    id: string;
-    name: string;
-    releaseDetectionMethod: Generated<string>;
-    releaseDetectionKey: Generated<string>;
-    updatedAt: string;
-    createdAt: Generated<string>;
-    isActive: Generated<number>;
-};
 export type CompanyGithubUser = {
-    companyId: string;
     userId: string | null;
     login: string;
     name: string | null;
@@ -38,22 +28,23 @@ export type CompanyGithubUser = {
     displayName: string;
     updatedAt: string;
     createdAt: Generated<string>;
+    organizationId: string;
 };
 export type ExportSetting = {
     id: string;
-    companyId: string;
     sheetId: string;
     clientEmail: string;
     privateKey: string;
     updatedAt: string;
     createdAt: Generated<string>;
+    organizationId: string;
 };
 export type Integration = {
     id: string;
     provider: string;
     method: string;
     privateToken: string | null;
-    companyId: string;
+    organizationId: string;
 };
 export type Invitation = {
     id: string;
@@ -79,6 +70,15 @@ export type Organization = {
     createdAt: Generated<string>;
     metadata: string | null;
 };
+export type OrganizationSetting = {
+    id: string;
+    organizationId: string;
+    releaseDetectionMethod: Generated<string>;
+    releaseDetectionKey: Generated<string>;
+    isActive: Generated<number>;
+    updatedAt: string;
+    createdAt: Generated<string>;
+};
 export type PullRequest = {
     repo: string;
     number: number;
@@ -103,7 +103,6 @@ export type PullRequest = {
 };
 export type Repository = {
     id: string;
-    companyId: string;
     integrationId: string;
     provider: string;
     owner: string;
@@ -112,6 +111,7 @@ export type Repository = {
     releaseDetectionKey: Generated<string>;
     updatedAt: string;
     createdAt: Generated<string>;
+    organizationId: string;
 };
 export type Session = {
     id: string;
@@ -148,12 +148,12 @@ export type Verification = {
 };
 export type DB = {
     accounts: Account;
-    companies: Company;
     companyGithubUsers: CompanyGithubUser;
     exportSettings: ExportSetting;
     integrations: Integration;
     invitations: Invitation;
     members: Member;
+    organizationSettings: OrganizationSetting;
     organizations: Organization;
     pullRequests: PullRequest;
     repositories: Repository;

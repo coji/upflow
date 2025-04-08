@@ -35,20 +35,22 @@ model User {
   @@map("users")
 }
 
-model Company {
-  id                     String              @id @default(cuid())
-  name                   String
-  releaseDetectionMethod String              @default("branch") @map("release_detection_method")
-  releaseDetectionKey    String              @default("production") @map("release_detection_key")
-  updatedAt              DateTime            @updatedAt @map("updated_at")
-  createdAt              DateTime            @default(now()) @map("created_at")
-  isActive               Boolean             @default(true) @map("is_active")
-  exportSetting          ExportSetting?
-  integration            Integration?
-  repositories           Repository[]
-  GithubUser             CompanyGithubUser[]
+// Removed Company model as it's now obsolete
+// model Company { ... }
 
-  @@map("companies")
+// New model for organization-specific settings
+model OrganizationSetting {
+  id                     String   @id @default(cuid())
+  organizationId         String   @unique @map("organization_id") // Link to Organization
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  releaseDetectionMethod String   @default("branch") @map("release_detection_method")
+  releaseDetectionKey    String   @default("production") @map("release_detection_key")
+  isActive               Boolean  @default(true) @map("is_active")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  @@map("organization_settings")
 }
 
 model Integration {
@@ -56,16 +58,20 @@ model Integration {
   provider     String
   method       String
   privateToken String?      @map("private_token")
-  companyId    String       @unique @map("company_id")
-  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // companyId    String?      @map("company_id") // Removed obsolete field
+
+  organizationId String       @unique @map("organization_id") // Made non-nullable
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade) // Made non-nullable
+
   repositories Repository[]
 
   @@map("integrations")
+  @@index([organizationId]) // Added index for new FK
 }
 
 model Repository {
   id                     String        @id
-  companyId              String        @map("company_id")
+  // companyId              String?       @map("company_id") // Removed obsolete field
   integrationId          String        @map("integration_id")
   provider               String
   owner                  String
@@ -75,11 +81,15 @@ model Repository {
   updatedAt              DateTime      @updatedAt @map("updated_at")
   createdAt              DateTime      @default(now()) @map("created_at")
   integration            Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // company                Company?      @relation(fields: [companyId], references: [id], onDelete: Cascade) // Removed obsolete relation
   pullrequest            PullRequest[]
 
-  @@unique([companyId, integrationId, owner, repo])
+  organizationId String       @map("organization_id") // Made non-nullable
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade) // Made non-nullable
+
+  @@unique([organizationId, integrationId, owner, repo]) // Unique constraint already uses organizationId
   @@map("repositories")
+  @@index([organizationId]) // Added index for new FK
 }
 
 model PullRequest {
@@ -111,19 +121,22 @@ model PullRequest {
 
 model ExportSetting {
   id          String   @id @default(cuid())
-  companyId   String   @unique @map("company_id")
+  // companyId   String?  @unique @map("company_id") // Removed obsolete field
   sheetId     String   @map("sheet_id")
   clientEmail String   @map("client_email")
   privateKey  String   @map("private_key")
   updatedAt   DateTime @updatedAt @map("updated_at")
   createdAt   DateTime @default(now()) @map("created_at")
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade) // Removed obsolete relation
+
+  organizationId String       @unique @map("organization_id") // Made non-nullable
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade) // Made non-nullable
 
   @@map("export_settings")
 }
 
 model CompanyGithubUser {
-  companyId   String   @map("company_id")
+  // companyId   String   @map("company_id") // Removed obsolete field
   userId      String?  @map("user_id")
   login       String
   name        String?
@@ -133,10 +146,14 @@ model CompanyGithubUser {
   updatedAt   DateTime @updatedAt @map("updated_at")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  Company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade) // Removed obsolete relation
 
-  @@id([companyId, login])
+  organizationId String       @map("organization_id") // Made non-nullable
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade) // Made non-nullable
+
+  @@id([organizationId, login]) // Final primary key using organizationId
   @@map("company_github_users")
+  @@index([organizationId]) // Index already exists
 }
 
 model Session {
@@ -195,6 +212,13 @@ model Organization {
   metadata    String?
   members     Member[]
   invitations Invitation[]
+
+  // Relations added
+  setting       OrganizationSetting?
+  exportSetting ExportSetting?
+  integration   Integration?
+  repositories  Repository[]
+  githubUsers   CompanyGithubUser[] // Removed explicit relation name
 
   @@unique([slug])
   @@map("organizations")
