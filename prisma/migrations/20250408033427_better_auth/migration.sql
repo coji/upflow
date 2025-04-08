@@ -125,7 +125,6 @@ CREATE TABLE "new_users" (
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL
 );
-INSERT INTO "new_users" ("created_at", "email", "id", "role", "updated_at") SELECT "created_at", "email", "id", "role", "updated_at" FROM "users";
 DROP TABLE "users";
 ALTER TABLE "new_users" RENAME TO "users";
 PRAGMA foreign_keys=ON;
