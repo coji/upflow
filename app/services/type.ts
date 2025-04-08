@@ -4,6 +4,21 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export type Account = {
+    id: string;
+    accountId: string;
+    providerId: string;
+    userId: string;
+    accessToken: string | null;
+    refreshToken: string | null;
+    idToken: string | null;
+    accessTokenExpiresAt: string | null;
+    refreshTokenExpiresAt: string | null;
+    scope: string | null;
+    password: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
 export type Company = {
     id: string;
     name: string;
@@ -24,15 +39,6 @@ export type CompanyGithubUser = {
     updatedAt: string;
     createdAt: Generated<string>;
 };
-export type CompanyUser = {
-    companyId: string;
-    userId: string;
-    role: string;
-    invitedAt: string | null;
-    activatedAt: string | null;
-    updatedAt: string;
-    createdAt: Generated<string>;
-};
 export type ExportSetting = {
     id: string;
     companyId: string;
@@ -48,6 +54,30 @@ export type Integration = {
     method: string;
     privateToken: string | null;
     companyId: string;
+};
+export type Invitation = {
+    id: string;
+    organizationId: string;
+    email: string;
+    role: string | null;
+    status: string;
+    expiresAt: string;
+    inviterId: string;
+};
+export type Member = {
+    id: string;
+    organizationId: string;
+    userId: string;
+    role: string;
+    createdAt: string;
+};
+export type Organization = {
+    id: string;
+    name: string;
+    slug: string | null;
+    logo: string | null;
+    createdAt: Generated<string>;
+    metadata: string | null;
 };
 export type PullRequest = {
     repo: string;
@@ -83,46 +113,51 @@ export type Repository = {
     updatedAt: string;
     createdAt: Generated<string>;
 };
-export type Team = {
+export type Session = {
     id: string;
-    name: string;
+    expiresAt: string;
+    token: string;
+    createdAt: string;
     updatedAt: string;
-    createdAt: Generated<string>;
-    companyId: string;
-};
-export type TeamRepository = {
-    teamId: string;
-    repositoryId: string;
-    updatedAt: string;
-    createdAt: Generated<string>;
-};
-export type TeamUser = {
-    teamId: string;
+    ipAddress: string | null;
+    userAgent: string | null;
     userId: string;
-    role: string;
-    updatedAt: string;
-    createdAt: Generated<string>;
+    impersonatedBy: string | null;
+    activeOrganizationId: string | null;
 };
 export type User = {
     id: string;
+    name: string;
     email: string;
-    displayName: string;
-    pictureUrl: string | null;
-    locale: string;
-    role: Generated<string>;
-    updatedAt: string;
+    emailVerified: number;
+    image: string | null;
+    role: string;
+    banned: number | null;
+    banReason: string | null;
+    banExpires: string | null;
     createdAt: Generated<string>;
+    updatedAt: string;
+};
+export type Verification = {
+    id: string;
+    identifier: string;
+    value: string;
+    expiresAt: string;
+    createdAt: string | null;
+    updatedAt: string | null;
 };
 export type DB = {
+    accounts: Account;
     companies: Company;
     companyGithubUsers: CompanyGithubUser;
-    companyUsers: CompanyUser;
     exportSettings: ExportSetting;
     integrations: Integration;
+    invitations: Invitation;
+    members: Member;
+    organizations: Organization;
     pullRequests: PullRequest;
     repositories: Repository;
-    teamRepositories: TeamRepository;
-    teamUsers: TeamUser;
-    teams: Team;
+    sessions: Session;
     users: User;
+    verifications: Verification;
 };

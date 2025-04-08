@@ -10,6 +10,7 @@ import {
 } from '~/app/components/ui'
 import { GoogleLoginButton } from '~/app/features/auth/components/GoogleLoginButton'
 import { getSessionUser } from '~/app/features/auth/services/auth'
+import { signIn } from '~/app/libs/auth-client'
 import type { Route } from './+types/login'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -32,7 +33,14 @@ export default function LoginPage() {
 
           <CardContent>
             <Stack>
-              <GoogleLoginButton className="w-full" variant="default">
+              <GoogleLoginButton
+                className="w-full"
+                variant="default"
+                type="button"
+                onClick={() => {
+                  signIn.social({ provider: 'google' })
+                }}
+              >
                 Googleでログイン
               </GoogleLoginButton>
 
