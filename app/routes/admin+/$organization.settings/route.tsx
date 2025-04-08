@@ -10,10 +10,10 @@ import {
   OrganizationSettings,
 } from './forms'
 import {
-  companySettingsAction,
-  deleteCompanyAction,
+  deleteOrganizationAction,
   exportSettingsAction,
   integrationSettingsAction,
+  organizationSettingsAction,
 } from './forms/actions.server'
 import {
   getExportSetting,
@@ -52,7 +52,7 @@ export const action = async ({
 
   return await match(intent)
     .with(INTENTS.organizationSettings, () =>
-      companySettingsAction({ request, params, context }),
+      organizationSettingsAction({ request, params, context }),
     )
     .with(INTENTS.integrationSettings, () =>
       integrationSettingsAction({
@@ -65,12 +65,12 @@ export const action = async ({
       exportSettingsAction({ request, params, context }),
     )
     .with(INTENTS.deleteOrganization, () =>
-      deleteCompanyAction({ request, params, context }),
+      deleteOrganizationAction({ request, params, context }),
     )
     .exhaustive()
 }
 
-export default function CompanySettingsPage({
+export default function OrganizationSettingsPage({
   loaderData: { organization, organizationSetting, exportSetting, integration },
 }: Route.ComponentProps) {
   return (

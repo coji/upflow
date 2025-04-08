@@ -50,7 +50,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 }
 
-const CompanyNewPage = ({ actionData }: Route.ComponentProps) => {
+const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
   const [form, { organizationId, organizationName }] = useForm({
     lastResult: actionData?.lastResult,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
@@ -104,4 +104,4 @@ const CompanyNewPage = ({ actionData }: Route.ComponentProps) => {
     </Card>
   )
 }
-export default CompanyNewPage
+export default OrganizationNewPage

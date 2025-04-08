@@ -38,7 +38,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   return { organization }
 }
 
-export default function CompanyLayout({
+export default function OrganizationLayout({
   loaderData: { organization },
 }: Route.ComponentProps) {
   const location = useLocation()

@@ -15,14 +15,14 @@ export const loader = async ({ request }: Route.LoaderArgs) => ({
   organizations: await listOrganizations(),
 })
 
-const AdminCompanyIndex = ({
+const AdminOrganizationIndex = ({
   loaderData: { organizations },
 }: Route.ComponentProps) => {
   return (
     <div className="grid grid-cols-[15rem_1fr] gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Companies</CardTitle>
+          <CardTitle>Organizations</CardTitle>
         </CardHeader>
         <CardContent>
           {organizations.map((organization) => (
@@ -49,4 +49,4 @@ const AdminCompanyIndex = ({
     </div>
   )
 }
-export default AdminCompanyIndex
+export default AdminOrganizationIndex

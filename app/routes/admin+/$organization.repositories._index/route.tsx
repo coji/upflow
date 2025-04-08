@@ -29,7 +29,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
   return { organizationId, repositories }
 }
 
-export default function CompanyRepositoryIndexPage({
+export default function OrganizationRepositoryIndexPage({
   loaderData: { organizationId, repositories },
 }: Route.ComponentProps) {
   return (
