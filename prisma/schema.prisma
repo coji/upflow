@@ -30,13 +30,13 @@ model User {
 }
 
 model Company {
-  id                     String         @id @default(cuid())
+  id                     String              @id @default(cuid())
   name                   String
-  releaseDetectionMethod String         @default("branch") @map("release_detection_method")
-  releaseDetectionKey    String         @default("production") @map("release_detection_key")
-  updatedAt              DateTime       @updatedAt @map("updated_at")
-  createdAt              DateTime       @default(now()) @map("created_at")
-  isActive               Boolean        @default(true) @map("is_active")
+  releaseDetectionMethod String              @default("branch") @map("release_detection_method")
+  releaseDetectionKey    String              @default("production") @map("release_detection_key")
+  updatedAt              DateTime            @updatedAt @map("updated_at")
+  createdAt              DateTime            @default(now()) @map("created_at")
+  isActive               Boolean             @default(true) @map("is_active")
   users                  CompanyUser[]
   exportSetting          ExportSetting?
   integration            Integration?
