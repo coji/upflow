@@ -11,35 +11,35 @@ import {
   TabsTrigger,
 } from '~/app/components/ui'
 import type { Route } from './+types/route'
-import { getCompany } from './queries.server'
+import { getOrganization } from './queries.server'
 
 export const meta = ({ data }: Route.MetaArgs) => [
-  { title: `${data?.company.name} - Upflow Admin` },
+  { title: `${data?.organization.name} - Upflow` },
 ]
 
 export const handle = {
-  breadcrumb: ({ company }: Awaited<ReturnType<typeof loader>>) => {
+  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => {
     return {
-      label: company.name,
-      to: href('/admin/:company', { company: company.id }),
+      label: organization.name,
+      to: href('/:organization', { organization: organization.id }),
     }
   },
 }
 
 export const loader = async ({ params }: Route.LoaderArgs) => {
-  const { company: companyId } = zx.parseParams(params, {
-    company: z.string(),
+  const { organization: organizationId } = zx.parseParams(params, {
+    organization: z.string(),
   })
-  const company = await getCompany(companyId)
-  if (!company) {
-    throw new Response('Company not found', { status: 404 })
+  const organization = await getOrganization(organizationId)
+  if (!organization) {
+    throw new Response('Organization not found', { status: 404 })
   }
 
-  return { company }
+  return { organization }
 }
 
 export default function CompanyLayout({
-  loaderData: { company },
+  loaderData: { organization },
 }: Route.ComponentProps) {
   const location = useLocation()
   const tabValue = location.pathname.split('/')?.[2] ?? 'dashboard'
@@ -47,17 +47,23 @@ export default function CompanyLayout({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{company.name}</CardTitle>
+        <CardTitle>{organization.name}</CardTitle>
 
         <Tabs value={tabValue}>
           <TabsList>
             <TabsTrigger value="dashboard" asChild>
-              <Link to={href('/:company', { company: company.id })}>
+              <Link
+                to={href('/:organization', { organization: organization.id })}
+              >
                 Dashboard
               </Link>
             </TabsTrigger>
             <TabsTrigger value="ongoing" asChild>
-              <Link to={href('/:company/ongoing', { company: company.id })}>
+              <Link
+                to={href('/:organization/ongoing', {
+                  organization: organization.id,
+                })}
+              >
                 Ongoing
               </Link>
             </TabsTrigger>

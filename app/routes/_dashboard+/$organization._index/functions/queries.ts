@@ -3,7 +3,7 @@ import { db, type DB } from '~/app/services/db.server'
 import { calculateBusinessHours } from './utils'
 
 export const getMergedPullRequestReport = async (
-  companyId: DB.Company['id'],
+  organizationId: DB.Organization['id'],
   fromDateTime: string | null,
   toDateTime: string | null,
   objective: number,
@@ -16,7 +16,7 @@ export const getMergedPullRequestReport = async (
       'pullRequests.author',
       'companyGithubUsers.login',
     )
-    .where('repositories.companyId', '==', companyId)
+    .where('repositories.organizationId', '=', organizationId)
     .$if(fromDateTime !== null, (qb) =>
       qb.where('mergedAt', '>=', fromDateTime),
     )

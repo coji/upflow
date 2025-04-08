@@ -23,8 +23,8 @@ export type PullRequest = Awaited<
 >[0]
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { company: companyId, objective } = zx.parseParams(params, {
-    company: z.string(),
+  const { organization: organizationId, objective } = zx.parseParams(params, {
+    organization: z.string(),
     objective: z.number().min(0.1).max(30).optional().default(2.0),
   })
 
@@ -45,7 +45,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 
   const pullRequests = await getMergedPullRequestReport(
-    companyId,
+    organizationId,
     from.withTimeZone('UTC').toISOString(),
     to.withTimeZone('UTC').toISOString(),
     objective,
@@ -56,7 +56,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     pullRequests.length > 0 ? (achievementCount / pullRequests.length) * 100 : 0
 
   return {
-    companyId,
+    organizationId,
     pullRequests,
     from,
     to,
@@ -66,7 +66,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 }
 
-export default function CompanyIndex({
+export default function OrganizationIndex({
   loaderData: {
     pullRequests,
     from,

@@ -15,14 +15,18 @@ export type PullRequest = Awaited<
 >[0]
 
 export const loader = async ({ params }: Route.LoaderArgs) => {
-  const { company: companyId } = zx.parseParams(params, {
-    company: z.string(),
+  const { organization: organizationId } = zx.parseParams(params, {
+    organization: z.string(),
   })
   const from = null
   const to = dayjs().utc().toISOString()
 
-  const pullRequests = await getOngoingPullRequestReport(companyId, from, to)
-  return { companyId, pullRequests, from, to }
+  const pullRequests = await getOngoingPullRequestReport(
+    organizationId,
+    from,
+    to,
+  )
+  return { organizationId, pullRequests, from, to }
 }
 
 export default function OngoingPage({
