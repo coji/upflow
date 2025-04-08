@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router'
 import { match } from 'ts-pattern'
 
-export const useCurrentCompany = () => {
+export const useCurrentOrganization = () => {
   const location = useLocation()
   return match(location.pathname)
     .when(

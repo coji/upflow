@@ -9,42 +9,39 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/app/components/ui'
-import { authClient } from '~/app/libs/auth-client'
 import { requireUser } from '~/app/libs/auth.server'
 import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/route'
-import { listUserCompanies } from './functions.server'
-import { useCurrentCompany } from './hooks/useCurrentCompany'
+import { listUserOrganizations } from './functions.server'
+import { useCurrentOrganization } from './hooks/useCurrentOrganization'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const user = await requireUser(request)
-  const companies = await listUserCompanies(user.id)
+  const organizations = await listUserOrganizations(user.id)
 
-  return { user, companies }
+  return { user, organizations }
 }
 
-interface CompanySwitcherProps
+interface OrganizationSwitcherProps
   extends React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger> {
   isAdmin: boolean
 }
-export const CompanySwitcher = ({
+export const OrganizationSwitcher = ({
   className,
   isAdmin,
-}: CompanySwitcherProps) => {
+}: OrganizationSwitcherProps) => {
   const fetcher = useFetcher<typeof loader>()
   const [open, setOpen] = useState(false)
-  const { data: organizations } = authClient.useListOrganizations()
-  const { data: activeOrganization } = authClient.useActiveOrganization()
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    fetcher.load(href('/resources/company'))
+    fetcher.load(href('/resources/organization'))
   }, [])
 
-  const currentCompanyId = useCurrentCompany()
+  const currentOrganizationId = useCurrentOrganization()
 
-  const currentCompany = fetcher.data?.companies.find(
-    (company) => company.id === currentCompanyId,
+  const currentOrganization = fetcher.data?.organizations.find(
+    (org) => org.id === currentOrganizationId,
   )
 
   return (
@@ -57,23 +54,27 @@ export const CompanySwitcher = ({
           className={cn('w-[10rem] justify-between md:w-[12rem]', className)}
         >
           <div>
-            {currentCompany ? currentCompany.name : 'Select Company...'}
+            {currentOrganization
+              ? currentOrganization.name
+              : 'Select Organization...'}
           </div>
           <ChevronsUpDownIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[10rem] p-0 md:w-[12rem]">
-        {fetcher.data?.companies.map((company) => (
-          <DropdownMenuGroup key={company.id}>
+        {fetcher.data?.organizations.map((organization) => (
+          <DropdownMenuGroup key={organization.id}>
             <DropdownMenuItem asChild>
               <Link
                 to={
                   isAdmin
-                    ? href('/admin/:company', { company: company.id })
-                    : href('/:company', { company: company.id })
+                    ? href('/admin/:organization', {
+                        organization: organization.id,
+                      })
+                    : href('/:organization', { organization: organization.id })
                 }
               >
-                {company.name}
+                {organization.name}
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>

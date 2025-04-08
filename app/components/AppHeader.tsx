@@ -16,7 +16,7 @@ import {
   Spacer,
 } from '~/app/components/ui'
 import { authClient } from '~/app/libs/auth-client'
-import { CompanySwitcher } from '~/app/routes/resources+/company/route'
+import { OrganizationSwitcher } from '~/app/routes/resources+/organization/route'
 
 interface AppHeaderProps {
   isAdmin?: boolean
@@ -36,7 +36,7 @@ export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
           </Link>
         </Heading>
 
-        {session && <CompanySwitcher isAdmin={isAdmin} />}
+        {session && <OrganizationSwitcher isAdmin={isAdmin} />}
       </HStack>
 
       <Spacer />
