@@ -16,7 +16,7 @@ import { listUserOrganizations } from './functions.server'
 import { useCurrentOrganization } from './hooks/useCurrentOrganization'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const user = await requireUser(request)
+  const { user } = await requireUser(request)
   const organizations = await listUserOrganizations(user.id)
 
   return { user, organizations }
