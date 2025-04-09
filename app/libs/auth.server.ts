@@ -3,7 +3,7 @@ import { admin } from 'better-auth/plugins/admin'
 import { organization } from 'better-auth/plugins/organization'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
-import { dialect } from '~/app/services/db.server'
+import { db, dialect } from '~/app/services/db.server'
 
 export const auth = betterAuth({
   baseURL: process.env.BASE_URL,
@@ -82,6 +82,15 @@ export const auth = betterAuth({
       },
     }),
     organization({
+      allowUserToCreateOrganization: async (user) => {
+        // Check if the user is a super admin
+        const { role } = await db
+          .selectFrom('users')
+          .select(['role'])
+          .where('id', '=', user.id)
+          .executeTakeFirstOrThrow()
+        return role === 'admin'
+      },
       schema: {
         session: {
           fields: {
