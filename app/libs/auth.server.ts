@@ -124,26 +124,25 @@ export const auth = betterAuth({
   ],
 })
 
-export const getSessionUser = async (request: Request) => {
-  const session = await auth.api.getSession(request)
-  return session?.user
+export const getSession = async (request: Request) => {
+  return await auth.api.getSession(request)
 }
 
 export const requireUser = async (request: Request) => {
-  const user = await getSessionUser(request)
-  if (!user) {
+  const session = await getSession(request)
+  if (!session) {
     throw redirect(href('/login'))
   }
-  return user
+  return session
 }
 
 export const requireSuperAdmin = async (request: Request) => {
-  const user = await getSessionUser(request)
-  if (!user) {
+  const session = await getSession(request)
+  if (!session) {
     throw redirect(href('/login'))
   }
-  if (user.role !== 'admin') {
+  if (session.user.role !== 'admin') {
     throw redirect(href('/'))
   }
-  return user
+  return session
 }

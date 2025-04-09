@@ -10,13 +10,13 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { authClient } from '~/app/libs/auth-client'
-import { getSessionUser } from '~/app/libs/auth.server'
+import { getSession } from '~/app/libs/auth.server'
 import type { Route } from './+types/login'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   // 認証済みならトップページにリダイレクト
-  const user = await getSessionUser(request)
-  if (user) {
+  const session = await getSession(request)
+  if (session) {
     throw redirect('/')
   }
   return
