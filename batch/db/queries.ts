@@ -24,7 +24,11 @@ export const listAllOrganizations = async () => {
       jsonObjectFrom(
         eb
           .selectFrom('organizationSettings')
-          .selectAll()
+          .select([
+            'organizationSettings.releaseDetectionMethod',
+            'organizationSettings.releaseDetectionKey',
+            'organizationSettings.isActive',
+          ])
           .whereRef(
             'organizationSettings.organizationId',
             '==',
@@ -91,7 +95,11 @@ export const getOrganization = async (
       jsonObjectFrom(
         eb
           .selectFrom('organizationSettings')
-          .selectAll()
+          .select([
+            'organizationSettings.releaseDetectionMethod',
+            'organizationSettings.releaseDetectionKey',
+            'organizationSettings.isActive',
+          ])
           .whereRef(
             'organizationSettings.organizationId',
             '==',
