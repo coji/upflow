@@ -106,7 +106,10 @@ export const createGitHubProvider = (
   }
 
   const analyze = async (
-    organizationSetting: Selectable<DB.OrganizationSetting>,
+    organizationSetting: Pick<
+      Selectable<DB.OrganizationSetting>,
+      'releaseDetectionMethod' | 'releaseDetectionKey'
+    >,
     repositories: Selectable<DB.Repository>[],
   ) => {
     let allPulls: Selectable<DB.PullRequest>[] = []
