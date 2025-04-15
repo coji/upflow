@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { admin } from 'better-auth/plugins/admin'
 import { organization } from 'better-auth/plugins/organization'
+import type { Dialect } from 'kysely'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { db, dialect } from '~/app/services/db.server'
@@ -8,7 +9,7 @@ import { db, dialect } from '~/app/services/db.server'
 export const auth = betterAuth({
   baseURL: process.env.BASE_URL,
   secret: process.env.SESSION_SECRET,
-  database: { dialect, type: 'sqlite' },
+  database: { dialect: dialect as Dialect, type: 'sqlite' },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -23,7 +24,6 @@ export const auth = betterAuth({
     fields: {
       createdAt: 'created_at',
       updatedAt: 'updated_at',
-      displayName: 'display_name',
       emailVerified: 'email_verified',
     },
   },
