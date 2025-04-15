@@ -76,7 +76,7 @@
     "debug": "4.4.0",
     "dotenv": "16.5.0",
     "embla-carousel-react": "8.6.0",
-    "express": "5.1.0",
+    "express": "4.21.2",
     "globby": "14.1.0",
     "google-auth-library": "9.15.1",
     "isbot": "5.1.26",
