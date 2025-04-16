@@ -17,7 +17,7 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    generateId: () => nanoid(),
+    database: { generateId: () => nanoid() },
   },
   user: {
     modelName: 'users',

@@ -51,7 +51,7 @@ app.use(express.static('build/client', { maxAge: '1h' }))
 
 // handle SSR requests
 app.all(
-  '*',
+  /.*/,
   createRequestHandler({
     build: viteDevServer
       ? () => viteDevServer.ssrLoadModule('virtual:react-router/server-build')
