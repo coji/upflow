@@ -14,12 +14,12 @@ import { getSession } from '~/app/libs/auth.server'
 import type { Route } from './+types/login'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  // 認証済みならトップページにリダイレクト
+  //   認証済みならトップページにリダイレクト
   const session = await getSession(request)
   if (session) {
     throw redirect('/')
   }
-  return
+  return {}
 }
 
 export default function LoginPage() {
