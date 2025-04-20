@@ -17,7 +17,9 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    generateId: () => nanoid(),
+    database: {
+      generateId: () => nanoid(),
+    },
   },
   user: {
     modelName: 'users',
@@ -53,6 +55,7 @@ export const auth = betterAuth({
     },
   },
   verification: {
+    disableCleanup: true,
     modelName: 'verifications',
     fields: {
       createdAt: 'created_at',
