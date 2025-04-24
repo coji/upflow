@@ -1,4 +1,4 @@
-import { href, Link, useNavigate } from 'react-router'
+import { href, Link } from 'react-router'
 import {
   Avatar,
   AvatarFallback,
@@ -17,13 +17,13 @@ import {
 } from '~/app/components/ui'
 import { authClient } from '~/app/libs/auth-client'
 import { OrganizationSwitcher } from '~/app/routes/resources+/organization/route'
+import { DropdownMenuLogout } from '../routes/_auth+/logout'
 
 interface AppHeaderProps {
   isAdmin?: boolean
 }
 
 export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
-  const navigate = useNavigate()
   const { data: session } = authClient.useSession()
   const user = session?.user
 
@@ -75,18 +75,8 @@ export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                authClient.signOut({
-                  fetchOptions: {
-                    onSuccess: () => {
-                      navigate(href('/'))
-                    },
-                  },
-                })
-              }}
-            >
-              ログアウト
+            <DropdownMenuItem asChild>
+              <DropdownMenuLogout />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

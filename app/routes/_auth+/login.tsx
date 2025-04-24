@@ -1,4 +1,4 @@
-import { redirect } from 'react-router'
+import { Form, redirect } from 'react-router'
 import { AppLayout } from '~/app/components'
 import {
   Button,
@@ -7,10 +7,8 @@ import {
   CardHeader,
   CardTitle,
   Center,
-  Stack,
 } from '~/app/components/ui'
-import { authClient } from '~/app/libs/auth-client'
-import { getSession } from '~/app/libs/auth.server'
+import { auth, getSession } from '~/app/libs/auth.server'
 import type { Route } from './+types/login'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -20,6 +18,21 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     throw redirect('/')
   }
   return {}
+}
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  //   認証済みならトップページにリダイレクト
+  const session = await getSession(request)
+  if (session) {
+    throw redirect('/')
+  }
+
+  //  認証処理
+  const res = await auth.api.signInSocial({
+    body: { provider: 'google' },
+  })
+
+  return redirect(res.url ?? '/')
 }
 
 export default function LoginPage() {
@@ -32,15 +45,8 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent>
-            <Stack>
-              <Button
-                className="w-full"
-                variant="default"
-                type="button"
-                onClick={() => {
-                  authClient.signIn.social({ provider: 'google' })
-                }}
-              >
+            <Form method="POST">
+              <Button className="w-full" variant="default" type="submit">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -55,7 +61,7 @@ export default function LoginPage() {
                 </svg>
                 Googleでログイン
               </Button>
-            </Stack>
+            </Form>
           </CardContent>
         </Card>
       </Center>
