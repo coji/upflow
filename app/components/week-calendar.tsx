@@ -1,7 +1,8 @@
 import { addDays, isSameDay, isWithinInterval, startOfDay } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { useEffect, useRef, useState } from 'react'
-import { useDayRender, type DayProps } from 'react-day-picker'
+import * as React from 'react'
+import { useEffect, useState } from 'react'
+import type { DayButton } from 'react-day-picker'
 import {
   Button,
   Calendar,
@@ -61,35 +62,39 @@ const WeeklyCalendar = ({
   }
 
   // カレンダーのカスタム日付レンダリング
-  const DayComponent = ({ date, displayMonth }: DayProps) => {
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    const buttonRef = useRef<HTMLButtonElement>(null!)
-    const dayRender = useDayRender(date, displayMonth, buttonRef)
-
-    const isSelected = isWithinInterval(date, {
+  function WeekDayButton({
+    className,
+    day,
+    modifiers,
+    ...props
+  }: React.ComponentProps<typeof DayButton>) {
+    const isSelected = isWithinInterval(day.date, {
       start: weekInterval.start,
       end: weekInterval.end,
     })
-    const isWeekStart = isSameDay(date, weekInterval.start)
-    const isWeekEnd = isSameDay(date, weekInterval.end)
+    const isWeekStart = isSameDay(day.date, weekInterval.start)
+    const isWeekEnd = isSameDay(day.date, weekInterval.end)
 
-    // biome-ignore lint/a11y/useFocusableInteractive: <explanation>
-    if (dayRender.isHidden) return <div role="gridcell" aria-hidden="true" />
-    if (!dayRender.isButton) return <div {...dayRender.divProps} />
+    const ref = React.useRef<HTMLButtonElement>(null)
+    React.useEffect(() => {
+      if (modifiers.focused) ref.current?.focus()
+    }, [modifiers.focused])
 
-    const { className, ...rest } = dayRender.buttonProps
     return (
-      <button
-        name="day"
-        ref={buttonRef}
+      <Button
+        ref={ref}
+        variant="ghost"
+        size="icon"
+        data-day={day.date.toLocaleDateString()}
+        data-selected={isSelected}
         className={cn(
           className,
           isSelected &&
-            'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground aria-selected:text-primary-foreground rounded-none',
+            'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
           isWeekStart && 'rounded-l-lg',
           isWeekEnd && 'rounded-r-lg',
         )}
-        {...rest}
+        {...props}
       />
     )
   }
@@ -110,7 +115,7 @@ const WeeklyCalendar = ({
             weekStartsOn={startDay}
             locale={ja}
             components={{
-              Day: DayComponent,
+              DayButton: WeekDayButton,
             }}
             className="rounded-lg border p-3"
           />

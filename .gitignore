@@ -44,3 +44,5 @@ dist
 
 .react-router
 tsconfig.tsbuildinfo
+
+/z
