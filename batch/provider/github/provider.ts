@@ -111,6 +111,11 @@ export const createGitHubProvider = (
       'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
     >,
     repositories: Selectable<DB.Repository>[],
+    onProgress?: (progress: {
+      repo: string
+      current: number
+      total: number
+    }) => void,
   ) => {
     let allPulls: Selectable<DB.PullRequest>[] = []
     let allReviewResponses: {
@@ -121,7 +126,13 @@ export const createGitHubProvider = (
       responseTime: number
     }[] = []
 
+    const total = repositories.length
+    let current = 0
+
     for (const repository of repositories) {
+      current++
+      onProgress?.({ repo: repository.repo, current, total })
+
       const store = createStore({
         organizationId: repository.organizationId,
         repositoryId: repository.id,
