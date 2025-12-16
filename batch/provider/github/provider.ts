@@ -108,7 +108,7 @@ export const createGitHubProvider = (
   const analyze = async (
     organizationSetting: Pick<
       Selectable<DB.OrganizationSetting>,
-      'releaseDetectionMethod' | 'releaseDetectionKey'
+      'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
     >,
     repositories: Selectable<DB.Repository>[],
   ) => {
@@ -136,6 +136,7 @@ export const createGitHubProvider = (
           releaseDetectionKey:
             repository.releaseDetectionKey ??
             organizationSetting.releaseDetectionKey,
+          excludedUsers: organizationSetting.excludedUsers,
         },
         await store.loader.pullrequests(),
       )

@@ -49,6 +49,7 @@ export const OrganizationSettings = ({
       name: organization.name,
       releaseDetectionMethod: organizationSetting?.releaseDetectionMethod,
       releaseDetectionKey: organizationSetting?.releaseDetectionKey,
+      excludedUsers: organizationSetting?.excludedUsers,
     },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
@@ -116,6 +117,23 @@ export const OrganizationSettings = ({
                 />
               </HStack>
               <div className="text-destructive">{fields.isActive.errors}</div>
+            </fieldset>
+
+            <fieldset>
+              <Label htmlFor={fields.excludedUsers.id}>
+                Excluded Users (comma separated)
+              </Label>
+              <Input
+                {...getInputProps(fields.excludedUsers, { type: 'text' })}
+                placeholder="e.g. iris-tech-bot, some-other-bot"
+              />
+              <p className="text-muted-foreground text-sm">
+                Copilot is excluded by default. Add additional usernames to
+                exclude from cycle time calculations.
+              </p>
+              <div className="text-destructive">
+                {fields.excludedUsers.errors}
+              </div>
             </fieldset>
 
             {form.errors && (

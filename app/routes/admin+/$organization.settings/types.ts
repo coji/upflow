@@ -8,6 +8,7 @@ export const organizationSettingsSchema = z.object({
     .literal('on')
     .optional()
     .transform((val) => (val === 'on' ? 1 : 0)),
+  excludedUsers: z.string().default(''),
 })
 
 export const integrationSettingsSchema = z.object({

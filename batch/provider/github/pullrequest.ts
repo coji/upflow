@@ -18,15 +18,25 @@ const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).utc().toISOString() : null
 }
 
+// デフォルトで除外するユーザー (GitHub API で [bot] 接尾辞なしで記録されるbot)
+const DEFAULT_EXCLUDED_USERS = ['Copilot']
+
 export const buildPullRequests = async (
   config: {
     organizationId: string
     repositoryId: string
     releaseDetectionMethod: string
     releaseDetectionKey: string
+    excludedUsers: string
   },
   pullrequests: ShapedGitHubPullRequest[],
 ) => {
+  // カンマ区切りの除外ユーザーリストをパース
+  const customExcludedUsers = config.excludedUsers
+    .split(',')
+    .map((u) => u.trim())
+    .filter((u) => u.length > 0)
+  const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
   const store = createStore(config)
 
   const pulls: Selectable<DB.PullRequest>[] = []
@@ -44,18 +54,24 @@ export const buildPullRequests = async (
 
       // レビュー履歴 (bot と PR 作成者は除外)
       const reviews = (await store.loader.reviews(pr.number)).filter(
-        (r) => !r.user?.endsWith('[bot]') && r.user !== pr.author,
+        (r) =>
+          !r.user?.endsWith('[bot]') &&
+          r.user !== pr.author &&
+          !excludedUsers.includes(r.user ?? ''),
       )
       // コメント履歴 (bot と PR 作成者は除外)
       const discussions = (await store.loader.discussions(pr.number)).filter(
-        (d) => !d.user.endsWith('[bot]') && d.user !== pr.author,
+        (d) =>
+          !d.user?.endsWith('[bot]') &&
+          d.user !== pr.author &&
+          !excludedUsers.includes(d.user ?? ''),
       )
 
       reviewResponses.push(
         ...analyzeReviewResponse(discussions).map((res) => ({
           repo: String(pr.repo),
           number: String(pr.number),
-          author: res.author,
+          author: res.author ?? '',
           createdAt: res.createdAt,
           responseTime: res.responseTime,
         })),

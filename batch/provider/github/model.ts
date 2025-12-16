@@ -48,7 +48,7 @@ export type ShapedGitHubIssueComment = {
 
 export type ShapedGitHubReviewComment = {
   id: GitHubReviewComment['id']
-  user: GitHubReviewComment['user']['login']
+  user: GitHubReviewComment['user']['login'] | null
   url: GitHubReviewComment['html_url']
   created_at: GitHubReviewComment['created_at']
 }
