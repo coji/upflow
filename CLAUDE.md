@@ -51,7 +51,7 @@ pnpm test:e2e
 ### Tech Stack
 
 - **Framework**: React Router v7 (SSR mode) with Express server
-- **Database**: SQLite via Prisma (ORM) and Kysely (query builder)
+- **Database**: SQLite via Atlas (migrations) and Kysely (query builder, type generation)
 - **Auth**: better-auth with Google OAuth, supporting organizations
 - **UI**: shadcn/ui components (new-york style) with Tailwind CSS v4
 - **Testing**: Vitest (unit), Playwright (E2E)
@@ -68,8 +68,7 @@ app/
 │   └── api.auth.$/   # Auth API endpoints
 ├── services/         # Server-side services
 │   ├── db.server.ts  # Kysely database client
-│   ├── prisma.server.ts  # Prisma client
-│   └── type.ts       # Generated Kysely types (from prisma-kysely)
+│   └── type.ts       # Generated Kysely types (from kysely-codegen)
 ├── libs/             # Shared utilities
 │   └── auth.server.ts    # better-auth configuration
 ├── components/       # React components
@@ -82,8 +81,9 @@ batch/                # CLI batch jobs for data processing
 ├── jobs/             # Scheduled job definitions
 └── provider/         # GitHub API integration
 
-prisma/
-├── schema.prisma     # Database schema
+db/
+├── schema.sql        # Declarative schema (Atlas source)
+├── migrations/       # Atlas versioned migrations
 └── seed.ts           # Seed data
 ```
 
@@ -98,12 +98,23 @@ Uses `remix-flat-routes` with the `+` folder syntax:
 
 ### Database Pattern
 
-Dual ORM setup:
+Atlas + Kysely setup:
 
-- **Prisma**: Schema definition, migrations, seeding
-- **Kysely**: Runtime queries (type-safe, generated from Prisma via prisma-kysely)
+- **Atlas**: Schema management and versioned SQL migrations
+- **Kysely**: Runtime queries and type generation via kysely-codegen
 
-Types are generated to `app/services/type.ts` from Prisma schema.
+```bash
+# Generate new migration from schema.sql changes
+pnpm db:migrate
+
+# Apply migrations to local database
+pnpm db:apply
+
+# Generate Kysely types from database
+pnpm db:generate
+```
+
+Types are generated to `app/services/type.ts` from the database.
 
 ### Path Aliases
 
