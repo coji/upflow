@@ -2,8 +2,8 @@ import { nanoid } from 'nanoid'
 import { db, sql, type DB, type Insertable } from '~/app/services/db.server'
 
 export const addRepository = async (
-  organizationId: DB.Organization['id'],
-  data: Pick<Insertable<DB.Repository>, 'owner' | 'repo'>,
+  organizationId: DB.Organizations['id'],
+  data: Pick<Insertable<DB.Repositories>, 'owner' | 'repo'>,
 ) => {
   const organizationSetting = await db
     .selectFrom('organizationSettings')

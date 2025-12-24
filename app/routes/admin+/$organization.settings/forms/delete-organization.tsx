@@ -19,7 +19,7 @@ import { INTENTS, deleteOrganizationSchema as schema } from '../types'
 import type { action } from './delete-organization.action.server'
 
 interface DeleteOrganizationProps {
-  organization: Selectable<DB.Organization>
+  organization: Selectable<DB.Organizations>
 }
 export const DeleteOrganization = ({
   organization,

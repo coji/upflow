@@ -1,7 +1,9 @@
 import { jsonArrayFrom } from 'kysely/helpers/sqlite'
 import { db, type DB } from '~/app/services/db.server'
 
-export const getIntegration = async (organizationId: DB.Organization['id']) => {
+export const getIntegration = async (
+  organizationId: DB.Organizations['id'],
+) => {
   return await db
     .selectFrom('integrations')
     .select((eb) => [
@@ -21,7 +23,7 @@ export const getIntegration = async (organizationId: DB.Organization['id']) => {
 }
 
 export const listRepositories = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
 ) => {
   return await db
     .selectFrom('repositories')

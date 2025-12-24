@@ -1,7 +1,7 @@
 import { db, type DB } from '~/app/services/db.server'
 
 export const listRepositories = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
 ) => {
   return await db
     .selectFrom('repositories')

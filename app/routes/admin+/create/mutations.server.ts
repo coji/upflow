@@ -4,8 +4,8 @@ export const createOrganization = async ({
   organizationId,
   organizationName,
 }: {
-  organizationId: DB.Organization['id']
-  organizationName: DB.Organization['name']
+  organizationId: DB.Organizations['id']
+  organizationName: DB.Organizations['name']
 }) => {
   return await db.transaction().execute(async (tsx) => {
     const organization = await tsx

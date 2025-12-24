@@ -1,8 +1,8 @@
 import { db, type DB, type Updateable } from '~/app/services/db.server'
 
 export const updateRepository = (
-  repositoryId: DB.Repository['id'],
-  data: Updateable<DB.Repository>,
+  repositoryId: DB.Repositories['id'],
+  data: Updateable<DB.Repositories>,
 ) => {
   return db
     .updateTable('repositories')

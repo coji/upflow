@@ -22,8 +22,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { user, organizations }
 }
 
-interface OrganizationSwitcherProps
-  extends React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger> {
+interface OrganizationSwitcherProps extends React.ComponentPropsWithoutRef<
+  typeof DropdownMenuTrigger
+> {
   isAdmin: boolean
 }
 export const OrganizationSwitcher = ({

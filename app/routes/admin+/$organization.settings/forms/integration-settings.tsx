@@ -29,7 +29,7 @@ import { INTENTS, integrationSettingsSchema as schema } from '../types'
 import type { action } from './integration-settings.action.server'
 
 interface IntegrationSettingsProps {
-  integration?: Selectable<DB.Integration>
+  integration?: Selectable<DB.Integrations>
 }
 
 export const IntegrationSettings = ({
