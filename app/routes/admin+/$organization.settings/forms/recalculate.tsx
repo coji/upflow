@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import {
   Alert,
@@ -27,9 +27,25 @@ export const Recalculate = () => {
   const [status, setStatus] = useState<Status>('idle')
   const [progress, setProgress] = useState<ProgressData | null>(null)
   const [message, setMessage] = useState<string>('')
+  const eventSourceRef = useRef<EventSource | null>(null)
+
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
+  }, [])
 
   const handleRecalculate = useCallback(() => {
     if (!organization) return
+
+    // Close any existing connection
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+    }
 
     setStatus('running')
     setProgress(null)
@@ -38,35 +54,54 @@ export const Recalculate = () => {
     const eventSource = new EventSource(
       `/api/admin/recalculate/${organization}`,
     )
+    eventSourceRef.current = eventSource
 
     eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
+      let data: {
+        type: string
+        message?: string
+        repo?: string
+        current?: number
+        total?: number
+      }
+      try {
+        data = JSON.parse(event.data)
+      } catch (error) {
+        console.error('Failed to parse SSE data:', error)
+        setStatus('error')
+        setMessage('Invalid server response')
+        eventSource.close()
+        eventSourceRef.current = null
+        return
+      }
 
       switch (data.type) {
         case 'start':
-          setMessage(data.message)
+          setMessage(data.message ?? '')
           break
         case 'progress':
           setProgress({
-            repo: data.repo,
-            current: data.current,
-            total: data.total,
+            repo: data.repo ?? '',
+            current: data.current ?? 0,
+            total: data.total ?? 0,
           })
-          setMessage(`Processing: ${data.repo}`)
+          setMessage(`Processing: ${data.repo ?? ''}`)
           break
         case 'upsert':
         case 'export':
-          setMessage(data.message)
+          setMessage(data.message ?? '')
           break
         case 'complete':
           setStatus('completed')
-          setMessage(data.message)
+          setMessage(data.message ?? '')
           eventSource.close()
+          eventSourceRef.current = null
           break
         case 'error':
           setStatus('error')
-          setMessage(data.message)
+          setMessage(data.message ?? 'Unknown error')
           eventSource.close()
+          eventSourceRef.current = null
           break
       }
     }
@@ -75,12 +110,14 @@ export const Recalculate = () => {
       setStatus('error')
       setMessage('Connection error occurred')
       eventSource.close()
+      eventSourceRef.current = null
     }
   }, [organization])
 
-  const progressPercent = progress
-    ? Math.round((progress.current / progress.total) * 100)
-    : 0
+  const progressPercent =
+    progress && progress.total > 0
+      ? Math.round((progress.current / progress.total) * 100)
+      : 0
 
   return (
     <Card>

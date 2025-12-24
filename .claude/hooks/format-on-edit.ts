@@ -1,5 +1,5 @@
 import { defineHook, runHook } from 'cc-hooks-ts'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 
 const FORMATTABLE_EXTENSIONS = [
   '.ts',
@@ -27,7 +27,7 @@ const formatHook = defineHook({
       FORMATTABLE_EXTENSIONS.some((ext) => filePath.endsWith(ext))
     ) {
       try {
-        execSync(`pnpm exec prettier --write "${filePath}"`, {
+        execFileSync('pnpm', ['exec', 'prettier', '--write', filePath], {
           stdio: 'inherit',
         })
       } catch (error) {

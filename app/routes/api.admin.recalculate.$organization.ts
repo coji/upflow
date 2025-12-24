@@ -1,9 +1,9 @@
 import invariant from 'tiny-invariant'
+import { requireSuperAdmin } from '~/app/libs/auth.server'
 import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,
 } from '~/batch/bizlogic/export-spreadsheet'
-import { requireSuperAdmin } from '~/app/libs/auth.server'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
 import { createProvider } from '~/batch/provider'
 import type { Route } from './+types/api.admin.recalculate.$organization'
@@ -18,7 +18,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const organizationId = params.organization
   invariant(organizationId, 'organization is required')
 
-  // 同時実行チェック
+  // 同時実行チェック & 登録（アトミックに）
   if (runningJobs.has(organizationId)) {
     return new Response(
       JSON.stringify({ error: 'Recalculation already in progress' }),
@@ -28,6 +28,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
       },
     )
   }
+  runningJobs.add(organizationId)
 
   // SSE ストリームを作成
   const stream = new ReadableStream({
@@ -36,8 +37,6 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
       const send = (data: Record<string, unknown>) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
-
-      runningJobs.add(organizationId)
 
       try {
         send({ type: 'start', message: 'Starting recalculation...' })
