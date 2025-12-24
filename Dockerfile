@@ -4,11 +4,12 @@ ARG PNPM_VERSION=10.5.2
 # base node image
 FROM node:${NODE_VERSION}-slim AS base
 
-# Install openssl for Prisma
+# Install dependencies and Atlas
 RUN apt-get update \
   && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip vim build-essential python3 \
   && apt-get clean \
   && npm i -g pnpm@${PNPM_VERSION} \
+  && curl -sSf https://atlasgo.sh | sh \
   && rm -rf /var/lib/apt/lists/* 
 
 # Install all node_modules, including dev dependencies
@@ -17,7 +18,6 @@ FROM base AS deps
 WORKDIR /upflow
 
 COPY package.json pnpm-lock.yaml ./
-ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
 RUN pnpm fetch
 
 
@@ -42,8 +42,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --offline --frozen-lockfile && pnpm rebuild better-sqlite3
 
 COPY . .
-RUN pnpm exec prisma generate \
-  && pnpm run build
+RUN pnpm run build
 
 
 # Finally, build the production image with minimal footprint
@@ -59,11 +58,11 @@ RUN printf '#!/bin/sh\nset -x\nsqlite3 file:/upflow/data/data.db\n' > /usr/local
 
 WORKDIR /upflow
 
-# ほんとは production-deps の node_modules を使いたいけど prisma generate 後のファイルがないので一旦buildで。
-COPY --from=build /upflow/node_modules /upflow/node_modules
+COPY --from=production-deps /upflow/node_modules /upflow/node_modules
 COPY --from=build /upflow/build /upflow/build
 COPY --from=build /upflow/public /upflow/public
-COPY --from=build /upflow/prisma /upflow/prisma
+COPY --from=build /upflow/db /upflow/db
+COPY --from=build /upflow/atlas.hcl /upflow/atlas.hcl
 COPY --from=build /upflow/package.json /upflow/package.json
 COPY --from=build /upflow/tsconfig.json /upflow/tsconfig.json
 COPY --from=build /upflow/start.sh /upflow/start.sh
