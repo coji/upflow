@@ -1,7 +1,7 @@
 import { jsonObjectFrom } from 'kysely/helpers/sqlite'
 import { db, type DB } from '~/app/services/db.server'
 
-export const getRepository = async (repositoryId: DB.Repository['id']) => {
+export const getRepository = async (repositoryId: DB.Repositories['id']) => {
   return await db
     .selectFrom('repositories')
     .where('id', '==', repositoryId)
@@ -20,8 +20,8 @@ export const getRepository = async (repositoryId: DB.Repository['id']) => {
 }
 
 export const getPullRequest = async (
-  repositoryId: DB.Repository['id'],
-  number: DB.PullRequest['number'],
+  repositoryId: DB.Repositories['id'],
+  number: DB.PullRequests['number'],
 ) => {
   return await db
     .selectFrom('pullRequests')

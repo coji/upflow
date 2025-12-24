@@ -1,7 +1,7 @@
 import { db, type DB } from '~/app/services/db.server'
 
 export const getOrganization = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
 ) => {
   return await db
     .selectFrom('organizations')
@@ -11,7 +11,7 @@ export const getOrganization = async (
 }
 
 export const getOrganizationSetting = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
 ) => {
   return await db
     .selectFrom('organizationSettings')
@@ -21,7 +21,7 @@ export const getOrganizationSetting = async (
 }
 
 export const getExportSetting = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
 ) => {
   return await db
     .selectFrom('exportSettings')
@@ -30,7 +30,9 @@ export const getExportSetting = async (
     .executeTakeFirst()
 }
 
-export const getIntegration = async (organizationId: DB.Organization['id']) => {
+export const getIntegration = async (
+  organizationId: DB.Organizations['id'],
+) => {
   return await db
     .selectFrom('integrations')
     .selectAll()

@@ -39,7 +39,7 @@ export const buildPullRequests = async (
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
   const store = createStore(config)
 
-  const pulls: Selectable<DB.PullRequest>[] = []
+  const pulls: Selectable<DB.PullRequests>[] = []
   const reviewResponses: {
     repo: string
     number: string

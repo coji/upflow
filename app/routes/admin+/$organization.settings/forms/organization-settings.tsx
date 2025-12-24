@@ -36,8 +36,8 @@ export const OrganizationSettings = ({
   organization,
   organizationSetting,
 }: {
-  organization: Selectable<DB.Organization>
-  organizationSetting: Selectable<DB.OrganizationSetting>
+  organization: Selectable<DB.Organizations>
+  organizationSetting: Selectable<DB.OrganizationSettings>
 }) => {
   const actionData = useActionData<typeof action>()
   const [form, fields] = useForm({

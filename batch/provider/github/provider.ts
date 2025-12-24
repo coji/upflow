@@ -8,7 +8,7 @@ import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 
 export const createGitHubProvider = (
-  integration: Selectable<DB.Integration>,
+  integration: Selectable<DB.Integrations>,
 ) => {
   interface FetchOptions {
     refresh?: boolean
@@ -16,7 +16,7 @@ export const createGitHubProvider = (
     delay?: number
   }
   const fetch = async (
-    repository: Selectable<DB.Repository>,
+    repository: Selectable<DB.Repositories>,
     { refresh = false, halt = false, delay = 0 }: FetchOptions,
   ) => {
     invariant(repository.repo, 'private token not specified')
@@ -107,17 +107,17 @@ export const createGitHubProvider = (
 
   const analyze = async (
     organizationSetting: Pick<
-      Selectable<DB.OrganizationSetting>,
+      Selectable<DB.OrganizationSettings>,
       'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
     >,
-    repositories: Selectable<DB.Repository>[],
+    repositories: Selectable<DB.Repositories>[],
     onProgress?: (progress: {
       repo: string
       current: number
       total: number
     }) => void,
   ) => {
-    let allPulls: Selectable<DB.PullRequest>[] = []
+    let allPulls: Selectable<DB.PullRequests>[] = []
     let allReviewResponses: {
       repo: string
       number: string

@@ -11,8 +11,8 @@ const escapeTabString = (str: string) => {
  * @param exportSetting
  */
 export const exportPullsToSpreadsheet = async (
-  pullrequests: Selectable<DB.PullRequest>[],
-  exportSetting: Selectable<DB.ExportSetting>,
+  pullrequests: Selectable<DB.PullRequests>[],
+  exportSetting: Selectable<DB.ExportSettings>,
 ) => {
   const tz = 'Asia/Tokyo'
   const sheet = createSheetApi({
@@ -86,7 +86,7 @@ export const exportReviewResponsesToSpreadsheet = async (
     createdAt: string
     responseTime: number
   }[],
-  exportSetting: Selectable<DB.ExportSetting>,
+  exportSetting: Selectable<DB.ExportSettings>,
 ) => {
   const tz = 'Asia/Tokyo'
   const sheet = createSheetApi({

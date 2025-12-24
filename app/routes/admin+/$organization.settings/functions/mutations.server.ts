@@ -8,8 +8,8 @@ import {
 } from '~/app/services/db.server'
 
 export const updateOrganization = async (
-  id: DB.Organization['id'],
-  data: Omit<Updateable<DB.Organization>, 'createdAt'>,
+  id: DB.Organizations['id'],
+  data: Omit<Updateable<DB.Organizations>, 'createdAt'>,
 ) => {
   return await db
     .updateTable('organizations')
@@ -19,9 +19,9 @@ export const updateOrganization = async (
 }
 
 export const updateOrganizationSetting = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
   data: Pick<
-    Updateable<DB.OrganizationSetting>,
+    Updateable<DB.OrganizationSettings>,
     | 'releaseDetectionMethod'
     | 'releaseDetectionKey'
     | 'isActive'
@@ -35,17 +35,17 @@ export const updateOrganizationSetting = async (
     .execute()
 }
 
-export const deleteOrganization = async (id: DB.Organization['id']) => {
+export const deleteOrganization = async (id: DB.Organizations['id']) => {
   return await db.deleteFrom('organizations').where('id', '=', id).execute()
 }
 
-export const createIntegration = async (data: Insertable<DB.Integration>) => {
+export const createIntegration = async (data: Insertable<DB.Integrations>) => {
   return await db.insertInto('integrations').values(data).execute()
 }
 
 export const upsertIntegration = async (
-  id: DB.Integration['id'] | undefined,
-  data: Omit<Insertable<DB.Integration>, 'id'>,
+  id: DB.Integrations['id'] | undefined,
+  data: Omit<Insertable<DB.Integrations>, 'id'>,
 ) => {
   return await db
     .insertInto('integrations')
@@ -61,8 +61,8 @@ export const upsertIntegration = async (
 }
 
 export const upsertExportSetting = async (
-  id: DB.ExportSetting['id'] | undefined,
-  data: Omit<Insertable<DB.ExportSetting>, 'id' | 'updatedAt'>,
+  id: DB.ExportSettings['id'] | undefined,
+  data: Omit<Insertable<DB.ExportSettings>, 'id' | 'updatedAt'>,
 ) => {
   return await db
     .insertInto('exportSettings')

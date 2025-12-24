@@ -2,7 +2,7 @@ import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite'
 import { db, type DB } from '~/app/services/db.server'
 
 export const getPullRequestReport = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
 ) => {
   return await db
     .selectFrom('pullRequests')
@@ -84,7 +84,7 @@ export const listAllOrganizations = async () => {
 }
 
 export const getOrganization = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
 ) => {
   return await db
     .selectFrom('organizations')

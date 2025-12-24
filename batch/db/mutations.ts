@@ -1,7 +1,7 @@
 import { db, type DB, type Insertable } from '~/app/services/db.server'
 import { timeFormatUTC } from '../helper/timeformat'
 
-export function upsertPullRequest(data: Insertable<DB.PullRequest>) {
+export function upsertPullRequest(data: Insertable<DB.PullRequests>) {
   const firstCommittedAt = timeFormatUTC(data.firstCommittedAt)
   const pullRequestCreatedAt = timeFormatUTC(data.pullRequestCreatedAt)
   const firstReviewedAt = timeFormatUTC(data.firstReviewedAt)

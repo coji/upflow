@@ -22,7 +22,7 @@ import { INTENTS, exportSettingsSchema as schema } from '../types'
 import type { action } from './export-settings.action.server'
 
 interface ExportSettingsProps {
-  exportSetting?: Selectable<DB.ExportSetting>
+  exportSetting?: Selectable<DB.ExportSettings>
 }
 
 export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {

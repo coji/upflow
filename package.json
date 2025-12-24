@@ -12,7 +12,10 @@
     "format": "prettier --cache -c .",
     "format:fix": "prettier --cache -w .",
     "lint": "biome lint .",
-    "setup": "pnpm prisma migrate reset --skip-generate",
+    "setup": "atlas migrate apply --env local --url 'sqlite://data/data.db' && tsx db/seed.ts",
+    "db:generate": "kysely-codegen --dialect sqlite --out-file app/services/type.ts --url ./data/data.db --camel-case --exclude-pattern '_prisma_migrations'",
+    "db:migrate": "atlas migrate diff --env local",
+    "db:apply": "atlas migrate apply --env local --url 'sqlite://data/data.db'",
     "test": "vitest --run",
     "test:e2e": "run-s test:e2e:build test:e2e:run",
     "test:e2e:build": "run-s build",
@@ -28,7 +31,6 @@
     "@epic-web/remember": "1.1.0",
     "@googleapis/sheets": "10.0.1",
     "@octokit/plugin-rest-endpoint-methods": "16.0.0",
-    "@prisma/client": "6.9.0",
     "@radix-ui/react-accordion": "1.2.11",
     "@radix-ui/react-alert-dialog": "1.1.14",
     "@radix-ui/react-aspect-ratio": "1.1.7",
@@ -123,13 +125,12 @@
     "dotenv-cli": "8.0.0",
     "esbuild": "0.25.5",
     "esbuild-plugin-clean": "1.0.1",
+    "kysely-codegen": "0.19.0",
     "msw": "2.10.2",
     "npm-run-all": "4.1.5",
-    "prettier": "3.5.3",
-    "prettier-plugin-organize-imports": "4.1.0",
-    "prettier-plugin-tailwindcss": "0.6.12",
-    "prisma": "6.9.0",
-    "prisma-kysely": "1.8.0",
+    "prettier": "3.7.4",
+    "prettier-plugin-organize-imports": "4.3.0",
+    "prettier-plugin-tailwindcss": "0.7.2",
     "remix-flat-routes": "0.8.5",
     "tailwindcss": "4.1.10",
     "tsconfig-paths": "4.2.0",
@@ -139,19 +140,13 @@
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.2.3"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@biomejs/biome",
-      "@prisma/client",
-      "@prisma/engines",
       "@tailwindcss/oxide",
       "better-sqlite3",
       "esbuild",
-      "msw",
-      "prisma"
+      "msw"
     ]
   }
 }

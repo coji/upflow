@@ -4,8 +4,9 @@ import { match } from 'ts-pattern'
 
 import { Button } from '~/app/components/ui'
 
-interface AppSortableHeaderProps<TData>
-  extends React.ComponentProps<typeof Button> {
+interface AppSortableHeaderProps<TData> extends React.ComponentProps<
+  typeof Button
+> {
   column: Column<TData>
   title: string
 }

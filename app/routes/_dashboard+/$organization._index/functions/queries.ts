@@ -3,7 +3,7 @@ import { db, type DB } from '~/app/services/db.server'
 import { calculateBusinessHours } from './utils'
 
 export const getMergedPullRequestReport = async (
-  organizationId: DB.Organization['id'],
+  organizationId: DB.Organizations['id'],
   fromDateTime: string | null,
   toDateTime: string | null,
   objective: number,

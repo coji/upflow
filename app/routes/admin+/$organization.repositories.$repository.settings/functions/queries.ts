@@ -1,6 +1,6 @@
 import { db, type DB } from '~/app/services/db.server'
 
-export const getRepository = async (repositoryId: DB.Repository['id']) => {
+export const getRepository = async (repositoryId: DB.Repositories['id']) => {
   return await db
     .selectFrom('repositories')
     .selectAll()
@@ -8,7 +8,9 @@ export const getRepository = async (repositoryId: DB.Repository['id']) => {
     .executeTakeFirst()
 }
 
-export const getIntegration = async (organizationId: DB.Organization['id']) => {
+export const getIntegration = async (
+  organizationId: DB.Organizations['id'],
+) => {
   return await db
     .selectFrom('integrations')
     .selectAll()

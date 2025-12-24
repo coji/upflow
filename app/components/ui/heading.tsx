@@ -20,7 +20,8 @@ const headingVariants = cva('font-bold', {
   },
 })
 interface HeadingProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof headingVariants> {
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 }

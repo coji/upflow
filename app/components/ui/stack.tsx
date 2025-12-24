@@ -32,7 +32,8 @@ const stackVariants = cva('flex', {
 })
 
 export interface StackProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof stackVariants> {}
 
 export const Stack = React.forwardRef<HTMLDivElement, StackProps>(
