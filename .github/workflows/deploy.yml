@@ -33,9 +33,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Generate prisma client
-        run: pnpm prisma generate
-
       - name: 🔬 Lint
         run: pnpm run lint
 
@@ -64,9 +61,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Generate prisma client
-        run: pnpm prisma generate
 
       - name: Build
         run: pnpm run build
@@ -103,8 +97,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: 🛠 Install Atlas
+        run: curl -sSf https://atlasgo.sh | sh
+
       - name: 🛠 Setup Database
-        run: pnpm prisma migrate reset --force --skip-generate
+        run: pnpm setup
 
       - name: ⚡ Run vitest
         run: pnpm run test
