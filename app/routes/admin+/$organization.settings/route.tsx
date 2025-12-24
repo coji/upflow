@@ -8,6 +8,7 @@ import {
   ExportSettings,
   IntegrationSettings,
   OrganizationSettings,
+  Recalculate,
 } from './forms'
 import {
   deleteOrganizationAction,
@@ -81,6 +82,7 @@ export default function OrganizationSettingsPage({
       />
       <IntegrationSettings integration={integration} />
       <ExportSettings exportSetting={exportSetting} />
+      <Recalculate />
       <DeleteOrganization organization={organization} />
     </Stack>
   )

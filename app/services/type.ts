@@ -76,6 +76,7 @@ export type OrganizationSetting = {
     releaseDetectionMethod: Generated<string>;
     releaseDetectionKey: Generated<string>;
     isActive: Generated<number>;
+    excludedUsers: Generated<string>;
     updatedAt: string;
     createdAt: Generated<string>;
 };

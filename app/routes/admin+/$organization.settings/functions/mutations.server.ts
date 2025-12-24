@@ -18,6 +18,23 @@ export const updateOrganization = async (
     .execute()
 }
 
+export const updateOrganizationSetting = async (
+  organizationId: DB.Organization['id'],
+  data: Pick<
+    Updateable<DB.OrganizationSetting>,
+    | 'releaseDetectionMethod'
+    | 'releaseDetectionKey'
+    | 'isActive'
+    | 'excludedUsers'
+  >,
+) => {
+  return await db
+    .updateTable('organizationSettings')
+    .where('organizationId', '=', organizationId)
+    .set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
+    .execute()
+}
+
 export const deleteOrganization = async (id: DB.Organization['id']) => {
   return await db.deleteFrom('organizations').where('id', '=', id).execute()
 }

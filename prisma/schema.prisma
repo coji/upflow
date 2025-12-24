@@ -43,6 +43,7 @@ model OrganizationSetting {
   releaseDetectionMethod String   @default("branch") @map("release_detection_method")
   releaseDetectionKey    String   @default("production") @map("release_detection_key")
   isActive               Boolean  @default(true) @map("is_active")
+  excludedUsers          String   @default("") @map("excluded_users") // カンマ区切りで除外ユーザーを指定
   updatedAt              DateTime @updatedAt @map("updated_at")
   createdAt              DateTime @default(now()) @map("created_at")
 

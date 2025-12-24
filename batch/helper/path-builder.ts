@@ -1,5 +1,18 @@
 import path from 'node:path'
 
+/**
+ * データディレクトリを取得
+ * UPFLOW_DATA_DIR が設定されていればそれを使用、なければ ./data
+ */
+export const getDataDir = () => {
+  const upflowDataDir = process.env.UPFLOW_DATA_DIR
+  if (upflowDataDir && upflowDataDir !== 'undefined') {
+    return upflowDataDir
+  }
+  // デフォルト: プロジェクトルートの data/
+  return './data'
+}
+
 interface createPathBuilderProps {
   organizationId: string
   repositoryId: string
@@ -10,11 +23,7 @@ export const createPathBuilder = ({
 }: createPathBuilderProps) => {
   const jsonPath = (filename: string) => {
     // JSON データの保存場所
-    const JSON_DIR = path.join(
-      process.env.UPFLOW_DATA_DIR ??
-        path.join(import.meta.dirname, '..', 'data'),
-      'json',
-    )
+    const JSON_DIR = path.join(getDataDir(), 'json')
     return path.join(JSON_DIR, organizationId, repositoryId, filename)
   }
   const jsonFilename = (element: string, iid: number) =>

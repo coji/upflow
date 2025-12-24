@@ -49,6 +49,7 @@ pnpm test:e2e
 ## Architecture
 
 ### Tech Stack
+
 - **Framework**: React Router v7 (SSR mode) with Express server
 - **Database**: SQLite via Prisma (ORM) and Kysely (query builder)
 - **Auth**: better-auth with Google OAuth, supporting organizations
@@ -89,6 +90,7 @@ prisma/
 ### Routing Convention
 
 Uses `remix-flat-routes` with the `+` folder syntax:
+
 - `_layout.tsx` - Layout routes (no URL segment)
 - `_index.tsx` - Index routes
 - `$param` - Dynamic segments
@@ -97,6 +99,7 @@ Uses `remix-flat-routes` with the `+` folder syntax:
 ### Database Pattern
 
 Dual ORM setup:
+
 - **Prisma**: Schema definition, migrations, seeding
 - **Kysely**: Runtime queries (type-safe, generated from Prisma via prisma-kysely)
 
@@ -105,6 +108,7 @@ Types are generated to `app/services/type.ts` from Prisma schema.
 ### Path Aliases
 
 Use `~/` prefix for imports from project root:
+
 ```typescript
 import { db } from '~/app/services/db.server'
 import { Button } from '~/app/components/ui/button'
@@ -113,6 +117,7 @@ import { Button } from '~/app/components/ui/button'
 ### Batch Processing
 
 CLI for data synchronization (`batch/cli.ts`):
+
 - `fetch` - Fetches PR data from GitHub
 - `report` - Generates cycle time reports
 - `upsert` - Updates database with processed data

@@ -1,12 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { getDataDir } from './path-builder'
 
 // JSON データの保存場所
-const JSON_DIR = path.join(
-  process.env.UPFLOW_DATA_DIR ??
-    path.join(import.meta.dirname, '..', '..', 'data'),
-  'json',
-)
+const JSON_DIR = path.join(getDataDir(), 'json')
 
 /**
  * JSON ファイルのパスを作成

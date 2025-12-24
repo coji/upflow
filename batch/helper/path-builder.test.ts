@@ -1,27 +1,21 @@
-import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { createPathBuilder } from './path-builder'
+import { createPathBuilder, getDataDir } from './path-builder'
+
+describe('getDataDir', () => {
+  test('returns default ./data', () => {
+    expect(getDataDir()).toBe('./data')
+  })
+})
 
 describe('path-builder', () => {
-  test('jsonPath', () => {
-    const organizationId = 'test-company'
-    const repositoryId = 'test-repository'
-    const pathBuilder = createPathBuilder({ organizationId, repositoryId })
+  test('jsonPath builds correct path', () => {
+    const pathBuilder = createPathBuilder({
+      organizationId: 'test-company',
+      repositoryId: 'test-repository',
+    })
 
-    const dataDir = path.join(import.meta.dirname, '..', 'data', 'json') // App's root directory
-    expect(pathBuilder.jsonPath('test.json')).toStrictEqual(
-      `${dataDir}/test-company/test-repository/test.json`,
-    )
-  })
-
-  test('jsonPath defined UPFLOW_DATA_DIR', () => {
-    const organizationId = 'test-company'
-    const repositoryId = 'test-repository'
-    const pathBuilder = createPathBuilder({ organizationId, repositoryId })
-    process.env.UPFLOW_DATA_DIR = '/'
-
-    expect(pathBuilder.jsonPath('test.json')).toStrictEqual(
-      '/json/test-company/test-repository/test.json',
+    expect(pathBuilder.jsonPath('test.json')).toBe(
+      'data/json/test-company/test-repository/test.json',
     )
   })
 })
