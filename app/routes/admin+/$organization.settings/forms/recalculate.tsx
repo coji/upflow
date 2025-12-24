@@ -103,15 +103,7 @@ export const Recalculate = () => {
           )}
 
           {message && status !== 'idle' && (
-            <Alert
-              variant={
-                status === 'error'
-                  ? 'destructive'
-                  : status === 'completed'
-                    ? 'default'
-                    : 'default'
-              }
-            >
+            <Alert variant={status === 'error' ? 'destructive' : 'default'}>
               <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}

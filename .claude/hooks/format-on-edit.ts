@@ -30,7 +30,9 @@ const formatHook = defineHook({
         execSync(`pnpm exec prettier --write "${filePath}"`, {
           stdio: 'inherit',
         })
-      } catch {}
+      } catch (error) {
+        console.error(`Failed to format ${filePath}:`, error)
+      }
     }
 
     return context.success()

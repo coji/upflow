@@ -3,6 +3,7 @@ import {
   exportPullsToSpreadsheet,
   exportReviewResponsesToSpreadsheet,
 } from '~/batch/bizlogic/export-spreadsheet'
+import { requireSuperAdmin } from '~/app/libs/auth.server'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
 import { createProvider } from '~/batch/provider'
 import type { Route } from './+types/api.admin.recalculate.$organization'
@@ -10,7 +11,10 @@ import type { Route } from './+types/api.admin.recalculate.$organization'
 // 実行中の組織を追跡（同時実行防止）
 const runningJobs = new Set<string>()
 
-export const loader = async ({ params }: Route.LoaderArgs) => {
+export const loader = async ({ params, request }: Route.LoaderArgs) => {
+  // 認証チェック
+  await requireSuperAdmin(request)
+
   const organizationId = params.organization
   invariant(organizationId, 'organization is required')
 
