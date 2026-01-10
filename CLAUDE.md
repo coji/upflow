@@ -139,8 +139,8 @@ Files with `.server.ts` suffix are server-only and won't be bundled for the clie
 Uses Conform with Zod for type-safe form validation:
 
 ```typescript
-import { parseWithZod } from '@conform-to/zod'
-import { zx } from 'zodix'
+import { parseWithZod } from '@conform-to/zod/v4'
+import { zx } from '@coji/zodix/v4'
 ```
 
 Routes with multiple form actions use intent-based dispatch with `ts-pattern`:

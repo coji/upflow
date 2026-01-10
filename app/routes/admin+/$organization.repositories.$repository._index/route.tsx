@@ -1,6 +1,6 @@
+import { zx } from '@coji/zodix/v4'
 import { href, Link } from 'react-router'
 import { z } from 'zod'
-import { zx } from 'zodix'
 import {
   Badge,
   Card,

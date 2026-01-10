@@ -1,6 +1,6 @@
+import { zx } from '@coji/zodix/v4'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import { zx } from 'zodix'
 import { Stack } from '~/app/components/ui'
 import type { Route } from './+types/route'
 import {

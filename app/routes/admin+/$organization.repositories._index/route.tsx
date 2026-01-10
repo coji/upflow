@@ -1,8 +1,8 @@
+import { zx } from '@coji/zodix/v4'
 import { ExternalLinkIcon } from 'lucide-react'
 import { Link, href } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import { zx } from 'zodix'
 import {
   Button,
   Card,
