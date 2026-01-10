@@ -13,8 +13,8 @@ export const organizationSettingsSchema = z.object({
 
 export const integrationSettingsSchema = z.object({
   id: z.string().optional(),
-  provider: z.enum(['github'], { required_error: 'provider is required' }),
-  method: z.enum(['token'], { required_error: 'method is required' }),
+  provider: z.enum(['github']),
+  method: z.enum(['token']),
   privateToken: z.string().min(1, { message: 'private token is required' }),
 })
 

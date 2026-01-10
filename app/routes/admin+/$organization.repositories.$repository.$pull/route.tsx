@@ -1,6 +1,6 @@
+import { zx } from '@coji/zodix/v4'
 import { href } from 'react-router'
 import { z } from 'zod'
-import { zx } from 'zodix'
 import { HStack, Heading, Stack } from '~/app/components/ui'
 import { createFetcher } from '~/batch/provider/github/fetcher'
 import { createStore } from '~/batch/provider/github/store'

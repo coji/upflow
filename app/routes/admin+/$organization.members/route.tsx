@@ -1,6 +1,6 @@
+import { zx } from '@coji/zodix/v4'
 import { href } from 'react-router'
 import { z } from 'zod'
-import { zx } from 'zodix'
 import { Card, CardContent, CardHeader, CardTitle } from '~/app/components/ui'
 import type { Route } from './+types/route'
 import { listOrganizationMembers } from './queries.server'

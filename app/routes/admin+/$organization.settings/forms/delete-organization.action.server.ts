@@ -1,4 +1,4 @@
-import { parseWithZod } from '@conform-to/zod'
+import { parseWithZod } from '@conform-to/zod/v4'
 import { href, redirect } from 'react-router'
 import type { Route } from '../+types/route'
 import { deleteOrganization } from '../functions.server'

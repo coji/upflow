@@ -1,7 +1,7 @@
+import { zx } from '@coji/zodix/v4'
 import type { ActionFunctionArgs } from 'react-router'
 import { href } from 'react-router'
 import { z } from 'zod'
-import { zx } from 'zodix'
 
 export const handle = {
   breadcrumb: ({ organizationId }: { organizationId: string }) => ({

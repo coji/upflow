@@ -1,7 +1,7 @@
+import { zx } from '@coji/zodix/v4'
 import { CopyIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { zx } from 'zodix'
 import { AppDataTable } from '~/app/components'
 import { Button, Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
