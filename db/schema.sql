@@ -109,11 +109,12 @@ CREATE TABLE `invitations` (
   `status` text NOT NULL,
   `expires_at` datetime NOT NULL,
   `inviter_id` text NOT NULL,
-  `created_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   `team_id` text NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `invitations_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT `invitations_inviter_id_fkey` FOREIGN KEY (`inviter_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+  CONSTRAINT `invitations_inviter_id_fkey` FOREIGN KEY (`inviter_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `invitations_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
 );
 -- Create "organization_settings" table
 CREATE TABLE `organization_settings` (
@@ -227,7 +228,7 @@ CREATE TABLE `teams` (
   `created_at` date NOT NULL,
   `updated_at` date NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `0` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+  CONSTRAINT `teams_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- Create index "teams_organization_id_idx" to table: "teams"
 CREATE INDEX `teams_organization_id_idx` ON `teams` (`organization_id`);
@@ -238,8 +239,8 @@ CREATE TABLE `team_members` (
   `user_id` text NOT NULL,
   `created_at` date NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `0` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT `1` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+  CONSTRAINT `team_members_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `team_members_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- Create index "team_members_team_id_idx" to table: "team_members"
 CREATE INDEX `team_members_team_id_idx` ON `team_members` (`team_id`);
