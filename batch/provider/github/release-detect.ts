@@ -15,7 +15,7 @@ const mergedPullRequests = (
         pr.state === 'closed' &&
         pr.merged_at !== null,
     ), // 一旦mainブランチ固定
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
+    // biome-ignore lint/style/noNonNullAssertion: merged_atはnullじゃないことが保証されている
     R.sortBy((pr) => pr.merged_at!),
   )
 }
@@ -55,7 +55,7 @@ const findReleaseDateByBranch = async (
  * @returns
  */
 const findReleaseDateByTag = async (
-  allPullRequests: ShapedGitHubPullRequest[],
+  _allPullRequests: ShapedGitHubPullRequest[],
   store: ReturnType<typeof createStore>,
   pr: ShapedGitHubPullRequest,
   tagCondition: string,
@@ -65,10 +65,7 @@ const findReleaseDateByTag = async (
   const tagRegexp = new RegExp(tagCondition)
   const allReleaseTags = (await store.loader.tags())
     .filter((t) => tagRegexp.test(t.name)) // リリース用のタグを抽出
-    .sort(
-      // biome-ignore lint/style/noNonNullAssertion: <explanation>
-      (a, b) => dayjs(a.committed_at!).unix() - dayjs(b.committed_at!).unix(),
-    ) // 古い順に並べる
+    .sort((a, b) => dayjs(a.committed_at).unix() - dayjs(b.committed_at).unix()) // 古い順に並べる
 
   for (const releaseTag of allReleaseTags) {
     if (dayjs(pr.merged_at).unix() <= dayjs(releaseTag.committed_at).unix()) {

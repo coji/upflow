@@ -30,7 +30,7 @@ export const loader = async ({ params }: Route.LoaderArgs) => {
 }
 
 export default function OngoingPage({
-  loaderData: { pullRequests, from, to },
+  loaderData: { pullRequests },
 }: Route.ComponentProps) {
   return (
     <Stack>

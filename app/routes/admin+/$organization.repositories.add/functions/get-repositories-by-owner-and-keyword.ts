@@ -70,7 +70,7 @@ export const getRepositoriesByOwnerAndKeyword = async ({
   const repoData = json.data.search
 
   const repos: Repository[] = repoData.nodes
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    // biome-ignore lint/suspicious/noExplicitAny: 型定義が面倒なのでanyで受け取る
     .map((node: any) => ({
       id: node.id,
       owner: node.owner.login,

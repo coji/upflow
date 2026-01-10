@@ -35,16 +35,17 @@ export function AppDataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>(
-      columns
-        .filter(
-          (column) => 'accessorKey' in column && column.enableHiding !== false,
-        )
-        .reduce(
-          // @ts-ignore
-          // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
-          (acc, obj) => ({ ...acc, [obj.id ?? obj.accessorKey]: false }),
-          {},
-        ),
+      Object.fromEntries(
+        columns
+          .filter(
+            (column) =>
+              'accessorKey' in column && column.enableHiding !== false,
+          )
+          .map((column) => [
+            column.id ?? ('accessorKey' in column ? column.accessorKey : ''),
+            false,
+          ]),
+      ),
     )
   const table = useReactTable({
     data,

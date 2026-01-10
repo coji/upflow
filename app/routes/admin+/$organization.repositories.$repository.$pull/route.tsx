@@ -22,7 +22,7 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const {
     organization: organizationId,
     repository: repositoryId,

@@ -13,7 +13,7 @@ export async function getUniqueOwners(token: string): Promise<string[]> {
 
 const getViewerOrganizations = async (token: string) => {
   const owners = new Set<string>()
-  let cursor: string | undefined = undefined
+  let cursor: string | undefined
   let hasNextPage = true
 
   const query = `
@@ -57,7 +57,7 @@ const getViewableRepositoriesOrganizations = async (
   token: string,
 ): Promise<string[]> => {
   const owners = new Set<string>()
-  let cursor: string | undefined = undefined
+  let cursor: string | undefined
   let hasNextPage = true
 
   const query = `

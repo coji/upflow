@@ -11,7 +11,7 @@ export const handle = {
     to: href('/admin/:organization/members', { organization: organizationId }),
   }),
 }
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
+export const loader = async ({ params }: Route.LoaderArgs) => {
   const { organization: organizationId } = zx.parseParams(params, {
     organization: z.string(),
   })

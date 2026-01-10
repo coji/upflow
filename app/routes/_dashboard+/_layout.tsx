@@ -13,9 +13,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { user }
 }
 
-export default function DashboardLayoutPage({
-  loaderData: { user },
-}: Route.ComponentProps) {
+export default function DashboardLayoutPage() {
   const { AppBreadcrumbs } = useBreadcrumbs()
 
   return (

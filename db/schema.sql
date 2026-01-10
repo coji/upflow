@@ -1,192 +1,245 @@
--- Users table (referenced by sessions, accounts, members, invitations)
-CREATE TABLE IF NOT EXISTS "users" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "email_verified" BOOLEAN NOT NULL,
-    "image" TEXT,
-    "role" TEXT NOT NULL,
-    "banned" BOOLEAN,
-    "ban_reason" TEXT,
-    "ban_expires" DATETIME,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" DATETIME NOT NULL
+-- Create "atlas_schema_revisions" table
+CREATE TABLE `atlas_schema_revisions` (
+  `version` text NOT NULL,
+  `description` text NOT NULL,
+  `type` integer NOT NULL DEFAULT 2,
+  `applied` integer NOT NULL DEFAULT 0,
+  `total` integer NOT NULL DEFAULT 0,
+  `executed_at` datetime NOT NULL,
+  `execution_time` integer NOT NULL,
+  `error` text NULL,
+  `error_stmt` text NULL,
+  `hash` text NOT NULL,
+  `partial_hashes` json NULL,
+  `operator_version` text NOT NULL,
+  PRIMARY KEY (`version`)
 );
-
--- Organizations table (referenced by many tables)
-CREATE TABLE IF NOT EXISTS "organizations" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "name" TEXT NOT NULL,
-    "slug" TEXT,
-    "logo" TEXT,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "metadata" TEXT
+-- Create "users" table
+CREATE TABLE `users` (
+  `id` text NOT NULL,
+  `name` text NOT NULL,
+  `email` text NOT NULL,
+  `email_verified` boolean NOT NULL,
+  `image` text NULL,
+  `role` text NOT NULL,
+  `banned` boolean NULL,
+  `ban_reason` text NULL,
+  `ban_expires` datetime NULL,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`)
 );
-CREATE UNIQUE INDEX "organizations_slug_key" ON "organizations"("slug");
-
--- Sessions table
-CREATE TABLE IF NOT EXISTS "sessions" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "expires_at" DATETIME NOT NULL,
-    "token" TEXT NOT NULL,
-    "created_at" DATETIME NOT NULL,
-    "updated_at" DATETIME NOT NULL,
-    "ip_address" TEXT,
-    "user_agent" TEXT,
-    "user_id" TEXT NOT NULL,
-    "impersonated_by" TEXT,
-    "active_organization_id" TEXT,
-    CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create "organizations" table
+CREATE TABLE `organizations` (
+  `id` text NOT NULL,
+  `name` text NOT NULL,
+  `slug` text NULL,
+  `logo` text NULL,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `metadata` text NULL,
+  PRIMARY KEY (`id`)
 );
-CREATE UNIQUE INDEX "sessions_token_key" ON "sessions"("token");
-
--- Accounts table
-CREATE TABLE IF NOT EXISTS "accounts" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "account_id" TEXT NOT NULL,
-    "provider_id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "access_token" TEXT,
-    "refresh_token" TEXT,
-    "id_token" TEXT,
-    "access_token_expires_at" DATETIME,
-    "refresh_token_expires_at" DATETIME,
-    "scope" TEXT,
-    "password" TEXT,
-    "created_at" DATETIME NOT NULL,
-    "updated_at" DATETIME NOT NULL,
-    CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create index "organizations_slug_key" to table: "organizations"
+CREATE UNIQUE INDEX `organizations_slug_key` ON `organizations` (`slug`);
+-- Create "sessions" table
+CREATE TABLE `sessions` (
+  `id` text NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `token` text NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `ip_address` text NULL,
+  `user_agent` text NULL,
+  `user_id` text NOT NULL,
+  `impersonated_by` text NULL,
+  `active_organization_id` text NULL,
+  `active_team_id` text NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `sessions_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
--- Verifications table
-CREATE TABLE IF NOT EXISTS "verifications" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "identifier" TEXT NOT NULL,
-    "value" TEXT NOT NULL,
-    "expires_at" DATETIME NOT NULL,
-    "created_at" DATETIME,
-    "updated_at" DATETIME
+-- Create index "sessions_token_key" to table: "sessions"
+CREATE UNIQUE INDEX `sessions_token_key` ON `sessions` (`token`);
+-- Create "accounts" table
+CREATE TABLE `accounts` (
+  `id` text NOT NULL,
+  `account_id` text NOT NULL,
+  `provider_id` text NOT NULL,
+  `user_id` text NOT NULL,
+  `access_token` text NULL,
+  `refresh_token` text NULL,
+  `id_token` text NULL,
+  `access_token_expires_at` datetime NULL,
+  `refresh_token_expires_at` datetime NULL,
+  `scope` text NULL,
+  `password` text NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `accounts_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
--- Members table
-CREATE TABLE IF NOT EXISTS "members" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "organization_id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "role" TEXT NOT NULL,
-    "created_at" DATETIME NOT NULL,
-    CONSTRAINT "members_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create "verifications" table
+CREATE TABLE `verifications` (
+  `id` text NOT NULL,
+  `identifier` text NOT NULL,
+  `value` text NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `created_at` datetime NULL,
+  `updated_at` datetime NULL,
+  PRIMARY KEY (`id`)
 );
-
--- Invitations table
-CREATE TABLE IF NOT EXISTS "invitations" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "organization_id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "role" TEXT,
-    "status" TEXT NOT NULL,
-    "expires_at" DATETIME NOT NULL,
-    "inviter_id" TEXT NOT NULL,
-    CONSTRAINT "invitations_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "invitations_inviter_id_fkey" FOREIGN KEY ("inviter_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create "members" table
+CREATE TABLE `members` (
+  `id` text NOT NULL,
+  `organization_id` text NOT NULL,
+  `user_id` text NOT NULL,
+  `role` text NOT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `members_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `members_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
--- Organization settings table
-CREATE TABLE IF NOT EXISTS "organization_settings" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "organization_id" TEXT NOT NULL,
-    "release_detection_method" TEXT NOT NULL DEFAULT 'branch',
-    "release_detection_key" TEXT NOT NULL DEFAULT 'production',
-    "is_active" BOOLEAN NOT NULL DEFAULT true,
-    "excluded_users" TEXT NOT NULL DEFAULT '',
-    "updated_at" DATETIME NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "organization_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create "invitations" table
+CREATE TABLE `invitations` (
+  `id` text NOT NULL,
+  `organization_id` text NOT NULL,
+  `email` text NOT NULL,
+  `role` text NULL,
+  `status` text NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `inviter_id` text NOT NULL,
+  `created_at` datetime NOT NULL,
+  `team_id` text NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `invitations_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `invitations_inviter_id_fkey` FOREIGN KEY (`inviter_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE UNIQUE INDEX "organization_settings_organization_id_key" ON "organization_settings"("organization_id");
-
--- Export settings table
-CREATE TABLE IF NOT EXISTS "export_settings" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "sheet_id" TEXT NOT NULL,
-    "client_email" TEXT NOT NULL,
-    "private_key" TEXT NOT NULL,
-    "updated_at" DATETIME NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "organization_id" TEXT NOT NULL,
-    CONSTRAINT "export_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create "organization_settings" table
+CREATE TABLE `organization_settings` (
+  `id` text NOT NULL,
+  `organization_id` text NOT NULL,
+  `release_detection_method` text NOT NULL DEFAULT 'branch',
+  `release_detection_key` text NOT NULL DEFAULT 'production',
+  `is_active` boolean NOT NULL DEFAULT true,
+  `excluded_users` text NOT NULL DEFAULT '',
+  `updated_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `organization_settings_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE UNIQUE INDEX "export_settings_organization_id_key" ON "export_settings"("organization_id");
-
--- Integrations table
-CREATE TABLE IF NOT EXISTS "integrations" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "provider" TEXT NOT NULL,
-    "method" TEXT NOT NULL,
-    "private_token" TEXT,
-    "organization_id" TEXT NOT NULL,
-    CONSTRAINT "integrations_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create index "organization_settings_organization_id_key" to table: "organization_settings"
+CREATE UNIQUE INDEX `organization_settings_organization_id_key` ON `organization_settings` (`organization_id`);
+-- Create "export_settings" table
+CREATE TABLE `export_settings` (
+  `id` text NOT NULL,
+  `sheet_id` text NOT NULL,
+  `client_email` text NOT NULL,
+  `private_key` text NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `organization_id` text NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `export_settings_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE UNIQUE INDEX "integrations_organization_id_key" ON "integrations"("organization_id");
-CREATE INDEX "integrations_organization_id_idx" ON "integrations"("organization_id");
-
--- Repositories table
-CREATE TABLE IF NOT EXISTS "repositories" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "integration_id" TEXT NOT NULL,
-    "provider" TEXT NOT NULL,
-    "owner" TEXT NOT NULL,
-    "repo" TEXT NOT NULL,
-    "release_detection_method" TEXT NOT NULL DEFAULT 'branch',
-    "release_detection_key" TEXT NOT NULL DEFAULT 'production',
-    "updated_at" DATETIME NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "organization_id" TEXT NOT NULL,
-    CONSTRAINT "repositories_integration_id_fkey" FOREIGN KEY ("integration_id") REFERENCES "integrations" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "repositories_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create index "export_settings_organization_id_key" to table: "export_settings"
+CREATE UNIQUE INDEX `export_settings_organization_id_key` ON `export_settings` (`organization_id`);
+-- Create "integrations" table
+CREATE TABLE `integrations` (
+  `id` text NOT NULL,
+  `provider` text NOT NULL,
+  `method` text NOT NULL,
+  `private_token` text NULL,
+  `organization_id` text NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `integrations_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX "repositories_organization_id_idx" ON "repositories"("organization_id");
-CREATE UNIQUE INDEX "repositories_organization_id_integration_id_owner_repo_key" ON "repositories"("organization_id", "integration_id", "owner", "repo");
-
--- Pull requests table
-CREATE TABLE IF NOT EXISTS "pull_requests" (
-    "repo" TEXT NOT NULL,
-    "number" INTEGER NOT NULL,
-    "source_branch" TEXT NOT NULL,
-    "target_branch" TEXT NOT NULL,
-    "state" TEXT NOT NULL,
-    "author" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "url" TEXT NOT NULL,
-    "first_committed_at" TEXT,
-    "pull_request_created_at" TEXT NOT NULL,
-    "first_reviewed_at" TEXT,
-    "merged_at" TEXT,
-    "released_at" TEXT,
-    "coding_time" REAL,
-    "pickup_time" REAL,
-    "review_time" REAL,
-    "deploy_time" REAL,
-    "total_time" REAL,
-    "repository_id" TEXT NOT NULL,
-    "updated_at" TEXT,
-    PRIMARY KEY ("repository_id", "number"),
-    CONSTRAINT "pull_requests_repository_id_fkey" FOREIGN KEY ("repository_id") REFERENCES "repositories" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create index "integrations_organization_id_key" to table: "integrations"
+CREATE UNIQUE INDEX `integrations_organization_id_key` ON `integrations` (`organization_id`);
+-- Create index "integrations_organization_id_idx" to table: "integrations"
+CREATE INDEX `integrations_organization_id_idx` ON `integrations` (`organization_id`);
+-- Create "repositories" table
+CREATE TABLE `repositories` (
+  `id` text NOT NULL,
+  `integration_id` text NOT NULL,
+  `provider` text NOT NULL,
+  `owner` text NOT NULL,
+  `repo` text NOT NULL,
+  `release_detection_method` text NOT NULL DEFAULT 'branch',
+  `release_detection_key` text NOT NULL DEFAULT 'production',
+  `updated_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `organization_id` text NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `repositories_integration_id_fkey` FOREIGN KEY (`integration_id`) REFERENCES `integrations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `repositories_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
--- Company GitHub users table
-CREATE TABLE IF NOT EXISTS "company_github_users" (
-    "user_id" TEXT,
-    "login" TEXT NOT NULL,
-    "name" TEXT,
-    "email" TEXT,
-    "picture_url" TEXT,
-    "display_name" TEXT NOT NULL,
-    "updated_at" DATETIME NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "organization_id" TEXT NOT NULL,
-    PRIMARY KEY ("organization_id", "login"),
-    CONSTRAINT "company_github_users_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+-- Create index "repositories_organization_id_idx" to table: "repositories"
+CREATE INDEX `repositories_organization_id_idx` ON `repositories` (`organization_id`);
+-- Create index "repositories_organization_id_integration_id_owner_repo_key" to table: "repositories"
+CREATE UNIQUE INDEX `repositories_organization_id_integration_id_owner_repo_key` ON `repositories` (`organization_id`, `integration_id`, `owner`, `repo`);
+-- Create "pull_requests" table
+CREATE TABLE `pull_requests` (
+  `repo` text NOT NULL,
+  `number` integer NOT NULL,
+  `source_branch` text NOT NULL,
+  `target_branch` text NOT NULL,
+  `state` text NOT NULL,
+  `author` text NOT NULL,
+  `title` text NOT NULL,
+  `url` text NOT NULL,
+  `first_committed_at` text NULL,
+  `pull_request_created_at` text NOT NULL,
+  `first_reviewed_at` text NULL,
+  `merged_at` text NULL,
+  `released_at` text NULL,
+  `coding_time` real NULL,
+  `pickup_time` real NULL,
+  `review_time` real NULL,
+  `deploy_time` real NULL,
+  `total_time` real NULL,
+  `repository_id` text NOT NULL,
+  `updated_at` text NULL,
+  PRIMARY KEY (`number`, `repository_id`),
+  CONSTRAINT `pull_requests_repository_id_fkey` FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX "company_github_users_organization_id_idx" ON "company_github_users"("organization_id");
+-- Create "company_github_users" table
+CREATE TABLE `company_github_users` (
+  `user_id` text NULL,
+  `login` text NOT NULL,
+  `name` text NULL,
+  `email` text NULL,
+  `picture_url` text NULL,
+  `display_name` text NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `organization_id` text NOT NULL,
+  PRIMARY KEY (`login`, `organization_id`),
+  CONSTRAINT `company_github_users_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+-- Create index "company_github_users_organization_id_idx" to table: "company_github_users"
+CREATE INDEX `company_github_users_organization_id_idx` ON `company_github_users` (`organization_id`);
+-- Create "teams" table
+CREATE TABLE `teams` (
+  `id` text NOT NULL,
+  `name` text NOT NULL,
+  `organization_id` text NOT NULL,
+  `created_at` date NOT NULL,
+  `updated_at` date NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `0` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "teams_organization_id_idx" to table: "teams"
+CREATE INDEX `teams_organization_id_idx` ON `teams` (`organization_id`);
+-- Create "team_members" table
+CREATE TABLE `team_members` (
+  `id` text NOT NULL,
+  `team_id` text NOT NULL,
+  `user_id` text NOT NULL,
+  `created_at` date NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `0` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT `1` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+);
+-- Create index "team_members_team_id_idx" to table: "team_members"
+CREATE INDEX `team_members_team_id_idx` ON `team_members` (`team_id`);
+-- Create index "team_members_user_id_idx" to table: "team_members"
+CREATE INDEX `team_members_user_id_idx` ON `team_members` (`user_id`);
