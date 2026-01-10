@@ -21,7 +21,7 @@ export const integrationSettingsSchema = z.object({
 export const exportSettingsSchema = z.object({
   id: z.string().optional(),
   sheetId: z.string(),
-  clientEmail: z.string().email(),
+  clientEmail: z.email(),
   privateKey: z.string(),
 })
 
@@ -39,4 +39,4 @@ export enum INTENTS {
   deleteOrganization = 'delete-organization',
 }
 
-export const intentsSchema = z.nativeEnum(INTENTS)
+export const intentsSchema = z.enum(INTENTS)
