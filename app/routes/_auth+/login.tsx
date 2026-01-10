@@ -33,7 +33,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     asResponse: true,
   })
 
-  // bodyにURLが含まれる場合
+  if (!response.ok) {
+    throw new Response('OAuth sign-in failed', { status: response.status })
+  }
+
   const data = await response.json()
   return redirect(data.url || '/', { headers: response.headers })
 }

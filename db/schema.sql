@@ -29,6 +29,8 @@ CREATE TABLE `users` (
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`)
 );
+-- Create index "users_email_key" to table: "users"
+CREATE UNIQUE INDEX `users_email_key` ON `users` (`email`);
 -- Create "organizations" table
 CREATE TABLE `organizations` (
   `id` text NOT NULL,
