@@ -26,22 +26,6 @@ INSERT INTO `new_invitations` (`id`, `organization_id`, `email`, `role`, `status
 DROP TABLE `invitations`;
 -- Rename temporary table "new_invitations" to "invitations"
 ALTER TABLE `new_invitations` RENAME TO `invitations`;
--- Create "atlas_schema_revisions" table
-CREATE TABLE `atlas_schema_revisions` (
-  `version` text NOT NULL,
-  `description` text NOT NULL,
-  `type` integer NOT NULL DEFAULT 2,
-  `applied` integer NOT NULL DEFAULT 0,
-  `total` integer NOT NULL DEFAULT 0,
-  `executed_at` datetime NOT NULL,
-  `execution_time` integer NOT NULL,
-  `error` text NULL,
-  `error_stmt` text NULL,
-  `hash` text NOT NULL,
-  `partial_hashes` json NULL,
-  `operator_version` text NOT NULL,
-  PRIMARY KEY (`version`)
-);
 -- Create "teams" table
 CREATE TABLE `teams` (
   `id` text NOT NULL,
