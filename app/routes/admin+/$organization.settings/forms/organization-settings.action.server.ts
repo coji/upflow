@@ -32,7 +32,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       isActive,
       excludedUsers,
     })
-  } catch (e) {
+  } catch (_e) {
     return {
       intent: INTENTS.organizationSettings,
       lastResult: submission.reply({

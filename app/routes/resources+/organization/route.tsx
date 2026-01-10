@@ -34,7 +34,7 @@ export const OrganizationSwitcher = ({
   const fetcher = useFetcher<typeof loader>()
   const [open, setOpen] = useState(false)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher.loadは安定している
   useEffect(() => {
     fetcher.load(href('/resources/organization'))
   }, [])
@@ -52,7 +52,7 @@ export const OrganizationSwitcher = ({
           variant="outline"
           aria-expanded={open}
           aria-label="Select a team"
-          className={cn('w-[10rem] justify-between md:w-[12rem]', className)}
+          className={cn('w-40 justify-between md:w-48', className)}
         >
           <div>
             {currentOrganization
@@ -62,7 +62,7 @@ export const OrganizationSwitcher = ({
           <ChevronsUpDownIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[10rem] p-0 md:w-[12rem]">
+      <DropdownMenuContent className="w-40 p-0 md:w-48">
         {fetcher.data?.organizations.map((organization) => (
           <DropdownMenuGroup key={organization.id}>
             <DropdownMenuItem asChild>

@@ -6,9 +6,8 @@ import { href, redirect } from 'react-router'
 import { db, dialect } from '~/app/services/db.server'
 
 export const auth = betterAuth({
-  baseURL: process.env.BASE_URL,
+  baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.SESSION_SECRET,
-  // @ts-ignore
   database: { dialect: dialect, type: 'sqlite' },
   socialProviders: {
     google: {
@@ -51,6 +50,7 @@ export const auth = betterAuth({
       idToken: 'id_token',
       providerId: 'provider_id',
       refreshToken: 'refresh_token',
+      refreshTokenExpiresAt: 'refresh_token_expires_at',
       userId: 'user_id',
     },
   },
@@ -85,6 +85,7 @@ export const auth = betterAuth({
       },
     }),
     organization({
+      teams: { enabled: true },
       allowUserToCreateOrganization: async (user) => {
         // Check if the user is a super admin
         const { role } = await db
@@ -98,6 +99,7 @@ export const auth = betterAuth({
         session: {
           fields: {
             activeOrganizationId: 'active_organization_id',
+            activeTeamId: 'active_team_id',
           },
         },
         team: {
@@ -106,6 +108,14 @@ export const auth = betterAuth({
             organizationId: 'organization_id',
             createdAt: 'created_at',
             updatedAt: 'updated_at',
+          },
+        },
+        teamMember: {
+          modelName: 'team_members',
+          fields: {
+            teamId: 'team_id',
+            userId: 'user_id',
+            createdAt: 'created_at',
           },
         },
         organization: {
@@ -129,6 +139,9 @@ export const auth = betterAuth({
           fields: {
             organizationId: 'organization_id',
             expiresAt: 'expires_at',
+            createdAt: 'created_at',
+            inviterId: 'inviter_id',
+            teamId: 'team_id',
           },
         },
       },

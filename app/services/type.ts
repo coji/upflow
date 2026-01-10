@@ -25,6 +25,21 @@ export interface Accounts {
   userId: string;
 }
 
+export interface AtlasSchemaRevisions {
+  applied: Generated<number>;
+  description: string;
+  error: string | null;
+  errorStmt: string | null;
+  executedAt: string;
+  executionTime: number;
+  hash: string;
+  operatorVersion: string;
+  partialHashes: string | null;
+  total: Generated<number>;
+  type: Generated<number>;
+  version: string;
+}
+
 export interface CompanyGithubUsers {
   createdAt: Generated<string>;
   displayName: string;
@@ -56,6 +71,7 @@ export interface Integrations {
 }
 
 export interface Invitations {
+  createdAt: string;
   email: string;
   expiresAt: string;
   id: string;
@@ -167,6 +183,7 @@ export interface Verifications {
 
 export interface DB {
   accounts: Accounts;
+  atlasSchemaRevisions: AtlasSchemaRevisions;
   companyGithubUsers: CompanyGithubUsers;
   exportSettings: ExportSettings;
   integrations: Integrations;

@@ -8,7 +8,7 @@ async function seed() {
   const email = 'coji@techtalk.jp'
 
   // user
-  const user = await db
+  await db
     .insertInto('users')
     .values({
       id: nanoid(),

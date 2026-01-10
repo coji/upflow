@@ -14,7 +14,7 @@ export default function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
-  loadContext: AppLoadContext,
+  _loadContext: AppLoadContext,
 ) {
   return isbot(request.headers.get('user-agent'))
     ? handleBotRequest(
@@ -40,7 +40,7 @@ function handleBotRequest(
   let statusCode = responseStatusCode
   return new Promise((resolve, reject) => {
     let shellRendered = false
-    const { pipe, abort } = renderToPipeableStream(
+    const { pipe } = renderToPipeableStream(
       <ServerRouter context={reactRouterContext} url={request.url} />,
       {
         onAllReady() {
@@ -85,7 +85,7 @@ function handleBrowserRequest(
   let statusCode = responseStatusCode
   return new Promise((resolve, reject) => {
     let shellRendered = false
-    const { pipe, abort } = renderToPipeableStream(
+    const { pipe } = renderToPipeableStream(
       <ServerRouter context={reactRouterContext} url={request.url} />,
       {
         onShellReady() {

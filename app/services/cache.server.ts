@@ -1,4 +1,4 @@
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: simple in-memory cache implementation
 const cacheStore: Record<string, { data: any; expires: number }> = {}
 
 export function getCachedData<T>(

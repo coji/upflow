@@ -28,11 +28,17 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   //  認証処理
-  const res = await auth.api.signInSocial({
-    body: { provider: 'google' },
+  const response = await auth.api.signInSocial({
+    body: { provider: 'google', callbackURL: '/' },
+    asResponse: true,
   })
 
-  return redirect(res.url ?? '/')
+  if (!response.ok) {
+    throw new Response('OAuth sign-in failed', { status: response.status })
+  }
+
+  const data = await response.json()
+  return redirect(data.url || '/', { headers: response.headers })
 }
 
 export default function LoginPage() {

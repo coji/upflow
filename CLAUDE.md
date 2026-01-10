@@ -59,7 +59,7 @@ pnpm test:e2e
 
 ### Project Structure
 
-```
+```text
 app/
 ├── routes/           # File-based routing (remix-flat-routes convention)
 │   ├── _dashboard+/  # Dashboard views (authenticated)
@@ -118,11 +118,39 @@ Types are generated to `app/services/type.ts` from the database.
 
 ### Path Aliases
 
-Use `~/` prefix for imports from project root:
+Use `~/` prefix for imports from `app/` directory:
 
 ```typescript
 import { db } from '~/app/services/db.server'
 import { Button } from '~/app/components/ui/button'
+```
+
+### Server-Side Code Convention
+
+Files with `.server.ts` suffix are server-only and won't be bundled for the client:
+
+- `queries.server.ts` - Database read operations
+- `mutations.server.ts` - Database write operations
+- `functions.server.ts` - General server utilities
+- `*.action.server.ts` - Form action handlers
+
+### Form Handling
+
+Uses Conform with Zod for type-safe form validation:
+
+```typescript
+import { parseWithZod } from '@conform-to/zod'
+import { zx } from 'zodix'
+```
+
+Routes with multiple form actions use intent-based dispatch with `ts-pattern`:
+
+```typescript
+const { intent } = await zx.parseForm(formData, { intent: intentsSchema })
+return match(intent)
+  .with(INTENTS.save, () => saveAction(...))
+  .with(INTENTS.delete, () => deleteAction(...))
+  .exhaustive()
 ```
 
 ### Batch Processing

@@ -84,10 +84,8 @@ export default function OrganizationLayout({
       </div>
 
       <div>
-        <>
-          <AppBreadcrumbs />
-          <Outlet />
-        </>
+        <AppBreadcrumbs />
+        <Outlet />
       </div>
     </div>
   )

@@ -11,7 +11,7 @@ import {
 import type { Route } from './+types/route'
 import { listOrganizations } from './queries.server'
 
-export const loader = async ({ request }: Route.LoaderArgs) => ({
+export const loader = async () => ({
   organizations: await listOrganizations(),
 })
 

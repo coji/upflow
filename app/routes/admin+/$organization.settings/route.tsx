@@ -46,6 +46,7 @@ export const action = async ({
   request,
   params,
   context,
+  ...rest
 }: Route.ActionArgs) => {
   const { intent } = await zx.parseForm(await request.clone().formData(), {
     intent: intentsSchema,
@@ -53,20 +54,21 @@ export const action = async ({
 
   return await match(intent)
     .with(INTENTS.organizationSettings, () =>
-      organizationSettingsAction({ request, params, context }),
+      organizationSettingsAction({ request, params, context, ...rest }),
     )
     .with(INTENTS.integrationSettings, () =>
       integrationSettingsAction({
         request,
         params,
         context,
+        ...rest,
       }),
     )
     .with(INTENTS.exportSettings, () =>
-      exportSettingsAction({ request, params, context }),
+      exportSettingsAction({ request, params, context, ...rest }),
     )
     .with(INTENTS.deleteOrganization, () =>
-      deleteOrganizationAction({ request, params, context }),
+      deleteOrganizationAction({ request, params, context, ...rest }),
     )
     .exhaustive()
 }
