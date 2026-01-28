@@ -12,7 +12,7 @@ import { logger } from '~/batch/helper/logger'
 import type { ShapedGitHubPullRequest } from './model'
 import { findReleaseDate } from './release-detect'
 import { analyzeReviewResponse } from './review-response'
-import { createStore } from './store'
+import type { PullRequestLoaders } from './types'
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).utc().toISOString() : null
@@ -30,6 +30,7 @@ export const buildPullRequests = async (
     excludedUsers: string
   },
   pullrequests: ShapedGitHubPullRequest[],
+  loaders: PullRequestLoaders,
 ) => {
   // カンマ区切りの除外ユーザーリストをパース
   const customExcludedUsers = config.excludedUsers
@@ -37,7 +38,6 @@ export const buildPullRequests = async (
     .map((u) => u.trim())
     .filter((u) => u.length > 0)
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
-  const store = createStore(config)
 
   const pulls: Selectable<DB.PullRequests>[] = []
   const reviewResponses: {
@@ -50,17 +50,17 @@ export const buildPullRequests = async (
   for (const pr of pullrequests) {
     try {
       // コミット履歴
-      const commits = await store.loader.commits(pr.number)
+      const commits = await loaders.commits(pr.number)
 
       // レビュー履歴 (bot と PR 作成者は除外)
-      const reviews = (await store.loader.reviews(pr.number)).filter(
+      const reviews = (await loaders.reviews(pr.number)).filter(
         (r) =>
           !r.user?.endsWith('[bot]') &&
           r.user !== pr.author &&
           !excludedUsers.includes(r.user ?? ''),
       )
       // コメント履歴 (bot と PR 作成者は除外)
-      const discussions = (await store.loader.discussions(pr.number)).filter(
+      const discussions = (await loaders.discussions(pr.number)).filter(
         (d) =>
           !d.user?.endsWith('[bot]') &&
           d.user !== pr.author &&
@@ -98,7 +98,7 @@ export const buildPullRequests = async (
         pr.merged_at && pr.merge_commit_sha
           ? await findReleaseDate(
               pullrequests,
-              store,
+              loaders,
               pr,
               config.releaseDetectionMethod,
               config.releaseDetectionKey,

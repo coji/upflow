@@ -139,6 +139,7 @@ export const createGitHubProvider = (
           excludedUsers: organizationSetting.excludedUsers,
         },
         await store.loader.pullrequests(),
+        store.loader,
       )
       allPulls = [...allPulls, ...pulls]
       allReviewResponses = [...allReviewResponses, ...reviewResponses]
