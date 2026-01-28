@@ -1,6 +1,4 @@
 import { zx } from '@coji/zodix/v4'
-import { TZDate } from '@date-fns/tz'
-import { addDays, format, subSeconds } from 'date-fns'
 import { CopyIcon } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -8,15 +6,12 @@ import { z } from 'zod'
 import { AppDataTable } from '~/app/components'
 import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
 import WeeklyCalendar from '~/app/components/week-calendar'
+import dayjs from '~/app/libs/dayjs'
 import type { Route } from './+types/route'
 import { columns } from './columns'
-import {
-  getEndOfWeek,
-  getMergedPullRequestReport,
-  getStartOfWeek,
-} from './functions.server'
+import { getMergedPullRequestReport } from './functions.server'
 import { generateMarkdown } from './functions/generate-markdown'
-import { parseDate } from './functions/utils'
+import { getEndOfWeek, getStartOfWeek, parseDate } from './functions/utils'
 
 export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>
@@ -32,22 +27,22 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const fromParam = url.searchParams.get('from')
   const toParam = url.searchParams.get('to')
 
-  let from: TZDate
-  let to: TZDate
+  let from: dayjs.Dayjs
+  let to: dayjs.Dayjs
   if (fromParam && toParam) {
     // 検索パラメータの日付（JST）をUTCに変換
     from = parseDate(fromParam)
-    to = subSeconds(addDays(parseDate(toParam), 1), 1)
+    to = parseDate(toParam).add(1, 'day').subtract(1, 'second')
   } else {
     // パラメータがない場合はデフォルト（現在の週）
-    from = new TZDate(getStartOfWeek())
-    to = new TZDate(getEndOfWeek())
+    from = getStartOfWeek()
+    to = getEndOfWeek()
   }
 
   const pullRequests = await getMergedPullRequestReport(
     organizationId,
-    from.withTimeZone('UTC').toISOString(),
-    to.withTimeZone('UTC').toISOString(),
+    from.utc().toISOString(),
+    to.utc().toISOString(),
     objective,
   )
 
@@ -58,8 +53,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return {
     organizationId,
     pullRequests,
-    from,
-    to,
+    from: from.toISOString(),
+    to: to.toISOString(),
     objective,
     achievementCount,
     achievementRate,
@@ -87,19 +82,23 @@ export default function OrganizationIndex({
               <div className="text-right">
                 <Badge variant="outline">From</Badge>
               </div>
-              <div className="text-sm">{format(from, 'yyyy-MM-dd HH:mm')}</div>
+              <div className="text-sm">
+                {dayjs(from).format('YYYY-MM-DD HH:mm')}
+              </div>
               <div className="text-right">
                 <Badge variant="outline">To</Badge>
               </div>
-              <div className="text-sm">{format(to, 'yyyy-MM-dd HH:mm')}</div>
+              <div className="text-sm">
+                {dayjs(to).format('YYYY-MM-DD HH:mm')}
+              </div>
             </div>
           </div>
           <WeeklyCalendar
-            initialDate={from}
+            initialDate={dayjs(from).toDate()}
             onWeekChange={(start, end) => {
               setSearchParams((prev) => {
-                prev.set('from', format(start, 'yyyy-MM-dd'))
-                prev.set('to', format(end, 'yyyy-MM-dd'))
+                prev.set('from', dayjs(start).format('YYYY-MM-DD'))
+                prev.set('to', dayjs(end).format('YYYY-MM-DD'))
                 return prev
               })
             }}
