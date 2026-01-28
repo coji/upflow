@@ -16,6 +16,8 @@
     "db:generate": "kysely-codegen --dialect sqlite --out-file app/services/type.ts --url ./data/data.db --camel-case",
     "db:migrate": "atlas migrate diff --env local",
     "db:apply": "atlas migrate apply --env local --url 'sqlite://data/data.db'",
+    "batch:golden:snapshot": "pnpm tsx --env-file .env batch/scripts/golden-snapshot.ts",
+    "batch:golden:compare": "pnpm tsx --env-file .env batch/scripts/golden-compare.ts",
     "test": "vitest --run",
     "test:e2e": "run-s test:e2e:build test:e2e:run",
     "test:e2e:build": "run-s build",
