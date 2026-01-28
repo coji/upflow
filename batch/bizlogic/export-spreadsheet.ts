@@ -131,27 +131,3 @@ export function createSpreadsheetExporter(
     exportReviewResponses,
   }
 }
-
-/**
- * 後方互換: pulls をスプレッドシートにエクスポート
- * 署名・動作を完全維持
- */
-export const exportPullsToSpreadsheet = async (
-  pullrequests: Selectable<DB.PullRequests>[],
-  exportSetting: Selectable<DB.ExportSettings>,
-): Promise<void> => {
-  const exporter = createSpreadsheetExporter(exportSetting)
-  await exporter.exportPulls(pullrequests)
-}
-
-/**
- * 後方互換: reviewResponses をスプレッドシートにエクスポート
- * 署名・動作を完全維持
- */
-export const exportReviewResponsesToSpreadsheet = async (
-  reviewResponses: ReviewResponse[],
-  exportSetting: Selectable<DB.ExportSettings>,
-): Promise<void> => {
-  const exporter = createSpreadsheetExporter(exportSetting)
-  await exporter.exportReviewResponses(reviewResponses)
-}
