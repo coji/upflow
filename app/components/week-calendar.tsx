@@ -1,3 +1,4 @@
+import { ja } from 'date-fns/locale'
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 import type { DayButton } from 'react-day-picker'
@@ -115,6 +116,7 @@ const WeeklyCalendar = ({
             selected={selectedDate}
             onSelect={handleDateSelect}
             weekStartsOn={startDay}
+            locale={ja}
             components={{
               DayButton: WeekDayButton,
             }}
