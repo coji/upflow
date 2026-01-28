@@ -1,8 +1,5 @@
 import type { DB, Selectable } from '~/app/services/db.server'
-import {
-  exportPullsToSpreadsheet,
-  exportReviewResponsesToSpreadsheet,
-} from '~/batch/bizlogic/export-spreadsheet'
+import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import { upsertPullRequest } from '~/batch/db'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
@@ -50,11 +47,9 @@ export async function analyzeAndUpsert({
   // 3. export (optional)
   if (organization.exportSetting) {
     logger.info('exporting to spreadsheet...', orgId)
-    await exportPullsToSpreadsheet(pulls, organization.exportSetting)
-    await exportReviewResponsesToSpreadsheet(
-      reviewResponses,
-      organization.exportSetting,
-    )
+    const exporter = createSpreadsheetExporter(organization.exportSetting)
+    await exporter.exportPulls(pulls)
+    await exporter.exportReviewResponses(reviewResponses)
     logger.info('export to spreadsheet done.', orgId)
   }
 
