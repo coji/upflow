@@ -1,5 +1,8 @@
 import dayjs from 'dayjs'
 
+import 'dayjs/locale/ja.js'
+dayjs.locale('ja')
+
 import duration from 'dayjs/plugin/duration.js'
 dayjs.extend(duration)
 
@@ -14,5 +17,8 @@ dayjs.extend(utc)
 
 import weekday from 'dayjs/plugin/weekday.js'
 dayjs.extend(weekday)
+
+import isBetween from 'dayjs/plugin/isBetween.js'
+dayjs.extend(isBetween)
 
 export default dayjs

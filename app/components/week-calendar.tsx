@@ -1,4 +1,3 @@
-import { addDays, isSameDay, isWithinInterval, startOfDay } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import * as React from 'react'
 import { useEffect, useState } from 'react'
@@ -10,21 +9,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui'
+import dayjs from '~/app/libs/dayjs'
 import { cn } from '../libs/utils'
 
 // 指定された開始曜日に基づく週間間隔を取得
 const getWeekInterval = (date: Date, startOfWeekDay: number) => {
-  const normalizedDate = startOfDay(date) // 00:00 に設定
-  const dayOfWeek = normalizedDate.getDay()
+  const normalizedDate = dayjs(date).startOf('day')
+  const dayOfWeek = normalizedDate.day()
 
   // 選択された開始曜日に合わせて調整
   let diff = dayOfWeek - startOfWeekDay
   if (diff < 0) diff += 7
 
-  const start = addDays(normalizedDate, -diff) // 開始曜日に調整
-  const end = addDays(start, 6) // 7日間の終了日
+  const start = normalizedDate.subtract(diff, 'day')
+  const end = start.add(6, 'day')
 
-  return { start, end }
+  return { start: start.toDate(), end: end.toDate() }
 }
 
 interface WeeklyCalendarProps {
@@ -46,7 +46,7 @@ const WeeklyCalendar = ({
 
   useEffect(() => {
     const interval = getWeekInterval(selectedDate, startDay)
-    if (!isSameDay(interval.start, weekInterval.start)) {
+    if (!dayjs(interval.start).isSame(weekInterval.start, 'day')) {
       setWeekInterval(interval)
       if (onWeekChange) {
         onWeekChange(interval.start, interval.end)
@@ -68,12 +68,15 @@ const WeeklyCalendar = ({
     modifiers,
     ...props
   }: React.ComponentProps<typeof DayButton>) {
-    const isSelected = isWithinInterval(day.date, {
-      start: weekInterval.start,
-      end: weekInterval.end,
-    })
-    const isWeekStart = isSameDay(day.date, weekInterval.start)
-    const isWeekEnd = isSameDay(day.date, weekInterval.end)
+    const targetDate = dayjs(day.date)
+    const isSelected = targetDate.isBetween(
+      weekInterval.start,
+      weekInterval.end,
+      'day',
+      '[]',
+    )
+    const isWeekStart = targetDate.isSame(weekInterval.start, 'day')
+    const isWeekEnd = targetDate.isSame(weekInterval.end, 'day')
 
     const ref = React.useRef<HTMLButtonElement>(null)
     React.useEffect(() => {
