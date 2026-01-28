@@ -8,7 +8,6 @@ interface FetchCommandProps {
   organizationId?: string
   repositoryId?: string
   refresh: boolean
-  delay?: number
   exclude?: string
 }
 
@@ -38,7 +37,6 @@ export async function fetchCommand(props: FetchCommandProps) {
     await provider.fetch(repository, {
       refresh: props.refresh,
       halt: false,
-      delay: props.delay,
     })
   }
 }

@@ -1,12 +1,9 @@
-import { listAllOrganizations, upsertPullRequest } from '~/batch/db'
-import {
-  exportPullsToSpreadsheet,
-  exportReviewResponsesToSpreadsheet,
-} from '../bizlogic/export-spreadsheet'
+import { listAllOrganizations } from '~/batch/db'
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
+import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
 
-const options = { refresh: false, halt: false, delay: 1000 }
+const options = { refresh: false, halt: false }
 
 export const crawlJob = async () => {
   logger.info('crawl started.')
@@ -14,7 +11,7 @@ export const crawlJob = async () => {
   const organizations = await listAllOrganizations()
 
   for (const organization of organizations) {
-    logger.info('organization: ', organization.name)
+    logger.info('organization:', organization.name)
 
     if (!organization.organizationSetting?.isActive) {
       logger.info('organization is not active.')
@@ -45,31 +42,14 @@ export const crawlJob = async () => {
       logger.info('fetch completed.')
     }
 
-    // analyze
-    logger.info('analyze started...')
-    const { pulls, reviewResponses } = await provider.analyze(
-      organization.organizationSetting,
-      organization.repositories,
-    )
-    logger.info('analyze completed.')
-
-    // upsert
-    logger.info('upsert started...')
-    for (const pr of pulls) {
-      await upsertPullRequest(pr)
-    }
-    logger.info('upsert completed.')
-
-    // export
-    if (organization.exportSetting) {
-      logger.info('exporting to spreadsheet...')
-      await exportPullsToSpreadsheet(pulls, organization.exportSetting)
-      await exportReviewResponsesToSpreadsheet(
-        reviewResponses,
-        organization.exportSetting,
-      )
-      logger.info('export to spreadsheet done')
-    }
+    // analyze + upsert + export
+    await analyzeAndUpsert({
+      organization: {
+        ...organization,
+        organizationSetting: organization.organizationSetting,
+      },
+      provider,
+    })
   }
 
   logger.info('crawl completed.')

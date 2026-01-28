@@ -6,8 +6,8 @@ export function upsertPullRequest(data: Insertable<DB.PullRequests>) {
   const pullRequestCreatedAt = timeFormatUTC(data.pullRequestCreatedAt)
   const firstReviewedAt = timeFormatUTC(data.firstReviewedAt)
   const mergedAt = timeFormatUTC(data.mergedAt)
-  const releasedAt = timeFormatUTC(data.mergedAt)
-  const updatedAt = timeFormatUTC(data.mergedAt)
+  const releasedAt = timeFormatUTC(data.releasedAt)
+  const updatedAt = timeFormatUTC(data.updatedAt)
 
   return db
     .insertInto('pullRequests')

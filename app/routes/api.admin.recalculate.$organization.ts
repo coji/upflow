@@ -1,9 +1,6 @@
 import invariant from 'tiny-invariant'
 import { requireSuperAdmin } from '~/app/libs/auth.server'
-import {
-  exportPullsToSpreadsheet,
-  exportReviewResponsesToSpreadsheet,
-} from '~/batch/bizlogic/export-spreadsheet'
+import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
 import { createProvider } from '~/batch/provider'
 import type { Route } from './+types/api.admin.recalculate.$organization'
@@ -78,11 +75,9 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
         // export to spreadsheet if configured
         if (organization.exportSetting) {
           send({ type: 'export', message: 'Exporting to spreadsheet...' })
-          await exportPullsToSpreadsheet(pulls, organization.exportSetting)
-          await exportReviewResponsesToSpreadsheet(
-            reviewResponses,
-            organization.exportSetting,
-          )
+          const exporter = createSpreadsheetExporter(organization.exportSetting)
+          await exporter.exportPulls(pulls)
+          await exporter.exportReviewResponses(reviewResponses)
         }
 
         send({

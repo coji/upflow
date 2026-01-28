@@ -65,6 +65,7 @@ export const shapeGitHubIssueComment: (
   return {
     id: comment.id,
     user: comment.user?.login ?? null,
+    isBot: comment.user?.type === 'Bot',
     url: comment.html_url,
     created_at: comment.created_at,
   }
@@ -81,6 +82,7 @@ export const shapeGitHubReviewComment: (
   return {
     id: comment.id,
     user: comment.user?.login ?? null,
+    isBot: comment.user?.type === 'Bot',
     url: comment.html_url,
     created_at: comment.created_at,
   }
@@ -97,6 +99,7 @@ export const shapeGitHubReview: (review: GitHubReview) => ShapedGitHubReview = (
   return {
     id: review.id,
     user: review.user?.login ?? null,
+    isBot: review.user?.type === 'Bot',
     state: review.state,
     url: review.html_url,
     submitted_at: review.submitted_at ?? null,

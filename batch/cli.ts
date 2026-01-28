@@ -14,11 +14,6 @@ const fetch = command(
         description: 'refresh all mergerequest resources.',
         default: false,
       },
-      delay: {
-        type: Number,
-        description: 'provider api call delay for api call limit',
-        default: 0,
-      },
       exclude: {
         type: String,
         description: 'exclude repository id',

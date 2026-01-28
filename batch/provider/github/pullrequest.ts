@@ -9,27 +9,162 @@ import {
   totalTime,
 } from '~/batch/bizlogic/cycletime'
 import { logger } from '~/batch/helper/logger'
-import type { ShapedGitHubPullRequest } from './model'
+import type {
+  ShapedGitHubCommit,
+  ShapedGitHubPullRequest,
+  ShapedGitHubReview,
+  ShapedGitHubReviewComment,
+} from './model'
 import { findReleaseDate } from './release-detect'
 import { analyzeReviewResponse } from './review-response'
-import { createStore } from './store'
+import type { PullRequestLoaders } from './types'
+
+// デフォルトで除外するユーザー (GitHub API で [bot] 接尾辞なしで記録されるbot)
+const DEFAULT_EXCLUDED_USERS = ['Copilot']
+
+/** PR に関連するアーティファクトの型 */
+interface PrArtifacts {
+  commits: ShapedGitHubCommit[]
+  reviews: ShapedGitHubReview[]
+  discussions: ShapedGitHubReviewComment[]
+}
+
+/** PR の各種日時 */
+interface PrDates {
+  firstCommittedAt: string | null
+  pullRequestCreatedAt: string
+  firstReviewedAt: string | null
+  mergedAt: string | null
+}
+
+/** buildPullRequests の設定 */
+interface BuildConfig {
+  organizationId: string
+  repositoryId: string
+  releaseDetectionMethod: string
+  releaseDetectionKey: string
+  excludedUsers: string
+}
 
 const nullOrDate = (dateStr?: Date | string | null) => {
   return dateStr ? dayjs(dateStr).utc().toISOString() : null
 }
 
-// デフォルトで除外するユーザー (GitHub API で [bot] 接尾辞なしで記録されるbot)
-const DEFAULT_EXCLUDED_USERS = ['Copilot']
+/**
+ * PR に関連するアーティファクトを読み込む（I/O を含む）
+ */
+async function loadPrArtifacts(
+  pr: ShapedGitHubPullRequest,
+  loaders: PullRequestLoaders,
+): Promise<PrArtifacts> {
+  return {
+    commits: await loaders.commits(pr.number),
+    reviews: await loaders.reviews(pr.number),
+    discussions: await loaders.discussions(pr.number),
+  }
+}
+
+/**
+ * bot と PR 作成者、除外ユーザーをフィルタリング（純粋関数）
+ */
+function filterActors(
+  artifacts: PrArtifacts,
+  pr: ShapedGitHubPullRequest,
+  excludedUsers: string[],
+): PrArtifacts {
+  return {
+    commits: artifacts.commits,
+    reviews: artifacts.reviews.filter(
+      (r) =>
+        !r.isBot &&
+        r.user !== pr.author &&
+        !excludedUsers.includes(r.user ?? ''),
+    ),
+    discussions: artifacts.discussions.filter(
+      (d) =>
+        !d.isBot &&
+        d.user !== pr.author &&
+        !excludedUsers.includes(d.user ?? ''),
+    ),
+  }
+}
+
+/**
+ * PR の各種日時を計算（純粋関数）
+ */
+function computeDates(
+  pr: ShapedGitHubPullRequest,
+  artifacts: PrArtifacts,
+): PrDates {
+  return {
+    firstCommittedAt: nullOrDate(
+      artifacts.commits.length > 0 ? artifacts.commits[0].date : null,
+    ),
+    pullRequestCreatedAt: nullOrDate(pr.created_at) ?? '',
+    firstReviewedAt: nullOrDate(
+      first(artifacts.discussions)?.created_at ??
+        first(artifacts.reviews)?.submitted_at,
+    ),
+    mergedAt: nullOrDate(pr.merged_at),
+  }
+}
+
+/**
+ * PR 行データを生成（純粋関数）
+ */
+function buildPullRequestRow(
+  pr: ShapedGitHubPullRequest,
+  dates: PrDates,
+  releasedAt: string | null,
+  repositoryId: string,
+): Selectable<DB.PullRequests> {
+  return {
+    repo: pr.repo,
+    number: pr.number,
+    sourceBranch: pr.source_branch,
+    targetBranch: pr.target_branch,
+    state: pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state,
+    author: pr.author ?? '',
+    title: pr.title,
+    url: pr.url,
+    firstCommittedAt: dates.firstCommittedAt,
+    pullRequestCreatedAt: dates.pullRequestCreatedAt,
+    firstReviewedAt: dates.firstReviewedAt,
+    mergedAt: dates.mergedAt,
+    releasedAt,
+    codingTime: codingTime({
+      firstCommittedAt: dates.firstCommittedAt,
+      pullRequestCreatedAt: dates.pullRequestCreatedAt,
+    }),
+    pickupTime: pickupTime({
+      pullRequestCreatedAt: dates.pullRequestCreatedAt,
+      firstReviewedAt: dates.firstReviewedAt,
+      mergedAt: dates.mergedAt,
+    }),
+    reviewTime: reviewTime({
+      firstReviewedAt: dates.firstReviewedAt,
+      mergedAt: dates.mergedAt,
+    }),
+    deployTime: deployTime({
+      mergedAt: dates.mergedAt,
+      releasedAt,
+    }),
+    totalTime: totalTime({
+      firstCommittedAt: dates.firstCommittedAt,
+      pullRequestCreatedAt: dates.pullRequestCreatedAt,
+      firstReviewedAt: dates.firstReviewedAt,
+      mergedAt: dates.mergedAt,
+      releasedAt,
+    }),
+    repositoryId,
+    updatedAt: nullOrDate(pr.updated_at),
+  }
+}
 
 export const buildPullRequests = async (
-  config: {
-    organizationId: string
-    repositoryId: string
-    releaseDetectionMethod: string
-    releaseDetectionKey: string
-    excludedUsers: string
-  },
+  config: BuildConfig,
   pullrequests: ShapedGitHubPullRequest[],
+  loaders: PullRequestLoaders,
 ) => {
   // カンマ区切りの除外ユーザーリストをパース
   const customExcludedUsers = config.excludedUsers
@@ -37,7 +172,6 @@ export const buildPullRequests = async (
     .map((u) => u.trim())
     .filter((u) => u.length > 0)
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
-  const store = createStore(config)
 
   const pulls: Selectable<DB.PullRequests>[] = []
   const reviewResponses: {
@@ -47,28 +181,18 @@ export const buildPullRequests = async (
     createdAt: string
     responseTime: number
   }[] = []
+
   for (const pr of pullrequests) {
     try {
-      // コミット履歴
-      const commits = await store.loader.commits(pr.number)
+      // 1. アーティファクト読み込み（I/O）
+      const rawArtifacts = await loadPrArtifacts(pr, loaders)
 
-      // レビュー履歴 (bot と PR 作成者は除外)
-      const reviews = (await store.loader.reviews(pr.number)).filter(
-        (r) =>
-          !r.user?.endsWith('[bot]') &&
-          r.user !== pr.author &&
-          !excludedUsers.includes(r.user ?? ''),
-      )
-      // コメント履歴 (bot と PR 作成者は除外)
-      const discussions = (await store.loader.discussions(pr.number)).filter(
-        (d) =>
-          !d.user?.endsWith('[bot]') &&
-          d.user !== pr.author &&
-          !excludedUsers.includes(d.user ?? ''),
-      )
+      // 2. アクター除外フィルタ（純粋関数）
+      const artifacts = filterActors(rawArtifacts, pr, excludedUsers)
 
+      // 3. レビューレスポンス解析
       reviewResponses.push(
-        ...analyzeReviewResponse(discussions).map((res) => ({
+        ...analyzeReviewResponse(artifacts.discussions).map((res) => ({
           repo: String(pr.repo),
           number: String(pr.number),
           author: res.author ?? '',
@@ -77,66 +201,25 @@ export const buildPullRequests = async (
         })),
       )
 
-      // 初期コミット日時
-      const firstCommittedAt = nullOrDate(
-        commits.length > 0 ? commits[0].date : null,
-      )
+      // 4. 日時計算（純粋関数）
+      const dates = computeDates(pr, artifacts)
 
-      // プルリク作成日時
-      const pullRequestCreatedAt = nullOrDate(pr.created_at) ?? ''
-
-      // レビュー開始日時
-      const firstReviewedAt = nullOrDate(
-        first(discussions)?.created_at ?? first(reviews)?.submitted_at,
-      ) // レビュー開始 = コメント最新 or レビュー submit 最新
-
-      // マージ日時
-      const mergedAt = nullOrDate(pr.merged_at)
-
-      // リリース日時
+      // 5. リリース日時計算（I/O を含む）
       const releasedAt =
         pr.merged_at && pr.merge_commit_sha
           ? await findReleaseDate(
               pullrequests,
-              store,
+              loaders,
               pr,
               config.releaseDetectionMethod,
               config.releaseDetectionKey,
             )
           : null
 
-      pulls.push({
-        repo: pr.repo,
-        number: pr.number,
-        sourceBranch: pr.source_branch,
-        targetBranch: pr.target_branch,
-        state: pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state, // github は api では merged にならないので
-        author: pr.author ?? '',
-        title: pr.title,
-        url: pr.url,
-        firstCommittedAt,
-        pullRequestCreatedAt,
-        firstReviewedAt,
-        mergedAt,
-        releasedAt,
-        codingTime: codingTime({ firstCommittedAt, pullRequestCreatedAt }),
-        pickupTime: pickupTime({
-          pullRequestCreatedAt,
-          firstReviewedAt,
-          mergedAt,
-        }),
-        reviewTime: reviewTime({ firstReviewedAt, mergedAt }),
-        deployTime: deployTime({ mergedAt, releasedAt }),
-        totalTime: totalTime({
-          firstCommittedAt,
-          pullRequestCreatedAt,
-          firstReviewedAt,
-          mergedAt,
-          releasedAt,
-        }),
-        repositoryId: config.repositoryId,
-        updatedAt: nullOrDate(pr.updated_at),
-      })
+      // 6. PR 行データ生成（純粋関数）
+      pulls.push(
+        buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
+      )
     } catch (e) {
       logger.error(
         'analyze failure:',
@@ -147,5 +230,6 @@ export const buildPullRequests = async (
       )
     }
   }
+
   return { pulls, reviewResponses }
 }

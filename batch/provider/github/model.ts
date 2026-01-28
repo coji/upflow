@@ -42,6 +42,7 @@ export type ShapedGitHubCommit = {
 export type ShapedGitHubIssueComment = {
   id: GithubIssueComment['id']
   user: NonNullable<GithubIssueComment['user']>['login'] | null
+  isBot: boolean
   url: GithubIssueComment['html_url']
   created_at: GithubIssueComment['created_at']
 }
@@ -49,6 +50,7 @@ export type ShapedGitHubIssueComment = {
 export type ShapedGitHubReviewComment = {
   id: GitHubReviewComment['id']
   user: GitHubReviewComment['user']['login'] | null
+  isBot: boolean
   url: GitHubReviewComment['html_url']
   created_at: GitHubReviewComment['created_at']
 }
@@ -56,6 +58,7 @@ export type ShapedGitHubReviewComment = {
 export type ShapedGitHubReview = {
   id: GitHubReview['id']
   user: NonNullable<GitHubReview['user']>['login'] | null
+  isBot: boolean
   state: GitHubReview['state']
   url: GitHubReview['html_url']
   submitted_at: NonNullable<GitHubReview['submitted_at']> | null
@@ -66,4 +69,18 @@ export type ShapedGitHubTag = {
   name: string
   sha: string
   committed_at: string
+}
+
+// PR + 関連データを一括取得した結果
+export type ShapedGitHubPullRequestWithDetails = {
+  pr: ShapedGitHubPullRequest
+  commits: ShapedGitHubCommit[]
+  reviews: ShapedGitHubReview[]
+  comments: (ShapedGitHubIssueComment | ShapedGitHubReviewComment)[]
+  /** 制限を超えて追加取得が必要かどうか */
+  needsMoreCommits: boolean
+  needsMoreReviews: boolean
+  needsMoreComments: boolean
+  needsMoreReviewThreads: boolean
+  needsMoreReviewThreadComments: boolean
 }

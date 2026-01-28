@@ -1,7 +1,7 @@
 import * as R from 'remeda'
 import dayjs from '~/app/libs/dayjs'
 import type { ShapedGitHubPullRequest } from './model'
-import type { createStore } from './store'
+import type { PullRequestLoaders } from './types'
 
 const mergedPullRequests = (
   allPullRequests: ShapedGitHubPullRequest[],
@@ -23,20 +23,20 @@ const mergedPullRequests = (
 /**
  * ブランチ基準でリリース日を探す
  * @param allPullRequests
- * @param store
+ * @param loaders
  * @param pr
  * @param branch
  * @returns
  */
 const findReleaseDateByBranch = async (
   allPullRequests: ShapedGitHubPullRequest[],
-  store: ReturnType<typeof createStore>,
+  loaders: Pick<PullRequestLoaders, 'commits'>,
   pr: ShapedGitHubPullRequest,
   branch: string,
 ) => {
   for (const m of mergedPullRequests(allPullRequests, branch)) {
     if (
-      (await store.loader.commits(m.number)).some(
+      (await loaders.commits(m.number)).some(
         (c) => c.sha === pr.merge_commit_sha,
       )
     ) {
@@ -47,23 +47,23 @@ const findReleaseDateByBranch = async (
 }
 
 /**
- * ブランチ基準でリリース日を探す
+ * タグ基準でリリース日を探す
  * @param allPullRequests
- * @param store
+ * @param loaders
  * @param pr
- * @param key
+ * @param tagCondition
  * @returns
  */
 const findReleaseDateByTag = async (
   _allPullRequests: ShapedGitHubPullRequest[],
-  store: ReturnType<typeof createStore>,
+  loaders: Pick<PullRequestLoaders, 'tags'>,
   pr: ShapedGitHubPullRequest,
   tagCondition: string,
 ) => {
   if (pr.merged_at === null) return null
 
   const tagRegexp = new RegExp(tagCondition)
-  const allReleaseTags = (await store.loader.tags())
+  const allReleaseTags = (await loaders.tags())
     .filter((t) => tagRegexp.test(t.name)) // リリース用のタグを抽出
     .sort((a, b) => dayjs(a.committed_at).unix() - dayjs(b.committed_at).unix()) // 古い順に並べる
 
@@ -77,7 +77,7 @@ const findReleaseDateByTag = async (
 
 export const findReleaseDate = async (
   allPullRequests: ShapedGitHubPullRequest[],
-  store: ReturnType<typeof createStore>,
+  loaders: Pick<PullRequestLoaders, 'commits' | 'tags'>,
   pr: ShapedGitHubPullRequest,
   releaseDetectionMethod: string,
   releaseDetectionKey: string,
@@ -85,7 +85,7 @@ export const findReleaseDate = async (
   if (releaseDetectionMethod === 'branch') {
     return await findReleaseDateByBranch(
       allPullRequests,
-      store,
+      loaders,
       pr,
       releaseDetectionKey,
     )
@@ -93,7 +93,7 @@ export const findReleaseDate = async (
   if (releaseDetectionMethod === 'tags') {
     return await findReleaseDateByTag(
       allPullRequests,
-      store,
+      loaders,
       pr,
       releaseDetectionKey,
     )

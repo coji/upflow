@@ -1,16 +1,14 @@
 import consola from 'consola'
 import invariant from 'tiny-invariant'
-import { getOrganization, upsertPullRequest } from '~/batch/db'
-import {
-  exportPullsToSpreadsheet,
-  exportReviewResponsesToSpreadsheet,
-} from '../bizlogic/export-spreadsheet'
+import { getOrganization } from '~/batch/db'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider/index'
+import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
 
 interface UpsertCommandProps {
   organizationId?: string
 }
+
 export async function upsertCommand({ organizationId }: UpsertCommandProps) {
   if (!organizationId) {
     consola.error('config should specified')
@@ -24,29 +22,19 @@ export async function upsertCommand({ organizationId }: UpsertCommandProps) {
 
   const organization = await getOrganization(organizationId)
   invariant(organization.integration, 'integration should related')
-
-  const provider = createProvider(organization.integration)
-  invariant(provider, `unknown provider ${organization.integration.provider}`)
   invariant(
     organization.organizationSetting,
     'organization setting should related',
   )
 
-  const { pulls, reviewResponses } = await provider.analyze(
-    organization.organizationSetting,
-    organization.repositories,
-  )
+  const provider = createProvider(organization.integration)
+  invariant(provider, `unknown provider ${organization.integration.provider}`)
 
-  // upsert
-  for (const pr of pulls) {
-    await upsertPullRequest(pr)
-  }
-
-  if (organization.exportSetting) {
-    await exportPullsToSpreadsheet(pulls, organization.exportSetting) // google spreadsheet にエクスポート
-    await exportReviewResponsesToSpreadsheet(
-      reviewResponses,
-      organization.exportSetting,
-    )
-  }
+  await analyzeAndUpsert({
+    organization: {
+      ...organization,
+      organizationSetting: organization.organizationSetting,
+    },
+    provider,
+  })
 }
