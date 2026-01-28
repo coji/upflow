@@ -68,11 +68,12 @@ const WeeklyCalendar = ({
     ...props
   }: React.ComponentProps<typeof DayButton>) {
     const targetDate = dayjs(day.date)
-    const isSelected =
-      (targetDate.isAfter(weekInterval.start, 'day') ||
-        targetDate.isSame(weekInterval.start, 'day')) &&
-      (targetDate.isBefore(weekInterval.end, 'day') ||
-        targetDate.isSame(weekInterval.end, 'day'))
+    const isSelected = targetDate.isBetween(
+      weekInterval.start,
+      weekInterval.end,
+      'day',
+      '[]',
+    )
     const isWeekStart = targetDate.isSame(weekInterval.start, 'day')
     const isWeekEnd = targetDate.isSame(weekInterval.end, 'day')
 
