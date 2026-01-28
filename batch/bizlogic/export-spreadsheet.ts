@@ -1,4 +1,3 @@
-import dayjs from '~/app/libs/dayjs'
 import type { DB, Selectable } from '~/app/services/db.server'
 import { createSheetApi } from '~/app/services/sheets.server'
 import { timeFormatTz } from '../helper/timeformat'
@@ -58,35 +57,30 @@ export function createSpreadsheetExporter(
 
     const data = [
       header,
-      ...pullrequests
-        .filter(
-          (pr) =>
-            pr.updatedAt && dayjs(pr.updatedAt) > dayjs().add(-90, 'days'),
-        )
-        .map((pr) => {
-          // １行タブ区切り x 改行区切りで全行まとめてペースト
-          return Object.values({
-            repo: pr.repo,
-            number: pr.number,
-            sourceBranch: pr.sourceBranch,
-            targetBranch: pr.targetBranch,
-            state: pr.state,
-            author: pr.author,
-            title: escapeTabString(pr.title),
-            url: pr.url,
-            codingTime: pr.codingTime,
-            pickupTime: pr.pickupTime,
-            reviewTime: pr.reviewTime,
-            deployTime: pr.deployTime,
-            totalTime: pr.totalTime,
-            firstCommitedAt: timeFormatTz(pr.firstCommittedAt, tz), // ISO形式から YYYY-MM-DD HH:mm:ss に変換。TODO: タイムゾーン対応?
-            pullRequestCreatedAt: timeFormatTz(pr.pullRequestCreatedAt, tz),
-            firstReviewedAt: timeFormatTz(pr.firstReviewedAt, tz),
-            mergedAt: timeFormatTz(pr.mergedAt, tz),
-            releasedAt: timeFormatTz(pr.releasedAt, tz),
-            updatedAt: timeFormatTz(pr.updatedAt, tz),
-          }).join('\t')
-        }),
+      ...pullrequests.map((pr) => {
+        // １行タブ区切り x 改行区切りで全行まとめてペースト
+        return Object.values({
+          repo: pr.repo,
+          number: pr.number,
+          sourceBranch: pr.sourceBranch,
+          targetBranch: pr.targetBranch,
+          state: pr.state,
+          author: pr.author,
+          title: escapeTabString(pr.title),
+          url: pr.url,
+          codingTime: pr.codingTime,
+          pickupTime: pr.pickupTime,
+          reviewTime: pr.reviewTime,
+          deployTime: pr.deployTime,
+          totalTime: pr.totalTime,
+          firstCommitedAt: timeFormatTz(pr.firstCommittedAt, tz), // ISO形式から YYYY-MM-DD HH:mm:ss に変換。TODO: タイムゾーン対応?
+          pullRequestCreatedAt: timeFormatTz(pr.pullRequestCreatedAt, tz),
+          firstReviewedAt: timeFormatTz(pr.firstReviewedAt, tz),
+          mergedAt: timeFormatTz(pr.mergedAt, tz),
+          releasedAt: timeFormatTz(pr.releasedAt, tz),
+          updatedAt: timeFormatTz(pr.updatedAt, tz),
+        }).join('\t')
+      }),
     ].join('\n')
 
     await sheet.paste(data)

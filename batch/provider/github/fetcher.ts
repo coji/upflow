@@ -373,12 +373,26 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: PullRequestsResult =
-        await octokit.graphql<PullRequestsResult>(queryStr, {
+      let result: PullRequestsResult
+      try {
+        result = await octokit.graphql<PullRequestsResult>(queryStr, {
           owner,
           repo,
           cursor,
         })
+      } catch (error: unknown) {
+        // GraphQL partial error: エラーがあってもデータが返る場合がある
+        if (
+          error &&
+          typeof error === 'object' &&
+          'data' in error &&
+          error.data != null
+        ) {
+          result = error.data as PullRequestsResult
+        } else {
+          throw error
+        }
+      }
 
       const pullRequests = result.repository?.pullRequests
       if (!pullRequests || !pullRequests.nodes) break
