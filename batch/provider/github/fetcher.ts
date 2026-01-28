@@ -1,6 +1,8 @@
+import { print } from 'graphql'
 import { setTimeout } from 'node:timers/promises'
 import { Octokit } from 'octokit'
 import dayjs from '~/app/libs/dayjs'
+import { graphql, type ResultOf } from './graphql'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubIssueComment,
@@ -16,6 +18,38 @@ import {
   shapeGitHubReview,
   shapeGitHubReviewComment,
 } from './shaper'
+
+const GetTagsQuery = graphql(`
+  query GetTags($owner: String!, $repo: String!, $cursor: String) {
+    repository(owner: $owner, name: $repo) {
+      refs(refPrefix: "refs/tags/", first: 100, after: $cursor) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          name
+          target {
+            __typename
+            oid
+            ... on Commit {
+              committedDate
+            }
+            ... on Tag {
+              target {
+                __typename
+                ... on Commit {
+                  oid
+                  committedDate
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`)
 
 const wait = async ({ count, delay }: { count: number; delay: number }) => {
   await setTimeout(count === 0 ? 1 : count, delay)
@@ -159,76 +193,47 @@ export const createFetcher = ({
 
   /** タグ一覧 + コミット日時を GraphQL で一括取得 */
   const tags = async () => {
-    interface TagNode {
-      name: string
-      target: {
-        oid: string
-        committedDate?: string
-        target?: {
-          oid: string
-          committedDate: string
-        }
-      }
-    }
-    interface TagsQueryResult {
-      repository: {
-        refs: {
-          pageInfo: { hasNextPage: boolean; endCursor: string | null }
-          nodes: TagNode[]
-        }
-      }
-    }
+    type TagsResult = ResultOf<typeof GetTagsQuery>
 
-    const query = `
-      query GetTags($owner: String!, $repo: String!, $cursor: String) {
-        repository(owner: $owner, name: $repo) {
-          refs(refPrefix: "refs/tags/", first: 100, after: $cursor) {
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-            nodes {
-              name
-              target {
-                oid
-                ... on Commit {
-                  committedDate
-                }
-                ... on Tag {
-                  target {
-                    ... on Commit {
-                      oid
-                      committedDate
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `
-
+    const queryStr = print(GetTagsQuery)
     let allTags: ShapedGitHubTag[] = []
     let cursor: string | null = null
+    let hasNextPage = true
 
-    while (true) {
-      const result: TagsQueryResult = await octokit.graphql<TagsQueryResult>(
-        query,
-        {
-          owner,
-          repo,
-          cursor,
-        },
-      )
+    while (hasNextPage) {
+      const result: TagsResult = await octokit.graphql<TagsResult>(queryStr, {
+        owner,
+        repo,
+        cursor,
+      })
 
-      const { nodes, pageInfo } = result.repository.refs
+      const refs = result.repository?.refs
+      if (!refs || !refs.nodes) break
 
-      for (const node of nodes) {
+      for (const node of refs.nodes) {
+        if (!node) continue
+        const target = node.target
+        if (!target) continue
+
         // annotated tag の場合は target.target にコミット情報がある
-        const sha = node.target.target?.oid ?? node.target.oid
-        const committedDate =
-          node.target.target?.committedDate ?? node.target.committedDate
+        let sha: string
+        let committedDate: string | null | undefined
+
+        if (target.__typename === 'Tag') {
+          const innerTarget = target.target
+          if (innerTarget?.__typename === 'Commit') {
+            sha = innerTarget.oid
+            committedDate = innerTarget.committedDate
+          } else {
+            continue
+          }
+        } else if (target.__typename === 'Commit') {
+          sha = target.oid
+          committedDate = target.committedDate
+        } else {
+          continue
+        }
+
         if (committedDate) {
           allTags = [
             ...allTags,
@@ -237,8 +242,8 @@ export const createFetcher = ({
         }
       }
 
-      if (!pageInfo.hasNextPage) break
-      cursor = pageInfo.endCursor
+      hasNextPage = refs.pageInfo.hasNextPage
+      cursor = refs.pageInfo.endCursor ?? null
     }
 
     return allTags
