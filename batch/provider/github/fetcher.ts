@@ -157,43 +157,91 @@ export const createFetcher = ({
     return allReviews
   }
 
-  type PickPartial<
-    T,
-    K extends keyof T,
-    G extends Exclude<keyof T, K>,
-  > = Required<Pick<T, K>> & Partial<Pick<T, G>>
-
+  /** タグ一覧 + コミット日時を GraphQL で一括取得 */
   const tags = async () => {
-    let tags: PickPartial<ShapedGitHubTag, 'name' | 'sha', 'committed_at'>[] =
-      []
-    let page = 1
-    // タグの一覧を取得
-    while (true) {
-      const ret = await octokit.rest.repos.listTags({
-        owner,
-        repo,
-        page,
-        per_page: 100,
-      })
-      await wait({ count: ret.data.length, delay })
-      if (ret.data.length === 0) break
-      tags = [
-        ...tags,
-        ...ret.data.map((tag) => ({ name: tag.name, sha: tag.commit.sha })),
-      ]
-      page++
+    interface TagNode {
+      name: string
+      target: {
+        oid: string
+        committedDate?: string
+        target?: {
+          oid: string
+          committedDate: string
+        }
+      }
+    }
+    interface TagsQueryResult {
+      repository: {
+        refs: {
+          pageInfo: { hasNextPage: boolean; endCursor: string | null }
+          nodes: TagNode[]
+        }
+      }
     }
 
-    // タグのコミット日時を補完
-    for (const tag of tags) {
-      const tagCommit = await octokit.rest.repos.getCommit({
-        owner,
-        repo,
-        ref: tag.sha,
-      })
-      tag.committed_at = tagCommit.data.commit.committer?.date
+    const query = `
+      query GetTags($owner: String!, $repo: String!, $cursor: String) {
+        repository(owner: $owner, name: $repo) {
+          refs(refPrefix: "refs/tags/", first: 100, after: $cursor) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              name
+              target {
+                oid
+                ... on Commit {
+                  committedDate
+                }
+                ... on Tag {
+                  target {
+                    ... on Commit {
+                      oid
+                      committedDate
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+
+    let allTags: ShapedGitHubTag[] = []
+    let cursor: string | null = null
+
+    while (true) {
+      const result: TagsQueryResult = await octokit.graphql<TagsQueryResult>(
+        query,
+        {
+          owner,
+          repo,
+          cursor,
+        },
+      )
+
+      const { nodes, pageInfo } = result.repository.refs
+
+      for (const node of nodes) {
+        // annotated tag の場合は target.target にコミット情報がある
+        const sha = node.target.target?.oid ?? node.target.oid
+        const committedDate =
+          node.target.target?.committedDate ?? node.target.committedDate
+        if (committedDate) {
+          allTags = [
+            ...allTags,
+            { name: node.name, sha, committed_at: committedDate },
+          ]
+        }
+      }
+
+      if (!pageInfo.hasNextPage) break
+      cursor = pageInfo.endCursor
     }
-    return tags.filter((tag) => !!tag.committed_at) as ShapedGitHubTag[] // コミット日時がないものは除外 (通常ないけど)
+
+    return allTags
   }
 
   return { pullrequests, commits, comments, reviews, tags }
