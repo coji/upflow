@@ -1,6 +1,7 @@
 import invariant from 'tiny-invariant'
 import type { DB, Selectable } from '~/app/services/db.server'
 import { logger } from '~/batch/helper/logger'
+import type { Provider } from '~/batch/provider'
 import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
 import { createFetcher } from './fetcher'
@@ -9,15 +10,10 @@ import { createStore } from './store'
 
 export const createGitHubProvider = (
   integration: Selectable<DB.Integrations>,
-) => {
-  interface FetchOptions {
-    refresh?: boolean
-    halt?: boolean
-    delay?: number
-  }
-  const fetch = async (
-    repository: Selectable<DB.Repositories>,
-    { refresh = false, halt = false, delay = 0 }: FetchOptions,
+): Provider => {
+  const fetch: Provider['fetch'] = async (
+    repository,
+    { refresh = false, halt = false, delay = 0 },
   ) => {
     invariant(repository.repo, 'private token not specified')
     invariant(repository.owner, 'private token not specified')
@@ -105,17 +101,10 @@ export const createGitHubProvider = (
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
   }
 
-  const analyze = async (
-    organizationSetting: Pick<
-      Selectable<DB.OrganizationSettings>,
-      'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
-    >,
-    repositories: Selectable<DB.Repositories>[],
-    onProgress?: (progress: {
-      repo: string
-      current: number
-      total: number
-    }) => void,
+  const analyze: Provider['analyze'] = async (
+    organizationSetting,
+    repositories,
+    onProgress,
   ) => {
     let allPulls: Selectable<DB.PullRequests>[] = []
     let allReviewResponses: {

@@ -5,10 +5,7 @@ import {
 } from '~/batch/bizlogic/export-spreadsheet'
 import { upsertPullRequest } from '~/batch/db'
 import { logger } from '~/batch/helper/logger'
-import type { createProvider } from '~/batch/provider'
-
-/** Provider 型（null を除外） */
-type Provider = NonNullable<ReturnType<typeof createProvider>>
+import type { Provider } from '~/batch/provider'
 
 /** analyzeAndUpsert に渡す organization の必須フィールド */
 interface OrganizationForAnalyze {
