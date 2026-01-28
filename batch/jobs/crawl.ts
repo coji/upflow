@@ -3,7 +3,7 @@ import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
 import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
 
-const options = { refresh: false, halt: false, delay: 1000 }
+const options = { refresh: false, halt: false }
 
 export const crawlJob = async () => {
   logger.info('crawl started.')

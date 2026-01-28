@@ -76,13 +76,13 @@ function filterActors(
     commits: artifacts.commits,
     reviews: artifacts.reviews.filter(
       (r) =>
-        !r.user?.endsWith('[bot]') &&
+        !r.isBot &&
         r.user !== pr.author &&
         !excludedUsers.includes(r.user ?? ''),
     ),
     discussions: artifacts.discussions.filter(
       (d) =>
-        !d.user?.endsWith('[bot]') &&
+        !d.isBot &&
         d.user !== pr.author &&
         !excludedUsers.includes(d.user ?? ''),
     ),

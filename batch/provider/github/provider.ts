@@ -13,7 +13,7 @@ export const createGitHubProvider = (
 ): Provider => {
   const fetch: Provider['fetch'] = async (
     repository,
-    { refresh = false, halt = false, delay = 0 },
+    { refresh = false, halt = false },
   ) => {
     invariant(repository.repo, 'private token not specified')
     invariant(repository.owner, 'private token not specified')
@@ -23,7 +23,6 @@ export const createGitHubProvider = (
       owner: repository.owner,
       repo: repository.repo,
       token: integration.privateToken,
-      delay,
     })
     const aggregator = createAggregator()
     const store = createStore({

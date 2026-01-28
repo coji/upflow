@@ -6,7 +6,7 @@ import { createGitHubProvider } from './github/provider'
 export interface Provider {
   fetch: (
     repository: Selectable<DB.Repositories>,
-    options: { refresh?: boolean; halt?: boolean; delay?: number },
+    options: { refresh?: boolean; halt?: boolean },
   ) => Promise<void>
 
   analyze: (
