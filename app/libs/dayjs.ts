@@ -1,5 +1,8 @@
 import dayjs from 'dayjs'
 
+import 'dayjs/locale/ja.js'
+dayjs.locale('ja')
+
 import duration from 'dayjs/plugin/duration.js'
 dayjs.extend(duration)
 
