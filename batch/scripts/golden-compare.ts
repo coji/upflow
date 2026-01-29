@@ -1,7 +1,7 @@
+import { cli } from 'cleye'
+import consola from 'consola'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import consola from 'consola'
-import { cli } from 'cleye'
 import { getOrganization, listAllOrganizations } from '~/batch/db'
 import { createProvider } from '~/batch/provider'
 
@@ -95,18 +95,29 @@ const buildSnapshot = async () => {
   }
 
   for (const organization of organizations) {
-    if (!argv.flags.includeInactive && !organization.organizationSetting?.isActive)
+    if (
+      !argv.flags.includeInactive &&
+      !organization.organizationSetting?.isActive
+    )
       continue
 
     const integration = organization.integration
     if (!integration) {
-      consola.warn('skip: integration not set', organization.id, organization.name)
+      consola.warn(
+        'skip: integration not set',
+        organization.id,
+        organization.name,
+      )
       continue
     }
 
     const orgSetting = organization.organizationSetting
     if (!orgSetting) {
-      consola.warn('skip: organization setting not set', organization.id, organization.name)
+      consola.warn(
+        'skip: organization setting not set',
+        organization.id,
+        organization.name,
+      )
       continue
     }
 
