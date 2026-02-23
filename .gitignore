@@ -48,3 +48,8 @@ tsconfig.tsbuildinfo
 /z
 
 .serena
+
+# Lab
+lab/data/
+lab/notes/
+lab/output/*.json

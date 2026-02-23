@@ -24,7 +24,9 @@
     "test:e2e:build": "run-s build",
     "test:e2e:run": "playwright test",
     "typecheck": "react-router typegen && tsc -b",
-    "validate": "run-s lint format typecheck build test"
+    "validate": "run-s lint format typecheck build test",
+    "lab:fetch": "pnpm tsx lab/fetch.ts",
+    "lab:serve": "python3 -m http.server 8787 -d lab/output"
   },
   "dependencies": {
     "@coji/zodix": "0.7.0",

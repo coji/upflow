@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>レビューキュープレイヤー - 人ごとのレビュー待ち推移</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px; }
+
+  /* Player Controls */
+  .controls {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .controls button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-width: 80px;
+  }
+  .controls button:hover { opacity: 0.9; }
+  .controls button.active { background: var(--orange); }
+
+  .timeline-slider {
+    flex: 1;
+    min-width: 200px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    outline: none;
+  }
+  .timeline-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .current-time {
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 160px;
+    text-align: right;
+  }
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .speed-control select {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 120px;
+  }
+  .stat-card .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-card .value.warn { color: var(--orange); }
+  .stat-card .value.danger { color: var(--red); }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-swatch {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+  }
+  .legend-swatch.fresh { background: #1f3a2a; border: 1px solid #2a5a3a; }
+  .legend-swatch.waiting { background: #3a2f1a; border: 1px solid #5a4a2a; }
+  .legend-swatch.overdue { background: #3a1a1a; border: 1px solid #5a2a2a; }
+
+  /* Unified grid */
+  .grid-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .unified-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr;
+    gap: 0;
+  }
+  .grid-header {
+    display: contents;
+  }
+  .grid-header > div {
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    background: var(--surface);
+  }
+  .grid-header .col-name { }
+  .grid-header .col-reviewer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .grid-header .col-author {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-left: 1px solid var(--border);
+  }
+  .col-total {
+    margin-left: auto;
+    background: var(--border);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .col-total.warn { background: var(--orange); color: #000; }
+  .col-total.danger { background: var(--red); color: #fff; }
+
+  .person-row { display: contents; }
+  .person-name {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .person-name .count {
+    background: var(--border);
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 0.68rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 20px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .person-name .count.high { background: var(--orange); color: #000; }
+  .person-name .count.critical { background: var(--red); color: #fff; }
+
+  .queue-cell {
+    border-bottom: 1px solid var(--border);
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: wrap;
+    min-height: 36px;
+  }
+  .queue-cell.author-cell {
+    border-left: 1px solid var(--border);
+  }
+
+  .pr-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    cursor: default;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .pr-chip.fresh { background: #1f3a2a; color: var(--green); border: 1px solid #2a5a3a; }
+  .pr-chip.waiting { background: #3a2f1a; color: var(--orange); border: 1px solid #5a4a2a; }
+  .pr-chip.overdue { background: #3a1a1a; color: var(--red); border: 1px solid #5a2a2a; }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: #1c2128;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    z-index: 1000;
+    pointer-events: none;
+    max-width: 350px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    display: none;
+  }
+  .tooltip .tt-title { font-weight: 600; margin-bottom: 4px; }
+  .tooltip .tt-meta { color: var(--text-muted); font-size: 0.75rem; }
+
+  /* Event log */
+  .event-log {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .event-log-title {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+  }
+  .event-item {
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .event-item:last-child { border-bottom: none; }
+  .event-item .time { color: var(--text-muted); min-width: 130px; }
+  .event-item .add { color: var(--red); }
+  .event-item .remove { color: var(--green); }
+
+  /* Chart */
+  .chart-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 20px;
+    padding: 16px;
+  }
+  .chart-section h3 { font-size: 0.9rem; margin-bottom: 12px; }
+  canvas { width: 100%; height: 200px; }
+
+  .loading {
+    text-align: center;
+    padding: 60px;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>レビューキュープレイヤー</h1>
+<p class="subtitle">人ごとのレビュー待ちキューが時系列でどう蓄積されるかを再生</p>
+
+<div class="loading" id="loading">レビューイベントデータを読み込み中...</div>
+
+<div id="app" style="display:none">
+  <!-- Controls -->
+  <div class="controls">
+    <button id="playBtn" onclick="togglePlay()">▶ 再生</button>
+    <button onclick="stepBack()">⏪</button>
+    <button onclick="stepForward()">⏩</button>
+    <input type="range" class="timeline-slider" id="slider" min="0" max="1000" value="0" oninput="onSliderInput(this.value)">
+    <div class="current-time" id="currentTime">---</div>
+    <div class="speed-control">
+      <label>速度:</label>
+      <select id="speedSelect" onchange="setSpeed(this.value)">
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+        <option value="2">2x</option>
+        <option value="5">5x</option>
+        <option value="10">10x</option>
+        <option value="50">50x</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="label">レビュー待ち合計</div><div class="value" id="statTotal">0</div></div>
+    <div class="stat-card"><div class="label">個人最大（受けてる）</div><div class="value" id="statMaxReviewer">0</div></div>
+    <div class="stat-card"><div class="label">個人最大（待ってる）</div><div class="value" id="statMaxAuthor">0</div></div>
+    <div class="stat-card"><div class="label">超過（24h以上）</div><div class="value" id="statOverdue">0</div></div>
+    <div class="stat-card"><div class="label">再生イベント数</div><div class="value" id="statEvents">0 / 0</div></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span style="color:var(--text)">待ち時間:</span>
+    <div class="legend-item"><div class="legend-swatch fresh"></div> 4時間未満</div>
+    <div class="legend-item"><div class="legend-swatch waiting"></div> 4〜24時間</div>
+    <div class="legend-item"><div class="legend-swatch overdue"></div> 24時間超</div>
+  </div>
+
+  <!-- Unified Grid -->
+  <div class="grid-panel">
+    <div class="unified-grid" id="unifiedGrid">
+      <div class="grid-header">
+        <div class="col-name"></div>
+        <div class="col-reviewer">📥 レビュー依頼を受けている <span class="col-total" id="reviewerTotal">0</span></div>
+        <div class="col-author">⏳ 自分のPRがレビュー待ち <span class="col-total" id="authorTotal">0</span></div>
+      </div>
+      <!-- rows inserted by JS -->
+    </div>
+  </div>
+
+  <!-- Queue Size Chart -->
+  <div class="chart-section">
+    <h3>全体のキューサイズ推移</h3>
+    <canvas id="queueChart"></canvas>
+  </div>
+
+  <!-- Event Log -->
+  <div class="event-log">
+    <div class="event-log-title">直近のイベント</div>
+    <div id="eventLog"></div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+let allEvents = [];
+let personList = [];  // unified list of all people
+let currentIndex = 0;
+let isPlaying = false;
+let playInterval = null;
+let speed = 1;
+let startTime = null;
+let endTime = null;
+
+// Reviewer view: Map<person, Map<prKey, {pr, addedAt}>>
+let reviewerQueues = {};
+// Author view: Map<person, Map<prKey, {pr, addedAt, pendingReviewers}>>
+let authorQueues = {};
+
+let chartData = [];
+const MAX_CHART_POINTS = 500;
+
+fetch('review-queue-events.json')
+  .then(r => r.json())
+  .then(data => {
+    allEvents = data;
+    init();
+  })
+  .catch(err => {
+    document.getElementById('loading').textContent = `データ読み込みエラー: ${err.message}`;
+  });
+
+function init() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = '';
+
+  // Collect all people (union of reviewers and authors), sorted by total event involvement
+  const involvement = {};
+  for (const e of allEvents) {
+    involvement[e.reviewer] = (involvement[e.reviewer] || 0) + 1;
+    involvement[e.pr.author] = (involvement[e.pr.author] || 0) + 1;
+  }
+  personList = Object.entries(involvement).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+
+  for (const p of personList) {
+    reviewerQueues[p] = new Map();
+    authorQueues[p] = new Map();
+  }
+
+  startTime = new Date(allEvents[0].time);
+  endTime = new Date(allEvents[allEvents.length - 1].time);
+
+  document.getElementById('slider').max = allEvents.length - 1;
+  document.getElementById('statEvents').textContent = `0 / ${allEvents.length}`;
+
+  buildGrid();
+  updateDisplay();
+}
+
+function buildGrid() {
+  const grid = document.getElementById('unifiedGrid');
+  // Keep header, remove old rows
+  const header = grid.querySelector('.grid-header');
+  grid.innerHTML = '';
+  grid.appendChild(header);
+
+  for (const p of personList) {
+    const row = document.createElement('div');
+    row.className = 'person-row';
+    row.innerHTML = `
+      <div class="person-name">
+        <span>${shortName(p)}</span>
+        <span class="count" id="total-${CSS.escape(p)}">0</span>
+      </div>
+      <div class="queue-cell" id="rqueue-${CSS.escape(p)}"></div>
+      <div class="queue-cell author-cell" id="aqueue-${CSS.escape(p)}"></div>
+    `;
+    grid.appendChild(row);
+  }
+}
+
+function shortName(login) {
+  return login.length > 16 ? login.slice(0, 14) + '..' : login;
+}
+
+function prKey(pr) {
+  return `${pr.repo}#${pr.number}`;
+}
+
+function applyEvent(index) {
+  const e = allEvents[index];
+  const key = prKey(e.pr);
+  const time = new Date(e.time);
+  const reviewer = e.reviewer;
+  const author = e.pr.author;
+
+  // Reviewer side
+  if (!reviewerQueues[reviewer]) reviewerQueues[reviewer] = new Map();
+  if (e.type === 'add') {
+    reviewerQueues[reviewer].set(key, { pr: e.pr, addedAt: time });
+  } else {
+    reviewerQueues[reviewer].delete(key);
+  }
+
+  // Author side
+  if (!authorQueues[author]) authorQueues[author] = new Map();
+  if (e.type === 'add') {
+    const existing = authorQueues[author].get(key);
+    if (existing) {
+      existing.pendingReviewers.add(reviewer);
+    } else {
+      const s = new Set();
+      s.add(reviewer);
+      authorQueues[author].set(key, { pr: e.pr, addedAt: time, pendingReviewers: s });
+    }
+  } else {
+    const existing = authorQueues[author].get(key);
+    if (existing) {
+      existing.pendingReviewers.delete(reviewer);
+      if (existing.pendingReviewers.size === 0) {
+        authorQueues[author].delete(key);
+      }
+    }
+  }
+}
+
+function revertEvent(index) {
+  resetState();
+  for (let i = 0; i < index; i++) applyEvent(i);
+}
+
+function resetState() {
+  for (const p of personList) {
+    reviewerQueues[p] = new Map();
+    authorQueues[p] = new Map();
+  }
+  chartData = [];
+}
+
+function seekTo(index) {
+  if (index < currentIndex) {
+    resetState();
+    for (let i = 0; i <= index; i++) applyEvent(i);
+  } else {
+    for (let i = currentIndex + 1; i <= index; i++) applyEvent(i);
+  }
+  currentIndex = index;
+  updateDisplay();
+}
+
+function updateDisplay() {
+  const now = currentIndex >= 0 && currentIndex < allEvents.length
+    ? new Date(allEvents[currentIndex].time) : startTime;
+
+  document.getElementById('currentTime').textContent = formatDateTime(now);
+  document.getElementById('slider').value = currentIndex;
+
+  let totalQueue = 0;
+  let maxReviewer = 0;
+  let maxAuthor = 0;
+  let overdue = 0;
+  let reviewerTotalCount = 0;
+  let authorTotalCount = 0;
+
+  for (const p of personList) {
+    const rq = reviewerQueues[p];
+    const aq = authorQueues[p];
+    const rSize = rq ? rq.size : 0;
+    const aSize = aq ? aq.size : 0;
+    const combined = rSize + aSize;
+
+    reviewerTotalCount += rSize;
+    authorTotalCount += aSize;
+    totalQueue += rSize;
+    if (rSize > maxReviewer) maxReviewer = rSize;
+    if (aSize > maxAuthor) maxAuthor = aSize;
+
+    // Overdue count (reviewer side)
+    if (rq) {
+      for (const [, item] of rq) {
+        if ((now - item.addedAt) / 3600000 > 24) overdue++;
+      }
+    }
+
+    // Total badge
+    const badge = document.getElementById(`total-${CSS.escape(p)}`);
+    if (badge) {
+      badge.textContent = combined;
+      badge.className = 'count' + (combined >= 8 ? ' critical' : combined >= 4 ? ' high' : '');
+    }
+
+    // Chips
+    renderChips(`rqueue-${CSS.escape(p)}`, rq, now, 'reviewer');
+    renderChips(`aqueue-${CSS.escape(p)}`, aq, now, 'author');
+  }
+
+  // Stats
+  setStatValue('statTotal', totalQueue, 15, 8);
+  setStatValue('statMaxReviewer', maxReviewer, 5, 3);
+  setStatValue('statMaxAuthor', maxAuthor, 4, 2);
+  setStatValue('statOverdue', overdue, 3, 1);
+  document.getElementById('statEvents').textContent = `${currentIndex + 1} / ${allEvents.length}`;
+
+  setPanelTotal('reviewerTotal', reviewerTotalCount);
+  setPanelTotal('authorTotal', authorTotalCount);
+
+  recordChartPoint(now, totalQueue);
+  drawChart();
+}
+
+function setStatValue(id, val, dangerThresh, warnThresh) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.className = 'value' + (val >= dangerThresh ? ' danger' : val >= warnThresh ? ' warn' : '');
+}
+
+function setPanelTotal(id, count) {
+  const el = document.getElementById(id);
+  el.textContent = count;
+  el.className = 'col-total' + (count >= 15 ? ' danger' : count >= 8 ? ' warn' : '');
+}
+
+function renderChips(containerId, queue, now, viewType) {
+  const container = document.getElementById(containerId);
+  if (!container || !queue) return;
+  const chips = [];
+  for (const [, item] of queue) {
+    const hours = (now - item.addedAt) / 3600000;
+    const cls = hours > 24 ? 'overdue' : hours > 4 ? 'waiting' : 'fresh';
+    const waitText = hours < 1 ? `${Math.round(hours * 60)}m` : hours < 24 ? `${Math.round(hours)}h` : `${(hours / 24).toFixed(1)}d`;
+    const reviewersAttr = viewType === 'author' && item.pendingReviewers
+      ? ` data-reviewers="${[...item.pendingReviewers].join(', ')}"`
+      : '';
+    chips.push(`<span class="pr-chip ${cls}" data-pr='${JSON.stringify(item.pr).replace(/'/g, "&#39;")}' data-wait="${waitText}" data-view="${viewType}"${reviewersAttr}
+      onmouseenter="showTooltip(event, this)" onmouseleave="hideTooltip()">
+      #${item.pr.number} <small>${waitText}</small>
+    </span>`);
+  }
+  container.innerHTML = chips.join('');
+}
+
+function addEventLog(e) {
+  const log = document.getElementById('eventLog');
+  const div = document.createElement('div');
+  div.className = 'event-item';
+  const icon = e.type === 'add' ? '📥' : '✅';
+  const cls = e.type === 'add' ? 'add' : 'remove';
+  div.innerHTML = `
+    <span class="time">${formatDateTime(new Date(e.time))}</span>
+    <span class="${cls}">${icon} ${e.reviewer}</span>
+    <span>${e.pr.repo}#${e.pr.number}</span>
+    <span style="color:var(--text-muted)">${e.reason || ''}</span>
+  `;
+  log.insertBefore(div, log.firstChild);
+  while (log.children.length > 50) log.removeChild(log.lastChild);
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  const btn = document.getElementById('playBtn');
+  if (isPlaying) {
+    btn.textContent = '⏸ 一時停止';
+    btn.classList.add('active');
+    play();
+  } else {
+    btn.textContent = '▶ 再生';
+    btn.classList.remove('active');
+    clearTimeout(playInterval);
+  }
+}
+
+function play() {
+  if (!isPlaying || currentIndex >= allEvents.length - 1) {
+    isPlaying = false;
+    document.getElementById('playBtn').textContent = '▶ 再生';
+    document.getElementById('playBtn').classList.remove('active');
+    return;
+  }
+
+  currentIndex++;
+  applyEvent(currentIndex);
+  addEventLog(allEvents[currentIndex]);
+  updateDisplay();
+
+  let delay = 100;
+  if (currentIndex < allEvents.length - 1) {
+    const curr = new Date(allEvents[currentIndex].time);
+    const next = new Date(allEvents[currentIndex + 1].time);
+    const gapMs = next - curr;
+    delay = Math.min(2000, Math.max(30, (gapMs / 3600000) * 500)) / speed;
+  }
+
+  playInterval = setTimeout(play, delay);
+}
+
+function stepForward() {
+  if (currentIndex < allEvents.length - 1) {
+    currentIndex++;
+    applyEvent(currentIndex);
+    addEventLog(allEvents[currentIndex]);
+    updateDisplay();
+  }
+}
+
+function stepBack() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    revertEvent(currentIndex);
+    updateDisplay();
+  }
+}
+
+function onSliderInput(val) {
+  seekTo(parseInt(val, 10));
+}
+
+function setSpeed(val) {
+  speed = parseFloat(val);
+}
+
+// Chart
+const chartCanvas = document.getElementById('queueChart');
+const chartCtx = chartCanvas?.getContext('2d');
+
+function recordChartPoint(time, total) {
+  if (chartData.length > 0) {
+    const last = chartData[chartData.length - 1];
+    if (time - last.time < 3600000 && total === last.value) return;
+  }
+  chartData.push({ time: +time, value: total });
+  if (chartData.length > MAX_CHART_POINTS) {
+    chartData = chartData.filter((_, i) => i % 2 === 0 || i === chartData.length - 1);
+  }
+}
+
+function drawChart() {
+  if (!chartCtx || chartData.length < 2) return;
+
+  const canvas = chartCanvas;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 200 * dpr;
+  canvas.style.height = '200px';
+  const ctx = chartCtx;
+  ctx.scale(dpr, dpr);
+  const W = rect.width;
+  const H = 200;
+  const pad = { top: 10, right: 10, bottom: 30, left: 40 };
+
+  ctx.clearRect(0, 0, W, H);
+
+  const minT = chartData[0].time;
+  const maxT = chartData[chartData.length - 1].time;
+  const maxV = Math.max(5, ...chartData.map(d => d.value));
+
+  const xScale = (t) => pad.left + ((t - minT) / (maxT - minT || 1)) * (W - pad.left - pad.right);
+  const yScale = (v) => H - pad.bottom - (v / maxV) * (H - pad.top - pad.bottom);
+
+  ctx.strokeStyle = '#21262d';
+  ctx.lineWidth = 1;
+  for (let v = 0; v <= maxV; v += Math.max(1, Math.floor(maxV / 5))) {
+    const y = yScale(v);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(W - pad.right, y);
+    ctx.stroke();
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(v, pad.left - 6, y + 4);
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(xScale(chartData[0].time), yScale(0));
+  for (const d of chartData) ctx.lineTo(xScale(d.time), yScale(d.value));
+  ctx.lineTo(xScale(chartData[chartData.length - 1].time), yScale(0));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(88,166,255,0.15)';
+  ctx.fill();
+
+  ctx.beginPath();
+  for (let i = 0; i < chartData.length; i++) {
+    const d = chartData[i];
+    if (i === 0) ctx.moveTo(xScale(d.time), yScale(d.value));
+    else ctx.lineTo(xScale(d.time), yScale(d.value));
+  }
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  const labelCount = Math.min(6, chartData.length);
+  for (let i = 0; i < labelCount; i++) {
+    const idx = Math.floor(i * (chartData.length - 1) / (labelCount - 1));
+    const d = chartData[idx];
+    const label = new Date(d.time).toLocaleDateString('ja', { month: 'short', day: 'numeric' });
+    ctx.fillText(label, xScale(d.time), H - 8);
+  }
+}
+
+function formatDateTime(d) {
+  return `${d.toLocaleDateString('ja', { year: 'numeric', month: '2-digit', day: '2-digit' })} ${d.toLocaleTimeString('ja', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function showTooltip(event, el) {
+  const pr = JSON.parse(el.dataset.pr);
+  const wait = el.dataset.wait;
+  const view = el.dataset.view;
+  const tt = document.getElementById('tooltip');
+
+  let detail = '';
+  if (view === 'reviewer') {
+    detail = `作成者: ${pr.author} | 待ち時間: ${wait}`;
+  } else {
+    const reviewers = el.dataset.reviewers || '—';
+    detail = `レビュー待ち先: ${reviewers} | 待ち時間: ${wait}`;
+  }
+
+  tt.innerHTML = `
+    <div class="tt-title">${pr.repo}#${pr.number}</div>
+    <div>${pr.title}</div>
+    <div class="tt-meta">${detail}</div>
+  `;
+  tt.style.display = 'block';
+  tt.style.left = `${event.clientX + 12}px`;
+  tt.style.top = `${event.clientY - 10}px`;
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+window.addEventListener('resize', drawChart);
+</script>
+</body>
+</html>
