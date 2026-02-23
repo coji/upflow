@@ -5,9 +5,11 @@ import { db, type DB } from '~/app/services/db.server'
 export const createOrganization = async ({
   organizationSlug,
   organizationName,
+  creatorUserId,
 }: {
   organizationSlug: DB.Organizations['slug']
   organizationName: DB.Organizations['name']
+  creatorUserId: string
 }) => {
   if (isReservedSlug(organizationSlug)) {
     throw new Error(`"${organizationSlug}" is a reserved slug`)
@@ -23,6 +25,17 @@ export const createOrganization = async ({
       })
       .returningAll()
       .executeTakeFirstOrThrow()
+
+    await tsx
+      .insertInto('members')
+      .values({
+        id: nanoid(),
+        organizationId: organization.id,
+        userId: creatorUserId,
+        role: 'owner',
+        createdAt: new Date().toISOString(),
+      })
+      .execute()
 
     return { organization }
   })

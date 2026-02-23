@@ -17,6 +17,7 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
+import { requireSuperAdmin } from '~/app/libs/auth.server'
 import { createOrganization } from './+create/mutations.server'
 import type { Route } from './+types/create'
 
@@ -31,13 +32,17 @@ export const schema = z.object({
 })
 
 export const action = async ({ request }: Route.ActionArgs) => {
+  const { user } = await requireSuperAdmin(request)
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return { lastResult: submission.reply() }
   }
 
   try {
-    const { organization } = await createOrganization(submission.value)
+    const { organization } = await createOrganization({
+      ...submission.value,
+      creatorUserId: user.id,
+    })
     return redirect(`/${organization.slug}`)
   } catch (e) {
     return {

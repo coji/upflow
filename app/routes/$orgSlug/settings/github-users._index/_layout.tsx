@@ -1,4 +1,6 @@
 import { data } from 'react-router'
+import { match } from 'ts-pattern'
+import { z } from 'zod'
 import {
   PageHeader,
   PageHeaderDescription,
@@ -58,44 +60,52 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return { organization, githubUsers, pagination }
 }
 
+const addSchema = z.object({
+  login: z.string().min(1),
+  displayName: z.string().min(1),
+})
+
+const updateSchema = z.object({
+  login: z.string().min(1),
+  displayName: z.string().min(1),
+  name: z.string().nullable().default(null),
+  email: z.string().nullable().default(null),
+})
+
+const deleteSchema = z.object({
+  login: z.string().min(1),
+})
+
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const formData = await request.formData()
-  const intent = formData.get('intent')
+  const intent = String(formData.get('intent'))
 
-  if (intent === 'add') {
-    const login = formData.get('login') as string
-    const displayName = formData.get('displayName') as string
-    await addGithubUser({
-      login,
-      displayName,
-      organizationId: organization.id,
+  return match(intent)
+    .with('add', async () => {
+      const parsed = addSchema.parse({
+        login: formData.get('login'),
+        displayName: formData.get('displayName'),
+      })
+      await addGithubUser({ ...parsed, organizationId: organization.id })
+      return data({ ok: true })
     })
-    return data({ ok: true })
-  }
-
-  if (intent === 'update') {
-    const login = formData.get('login') as string
-    const displayName = formData.get('displayName') as string
-    const name = (formData.get('name') as string) || null
-    const email = (formData.get('email') as string) || null
-    await updateGithubUser({
-      login,
-      organizationId: organization.id,
-      displayName,
-      name,
-      email,
+    .with('update', async () => {
+      const parsed = updateSchema.parse({
+        login: formData.get('login'),
+        displayName: formData.get('displayName'),
+        name: formData.get('name') || null,
+        email: formData.get('email') || null,
+      })
+      await updateGithubUser({ ...parsed, organizationId: organization.id })
+      return data({ ok: true })
     })
-    return data({ ok: true })
-  }
-
-  if (intent === 'delete') {
-    const login = formData.get('login') as string
-    await deleteGithubUser(login, organization.id)
-    return data({ ok: true })
-  }
-
-  return data({ error: 'Invalid intent' }, { status: 400 })
+    .with('delete', async () => {
+      const { login } = deleteSchema.parse({ login: formData.get('login') })
+      await deleteGithubUser(login, organization.id)
+      return data({ ok: true })
+    })
+    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
 
 export default function GithubUsersPage({

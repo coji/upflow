@@ -1,4 +1,6 @@
 import { data } from 'react-router'
+import { match } from 'ts-pattern'
+import { z } from 'zod'
 import {
   PageHeader,
   PageHeaderDescription,
@@ -60,25 +62,41 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return { organization, members, pagination }
 }
 
+const changeRoleSchema = z.object({
+  memberId: z.string().min(1),
+  role: z.string().min(1),
+})
+
+const removeMemberSchema = z.object({
+  memberId: z.string().min(1),
+})
+
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const formData = await request.formData()
-  const intent = formData.get('intent')
+  const intent = String(formData.get('intent'))
 
-  if (intent === 'changeRole') {
-    const memberId = formData.get('memberId') as string
-    const role = formData.get('role') as string
-    await changeMemberRole(memberId, organization.id, role)
-    return data({ ok: true })
-  }
-
-  if (intent === 'removeMember') {
-    const memberId = formData.get('memberId') as string
-    await removeMember(memberId, organization.id)
-    return data({ ok: true })
-  }
-
-  return data({ error: 'Invalid intent' }, { status: 400 })
+  return match(intent)
+    .with('changeRole', async () => {
+      const { memberId, role } = changeRoleSchema.parse({
+        memberId: formData.get('memberId'),
+        role: formData.get('role'),
+      })
+      await changeMemberRole(memberId, organization.id, role)
+      return data({ ok: true })
+    })
+    .with('removeMember', async () => {
+      const { memberId } = removeMemberSchema.parse({
+        memberId: formData.get('memberId'),
+      })
+      try {
+        await removeMember(memberId, organization.id)
+      } catch (e) {
+        return data({ error: String(e) }, { status: 400 })
+      }
+      return data({ ok: true })
+    })
+    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
 
 export default function OrganizationMembersPage({

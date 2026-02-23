@@ -1,14 +1,9 @@
-import type { Table } from '@tanstack/react-table'
 import { XIcon } from 'lucide-react'
 import { SearchInput } from '~/app/components/search-input'
 import { Button } from '~/app/components/ui/button'
 import { useDataTableState } from '../+hooks/use-data-table-state'
 
-interface DataTableToolbarProps<TData> {
-  table: Table<TData>
-}
-
-export function DataTableToolbar<TData>(_props: DataTableToolbarProps<TData>) {
+export function DataTableToolbar() {
   const { queries, updateQueries, isFiltered, resetFilters } =
     useDataTableState()
 

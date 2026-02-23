@@ -126,15 +126,15 @@ export function classifyPR(pr: PRSizeInfo): PRSize {
   if (isTitleDocs && totalLines <= 100) return 'S'
   if (isTitleRefactor && totalLines <= 50 && changedFiles <= 5) return 'S'
 
+  // XL: System-wide (check before L to avoid shadowing)
+  if (totalLines > 1000 && changedFiles > 30) return 'XL'
+  if (hasDBChange && hasAPIChange && hasAuthChange) return 'XL'
+  if (componentDirs.size > 10) return 'XL'
+
   // L: Wide impact or critical domain
   if (hasPaymentChange || hasAuthChange) return 'L'
   if (hasDBChange && hasAPIChange) return 'L'
   if (totalLines > 500 && changedFiles > 15) return 'L'
-
-  // XL: System-wide
-  if (totalLines > 1000 && changedFiles > 30) return 'XL'
-  if (hasDBChange && hasAPIChange && hasAuthChange) return 'XL'
-  if (componentDirs.size > 10) return 'XL'
 
   // M: Default moderate
   return 'M'

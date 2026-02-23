@@ -51,7 +51,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     repository: z.string(),
   })
   const repository = await getRepository(repositoryId)
-  if (!repository) {
+  if (!repository || repository.organizationId !== organization.id) {
     throw new Response('repository not found', { status: 404 })
   }
   const integration = await getIntegration(organization.id)
@@ -72,6 +72,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
+  const repository = await getRepository(repositoryId)
+  if (!repository || repository.organizationId !== organization.id) {
+    throw new Response('repository not found', { status: 404 })
+  }
   const formData = await request.formData()
   const submission = parseWithZod(formData, { schema: githubSchema })
   if (submission.status !== 'success') {

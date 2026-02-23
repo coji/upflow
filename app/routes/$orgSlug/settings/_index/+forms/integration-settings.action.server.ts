@@ -37,7 +37,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       lastResult: submission.reply(),
     },
     {
-      message: 'Update export settings successfully',
+      message: 'Update integration settings successfully',
     },
   )
 }

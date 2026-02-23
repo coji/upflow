@@ -7,6 +7,7 @@ export const getRepository = async (repositoryId: DB.Repositories['id']) => {
     .where('id', '=', repositoryId)
     .select((eb) => [
       'id',
+      'organizationId',
       'owner',
       'repo',
       jsonObjectFrom(

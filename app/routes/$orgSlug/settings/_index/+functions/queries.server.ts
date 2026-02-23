@@ -31,6 +31,7 @@ export const createDefaultOrganizationSetting = async (
       organizationId,
       updatedAt: new Date().toISOString(),
     })
+    .onConflict((oc) => oc.doNothing())
     .execute()
   const row = await getOrganizationSetting(organizationId)
   if (!row) throw new Error('Failed to create organization setting')

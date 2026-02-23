@@ -25,8 +25,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     repository: z.string(),
   })
   const repository = await getRepository(repositoryId)
-  if (!repository) {
-    throw new Error('repository not found')
+  if (!repository || repository.organizationId !== organization.id) {
+    throw new Response('repository not found', { status: 404 })
   }
   return { organization, repositoryId, repository }
 }
@@ -36,6 +36,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
+  const repository = await getRepository(repositoryId)
+  if (!repository || repository.organizationId !== organization.id) {
+    throw new Response('repository not found', { status: 404 })
+  }
 
   await deleteRepository(repositoryId)
 

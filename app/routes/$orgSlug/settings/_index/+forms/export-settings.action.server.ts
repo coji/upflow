@@ -6,7 +6,7 @@ import type { Route } from '../+types/_layout'
 import { upsertExportSetting } from '../functions.server'
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  const submission = parseWithZod(await request.formData(), { schema })
+  const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {
       intent: INTENTS.exportSettings,

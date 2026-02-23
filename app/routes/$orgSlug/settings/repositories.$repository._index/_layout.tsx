@@ -37,7 +37,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   })
 
   const repository = await getRepository(repositoryId)
-  if (!repository) {
+  if (!repository || repository.organizationId !== organization.id) {
     throw new Response('repository not found', { status: 404 })
   }
   const pulls = await listPullRequests(repositoryId)
