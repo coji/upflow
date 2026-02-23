@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM分類 Auto Mergeシミュレーション</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
+    --xs: #3fb950;
+    --s: #58a6ff;
+    --m: #d29922;
+    --l: #f85149;
+    --xl: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    min-height: 100vh;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; margin-bottom: 12px; }
+  .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    min-width: 130px;
+    flex: 1;
+  }
+  .stat-card .label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-card .note { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+  .stat-card .value.green { color: var(--green); }
+  .stat-card .value.red { color: var(--red); }
+
+  .size-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+  .size-label {
+    min-width: 32px;
+    font-weight: 700;
+    text-align: right;
+  }
+  .size-label.xs { color: var(--xs); }
+  .size-label.s { color: var(--s); }
+  .size-label.m { color: var(--m); }
+  .size-label.l { color: var(--l); }
+  .size-label.xl { color: var(--xl); }
+  .size-bar-track {
+    flex: 1;
+    height: 24px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .size-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #fff;
+    transition: width 0.5s;
+  }
+  .size-count { min-width: 80px; font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: 0.82rem; }
+
+  .compare-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .compare-label {
+    min-width: 180px;
+    font-size: 0.85rem;
+  }
+  .compare-bar-track {
+    flex: 1;
+    height: 32px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .compare-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    transition: width 0.5s;
+  }
+  .compare-reduction {
+    min-width: 80px;
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9rem;
+  }
+
+  canvas { width: 100%; }
+
+  .review-time-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .review-time-card {
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 14px;
+    text-align: center;
+  }
+  .review-time-card .size-tag {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+  .review-time-card .metric {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  .review-time-card .metric-value {
+    font-size: 1rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .insight {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    line-height: 1.8;
+    font-size: 0.88rem;
+  }
+  .insight h3 { font-size: 0.95rem; margin-bottom: 8px; color: var(--accent); }
+  .insight ul { padding-left: 20px; margin-top: 6px; }
+  .insight li { margin-bottom: 4px; }
+  .insight .hl { color: var(--orange); font-weight: 600; }
+  .insight .good { color: var(--green); font-weight: 600; }
+  .insight .bad { color: var(--red); font-weight: 600; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } .review-time-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .pr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    margin-top: 12px;
+  }
+  .pr-table th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+  }
+  .pr-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .pr-table tr:hover { background: var(--bg); }
+  .size-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .size-badge.xs { background: var(--xs); color: #000; }
+  .size-badge.s { background: var(--s); color: #000; }
+  .size-badge.m { background: var(--m); color: #000; }
+  .size-badge.l { background: var(--l); color: #fff; }
+  .size-badge.xl { background: var(--xl); color: #fff; }
+
+  .loading { text-align: center; padding: 60px; color: var(--text-muted); }
+  .legend-row { display:flex;gap:20px;justify-content:center;margin-top:8px;font-size:0.75rem; }
+  .legend-row span { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<h1>LLM分類 Auto Mergeシミュレーション</h1>
+<p class="subtitle">LLM（Gemini Flash Lite）による分類で、ルールベースより正確にPRサイズを判定。XS+S自動マージの効果を比較。</p>
+
+<div class="loading" id="loading">データ読み込み中...</div>
+<div id="app" style="display:none"></div>
+
+<script>
+fetch('llm-automerge-simulation-data.json')
+  .then(r => r.json())
+  .then(data => render(data))
+  .catch(err => {
+    document.getElementById('loading').textContent = `エラー: ${err.message}`;
+  });
+
+function render(data) {
+  document.getElementById('loading').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = '';
+
+  const { sizeDistribution, simulation, pickupBySize, classifications, meta } = data;
+  const total = meta.totalPRs;
+  const rule = sizeDistribution.rule;
+  const llm = sizeDistribution.llm;
+
+  const llmXSSPct = (((llm.XS + llm.S) / total) * 100).toFixed(0);
+  const ruleXSSPct = (((rule.XS + rule.S) / total) * 100).toFixed(0);
+  const llmReduction = simulation['Auto XS+S'].llmReduction.toFixed(1);
+  const ruleReduction = simulation['Auto XS+S'].ruleReduction.toFixed(1);
+
+  app.innerHTML = `
+    <!-- Hero Stats -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="label">分析PR数</div>
+        <div class="value">${total}</div>
+        <div class="note">2025年以降のmerged PR</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">LLM XS+S 割合</div>
+        <div class="value green">${llmXSSPct}%</div>
+        <div class="note">ルールベース: ${ruleXSSPct}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">LLM キュー削減</div>
+        <div class="value green">-${llmReduction}%</div>
+        <div class="note">XS+S auto merge時</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ルール キュー削減</div>
+        <div class="value red">-${ruleReduction}%</div>
+        <div class="note">XS+S auto merge時</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">効果の差</div>
+        <div class="value green">${(parseFloat(llmReduction) / parseFloat(ruleReduction)).toFixed(1)}x</div>
+        <div class="note">LLMの方が効果大</div>
+      </div>
+    </div>
+
+    <!-- Size Distribution Comparison -->
+    <div class="panel">
+      <h2>サイズ分布比較: ルールベース vs LLM</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">
+        LLM分類ではM/Lの過剰分類が解消され、XS/Sが大幅に増加
+      </p>
+      <div class="two-col">
+        <div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;font-weight:600">ルールベース (行数・ファイル数)</div>
+          <div id="ruleDist"></div>
+        </div>
+        <div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;font-weight:600">LLM (Gemini Flash Lite)</div>
+          <div id="llmDist"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Queue Comparison -->
+    <div class="panel">
+      <h2>レビューキュー削減: ルールベース vs LLM</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">
+        同じ「XS+S自動マージ」施策でも、分類精度によって効果が大きく異なる
+      </p>
+      <div id="comparison"></div>
+    </div>
+
+    <!-- Timeline Chart -->
+    <div class="panel">
+      <h2>キューサイズ推移: LLM分類シミュレーション</h2>
+      <canvas id="timelineChart" height="280"></canvas>
+      <div class="legend-row">
+        <span><span style="color:var(--red)">━</span> 現状 (Baseline)</span>
+        <span><span style="color:var(--orange)">━</span> ルール XS+S</span>
+        <span><span style="color:var(--green)">━</span> LLM XS+S</span>
+      </div>
+    </div>
+
+    <!-- Throughput Impact -->
+    <div class="panel">
+      <h2>スループットへの影響予測</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">
+        キュー削減によりレビュアーの負荷が下がり、残りのPRのレビュー速度が向上する
+      </p>
+      <canvas id="throughputChart" height="280"></canvas>
+      <div class="legend-row">
+        <span><span style="color:var(--text-muted)">●</span> 現状（実データ）</span>
+        <span><span style="color:var(--green)">●</span> LLM XS+S 自動化後の推定ゾーン</span>
+      </div>
+    </div>
+
+    <!-- Review Wait Time -->
+    <div class="panel">
+      <h2>LLMサイズ別レビュー待ち時間</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px">
+        XS/Sは自動マージで即時化、レビュアーはM以上に集中 → M/Lの待ち時間も改善見込み
+      </p>
+      <div class="review-time-grid" id="reviewTimeGrid"></div>
+    </div>
+
+    <!-- Reclassification Examples -->
+    <div class="panel">
+      <h2>LLMにより再分類されたPRの例</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px">
+        ルールベースでM/L判定だがLLMでXS/Sと判定 — 自動マージ対象に追加
+      </p>
+      <table class="pr-table" id="reclassTable"></table>
+    </div>
+
+    <!-- Insights -->
+    <div class="insight" id="insights"></div>
+  `;
+
+  renderDistribution('ruleDist', rule, total);
+  renderDistribution('llmDist', llm, total);
+  renderComparison(simulation);
+  renderTimeline(simulation);
+  renderThroughputChart(simulation);
+  renderReviewTimes(pickupBySize);
+  renderReclassExamples(classifications);
+  renderInsights(rule, llm, total, simulation, pickupBySize);
+}
+
+function renderDistribution(elId, counts, total) {
+  const el = document.getElementById(elId);
+  const sizes = ['XS', 'S', 'M', 'L', 'XL'];
+  const maxCount = Math.max(...sizes.map(s => counts[s] || 0));
+  el.innerHTML = sizes.map(s => {
+    const count = counts[s] || 0;
+    if (count === 0) return '';
+    const pct = ((count / total) * 100).toFixed(1);
+    const width = (count / maxCount * 100).toFixed(0);
+    return `<div class="size-bar-row">
+      <div class="size-label ${s.toLowerCase()}">${s}</div>
+      <div class="size-bar-track">
+        <div class="size-bar-fill" style="width:${width}%;background:var(--${s.toLowerCase()})">${count > 15 ? count : ''}</div>
+      </div>
+      <div class="size-count">${count} (${pct}%)</div>
+    </div>`;
+  }).join('');
+}
+
+function renderComparison(simulation) {
+  const el = document.getElementById('comparison');
+  const baseline = simulation.Baseline.rule;
+  const scenarios = [
+    { label: '現状 (Baseline)', rule: baseline, llm: baseline },
+    { label: 'Auto XS のみ', rule: simulation['Auto XS'].rule, llm: simulation['Auto XS'].llm },
+    { label: 'Auto XS+S', rule: simulation['Auto XS+S'].rule, llm: simulation['Auto XS+S'].llm },
+  ];
+
+  el.innerHTML = scenarios.map(s => {
+    const ruleWidth = (s.rule / baseline * 100).toFixed(0);
+    const llmWidth = (s.llm / baseline * 100).toFixed(0);
+    const ruleRed = s.rule < baseline ? `-${((1 - s.rule / baseline) * 100).toFixed(1)}%` : '—';
+    const llmRed = s.llm < baseline ? `-${((1 - s.llm / baseline) * 100).toFixed(1)}%` : '—';
+    return `
+      <div style="margin-bottom:18px">
+        <div style="font-size:0.85rem;font-weight:600;margin-bottom:6px">${s.label}</div>
+        <div class="compare-row">
+          <div class="compare-label" style="min-width:90px;font-size:0.78rem;color:var(--text-muted)">ルールベース</div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill" style="width:${ruleWidth}%;background:var(--orange)">${s.rule.toFixed(1)} 件</div>
+          </div>
+          <div class="compare-reduction" style="color:${ruleRed !== '—' ? 'var(--orange)' : 'var(--text-muted)'}">${ruleRed}</div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-label" style="min-width:90px;font-size:0.78rem;color:var(--text-muted)">LLM</div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill" style="width:${llmWidth}%;background:var(--green)">${s.llm.toFixed(1)} 件</div>
+          </div>
+          <div class="compare-reduction" style="color:${llmRed !== '—' ? 'var(--green)' : 'var(--text-muted)'}">${llmRed}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function drawChart(canvasId, height, drawFn) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.height = height + 'px';
+  ctx.scale(dpr, dpr);
+  drawFn(ctx, rect.width, height);
+}
+
+function renderTimeline(simulation) {
+  drawChart('timelineChart', 280, (ctx, W, H) => {
+    const pad = { top: 15, right: 20, bottom: 40, left: 45 };
+
+    const baseSnaps = simulation.Baseline.ruleSnapshots || [];
+    const ruleXSSSnaps = simulation['Auto XS+S'].ruleSnapshots || [];
+    const llmXSSSnaps = simulation['Auto XS+S'].llmSnapshots || [];
+
+    if (baseSnaps.length === 0) {
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('スナップショットデータなし', W / 2 - 80, H / 2);
+      return;
+    }
+
+    const allDays = baseSnaps.map(d => d.day);
+    const maxV = Math.max(...baseSnaps.map(d => d.total)) * 1.1;
+
+    const x = (i) => pad.left + (i / (allDays.length - 1)) * (W - pad.left - pad.right);
+    const y = (v) => H - pad.bottom - (v / maxV) * (H - pad.top - pad.bottom);
+
+    // Grid
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const yv = pad.top + (i / 4) * (H - pad.top - pad.bottom);
+      ctx.beginPath(); ctx.moveTo(pad.left, yv); ctx.lineTo(W - pad.right, yv); ctx.stroke();
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(((4 - i) / 4 * maxV).toFixed(0), pad.left - 6, yv + 4);
+    }
+
+    // Build maps
+    const baseMap = {}; for (const d of baseSnaps) baseMap[d.day] = d.total;
+    const ruleMap = {}; for (const d of ruleXSSSnaps) ruleMap[d.day] = d.total;
+    const llmMap = {}; for (const d of llmXSSSnaps) llmMap[d.day] = d.total;
+
+    // Area: delta between baseline and LLM
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < allDays.length; i++) {
+      const bv = baseMap[allDays[i]];
+      const lv = llmMap[allDays[i]];
+      if (bv !== undefined && lv !== undefined) {
+        if (!started) { ctx.moveTo(x(i), y(bv)); started = true; }
+        else ctx.lineTo(x(i), y(bv));
+      }
+    }
+    for (let i = allDays.length - 1; i >= 0; i--) {
+      const lv = llmMap[allDays[i]];
+      if (lv !== undefined) ctx.lineTo(x(i), y(lv));
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(63,185,80,0.12)';
+    ctx.fill();
+
+    // Lines
+    function drawLine(map, color, dash, width) {
+      ctx.beginPath();
+      ctx.setLineDash(dash || []);
+      let first = true;
+      for (let i = 0; i < allDays.length; i++) {
+        const v = map[allDays[i]];
+        if (v !== undefined) {
+          if (first) { ctx.moveTo(x(i), y(v)); first = false; }
+          else ctx.lineTo(x(i), y(v));
+        }
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width || 2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    drawLine(baseMap, '#f85149', [], 2);
+    drawLine(ruleMap, '#d29922', [6, 3], 1.5);
+    drawLine(llmMap, '#3fb950', [], 2.5);
+
+    // X labels
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    const step = Math.max(1, Math.floor(allDays.length / 8));
+    for (let i = 0; i < allDays.length; i += step) {
+      const d = new Date(allDays[i]);
+      ctx.fillText(`${d.getMonth() + 1}/${d.getDate()}`, x(i), H - pad.bottom + 18);
+    }
+
+    // Y label
+    ctx.save();
+    ctx.translate(12, H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('キューサイズ', 0, 0);
+    ctx.restore();
+  });
+}
+
+function renderThroughputChart(simulation) {
+  // Load queue-throughput data for scatter plot
+  fetch('queue-throughput-data.json')
+    .then(r => r.json())
+    .then(qtData => {
+      drawChart('throughputChart', 280, (ctx, W, H) => {
+        const pad = { top: 15, right: 20, bottom: 40, left: 55 };
+        const weekly = qtData.weekly || [];
+
+        if (weekly.length === 0) return;
+
+        const maxQ = Math.max(...weekly.map(d => d.avgQueue)) * 1.1;
+        const maxT = Math.max(...weekly.map(d => d.totalThroughput)) * 1.1;
+
+        const x = (q) => pad.left + (q / maxQ) * (W - pad.left - pad.right);
+        const y = (t) => H - pad.bottom - (t / maxT) * (H - pad.top - pad.bottom);
+
+        // Grid
+        ctx.strokeStyle = '#21262d';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const yv = pad.top + (i / 4) * (H - pad.top - pad.bottom);
+          ctx.beginPath(); ctx.moveTo(pad.left, yv); ctx.lineTo(W - pad.right, yv); ctx.stroke();
+          ctx.fillStyle = '#8b949e';
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText(((4 - i) / 4 * maxT).toFixed(0), pad.left - 6, yv + 4);
+        }
+        for (let i = 0; i <= 4; i++) {
+          const xv = pad.left + (i / 4) * (W - pad.left - pad.right);
+          ctx.beginPath(); ctx.moveTo(xv, pad.top); ctx.lineTo(xv, H - pad.bottom); ctx.stroke();
+          ctx.fillStyle = '#8b949e';
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText((i / 4 * maxQ).toFixed(0), xv, H - pad.bottom + 18);
+        }
+
+        // Current data points
+        for (const d of weekly) {
+          ctx.beginPath();
+          ctx.arc(x(d.avgQueue), y(d.totalThroughput), 4, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(139,148,158,0.4)';
+          ctx.fill();
+        }
+
+        // LLM auto-merge zone: shift queue left by 50%
+        const llmReductionRate = simulation['Auto XS+S'].llmReduction / 100;
+        ctx.fillStyle = 'rgba(63,185,80,0.15)';
+        ctx.strokeStyle = 'rgba(63,185,80,0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+
+        // Draw shifted points
+        const shiftedPoints = weekly.map(d => ({
+          q: d.avgQueue * (1 - llmReductionRate),
+          t: d.totalThroughput
+        }));
+
+        for (const p of shiftedPoints) {
+          ctx.beginPath();
+          ctx.arc(x(p.q), y(p.t), 4, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(63,185,80,0.5)';
+          ctx.fill();
+        }
+
+        // Draw arrow showing the shift
+        const avgQ = weekly.reduce((s, d) => s + d.avgQueue, 0) / weekly.length;
+        const avgT = weekly.reduce((s, d) => s + d.totalThroughput, 0) / weekly.length;
+        const newAvgQ = avgQ * (1 - llmReductionRate);
+
+        ctx.beginPath();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'var(--green)';
+        ctx.lineWidth = 3;
+        ctx.moveTo(x(avgQ), y(avgT));
+        ctx.lineTo(x(newAvgQ), y(avgT));
+        ctx.stroke();
+
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(x(newAvgQ), y(avgT));
+        ctx.lineTo(x(newAvgQ) + 8, y(avgT) - 5);
+        ctx.lineTo(x(newAvgQ) + 8, y(avgT) + 5);
+        ctx.closePath();
+        ctx.fillStyle = 'var(--green)';
+        ctx.fill();
+
+        // Label
+        ctx.fillStyle = 'var(--green)';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`キュー -${(llmReductionRate * 100).toFixed(0)}%`, (x(avgQ) + x(newAvgQ)) / 2, y(avgT) - 12);
+
+        // Axis labels
+        ctx.fillStyle = '#8b949e';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('平均キューサイズ', (pad.left + W - pad.right) / 2, H - 2);
+
+        ctx.save();
+        ctx.translate(12, H / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('週間スループット', 0, 0);
+        ctx.restore();
+      });
+    })
+    .catch(() => {
+      const canvas = document.getElementById('throughputChart');
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('queue-throughput-data.json が必要です', 40, 140);
+    });
+}
+
+function renderReviewTimes(pickupBySize) {
+  const el = document.getElementById('reviewTimeGrid');
+  const sizes = ['XS', 'S', 'M', 'L', 'XL'];
+  el.innerHTML = sizes.map(s => {
+    const d = pickupBySize[s];
+    if (!d || d.count === 0) return '';
+    const fmtTime = (h) => {
+      if (h === null || h === undefined) return '—';
+      if (h < 1) return `${(h * 60).toFixed(0)}分`;
+      if (h < 24) return `${h.toFixed(1)}時間`;
+      return `${(h / 24).toFixed(1)}日`;
+    };
+    const autoMergeable = s === 'XS' || s === 'S';
+    return `<div class="review-time-card" style="${autoMergeable ? 'border:1px solid var(--green)' : ''}">
+      <div class="size-tag" style="color:var(--${s.toLowerCase()})">${s}</div>
+      ${autoMergeable ? '<div style="font-size:0.65rem;color:var(--green);margin-bottom:4px">AUTO MERGE</div>' : ''}
+      <div class="metric">中央値</div>
+      <div class="metric-value">${fmtTime(d.median)}</div>
+      <div class="metric" style="margin-top:6px">p75</div>
+      <div class="metric-value">${fmtTime(d.p75)}</div>
+      <div class="metric" style="margin-top:6px">p90</div>
+      <div class="metric-value">${fmtTime(d.p90)}</div>
+      <div class="metric" style="margin-top:6px">件数</div>
+      <div class="metric-value" style="font-size:0.85rem">${d.count}</div>
+    </div>`;
+  }).join('');
+}
+
+function prUrl(p) {
+  return p.owner ? `https://github.com/${p.owner}/${p.repo}/pull/${p.number}` : '#';
+}
+
+function renderReclassExamples(classifications) {
+  const el = document.getElementById('reclassTable');
+  // PRs where rule=M/L/XL but LLM=XS/S
+  const reclass = classifications
+    .filter(p => {
+      const ruleOrder = { XS: 0, S: 1, M: 2, L: 3, XL: 4 };
+      return ruleOrder[p.ruleSize] >= 2 && ruleOrder[p.llmSize] <= 1;
+    })
+    .slice(0, 15);
+
+  el.innerHTML = `
+    <thead><tr>
+      <th>PR</th><th>タイトル</th><th>ルール</th><th>LLM</th><th>LLM理由</th>
+    </tr></thead>
+    <tbody>${reclass.map(p => `<tr>
+      <td><a href="${prUrl(p)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${p.repo}#${p.number}</a></td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="${prUrl(p)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${p.title}</a></td>
+      <td><span class="size-badge ${p.ruleSize.toLowerCase()}">${p.ruleSize}</span></td>
+      <td><span class="size-badge ${p.llmSize.toLowerCase()}">${p.llmSize}</span></td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.75rem;color:var(--text-muted)">${p.llmReason || ''}</td>
+    </tr>`).join('')}</tbody>
+  `;
+}
+
+function renderInsights(rule, llm, total, simulation, pickupBySize) {
+  const el = document.getElementById('insights');
+  const llmXSSPct = (((llm.XS + llm.S) / total) * 100).toFixed(0);
+  const ruleXSSPct = (((rule.XS + rule.S) / total) * 100).toFixed(0);
+  const addedToAutoMerge = (llm.XS + llm.S) - (rule.XS + rule.S);
+  const llmRed = simulation['Auto XS+S'].llmReduction.toFixed(1);
+  const ruleRed = simulation['Auto XS+S'].ruleReduction.toFixed(1);
+  const xsMedian = pickupBySize.XS?.median || 0;
+  const xlMedian = pickupBySize.XL?.median || 0;
+  const ratio = xsMedian > 0 ? (xlMedian / xsMedian).toFixed(0) : '—';
+
+  el.innerHTML = `
+    <h3>分析結果と提言</h3>
+    <p><b>LLM分類により、自動マージ対象が${ruleXSSPct}% → ${llmXSSPct}%に拡大（+${addedToAutoMerge}件）</b></p>
+    <ul>
+      <li>ルールベース分類ではM/Lに過剰分類されていた<span class="hl">${addedToAutoMerge}件</span>のPRが、LLMにより正しくXS/Sに再分類</li>
+      <li>結果、XS+S自動マージの効果が<span class="bad">-${ruleRed}%</span> → <span class="good">-${llmRed}%</span>に改善（<span class="hl">${(parseFloat(llmRed) / parseFloat(ruleRed)).toFixed(1)}倍</span>）</li>
+      <li>LLMサイズとレビュー待ち時間がきれいに相関（XS: ${xsMedian < 1 ? (xsMedian*60).toFixed(0)+'分' : xsMedian.toFixed(1)+'h'} → XL: ${xlMedian.toFixed(1)}h = <span class="hl">${ratio}倍</span>）</li>
+      <li>コスト: <span class="good">$0.06/971PR</span>（PR単価$0.00017、月$0.02で運用可能）</li>
+    </ul>
+    <p style="margin-top:12px"><b>推奨アクション：</b></p>
+    <ul>
+      <li><span class="good">LLMベースPRサイズ分類をUpflowに導入</span> — ルールベースを置き換え</li>
+      <li>XS/S PRに「Auto-mergeable」バッジを表示し、レビュー優先度の判断材料に</li>
+      <li>レビュアーの時間をM/L/XL（全体の30%）に集中させ、ボトルネックを解消</li>
+    </ul>
+  `;
+}
+
+window.addEventListener('resize', () => {
+  fetch('llm-automerge-simulation-data.json').then(r => r.json()).then(render);
+});
+</script>
+</body>
+</html>

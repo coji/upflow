@@ -116,9 +116,13 @@ async function main() {
   if (!only || only === 'sizes') {
     const allSizes = org.repositories.flatMap((repo) => {
       const file = path.join(DATA_DIR, `pr-sizes-${repo.repo}.json`)
-      return fs.existsSync(file)
-        ? JSON.parse(fs.readFileSync(file, 'utf-8'))
-        : []
+      if (!fs.existsSync(file)) return []
+      const prs = JSON.parse(fs.readFileSync(file, 'utf-8'))
+      // Ensure owner is present (backfill for old cache files)
+      return prs.map((pr: Record<string, unknown>) => ({
+        ...pr,
+        owner: pr.owner ?? repo.owner,
+      }))
     })
     const combinedFile = path.join(DATA_DIR, 'pr-sizes.json')
     fs.writeFileSync(combinedFile, JSON.stringify(allSizes, null, 2))

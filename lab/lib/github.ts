@@ -110,7 +110,7 @@ export function createGitHubClient(token: string) {
 
       const prs = repository.pullRequests
       for (const node of prs.nodes) {
-        allPRs.push({ ...node, repo })
+        allPRs.push({ ...node, owner, repo })
       }
 
       if (!prs.pageInfo.hasNextPage) break
@@ -166,6 +166,7 @@ export interface PRSizeInfo {
   additions: number
   deletions: number
   changedFiles: number
+  owner: string
   repo: string
   labels: { nodes: { name: string }[] }
   files: { nodes: { path: string; additions: number; deletions: number }[] }

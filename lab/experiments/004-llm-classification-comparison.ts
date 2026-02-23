@@ -40,6 +40,7 @@ const onlyL = args.includes('--only-l')
 
 interface ComparisonResult {
   pr: {
+    owner: string
     repo: string
     number: number
     title: string
@@ -157,6 +158,7 @@ async function main() {
 
     return {
       pr: {
+        owner: pr.owner,
         repo: pr.repo,
         number: pr.number,
         title: pr.title,

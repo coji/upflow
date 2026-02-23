@@ -221,12 +221,21 @@ async function main() {
 
   const simResults: Record<
     string,
-    { rule: number; llm: number; ruleReduction: number; llmReduction: number }
+    {
+      rule: number
+      llm: number
+      ruleReduction: number
+      llmReduction: number
+      ruleSnapshots: { day: string; total: number }[]
+      llmSnapshots: { day: string; total: number }[]
+    }
   > = {}
 
   for (const { label, sizes } of scenarios) {
-    const ruleAvg = avgQueue(simulateQueue(reviewEvents, ruleSizeMap, sizes))
-    const llmAvg = avgQueue(simulateQueue(reviewEvents, llmSizeMap, sizes))
+    const ruleSnapshots = simulateQueue(reviewEvents, ruleSizeMap, sizes)
+    const llmSnapshots = simulateQueue(reviewEvents, llmSizeMap, sizes)
+    const ruleAvg = avgQueue(ruleSnapshots)
+    const llmAvg = avgQueue(llmSnapshots)
     const ruleReduction =
       sizes.size > 0 ? (1 - ruleAvg / ruleBaseline) * 100 : 0
     const llmReduction = sizes.size > 0 ? (1 - llmAvg / llmBaseline) * 100 : 0
@@ -236,6 +245,8 @@ async function main() {
       llm: llmAvg,
       ruleReduction,
       llmReduction,
+      ruleSnapshots,
+      llmSnapshots,
     }
 
     consola.info(
@@ -307,6 +318,7 @@ async function main() {
         classifications: mergedPRs.map((pr) => {
           const key = `${pr.repo}#${pr.number}`
           return {
+            owner: pr.owner,
             repo: pr.repo,
             number: pr.number,
             title: pr.title,
