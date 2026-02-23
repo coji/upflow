@@ -1,0 +1,133 @@
+import { data } from 'react-router'
+import { match } from 'ts-pattern'
+import { z } from 'zod'
+import {
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderHeading,
+  PageHeaderTitle,
+} from '~/app/components/layout/page-header'
+import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { columns } from './+components/github-users-columns'
+import { GithubUsersTable } from './+components/github-users-table'
+import {
+  PaginationSchema,
+  QuerySchema,
+  SortSchema,
+} from './+hooks/use-data-table-state'
+import type { Route } from './+types/_layout'
+import {
+  addGithubUser,
+  deleteGithubUser,
+  updateGithubUser,
+} from './mutations.server'
+import { listFilteredGithubUsers } from './queries.server'
+
+export const handle = {
+  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+    label: 'GitHub Users',
+    to: `/${organization.slug}/settings/github-users`,
+  }),
+}
+
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+  const searchParams = new URL(request.url).searchParams
+
+  const { search } = QuerySchema.parse({
+    search: searchParams.get('search'),
+  })
+
+  const { sort_by: sortBy, sort_order: sortOrder } = SortSchema.parse({
+    sort_by: searchParams.get('sort_by'),
+    sort_order: searchParams.get('sort_order'),
+  })
+
+  const { page: currentPage, per_page: pageSize } = PaginationSchema.parse({
+    page: searchParams.get('page'),
+    per_page: searchParams.get('per_page'),
+  })
+
+  const { data: githubUsers, pagination } = await listFilteredGithubUsers({
+    organizationId: organization.id,
+    search,
+    currentPage,
+    pageSize,
+    sortBy,
+    sortOrder,
+  })
+
+  return { organization, githubUsers, pagination }
+}
+
+const addSchema = z.object({
+  login: z.string().min(1),
+  displayName: z.string().min(1),
+})
+
+const updateSchema = z.object({
+  login: z.string().min(1),
+  displayName: z.string().min(1),
+  name: z.string().nullable().default(null),
+  email: z.string().nullable().default(null),
+})
+
+const deleteSchema = z.object({
+  login: z.string().min(1),
+})
+
+export const action = async ({ request, params }: Route.ActionArgs) => {
+  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+  const formData = await request.formData()
+  const intent = String(formData.get('intent'))
+
+  return match(intent)
+    .with('add', async () => {
+      const parsed = addSchema.parse({
+        login: formData.get('login'),
+        displayName: formData.get('displayName'),
+      })
+      await addGithubUser({ ...parsed, organizationId: organization.id })
+      return data({ ok: true })
+    })
+    .with('update', async () => {
+      const parsed = updateSchema.parse({
+        login: formData.get('login'),
+        displayName: formData.get('displayName'),
+        name: formData.get('name') || null,
+        email: formData.get('email') || null,
+      })
+      await updateGithubUser({ ...parsed, organizationId: organization.id })
+      return data({ ok: true })
+    })
+    .with('delete', async () => {
+      const { login } = deleteSchema.parse({ login: formData.get('login') })
+      await deleteGithubUser(login, organization.id)
+      return data({ ok: true })
+    })
+    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
+}
+
+export default function GithubUsersPage({
+  loaderData: { githubUsers, pagination },
+}: Route.ComponentProps) {
+  return (
+    <>
+      <PageHeader>
+        <PageHeaderHeading>
+          <PageHeaderTitle>GitHub Users</PageHeaderTitle>
+          <PageHeaderDescription>
+            Manage GitHub users linked to this organization.
+          </PageHeaderDescription>
+        </PageHeaderHeading>
+      </PageHeader>
+      <div className="-mx-4 flex-1 overflow-auto px-4 py-1">
+        <GithubUsersTable
+          data={githubUsers}
+          columns={columns}
+          pagination={pagination}
+        />
+      </div>
+    </>
+  )
+}

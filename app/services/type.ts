@@ -71,7 +71,7 @@ export interface Integrations {
 }
 
 export interface Invitations {
-  createdAt: string;
+  createdAt: Generated<string>;
   email: string;
   expiresAt: string;
   id: string;
@@ -79,6 +79,7 @@ export interface Invitations {
   organizationId: string;
   role: string | null;
   status: string;
+  teamId: string | null;
 }
 
 export interface Members {
@@ -95,7 +96,7 @@ export interface Organizations {
   logo: string | null;
   metadata: string | null;
   name: string;
-  slug: string | null;
+  slug: string;
 }
 
 export interface OrganizationSettings {
@@ -147,6 +148,7 @@ export interface Repositories {
 
 export interface Sessions {
   activeOrganizationId: string | null;
+  activeTeamId: string | null;
   createdAt: string;
   expiresAt: string;
   id: string;
@@ -156,6 +158,21 @@ export interface Sessions {
   updatedAt: string;
   userAgent: string | null;
   userId: string;
+}
+
+export interface TeamMembers {
+  createdAt: string | null;
+  id: string;
+  teamId: string;
+  userId: string;
+}
+
+export interface Teams {
+  createdAt: string;
+  id: string;
+  name: string;
+  organizationId: string;
+  updatedAt: string | null;
 }
 
 export interface Users {
@@ -194,6 +211,8 @@ export interface DB {
   pullRequests: PullRequests;
   repositories: Repositories;
   sessions: Sessions;
+  teamMembers: TeamMembers;
+  teams: Teams;
   users: Users;
   verifications: Verifications;
 }

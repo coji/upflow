@@ -2,7 +2,13 @@
   "$schema": "https://biomejs.dev/schemas/2.3.13/schema.json",
   "assist": { "actions": { "source": { "organizeImports": "off" } } },
   "files": {
-    "includes": ["**", "!app/styles/globals.css"]
+    "includes": [
+      "**",
+      "!app/styles/globals.css",
+      "!lab",
+      "!batch/provider/github/graphql-env.d.ts",
+      "!batch/provider/github/schema.graphql"
+    ]
   },
   "vcs": {
     "enabled": true,

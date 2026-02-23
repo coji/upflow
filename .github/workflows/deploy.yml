@@ -130,7 +130,7 @@ jobs:
         run: curl -sSf https://atlasgo.sh | sh
 
       - name: 🛠 Setup Database
-        run: pnpm setup
+        run: pnpm db:setup
 
       - name: ⚡ Run vitest
         run: pnpm run test

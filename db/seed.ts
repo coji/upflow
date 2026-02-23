@@ -1,14 +1,26 @@
 import { consola } from 'consola'
-import { config } from 'dotenv'
+import 'dotenv/config'
 import { nanoid } from 'nanoid'
 import { db, sql } from '~/app/services/db.server'
-config()
 
 async function seed() {
+  // Clear existing data (child tables first for FK constraints)
+  await db.deleteFrom('pullRequests').execute()
+  await db.deleteFrom('companyGithubUsers').execute()
+  await db.deleteFrom('repositories').execute()
+  await db.deleteFrom('exportSettings').execute()
+  await db.deleteFrom('organizationSettings').execute()
+  await db.deleteFrom('integrations').execute()
+  await db.deleteFrom('members').execute()
+  await db.deleteFrom('organizations').execute()
+  await db.deleteFrom('sessions').execute()
+  await db.deleteFrom('accounts').execute()
+  await db.deleteFrom('users').execute()
+
   const email = 'coji@techtalk.jp'
 
   // user
-  await db
+  const user = await db
     .insertInto('users')
     .values({
       id: nanoid(),
@@ -26,12 +38,47 @@ async function seed() {
   const organization = await db
     .insertInto('organizations')
     .values({
-      id: 'techtalk',
+      id: nanoid(),
       name: 'TechTalk',
       slug: 'techtalk',
     })
     .returningAll()
     .executeTakeFirstOrThrow()
+
+  // member (owner)
+  await db
+    .insertInto('members')
+    .values({
+      id: nanoid(),
+      organizationId: organization.id,
+      userId: user.id,
+      role: 'owner',
+      createdAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .execute()
+
+  // organization settings
+  await db
+    .insertInto('organizationSettings')
+    .values({
+      id: nanoid(),
+      organizationId: organization.id,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .execute()
+
+  // export settings
+  await db
+    .insertInto('exportSettings')
+    .values({
+      id: nanoid(),
+      organizationId: organization.id,
+      sheetId: '',
+      clientEmail: '',
+      privateKey: '',
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .execute()
 
   // integration
   const integration = await db

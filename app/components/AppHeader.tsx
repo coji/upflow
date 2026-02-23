@@ -16,8 +16,8 @@ import {
   Spacer,
 } from '~/app/components/ui'
 import { authClient } from '~/app/libs/auth-client'
-import { OrganizationSwitcher } from '~/app/routes/resources+/organization/route'
-import { DropdownMenuLogout } from '../routes/_auth+/logout'
+import { DropdownMenuLogout } from '~/app/routes/_auth/logout'
+import { OrganizationSwitcher } from '~/app/routes/resources/organization'
 
 interface AppHeaderProps {
   isAdmin?: boolean
@@ -36,7 +36,7 @@ export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
           </Link>
         </Heading>
 
-        {session && <OrganizationSwitcher isAdmin={isAdmin} />}
+        {session && <OrganizationSwitcher />}
       </HStack>
 
       <Spacer />
