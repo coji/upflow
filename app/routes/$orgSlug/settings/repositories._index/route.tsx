@@ -1,115 +1,80 @@
-import { ExternalLinkIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { match } from 'ts-pattern'
 import {
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  HStack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/app/components/ui'
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderHeading,
+  PageHeaderTitle,
+} from '~/app/components/layout/page-header'
+import { Button } from '~/app/components/ui/button'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { createColumns } from './+components/repo-columns'
+import { RepoTable } from './+components/repo-table'
+import {
+  PaginationSchema,
+  QuerySchema,
+  SortSchema,
+} from './+hooks/use-data-table-state'
 import type { Route } from './+types/route'
-import { listRepositories } from './queries.server'
+import { listFilteredRepositories } from './queries.server'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
-  const repositories = await listRepositories(organization.id)
-  return { organization, repositories }
+  const searchParams = new URL(request.url).searchParams
+
+  const { repo } = QuerySchema.parse({
+    repo: searchParams.get('repo'),
+  })
+
+  const { sort_by: sortBy, sort_order: sortOrder } = SortSchema.parse({
+    sort_by: searchParams.get('sort_by'),
+    sort_order: searchParams.get('sort_order'),
+  })
+
+  const { page: currentPage, per_page: pageSize } = PaginationSchema.parse({
+    page: searchParams.get('page'),
+    per_page: searchParams.get('per_page'),
+  })
+
+  const { data: repositories, pagination } = await listFilteredRepositories({
+    organizationId: organization.id,
+    repo,
+    currentPage,
+    pageSize,
+    sortBy,
+    sortOrder,
+  })
+
+  return { organization, repositories, pagination }
 }
 
 export default function OrganizationRepositoryIndexPage({
-  loaderData: { organization, repositories },
+  loaderData: { organization, repositories, pagination },
 }: Route.ComponentProps) {
   const slug = organization.slug
+  const columns = useMemo(() => createColumns(slug), [slug])
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Repositories</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-lg border shadow-xs">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Repo</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Key</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {repositories.map((repo) => {
-                const repoUrl = match(repo.provider)
-                  .with(
-                    'github',
-                    () => `https://github.com/${repo.owner}/${repo.repo}`,
-                  ) // TODO: retrieve url from github api
-                  .otherwise(() => '')
-                return (
-                  <TableRow key={repo.id}>
-                    <TableCell>
-                      <Link to={repoUrl} target="_blank" className="">
-                        {repo.owner}/{repo.repo}{' '}
-                        <ExternalLinkIcon className="inline-block h-4 w-4" />
-                      </Link>
-                    </TableCell>
-
-                    <TableCell>{repo.releaseDetectionKey}</TableCell>
-
-                    <TableCell>{repo.releaseDetectionMethod}</TableCell>
-
-                    <TableCell>
-                      <HStack>
-                        <Button asChild size="sm" variant="link">
-                          <Link
-                            to={`/${slug}/settings/repositories/${repo.id}`}
-                          >
-                            Pulls
-                          </Link>
-                        </Button>
-
-                        <Button asChild size="sm" variant="link">
-                          <Link
-                            to={`/${slug}/settings/repositories/${repo.id}/settings`}
-                          >
-                            Settings
-                          </Link>
-                        </Button>
-
-                        <Button asChild size="sm" variant="link">
-                          <Link
-                            to={`/${slug}/settings/repositories/${repo.id}/delete`}
-                          >
-                            Delete
-                          </Link>
-                        </Button>
-                      </HStack>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <HStack>
-          <Button className="w-full" asChild>
+    <>
+      <PageHeader>
+        <PageHeaderHeading>
+          <PageHeaderTitle>Repositories</PageHeaderTitle>
+        </PageHeaderHeading>
+        <PageHeaderActions>
+          <Button asChild>
             <Link to={`/${slug}/settings/repositories/add`}>
-              Add Repositories
+              Add Repository
             </Link>
           </Button>
-        </HStack>
-      </CardFooter>
-    </Card>
+        </PageHeaderActions>
+      </PageHeader>
+      <div className="-mx-4 flex-1 overflow-auto px-4 py-1">
+        <RepoTable
+          data={repositories}
+          columns={columns}
+          pagination={pagination}
+        />
+      </div>
+    </>
   )
 }

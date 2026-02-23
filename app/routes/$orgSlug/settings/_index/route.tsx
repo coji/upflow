@@ -24,6 +24,12 @@ import {
 } from './functions/queries.server'
 import { INTENTS, intentsSchema } from './types'
 
+export const handle = {
+  breadcrumb: () => ({
+    label: 'Settings',
+  }),
+}
+
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization: orgContext } = await requireOrgAdmin(
     request,

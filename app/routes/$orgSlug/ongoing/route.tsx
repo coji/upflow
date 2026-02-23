@@ -9,6 +9,12 @@ import { columns } from './columns'
 import { getOngoingPullRequestReport } from './functions.server'
 import { generateMarkdown } from './functions/generate-markdown'
 
+export const handle = {
+  breadcrumb: () => ({
+    label: 'Ongoing',
+  }),
+}
+
 export type PullRequest = Awaited<
   ReturnType<typeof getOngoingPullRequestReport>
 >[0]

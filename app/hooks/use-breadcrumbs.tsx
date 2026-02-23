@@ -1,7 +1,15 @@
 import React from 'react'
 import { Link, useMatches } from 'react-router'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '~/app/components/ui/breadcrumb'
 
-interface AppBreadcrumbItem {
+interface MatchedBreadcrumbItem {
   label: string
   to?: string
   isCurrentPage?: boolean
@@ -23,7 +31,8 @@ export const useBreadcrumbs = () => {
   const breadcrumbMatches = matches.filter((match) =>
     isBreadcrumbHandle(match.handle),
   )
-  const breadcrumbs = breadcrumbMatches.map((match, idx) => {
+
+  const breadcrumbItems = breadcrumbMatches.map((match, idx) => {
     if (!isBreadcrumbHandle(match.handle)) {
       return null
     }
@@ -31,32 +40,32 @@ export const useBreadcrumbs = () => {
       ...match.handle.breadcrumb(match.data),
       isCurrentPage: idx === breadcrumbMatches.length - 1,
     }
-  }) as AppBreadcrumbItem[]
+  }) as MatchedBreadcrumbItem[]
 
-  const AppBreadcrumbs = () => {
+  const Breadcrumbs = () => {
     return (
-      <nav className="inline-flex py-1 text-sm">
-        <ul className="inline-flex gap-2">
-          {breadcrumbs.map((item, idx) => {
-            const i = idx
-            const isLast = idx === breadcrumbs.length - 1
+      <Breadcrumb>
+        <BreadcrumbList className="px-4">
+          {breadcrumbItems.map((item, idx) => {
             return (
-              <React.Fragment key={i}>
-                <li>
+              <React.Fragment key={item.label}>
+                {idx > 0 && <BreadcrumbSeparator />}
+                <BreadcrumbItem>
                   {item.to && !item.isCurrentPage ? (
-                    <Link to={item.to}>{item.label}</Link>
+                    <BreadcrumbLink asChild>
+                      <Link to={item.to}>{item.label}</Link>
+                    </BreadcrumbLink>
                   ) : (
-                    <span>{item.label}</span>
+                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
                   )}
-                </li>
-                {!isLast && <li>/</li>}
+                </BreadcrumbItem>
               </React.Fragment>
             )
           })}
-        </ul>
-      </nav>
+        </BreadcrumbList>
+      </Breadcrumb>
     )
   }
 
-  return { breadcrumbs, AppBreadcrumbs }
+  return { Breadcrumbs }
 }

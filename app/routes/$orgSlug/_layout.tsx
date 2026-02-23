@@ -1,17 +1,18 @@
-import { Link, Outlet, useLocation } from 'react-router'
-import { AppHeader, AppLayout } from '~/app/components'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from '~/app/components/ui'
-import { useBreadcrumbs } from '~/app/hooks/AppBreadcrumbs'
+import { Outlet, useMatches } from 'react-router'
+import { AppSidebar } from '~/app/components/layout/app-sidebar'
+import { Header } from '~/app/components/layout/header'
+import { Main } from '~/app/components/layout/main'
+import { SidebarProvider } from '~/app/components/ui/sidebar'
+import { useBreadcrumbs } from '~/app/hooks/use-breadcrumbs'
 import { getUserOrganizations, requireOrgMember } from '~/app/libs/auth.server'
+import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/_layout'
+
+export interface RouteHandle {
+  breadcrumb?: (data?: unknown) => { label: string; to?: string }
+  headerFixed?: boolean
+  mainFixed?: boolean
+}
 
 export const meta = ({ data }: Route.MetaArgs) => [
   { title: `${data?.organization.name} - Upflow` },
@@ -35,35 +36,38 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 }
 
 export default function OrgLayout({
-  loaderData: { organization },
+  loaderData: { user, organization, organizations },
 }: Route.ComponentProps) {
-  const { AppBreadcrumbs } = useBreadcrumbs()
-  const location = useLocation()
-  const pathParts = location.pathname.split('/').filter(Boolean)
-  const tabValue = pathParts[1] === 'ongoing' ? 'ongoing' : 'dashboard'
+  const { Breadcrumbs } = useBreadcrumbs()
+  const matches = useMatches()
+  const handle = matches.reduce<Record<string, unknown>>((acc, m) => {
+    if (m.handle && typeof m.handle === 'object') Object.assign(acc, m.handle)
+    return acc
+  }, {}) as RouteHandle
 
   return (
-    <AppLayout header={<AppHeader />} breadcrumbs={<AppBreadcrumbs />}>
-      <Card>
-        <CardHeader>
-          <CardTitle>{organization.name}</CardTitle>
-
-          <Tabs value={tabValue}>
-            <TabsList>
-              <TabsTrigger value="dashboard" asChild>
-                <Link to={`/${organization.slug}`}>Dashboard</Link>
-              </TabsTrigger>
-              <TabsTrigger value="ongoing" asChild>
-                <Link to={`/${organization.slug}/ongoing`}>Ongoing</Link>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardHeader>
-
-        <CardContent>
+    <SidebarProvider>
+      <AppSidebar
+        user={user}
+        organization={organization}
+        organizations={organizations}
+      />
+      <div
+        id="content"
+        className={cn(
+          'ml-auto w-full max-w-full',
+          'peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon)-1rem)]',
+          'peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]',
+          'transition-[width] duration-200 ease-linear',
+          'flex h-svh flex-col',
+        )}
+      >
+        <Header fixed={handle.headerFixed} />
+        <Breadcrumbs />
+        <Main fixed={handle.mainFixed}>
           <Outlet />
-        </CardContent>
-      </Card>
-    </AppLayout>
+        </Main>
+      </div>
+    </SidebarProvider>
   )
 }
