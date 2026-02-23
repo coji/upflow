@@ -26,6 +26,7 @@ import {
   batchClassifyWithLLM,
   estimateCost,
 } from '../lib/llm-classify'
+import { createReport } from '../lib/report'
 
 const DATA_DIR = path.join(import.meta.dirname, '..', 'data')
 const OUTPUT_DIR = path.join(import.meta.dirname, '..', 'output')
@@ -335,6 +336,246 @@ async function main() {
     ),
   )
   consola.success(`Output: ${outputFile}`)
+
+  // ── Generate HTML Report ──────────────────────────────────────────
+  const total = mergedPRs.length
+  const llmXSSPct = (((llmCounts.XS + llmCounts.S) / total) * 100).toFixed(0)
+  const llmReduction = simResults['Auto XS+S'].llmReduction
+  const autoMergeCount = llmCounts.XS + llmCounts.S
+  const needsReviewCount = total - autoMergeCount
+
+  const report = createReport('AI自動マージ導入シミュレーション', {
+    subtitle:
+      'AIがPRの複雑さを判定し、シンプルなPRはレビュー不要で自動マージ。レビュー待ちがどれだけ減るかをシミュレーション。',
+  })
+
+  // ── Hero Stats ──
+  report.stats([
+    { label: '分析PR数', value: total, note: '2025年以降のmerged PR' },
+    {
+      label: '自動マージ対象',
+      value: `${llmXSSPct}%`,
+      color: 'green',
+      note: `${autoMergeCount}件 がレビュー不要に`,
+    },
+    {
+      label: 'レビュー待ち削減',
+      value: `-${llmReduction.toFixed(0)}%`,
+      color: 'green',
+      note: '平均レビュー待ち件数',
+    },
+    {
+      label: '残りのレビュー対象',
+      value: needsReviewCount,
+      note: `${((needsReviewCount / total) * 100).toFixed(0)}% は人がレビュー`,
+    },
+  ])
+
+  // ── How it works ──
+  report.section(
+    'しくみ: AIがPRの複雑さを5段階で判定',
+    (s) => {
+      s.html(`<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;line-height:1.7">
+        AIがPRのタイトル・変更行数・ファイル数を見て、レビューの複雑さを<b style="color:var(--text)">XS〜XL</b>の5段階で判定します。<br>
+        <span style="color:var(--green)">XS・S（シンプルな変更）</span>→ 自動マージ（レビュー不要）<br>
+        <span style="color:var(--text)">M・L・XL（複雑な変更）</span>→ 従来どおり人がレビュー
+      </p>`)
+      s.barChart(llmCounts)
+    },
+    {
+      description: `全${total}件のPRをAIが判定した結果の内訳`,
+    },
+  )
+
+  // ── Impact: before/after ──
+  const baselineAvg = simResults.Baseline.llm
+  const afterAvg = simResults['Auto XS+S'].llm
+
+  report.section(
+    'レビュー待ち件数: 導入前 vs 導入後',
+    (s) => {
+      s.comparisonBars([
+        {
+          label: '現状（すべて人がレビュー）',
+          value: baselineAvg,
+          color: 'var(--red)',
+        },
+        {
+          label: 'XSのみ自動マージ',
+          value: simResults['Auto XS'].llm,
+          color: 'var(--orange)',
+          reduction: `-${simResults['Auto XS'].llmReduction.toFixed(0)}%`,
+        },
+        {
+          label: 'XS+S 自動マージ',
+          value: afterAvg,
+          color: 'var(--green)',
+          reduction: `-${llmReduction.toFixed(0)}%`,
+        },
+      ])
+    },
+    {
+      description:
+        'ある時点でレビュー待ちになっているPR件数の平均。少ないほどレビューが速く回っている',
+    },
+  )
+
+  // ── Timeline Chart ──
+  const baseSnaps = simResults.Baseline.llmSnapshots
+  const llmXSSSnaps = simResults['Auto XS+S'].llmSnapshots
+
+  report.section('レビュー待ち件数の推移（日次）', (s) => {
+    s.lineChart(
+      [
+        {
+          label: '現状',
+          data: baseSnaps.map((d) => ({ x: d.day, y: d.total })),
+          color: 'red',
+        },
+        {
+          label: 'AI自動マージ導入後',
+          data: llmXSSSnaps.map((d) => ({ x: d.day, y: d.total })),
+          color: 'green',
+          width: 2.5,
+        },
+      ],
+      {
+        yLabel: 'レビュー待ち件数',
+        areaFill: { from: 0, to: 1 },
+      },
+    )
+    s.html(
+      '<p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;text-align:center">緑の塗りつぶし部分 = 削減される待ち件数</p>',
+    )
+  })
+
+  // ── Review Wait Time by Size ──
+  const fmtTime = (h: number | null): string => {
+    if (h === null || h === undefined) return '—'
+    if (h < 1) return `${(h * 60).toFixed(0)}分`
+    if (h < 24) return `${h.toFixed(1)}時間`
+    return `${(h / 24).toFixed(1)}日`
+  }
+
+  report.section(
+    'サイズ別のレビュー待ち時間',
+    (s) => {
+      s.html(`<p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;line-height:1.6">
+        各PRの「レビューリクエストされてから最初のレビューがつくまでの時間」を集計。<br>
+        <b style="color:var(--text)">中央値</b> = 半分のPRがこの時間以内にレビューされた。
+        <b style="color:var(--text)">75%点</b> = 75%がこの時間以内。
+        <b style="color:var(--text)">90%点</b> = 90%がこの時間以内（遅いケースの目安）。
+      </p>`)
+      const sizes: ReviewComplexity[] = ['XS', 'S', 'M', 'L', 'XL']
+      s.html('<div class="review-time-grid">')
+      for (const size of sizes) {
+        const times = pickupBySize[size]
+        if (times.length === 0) continue
+        const med = median(times)
+        const p75 = percentile(times, 0.75)
+        const p90 = percentile(times, 0.9)
+        const autoMergeable = size === 'XS' || size === 'S'
+        s.html(`<div class="review-time-card"${autoMergeable ? ' style="border:1px solid var(--green)"' : ''}>
+      <div class="size-tag" style="color:var(--${size.toLowerCase()})">${size}</div>
+      ${autoMergeable ? '<div style="font-size:0.65rem;color:var(--green);margin-bottom:4px">自動マージ</div>' : ''}
+      <div class="metric">中央値</div>
+      <div class="metric-value">${fmtTime(med)}</div>
+      <div class="metric" style="margin-top:6px">75%点</div>
+      <div class="metric-value">${fmtTime(p75)}</div>
+      <div class="metric" style="margin-top:6px">90%点</div>
+      <div class="metric-value">${fmtTime(p90)}</div>
+      <div class="metric" style="margin-top:6px">件数</div>
+      <div class="metric-value" style="font-size:0.85rem">${times.length}</div>
+    </div>`)
+      }
+      s.html('</div>')
+    },
+    {
+      description:
+        'XS/Sは自動マージで即時完了。レビュアーは複雑なPRに集中できる',
+    },
+  )
+
+  // ── Example PRs ──
+  const prUrl = (p: { owner: string; repo: string; number: number }): string =>
+    `https://github.com/${p.owner}/${p.repo}/pull/${p.number}`
+
+  const classifications = mergedPRs.map((pr) => {
+    const key = `${pr.repo}#${pr.number}`
+    return {
+      owner: pr.owner,
+      repo: pr.repo,
+      number: pr.number,
+      title: pr.title,
+      llmSize: llmSizeMap[key],
+      llmReason: llmMap[key]?.reason ?? '',
+    }
+  })
+
+  const autoMergeExamples = classifications
+    .filter((p) => p.llmSize === 'XS' || p.llmSize === 'S')
+    .slice(0, 15)
+
+  report.section(
+    '自動マージ対象になるPRの例',
+    (s) => {
+      s.table({
+        columns: [
+          {
+            key: 'pr',
+            label: 'PR',
+            render: (row) =>
+              `<a href="${prUrl(row)}" target="_blank" rel="noopener">${row.repo}#${row.number}</a>`,
+          },
+          {
+            key: 'title',
+            label: 'タイトル',
+            maxWidth: 300,
+            render: (row) =>
+              `<a href="${prUrl(row)}" target="_blank" rel="noopener" style="color:inherit">${row.title}</a>`,
+          },
+          {
+            key: 'llmSize',
+            label: '判定',
+            render: (row) =>
+              `<span class="size-badge ${row.llmSize.toLowerCase()}">${row.llmSize}</span>`,
+          },
+          {
+            key: 'llmReason',
+            label: 'AIの判定理由',
+            maxWidth: 350,
+          },
+        ],
+        rows: autoMergeExamples,
+      })
+    },
+    {
+      description:
+        'AIが「シンプル」と判定したPR。実際のPRリンクから判定の妥当性を確認できます',
+    },
+  )
+
+  // ── Insights ──
+  const xsMedian = median(pickupBySize.XS) ?? 0
+  const xlMedian = median(pickupBySize.XL) ?? 0
+  const ratio = xsMedian > 0 ? (xlMedian / xsMedian).toFixed(0) : '—'
+
+  report.insight('分析結果', [
+    `全PRの<span class="good">${llmXSSPct}%</span>（${autoMergeCount}件）がレビュー不要と判定 → 自動マージ可能`,
+    `導入すると<b>レビュー待ち件数が<span class="good">${llmReduction.toFixed(0)}%削減</span></b>（平均${baselineAvg.toFixed(1)}件 → ${afterAvg.toFixed(1)}件）`,
+    `AIの判定はPRの複雑さと実際のレビュー時間がきれいに相関（XS: ${fmtTime(xsMedian)} → XL: ${fmtTime(xlMedian)} = <span class="hl">${ratio}倍</span>差）`,
+    `運用コスト: <span class="good">月$0.02</span>程度（1PR あたり$0.00017、Gemini Flash Lite使用）`,
+  ])
+
+  report.insight('提案するアクション', [
+    '<span class="good">AI自動マージをUpflowに導入</span> — XS/S判定のPRを自動マージ対象にする',
+    'まずは「自動マージ候補」のラベル表示から始め、段階的に自動化を進める',
+    'レビュアーの時間を複雑なPR（M/L/XL）に集中させ、レビューの質と速度を両立',
+  ])
+
+  const reportFile = path.join(OUTPUT_DIR, 'llm-automerge-simulation.html')
+  report.save(reportFile, { open: true })
+  consola.success(`Report: ${reportFile}`)
 }
 
 main().catch((err) => {

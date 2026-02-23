@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LLM分類 Auto Mergeシミュレーション</title>
+<title>AI自動マージ導入シミュレーション</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -63,6 +63,7 @@
   .stat-card .note { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
   .stat-card .value.green { color: var(--green); }
   .stat-card .value.red { color: var(--red); }
+  .stat-card .value.accent { color: var(--accent); }
 
   .size-bar-row {
     display: flex;
@@ -220,525 +221,452 @@
   .size-badge.l { background: var(--l); color: #fff; }
   .size-badge.xl { background: var(--xl); color: #fff; }
 
-  .loading { text-align: center; padding: 60px; color: var(--text-muted); }
   .legend-row { display:flex;gap:20px;justify-content:center;margin-top:8px;font-size:0.75rem; }
   .legend-row span { color: var(--text-muted); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 
-<h1>LLM分類 Auto Mergeシミュレーション</h1>
-<p class="subtitle">LLM（Gemini Flash Lite）による分類で、ルールベースより正確にPRサイズを判定。XS+S自動マージの効果を比較。</p>
+<h1>AI自動マージ導入シミュレーション</h1>
+<p class="subtitle">AIがPRの複雑さを判定し、シンプルなPRはレビュー不要で自動マージ。レビュー待ちがどれだけ減るかをシミュレーション。</p>
 
-<div class="loading" id="loading">データ読み込み中...</div>
-<div id="app" style="display:none"></div>
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="label">分析PR数</div>
+    <div class="value">971</div>
+    <div class="note">2025年以降のmerged PR</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">自動マージ対象</div>
+    <div class="value green">70%</div>
+    <div class="note">682件 がレビュー不要に</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">レビュー待ち削減</div>
+    <div class="value green">-50%</div>
+    <div class="note">平均レビュー待ち件数</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">残りのレビュー対象</div>
+    <div class="value">289</div>
+    <div class="note">30% は人がレビュー</div>
+  </div>
+</div>
+<div class="panel">
+  <h2>しくみ: AIがPRの複雑さを5段階で判定</h2>
+  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">全971件のPRをAIが判定した結果の内訳</p>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;line-height:1.7">
+        AIがPRのタイトル・変更行数・ファイル数を見て、レビューの複雑さを<b style="color:var(--text)">XS〜XL</b>の5段階で判定します。<br>
+        <span style="color:var(--green)">XS・S（シンプルな変更）</span>→ 自動マージ（レビュー不要）<br>
+        <span style="color:var(--text)">M・L・XL（複雑な変更）</span>→ 従来どおり人がレビュー
+      </p>
+<div class="size-bar-row">
+      <div class="size-label xs" style="color:var(--xs)">XS</div>
+      <div class="size-bar-track">
+        <div class="size-bar-fill" style="width:100%;background:var(--xs)">471</div>
+      </div>
+      <div class="size-count">471 (48.5%)</div>
+    </div>
+<div class="size-bar-row">
+      <div class="size-label s" style="color:var(--s)">S</div>
+      <div class="size-bar-track">
+        <div class="size-bar-fill" style="width:45%;background:var(--s)">211</div>
+      </div>
+      <div class="size-count">211 (21.7%)</div>
+    </div>
+<div class="size-bar-row">
+      <div class="size-label m" style="color:var(--m)">M</div>
+      <div class="size-bar-track">
+        <div class="size-bar-fill" style="width:43%;background:var(--m)">202</div>
+      </div>
+      <div class="size-count">202 (20.8%)</div>
+    </div>
+<div class="size-bar-row">
+      <div class="size-label l" style="color:var(--l)">L</div>
+      <div class="size-bar-track">
+        <div class="size-bar-fill" style="width:15%;background:var(--l)">70</div>
+      </div>
+      <div class="size-count">70 (7.2%)</div>
+    </div>
+<div class="size-bar-row">
+      <div class="size-label xl" style="color:var(--xl)">XL</div>
+      <div class="size-bar-track">
+        <div class="size-bar-fill" style="width:4%;background:var(--xl)">17</div>
+      </div>
+      <div class="size-count">17 (1.8%)</div>
+    </div>
+</div>
+<div class="panel">
+  <h2>レビュー待ち件数: 導入前 vs 導入後</h2>
+  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">ある時点でレビュー待ちになっているPR件数の平均。少ないほどレビューが速く回っている</p>
+  <div class="compare-row">
+      <div class="compare-label">現状（すべて人がレビュー）</div>
+      <div class="compare-bar-track">
+        <div class="compare-bar-fill" style="width:100%;background:var(--red)">13.1</div>
+      </div>
+      <div class="compare-reduction" style="color:var(--text-muted)">—</div>
+    </div>
+<div class="compare-row">
+      <div class="compare-label">XSのみ自動マージ</div>
+      <div class="compare-bar-track">
+        <div class="compare-bar-fill" style="width:88%;background:var(--orange)">11.5</div>
+      </div>
+      <div class="compare-reduction" style="color:var(--orange)">-12%</div>
+    </div>
+<div class="compare-row">
+      <div class="compare-label">XS+S 自動マージ</div>
+      <div class="compare-bar-track">
+        <div class="compare-bar-fill" style="width:50%;background:var(--green)">6.6</div>
+      </div>
+      <div class="compare-reduction" style="color:var(--green)">-50%</div>
+    </div>
+</div>
+<div class="panel">
+  <h2>レビュー待ち件数の推移（日次）</h2>
+  
+  <canvas id="canvas_0" height="280"></canvas>
+<div class="legend-row"><span><span style="color:var(--red)">━</span> 現状</span>
+<span><span style="color:var(--green)">━</span> AI自動マージ導入後</span></div>
+<p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;text-align:center">緑の塗りつぶし部分 = 削減される待ち件数</p>
+</div>
+<div class="panel">
+  <h2>サイズ別のレビュー待ち時間</h2>
+  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">XS/Sは自動マージで即時完了。レビュアーは複雑なPRに集中できる</p>
+  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;line-height:1.6">
+        各PRの「レビューリクエストされてから最初のレビューがつくまでの時間」を集計。<br>
+        <b style="color:var(--text)">中央値</b> = 半分のPRがこの時間以内にレビューされた。
+        <b style="color:var(--text)">75%点</b> = 75%がこの時間以内。
+        <b style="color:var(--text)">90%点</b> = 90%がこの時間以内（遅いケースの目安）。
+      </p>
+<div class="review-time-grid">
+<div class="review-time-card" style="border:1px solid var(--green)">
+      <div class="size-tag" style="color:var(--xs)">XS</div>
+      <div style="font-size:0.65rem;color:var(--green);margin-bottom:4px">自動マージ</div>
+      <div class="metric">中央値</div>
+      <div class="metric-value">28分</div>
+      <div class="metric" style="margin-top:6px">75%点</div>
+      <div class="metric-value">11.0時間</div>
+      <div class="metric" style="margin-top:6px">90%点</div>
+      <div class="metric-value">1.9日</div>
+      <div class="metric" style="margin-top:6px">件数</div>
+      <div class="metric-value" style="font-size:0.85rem">219</div>
+    </div>
+<div class="review-time-card" style="border:1px solid var(--green)">
+      <div class="size-tag" style="color:var(--s)">S</div>
+      <div style="font-size:0.65rem;color:var(--green);margin-bottom:4px">自動マージ</div>
+      <div class="metric">中央値</div>
+      <div class="metric-value">4.0時間</div>
+      <div class="metric" style="margin-top:6px">75%点</div>
+      <div class="metric-value">1.2日</div>
+      <div class="metric" style="margin-top:6px">90%点</div>
+      <div class="metric-value">4.7日</div>
+      <div class="metric" style="margin-top:6px">件数</div>
+      <div class="metric-value" style="font-size:0.85rem">157</div>
+    </div>
+<div class="review-time-card">
+      <div class="size-tag" style="color:var(--m)">M</div>
+      
+      <div class="metric">中央値</div>
+      <div class="metric-value">6.6時間</div>
+      <div class="metric" style="margin-top:6px">75%点</div>
+      <div class="metric-value">2.9日</div>
+      <div class="metric" style="margin-top:6px">90%点</div>
+      <div class="metric-value">6.8日</div>
+      <div class="metric" style="margin-top:6px">件数</div>
+      <div class="metric-value" style="font-size:0.85rem">136</div>
+    </div>
+<div class="review-time-card">
+      <div class="size-tag" style="color:var(--l)">L</div>
+      
+      <div class="metric">中央値</div>
+      <div class="metric-value">23.3時間</div>
+      <div class="metric" style="margin-top:6px">75%点</div>
+      <div class="metric-value">4.8日</div>
+      <div class="metric" style="margin-top:6px">90%点</div>
+      <div class="metric-value">7.0日</div>
+      <div class="metric" style="margin-top:6px">件数</div>
+      <div class="metric-value" style="font-size:0.85rem">42</div>
+    </div>
+<div class="review-time-card">
+      <div class="size-tag" style="color:var(--xl)">XL</div>
+      
+      <div class="metric">中央値</div>
+      <div class="metric-value">3.3日</div>
+      <div class="metric" style="margin-top:6px">75%点</div>
+      <div class="metric-value">5.7日</div>
+      <div class="metric" style="margin-top:6px">90%点</div>
+      <div class="metric-value">5.7日</div>
+      <div class="metric" style="margin-top:6px">件数</div>
+      <div class="metric-value" style="font-size:0.85rem">4</div>
+    </div>
+</div>
+</div>
+<div class="panel">
+  <h2>自動マージ対象になるPRの例</h2>
+  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">AIが「シンプル」と判定したPR。実際のPRリンクから判定の妥当性を確認できます</p>
+  <table class="pr-table"><thead><tr><th style="text-align:left">PR</th><th style="text-align:left">タイトル</th><th style="text-align:left">判定</th><th style="text-align:left">AIの判定理由</th></tr></thead><tbody><tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1423" target="_blank" rel="noopener">carson-city2#1423</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1423" target="_blank" rel="noopener" style="color:inherit">SER-545: docs: add PlantUML utility scripts for Claude Code</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR adds utility scripts and documentation for PlantUML, involving multiple script files but without significant logic changes.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1422" target="_blank" rel="noopener">carson-city2#1422</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1422" target="_blank" rel="noopener" style="color:inherit">SER-545: doc: レポート生成・クリエイティブファイル管理に関する調査ドキュメントを追加</a></td><td><span class="size-badge xs">XS</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR adds research documentation, involving only text modifications and no code changes.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1419" target="_blank" rel="noopener">carson-city2#1419</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1419" target="_blank" rel="noopener" style="color:inherit">Release/2026 02 17 for pending dml</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR contains SQL migration scripts, which are typically straightforward to review for correctness and potential side effects.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1414" target="_blank" rel="noopener">carson-city2#1414</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1414" target="_blank" rel="noopener" style="color:inherit">fix: sendViaWebhookのラムダ式を調整</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR involves minor code adjustments within a lambda expression and a small change in an interface implementation, along with a significant number of test additions, indicating a focused fix with thorough testing.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1413" target="_blank" rel="noopener">carson-city2#1413</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1413" target="_blank" rel="noopener" style="color:inherit">fix: detekt（再）</a></td><td><span class="size-badge xs">XS</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR involves only code style and linting fixes detected by Detekt, with no functional changes.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1412" target="_blank" rel="noopener">carson-city2#1412</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1412" target="_blank" rel="noopener" style="color:inherit">fix: detekt</a></td><td><span class="size-badge xs">XS</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR only contains a fix for detekt, which is a code linter, and doesn't change any logic.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1411" target="_blank" rel="noopener">carson-city2#1411</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1411" target="_blank" rel="noopener" style="color:inherit">docs: SER-525 2024/8/28 JDBCパラメータ溢れ障害に伴う類似調査</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR updates documentation by adding a new markdown file, which requires minimal cognitive load to review.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1409" target="_blank" rel="noopener">carson-city2#1409</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1409" target="_blank" rel="noopener" style="color:inherit">CLT-744: tokyo-prime サイドバーのデフォルト画像を削除 dev DML適用</a></td><td><span class="size-badge xs">XS</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR only applies a DML script for a database migration, which is a straightforward change.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1408" target="_blank" rel="noopener">carson-city2#1408</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1408" target="_blank" rel="noopener" style="color:inherit">SER-526：Slack通知方式変更</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR involves changes to Slack notification configuration and implementation, including updates to YAML files and Kotlin code, which is a small, focused change.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1407" target="_blank" rel="noopener">carson-city2#1407</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1407" target="_blank" rel="noopener" style="color:inherit">tidy: README, テストデータの整理</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">The changes are primarily focused on organizing test data and updating the README, with minor code adjustments in TypeScript and Kotlin files, indicating a low cognitive load for review.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1402" target="_blank" rel="noopener">carson-city2#1402</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1402" target="_blank" rel="noopener" style="color:inherit">SER-495:特定ユーザから端末チャンネル変更の操作権限の剥奪 prod DML適用</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR involves a production DML script to modify user permissions, requiring careful review of the data manipulation.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1401" target="_blank" rel="noopener">carson-city2#1401</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1401" target="_blank" rel="noopener" style="color:inherit">fix: FetchBoardingAdsLogServiceBqImplTestのIMP倍率テストの期待値を実装仕様に合わせて修正</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR involves updating test expectations to match implementation specifications, indicating a small bug fix or adjustment within existing logic.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1400" target="_blank" rel="noopener">carson-city2#1400</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1400" target="_blank" rel="noopener" style="color:inherit">fix: BigQueryServiceTestの期待値を実装仕様に合わせて修正</a></td><td><span class="size-badge xs">XS</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR involves a minor adjustment to test expectations in a single test file, indicating a very low cognitive load for review.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1399" target="_blank" rel="noopener">carson-city2#1399</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1399" target="_blank" rel="noopener" style="color:inherit">fix: レポートの集計タイプを一時的にAllTypesに変更</a></td><td><span class="size-badge s">S</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR involves minor fixes to report aggregation types and includes corresponding test updates, indicating a low cognitive load for review.</td></tr>
+<tr><td><a href="https://github.com/iris-tech/carson-city2/pull/1396" target="_blank" rel="noopener">carson-city2#1396</a></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/iris-tech/carson-city2/pull/1396" target="_blank" rel="noopener" style="color:inherit">chore: apply ktlint formatting</a></td><td><span class="size-badge xs">XS</span></td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">This PR solely applies code formatting changes as indicated by the 'chore: apply ktlint formatting' title and the nature of the diffs.</td></tr></tbody></table>
+</div>
+<div class="insight">
+  <h3>分析結果</h3>
+  <ul>
+    <li>全PRの<span class="good">70%</span>（682件）がレビュー不要と判定 → 自動マージ可能</li>
+    <li>導入すると<b>レビュー待ち件数が<span class="good">50%削減</span></b>（平均13.1件 → 6.6件）</li>
+    <li>AIの判定はPRの複雑さと実際のレビュー時間がきれいに相関（XS: 28分 → XL: 3.3日 = <span class="hl">171倍</span>差）</li>
+    <li>運用コスト: <span class="good">月$0.02</span>程度（1PR あたり$0.00017、Gemini Flash Lite使用）</li>
+  </ul>
+</div>
+<div class="insight">
+  <h3>提案するアクション</h3>
+  <ul>
+    <li><span class="good">AI自動マージをUpflowに導入</span> — XS/S判定のPRを自動マージ対象にする</li>
+    <li>まずは「自動マージ候補」のラベル表示から始め、段階的に自動化を進める</li>
+    <li>レビュアーの時間を複雑なPR（M/L/XL）に集中させ、レビューの質と速度を両立</li>
+  </ul>
+</div>
 
 <script>
-fetch('llm-automerge-simulation-data.json')
-  .then(r => r.json())
-  .then(data => render(data))
-  .catch(err => {
-    document.getElementById('loading').textContent = `エラー: ${err.message}`;
-  });
 
-function render(data) {
-  document.getElementById('loading').style.display = 'none';
-  const app = document.getElementById('app');
-  app.style.display = '';
-
-  const { sizeDistribution, simulation, pickupBySize, classifications, meta } = data;
-  const total = meta.totalPRs;
-  const rule = sizeDistribution.rule;
-  const llm = sizeDistribution.llm;
-
-  const llmXSSPct = (((llm.XS + llm.S) / total) * 100).toFixed(0);
-  const ruleXSSPct = (((rule.XS + rule.S) / total) * 100).toFixed(0);
-  const llmReduction = simulation['Auto XS+S'].llmReduction.toFixed(1);
-  const ruleReduction = simulation['Auto XS+S'].ruleReduction.toFixed(1);
-
-  app.innerHTML = `
-    <!-- Hero Stats -->
-    <div class="stats-bar">
-      <div class="stat-card">
-        <div class="label">分析PR数</div>
-        <div class="value">${total}</div>
-        <div class="note">2025年以降のmerged PR</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">LLM XS+S 割合</div>
-        <div class="value green">${llmXSSPct}%</div>
-        <div class="note">ルールベース: ${ruleXSSPct}%</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">LLM キュー削減</div>
-        <div class="value green">-${llmReduction}%</div>
-        <div class="note">XS+S auto merge時</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">ルール キュー削減</div>
-        <div class="value red">-${ruleReduction}%</div>
-        <div class="note">XS+S auto merge時</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">効果の差</div>
-        <div class="value green">${(parseFloat(llmReduction) / parseFloat(ruleReduction)).toFixed(1)}x</div>
-        <div class="note">LLMの方が効果大</div>
-      </div>
-    </div>
-
-    <!-- Size Distribution Comparison -->
-    <div class="panel">
-      <h2>サイズ分布比較: ルールベース vs LLM</h2>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">
-        LLM分類ではM/Lの過剰分類が解消され、XS/Sが大幅に増加
-      </p>
-      <div class="two-col">
-        <div>
-          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;font-weight:600">ルールベース (行数・ファイル数)</div>
-          <div id="ruleDist"></div>
-        </div>
-        <div>
-          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;font-weight:600">LLM (Gemini Flash Lite)</div>
-          <div id="llmDist"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Queue Comparison -->
-    <div class="panel">
-      <h2>レビューキュー削減: ルールベース vs LLM</h2>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">
-        同じ「XS+S自動マージ」施策でも、分類精度によって効果が大きく異なる
-      </p>
-      <div id="comparison"></div>
-    </div>
-
-    <!-- Timeline Chart -->
-    <div class="panel">
-      <h2>キューサイズ推移: LLM分類シミュレーション</h2>
-      <canvas id="timelineChart" height="280"></canvas>
-      <div class="legend-row">
-        <span><span style="color:var(--red)">━</span> 現状 (Baseline)</span>
-        <span><span style="color:var(--orange)">━</span> ルール XS+S</span>
-        <span><span style="color:var(--green)">━</span> LLM XS+S</span>
-      </div>
-    </div>
-
-    <!-- Throughput Impact -->
-    <div class="panel">
-      <h2>スループットへの影響予測</h2>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">
-        キュー削減によりレビュアーの負荷が下がり、残りのPRのレビュー速度が向上する
-      </p>
-      <canvas id="throughputChart" height="280"></canvas>
-      <div class="legend-row">
-        <span><span style="color:var(--text-muted)">●</span> 現状（実データ）</span>
-        <span><span style="color:var(--green)">●</span> LLM XS+S 自動化後の推定ゾーン</span>
-      </div>
-    </div>
-
-    <!-- Review Wait Time -->
-    <div class="panel">
-      <h2>LLMサイズ別レビュー待ち時間</h2>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px">
-        XS/Sは自動マージで即時化、レビュアーはM以上に集中 → M/Lの待ち時間も改善見込み
-      </p>
-      <div class="review-time-grid" id="reviewTimeGrid"></div>
-    </div>
-
-    <!-- Reclassification Examples -->
-    <div class="panel">
-      <h2>LLMにより再分類されたPRの例</h2>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px">
-        ルールベースでM/L判定だがLLMでXS/Sと判定 — 自動マージ対象に追加
-      </p>
-      <table class="pr-table" id="reclassTable"></table>
-    </div>
-
-    <!-- Insights -->
-    <div class="insight" id="insights"></div>
-  `;
-
-  renderDistribution('ruleDist', rule, total);
-  renderDistribution('llmDist', llm, total);
-  renderComparison(simulation);
-  renderTimeline(simulation);
-  renderThroughputChart(simulation);
-  renderReviewTimes(pickupBySize);
-  renderReclassExamples(classifications);
-  renderInsights(rule, llm, total, simulation, pickupBySize);
+function resolveColor(c) {
+  var map = { red: '#f85149', green: '#3fb950', orange: '#d29922', purple: '#bc8cff', accent: '#58a6ff' };
+  return map[c] || c;
 }
 
-function renderDistribution(elId, counts, total) {
-  const el = document.getElementById(elId);
-  const sizes = ['XS', 'S', 'M', 'L', 'XL'];
-  const maxCount = Math.max(...sizes.map(s => counts[s] || 0));
-  el.innerHTML = sizes.map(s => {
-    const count = counts[s] || 0;
-    if (count === 0) return '';
-    const pct = ((count / total) * 100).toFixed(1);
-    const width = (count / maxCount * 100).toFixed(0);
-    return `<div class="size-bar-row">
-      <div class="size-label ${s.toLowerCase()}">${s}</div>
-      <div class="size-bar-track">
-        <div class="size-bar-fill" style="width:${width}%;background:var(--${s.toLowerCase()})">${count > 15 ? count : ''}</div>
-      </div>
-      <div class="size-count">${count} (${pct}%)</div>
-    </div>`;
-  }).join('');
-}
-
-function renderComparison(simulation) {
-  const el = document.getElementById('comparison');
-  const baseline = simulation.Baseline.rule;
-  const scenarios = [
-    { label: '現状 (Baseline)', rule: baseline, llm: baseline },
-    { label: 'Auto XS のみ', rule: simulation['Auto XS'].rule, llm: simulation['Auto XS'].llm },
-    { label: 'Auto XS+S', rule: simulation['Auto XS+S'].rule, llm: simulation['Auto XS+S'].llm },
-  ];
-
-  el.innerHTML = scenarios.map(s => {
-    const ruleWidth = (s.rule / baseline * 100).toFixed(0);
-    const llmWidth = (s.llm / baseline * 100).toFixed(0);
-    const ruleRed = s.rule < baseline ? `-${((1 - s.rule / baseline) * 100).toFixed(1)}%` : '—';
-    const llmRed = s.llm < baseline ? `-${((1 - s.llm / baseline) * 100).toFixed(1)}%` : '—';
-    return `
-      <div style="margin-bottom:18px">
-        <div style="font-size:0.85rem;font-weight:600;margin-bottom:6px">${s.label}</div>
-        <div class="compare-row">
-          <div class="compare-label" style="min-width:90px;font-size:0.78rem;color:var(--text-muted)">ルールベース</div>
-          <div class="compare-bar-track">
-            <div class="compare-bar-fill" style="width:${ruleWidth}%;background:var(--orange)">${s.rule.toFixed(1)} 件</div>
-          </div>
-          <div class="compare-reduction" style="color:${ruleRed !== '—' ? 'var(--orange)' : 'var(--text-muted)'}">${ruleRed}</div>
-        </div>
-        <div class="compare-row">
-          <div class="compare-label" style="min-width:90px;font-size:0.78rem;color:var(--text-muted)">LLM</div>
-          <div class="compare-bar-track">
-            <div class="compare-bar-fill" style="width:${llmWidth}%;background:var(--green)">${s.llm.toFixed(1)} 件</div>
-          </div>
-          <div class="compare-reduction" style="color:${llmRed !== '—' ? 'var(--green)' : 'var(--text-muted)'}">${llmRed}</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function drawChart(canvasId, height, drawFn) {
-  const canvas = document.getElementById(canvasId);
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
+function initCanvas(canvasId, height) {
+  var canvas = document.getElementById(canvasId);
+  var ctx = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
   canvas.height = height * dpr;
   canvas.style.height = height + 'px';
   ctx.scale(dpr, dpr);
-  drawFn(ctx, rect.width, height);
+  return { ctx: ctx, W: rect.width, H: height };
 }
 
-function renderTimeline(simulation) {
-  drawChart('timelineChart', 280, (ctx, W, H) => {
-    const pad = { top: 15, right: 20, bottom: 40, left: 45 };
-
-    const baseSnaps = simulation.Baseline.ruleSnapshots || [];
-    const ruleXSSSnaps = simulation['Auto XS+S'].ruleSnapshots || [];
-    const llmXSSSnaps = simulation['Auto XS+S'].llmSnapshots || [];
-
-    if (baseSnaps.length === 0) {
-      ctx.fillStyle = '#8b949e';
-      ctx.font = '14px sans-serif';
-      ctx.fillText('スナップショットデータなし', W / 2 - 80, H / 2);
-      return;
-    }
-
-    const allDays = baseSnaps.map(d => d.day);
-    const maxV = Math.max(...baseSnaps.map(d => d.total)) * 1.1;
-
-    const x = (i) => pad.left + (i / (allDays.length - 1)) * (W - pad.left - pad.right);
-    const y = (v) => H - pad.bottom - (v / maxV) * (H - pad.top - pad.bottom);
-
-    // Grid
-    ctx.strokeStyle = '#21262d';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i++) {
-      const yv = pad.top + (i / 4) * (H - pad.top - pad.bottom);
-      ctx.beginPath(); ctx.moveTo(pad.left, yv); ctx.lineTo(W - pad.right, yv); ctx.stroke();
-      ctx.fillStyle = '#8b949e';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(((4 - i) / 4 * maxV).toFixed(0), pad.left - 6, yv + 4);
-    }
-
-    // Build maps
-    const baseMap = {}; for (const d of baseSnaps) baseMap[d.day] = d.total;
-    const ruleMap = {}; for (const d of ruleXSSSnaps) ruleMap[d.day] = d.total;
-    const llmMap = {}; for (const d of llmXSSSnaps) llmMap[d.day] = d.total;
-
-    // Area: delta between baseline and LLM
-    ctx.beginPath();
-    let started = false;
-    for (let i = 0; i < allDays.length; i++) {
-      const bv = baseMap[allDays[i]];
-      const lv = llmMap[allDays[i]];
-      if (bv !== undefined && lv !== undefined) {
-        if (!started) { ctx.moveTo(x(i), y(bv)); started = true; }
-        else ctx.lineTo(x(i), y(bv));
-      }
-    }
-    for (let i = allDays.length - 1; i >= 0; i--) {
-      const lv = llmMap[allDays[i]];
-      if (lv !== undefined) ctx.lineTo(x(i), y(lv));
-    }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(63,185,80,0.12)';
-    ctx.fill();
-
-    // Lines
-    function drawLine(map, color, dash, width) {
-      ctx.beginPath();
-      ctx.setLineDash(dash || []);
-      let first = true;
-      for (let i = 0; i < allDays.length; i++) {
-        const v = map[allDays[i]];
-        if (v !== undefined) {
-          if (first) { ctx.moveTo(x(i), y(v)); first = false; }
-          else ctx.lineTo(x(i), y(v));
-        }
-      }
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width || 2;
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    drawLine(baseMap, '#f85149', [], 2);
-    drawLine(ruleMap, '#d29922', [6, 3], 1.5);
-    drawLine(llmMap, '#3fb950', [], 2.5);
-
-    // X labels
+function drawGrid(ctx, pad, W, H, maxY, opts) {
+  var steps = 4;
+  ctx.strokeStyle = '#21262d';
+  ctx.lineWidth = 1;
+  for (var i = 0; i <= steps; i++) {
+    var yv = pad.top + (i / steps) * (H - pad.top - pad.bottom);
+    ctx.beginPath(); ctx.moveTo(pad.left, yv); ctx.lineTo(W - pad.right, yv); ctx.stroke();
     ctx.fillStyle = '#8b949e';
     ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
-    const step = Math.max(1, Math.floor(allDays.length / 8));
-    for (let i = 0; i < allDays.length; i += step) {
-      const d = new Date(allDays[i]);
-      ctx.fillText(`${d.getMonth() + 1}/${d.getDate()}`, x(i), H - pad.bottom + 18);
-    }
-
-    // Y label
+    ctx.textAlign = 'right';
+    ctx.fillText(((steps - i) / steps * maxY).toFixed(0), pad.left - 6, yv + 4);
+  }
+  if (opts && opts.yLabel) {
     ctx.save();
     ctx.translate(12, H / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillStyle = '#8b949e';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('キューサイズ', 0, 0);
+    ctx.fillText(opts.yLabel, 0, 0);
     ctx.restore();
-  });
+  }
 }
 
-function renderThroughputChart(simulation) {
-  // Load queue-throughput data for scatter plot
-  fetch('queue-throughput-data.json')
-    .then(r => r.json())
-    .then(qtData => {
-      drawChart('throughputChart', 280, (ctx, W, H) => {
-        const pad = { top: 15, right: 20, bottom: 40, left: 55 };
-        const weekly = qtData.weekly || [];
+function drawLineChart(canvasId, height, series, opts) {
+  var c = initCanvas(canvasId, height);
+  var ctx = c.ctx, W = c.W, H = c.H;
+  var pad = { top: 15, right: 20, bottom: 40, left: 45 };
 
-        if (weekly.length === 0) return;
+  // Collect all x values
+  var allX = [];
+  var xSet = {};
+  for (var si = 0; si < series.length; si++) {
+    for (var di = 0; di < series[si].data.length; di++) {
+      var xv = series[si].data[di].x;
+      if (!xSet[xv]) { allX.push(xv); xSet[xv] = true; }
+    }
+  }
+  allX.sort();
 
-        const maxQ = Math.max(...weekly.map(d => d.avgQueue)) * 1.1;
-        const maxT = Math.max(...weekly.map(d => d.totalThroughput)) * 1.1;
+  if (allX.length === 0) return;
 
-        const x = (q) => pad.left + (q / maxQ) * (W - pad.left - pad.right);
-        const y = (t) => H - pad.bottom - (t / maxT) * (H - pad.top - pad.bottom);
+  // Max Y
+  var maxY = 0;
+  for (var si = 0; si < series.length; si++) {
+    for (var di = 0; di < series[si].data.length; di++) {
+      if (series[si].data[di].y > maxY) maxY = series[si].data[di].y;
+    }
+  }
+  maxY *= 1.1;
 
-        // Grid
-        ctx.strokeStyle = '#21262d';
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 4; i++) {
-          const yv = pad.top + (i / 4) * (H - pad.top - pad.bottom);
-          ctx.beginPath(); ctx.moveTo(pad.left, yv); ctx.lineTo(W - pad.right, yv); ctx.stroke();
-          ctx.fillStyle = '#8b949e';
-          ctx.font = '10px sans-serif';
-          ctx.textAlign = 'right';
-          ctx.fillText(((4 - i) / 4 * maxT).toFixed(0), pad.left - 6, yv + 4);
-        }
-        for (let i = 0; i <= 4; i++) {
-          const xv = pad.left + (i / 4) * (W - pad.left - pad.right);
-          ctx.beginPath(); ctx.moveTo(xv, pad.top); ctx.lineTo(xv, H - pad.bottom); ctx.stroke();
-          ctx.fillStyle = '#8b949e';
-          ctx.font = '10px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText((i / 4 * maxQ).toFixed(0), xv, H - pad.bottom + 18);
-        }
+  var x = function(i) { return pad.left + (i / (allX.length - 1)) * (W - pad.left - pad.right); };
+  var y = function(v) { return H - pad.bottom - (v / maxY) * (H - pad.top - pad.bottom); };
 
-        // Current data points
-        for (const d of weekly) {
-          ctx.beginPath();
-          ctx.arc(x(d.avgQueue), y(d.totalThroughput), 4, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(139,148,158,0.4)';
-          ctx.fill();
-        }
+  drawGrid(ctx, pad, W, H, maxY, opts);
 
-        // LLM auto-merge zone: shift queue left by 50%
-        const llmReductionRate = simulation['Auto XS+S'].llmReduction / 100;
-        ctx.fillStyle = 'rgba(63,185,80,0.15)';
-        ctx.strokeStyle = 'rgba(63,185,80,0.5)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4, 4]);
+  // Area fill between two series
+  if (opts && opts.areaFill) {
+    var from = opts.areaFill.from;
+    var to = opts.areaFill.to;
+    var fromMap = {};
+    var toMap = {};
+    for (var di = 0; di < series[from].data.length; di++) fromMap[series[from].data[di].x] = series[from].data[di].y;
+    for (var di = 0; di < series[to].data.length; di++) toMap[series[to].data[di].x] = series[to].data[di].y;
+
+    ctx.beginPath();
+    var started = false;
+    for (var i = 0; i < allX.length; i++) {
+      if (fromMap[allX[i]] !== undefined && toMap[allX[i]] !== undefined) {
+        if (!started) { ctx.moveTo(x(i), y(fromMap[allX[i]])); started = true; }
+        else ctx.lineTo(x(i), y(fromMap[allX[i]]));
+      }
+    }
+    for (var i = allX.length - 1; i >= 0; i--) {
+      if (toMap[allX[i]] !== undefined) ctx.lineTo(x(i), y(toMap[allX[i]]));
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(63,185,80,0.12)';
+    ctx.fill();
+  }
+
+  // Draw lines
+  for (var si = 0; si < series.length; si++) {
+    var s = series[si];
+    var dataMap = {};
+    for (var di = 0; di < s.data.length; di++) dataMap[s.data[di].x] = s.data[di].y;
+
+    ctx.beginPath();
+    ctx.setLineDash(s.dash || []);
+    var first = true;
+    for (var i = 0; i < allX.length; i++) {
+      var v = dataMap[allX[i]];
+      if (v !== undefined) {
+        if (first) { ctx.moveTo(x(i), y(v)); first = false; }
+        else ctx.lineTo(x(i), y(v));
+      }
+    }
+    ctx.strokeStyle = resolveColor(s.color);
+    ctx.lineWidth = s.width || 2;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // X labels
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  var labelCount = (opts && opts.xLabelCount) || 8;
+  var step = Math.max(1, Math.floor(allX.length / labelCount));
+  for (var i = 0; i < allX.length; i += step) {
+    var d = new Date(allX[i]);
+    ctx.fillText((d.getMonth() + 1) + '/' + d.getDate(), x(i), H - pad.bottom + 18);
+  }
+}
+
+function drawScatterChart(canvasId, height, points, opts) {
+  var c = initCanvas(canvasId, height);
+  var ctx = c.ctx, W = c.W, H = c.H;
+  var pad = { top: 15, right: 20, bottom: 40, left: 55 };
+
+  if (points.length === 0) return;
+
+  var maxX = 0, maxY = 0;
+  for (var i = 0; i < points.length; i++) {
+    if (points[i].x > maxX) maxX = points[i].x;
+    if (points[i].y > maxY) maxY = points[i].y;
+  }
+  maxX *= 1.1;
+  maxY *= 1.1;
+
+  var xFn = function(v) { return pad.left + (v / maxX) * (W - pad.left - pad.right); };
+  var yFn = function(v) { return H - pad.bottom - (v / maxY) * (H - pad.top - pad.bottom); };
+
+  // Grid
+  drawGrid(ctx, pad, W, H, maxY, opts);
+  for (var i = 0; i <= 4; i++) {
+    var xv = pad.left + (i / 4) * (W - pad.left - pad.right);
+    ctx.beginPath(); ctx.moveTo(xv, pad.top); ctx.lineTo(xv, H - pad.bottom); ctx.stroke();
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText((i / 4 * maxX).toFixed(0), xv, H - pad.bottom + 18);
+  }
+
+  // Points
+  for (var i = 0; i < points.length; i++) {
+    ctx.beginPath();
+    ctx.arc(xFn(points[i].x), yFn(points[i].y), 4, 0, Math.PI * 2);
+    ctx.fillStyle = resolveColor(points[i].color || 'rgba(139,148,158,0.4)');
+    ctx.fill();
+  }
+
+  // Zones
+  if (opts && opts.zones) {
+    for (var zi = 0; zi < opts.zones.length; zi++) {
+      var zone = opts.zones[zi];
+      for (var pi = 0; pi < zone.points.length; pi++) {
         ctx.beginPath();
+        ctx.arc(xFn(zone.points[pi].x), yFn(zone.points[pi].y), 4, 0, Math.PI * 2);
+        ctx.fillStyle = resolveColor(zone.color);
+        ctx.fill();
+      }
+    }
+  }
 
-        // Draw shifted points
-        const shiftedPoints = weekly.map(d => ({
-          q: d.avgQueue * (1 - llmReductionRate),
-          t: d.totalThroughput
-        }));
-
-        for (const p of shiftedPoints) {
-          ctx.beginPath();
-          ctx.arc(x(p.q), y(p.t), 4, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(63,185,80,0.5)';
-          ctx.fill();
-        }
-
-        // Draw arrow showing the shift
-        const avgQ = weekly.reduce((s, d) => s + d.avgQueue, 0) / weekly.length;
-        const avgT = weekly.reduce((s, d) => s + d.totalThroughput, 0) / weekly.length;
-        const newAvgQ = avgQ * (1 - llmReductionRate);
-
+  // Annotations (arrows)
+  if (opts && opts.annotations) {
+    for (var ai = 0; ai < opts.annotations.length; ai++) {
+      var a = opts.annotations[ai];
+      if (a.type === 'arrow') {
         ctx.beginPath();
-        ctx.setLineDash([]);
-        ctx.strokeStyle = 'var(--green)';
+        ctx.strokeStyle = resolveColor(a.color);
         ctx.lineWidth = 3;
-        ctx.moveTo(x(avgQ), y(avgT));
-        ctx.lineTo(x(newAvgQ), y(avgT));
+        ctx.moveTo(xFn(a.from[0]), yFn(a.from[1]));
+        ctx.lineTo(xFn(a.to[0]), yFn(a.to[1]));
         ctx.stroke();
-
         // Arrow head
         ctx.beginPath();
-        ctx.moveTo(x(newAvgQ), y(avgT));
-        ctx.lineTo(x(newAvgQ) + 8, y(avgT) - 5);
-        ctx.lineTo(x(newAvgQ) + 8, y(avgT) + 5);
+        ctx.moveTo(xFn(a.to[0]), yFn(a.to[1]));
+        ctx.lineTo(xFn(a.to[0]) + 8, yFn(a.to[1]) - 5);
+        ctx.lineTo(xFn(a.to[0]) + 8, yFn(a.to[1]) + 5);
         ctx.closePath();
-        ctx.fillStyle = 'var(--green)';
+        ctx.fillStyle = resolveColor(a.color);
         ctx.fill();
-
         // Label
-        ctx.fillStyle = 'var(--green)';
+        ctx.fillStyle = resolveColor(a.color);
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`キュー -${(llmReductionRate * 100).toFixed(0)}%`, (x(avgQ) + x(newAvgQ)) / 2, y(avgT) - 12);
+        ctx.fillText(a.label, (xFn(a.from[0]) + xFn(a.to[0])) / 2, yFn(a.from[1]) - 12);
+      }
+    }
+  }
 
-        // Axis labels
-        ctx.fillStyle = '#8b949e';
-        ctx.font = '11px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('平均キューサイズ', (pad.left + W - pad.right) / 2, H - 2);
-
-        ctx.save();
-        ctx.translate(12, H / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText('週間スループット', 0, 0);
-        ctx.restore();
-      });
-    })
-    .catch(() => {
-      const canvas = document.getElementById('throughputChart');
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#8b949e';
-      ctx.font = '14px sans-serif';
-      ctx.fillText('queue-throughput-data.json が必要です', 40, 140);
-    });
+  // Axis labels
+  if (opts && opts.xLabel) {
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(opts.xLabel, (pad.left + W - pad.right) / 2, H - 2);
+  }
 }
 
-function renderReviewTimes(pickupBySize) {
-  const el = document.getElementById('reviewTimeGrid');
-  const sizes = ['XS', 'S', 'M', 'L', 'XL'];
-  el.innerHTML = sizes.map(s => {
-    const d = pickupBySize[s];
-    if (!d || d.count === 0) return '';
-    const fmtTime = (h) => {
-      if (h === null || h === undefined) return '—';
-      if (h < 1) return `${(h * 60).toFixed(0)}分`;
-      if (h < 24) return `${h.toFixed(1)}時間`;
-      return `${(h / 24).toFixed(1)}日`;
-    };
-    const autoMergeable = s === 'XS' || s === 'S';
-    return `<div class="review-time-card" style="${autoMergeable ? 'border:1px solid var(--green)' : ''}">
-      <div class="size-tag" style="color:var(--${s.toLowerCase()})">${s}</div>
-      ${autoMergeable ? '<div style="font-size:0.65rem;color:var(--green);margin-bottom:4px">AUTO MERGE</div>' : ''}
-      <div class="metric">中央値</div>
-      <div class="metric-value">${fmtTime(d.median)}</div>
-      <div class="metric" style="margin-top:6px">p75</div>
-      <div class="metric-value">${fmtTime(d.p75)}</div>
-      <div class="metric" style="margin-top:6px">p90</div>
-      <div class="metric-value">${fmtTime(d.p90)}</div>
-      <div class="metric" style="margin-top:6px">件数</div>
-      <div class="metric-value" style="font-size:0.85rem">${d.count}</div>
-    </div>`;
-  }).join('');
-}
 
-function prUrl(p) {
-  return p.owner ? `https://github.com/${p.owner}/${p.repo}/pull/${p.number}` : '#';
-}
-
-function renderReclassExamples(classifications) {
-  const el = document.getElementById('reclassTable');
-  // PRs where rule=M/L/XL but LLM=XS/S
-  const reclass = classifications
-    .filter(p => {
-      const ruleOrder = { XS: 0, S: 1, M: 2, L: 3, XL: 4 };
-      return ruleOrder[p.ruleSize] >= 2 && ruleOrder[p.llmSize] <= 1;
-    })
-    .slice(0, 15);
-
-  el.innerHTML = `
-    <thead><tr>
-      <th>PR</th><th>タイトル</th><th>ルール</th><th>LLM</th><th>LLM理由</th>
-    </tr></thead>
-    <tbody>${reclass.map(p => `<tr>
-      <td><a href="${prUrl(p)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${p.repo}#${p.number}</a></td>
-      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="${prUrl(p)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${p.title}</a></td>
-      <td><span class="size-badge ${p.ruleSize.toLowerCase()}">${p.ruleSize}</span></td>
-      <td><span class="size-badge ${p.llmSize.toLowerCase()}">${p.llmSize}</span></td>
-      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.75rem;color:var(--text-muted)">${p.llmReason || ''}</td>
-    </tr>`).join('')}</tbody>
-  `;
-}
-
-function renderInsights(rule, llm, total, simulation, pickupBySize) {
-  const el = document.getElementById('insights');
-  const llmXSSPct = (((llm.XS + llm.S) / total) * 100).toFixed(0);
-  const ruleXSSPct = (((rule.XS + rule.S) / total) * 100).toFixed(0);
-  const addedToAutoMerge = (llm.XS + llm.S) - (rule.XS + rule.S);
-  const llmRed = simulation['Auto XS+S'].llmReduction.toFixed(1);
-  const ruleRed = simulation['Auto XS+S'].ruleReduction.toFixed(1);
-  const xsMedian = pickupBySize.XS?.median || 0;
-  const xlMedian = pickupBySize.XL?.median || 0;
-  const ratio = xsMedian > 0 ? (xlMedian / xsMedian).toFixed(0) : '—';
-
-  el.innerHTML = `
-    <h3>分析結果と提言</h3>
-    <p><b>LLM分類により、自動マージ対象が${ruleXSSPct}% → ${llmXSSPct}%に拡大（+${addedToAutoMerge}件）</b></p>
-    <ul>
-      <li>ルールベース分類ではM/Lに過剰分類されていた<span class="hl">${addedToAutoMerge}件</span>のPRが、LLMにより正しくXS/Sに再分類</li>
-      <li>結果、XS+S自動マージの効果が<span class="bad">-${ruleRed}%</span> → <span class="good">-${llmRed}%</span>に改善（<span class="hl">${(parseFloat(llmRed) / parseFloat(ruleRed)).toFixed(1)}倍</span>）</li>
-      <li>LLMサイズとレビュー待ち時間がきれいに相関（XS: ${xsMedian < 1 ? (xsMedian*60).toFixed(0)+'分' : xsMedian.toFixed(1)+'h'} → XL: ${xlMedian.toFixed(1)}h = <span class="hl">${ratio}倍</span>）</li>
-      <li>コスト: <span class="good">$0.06/971PR</span>（PR単価$0.00017、月$0.02で運用可能）</li>
-    </ul>
-    <p style="margin-top:12px"><b>推奨アクション：</b></p>
-    <ul>
-      <li><span class="good">LLMベースPRサイズ分類をUpflowに導入</span> — ルールベースを置き換え</li>
-      <li>XS/S PRに「Auto-mergeable」バッジを表示し、レビュー優先度の判断材料に</li>
-      <li>レビュアーの時間をM/L/XL（全体の30%）に集中させ、ボトルネックを解消</li>
-    </ul>
-  `;
-}
+drawLineChart('canvas_0', 280, [{"label":"現状","data":[{"x":"2025-01-06","y":0},{"x":"2025-01-07","y":1},{"x":"2025-01-08","y":0},{"x":"2025-01-09","y":1},{"x":"2025-01-10","y":2},{"x":"2025-01-14","y":7},{"x":"2025-01-15","y":4},{"x":"2025-01-16","y":10},{"x":"2025-01-17","y":14},{"x":"2025-01-20","y":11},{"x":"2025-01-21","y":16},{"x":"2025-01-22","y":8},{"x":"2025-01-23","y":10},{"x":"2025-01-24","y":12},{"x":"2025-01-27","y":8},{"x":"2025-01-28","y":8},{"x":"2025-01-29","y":10},{"x":"2025-01-30","y":19},{"x":"2025-01-31","y":28},{"x":"2025-02-03","y":21},{"x":"2025-02-04","y":19},{"x":"2025-02-05","y":9},{"x":"2025-02-06","y":9},{"x":"2025-02-07","y":6},{"x":"2025-02-10","y":13},{"x":"2025-02-11","y":16},{"x":"2025-02-12","y":37},{"x":"2025-02-13","y":19},{"x":"2025-02-14","y":16},{"x":"2025-02-17","y":22},{"x":"2025-02-18","y":24},{"x":"2025-02-19","y":25},{"x":"2025-02-20","y":21},{"x":"2025-02-21","y":18},{"x":"2025-02-25","y":15},{"x":"2025-02-27","y":8},{"x":"2025-02-28","y":9},{"x":"2025-03-03","y":10},{"x":"2025-03-04","y":19},{"x":"2025-03-05","y":18},{"x":"2025-03-06","y":16},{"x":"2025-03-07","y":17},{"x":"2025-03-10","y":22},{"x":"2025-03-11","y":23},{"x":"2025-03-12","y":22},{"x":"2025-03-13","y":17},{"x":"2025-03-14","y":23},{"x":"2025-03-17","y":21},{"x":"2025-03-18","y":18},{"x":"2025-03-19","y":19},{"x":"2025-03-21","y":16},{"x":"2025-03-24","y":16},{"x":"2025-03-25","y":19},{"x":"2025-03-26","y":12},{"x":"2025-03-27","y":8},{"x":"2025-03-28","y":10},{"x":"2025-03-31","y":12},{"x":"2025-04-01","y":22},{"x":"2025-04-02","y":15},{"x":"2025-04-03","y":13},{"x":"2025-04-04","y":14},{"x":"2025-04-06","y":11},{"x":"2025-04-07","y":9},{"x":"2025-04-09","y":7},{"x":"2025-04-10","y":15},{"x":"2025-04-11","y":17},{"x":"2025-04-14","y":16},{"x":"2025-04-15","y":19},{"x":"2025-04-16","y":17},{"x":"2025-04-17","y":20},{"x":"2025-04-18","y":18},{"x":"2025-04-21","y":18},{"x":"2025-04-22","y":15},{"x":"2025-04-23","y":11},{"x":"2025-04-24","y":11},{"x":"2025-04-25","y":10},{"x":"2025-04-28","y":10},{"x":"2025-04-30","y":12},{"x":"2025-05-01","y":16},{"x":"2025-05-06","y":16},{"x":"2025-05-07","y":14},{"x":"2025-05-08","y":17},{"x":"2025-05-09","y":18},{"x":"2025-05-12","y":22},{"x":"2025-05-13","y":23},{"x":"2025-05-14","y":11},{"x":"2025-05-15","y":10},{"x":"2025-05-16","y":9},{"x":"2025-05-19","y":11},{"x":"2025-05-20","y":13},{"x":"2025-05-21","y":17},{"x":"2025-05-22","y":14},{"x":"2025-05-23","y":15},{"x":"2025-05-25","y":16},{"x":"2025-05-26","y":18},{"x":"2025-05-27","y":25},{"x":"2025-05-28","y":13},{"x":"2025-05-29","y":11},{"x":"2025-05-30","y":17},{"x":"2025-06-02","y":14},{"x":"2025-06-03","y":16},{"x":"2025-06-04","y":11},{"x":"2025-06-05","y":12},{"x":"2025-06-06","y":12},{"x":"2025-06-09","y":11},{"x":"2025-06-10","y":12},{"x":"2025-06-11","y":14},{"x":"2025-06-12","y":14},{"x":"2025-06-16","y":15},{"x":"2025-06-17","y":13},{"x":"2025-06-18","y":10},{"x":"2025-06-23","y":10},{"x":"2025-06-24","y":12},{"x":"2025-06-26","y":12},{"x":"2025-06-27","y":19},{"x":"2025-06-30","y":19},{"x":"2025-07-01","y":19},{"x":"2025-07-02","y":20},{"x":"2025-07-04","y":13},{"x":"2025-07-07","y":11},{"x":"2025-07-08","y":12},{"x":"2025-07-09","y":12},{"x":"2025-07-10","y":10},{"x":"2025-07-11","y":10},{"x":"2025-07-12","y":18},{"x":"2025-07-14","y":19},{"x":"2025-07-15","y":19},{"x":"2025-07-16","y":14},{"x":"2025-07-17","y":14},{"x":"2025-07-18","y":15},{"x":"2025-07-22","y":16},{"x":"2025-07-23","y":13},{"x":"2025-07-25","y":12},{"x":"2025-07-28","y":11},{"x":"2025-07-29","y":12},{"x":"2025-07-30","y":9},{"x":"2025-07-31","y":8},{"x":"2025-08-01","y":15},{"x":"2025-08-03","y":17},{"x":"2025-08-04","y":15},{"x":"2025-08-05","y":16},{"x":"2025-08-06","y":23},{"x":"2025-08-07","y":21},{"x":"2025-08-08","y":19},{"x":"2025-08-12","y":16},{"x":"2025-08-13","y":16},{"x":"2025-08-14","y":11},{"x":"2025-08-15","y":13},{"x":"2025-08-17","y":13},{"x":"2025-08-18","y":18},{"x":"2025-08-19","y":14},{"x":"2025-08-20","y":20},{"x":"2025-08-21","y":18},{"x":"2025-08-22","y":13},{"x":"2025-08-25","y":32},{"x":"2025-08-26","y":21},{"x":"2025-08-27","y":12},{"x":"2025-08-28","y":19},{"x":"2025-08-29","y":21},{"x":"2025-09-01","y":17},{"x":"2025-09-02","y":26},{"x":"2025-09-03","y":20},{"x":"2025-09-04","y":18},{"x":"2025-09-05","y":17},{"x":"2025-09-08","y":11},{"x":"2025-09-09","y":13},{"x":"2025-09-10","y":15},{"x":"2025-09-11","y":15},{"x":"2025-09-12","y":10},{"x":"2025-09-16","y":11},{"x":"2025-09-17","y":11},{"x":"2025-09-18","y":13},{"x":"2025-09-19","y":14},{"x":"2025-09-24","y":19},{"x":"2025-09-25","y":17},{"x":"2025-09-26","y":15},{"x":"2025-09-29","y":16},{"x":"2025-09-30","y":12},{"x":"2025-10-01","y":13},{"x":"2025-10-02","y":14},{"x":"2025-10-06","y":9},{"x":"2025-10-07","y":8},{"x":"2025-10-08","y":4},{"x":"2025-10-09","y":6},{"x":"2025-10-10","y":8},{"x":"2025-10-14","y":10},{"x":"2025-10-15","y":19},{"x":"2025-10-16","y":15},{"x":"2025-10-17","y":16},{"x":"2025-10-20","y":17},{"x":"2025-10-21","y":15},{"x":"2025-10-22","y":12},{"x":"2025-10-23","y":7},{"x":"2025-10-26","y":5},{"x":"2025-10-27","y":6},{"x":"2025-10-28","y":14},{"x":"2025-10-29","y":11},{"x":"2025-10-30","y":7},{"x":"2025-10-31","y":4},{"x":"2025-11-02","y":6},{"x":"2025-11-04","y":6},{"x":"2025-11-05","y":2},{"x":"2025-11-06","y":4},{"x":"2025-11-07","y":7},{"x":"2025-11-09","y":9},{"x":"2025-11-10","y":10},{"x":"2025-11-11","y":10},{"x":"2025-11-12","y":18},{"x":"2025-11-13","y":19},{"x":"2025-11-14","y":18},{"x":"2025-11-16","y":17},{"x":"2025-11-17","y":15},{"x":"2025-11-18","y":3},{"x":"2025-11-19","y":13},{"x":"2025-11-25","y":10},{"x":"2025-11-26","y":12},{"x":"2025-11-27","y":17},{"x":"2025-11-28","y":9},{"x":"2025-12-01","y":13},{"x":"2025-12-02","y":12},{"x":"2025-12-03","y":13},{"x":"2025-12-04","y":16},{"x":"2025-12-05","y":10},{"x":"2025-12-08","y":8},{"x":"2025-12-09","y":3},{"x":"2025-12-15","y":4},{"x":"2025-12-16","y":4},{"x":"2025-12-17","y":4},{"x":"2025-12-18","y":8},{"x":"2025-12-22","y":5},{"x":"2025-12-23","y":4},{"x":"2025-12-24","y":12},{"x":"2025-12-25","y":15},{"x":"2025-12-26","y":13},{"x":"2026-01-05","y":16},{"x":"2026-01-07","y":16},{"x":"2026-01-08","y":14},{"x":"2026-01-09","y":10},{"x":"2026-01-11","y":11},{"x":"2026-01-13","y":10},{"x":"2026-01-15","y":5},{"x":"2026-01-19","y":5},{"x":"2026-01-20","y":4},{"x":"2026-01-21","y":3},{"x":"2026-01-22","y":3},{"x":"2026-01-23","y":5},{"x":"2026-01-26","y":7},{"x":"2026-01-27","y":10},{"x":"2026-01-28","y":10},{"x":"2026-01-29","y":11},{"x":"2026-01-30","y":11},{"x":"2026-02-02","y":8},{"x":"2026-02-03","y":6},{"x":"2026-02-05","y":8},{"x":"2026-02-06","y":12},{"x":"2026-02-09","y":14},{"x":"2026-02-10","y":13},{"x":"2026-02-12","y":12},{"x":"2026-02-13","y":12},{"x":"2026-02-16","y":11},{"x":"2026-02-17","y":3},{"x":"2026-02-19","y":3},{"x":"2026-02-20","y":5}],"color":"red"},{"label":"AI自動マージ導入後","data":[{"x":"2025-01-06","y":0},{"x":"2025-01-07","y":1},{"x":"2025-01-08","y":0},{"x":"2025-01-09","y":1},{"x":"2025-01-10","y":2},{"x":"2025-01-14","y":3},{"x":"2025-01-15","y":2},{"x":"2025-01-16","y":2},{"x":"2025-01-17","y":3},{"x":"2025-01-20","y":3},{"x":"2025-01-21","y":3},{"x":"2025-01-22","y":2},{"x":"2025-01-23","y":4},{"x":"2025-01-24","y":5},{"x":"2025-01-29","y":5},{"x":"2025-01-30","y":9},{"x":"2025-02-04","y":8},{"x":"2025-02-05","y":6},{"x":"2025-02-06","y":8},{"x":"2025-02-07","y":6},{"x":"2025-02-12","y":11},{"x":"2025-02-13","y":10},{"x":"2025-02-14","y":10},{"x":"2025-02-17","y":11},{"x":"2025-02-18","y":11},{"x":"2025-02-19","y":19},{"x":"2025-02-20","y":13},{"x":"2025-02-21","y":12},{"x":"2025-02-25","y":8},{"x":"2025-02-27","y":6},{"x":"2025-02-28","y":6},{"x":"2025-03-03","y":7},{"x":"2025-03-04","y":10},{"x":"2025-03-05","y":7},{"x":"2025-03-06","y":9},{"x":"2025-03-07","y":10},{"x":"2025-03-10","y":13},{"x":"2025-03-11","y":15},{"x":"2025-03-12","y":14},{"x":"2025-03-13","y":12},{"x":"2025-03-14","y":14},{"x":"2025-03-17","y":11},{"x":"2025-03-18","y":8},{"x":"2025-03-19","y":7},{"x":"2025-03-21","y":6},{"x":"2025-03-25","y":4},{"x":"2025-03-26","y":3},{"x":"2025-03-27","y":3},{"x":"2025-03-31","y":3},{"x":"2025-04-01","y":7},{"x":"2025-04-02","y":5},{"x":"2025-04-03","y":5},{"x":"2025-04-04","y":6},{"x":"2025-04-06","y":4},{"x":"2025-04-07","y":3},{"x":"2025-04-09","y":2},{"x":"2025-04-10","y":8},{"x":"2025-04-11","y":12},{"x":"2025-04-14","y":8},{"x":"2025-04-15","y":9},{"x":"2025-04-16","y":7},{"x":"2025-04-17","y":9},{"x":"2025-04-18","y":10},{"x":"2025-04-21","y":10},{"x":"2025-04-22","y":8},{"x":"2025-04-23","y":5},{"x":"2025-04-24","y":6},{"x":"2025-04-25","y":5},{"x":"2025-04-28","y":5},{"x":"2025-04-30","y":5},{"x":"2025-05-01","y":6},{"x":"2025-05-07","y":6},{"x":"2025-05-08","y":5},{"x":"2025-05-09","y":7},{"x":"2025-05-13","y":5},{"x":"2025-05-15","y":4},{"x":"2025-05-19","y":4},{"x":"2025-05-20","y":8},{"x":"2025-05-21","y":6},{"x":"2025-05-22","y":5},{"x":"2025-05-26","y":6},{"x":"2025-05-27","y":8},{"x":"2025-06-02","y":4},{"x":"2025-06-03","y":5},{"x":"2025-06-09","y":4},{"x":"2025-06-10","y":5},{"x":"2025-06-11","y":4},{"x":"2025-06-12","y":5},{"x":"2025-06-16","y":4},{"x":"2025-06-17","y":4},{"x":"2025-06-18","y":1},{"x":"2025-06-26","y":1},{"x":"2025-06-30","y":6},{"x":"2025-07-01","y":6},{"x":"2025-07-02","y":10},{"x":"2025-07-04","y":4},{"x":"2025-07-07","y":2},{"x":"2025-07-11","y":3},{"x":"2025-07-12","y":4},{"x":"2025-07-14","y":5},{"x":"2025-07-15","y":7},{"x":"2025-07-16","y":4},{"x":"2025-07-17","y":4},{"x":"2025-07-18","y":5},{"x":"2025-07-22","y":5},{"x":"2025-07-23","y":3},{"x":"2025-07-25","y":4},{"x":"2025-07-28","y":3},{"x":"2025-07-29","y":4},{"x":"2025-07-30","y":2},{"x":"2025-08-01","y":1},{"x":"2025-08-05","y":7},{"x":"2025-08-08","y":8},{"x":"2025-08-13","y":7},{"x":"2025-08-14","y":6},{"x":"2025-08-17","y":7},{"x":"2025-08-18","y":9},{"x":"2025-08-19","y":9},{"x":"2025-08-20","y":11},{"x":"2025-08-21","y":8},{"x":"2025-08-22","y":6},{"x":"2025-08-25","y":9},{"x":"2025-08-26","y":12},{"x":"2025-08-27","y":7},{"x":"2025-08-28","y":10},{"x":"2025-09-01","y":13},{"x":"2025-09-02","y":22},{"x":"2025-09-03","y":18},{"x":"2025-09-04","y":13},{"x":"2025-09-05","y":11},{"x":"2025-09-08","y":11},{"x":"2025-09-09","y":9},{"x":"2025-09-10","y":11},{"x":"2025-09-11","y":11},{"x":"2025-09-12","y":10},{"x":"2025-09-16","y":11},{"x":"2025-09-17","y":8},{"x":"2025-09-18","y":8},{"x":"2025-09-19","y":9},{"x":"2025-09-24","y":11},{"x":"2025-09-25","y":11},{"x":"2025-09-26","y":9},{"x":"2025-09-29","y":12},{"x":"2025-09-30","y":8},{"x":"2025-10-01","y":9},{"x":"2025-10-02","y":10},{"x":"2025-10-06","y":5},{"x":"2025-10-07","y":2},{"x":"2025-10-08","y":0},{"x":"2025-10-10","y":3},{"x":"2025-10-14","y":5},{"x":"2025-10-15","y":8},{"x":"2025-10-16","y":10},{"x":"2025-10-17","y":11},{"x":"2025-10-20","y":11},{"x":"2025-10-21","y":6},{"x":"2025-10-22","y":7},{"x":"2025-10-23","y":5},{"x":"2025-10-27","y":3},{"x":"2025-10-28","y":8},{"x":"2025-10-29","y":7},{"x":"2025-10-30","y":3},{"x":"2025-11-02","y":4},{"x":"2025-11-04","y":2},{"x":"2025-11-05","y":0},{"x":"2025-11-06","y":4},{"x":"2025-11-07","y":7},{"x":"2025-11-10","y":7},{"x":"2025-11-11","y":7},{"x":"2025-11-13","y":14},{"x":"2025-11-14","y":13},{"x":"2025-11-16","y":10},{"x":"2025-11-17","y":8},{"x":"2025-11-18","y":4},{"x":"2025-11-25","y":7},{"x":"2025-11-26","y":8},{"x":"2025-11-27","y":11},{"x":"2025-12-03","y":6},{"x":"2025-12-04","y":7},{"x":"2025-12-05","y":3},{"x":"2025-12-08","y":2},{"x":"2025-12-09","y":1},{"x":"2025-12-17","y":1},{"x":"2025-12-18","y":5},{"x":"2025-12-23","y":1},{"x":"2025-12-24","y":4},{"x":"2026-01-07","y":8},{"x":"2026-01-08","y":6},{"x":"2026-01-09","y":5},{"x":"2026-01-11","y":5},{"x":"2026-01-13","y":4},{"x":"2026-01-15","y":3},{"x":"2026-01-19","y":3},{"x":"2026-01-20","y":2},{"x":"2026-01-22","y":1},{"x":"2026-01-26","y":3},{"x":"2026-01-29","y":4},{"x":"2026-02-02","y":3},{"x":"2026-02-03","y":2},{"x":"2026-02-05","y":3},{"x":"2026-02-06","y":7},{"x":"2026-02-09","y":10},{"x":"2026-02-10","y":11},{"x":"2026-02-12","y":10},{"x":"2026-02-16","y":7},{"x":"2026-02-17","y":1}],"color":"green","width":2.5}], {"yLabel":"レビュー待ち件数","areaFill":{"from":0,"to":1}});
 
 window.addEventListener('resize', () => {
-  fetch('llm-automerge-simulation-data.json').then(r => r.json()).then(render);
+drawLineChart('canvas_0', 280, [{"label":"現状","data":[{"x":"2025-01-06","y":0},{"x":"2025-01-07","y":1},{"x":"2025-01-08","y":0},{"x":"2025-01-09","y":1},{"x":"2025-01-10","y":2},{"x":"2025-01-14","y":7},{"x":"2025-01-15","y":4},{"x":"2025-01-16","y":10},{"x":"2025-01-17","y":14},{"x":"2025-01-20","y":11},{"x":"2025-01-21","y":16},{"x":"2025-01-22","y":8},{"x":"2025-01-23","y":10},{"x":"2025-01-24","y":12},{"x":"2025-01-27","y":8},{"x":"2025-01-28","y":8},{"x":"2025-01-29","y":10},{"x":"2025-01-30","y":19},{"x":"2025-01-31","y":28},{"x":"2025-02-03","y":21},{"x":"2025-02-04","y":19},{"x":"2025-02-05","y":9},{"x":"2025-02-06","y":9},{"x":"2025-02-07","y":6},{"x":"2025-02-10","y":13},{"x":"2025-02-11","y":16},{"x":"2025-02-12","y":37},{"x":"2025-02-13","y":19},{"x":"2025-02-14","y":16},{"x":"2025-02-17","y":22},{"x":"2025-02-18","y":24},{"x":"2025-02-19","y":25},{"x":"2025-02-20","y":21},{"x":"2025-02-21","y":18},{"x":"2025-02-25","y":15},{"x":"2025-02-27","y":8},{"x":"2025-02-28","y":9},{"x":"2025-03-03","y":10},{"x":"2025-03-04","y":19},{"x":"2025-03-05","y":18},{"x":"2025-03-06","y":16},{"x":"2025-03-07","y":17},{"x":"2025-03-10","y":22},{"x":"2025-03-11","y":23},{"x":"2025-03-12","y":22},{"x":"2025-03-13","y":17},{"x":"2025-03-14","y":23},{"x":"2025-03-17","y":21},{"x":"2025-03-18","y":18},{"x":"2025-03-19","y":19},{"x":"2025-03-21","y":16},{"x":"2025-03-24","y":16},{"x":"2025-03-25","y":19},{"x":"2025-03-26","y":12},{"x":"2025-03-27","y":8},{"x":"2025-03-28","y":10},{"x":"2025-03-31","y":12},{"x":"2025-04-01","y":22},{"x":"2025-04-02","y":15},{"x":"2025-04-03","y":13},{"x":"2025-04-04","y":14},{"x":"2025-04-06","y":11},{"x":"2025-04-07","y":9},{"x":"2025-04-09","y":7},{"x":"2025-04-10","y":15},{"x":"2025-04-11","y":17},{"x":"2025-04-14","y":16},{"x":"2025-04-15","y":19},{"x":"2025-04-16","y":17},{"x":"2025-04-17","y":20},{"x":"2025-04-18","y":18},{"x":"2025-04-21","y":18},{"x":"2025-04-22","y":15},{"x":"2025-04-23","y":11},{"x":"2025-04-24","y":11},{"x":"2025-04-25","y":10},{"x":"2025-04-28","y":10},{"x":"2025-04-30","y":12},{"x":"2025-05-01","y":16},{"x":"2025-05-06","y":16},{"x":"2025-05-07","y":14},{"x":"2025-05-08","y":17},{"x":"2025-05-09","y":18},{"x":"2025-05-12","y":22},{"x":"2025-05-13","y":23},{"x":"2025-05-14","y":11},{"x":"2025-05-15","y":10},{"x":"2025-05-16","y":9},{"x":"2025-05-19","y":11},{"x":"2025-05-20","y":13},{"x":"2025-05-21","y":17},{"x":"2025-05-22","y":14},{"x":"2025-05-23","y":15},{"x":"2025-05-25","y":16},{"x":"2025-05-26","y":18},{"x":"2025-05-27","y":25},{"x":"2025-05-28","y":13},{"x":"2025-05-29","y":11},{"x":"2025-05-30","y":17},{"x":"2025-06-02","y":14},{"x":"2025-06-03","y":16},{"x":"2025-06-04","y":11},{"x":"2025-06-05","y":12},{"x":"2025-06-06","y":12},{"x":"2025-06-09","y":11},{"x":"2025-06-10","y":12},{"x":"2025-06-11","y":14},{"x":"2025-06-12","y":14},{"x":"2025-06-16","y":15},{"x":"2025-06-17","y":13},{"x":"2025-06-18","y":10},{"x":"2025-06-23","y":10},{"x":"2025-06-24","y":12},{"x":"2025-06-26","y":12},{"x":"2025-06-27","y":19},{"x":"2025-06-30","y":19},{"x":"2025-07-01","y":19},{"x":"2025-07-02","y":20},{"x":"2025-07-04","y":13},{"x":"2025-07-07","y":11},{"x":"2025-07-08","y":12},{"x":"2025-07-09","y":12},{"x":"2025-07-10","y":10},{"x":"2025-07-11","y":10},{"x":"2025-07-12","y":18},{"x":"2025-07-14","y":19},{"x":"2025-07-15","y":19},{"x":"2025-07-16","y":14},{"x":"2025-07-17","y":14},{"x":"2025-07-18","y":15},{"x":"2025-07-22","y":16},{"x":"2025-07-23","y":13},{"x":"2025-07-25","y":12},{"x":"2025-07-28","y":11},{"x":"2025-07-29","y":12},{"x":"2025-07-30","y":9},{"x":"2025-07-31","y":8},{"x":"2025-08-01","y":15},{"x":"2025-08-03","y":17},{"x":"2025-08-04","y":15},{"x":"2025-08-05","y":16},{"x":"2025-08-06","y":23},{"x":"2025-08-07","y":21},{"x":"2025-08-08","y":19},{"x":"2025-08-12","y":16},{"x":"2025-08-13","y":16},{"x":"2025-08-14","y":11},{"x":"2025-08-15","y":13},{"x":"2025-08-17","y":13},{"x":"2025-08-18","y":18},{"x":"2025-08-19","y":14},{"x":"2025-08-20","y":20},{"x":"2025-08-21","y":18},{"x":"2025-08-22","y":13},{"x":"2025-08-25","y":32},{"x":"2025-08-26","y":21},{"x":"2025-08-27","y":12},{"x":"2025-08-28","y":19},{"x":"2025-08-29","y":21},{"x":"2025-09-01","y":17},{"x":"2025-09-02","y":26},{"x":"2025-09-03","y":20},{"x":"2025-09-04","y":18},{"x":"2025-09-05","y":17},{"x":"2025-09-08","y":11},{"x":"2025-09-09","y":13},{"x":"2025-09-10","y":15},{"x":"2025-09-11","y":15},{"x":"2025-09-12","y":10},{"x":"2025-09-16","y":11},{"x":"2025-09-17","y":11},{"x":"2025-09-18","y":13},{"x":"2025-09-19","y":14},{"x":"2025-09-24","y":19},{"x":"2025-09-25","y":17},{"x":"2025-09-26","y":15},{"x":"2025-09-29","y":16},{"x":"2025-09-30","y":12},{"x":"2025-10-01","y":13},{"x":"2025-10-02","y":14},{"x":"2025-10-06","y":9},{"x":"2025-10-07","y":8},{"x":"2025-10-08","y":4},{"x":"2025-10-09","y":6},{"x":"2025-10-10","y":8},{"x":"2025-10-14","y":10},{"x":"2025-10-15","y":19},{"x":"2025-10-16","y":15},{"x":"2025-10-17","y":16},{"x":"2025-10-20","y":17},{"x":"2025-10-21","y":15},{"x":"2025-10-22","y":12},{"x":"2025-10-23","y":7},{"x":"2025-10-26","y":5},{"x":"2025-10-27","y":6},{"x":"2025-10-28","y":14},{"x":"2025-10-29","y":11},{"x":"2025-10-30","y":7},{"x":"2025-10-31","y":4},{"x":"2025-11-02","y":6},{"x":"2025-11-04","y":6},{"x":"2025-11-05","y":2},{"x":"2025-11-06","y":4},{"x":"2025-11-07","y":7},{"x":"2025-11-09","y":9},{"x":"2025-11-10","y":10},{"x":"2025-11-11","y":10},{"x":"2025-11-12","y":18},{"x":"2025-11-13","y":19},{"x":"2025-11-14","y":18},{"x":"2025-11-16","y":17},{"x":"2025-11-17","y":15},{"x":"2025-11-18","y":3},{"x":"2025-11-19","y":13},{"x":"2025-11-25","y":10},{"x":"2025-11-26","y":12},{"x":"2025-11-27","y":17},{"x":"2025-11-28","y":9},{"x":"2025-12-01","y":13},{"x":"2025-12-02","y":12},{"x":"2025-12-03","y":13},{"x":"2025-12-04","y":16},{"x":"2025-12-05","y":10},{"x":"2025-12-08","y":8},{"x":"2025-12-09","y":3},{"x":"2025-12-15","y":4},{"x":"2025-12-16","y":4},{"x":"2025-12-17","y":4},{"x":"2025-12-18","y":8},{"x":"2025-12-22","y":5},{"x":"2025-12-23","y":4},{"x":"2025-12-24","y":12},{"x":"2025-12-25","y":15},{"x":"2025-12-26","y":13},{"x":"2026-01-05","y":16},{"x":"2026-01-07","y":16},{"x":"2026-01-08","y":14},{"x":"2026-01-09","y":10},{"x":"2026-01-11","y":11},{"x":"2026-01-13","y":10},{"x":"2026-01-15","y":5},{"x":"2026-01-19","y":5},{"x":"2026-01-20","y":4},{"x":"2026-01-21","y":3},{"x":"2026-01-22","y":3},{"x":"2026-01-23","y":5},{"x":"2026-01-26","y":7},{"x":"2026-01-27","y":10},{"x":"2026-01-28","y":10},{"x":"2026-01-29","y":11},{"x":"2026-01-30","y":11},{"x":"2026-02-02","y":8},{"x":"2026-02-03","y":6},{"x":"2026-02-05","y":8},{"x":"2026-02-06","y":12},{"x":"2026-02-09","y":14},{"x":"2026-02-10","y":13},{"x":"2026-02-12","y":12},{"x":"2026-02-13","y":12},{"x":"2026-02-16","y":11},{"x":"2026-02-17","y":3},{"x":"2026-02-19","y":3},{"x":"2026-02-20","y":5}],"color":"red"},{"label":"AI自動マージ導入後","data":[{"x":"2025-01-06","y":0},{"x":"2025-01-07","y":1},{"x":"2025-01-08","y":0},{"x":"2025-01-09","y":1},{"x":"2025-01-10","y":2},{"x":"2025-01-14","y":3},{"x":"2025-01-15","y":2},{"x":"2025-01-16","y":2},{"x":"2025-01-17","y":3},{"x":"2025-01-20","y":3},{"x":"2025-01-21","y":3},{"x":"2025-01-22","y":2},{"x":"2025-01-23","y":4},{"x":"2025-01-24","y":5},{"x":"2025-01-29","y":5},{"x":"2025-01-30","y":9},{"x":"2025-02-04","y":8},{"x":"2025-02-05","y":6},{"x":"2025-02-06","y":8},{"x":"2025-02-07","y":6},{"x":"2025-02-12","y":11},{"x":"2025-02-13","y":10},{"x":"2025-02-14","y":10},{"x":"2025-02-17","y":11},{"x":"2025-02-18","y":11},{"x":"2025-02-19","y":19},{"x":"2025-02-20","y":13},{"x":"2025-02-21","y":12},{"x":"2025-02-25","y":8},{"x":"2025-02-27","y":6},{"x":"2025-02-28","y":6},{"x":"2025-03-03","y":7},{"x":"2025-03-04","y":10},{"x":"2025-03-05","y":7},{"x":"2025-03-06","y":9},{"x":"2025-03-07","y":10},{"x":"2025-03-10","y":13},{"x":"2025-03-11","y":15},{"x":"2025-03-12","y":14},{"x":"2025-03-13","y":12},{"x":"2025-03-14","y":14},{"x":"2025-03-17","y":11},{"x":"2025-03-18","y":8},{"x":"2025-03-19","y":7},{"x":"2025-03-21","y":6},{"x":"2025-03-25","y":4},{"x":"2025-03-26","y":3},{"x":"2025-03-27","y":3},{"x":"2025-03-31","y":3},{"x":"2025-04-01","y":7},{"x":"2025-04-02","y":5},{"x":"2025-04-03","y":5},{"x":"2025-04-04","y":6},{"x":"2025-04-06","y":4},{"x":"2025-04-07","y":3},{"x":"2025-04-09","y":2},{"x":"2025-04-10","y":8},{"x":"2025-04-11","y":12},{"x":"2025-04-14","y":8},{"x":"2025-04-15","y":9},{"x":"2025-04-16","y":7},{"x":"2025-04-17","y":9},{"x":"2025-04-18","y":10},{"x":"2025-04-21","y":10},{"x":"2025-04-22","y":8},{"x":"2025-04-23","y":5},{"x":"2025-04-24","y":6},{"x":"2025-04-25","y":5},{"x":"2025-04-28","y":5},{"x":"2025-04-30","y":5},{"x":"2025-05-01","y":6},{"x":"2025-05-07","y":6},{"x":"2025-05-08","y":5},{"x":"2025-05-09","y":7},{"x":"2025-05-13","y":5},{"x":"2025-05-15","y":4},{"x":"2025-05-19","y":4},{"x":"2025-05-20","y":8},{"x":"2025-05-21","y":6},{"x":"2025-05-22","y":5},{"x":"2025-05-26","y":6},{"x":"2025-05-27","y":8},{"x":"2025-06-02","y":4},{"x":"2025-06-03","y":5},{"x":"2025-06-09","y":4},{"x":"2025-06-10","y":5},{"x":"2025-06-11","y":4},{"x":"2025-06-12","y":5},{"x":"2025-06-16","y":4},{"x":"2025-06-17","y":4},{"x":"2025-06-18","y":1},{"x":"2025-06-26","y":1},{"x":"2025-06-30","y":6},{"x":"2025-07-01","y":6},{"x":"2025-07-02","y":10},{"x":"2025-07-04","y":4},{"x":"2025-07-07","y":2},{"x":"2025-07-11","y":3},{"x":"2025-07-12","y":4},{"x":"2025-07-14","y":5},{"x":"2025-07-15","y":7},{"x":"2025-07-16","y":4},{"x":"2025-07-17","y":4},{"x":"2025-07-18","y":5},{"x":"2025-07-22","y":5},{"x":"2025-07-23","y":3},{"x":"2025-07-25","y":4},{"x":"2025-07-28","y":3},{"x":"2025-07-29","y":4},{"x":"2025-07-30","y":2},{"x":"2025-08-01","y":1},{"x":"2025-08-05","y":7},{"x":"2025-08-08","y":8},{"x":"2025-08-13","y":7},{"x":"2025-08-14","y":6},{"x":"2025-08-17","y":7},{"x":"2025-08-18","y":9},{"x":"2025-08-19","y":9},{"x":"2025-08-20","y":11},{"x":"2025-08-21","y":8},{"x":"2025-08-22","y":6},{"x":"2025-08-25","y":9},{"x":"2025-08-26","y":12},{"x":"2025-08-27","y":7},{"x":"2025-08-28","y":10},{"x":"2025-09-01","y":13},{"x":"2025-09-02","y":22},{"x":"2025-09-03","y":18},{"x":"2025-09-04","y":13},{"x":"2025-09-05","y":11},{"x":"2025-09-08","y":11},{"x":"2025-09-09","y":9},{"x":"2025-09-10","y":11},{"x":"2025-09-11","y":11},{"x":"2025-09-12","y":10},{"x":"2025-09-16","y":11},{"x":"2025-09-17","y":8},{"x":"2025-09-18","y":8},{"x":"2025-09-19","y":9},{"x":"2025-09-24","y":11},{"x":"2025-09-25","y":11},{"x":"2025-09-26","y":9},{"x":"2025-09-29","y":12},{"x":"2025-09-30","y":8},{"x":"2025-10-01","y":9},{"x":"2025-10-02","y":10},{"x":"2025-10-06","y":5},{"x":"2025-10-07","y":2},{"x":"2025-10-08","y":0},{"x":"2025-10-10","y":3},{"x":"2025-10-14","y":5},{"x":"2025-10-15","y":8},{"x":"2025-10-16","y":10},{"x":"2025-10-17","y":11},{"x":"2025-10-20","y":11},{"x":"2025-10-21","y":6},{"x":"2025-10-22","y":7},{"x":"2025-10-23","y":5},{"x":"2025-10-27","y":3},{"x":"2025-10-28","y":8},{"x":"2025-10-29","y":7},{"x":"2025-10-30","y":3},{"x":"2025-11-02","y":4},{"x":"2025-11-04","y":2},{"x":"2025-11-05","y":0},{"x":"2025-11-06","y":4},{"x":"2025-11-07","y":7},{"x":"2025-11-10","y":7},{"x":"2025-11-11","y":7},{"x":"2025-11-13","y":14},{"x":"2025-11-14","y":13},{"x":"2025-11-16","y":10},{"x":"2025-11-17","y":8},{"x":"2025-11-18","y":4},{"x":"2025-11-25","y":7},{"x":"2025-11-26","y":8},{"x":"2025-11-27","y":11},{"x":"2025-12-03","y":6},{"x":"2025-12-04","y":7},{"x":"2025-12-05","y":3},{"x":"2025-12-08","y":2},{"x":"2025-12-09","y":1},{"x":"2025-12-17","y":1},{"x":"2025-12-18","y":5},{"x":"2025-12-23","y":1},{"x":"2025-12-24","y":4},{"x":"2026-01-07","y":8},{"x":"2026-01-08","y":6},{"x":"2026-01-09","y":5},{"x":"2026-01-11","y":5},{"x":"2026-01-13","y":4},{"x":"2026-01-15","y":3},{"x":"2026-01-19","y":3},{"x":"2026-01-20","y":2},{"x":"2026-01-22","y":1},{"x":"2026-01-26","y":3},{"x":"2026-01-29","y":4},{"x":"2026-02-02","y":3},{"x":"2026-02-03","y":2},{"x":"2026-02-05","y":3},{"x":"2026-02-06","y":7},{"x":"2026-02-09","y":10},{"x":"2026-02-10","y":11},{"x":"2026-02-12","y":10},{"x":"2026-02-16","y":7},{"x":"2026-02-17","y":1}],"color":"green","width":2.5}], {"yLabel":"レビュー待ち件数","areaFill":{"from":0,"to":1}});
 });
 </script>
 </body>
