@@ -53,13 +53,13 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
             <div>{desc}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {children}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>
             {cancelBtnText ?? 'Cancel'}
           </AlertDialogCancel>
           {fetcher ? (
             <fetcher.Form method="POST" action={action}>
+              {children}
               <Button
                 type="submit"
                 variant={destructive ? 'destructive' : 'default'}
@@ -72,6 +72,7 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
             </fetcher.Form>
           ) : (
             <Form method="POST" action={action}>
+              {children}
               <Button
                 type="submit"
                 variant={destructive ? 'destructive' : 'default'}

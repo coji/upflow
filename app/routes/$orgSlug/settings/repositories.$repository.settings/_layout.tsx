@@ -6,7 +6,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, Link, redirect } from 'react-router'
+import { Form, Link, data, redirect } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { AppProviderBadge } from '~/app/components'
@@ -73,9 +73,12 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     repository: z.string(),
   })
   const formData = await request.formData()
-  const entries = Object.fromEntries(formData.entries())
+  const submission = parseWithZod(formData, { schema: githubSchema })
+  if (submission.status !== 'success') {
+    return data(submission.reply(), { status: 400 })
+  }
 
-  await updateRepository(repositoryId, entries)
+  await updateRepository(repositoryId, submission.value)
 
   return redirect(`/${organization.slug}/settings/repositories`)
 }

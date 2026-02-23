@@ -61,20 +61,20 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  await requireOrgAdmin(request, params.orgSlug)
+  const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const formData = await request.formData()
   const intent = formData.get('intent')
 
   if (intent === 'changeRole') {
     const memberId = formData.get('memberId') as string
     const role = formData.get('role') as string
-    await changeMemberRole(memberId, role)
+    await changeMemberRole(memberId, organization.id, role)
     return data({ ok: true })
   }
 
   if (intent === 'removeMember') {
     const memberId = formData.get('memberId') as string
-    await removeMember(memberId)
+    await removeMember(memberId, organization.id)
     return data({ ok: true })
   }
 
