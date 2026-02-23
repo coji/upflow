@@ -27,7 +27,7 @@ interface ExportSettingsProps {
 
 export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
   const actionData = useActionData<typeof action>()
-  const [form, { id, sheetId, clientEmail, privateKey }] = useForm({
+  const [form, { sheetId, clientEmail, privateKey }] = useForm({
     lastResult:
       (actionData?.intent === INTENTS.exportSettings &&
         actionData?.lastResult) ||
@@ -43,7 +43,6 @@ export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
       </CardHeader>
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
-          <input type="hidden" name="id" defaultValue={id.value} />
           <Stack>
             <fieldset>
               <Label htmlFor={sheetId.id}>Sheet Id</Label>

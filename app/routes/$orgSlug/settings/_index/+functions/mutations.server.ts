@@ -39,19 +39,14 @@ export const deleteOrganization = async (id: DB.Organizations['id']) => {
   return await db.deleteFrom('organizations').where('id', '=', id).execute()
 }
 
-export const createIntegration = async (data: Insertable<DB.Integrations>) => {
-  return await db.insertInto('integrations').values(data).execute()
-}
-
 export const upsertIntegration = async (
-  id: DB.Integrations['id'] | undefined,
   data: Omit<Insertable<DB.Integrations>, 'id'>,
 ) => {
   return await db
     .insertInto('integrations')
-    .values({ id: id ?? nanoid(), ...data })
+    .values({ id: nanoid(), ...data })
     .onConflict((oc) =>
-      oc.column('id').doUpdateSet((eb) => ({
+      oc.column('organizationId').doUpdateSet((eb) => ({
         provider: eb.ref('excluded.provider'),
         method: eb.ref('excluded.method'),
         privateToken: eb.ref('excluded.privateToken'),
@@ -61,14 +56,13 @@ export const upsertIntegration = async (
 }
 
 export const upsertExportSetting = async (
-  id: DB.ExportSettings['id'] | undefined,
   data: Omit<Insertable<DB.ExportSettings>, 'id' | 'updatedAt'>,
 ) => {
   return await db
     .insertInto('exportSettings')
-    .values({ id: id ?? nanoid(), ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
+    .values({ id: nanoid(), ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
     .onConflict((oc) =>
-      oc.column('id').doUpdateSet((eb) => ({
+      oc.column('organizationId').doUpdateSet((eb) => ({
         sheetId: eb.ref('excluded.sheetId'),
         clientEmail: eb.ref('excluded.clientEmail'),
         privateKey: eb.ref('excluded.privateKey'),

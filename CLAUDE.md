@@ -61,19 +61,22 @@ pnpm test:e2e
 
 ```text
 app/
-├── routes/           # File-based routing (remix-flat-routes convention)
-│   ├── _dashboard+/  # Dashboard views (authenticated)
-│   ├── admin+/       # Admin/settings views
-│   ├── _auth+/       # Authentication routes
-│   └── api.auth.$/   # Auth API endpoints
-├── services/         # Server-side services
-│   ├── db.server.ts  # Kysely database client
-│   └── type.ts       # Generated Kysely types (from kysely-codegen)
-├── libs/             # Shared utilities
-│   └── auth.server.ts    # better-auth configuration
-├── components/       # React components
-│   └── ui/           # shadcn/ui components
-└── hooks/            # Custom React hooks
+├── routes/                # File-based routing (react-router-auto-routes)
+│   ├── $orgSlug/          # Org-scoped routes (dashboard, settings)
+│   ├── admin/             # Superadmin routes (org list, create)
+│   ├── _auth/             # Authentication routes (login, logout)
+│   ├── resources/         # Resource routes (org switcher data)
+│   └── api.auth.$.ts      # Auth API endpoint
+├── services/              # Server-side services
+│   ├── db.server.ts                   # Kysely database client
+│   ├── organization-scope-plugin.ts   # Kysely plugin for org scoping
+│   └── type.ts                        # Generated Kysely types (from kysely-codegen)
+├── libs/                  # Shared utilities
+│   ├── auth.server.ts     # better-auth + org membership guards
+│   └── reserved-slugs.ts  # Reserved URL slugs
+├── components/            # React components
+│   └── ui/                # shadcn/ui components
+└── hooks/                 # Custom React hooks
 
 batch/                # CLI batch jobs for data processing
 ├── cli.ts            # Main CLI entry (cleye)
@@ -162,6 +165,24 @@ CLI for data synchronization (`batch/cli.ts`):
 - `upsert` - Updates database with processed data
 
 In production, these run on a schedule via `job-schedular.ts`.
+
+### Multi-Tenant Security
+
+All org-scoped routes live under `app/routes/$orgSlug/`. Key rules:
+
+- **Auth guard first**: Call `requireOrgMember` or `requireOrgAdmin` BEFORE `parseWithZod(request.formData())` — unauthenticated users must not receive validation errors
+- **No user-controlled IDs in conflict keys**: `onConflict` must use server-derived keys (e.g. `organizationId`), never IDs from form hidden inputs
+- **Mutation functions must scope to org**: Every UPDATE/DELETE on org-scoped tables must include `WHERE organizationId = ?` with a server-derived value
+- **Route-layer ownership check for child resources**: When operating on a resource by ID (repository, member), verify `resource.organizationId === organization.id` before any mutation
+
+Org-scoped tables (have `organizationId` column): `companyGithubUsers`, `exportSettings`, `integrations`, `invitations`, `members`, `organizationSettings`, `repositories`, `teams`
+
+**OrganizationScopePlugin** (`app/services/organization-scope-plugin.ts`): Kysely plugin that auto-injects `WHERE organization_id = ?` into SELECT/UPDATE/DELETE on scoped tables. Use for defense-in-depth:
+
+```typescript
+import { db, OrganizationScopePlugin } from '~/app/services/db.server'
+const scopedDb = db.withPlugin(new OrganizationScopePlugin(organization.id))
+```
 
 ### Source Code Reference
 

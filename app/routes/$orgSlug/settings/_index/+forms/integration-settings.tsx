@@ -57,7 +57,6 @@ export const IntegrationSettings = ({
             name="intent"
             value={INTENTS.integrationSettings}
           />
-          <input type="hidden" name="id" value={integration?.id} />
           <Stack>
             <fieldset>
               <Label htmlFor={provider.id}>Provider</Label>

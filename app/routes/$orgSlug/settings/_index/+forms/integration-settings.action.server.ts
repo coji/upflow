@@ -17,9 +17,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   try {
-    const { id, ...rest } = submission.value
-    await upsertIntegration(id, {
-      ...rest,
+    await upsertIntegration({
+      ...submission.value,
       organizationId: organization.id,
     })
   } catch (e) {

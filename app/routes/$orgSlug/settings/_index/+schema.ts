@@ -12,14 +12,12 @@ export const organizationSettingsSchema = z.object({
 })
 
 export const integrationSettingsSchema = z.object({
-  id: z.string().optional(),
   provider: z.enum(['github']),
   method: z.enum(['token']),
   privateToken: z.string().min(1, { message: 'private token is required' }),
 })
 
 export const exportSettingsSchema = z.object({
-  id: z.string().optional(),
   sheetId: z.string(),
   clientEmail: z.email(),
   privateKey: z.string(),

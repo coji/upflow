@@ -14,6 +14,7 @@ import type * as DB from './type'
 
 const debug = createDebug('app:db')
 
+export { OrganizationScopePlugin } from './organization-scope-plugin'
 export { sql }
 export type { DB, Insertable, Selectable, Updateable }
 
