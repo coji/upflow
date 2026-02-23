@@ -162,3 +162,12 @@ CLI for data synchronization (`batch/cli.ts`):
 - `upsert` - Updates database with processed data
 
 In production, these run on a schedule via `job-schedular.ts`.
+
+### Source Code Reference
+
+Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details. See `opensrc/sources.json` for the list of available packages.
+
+```bash
+npx opensrc <package>           # npm package (e.g., npx opensrc zod)
+npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
+```

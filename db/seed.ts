@@ -8,7 +8,7 @@ async function seed() {
   const email = 'coji@techtalk.jp'
 
   // user
-  await db
+  const user = await db
     .insertInto('users')
     .values({
       id: nanoid(),
@@ -26,12 +26,24 @@ async function seed() {
   const organization = await db
     .insertInto('organizations')
     .values({
-      id: 'techtalk',
+      id: nanoid(),
       name: 'TechTalk',
       slug: 'techtalk',
     })
     .returningAll()
     .executeTakeFirstOrThrow()
+
+  // member (owner)
+  await db
+    .insertInto('members')
+    .values({
+      id: nanoid(),
+      organizationId: organization.id,
+      userId: user.id,
+      role: 'owner',
+      createdAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .execute()
 
   // integration
   const integration = await db

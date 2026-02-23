@@ -1,5 +1,5 @@
 import { PlusCircleIcon } from 'lucide-react'
-import { Link, Outlet, href } from 'react-router'
+import { Link, href } from 'react-router'
 import {
   Button,
   Card,
@@ -7,6 +7,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '~/app/components/ui'
 import type { Route } from './+types/route'
 import { listOrganizations } from './queries.server'
@@ -19,34 +25,47 @@ const AdminOrganizationIndex = ({
   loaderData: { organizations },
 }: Route.ComponentProps) => {
   return (
-    <div className="grid grid-cols-[15rem_1fr] gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Organizations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {organizations.map((organization) => (
-            <Link
-              key={organization.id}
-              className="hover:bg-secondary block rounded p-2"
-              to={`${organization.id}`}
-            >
-              {organization.name}
-            </Link>
-          ))}
-        </CardContent>
-        <CardFooter>
-          <Button asChild className="w-full" variant="outline">
-            <Link to={href('/admin/create')}>
-              <PlusCircleIcon />
-              新規作成
-            </Link>
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <Outlet />
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Organizations</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-lg border shadow-xs">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {organizations.map((organization) => (
+                <TableRow key={organization.id}>
+                  <TableCell>{organization.name}</TableCell>
+                  <TableCell>{organization.slug}</TableCell>
+                  <TableCell>
+                    <Button asChild size="sm" variant="link">
+                      <Link to={`/${organization.slug}/settings`}>
+                        Settings
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button asChild className="w-full" variant="outline">
+          <Link to={href('/admin/create')}>
+            <PlusCircleIcon />
+            新規作成
+          </Link>
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
 export default AdminOrganizationIndex

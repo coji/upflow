@@ -171,3 +171,111 @@ export const requireSuperAdmin = async (request: Request) => {
   }
   return session
 }
+
+// ── Organization membership helpers ──────────────────────────────
+
+const RESERVED_SLUGS = new Set([
+  'admin',
+  'login',
+  'logout',
+  'api',
+  'resources',
+  'healthcheck',
+  'no-org',
+  'sign-in',
+  'sign-up',
+  'settings',
+])
+
+export const isReservedSlug = (slug: string): boolean => {
+  return RESERVED_SLUGS.has(slug.toLowerCase())
+}
+
+export interface OrgContext {
+  user: NonNullable<Awaited<ReturnType<typeof getSession>>>['user']
+  organization: { id: string; name: string; slug: string }
+  membership: { id: string; role: string }
+}
+
+export const requireOrgMember = async (
+  request: Request,
+  orgSlug: string,
+): Promise<OrgContext> => {
+  const session = await getSession(request)
+  if (!session) {
+    throw redirect(href('/login'))
+  }
+
+  const result = await db
+    .selectFrom('members')
+    .innerJoin('organizations', 'organizations.id', 'members.organizationId')
+    .select([
+      'organizations.id as orgId',
+      'organizations.name as orgName',
+      'organizations.slug as orgSlug',
+      'members.id as memberId',
+      'members.role',
+    ])
+    .where('organizations.slug', '=', orgSlug)
+    .where('members.userId', '=', session.user.id)
+    .executeTakeFirst()
+
+  if (!result) {
+    throw redirect('/no-org')
+  }
+
+  return {
+    user: session.user,
+    organization: {
+      id: result.orgId,
+      name: result.orgName,
+      slug: result.orgSlug,
+    },
+    membership: {
+      id: result.memberId,
+      role: result.role,
+    },
+  }
+}
+
+export const requireOrgAdmin = async (
+  request: Request,
+  orgSlug: string,
+): Promise<OrgContext> => {
+  const context = await requireOrgMember(request, orgSlug)
+  if (
+    context.membership.role !== 'owner' &&
+    context.membership.role !== 'admin'
+  ) {
+    throw redirect(`/${orgSlug}`)
+  }
+  return context
+}
+
+export const getUserOrganizations = async (userId: string) => {
+  return await db
+    .selectFrom('members')
+    .innerJoin('organizations', 'organizations.id', 'members.organizationId')
+    .select([
+      'organizations.id',
+      'organizations.name',
+      'organizations.slug',
+      'members.role',
+    ])
+    .where('members.userId', '=', userId)
+    .orderBy('members.createdAt', 'asc')
+    .execute()
+}
+
+export const getFirstOrganization = async (
+  userId: string,
+): Promise<{ id: string; slug: string } | null> => {
+  const result = await db
+    .selectFrom('members')
+    .innerJoin('organizations', 'organizations.id', 'members.organizationId')
+    .select(['organizations.id', 'organizations.slug'])
+    .where('members.userId', '=', userId)
+    .orderBy('members.createdAt', 'asc')
+    .executeTakeFirst()
+  return result ?? null
+}

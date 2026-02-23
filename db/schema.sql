@@ -19,7 +19,7 @@ CREATE UNIQUE INDEX `users_email_key` ON `users` (`email`);
 CREATE TABLE `organizations` (
   `id` text NOT NULL,
   `name` text NOT NULL,
-  `slug` text NULL,
+  `slug` text NOT NULL,
   `logo` text NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   `metadata` text NULL,

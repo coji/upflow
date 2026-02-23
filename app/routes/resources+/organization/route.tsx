@@ -24,12 +24,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
 interface OrganizationSwitcherProps extends React.ComponentPropsWithoutRef<
   typeof DropdownMenuTrigger
-> {
-  isAdmin: boolean
-}
+> {}
 export const OrganizationSwitcher = ({
   className,
-  isAdmin,
 }: OrganizationSwitcherProps) => {
   const fetcher = useFetcher<typeof loader>()
   const [open, setOpen] = useState(false)
@@ -39,10 +36,10 @@ export const OrganizationSwitcher = ({
     fetcher.load(href('/resources/organization'))
   }, [])
 
-  const currentOrganizationId = useCurrentOrganization()
+  const currentOrgSlug = useCurrentOrganization()
 
   const currentOrganization = fetcher.data?.organizations.find(
-    (org) => org.id === currentOrganizationId,
+    (org) => org.slug === currentOrgSlug,
   )
 
   return (
@@ -66,17 +63,7 @@ export const OrganizationSwitcher = ({
         {fetcher.data?.organizations.map((organization) => (
           <DropdownMenuGroup key={organization.id}>
             <DropdownMenuItem asChild>
-              <Link
-                to={
-                  isAdmin
-                    ? href('/admin/:organization', {
-                        organization: organization.id,
-                      })
-                    : href('/:organization', { organization: organization.id })
-                }
-              >
-                {organization.name}
-              </Link>
+              <Link to={`/${organization.slug}`}>{organization.name}</Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         ))}

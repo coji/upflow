@@ -23,11 +23,11 @@ import { createOrganization } from './mutations.server'
 export const handle = { breadcrumb: () => ({ label: 'Create Organization' }) }
 
 export const schema = z.object({
-  organizationId: z
+  organizationSlug: z
     .string()
-    .max(20)
-    .regex(/^[a-zA-Z0-9]+$/, 'Must be alphanumeric'),
-  organizationName: z.string().min(1).max(20),
+    .max(40)
+    .regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
+  organizationName: z.string().min(1).max(40),
 })
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -38,9 +38,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   try {
     const { organization } = await createOrganization(submission.value)
-    return redirect(
-      href('/admin/:organization', { organization: organization.id }),
-    )
+    return redirect(`/${organization.slug}`)
   } catch (e) {
     return {
       lastResult: submission.reply({
@@ -51,7 +49,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 }
 
 const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
-  const [form, { organizationId, organizationName }] = useForm({
+  const [form, { organizationSlug, organizationName }] = useForm({
     lastResult: actionData?.lastResult,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
@@ -65,23 +63,27 @@ const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
         <Form method="POST" {...getFormProps(form)}>
           <Stack>
             <fieldset>
-              <Label htmlFor={organizationId.id}>Organization ID</Label>
+              <Label htmlFor={organizationSlug.id}>Organization Slug</Label>
               <Input
                 autoFocus
-                {...getInputProps(organizationId, { type: 'text' })}
+                placeholder="my-team"
+                {...getInputProps(organizationSlug, { type: 'text' })}
               />
-              <div className="text-destructive">{organizationId.errors}</div>
+              <div className="text-muted-foreground text-xs">
+                URL: /{organizationSlug.value || 'slug'}
+              </div>
+              <div className="text-destructive">{organizationSlug.errors}</div>
             </fieldset>
 
             <fieldset>
-              <Label htmlFor={organizationName.id}>Organization name</Label>
+              <Label htmlFor={organizationName.id}>Organization Name</Label>
               <Input {...getInputProps(organizationName, { type: 'text' })} />
               <div className="text-destructive">{organizationName.errors}</div>
             </fieldset>
 
             {form.errors && (
               <Alert variant="destructive">
-                <AlertTitle>システムエラー</AlertTitle>
+                <AlertTitle>Error</AlertTitle>
                 <AlertDescription>
                   {JSON.stringify(form.errors)}
                 </AlertDescription>

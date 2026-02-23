@@ -36,7 +36,7 @@ export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
           </Link>
         </Heading>
 
-        {session && <OrganizationSwitcher isAdmin={isAdmin} />}
+        {session && <OrganizationSwitcher />}
       </HStack>
 
       <Spacer />
