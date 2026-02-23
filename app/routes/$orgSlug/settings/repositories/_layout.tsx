@@ -1,4 +1,5 @@
 import type { LoaderFunctionArgs } from 'react-router'
+import { Outlet } from 'react-router'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 
 export const handle = {
@@ -14,4 +15,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     params.orgSlug as string,
   )
   return { organization }
+}
+
+export default function RepositoriesLayout() {
+  return <Outlet />
 }
