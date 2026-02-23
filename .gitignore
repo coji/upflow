@@ -52,7 +52,7 @@ tsconfig.tsbuildinfo
 # Lab
 lab/data/
 lab/notes/
-lab/output/*.json
+lab/output/
 
 # opensrc - source code for packages
 opensrc/
