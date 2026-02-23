@@ -32,7 +32,7 @@ export const listAllOrganizations = async () => {
           ])
           .whereRef(
             'organizationSettings.organizationId',
-            '==',
+            '=',
             'organizations.id',
           ),
       ).as('organizationSetting'),
@@ -46,7 +46,7 @@ export const listAllOrganizations = async () => {
             'provider',
             'privateToken',
           ])
-          .whereRef('integrations.organizationId', '==', 'organizations.id'),
+          .whereRef('integrations.organizationId', '=', 'organizations.id'),
       ).as('integration'),
       jsonArrayFrom(
         eb
@@ -104,7 +104,7 @@ export const getOrganization = async (
           ])
           .whereRef(
             'organizationSettings.organizationId',
-            '==',
+            '=',
             'organizations.id',
           ),
       ).as('organizationSetting'),

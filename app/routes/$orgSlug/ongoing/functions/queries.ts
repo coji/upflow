@@ -23,7 +23,7 @@ export const getOngoingPullRequestReport = async (
       qb.where('pullRequestCreatedAt', '<=', toDateTime),
     )
     .where('mergedAt', 'is', null)
-    .where('state', '==', 'open')
+    .where('state', '=', 'open')
     .where('author', 'not like', '%[bot]')
     .orderBy('pullRequestCreatedAt', 'desc')
     .selectAll('pullRequests')

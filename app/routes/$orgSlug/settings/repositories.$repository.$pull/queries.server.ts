@@ -4,7 +4,7 @@ import { db, type DB } from '~/app/services/db.server'
 export const getRepository = async (repositoryId: DB.Repositories['id']) => {
   return await db
     .selectFrom('repositories')
-    .where('id', '==', repositoryId)
+    .where('id', '=', repositoryId)
     .select((eb) => [
       'id',
       'owner',
@@ -13,7 +13,7 @@ export const getRepository = async (repositoryId: DB.Repositories['id']) => {
         eb
           .selectFrom('integrations')
           .select(['privateToken'])
-          .whereRef('integrations.id', '==', 'repositories.integrationId'),
+          .whereRef('integrations.id', '=', 'repositories.integrationId'),
       ).as('integration'),
     ])
     .executeTakeFirst()
@@ -25,8 +25,8 @@ export const getPullRequest = async (
 ) => {
   return await db
     .selectFrom('pullRequests')
-    .where('repositoryId', '==', repositoryId)
-    .where('number', '==', number)
+    .where('repositoryId', '=', repositoryId)
+    .where('number', '=', number)
     .selectAll()
     .executeTakeFirst()
 }
