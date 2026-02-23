@@ -37,6 +37,15 @@ export const createOrganization = async ({
       })
       .execute()
 
+    await tsx
+      .insertInto('organizationSettings')
+      .values({
+        id: nanoid(),
+        organizationId: organization.id,
+        updatedAt: new Date().toISOString(),
+      })
+      .execute()
+
     return { organization }
   })
 }

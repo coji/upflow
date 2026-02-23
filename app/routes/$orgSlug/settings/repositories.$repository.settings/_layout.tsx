@@ -56,7 +56,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
   const integration = await getIntegration(organization.id)
   if (!integration) {
-    throw new Error('organization integration setted up')
+    throw new Error('Organization integration not found')
   }
 
   return {

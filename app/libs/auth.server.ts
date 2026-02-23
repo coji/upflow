@@ -174,18 +174,7 @@ export const requireSuperAdmin = async (request: Request) => {
 
 // ── Organization membership helpers ──────────────────────────────
 
-const RESERVED_SLUGS = new Set([
-  'admin',
-  'login',
-  'logout',
-  'api',
-  'resources',
-  'healthcheck',
-  'no-org',
-  'sign-in',
-  'sign-up',
-  'settings',
-])
+import { RESERVED_SLUGS } from './reserved-slugs'
 
 export const isReservedSlug = (slug: string): boolean => {
   return RESERVED_SLUGS.has(slug.toLowerCase())

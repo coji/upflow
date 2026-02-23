@@ -89,12 +89,12 @@ db/
 
 ### Routing Convention
 
-Uses `remix-flat-routes` with the `+` folder syntax:
+Uses `react-router-auto-routes` for file-based routing (`export default autoRoutes() satisfies RouteConfig`):
 
 - `_layout.tsx` - Layout routes (no URL segment)
 - `_index.tsx` - Index routes
 - `$param` - Dynamic segments
-- `$organization.settings/` - Nested route folders
+- `+` prefix - Co-located files (not routes, e.g. `+components/`, `+hooks/`, `+functions/`)
 
 ### Database Pattern
 

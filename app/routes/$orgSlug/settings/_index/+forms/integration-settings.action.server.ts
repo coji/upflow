@@ -6,6 +6,8 @@ import type { Route } from '../+types/_layout'
 import { upsertIntegration } from '../functions.server'
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
+  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {
@@ -13,8 +15,6 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       lastResult: submission.reply(),
     }
   }
-
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
 
   try {
     const { id, ...rest } = submission.value

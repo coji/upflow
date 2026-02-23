@@ -96,7 +96,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return { integration, pageInfo, query, owner, owners, repos }
 }
 
-export const action = async ({ request, params }: Route.LoaderArgs) => {
+export const action = async ({ request, params }: Route.ActionArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const integration = await getIntegration(organization.id)
   if (!integration) {

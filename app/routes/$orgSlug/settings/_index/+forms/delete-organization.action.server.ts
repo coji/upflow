@@ -6,6 +6,16 @@ import type { Route } from '../+types/_layout'
 import { deleteOrganization } from '../functions.server'
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
+  const { organization, membership } = await requireOrgAdmin(
+    request,
+    params.orgSlug,
+  )
+  if (membership.role !== 'owner') {
+    throw new Response('Only the organization owner can delete it', {
+      status: 403,
+    })
+  }
+
   const submission = parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {
     return {
@@ -14,7 +24,6 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     }
   }
 
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
   await deleteOrganization(organization.id)
 
   throw redirect('/admin')

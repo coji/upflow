@@ -27,7 +27,10 @@ export const schema = z.object({
   organizationSlug: z
     .string()
     .max(40)
-    .regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'Must be lowercase alphanumeric with single hyphens, no leading/trailing hyphens',
+    ),
   organizationName: z.string().min(1).max(40),
 })
 
@@ -89,9 +92,7 @@ const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
             {form.errors && (
               <Alert variant="destructive">
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  {JSON.stringify(form.errors)}
-                </AlertDescription>
+                <AlertDescription>{form.errors?.join(', ')}</AlertDescription>
               </Alert>
             )}
           </Stack>

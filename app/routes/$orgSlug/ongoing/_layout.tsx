@@ -21,15 +21,12 @@ export type PullRequest = Awaited<
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgMember(request, params.orgSlug)
-  const from = null
-  const to = dayjs().utc().toISOString()
-
   const pullRequests = await getOngoingPullRequestReport(
     organization.id,
-    from,
-    to,
+    null,
+    dayjs().utc().toISOString(),
   )
-  return { pullRequests, from, to }
+  return { pullRequests }
 }
 
 export default function OngoingPage({
@@ -44,9 +41,10 @@ export default function OngoingPage({
           size="sm"
           className="w-full md:w-auto"
           onClick={() => {
-            // markdown 表形式でコピー
-            navigator.clipboard.writeText(generateMarkdown(pullRequests))
-            toast.info(`Copied ${pullRequests.length} rows`)
+            navigator.clipboard
+              .writeText(generateMarkdown(pullRequests))
+              .then(() => toast.info(`Copied ${pullRequests.length} rows`))
+              .catch(() => toast.error('Failed to copy to clipboard'))
           }}
         >
           <CopyIcon size="16" />

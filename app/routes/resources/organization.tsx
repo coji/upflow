@@ -11,8 +11,8 @@ import {
 } from '~/app/components/ui'
 import { requireUser } from '~/app/libs/auth.server'
 import { cn } from '~/app/libs/utils'
-import { listUserOrganizations } from './+organization/functions.server'
-import { useCurrentOrganization } from './+organization/hooks/useCurrentOrganization'
+import { listUserOrganizations } from '~/app/routes/resources/+organization/functions.server'
+import { useCurrentOrganization } from '~/app/routes/resources/+organization/hooks/useCurrentOrganization'
 import type { Route } from './+types/organization'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {

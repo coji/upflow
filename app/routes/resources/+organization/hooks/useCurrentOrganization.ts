@@ -1,16 +1,5 @@
 import { useLocation } from 'react-router'
-
-const RESERVED_PREFIXES = new Set([
-  'admin',
-  'login',
-  'logout',
-  'api',
-  'resources',
-  'healthcheck',
-  'no-org',
-  'sign-in',
-  'sign-up',
-])
+import { RESERVED_SLUGS } from '~/app/libs/reserved-slugs'
 
 /**
  * Extracts the current org slug from the URL pathname.
@@ -21,7 +10,7 @@ export const useCurrentOrganization = () => {
   const location = useLocation()
   const segments = location.pathname.split('/').filter(Boolean)
   const firstSegment = segments[0]
-  if (!firstSegment || RESERVED_PREFIXES.has(firstSegment)) {
+  if (!firstSegment || RESERVED_SLUGS.has(firstSegment)) {
     return null
   }
   return firstSegment

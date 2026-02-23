@@ -49,6 +49,7 @@ export const OrganizationSettings = ({
       name: organization.name,
       releaseDetectionMethod: organizationSetting?.releaseDetectionMethod,
       releaseDetectionKey: organizationSetting?.releaseDetectionKey,
+      isActive: organizationSetting?.isActive ? '1' : undefined,
       excludedUsers: organizationSetting?.excludedUsers,
     },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
@@ -138,7 +139,7 @@ export const OrganizationSettings = ({
 
             {form.errors && (
               <Alert variant="destructive">
-                <AlertTitle>システムエラー</AlertTitle>
+                <AlertTitle>System Error</AlertTitle>
                 <AlertDescription>{form.errors}</AlertDescription>
               </Alert>
             )}
