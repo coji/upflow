@@ -16,8 +16,8 @@ import {
   Spacer,
 } from '~/app/components/ui'
 import { authClient } from '~/app/libs/auth-client'
-import { OrganizationSwitcher } from '~/app/routes/resources+/organization/route'
-import { DropdownMenuLogout } from '../routes/_auth+/logout'
+import { OrganizationSwitcher } from '~/app/routes/resources/organization'
+import { DropdownMenuLogout } from '../routes/_auth/logout'
 
 interface AppHeaderProps {
   isAdmin?: boolean

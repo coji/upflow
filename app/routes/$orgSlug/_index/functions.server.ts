@@ -1,2 +1,2 @@
-export * from './functions/queries'
-export * from './functions/utils'
+export * from './+functions/queries'
+export * from './+functions/utils'
