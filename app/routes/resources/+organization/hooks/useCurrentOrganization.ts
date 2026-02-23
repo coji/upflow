@@ -10,7 +10,7 @@ export const useCurrentOrganization = () => {
   const location = useLocation()
   const segments = location.pathname.split('/').filter(Boolean)
   const firstSegment = segments[0]
-  if (!firstSegment || RESERVED_SLUGS.has(firstSegment)) {
+  if (!firstSegment || RESERVED_SLUGS.has(firstSegment.toLowerCase())) {
     return null
   }
   return firstSegment

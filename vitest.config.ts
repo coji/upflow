@@ -1,9 +1,13 @@
-import tsconfigPaths from 'vite-tsconfig-paths'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig, mergeConfig } from 'vitest/config'
+import viteConfigFn from './vite.config'
 
-export default defineConfig({
-  plugins: [tsconfigPaths()],
-  test: {
-    exclude: ['node_modules', 'opensrc'],
-  },
-})
+export default defineConfig((configEnv) =>
+  mergeConfig(
+    viteConfigFn(configEnv),
+    defineConfig({
+      test: {
+        exclude: [...configDefaults.exclude, 'opensrc/**'],
+      },
+    }),
+  ),
+)

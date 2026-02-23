@@ -4,6 +4,11 @@ import { defineConfig } from 'vite'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
-export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), devtoolsJson()],
-})
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    tailwindcss(),
+    reactRouter(),
+    tsconfigPaths(),
+    mode !== 'production' && devtoolsJson(),
+  ],
+}))

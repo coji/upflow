@@ -26,5 +26,5 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   await deleteOrganization(organization.id)
 
-  throw redirect('/admin')
+  throw redirect('/')
 }
