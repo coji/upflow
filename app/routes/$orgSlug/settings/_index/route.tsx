@@ -17,6 +17,7 @@ import {
   organizationSettingsAction,
 } from './forms/actions.server'
 import {
+  createDefaultOrganizationSetting,
   getExportSetting,
   getIntegration,
   getOrganization,
@@ -39,10 +40,9 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   if (!organization) {
     throw new Response('Organization not found', { status: 404 })
   }
-  const organizationSetting = await getOrganizationSetting(orgContext.id)
-  if (!organizationSetting) {
-    throw new Response('Organization setting not found', { status: 404 })
-  }
+  const organizationSetting =
+    (await getOrganizationSetting(orgContext.id)) ??
+    (await createDefaultOrganizationSetting(orgContext.id))
 
   const exportSetting = await getExportSetting(orgContext.id)
   const integration = await getIntegration(orgContext.id)

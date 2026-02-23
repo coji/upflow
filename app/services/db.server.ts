@@ -17,6 +17,9 @@ const debug = createDebug('app:db')
 export { sql }
 export type { DB, Insertable, Selectable, Updateable }
 
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required')
+}
 const filename = `${process.env.NODE_ENV === 'production' ? '' : '.'}${new URL(process.env.DATABASE_URL).pathname}`
 const database = new SQLite(filename)
 export const dialect = new SqliteDialect({ database })

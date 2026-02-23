@@ -20,6 +20,23 @@ export const getOrganizationSetting = async (
     .executeTakeFirst()
 }
 
+export const createDefaultOrganizationSetting = async (
+  organizationId: DB.Organizations['id'],
+) => {
+  const id = crypto.randomUUID()
+  await db
+    .insertInto('organizationSettings')
+    .values({
+      id,
+      organizationId,
+      updatedAt: new Date().toISOString(),
+    })
+    .execute()
+  const row = await getOrganizationSetting(organizationId)
+  if (!row) throw new Error('Failed to create organization setting')
+  return row
+}
+
 export const getExportSetting = async (
   organizationId: DB.Organizations['id'],
 ) => {
