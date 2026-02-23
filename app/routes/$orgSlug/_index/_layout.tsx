@@ -6,11 +6,11 @@ import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
 import WeeklyCalendar from '~/app/components/week-calendar'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
-import type { Route } from './+types/_layout'
 import { columns } from './+columns'
-import { getMergedPullRequestReport } from './functions.server'
 import { generateMarkdown } from './+functions/generate-markdown'
 import { getEndOfWeek, getStartOfWeek, parseDate } from './+functions/utils'
+import type { Route } from './+types/_layout'
+import { getMergedPullRequestReport } from './functions.server'
 
 export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>

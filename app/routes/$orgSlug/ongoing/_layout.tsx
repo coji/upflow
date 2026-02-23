@@ -4,10 +4,10 @@ import { AppDataTable } from '~/app/components'
 import { Button, Stack } from '~/app/components/ui'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
-import type { Route } from './+types/_layout'
 import { columns } from './+columns'
-import { getOngoingPullRequestReport } from './functions.server'
 import { generateMarkdown } from './+functions/generate-markdown'
+import type { Route } from './+types/_layout'
+import { getOngoingPullRequestReport } from './functions.server'
 
 export const handle = {
   breadcrumb: () => ({

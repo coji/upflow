@@ -17,8 +17,8 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
-import type { Route } from './+types/create'
 import { createOrganization } from './+create/mutations.server'
+import type { Route } from './+types/create'
 
 export const handle = { breadcrumb: () => ({ label: 'Create Organization' }) }
 

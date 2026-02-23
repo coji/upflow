@@ -1,9 +1,9 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { dataWithSuccess } from 'remix-toast'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { INTENTS, exportSettingsSchema as schema } from '../+schema'
 import type { Route } from '../+types/_layout'
 import { upsertExportSetting } from '../functions.server'
-import { INTENTS, exportSettingsSchema as schema } from '../+schema'
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const submission = parseWithZod(await request.formData(), { schema })

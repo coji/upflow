@@ -2,7 +2,6 @@ import { zx } from '@coji/zodix/v4'
 import { match } from 'ts-pattern'
 import { Stack } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
-import type { Route } from './+types/_layout'
 import {
   DeleteOrganization,
   ExportSettings,
@@ -24,6 +23,7 @@ import {
   getOrganizationSetting,
 } from './+functions/queries.server'
 import { INTENTS, intentsSchema } from './+schema'
+import type { Route } from './+types/_layout'
 
 export const handle = {
   breadcrumb: () => ({
