@@ -12,7 +12,7 @@
     "format": "prettier --cache -c . --experimental-cli",
     "format:fix": "prettier --cache -w . --experimental-cli",
     "lint": "biome lint .",
-    "setup": "atlas migrate apply --env local --url 'sqlite://data/data.db' && tsx db/seed.ts",
+    "db:setup": "atlas migrate apply --env local --url 'sqlite://data/data.db' && tsx db/seed.ts",
     "db:generate": "kysely-codegen --dialect sqlite --out-file app/services/type.ts --url ./data/data.db --camel-case",
     "db:migrate": "atlas migrate diff --env local",
     "db:apply": "atlas migrate apply --env local --url 'sqlite://data/data.db'",

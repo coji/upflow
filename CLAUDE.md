@@ -40,7 +40,7 @@ pnpm format:fix
 pnpm validate
 
 # Database reset with seed data
-pnpm setup
+pnpm db:setup
 
 # E2E tests
 pnpm test:e2e
