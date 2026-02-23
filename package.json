@@ -86,6 +86,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
+    "@google/genai": "1.42.0",
     "@octokit/graphql-schema": "15.26.1",
     "@octokit/types": "16.0.0",
     "@playwright/test": "1.58.0",

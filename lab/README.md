@@ -11,12 +11,14 @@ lab/
 ├── lib/
 │   ├── github.ts         # Octokit GraphQL ラッパー
 │   ├── db.ts             # DB接続 (app/services/db.server を再export)
-│   └── classify.ts       # PRサイズ分類 (影響度ベース)
+│   ├── classify.ts       # PRサイズ分類 (影響度ベース)
+│   └── llm-classify.ts   # LLMベースPR分類 (Gemini Flash)
 ├── data/                 # 取得データ (.gitignore)
 ├── experiments/          # 実験スクリプト
 │   ├── 001-queue-visualization.ts
 │   ├── 002-queue-throughput-correlation.ts
-│   └── 003-automerge-simulation.ts
+│   ├── 003-automerge-simulation.ts
+│   └── 004-llm-classification-comparison.ts
 └── output/               # 生成された可視化 HTML/JSON (コミット対象)
 ```
 
@@ -41,11 +43,13 @@ open http://localhost:8787/review-queue-player.html
 
 ## 実験一覧
 
-| #   | 名前                         | 内容                                 |
-| --- | ---------------------------- | ------------------------------------ |
-| 001 | Queue Visualization          | レビューキューの人別蓄積を可視化     |
-| 002 | Queue-Throughput Correlation | キューサイズとスループットの相関分析 |
-| 003 | Automerge Simulation         | XS/S PR自動マージのキュー削減効果    |
+| #   | 名前                         | 内容                                        |
+| --- | ---------------------------- | ------------------------------------------- |
+| 001 | Queue Visualization          | レビューキューの人別蓄積を可視化            |
+| 002 | Queue-Throughput Correlation | キューサイズとスループットの相関分析        |
+| 003 | Automerge Simulation         | XS/S PR自動マージのキュー削減効果           |
+| 004 | LLM Classification Compare   | Gemini Flash vs ルールベース分類比較        |
+| 005 | LLM Automerge Simulation     | LLM分類ベースの自動マージ再シミュレーション |
 
 ## 新しい実験の追加
 
