@@ -17,7 +17,7 @@ async function seed() {
   await db.deleteFrom('accounts').execute()
   await db.deleteFrom('users').execute()
 
-  const email = 'coji@techtalk.jp'
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@example.com'
 
   // user
   const user = await db
@@ -50,7 +50,7 @@ async function seed() {
     .insertInto('users')
     .values({
       id: nanoid(),
-      email: 'mizoguchi.coji@gmail.com',
+      email: process.env.SEED_MEMBER_EMAIL ?? 'member@example.com',
       name: 'Member User',
       emailVerified: sql`CURRENT_TIMESTAMP`,
       image: null,
