@@ -8,7 +8,7 @@ export const addRepository = async (
   const organizationSetting = await db
     .selectFrom('organizationSettings')
     .selectAll()
-    .where('id', '=', organizationId)
+    .where('organizationId', '=', organizationId)
     .executeTakeFirstOrThrow()
   const integration = await db
     .selectFrom('integrations')

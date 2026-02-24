@@ -41,7 +41,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     throw new Response('repository not found', { status: 404 })
   }
 
-  await deleteRepository(repositoryId)
+  await deleteRepository(repositoryId, organization.id)
 
   return redirect(`/${organization.slug}/settings/repositories`)
 }

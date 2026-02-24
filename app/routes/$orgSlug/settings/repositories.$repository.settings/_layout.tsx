@@ -82,7 +82,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     return data(submission.reply(), { status: 400 })
   }
 
-  await updateRepository(repositoryId, submission.value)
+  await updateRepository(repositoryId, organization.id, submission.value)
 
   return redirect(`/${organization.slug}/settings/repositories`)
 }

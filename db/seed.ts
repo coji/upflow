@@ -17,7 +17,7 @@ async function seed() {
   await db.deleteFrom('accounts').execute()
   await db.deleteFrom('users').execute()
 
-  const email = 'coji@techtalk.jp'
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@example.com'
 
   // user
   const user = await db
@@ -45,6 +45,21 @@ async function seed() {
     .returningAll()
     .executeTakeFirstOrThrow()
 
+  // member user (non-admin, for testing role-based UI)
+  const memberUser = await db
+    .insertInto('users')
+    .values({
+      id: nanoid(),
+      email: process.env.SEED_MEMBER_EMAIL ?? 'member@example.com',
+      name: 'Member User',
+      emailVerified: sql`CURRENT_TIMESTAMP`,
+      image: null,
+      role: 'user',
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
+
   // member (owner)
   await db
     .insertInto('members')
@@ -53,6 +68,18 @@ async function seed() {
       organizationId: organization.id,
       userId: user.id,
       role: 'owner',
+      createdAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .execute()
+
+  // member (member role)
+  await db
+    .insertInto('members')
+    .values({
+      id: nanoid(),
+      organizationId: organization.id,
+      userId: memberUser.id,
+      role: 'member',
       createdAt: sql`CURRENT_TIMESTAMP`,
     })
     .execute()

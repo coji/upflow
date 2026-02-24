@@ -27,6 +27,7 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
     },
     {
       title: 'Management',
+      adminOnly: true,
       items: [
         {
           title: 'Members',

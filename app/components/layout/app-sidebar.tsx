@@ -28,16 +28,21 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     name: string
     slug: string | null
   }>
+  memberRole: string
 }
 
 export function AppSidebar({
   user,
   organization,
   organizations,
+  memberRole,
   ...props
 }: AppSidebarProps) {
   const orgSlug = organization.slug ?? organization.id
-  const navGroups = getNavConfig(orgSlug)
+  const isAdmin = memberRole === 'owner' || memberRole === 'admin'
+  const navGroups = getNavConfig(orgSlug).filter(
+    (group) => !group.adminOnly || isAdmin,
+  )
 
   return (
     <Sidebar collapsible="icon" variant="floating" {...props}>

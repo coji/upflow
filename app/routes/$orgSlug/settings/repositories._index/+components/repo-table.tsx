@@ -40,6 +40,7 @@ export function RepoTable({ columns, data, pagination }: DataTableProps) {
   const table = useReactTable({
     data,
     columns,
+    getRowId: (row) => row.id,
     state: { columnVisibility },
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
