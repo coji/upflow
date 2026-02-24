@@ -1,6 +1,10 @@
 import type { DB, Selectable } from '~/app/services/db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
-import { upsertPullRequest } from '~/batch/db'
+import {
+  upsertPullRequest,
+  upsertPullRequestReview,
+  upsertPullRequestReviewers,
+} from '~/batch/db'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
 
@@ -31,20 +35,38 @@ export async function analyzeAndUpsert({
 
   // 1. analyze
   logger.info('analyze started...', orgId)
-  const { pulls, reviewResponses } = await provider.analyze(
+  const { pulls, reviews, reviewers, reviewResponses } = await provider.analyze(
     organization.organizationSetting,
     organization.repositories,
   )
   logger.info('analyze completed.', orgId)
 
-  // 2. upsert
+  // 2. upsert pull requests
   logger.info('upsert started...', orgId)
   for (const pr of pulls) {
     await upsertPullRequest(pr)
   }
-  logger.info('upsert completed.', orgId)
+  logger.info('upsert pull requests completed.', orgId)
 
-  // 3. export (optional)
+  // 3. upsert reviews
+  logger.info('upsert reviews started...', orgId)
+  for (const review of reviews) {
+    await upsertPullRequestReview(review)
+  }
+  logger.info('upsert reviews completed.', orgId)
+
+  // 4. upsert reviewers
+  logger.info('upsert reviewers started...', orgId)
+  for (const reviewer of reviewers) {
+    await upsertPullRequestReviewers(
+      reviewer.repositoryId,
+      reviewer.pullRequestNumber,
+      reviewer.reviewerLogins,
+    )
+  }
+  logger.info('upsert reviewers completed.', orgId)
+
+  // 5. export (optional)
   if (organization.exportSetting) {
     logger.info('exporting to spreadsheet...', orgId)
     const exporter = createSpreadsheetExporter(organization.exportSetting)

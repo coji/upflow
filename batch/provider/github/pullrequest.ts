@@ -158,6 +158,9 @@ function buildPullRequestRow(
     }),
     repositoryId,
     updatedAt: nullOrDate(pr.updated_at),
+    additions: pr.additions,
+    deletions: pr.deletions,
+    changedFiles: pr.changed_files,
   }
 }
 
@@ -174,6 +177,20 @@ export const buildPullRequests = async (
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
 
   const pulls: Selectable<DB.PullRequests>[] = []
+  const reviews: {
+    id: string
+    pullRequestNumber: number
+    repositoryId: string
+    reviewer: string
+    state: string
+    submittedAt: string
+    url: string
+  }[] = []
+  const reviewers: {
+    pullRequestNumber: number
+    repositoryId: string
+    reviewerLogins: string[]
+  }[] = []
   const reviewResponses: {
     repo: string
     number: string
@@ -220,6 +237,29 @@ export const buildPullRequests = async (
       pulls.push(
         buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
       )
+
+      // 7. レビュー情報を収集（フィルタ前の全レビューを保存）
+      for (const review of rawArtifacts.reviews) {
+        if (!review.user || !review.submitted_at) continue
+        reviews.push({
+          id: String(review.id),
+          pullRequestNumber: pr.number,
+          repositoryId: config.repositoryId,
+          reviewer: review.user,
+          state: review.state,
+          submittedAt: review.submitted_at,
+          url: review.url,
+        })
+      }
+
+      // 8. レビュアー（レビュー依頼先）情報を収集
+      if (pr.reviewers.length > 0) {
+        reviewers.push({
+          pullRequestNumber: pr.number,
+          repositoryId: config.repositoryId,
+          reviewerLogins: pr.reviewers,
+        })
+      }
     } catch (e) {
       logger.error(
         'analyze failure:',
@@ -231,5 +271,5 @@ export const buildPullRequests = async (
     }
   }
 
-  return { pulls, reviewResponses }
+  return { pulls, reviews, reviewers, reviewResponses }
 }

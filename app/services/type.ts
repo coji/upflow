@@ -9,6 +9,17 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export interface _PrismaMigrations {
+  appliedStepsCount: Generated<string>;
+  checksum: string;
+  finishedAt: string | null;
+  id: string;
+  logs: string | null;
+  migrationName: string;
+  rolledBackAt: string | null;
+  startedAt: Generated<string>;
+}
+
 export interface Accounts {
   accessToken: string | null;
   accessTokenExpiresAt: string | null;
@@ -110,9 +121,29 @@ export interface OrganizationSettings {
   updatedAt: string;
 }
 
+export interface PullRequestReviewers {
+  pullRequestNumber: number;
+  repositoryId: string;
+  requestedAt: string | null;
+  reviewer: string;
+}
+
+export interface PullRequestReviews {
+  id: string;
+  pullRequestNumber: number;
+  repositoryId: string;
+  reviewer: string;
+  state: string;
+  submittedAt: string;
+  url: string;
+}
+
 export interface PullRequests {
+  additions: number | null;
   author: string;
+  changedFiles: number | null;
   codingTime: number | null;
+  deletions: number | null;
   deployTime: number | null;
   firstCommittedAt: string | null;
   firstReviewedAt: string | null;
@@ -199,6 +230,7 @@ export interface Verifications {
 }
 
 export interface DB {
+  _PrismaMigrations: _PrismaMigrations;
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
   companyGithubUsers: CompanyGithubUsers;
@@ -208,6 +240,8 @@ export interface DB {
   members: Members;
   organizations: Organizations;
   organizationSettings: OrganizationSettings;
+  pullRequestReviewers: PullRequestReviewers;
+  pullRequestReviews: PullRequestReviews;
   pullRequests: PullRequests;
   repositories: Repositories;
   sessions: Sessions;
