@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Form, useNavigation, type FetcherWithComponents } from 'react-router'
 import {
   AlertDialog,
@@ -43,6 +44,13 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
     ...actions
   } = props
   const navigation = useNavigation()
+
+  // Close dialog when fetcher completes successfully
+  useEffect(() => {
+    if (fetcher?.state === 'idle' && fetcher.data) {
+      actions.onOpenChange(false)
+    }
+  }, [fetcher?.state, fetcher?.data])
 
   return (
     <AlertDialog {...actions}>

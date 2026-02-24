@@ -39,6 +39,11 @@ const getViewerOrganizations = async (token: string) => {
       body: JSON.stringify({ query, variables: { cursor } }),
     })
     const json = await res.json()
+    if (!json.data?.viewer) {
+      throw new Error(
+        `GitHub API error: ${JSON.stringify(json.errors ?? json.message ?? 'unknown')}`,
+      )
+    }
     const organizations = json.data.viewer.organizations
     for (const node of organizations.nodes) {
       owners.add(node.login)
@@ -83,6 +88,11 @@ const getViewableRepositoriesOrganizations = async (
       body: JSON.stringify({ query, variables: { cursor } }),
     })
     const json = await res.json()
+    if (!json.data?.viewer) {
+      throw new Error(
+        `GitHub API error: ${JSON.stringify(json.errors ?? json.message ?? 'unknown')}`,
+      )
+    }
     const repoData = json.data.viewer.repositories
     for (const node of repoData.nodes) {
       owners.add(node.owner.login)

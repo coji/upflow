@@ -44,6 +44,7 @@ export function GithubUsersTable({
   const table = useReactTable({
     data,
     columns,
+    getRowId: (row) => row.login,
     state: { columnVisibility },
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
