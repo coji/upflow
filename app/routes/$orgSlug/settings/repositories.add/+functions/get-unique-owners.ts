@@ -38,6 +38,12 @@ const getViewerOrganizations = async (token: string) => {
       },
       body: JSON.stringify({ query, variables: { cursor } }),
     })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(
+        `GitHub API error (HTTP ${res.status}): ${text.slice(0, 200)}`,
+      )
+    }
     const json = await res.json()
     if (!json.data?.viewer) {
       throw new Error(
@@ -87,6 +93,12 @@ const getViewableRepositoriesOrganizations = async (
       },
       body: JSON.stringify({ query, variables: { cursor } }),
     })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(
+        `GitHub API error (HTTP ${res.status}): ${text.slice(0, 200)}`,
+      )
+    }
     const json = await res.json()
     if (!json.data?.viewer) {
       throw new Error(
