@@ -36,7 +36,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 }
 
 export default function OrgLayout({
-  loaderData: { user, organization, organizations },
+  loaderData: { user, organization, membership, organizations },
 }: Route.ComponentProps) {
   const { Breadcrumbs } = useBreadcrumbs()
   const matches = useMatches()
@@ -51,6 +51,7 @@ export default function OrgLayout({
         user={user}
         organization={organization}
         organizations={organizations}
+        memberRole={membership.role}
       />
       <div
         id="content"

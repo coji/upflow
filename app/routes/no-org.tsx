@@ -1,4 +1,4 @@
-import { redirect } from 'react-router'
+import { Link, redirect } from 'react-router'
 import { AppLayout } from '~/app/components'
 import {
   Button,
@@ -23,18 +23,33 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 export default function NoOrgPage({
   loaderData: { user },
 }: Route.ComponentProps) {
+  const isSuperAdmin = user.role === 'admin'
+
   return (
     <AppLayout>
       <Center>
         <Card className="max-w-md">
           <CardHeader className="text-center">
-            <CardTitle>招待をお待ちください</CardTitle>
+            <CardTitle>
+              {isSuperAdmin ? '組織を作成してください' : '招待をお待ちください'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-center">
-            <p className="text-muted-foreground">
-              {user.name} さんはまだどの組織にも所属していません。
-              管理者からの招待をお待ちください。
-            </p>
+            {isSuperAdmin ? (
+              <>
+                <p className="text-muted-foreground">
+                  まだ組織がありません。最初の組織を作成してください。
+                </p>
+                <Button asChild className="w-full">
+                  <Link to="/admin/create">組織を作成</Link>
+                </Button>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                {user.name} さんはまだどの組織にも所属していません。
+                管理者からの招待をお待ちください。
+              </p>
+            )}
             <Button
               variant="outline"
               className="w-full"

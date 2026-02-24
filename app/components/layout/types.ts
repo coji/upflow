@@ -19,6 +19,7 @@ type NavItem = NavCollapsible | NavLink
 interface NavGroupProps {
   title: string
   items: NavItem[]
+  adminOnly?: boolean
 }
 
 export type { NavCollapsible, NavGroupProps, NavItem, NavLink }
