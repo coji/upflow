@@ -105,6 +105,7 @@ export interface OrganizationSettings {
   id: string;
   isActive: Generated<number>;
   organizationId: string;
+  refreshRequestedAt: string | null;
   releaseDetectionKey: Generated<string>;
   releaseDetectionMethod: Generated<string>;
   updatedAt: string;

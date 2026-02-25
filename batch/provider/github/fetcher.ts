@@ -1,6 +1,7 @@
 import { print } from 'graphql'
 import { Octokit } from 'octokit'
 import dayjs from '~/app/libs/dayjs'
+import { logger } from '~/batch/helper/logger'
 import { graphql, type ResultOf } from './graphql'
 import type {
   ShapedGitHubCommit,
@@ -394,13 +395,17 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           'data' in error &&
           error.data != null
         ) {
+          logger.warn(
+            'GraphQL partial error in pullrequests():',
+            'errors' in error ? JSON.stringify(error.errors) : error,
+          )
           result = error.data as PullRequestsResult
         } else {
           throw error
         }
       }
 
-      const pullRequests = result.repository?.pullRequests
+      const pullRequests = result?.repository?.pullRequests
       if (!pullRequests || !pullRequests.nodes) break
 
       for (const node of pullRequests.nodes) {
@@ -705,13 +710,32 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: Result = await octokit.graphql<Result>(queryStr, {
-        owner,
-        repo,
-        cursor,
-      })
+      let result: Result
+      try {
+        result = await octokit.graphql<Result>(queryStr, {
+          owner,
+          repo,
+          cursor,
+        })
+      } catch (error: unknown) {
+        // GraphQL partial error: エラーがあってもデータが返る場合がある
+        if (
+          error &&
+          typeof error === 'object' &&
+          'data' in error &&
+          error.data != null
+        ) {
+          logger.warn(
+            'GraphQL partial error in pullrequestsWithDetails():',
+            'errors' in error ? JSON.stringify(error.errors) : error,
+          )
+          result = error.data as Result
+        } else {
+          throw error
+        }
+      }
 
-      const pullRequests = result.repository?.pullRequests
+      const pullRequests = result?.repository?.pullRequests
       if (!pullRequests || !pullRequests.nodes) break
 
       for (const node of pullRequests.nodes) {

@@ -1,9 +1,8 @@
+import { db } from '~/app/services/db.server'
 import { listAllOrganizations } from '~/batch/db'
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
 import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
-
-const options = { refresh: false, halt: false }
 
 export const crawlJob = async () => {
   logger.info('crawl started.')
@@ -35,11 +34,28 @@ export const crawlJob = async () => {
       continue
     }
 
+    // refreshRequestedAt が設定されていれば full refresh
+    const refresh = organization.organizationSetting.refreshRequestedAt != null
+    if (refresh) {
+      logger.info('refresh requested, using full refresh.')
+    }
+    const options = { refresh, halt: false }
+
     // fetch
     for (const repository of organization.repositories) {
       logger.info('fetch started...')
       await provider.fetch(repository, options)
       logger.info('fetch completed.')
+    }
+
+    // refresh フラグを消費
+    if (refresh) {
+      await db
+        .updateTable('organizationSettings')
+        .set({ refreshRequestedAt: null })
+        .where('organizationId', '=', organization.id)
+        .execute()
+      logger.info('refresh flag consumed.')
     }
 
     // analyze + upsert + export

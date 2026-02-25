@@ -29,6 +29,7 @@ export const listAllOrganizations = async () => {
             'organizationSettings.releaseDetectionKey',
             'organizationSettings.isActive',
             'organizationSettings.excludedUsers',
+            'organizationSettings.refreshRequestedAt',
           ])
           .whereRef(
             'organizationSettings.organizationId',
@@ -101,6 +102,7 @@ export const getOrganization = async (
             'organizationSettings.releaseDetectionKey',
             'organizationSettings.isActive',
             'organizationSettings.excludedUsers',
+            'organizationSettings.refreshRequestedAt',
           ])
           .whereRef(
             'organizationSettings.organizationId',

@@ -1,4 +1,5 @@
 import {
+  DatabaseIcon,
   GithubIcon,
   GitPullRequestIcon,
   LayoutDashboardIcon,
@@ -43,6 +44,11 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
           title: 'GitHub Users',
           url: `/${orgSlug}/settings/github-users`,
           icon: GithubIcon,
+        },
+        {
+          title: 'Data Management',
+          url: `/${orgSlug}/settings/data-management`,
+          icon: DatabaseIcon,
         },
         {
           title: 'Settings',
