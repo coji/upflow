@@ -238,7 +238,7 @@ export const buildPullRequests = async (
         buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
       )
 
-      // 7. レビュー情報を収集（フィルタ前の全レビューを保存）
+      // 7. レビュー情報を収集（PENDING レビューは submitted_at がないため除外）
       for (const review of rawArtifacts.reviews) {
         if (!review.user || !review.submitted_at) continue
         reviews.push({
@@ -253,11 +253,12 @@ export const buildPullRequests = async (
       }
 
       // 8. レビュアー（レビュー依頼先）情報を収集
-      if (pr.reviewers.length > 0) {
+      const reviewerLogins = pr.reviewers ?? []
+      if (reviewerLogins.length > 0) {
         reviewers.push({
           pullRequestNumber: pr.number,
           repositoryId: config.repositoryId,
-          reviewerLogins: pr.reviewers,
+          reviewerLogins,
         })
       }
     } catch (e) {

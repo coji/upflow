@@ -70,25 +70,27 @@ export async function upsertPullRequestReviewers(
   pullRequestNumber: number,
   reviewers: string[],
 ) {
-  // 既存のレビュー依頼を削除してから再挿入（スナップショット方式）
-  await db
-    .deleteFrom('pullRequestReviewers')
-    .where('repositoryId', '=', repositoryId)
-    .where('pullRequestNumber', '=', pullRequestNumber)
-    .execute()
+  await db.transaction().execute(async (trx) => {
+    // 既存のレビュー依頼を削除してから再挿入（スナップショット方式）
+    await trx
+      .deleteFrom('pullRequestReviewers')
+      .where('repositoryId', '=', repositoryId)
+      .where('pullRequestNumber', '=', pullRequestNumber)
+      .execute()
 
-  const uniqueReviewers = [...new Set(reviewers)]
-  if (uniqueReviewers.length === 0) return
+    const uniqueReviewers = [...new Set(reviewers)]
+    if (uniqueReviewers.length === 0) return
 
-  await db
-    .insertInto('pullRequestReviewers')
-    .values(
-      uniqueReviewers.map((reviewer) => ({
-        pullRequestNumber,
-        repositoryId,
-        reviewer,
-        requestedAt: null,
-      })),
-    )
-    .execute()
+    await trx
+      .insertInto('pullRequestReviewers')
+      .values(
+        uniqueReviewers.map((reviewer) => ({
+          pullRequestNumber,
+          repositoryId,
+          reviewer,
+          requestedAt: null,
+        })),
+      )
+      .execute()
+  })
 }
