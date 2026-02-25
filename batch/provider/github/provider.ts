@@ -45,54 +45,71 @@ export const createGitHubProvider = (
       leastMergeRequest?.updated_at ?? '2000-01-01T00:00:00Z'
     logger.info(`last fetched at: ${lastFetchedAt}`)
 
-    // 全プルリク情報をダウンロード
-    logger.info('fetching all pullrequests...')
-    const allPullRequests = await fetcher.pullrequests()
+    if (halt) {
+      logger.fatal('halted')
+      return
+    }
 
-    // 一旦保存する: クロールしなおしたときに quota が溢れちゃうので一旦。
-    // await store.save('pullrequests.json', allPullRequests)
-    logger.info('fetching all pullrequests completed.')
+    // ネストクエリで PR + commits + reviews + comments を一括取得
+    logger.info('fetching all pullrequests with details (nested query)...')
+    const allDetails = await fetcher.pullrequestsWithDetails()
+    logger.info(`fetched ${allDetails.length} PRs with details.`)
 
-    // 全タグを情報をダウンロード
+    // 全タグ情報をダウンロード
     if (repository.releaseDetectionMethod === 'tags') {
       logger.info('fetching all tags...')
       const allTags = await fetcher.tags()
       await store.save('tags.json', allTags)
-
       logger.info('fetching all tags completed.')
     }
 
-    // 個別のPR
-    for (const pr of allPullRequests) {
+    // 各 PR のデータを保存（needsMore* フラグが立っていれば個別フォールバック）
+    const allPullRequests = []
+    for (const detail of allDetails) {
       if (halt) {
         logger.fatal('halted')
         return
       }
 
+      const { pr } = detail
       const isUpdated = pr.updated_at > lastFetchedAt
-      // 前回以前fetchしたときから更新されていないPRの場合はスキップ
       if (!refresh && !isUpdated) {
         logger.debug('skip', pr.number, pr.state, pr.updated_at)
+        // スキップする PR でも pullrequests.json には含める
+        allPullRequests.push(pr)
         continue
       }
 
-      // 個別PRの全コミット
-      logger.info(`${pr.number} commits`)
-      const allCommits = await fetcher.commits(pr.number)
-      await store.save(store.path.commitsJsonFilename(pr.number), allCommits)
+      // commits: オーバーフロー時は個別取得でフォールバック
+      let { commits } = detail
+      if (detail.needsMoreCommits) {
+        logger.info(`${pr.number} commits overflow, fetching individually...`)
+        commits = await fetcher.commits(pr.number)
+      }
+      await store.save(store.path.commitsJsonFilename(pr.number), commits)
 
-      // 個別PRのレビューコメント
-      logger.info(`${pr.number} review comments`)
-      const discussions = await fetcher.comments(pr.number)
-      await store.save(
-        store.path.discussionsJsonFilename(pr.number),
-        discussions,
-      )
-
-      // 個別PRのレビュー
-      logger.info(`${pr.number} reviews`)
-      const reviews = await fetcher.reviews(pr.number)
+      // reviews: オーバーフロー時は個別取得でフォールバック
+      let { reviews } = detail
+      if (detail.needsMoreReviews) {
+        logger.info(`${pr.number} reviews overflow, fetching individually...`)
+        reviews = await fetcher.reviews(pr.number)
+      }
       await store.save(store.path.reviewJsonFilename(pr.number), reviews)
+
+      // comments: オーバーフロー時は個別取得でフォールバック
+      let { comments } = detail
+      if (
+        detail.needsMoreComments ||
+        detail.needsMoreReviewThreads ||
+        detail.needsMoreReviewThreadComments
+      ) {
+        logger.info(`${pr.number} comments overflow, fetching individually...`)
+        comments = await fetcher.comments(pr.number)
+      }
+      await store.save(store.path.discussionsJsonFilename(pr.number), comments)
+
+      allPullRequests.push(pr)
+      logger.info(`${pr.number} saved`)
     }
 
     // 全プルリク情報を保存
