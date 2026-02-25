@@ -42,6 +42,10 @@ export const createStore = ({
       pathBuilder.jsonPath(filename),
       JSON.stringify(content, null, 2),
     )
+    // 書き込み後はキャッシュを無効化して read-after-write の一貫性を保つ
+    commitsCache.clear()
+    discussionsCache.clear()
+    reviewsCache.clear()
   }
 
   // メモ化キャッシュ（PR番号 → Promise）で同一ファイルの重複読み込みを防止
@@ -58,7 +62,10 @@ export const createStore = ({
     if (!cached) {
       cached = load<ShapedGitHubCommit[]>(
         pathBuilder.commitsJsonFilename(number),
-      )
+      ).catch((error) => {
+        commitsCache.delete(number)
+        throw error
+      })
       commitsCache.set(number, cached)
     }
     return cached
@@ -68,7 +75,10 @@ export const createStore = ({
     if (!cached) {
       cached = load<ShapedGitHubReviewComment[]>(
         pathBuilder.discussionsJsonFilename(number),
-      )
+      ).catch((error) => {
+        discussionsCache.delete(number)
+        throw error
+      })
       discussionsCache.set(number, cached)
     }
     return cached
@@ -78,7 +88,10 @@ export const createStore = ({
     if (!cached) {
       cached = load<ShapedGitHubReview[]>(
         pathBuilder.reviewJsonFilename(number),
-      )
+      ).catch((error) => {
+        reviewsCache.delete(number)
+        throw error
+      })
       reviewsCache.set(number, cached)
     }
     return cached
