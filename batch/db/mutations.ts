@@ -55,18 +55,12 @@ export function upsertPullRequestReview(
     .insertInto('pullRequestReviews')
     .values(data)
     .onConflict((oc) =>
-      oc
-        .columns([
-          'pullRequestNumber',
-          'repositoryId',
-          'reviewer',
-          'submittedAt',
-        ])
-        .doUpdateSet((eb) => ({
-          id: eb.ref('excluded.id'),
-          state: eb.ref('excluded.state'),
-          url: eb.ref('excluded.url'),
-        })),
+      oc.column('id').doUpdateSet((eb) => ({
+        state: eb.ref('excluded.state'),
+        url: eb.ref('excluded.url'),
+        reviewer: eb.ref('excluded.reviewer'),
+        submittedAt: eb.ref('excluded.submittedAt'),
+      })),
     )
     .executeTakeFirst()
 }
@@ -83,12 +77,13 @@ export async function upsertPullRequestReviewers(
     .where('pullRequestNumber', '=', pullRequestNumber)
     .execute()
 
-  if (reviewers.length === 0) return
+  const uniqueReviewers = [...new Set(reviewers)]
+  if (uniqueReviewers.length === 0) return
 
   await db
     .insertInto('pullRequestReviewers')
     .values(
-      reviewers.map((reviewer) => ({
+      uniqueReviewers.map((reviewer) => ({
         pullRequestNumber,
         repositoryId,
         reviewer,

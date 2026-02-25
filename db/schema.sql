@@ -203,8 +203,6 @@ CREATE TABLE `pull_request_reviews` (
   CONSTRAINT `pull_request_reviews_pk` PRIMARY KEY (`id`),
   CONSTRAINT `pull_request_reviews_pr_fkey` FOREIGN KEY (`pull_request_number`, `repository_id`) REFERENCES `pull_requests` (`number`, `repository_id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
--- Create index "pull_request_reviews_pr_reviewer_submitted_at_key" to table: "pull_request_reviews"
-CREATE UNIQUE INDEX `pull_request_reviews_pr_reviewer_submitted_at_key` ON `pull_request_reviews` (`pull_request_number`, `repository_id`, `reviewer`, `submitted_at`);
 -- Create index "pull_request_reviews_pr_idx" to table: "pull_request_reviews"
 CREATE INDEX `pull_request_reviews_pr_idx` ON `pull_request_reviews` (`pull_request_number`, `repository_id`);
 -- Create "pull_request_reviewers" table
