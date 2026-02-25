@@ -42,17 +42,60 @@ export const createStore = ({
       pathBuilder.jsonPath(filename),
       JSON.stringify(content, null, 2),
     )
+    // 書き込み後はキャッシュを無効化して read-after-write の一貫性を保つ
+    commitsCache.clear()
+    discussionsCache.clear()
+    reviewsCache.clear()
   }
 
+  // メモ化キャッシュ（PR番号 → Promise）で同一ファイルの重複読み込みを防止
+  const commitsCache = new Map<number, Promise<ShapedGitHubCommit[]>>()
+  const discussionsCache = new Map<
+    number,
+    Promise<ShapedGitHubReviewComment[]>
+  >()
+  const reviewsCache = new Map<number, Promise<ShapedGitHubReview[]>>()
+
   // loaders
-  const commits = async (number: number) =>
-    load<ShapedGitHubCommit[]>(pathBuilder.commitsJsonFilename(number))
-  const discussions = async (number: number) =>
-    load<ShapedGitHubReviewComment[]>(
-      pathBuilder.discussionsJsonFilename(number),
-    )
-  const reviews = async (number: number) =>
-    load<ShapedGitHubReview[]>(pathBuilder.reviewJsonFilename(number))
+  const commits = (number: number) => {
+    let cached = commitsCache.get(number)
+    if (!cached) {
+      cached = load<ShapedGitHubCommit[]>(
+        pathBuilder.commitsJsonFilename(number),
+      ).catch((error) => {
+        commitsCache.delete(number)
+        throw error
+      })
+      commitsCache.set(number, cached)
+    }
+    return cached
+  }
+  const discussions = (number: number) => {
+    let cached = discussionsCache.get(number)
+    if (!cached) {
+      cached = load<ShapedGitHubReviewComment[]>(
+        pathBuilder.discussionsJsonFilename(number),
+      ).catch((error) => {
+        discussionsCache.delete(number)
+        throw error
+      })
+      discussionsCache.set(number, cached)
+    }
+    return cached
+  }
+  const reviews = (number: number) => {
+    let cached = reviewsCache.get(number)
+    if (!cached) {
+      cached = load<ShapedGitHubReview[]>(
+        pathBuilder.reviewJsonFilename(number),
+      ).catch((error) => {
+        reviewsCache.delete(number)
+        throw error
+      })
+      reviewsCache.set(number, cached)
+    }
+    return cached
+  }
   const pullrequests = async () =>
     load<ShapedGitHubPullRequest[]>('pullrequests.json')
   const tags = async () => load<ShapedGitHubTag[]>('tags.json')
