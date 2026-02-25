@@ -12,22 +12,62 @@ GitHub login と upflow ユーザーの紐付けは、**複数の経路で自動
 
 推奨パスは **GitHub ログイン**。upflow は GitHub の PR データを扱うツールなので、GitHub でログインするのが最も自然で、紐付けも即座に完了する。
 
-## 2. GitHub ログインの追加
+## 2. GitHub App（OAuth App ではなく）
 
-Better Auth に GitHub OAuth プロバイダーを追加する。
+**GitHub App** を使う。理由：
+
+| 観点                 | OAuth App                              | GitHub App（採用）                                |
+| -------------------- | -------------------------------------- | ------------------------------------------------- |
+| ユーザー認証         | ○                                      | ○                                                 |
+| リポジトリアクセス   | ユーザーの全リポジトリ                 | fine-grained（Org admin が選択）                  |
+| 顧客オンボーディング | 運営者が Org に招待される必要あり      | Org admin が App を install するだけ              |
+| トークン管理         | 手動で fine-grained token を作成・管理 | installation token が自動発行・自動ローテーション |
+| Rate limit           | 5,000/h（ユーザー）                    | 5,000/h（user）or 15,000/h（installation）        |
+| Webhook              | なし                                   | あり（将来のリアルタイム更新に対応可能）          |
+
+**GitHub App は2つの役割を兼ねる：**
+
+1. **ユーザー認証（OAuth フロー）**: ログイン + GitHub username 取得
+2. **データ取得（Installation token）**: 顧客 Org の private repo から PR データを取得（現在の `INTEGRATION_PRIVATE_TOKEN` を置き換え）
+
+### GitHub App の作成
+
+1. https://github.com/settings/apps → 「New GitHub App」
+2. 設定：
+
+| 項目                 | 値                                                      |
+| -------------------- | ------------------------------------------------------- |
+| App name             | `Upflow Dev` / `Upflow`（環境別）                       |
+| Homepage URL         | アプリの URL                                            |
+| Callback URL         | `{BASE_URL}/api/auth/callback/github`                   |
+| Setup URL (optional) | `{BASE_URL}/github/setup`（install 後のリダイレクト先） |
+| Webhook              | 初期は無効（将来有効化）                                |
+
+3. Permissions：
+
+| カテゴリ   | Permission      | Access    | 用途                           |
+| ---------- | --------------- | --------- | ------------------------------ |
+| Account    | Email addresses | Read-only | ユーザー認証時のメール取得     |
+| Repository | Pull requests   | Read-only | PR データ取得                  |
+| Repository | Contents        | Read-only | コミット・タグデータ取得       |
+| Repository | Metadata        | Read-only | リポジトリ基本情報（自動付与） |
+
+4. 「Where can this GitHub App be installed?」→ **Any account**（顧客の Org に install してもらうため）
+
+### Better Auth への設定
 
 ```typescript
 // auth.server.ts
 socialProviders: {
   google: { ... },  // 既存
   github: {
-    clientId: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    clientId: process.env.GITHUB_APP_CLIENT_ID,
+    clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
   },
 },
 ```
 
-必要な OAuth スコープ: `read:user` のみ。リポジトリアクセス権限は不要（PR データの取得は既存のバッチ処理が担う）。
+ユーザー認証には GitHub App の OAuth フローを使う。Better Auth の GitHub provider 設定は OAuth App と同じインターフェース。
 
 ## 3. ログインと自動紐付け
 
@@ -97,36 +137,76 @@ Better Auth の Organization plugin が提供する `sendInvitationEmail` フッ
 
 GitHub Users 設定画面に「upflow ユーザーとの紐付け」セレクトボックスを追加し、`user_id` を設定できるようにする。自動紐付けが何らかの理由で機能しない場合の救済策。
 
-## 7. 必要な環境変数
+## 7. データ取得の移行（Installation Token 化）
 
-| 変数                                        | 用途                | 新規 |
-| ------------------------------------------- | ------------------- | ---- |
-| `GITHUB_CLIENT_ID`                          | GitHub OAuth App    | 新規 |
-| `GITHUB_CLIENT_SECRET`                      | GitHub OAuth App    | 新規 |
-| `RESEND_API_KEY`                            | 招待メール送信      | 新規 |
-| `DATABASE_URL`                              | SQLite              | 既存 |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth        | 既存 |
-| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL`    | Better Auth         | 既存 |
-| `INTEGRATION_PRIVATE_TOKEN`                 | GitHub API (バッチ) | 既存 |
+現在のバッチ処理は `INTEGRATION_PRIVATE_TOKEN`（運営者個人の fine-grained token）で GitHub API にアクセスしている。これを GitHub App の installation token に移行する。
 
-GitHub OAuth App は `read:user` スコープのみ。Organization 単位ではなく個人の OAuth App で十分。
+### 移行の流れ
 
-## 8. 実装ステップ
+1. 顧客の Org admin が GitHub App を install（対象リポジトリを選択）
+2. upflow が installation ID を DB に保存（`integrations` テーブルを拡張）
+3. バッチ実行時に installation token を動的に生成して API アクセス
 
-### 8a. GitHub OAuth + 自動紐付け
+### Installation Token の生成
 
-1. Better Auth に GitHub OAuth プロバイダーを追加
-2. ログイン画面に「GitHub でログイン」ボタンを追加
-3. GitHub ログイン時の `company_github_users.user_id` 自動紐付けフック
+```typescript
+import { createAppAuth } from '@octokit/auth-app'
 
-### 8b. 招待フロー
+const auth = createAppAuth({
+  appId: process.env.GITHUB_APP_ID,
+  privateKey: process.env.GITHUB_APP_PRIVATE_KEY,
+  installationId: installation.id,
+})
 
-4. Atlas マイグレーション: `invitations` に `github_login` カラム追加
-5. Resend をメールトランスポートとして設定（Better Auth の `sendInvitationEmail` フック）
-6. メンバー招待画面に email + GitHub login 入力
-7. 招待 accept 時の `company_github_users.user_id` 自動設定ロジック
+const { token } = await auth({ type: 'installation' })
+// この token でバッチの GraphQL クエリを実行
+```
 
-### 8c. 連携 UI + 手動紐付け
+### 移行戦略
 
-8. 設定画面に GitHub アカウント連携 UI（Google ログインユーザー向け）
-9. GitHub Users 設定画面に upflow ユーザー手動紐付け UI（フォールバック）
+- **段階的移行**: `INTEGRATION_PRIVATE_TOKEN` と installation token を並行サポート
+- `integrations` テーブルに `github_app_installation_id` がある場合は installation token を使用
+- ない場合は従来の `INTEGRATION_PRIVATE_TOKEN` にフォールバック
+- 全顧客の移行が完了したら `INTEGRATION_PRIVATE_TOKEN` を廃止
+
+## 8. 必要な環境変数
+
+| 変数                                        | 用途                                     | 新規/既存 |
+| ------------------------------------------- | ---------------------------------------- | --------- |
+| `GITHUB_APP_ID`                             | GitHub App ID                            | 新規      |
+| `GITHUB_APP_CLIENT_ID`                      | GitHub App OAuth（ログイン用）           | 新規      |
+| `GITHUB_APP_CLIENT_SECRET`                  | GitHub App OAuth（ログイン用）           | 新規      |
+| `GITHUB_APP_PRIVATE_KEY`                    | GitHub App（installation token 生成）    | 新規      |
+| `RESEND_API_KEY`                            | 招待メール送信                           | 新規      |
+| `DATABASE_URL`                              | SQLite                                   | 既存      |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth                             | 既存      |
+| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL`    | Better Auth                              | 既存      |
+| `INTEGRATION_PRIVATE_TOKEN`                 | GitHub API（移行期間中のフォールバック） | 既存→廃止 |
+
+## 9. 実装ステップ
+
+### 9a. GitHub App + ログイン + 自動紐付け
+
+1. GitHub App を作成（開発用: `Upflow Dev`）
+2. Better Auth に GitHub App の OAuth プロバイダーを追加
+3. ログイン画面に「GitHub でログイン」ボタンを追加
+4. GitHub ログイン時の `company_github_users.user_id` 自動紐付けフック
+
+### 9b. Installation Token によるデータ取得
+
+5. DB スキーマ: `integrations` テーブルに `github_app_installation_id` カラム追加
+6. GitHub App install 時の installation ID 保存エンドポイント（Setup URL）
+7. バッチ処理: installation token 生成 + 既存 token からのフォールバック
+8. 管理画面: GitHub App install 状態の表示 + install リンク
+
+### 9c. 招待フロー
+
+9. Atlas マイグレーション: `invitations` に `github_login` カラム追加
+10. Resend をメールトランスポートとして設定（Better Auth の `sendInvitationEmail` フック）
+11. メンバー招待画面に email + GitHub login 入力
+12. 招待 accept 時の `company_github_users.user_id` 自動設定ロジック
+
+### 9d. 連携 UI + 手動紐付け
+
+13. 設定画面に GitHub アカウント連携 UI（Google ログインユーザー向け）
+14. GitHub Users 設定画面に upflow ユーザー手動紐付け UI（フォールバック）
