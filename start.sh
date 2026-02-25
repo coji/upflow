@@ -17,17 +17,4 @@ fi
 
 atlas migrate apply --env local --url "$DB_URL"
 
-# Data migration: ensure every org has at least one owner member
-# This handles the transition from pre-membership schema
-sqlite3 /upflow/data/data.db "
-INSERT INTO members (id, organization_id, user_id, role, created_at)
-SELECT lower(hex(randomblob(10))), o.id, u.id, 'owner', datetime('now')
-FROM organizations o
-CROSS JOIN users u
-WHERE u.role = 'admin'
-AND NOT EXISTS (
-  SELECT 1 FROM members m WHERE m.organization_id = o.id
-);
-"
-
 node server.mjs

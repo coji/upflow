@@ -110,9 +110,29 @@ export interface OrganizationSettings {
   updatedAt: string;
 }
 
+export interface PullRequestReviewers {
+  pullRequestNumber: number;
+  repositoryId: string;
+  requestedAt: string | null;
+  reviewer: string;
+}
+
+export interface PullRequestReviews {
+  id: string;
+  pullRequestNumber: number;
+  repositoryId: string;
+  reviewer: string;
+  state: string;
+  submittedAt: string;
+  url: string;
+}
+
 export interface PullRequests {
+  additions: number | null;
   author: string;
+  changedFiles: number | null;
   codingTime: number | null;
+  deletions: number | null;
   deployTime: number | null;
   firstCommittedAt: string | null;
   firstReviewedAt: string | null;
@@ -208,6 +228,8 @@ export interface DB {
   members: Members;
   organizations: Organizations;
   organizationSettings: OrganizationSettings;
+  pullRequestReviewers: PullRequestReviewers;
+  pullRequestReviews: PullRequestReviews;
   pullRequests: PullRequests;
   repositories: Repositories;
   sessions: Sessions;

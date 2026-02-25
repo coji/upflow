@@ -7,7 +7,7 @@ const escapeTabString = (str: string) => {
 }
 
 /** ReviewResponse の型定義 */
-export interface ReviewResponse {
+interface ReviewResponse {
   repo: string
   number: string
   author: string

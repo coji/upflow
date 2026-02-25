@@ -185,8 +185,34 @@ CREATE TABLE `pull_requests` (
   `total_time` real NULL,
   `repository_id` text NOT NULL,
   `updated_at` text NULL,
+  `additions` integer NULL,
+  `deletions` integer NULL,
+  `changed_files` integer NULL,
   PRIMARY KEY (`number`, `repository_id`),
   CONSTRAINT `pull_requests_repository_id_fkey` FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+-- Create "pull_request_reviews" table
+CREATE TABLE `pull_request_reviews` (
+  `id` text NOT NULL,
+  `pull_request_number` integer NOT NULL,
+  `repository_id` text NOT NULL,
+  `reviewer` text NOT NULL,
+  `state` text NOT NULL,
+  `submitted_at` text NOT NULL,
+  `url` text NOT NULL,
+  CONSTRAINT `pull_request_reviews_pk` PRIMARY KEY (`id`),
+  CONSTRAINT `pull_request_reviews_pr_fkey` FOREIGN KEY (`pull_request_number`, `repository_id`) REFERENCES `pull_requests` (`number`, `repository_id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+-- Create index "pull_request_reviews_pr_idx" to table: "pull_request_reviews"
+CREATE INDEX `pull_request_reviews_pr_idx` ON `pull_request_reviews` (`pull_request_number`, `repository_id`);
+-- Create "pull_request_reviewers" table
+CREATE TABLE `pull_request_reviewers` (
+  `pull_request_number` integer NOT NULL,
+  `repository_id` text NOT NULL,
+  `reviewer` text NOT NULL,
+  `requested_at` text NULL,
+  CONSTRAINT `pull_request_reviewers_pk` PRIMARY KEY (`pull_request_number`, `repository_id`, `reviewer`),
+  CONSTRAINT `pull_request_reviewers_pr_fkey` FOREIGN KEY (`pull_request_number`, `repository_id`) REFERENCES `pull_requests` (`number`, `repository_id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- Create "company_github_users" table
 CREATE TABLE `company_github_users` (

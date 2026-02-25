@@ -106,6 +106,20 @@ export const createGitHubProvider = (
     onProgress,
   ) => {
     let allPulls: Selectable<DB.PullRequests>[] = []
+    let allReviews: {
+      id: string
+      pullRequestNumber: number
+      repositoryId: string
+      reviewer: string
+      state: string
+      submittedAt: string
+      url: string
+    }[] = []
+    let allReviewers: {
+      pullRequestNumber: number
+      repositoryId: string
+      reviewerLogins: string[]
+    }[] = []
     let allReviewResponses: {
       repo: string
       number: string
@@ -125,25 +139,33 @@ export const createGitHubProvider = (
         organizationId: repository.organizationId,
         repositoryId: repository.id,
       })
-      const { pulls, reviewResponses } = await buildPullRequests(
-        {
-          organizationId: repository.organizationId,
-          repositoryId: repository.id,
-          releaseDetectionMethod:
-            repository.releaseDetectionMethod ??
-            organizationSetting.releaseDetectionMethod,
-          releaseDetectionKey:
-            repository.releaseDetectionKey ??
-            organizationSetting.releaseDetectionKey,
-          excludedUsers: organizationSetting.excludedUsers,
-        },
-        await store.loader.pullrequests(),
-        store.loader,
-      )
+      const { pulls, reviews, reviewers, reviewResponses } =
+        await buildPullRequests(
+          {
+            organizationId: repository.organizationId,
+            repositoryId: repository.id,
+            releaseDetectionMethod:
+              repository.releaseDetectionMethod ??
+              organizationSetting.releaseDetectionMethod,
+            releaseDetectionKey:
+              repository.releaseDetectionKey ??
+              organizationSetting.releaseDetectionKey,
+            excludedUsers: organizationSetting.excludedUsers,
+          },
+          await store.loader.pullrequests(),
+          store.loader,
+        )
       allPulls = [...allPulls, ...pulls]
+      allReviews = [...allReviews, ...reviews]
+      allReviewers = [...allReviewers, ...reviewers]
       allReviewResponses = [...allReviewResponses, ...reviewResponses]
     }
-    return { pulls: allPulls, reviewResponses: allReviewResponses }
+    return {
+      pulls: allPulls,
+      reviews: allReviews,
+      reviewers: allReviewers,
+      reviewResponses: allReviewResponses,
+    }
   }
 
   return {

@@ -10,8 +10,6 @@ export type GithubIssueComment =
   RestEndpointMethodTypes['issues']['listComments']['response']['data'][0]
 export type GitHubReviewComment =
   RestEndpointMethodTypes['pulls']['listReviewComments']['response']['data'][0]
-export type GitHubUser = GitHubPullRequest['user']
-
 export type ShapedGitHubPullRequest = {
   id: GitHubPullRequest['id']
   organization: GitHubPullRequest['base']['repo']['owner']['login']
@@ -30,6 +28,9 @@ export type ShapedGitHubPullRequest = {
   updated_at: GitHubPullRequest['updated_at']
   merged_at: GitHubPullRequest['merged_at'] | null
   merge_commit_sha: GitHubPullRequest['merge_commit_sha'] | null
+  additions: number | null
+  deletions: number | null
+  changed_files: number | null
 }
 
 export type ShapedGitHubCommit = {

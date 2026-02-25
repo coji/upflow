@@ -22,6 +22,20 @@ export interface Provider {
     }) => void,
   ) => Promise<{
     pulls: Selectable<DB.PullRequests>[]
+    reviews: {
+      id: string
+      pullRequestNumber: number
+      repositoryId: string
+      reviewer: string
+      state: string
+      submittedAt: string
+      url: string
+    }[]
+    reviewers: {
+      pullRequestNumber: number
+      repositoryId: string
+      reviewerLogins: string[]
+    }[]
     reviewResponses: {
       repo: string
       number: string

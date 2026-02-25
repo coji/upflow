@@ -40,7 +40,57 @@ export function upsertPullRequest(data: Insertable<DB.PullRequests>) {
         deployTime: eb.ref('excluded.deployTime'),
         totalTime: eb.ref('excluded.totalTime'),
         updatedAt: eb.ref('excluded.updatedAt'),
+        additions: eb.ref('excluded.additions'),
+        deletions: eb.ref('excluded.deletions'),
+        changedFiles: eb.ref('excluded.changedFiles'),
       })),
     )
     .executeTakeFirst()
+}
+
+export function upsertPullRequestReview(
+  data: Insertable<DB.PullRequestReviews>,
+) {
+  return db
+    .insertInto('pullRequestReviews')
+    .values(data)
+    .onConflict((oc) =>
+      oc.column('id').doUpdateSet((eb) => ({
+        state: eb.ref('excluded.state'),
+        url: eb.ref('excluded.url'),
+        reviewer: eb.ref('excluded.reviewer'),
+        submittedAt: eb.ref('excluded.submittedAt'),
+      })),
+    )
+    .executeTakeFirst()
+}
+
+export async function upsertPullRequestReviewers(
+  repositoryId: string,
+  pullRequestNumber: number,
+  reviewers: string[],
+) {
+  await db.transaction().execute(async (trx) => {
+    // 既存のレビュー依頼を削除してから再挿入（スナップショット方式）
+    await trx
+      .deleteFrom('pullRequestReviewers')
+      .where('repositoryId', '=', repositoryId)
+      .where('pullRequestNumber', '=', pullRequestNumber)
+      .execute()
+
+    const uniqueReviewers = [...new Set(reviewers)]
+    if (uniqueReviewers.length === 0) return
+
+    await trx
+      .insertInto('pullRequestReviewers')
+      .values(
+        uniqueReviewers.map((reviewer) => ({
+          pullRequestNumber,
+          repositoryId,
+          reviewer,
+          requestedAt: null,
+        })),
+      )
+      .execute()
+  })
 }
