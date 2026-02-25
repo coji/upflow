@@ -45,6 +45,11 @@ export const createGitHubProvider = (
       leastMergeRequest?.updated_at ?? '2000-01-01T00:00:00Z'
     logger.info(`last fetched at: ${lastFetchedAt}`)
 
+    if (halt) {
+      logger.fatal('halted')
+      return
+    }
+
     // ネストクエリで PR + commits + reviews + comments を一括取得
     logger.info('fetching all pullrequests with details (nested query)...')
     const allDetails = await fetcher.pullrequestsWithDetails()
