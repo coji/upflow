@@ -8,10 +8,17 @@ import { getIntegration } from '../_index/+functions/queries.server'
 import { integrationSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+    label: 'Integration',
+    to: `/${organization.slug}/settings/integration`,
+  }),
+}
+
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const integration = await getIntegration(organization.id)
-  return { integration }
+  return { organization, integration }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {

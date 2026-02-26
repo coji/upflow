@@ -8,10 +8,17 @@ import { getExportSetting } from '../_index/+functions/queries.server'
 import { exportSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+    label: 'Export',
+    to: `/${organization.slug}/settings/export`,
+  }),
+}
+
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const exportSetting = await getExportSetting(organization.id)
-  return { exportSetting }
+  return { organization, exportSetting }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {

@@ -8,6 +8,13 @@ import { getOrganization } from '../_index/+functions/queries.server'
 import { deleteOrganizationSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+    label: 'Danger Zone',
+    to: `/${organization.slug}/settings/danger`,
+  }),
+}
+
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization: orgContext } = await requireOrgAdmin(
     request,
