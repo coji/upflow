@@ -6,7 +6,7 @@ import {
   ParseJSONResultsPlugin,
   SqliteDialect,
 } from 'kysely'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { existsSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import type * as TenantDB from './tenant-type'
@@ -65,8 +65,16 @@ export function closeAllTenantDbs(): void {
  */
 export function createTenantDb(organizationId: string): void {
   const tenantDbPath = getTenantDbPath(organizationId)
-  execSync(
-    `atlas migrate apply --env tenant --url 'sqlite://${tenantDbPath}'`,
+  execFileSync(
+    'atlas',
+    [
+      'migrate',
+      'apply',
+      '--env',
+      'tenant',
+      '--url',
+      `sqlite://${tenantDbPath}`,
+    ],
     { stdio: 'inherit' },
   )
 }

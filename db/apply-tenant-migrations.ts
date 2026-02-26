@@ -4,7 +4,7 @@
  * Also used during db:setup to apply migrations to newly created tenant DBs.
  */
 import { consola } from 'consola'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { readdirSync } from 'node:fs'
 
 const dataDir = './data'
@@ -22,7 +22,7 @@ function getTenantDbFiles(): string[] {
 function applyMigrations(dbFile: string) {
   const url = `sqlite://${dataDir}/${dbFile}`
   consola.info(`Applying tenant migrations to ${dbFile}...`)
-  execSync(`atlas migrate apply --env tenant --url '${url}'`, {
+  execFileSync('atlas', ['migrate', 'apply', '--env', 'tenant', '--url', url], {
     stdio: 'inherit',
   })
 }
