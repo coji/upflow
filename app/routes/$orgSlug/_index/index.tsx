@@ -2,6 +2,12 @@ import { CopyIcon } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
+import {
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderHeading,
+  PageHeaderTitle,
+} from '~/app/components/layout/page-header'
 import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
 import WeeklyCalendar from '~/app/components/week-calendar'
 import { requireOrgMember } from '~/app/libs/auth.server'
@@ -69,6 +75,25 @@ export default function OrganizationIndex({
 
   return (
     <Stack>
+      <PageHeader>
+        <PageHeaderHeading>
+          <PageHeaderTitle>Dashboard</PageHeaderTitle>
+        </PageHeaderHeading>
+        <PageHeaderActions>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(generateMarkdown(pullRequests))
+              toast.info(`Copied ${pullRequests.length} rows`)
+            }}
+          >
+            <CopyIcon size="16" />
+          </Button>
+        </PageHeaderActions>
+      </PageHeader>
+
       <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
         <HStack>
           <div>
@@ -116,20 +141,6 @@ export default function OrganizationIndex({
             </div>
           </div>
         </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full md:w-auto"
-          onClick={() => {
-            // markdown 表形式でコピー
-            navigator.clipboard.writeText(generateMarkdown(pullRequests))
-            toast.info(`Copied ${pullRequests.length} rows`)
-          }}
-        >
-          <CopyIcon size="16" />
-        </Button>
       </div>
 
       <AppDataTable
