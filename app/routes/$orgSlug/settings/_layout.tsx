@@ -22,8 +22,9 @@ import SidebarNav from './+components/sidebar-nav'
 import type { Route } from './+types/_layout'
 
 export const handle: RouteHandle = {
-  breadcrumb: () => ({
+  breadcrumb: (_data: unknown, params?: Record<string, string>) => ({
     label: 'Settings',
+    to: `/${params?.orgSlug}/settings`,
   }),
 }
 

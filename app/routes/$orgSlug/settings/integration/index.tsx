@@ -38,10 +38,11 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       organizationId: organization.id,
     })
   } catch (e) {
+    console.error('Integration upsert failed', e)
     return {
       intent: 'integration-settings' as const,
       lastResult: submission.reply({
-        formErrors: [`Integration upsert failed: ${String(e)}`],
+        formErrors: ['Integration upsert failed. Please try again.'],
       }),
     }
   }

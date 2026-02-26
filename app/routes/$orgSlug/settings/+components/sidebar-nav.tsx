@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react'
+import type { JSX } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { buttonVariants } from '~/app/components/ui/button'
 import { ScrollArea, ScrollBar } from '~/app/components/ui/scroll-area'
@@ -26,17 +26,16 @@ export default function SidebarNav({
 }: SidebarNavProps) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const [val, setVal] = useState(pathname ?? '/settings')
 
-  const handleSelect = (e: string) => {
-    setVal(e)
-    navigate(e)
-  }
+  const activeHref =
+    items.find(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )?.href ?? items[0]?.href ?? ''
 
   return (
     <>
       <div className="p-1 md:hidden">
-        <Select value={val} onValueChange={handleSelect}>
+        <Select value={activeHref} onValueChange={navigate}>
           <SelectTrigger className="h-12 sm:w-48">
             <SelectValue placeholder="Settings" />
           </SelectTrigger>
@@ -70,7 +69,7 @@ export default function SidebarNav({
               to={item.href}
               className={cn(
                 buttonVariants({ variant: 'ghost' }),
-                pathname === item.href
+                pathname === item.href || pathname.startsWith(`${item.href}/`)
                   ? 'bg-muted hover:bg-muted'
                   : 'hover:bg-transparent hover:underline',
                 'justify-start',

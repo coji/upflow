@@ -112,9 +112,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       repo: submission.value.name,
     })
   } catch (e) {
+    console.error('Failed to add repository', e)
     return dataWithError(
       {},
-      { message: `Failed to add repository: ${String(e)}` },
+      { message: 'Failed to add repository. Please try again.' },
     )
   }
 
@@ -191,6 +192,7 @@ export default function AddRepositoryPage({
             setSearchParams(
               (prev) => {
                 prev.set('query', query)
+                prev.delete('cursor')
                 prev.delete('refresh')
                 return prev
               },

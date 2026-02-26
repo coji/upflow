@@ -1,4 +1,9 @@
-import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import {
+  getFormProps,
+  getInputProps,
+  getTextareaProps,
+  useForm,
+} from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, useActionData } from 'react-router'
 import {
@@ -47,7 +52,7 @@ export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
 
         <fieldset className="space-y-1">
           <Label htmlFor={privateKey.id}>Private Key</Label>
-          <Textarea {...getInputProps(privateKey, { type: 'text' })} />
+          <Textarea {...getTextareaProps(privateKey)} />
           <div className="text-destructive">{privateKey.errors}</div>
         </fieldset>
 
