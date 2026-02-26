@@ -139,7 +139,7 @@ export default function AddRepositoryPage({
     >
       <Stack>
         <HStack className="justify-between">
-          <fieldset className="space-y-1 flex-1">
+          <fieldset className="flex-1 space-y-1">
             <Label>Organization</Label>
             <Select
               defaultValue={owner}
