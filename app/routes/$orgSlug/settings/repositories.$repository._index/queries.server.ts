@@ -1,15 +1,23 @@
-import { db, type DB } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 
-export const getRepository = async (repositoryId: DB.Repositories['id']) => {
-  return await db
+export const getRepository = async (
+  organizationId: string,
+  repositoryId: string,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .selectFrom('repositories')
     .where('id', '=', repositoryId)
     .selectAll()
     .executeTakeFirst()
 }
 
-export const listPullRequests = async (repositoryId: DB.Repositories['id']) => {
-  return await db
+export const listPullRequests = async (
+  organizationId: string,
+  repositoryId: string,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .selectFrom('pullRequests')
     .where('repositoryId', '=', repositoryId)
     .orderBy('number', 'desc')

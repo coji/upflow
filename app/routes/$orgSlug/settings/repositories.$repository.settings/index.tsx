@@ -46,8 +46,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
-  const repository = await getRepository(repositoryId)
-  if (!repository || repository.organizationId !== organization.id) {
+  const repository = await getRepository(organization.id, repositoryId)
+  if (!repository) {
     throw new Response('repository not found', { status: 404 })
   }
   const integration = await getIntegration(organization.id)
@@ -68,8 +68,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
-  const repository = await getRepository(repositoryId)
-  if (!repository || repository.organizationId !== organization.id) {
+  const repository = await getRepository(organization.id, repositoryId)
+  if (!repository) {
     throw new Response('repository not found', { status: 404 })
   }
   const formData = await request.formData()
@@ -78,7 +78,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     return data(submission.reply(), { status: 400 })
   }
 
-  await updateRepository(repositoryId, organization.id, submission.value)
+  await updateRepository(organization.id, repositoryId, submission.value)
 
   return redirect(`/${organization.slug}/settings/repositories`)
 }

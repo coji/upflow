@@ -1,7 +1,11 @@
-import { db, type DB, type Insertable } from '~/app/services/db.server'
+import type { Insertable } from 'kysely'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import { timeFormatUTC } from '../helper/timeformat'
 
-export function upsertPullRequest(data: Insertable<DB.PullRequests>) {
+export function upsertPullRequest(
+  organizationId: string,
+  data: Insertable<TenantDB.PullRequests>,
+) {
   const firstCommittedAt = timeFormatUTC(data.firstCommittedAt)
   const pullRequestCreatedAt = timeFormatUTC(data.pullRequestCreatedAt)
   const firstReviewedAt = timeFormatUTC(data.firstReviewedAt)
@@ -9,7 +13,8 @@ export function upsertPullRequest(data: Insertable<DB.PullRequests>) {
   const releasedAt = timeFormatUTC(data.releasedAt)
   const updatedAt = timeFormatUTC(data.updatedAt)
 
-  return db
+  const tenantDb = getTenantDb(organizationId)
+  return tenantDb
     .insertInto('pullRequests')
     .values({
       ...data,
@@ -49,9 +54,11 @@ export function upsertPullRequest(data: Insertable<DB.PullRequests>) {
 }
 
 export function upsertPullRequestReview(
-  data: Insertable<DB.PullRequestReviews>,
+  organizationId: string,
+  data: Insertable<TenantDB.PullRequestReviews>,
 ) {
-  return db
+  const tenantDb = getTenantDb(organizationId)
+  return tenantDb
     .insertInto('pullRequestReviews')
     .values(data)
     .onConflict((oc) =>
@@ -66,11 +73,13 @@ export function upsertPullRequestReview(
 }
 
 export async function upsertPullRequestReviewers(
+  organizationId: string,
   repositoryId: string,
   pullRequestNumber: number,
   reviewers: string[],
 ) {
-  await db.transaction().execute(async (trx) => {
+  const tenantDb = getTenantDb(organizationId)
+  await tenantDb.transaction().execute(async (trx) => {
     // 既存のレビュー依頼を削除してから再挿入（スナップショット方式）
     await trx
       .deleteFrom('pullRequestReviewers')

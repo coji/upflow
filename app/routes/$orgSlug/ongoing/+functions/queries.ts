@@ -1,13 +1,14 @@
 import { pipe, sortBy } from 'remeda'
-import { db, type DB } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 import { calculateBusinessHours } from './utils'
 
 export const getOngoingPullRequestReport = async (
-  organizationId: DB.Organizations['id'],
+  organizationId: string,
   fromDateTime: string | null,
   toDateTime: string | null,
 ) => {
-  const pullrequests = await db
+  const tenantDb = getTenantDb(organizationId)
+  const pullrequests = await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .leftJoin(
@@ -15,7 +16,6 @@ export const getOngoingPullRequestReport = async (
       'pullRequests.author',
       'companyGithubUsers.login',
     )
-    .where('repositories.organizationId', '=', organizationId)
     .$if(fromDateTime !== null, (qb) =>
       qb.where('pullRequestCreatedAt', '>=', fromDateTime),
     )

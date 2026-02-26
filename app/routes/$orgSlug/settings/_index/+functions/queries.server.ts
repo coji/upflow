@@ -1,8 +1,7 @@
-import { db, type DB } from '~/app/services/db.server'
+import { db } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 
-export const getOrganization = async (
-  organizationId: DB.Organizations['id'],
-) => {
+export const getOrganization = async (organizationId: string) => {
   return await db
     .selectFrom('organizations')
     .selectAll()
@@ -10,25 +9,23 @@ export const getOrganization = async (
     .executeTakeFirst()
 }
 
-export const getOrganizationSetting = async (
-  organizationId: DB.Organizations['id'],
-) => {
-  return await db
+export const getOrganizationSetting = async (organizationId: string) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .selectFrom('organizationSettings')
     .selectAll()
-    .where('organizationId', '=', organizationId)
     .executeTakeFirst()
 }
 
 export const createDefaultOrganizationSetting = async (
-  organizationId: DB.Organizations['id'],
+  organizationId: string,
 ) => {
+  const tenantDb = getTenantDb(organizationId)
   const id = crypto.randomUUID()
-  await db
+  await tenantDb
     .insertInto('organizationSettings')
     .values({
       id,
-      organizationId,
       updatedAt: new Date().toISOString(),
     })
     .onConflict((oc) => oc.doNothing())
@@ -38,22 +35,18 @@ export const createDefaultOrganizationSetting = async (
   return row
 }
 
-export const getExportSetting = async (
-  organizationId: DB.Organizations['id'],
-) => {
-  return await db
+export const getExportSetting = async (organizationId: string) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .selectFrom('exportSettings')
     .selectAll()
-    .where('organizationId', '=', organizationId)
     .executeTakeFirst()
 }
 
-export const getIntegration = async (
-  organizationId: DB.Organizations['id'],
-) => {
-  return await db
+export const getIntegration = async (organizationId: string) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .selectFrom('integrations')
     .selectAll()
-    .where('organizationId', '=', organizationId)
     .executeTakeFirst()
 }

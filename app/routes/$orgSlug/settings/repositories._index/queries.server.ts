@@ -1,5 +1,5 @@
 import { sql } from 'kysely'
-import { db } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 
 interface ListFilteredRepositoriesArgs {
   organizationId: string
@@ -18,10 +18,8 @@ export const listFilteredRepositories = async ({
   sortBy,
   sortOrder,
 }: ListFilteredRepositoriesArgs) => {
-  let query = db
-    .selectFrom('repositories')
-    .selectAll()
-    .where('repositories.organizationId', '=', organizationId)
+  const tenantDb = getTenantDb(organizationId)
+  let query = tenantDb.selectFrom('repositories').selectAll()
 
   if (repo) {
     query = query.where((eb) =>
@@ -32,10 +30,9 @@ export const listFilteredRepositories = async ({
     )
   }
 
-  let countQuery = db
+  let countQuery = tenantDb
     .selectFrom('repositories')
     .select((eb) => eb.fn.count<string>('repositories.id').as('count'))
-    .where('repositories.organizationId', '=', organizationId)
 
   if (repo) {
     countQuery = countQuery.where((eb) =>

@@ -24,8 +24,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     pull: zx.NumAsString,
   })
 
-  const repository = await getRepository(repositoryId)
-  if (!repository || repository.organizationId !== organization.id) {
+  const repository = await getRepository(organization.id, repositoryId)
+  if (!repository) {
     throw new Response('Repository not found', { status: 404 })
   }
   if (
@@ -37,7 +37,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw new Error('Repository is not integrated')
   }
 
-  const pull = await getPullRequest(repository.id, pullId)
+  const pull = await getPullRequest(organization.id, repository.id, pullId)
   if (!pull) {
     throw new Response('Pull request not found', { status: 404 })
   }

@@ -30,11 +30,11 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     repository: z.string(),
   })
 
-  const repository = await getRepository(repositoryId)
-  if (!repository || repository.organizationId !== organization.id) {
+  const repository = await getRepository(organization.id, repositoryId)
+  if (!repository) {
     throw new Response('repository not found', { status: 404 })
   }
-  const pulls = await listPullRequests(repositoryId)
+  const pulls = await listPullRequests(organization.id, repositoryId)
 
   return { repositoryId, repository, pulls }
 }

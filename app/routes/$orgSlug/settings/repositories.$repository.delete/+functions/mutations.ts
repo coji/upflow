@@ -1,12 +1,12 @@
-import { db, type DB } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 
 export const deleteRepository = (
-  repositoryId: DB.Repositories['id'],
-  organizationId: DB.Repositories['organizationId'],
+  organizationId: string,
+  repositoryId: string,
 ) => {
-  return db
+  const tenantDb = getTenantDb(organizationId)
+  return tenantDb
     .deleteFrom('repositories')
     .where('id', '=', repositoryId)
-    .where('organizationId', '=', organizationId)
     .execute()
 }

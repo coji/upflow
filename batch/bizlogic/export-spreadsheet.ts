@@ -1,5 +1,6 @@
-import type { DB, Selectable } from '~/app/services/db.server'
+import type { Selectable } from 'kysely'
 import { createSheetApi } from '~/app/services/sheets.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import { timeFormatTz } from '../helper/timeformat'
 
 const escapeTabString = (str: string) => {
@@ -20,12 +21,12 @@ interface ReviewResponse {
  * exportSetting を受け取り、pulls と reviewResponses のエクスポート関数を返す
  */
 export function createSpreadsheetExporter(
-  exportSetting: Selectable<DB.ExportSettings>,
+  exportSetting: Selectable<TenantDB.ExportSettings>,
 ) {
   const tz = 'Asia/Tokyo'
 
   const exportPulls = async (
-    pullrequests: Selectable<DB.PullRequests>[],
+    pullrequests: Selectable<TenantDB.PullRequests>[],
   ): Promise<void> => {
     const sheet = createSheetApi({
       spreadsheetId: exportSetting.sheetId,

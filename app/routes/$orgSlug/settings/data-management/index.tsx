@@ -9,7 +9,7 @@ import {
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
-import { db } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
 import { createProvider } from '~/batch/provider'
@@ -26,10 +26,10 @@ export const handle = {
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
 
-  const organizationSetting = await db
+  const tenantDb = getTenantDb(organization.id)
+  const organizationSetting = await tenantDb
     .selectFrom('organizationSettings')
     .select(['refreshRequestedAt'])
-    .where('organizationId', '=', organization.id)
     .executeTakeFirst()
 
   return {
@@ -47,10 +47,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   return match(intent)
     .with('refresh', async () => {
-      await db
+      const tenantDb = getTenantDb(orgContext.id)
+      await tenantDb
         .updateTable('organizationSettings')
         .set({ refreshRequestedAt: new Date().toISOString() })
-        .where('organizationId', '=', orgContext.id)
         .execute()
 
       return data({ intent: 'refresh' as const, ok: true })
@@ -90,7 +90,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       )
 
       for (const pr of pulls) {
-        await upsertPullRequest(pr)
+        await upsertPullRequest(orgContext.id, pr)
       }
 
       if (organization.exportSetting) {

@@ -1,26 +1,26 @@
 import { nanoid } from 'nanoid'
-import { db, sql, type DB, type Insertable } from '~/app/services/db.server'
+import { sql } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 
 export const addRepository = async (
-  organizationId: DB.Organizations['id'],
-  data: Pick<Insertable<DB.Repositories>, 'owner' | 'repo'>,
+  organizationId: string,
+  data: { owner: string; repo: string },
 ) => {
-  const organizationSetting = await db
+  const tenantDb = getTenantDb(organizationId)
+
+  const organizationSetting = await tenantDb
     .selectFrom('organizationSettings')
     .selectAll()
-    .where('organizationId', '=', organizationId)
     .executeTakeFirstOrThrow()
-  const integration = await db
+  const integration = await tenantDb
     .selectFrom('integrations')
     .selectAll()
-    .where('organizationId', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  return await db
+  return await tenantDb
     .insertInto('repositories')
     .values({
       id: nanoid(),
-      organizationId,
       integrationId: integration.id,
       provider: integration.provider,
       owner: data.owner,
@@ -30,15 +30,13 @@ export const addRepository = async (
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .onConflict((cb) =>
-      cb
-        .columns(['organizationId', 'integrationId', 'owner', 'repo'])
-        .doUpdateSet((eb) => ({
-          owner: eb.ref('excluded.owner'),
-          repo: eb.ref('excluded.repo'),
-          releaseDetectionKey: eb.ref('excluded.releaseDetectionKey'),
-          releaseDetectionMethod: eb.ref('excluded.releaseDetectionMethod'),
-          updatedAt: eb.ref('excluded.updatedAt'),
-        })),
+      cb.columns(['integrationId', 'owner', 'repo']).doUpdateSet((eb) => ({
+        owner: eb.ref('excluded.owner'),
+        repo: eb.ref('excluded.repo'),
+        releaseDetectionKey: eb.ref('excluded.releaseDetectionKey'),
+        releaseDetectionMethod: eb.ref('excluded.releaseDetectionMethod'),
+        updatedAt: eb.ref('excluded.updatedAt'),
+      })),
     )
     .executeTakeFirst()
 }

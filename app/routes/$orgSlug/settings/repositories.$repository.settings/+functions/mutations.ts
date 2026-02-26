@@ -1,17 +1,18 @@
-import { db, type DB, type Updateable } from '~/app/services/db.server'
+import type { Updateable } from 'kysely'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 
 export const updateRepository = (
-  repositoryId: DB.Repositories['id'],
-  organizationId: DB.Repositories['organizationId'],
+  organizationId: string,
+  repositoryId: string,
   data: Pick<
-    Updateable<DB.Repositories>,
+    Updateable<TenantDB.Repositories>,
     'owner' | 'repo' | 'releaseDetectionMethod' | 'releaseDetectionKey'
   >,
 ) => {
-  return db
+  const tenantDb = getTenantDb(organizationId)
+  return tenantDb
     .updateTable('repositories')
     .where('id', '=', repositoryId)
-    .where('organizationId', '=', organizationId)
     .set(data)
     .executeTakeFirst()
 }

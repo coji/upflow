@@ -1,14 +1,10 @@
+import type { Insertable } from 'kysely'
 import { nanoid } from 'nanoid'
-import {
-  db,
-  sql,
-  type DB,
-  type Insertable,
-  type Updateable,
-} from '~/app/services/db.server'
+import { db, sql, type DB, type Updateable } from '~/app/services/db.server'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 
 export const updateOrganization = async (
-  id: DB.Organizations['id'],
+  id: string,
   data: Omit<Updateable<DB.Organizations>, 'createdAt'>,
 ) => {
   return await db
@@ -19,34 +15,36 @@ export const updateOrganization = async (
 }
 
 export const updateOrganizationSetting = async (
-  organizationId: DB.Organizations['id'],
+  organizationId: string,
   data: Pick<
-    Updateable<DB.OrganizationSettings>,
+    Updateable<TenantDB.OrganizationSettings>,
     | 'releaseDetectionMethod'
     | 'releaseDetectionKey'
     | 'isActive'
     | 'excludedUsers'
   >,
 ) => {
-  return await db
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .updateTable('organizationSettings')
-    .where('organizationId', '=', organizationId)
     .set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
     .execute()
 }
 
-export const deleteOrganization = async (id: DB.Organizations['id']) => {
+export const deleteOrganization = async (id: string) => {
   return await db.deleteFrom('organizations').where('id', '=', id).execute()
 }
 
 export const upsertIntegration = async (
-  data: Omit<Insertable<DB.Integrations>, 'id'>,
+  organizationId: string,
+  data: Omit<Insertable<TenantDB.Integrations>, 'id'>,
 ) => {
-  return await db
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .insertInto('integrations')
     .values({ id: nanoid(), ...data })
     .onConflict((oc) =>
-      oc.column('organizationId').doUpdateSet((eb) => ({
+      oc.column('id').doUpdateSet((eb) => ({
         provider: eb.ref('excluded.provider'),
         method: eb.ref('excluded.method'),
         privateToken: eb.ref('excluded.privateToken'),
@@ -56,13 +54,15 @@ export const upsertIntegration = async (
 }
 
 export const upsertExportSetting = async (
-  data: Omit<Insertable<DB.ExportSettings>, 'id' | 'updatedAt'>,
+  organizationId: string,
+  data: Omit<Insertable<TenantDB.ExportSettings>, 'id' | 'updatedAt'>,
 ) => {
-  return await db
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
     .insertInto('exportSettings')
     .values({ id: nanoid(), ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
     .onConflict((oc) =>
-      oc.column('organizationId').doUpdateSet((eb) => ({
+      oc.column('id').doUpdateSet((eb) => ({
         sheetId: eb.ref('excluded.sheetId'),
         clientEmail: eb.ref('excluded.clientEmail'),
         privateKey: eb.ref('excluded.privateKey'),

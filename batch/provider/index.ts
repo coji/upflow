@@ -1,27 +1,33 @@
+import type { Selectable } from 'kysely'
 import { match } from 'ts-pattern'
-import type { DB, Selectable } from '~/app/services/db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import { createGitHubProvider } from './github/provider'
+
+/** Repository with organizationId (added back by getTenantData for batch compatibility) */
+type RepositoryWithOrg = Selectable<TenantDB.Repositories> & {
+  organizationId: string
+}
 
 /** Provider が提供する機能の契約 */
 export interface Provider {
   fetch: (
-    repository: Selectable<DB.Repositories>,
+    repository: RepositoryWithOrg,
     options: { refresh?: boolean; halt?: boolean },
   ) => Promise<void>
 
   analyze: (
     organizationSetting: Pick<
-      Selectable<DB.OrganizationSettings>,
+      Selectable<TenantDB.OrganizationSettings>,
       'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
     >,
-    repositories: Selectable<DB.Repositories>[],
+    repositories: RepositoryWithOrg[],
     onProgress?: (progress: {
       repo: string
       current: number
       total: number
     }) => void,
   ) => Promise<{
-    pulls: Selectable<DB.PullRequests>[]
+    pulls: Selectable<TenantDB.PullRequests>[]
     reviews: {
       id: string
       pullRequestNumber: number
@@ -47,7 +53,7 @@ export interface Provider {
 }
 
 export const createProvider = (
-  integration: Selectable<DB.Integrations>,
+  integration: Selectable<TenantDB.Integrations>,
 ): Provider | null =>
   match(integration.provider)
     .with('github', () => createGitHubProvider(integration))

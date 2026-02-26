@@ -1,4 +1,4 @@
-import { db } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 import { listAllOrganizations } from '~/batch/db'
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
@@ -50,10 +50,10 @@ export const crawlJob = async () => {
 
     // refresh フラグを消費
     if (refresh) {
-      await db
+      const tenantDb = getTenantDb(organization.id)
+      await tenantDb
         .updateTable('organizationSettings')
         .set({ refreshRequestedAt: null })
-        .where('organizationId', '=', organization.id)
         .execute()
       logger.info('refresh flag consumed.')
     }
