@@ -1,16 +1,13 @@
 import { consola } from 'consola'
 import 'dotenv/config'
 import { nanoid } from 'nanoid'
+import { execSync } from 'node:child_process'
+import { copyFileSync } from 'node:fs'
 import { db, sql } from '~/app/services/db.server'
+import { getTenantDb, getTenantDbPath } from '~/app/services/tenant-db.server'
 
 async function seed() {
-  // Clear existing data (child tables first for FK constraints)
-  await db.deleteFrom('pullRequests').execute()
-  await db.deleteFrom('companyGithubUsers').execute()
-  await db.deleteFrom('repositories').execute()
-  await db.deleteFrom('exportSettings').execute()
-  await db.deleteFrom('organizationSettings').execute()
-  await db.deleteFrom('integrations').execute()
+  // Clear existing shared data (child tables first for FK constraints)
   await db.deleteFrom('members').execute()
   await db.deleteFrom('organizations').execute()
   await db.deleteFrom('sessions').execute()
@@ -84,22 +81,31 @@ async function seed() {
     })
     .execute()
 
+  // --- Tenant DB ---
+  // Create tenant DB file and apply migrations
+  const tenantDbPath = getTenantDbPath(organization.id)
+  consola.info(`Creating tenant DB at ${tenantDbPath}...`)
+  execSync(
+    `atlas migrate apply --env tenant --url 'sqlite://${tenantDbPath}'`,
+    { stdio: 'inherit' },
+  )
+
+  const tenantDb = getTenantDb(organization.id)
+
   // organization settings
-  await db
+  await tenantDb
     .insertInto('organizationSettings')
     .values({
       id: nanoid(),
-      organizationId: organization.id,
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .execute()
 
   // export settings
-  await db
+  await tenantDb
     .insertInto('exportSettings')
     .values({
       id: nanoid(),
-      organizationId: organization.id,
       sheetId: '',
       clientEmail: '',
       privateKey: '',
@@ -108,20 +114,19 @@ async function seed() {
     .execute()
 
   // integration
-  const integration = await db
+  const integration = await tenantDb
     .insertInto('integrations')
     .values({
       id: nanoid(),
       provider: 'github',
       method: 'token',
-      privateToken: process.env.INTEGRATION_PRIVATE_TOKEN,
-      organizationId: organization.id,
+      privateToken: process.env.INTEGRATION_PRIVATE_TOKEN ?? null,
     })
     .returningAll()
     .executeTakeFirstOrThrow()
 
   // repository
-  const repo = await db
+  const repo = await tenantDb
     .insertInto('repositories')
     .values({
       id: nanoid(),
@@ -129,7 +134,6 @@ async function seed() {
       owner: 'test',
       repo: 'test',
       integrationId: integration.id,
-      organizationId: organization.id,
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .returningAll()
@@ -137,7 +141,7 @@ async function seed() {
 
   // pull requests
   for (const i of Array(10).keys()) {
-    await db
+    await tenantDb
       .insertInto('pullRequests')
       .values({
         repo: 'test',
@@ -155,15 +159,17 @@ async function seed() {
   }
 
   // company github users
-  await db
+  await tenantDb
     .insertInto('companyGithubUsers')
     .values({
-      organizationId: organization.id,
       login: 'test_user',
       displayName: 'Test User',
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .execute()
+
+  // Copy tenant DB for type generation (used by db:generate:tenant)
+  copyFileSync(tenantDbPath, './data/tenant_seed.db')
 
   consola.info('Database has been seeded. 🌱')
 }
