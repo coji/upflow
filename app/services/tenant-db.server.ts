@@ -6,6 +6,8 @@ import {
   ParseJSONResultsPlugin,
   SqliteDialect,
 } from 'kysely'
+import { execSync } from 'node:child_process'
+import { existsSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import type * as TenantDB from './tenant-type'
 
@@ -55,6 +57,37 @@ export function closeAllTenantDbs(): void {
     tenantDb.destroy()
   }
   tenantDbCache.clear()
+}
+
+/**
+ * Create a new tenant DB file and apply migrations.
+ * Call this when creating a new organization.
+ */
+export function createTenantDb(organizationId: string): void {
+  const tenantDbPath = getTenantDbPath(organizationId)
+  execSync(
+    `atlas migrate apply --env tenant --url 'sqlite://${tenantDbPath}'`,
+    { stdio: 'inherit' },
+  )
+}
+
+/**
+ * Delete the tenant DB file.
+ * Call closeTenantDb first to release the connection.
+ */
+export function deleteTenantDb(organizationId: string): void {
+  closeTenantDb(organizationId)
+  const tenantDbPath = getTenantDbPath(organizationId)
+  if (existsSync(tenantDbPath)) {
+    unlinkSync(tenantDbPath)
+  }
+  // Also clean up WAL and SHM files
+  for (const suffix of ['-wal', '-shm']) {
+    const walPath = tenantDbPath + suffix
+    if (existsSync(walPath)) {
+      unlinkSync(walPath)
+    }
+  }
 }
 
 export { getTenantDbPath }

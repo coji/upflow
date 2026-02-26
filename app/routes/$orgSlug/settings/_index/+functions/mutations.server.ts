@@ -1,7 +1,11 @@
 import type { Insertable } from 'kysely'
 import { nanoid } from 'nanoid'
 import { db, sql, type DB, type Updateable } from '~/app/services/db.server'
-import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import {
+  deleteTenantDb,
+  getTenantDb,
+  type TenantDB,
+} from '~/app/services/tenant-db.server'
 
 export const updateOrganization = async (
   id: string,
@@ -32,7 +36,8 @@ export const updateOrganizationSetting = async (
 }
 
 export const deleteOrganization = async (id: string) => {
-  return await db.deleteFrom('organizations').where('id', '=', id).execute()
+  await db.deleteFrom('organizations').where('id', '=', id).execute()
+  deleteTenantDb(id)
 }
 
 export const upsertIntegration = async (
