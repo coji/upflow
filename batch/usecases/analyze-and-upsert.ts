@@ -1,4 +1,5 @@
-import type { DB, Selectable } from '~/app/services/db.server'
+import type { Selectable } from 'kysely'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import {
   upsertPullRequest,
@@ -12,11 +13,13 @@ import type { Provider } from '~/batch/provider'
 interface OrganizationForAnalyze {
   id: string
   organizationSetting: Pick<
-    Selectable<DB.OrganizationSettings>,
+    Selectable<TenantDB.OrganizationSettings>,
     'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
   >
-  repositories: Selectable<DB.Repositories>[]
-  exportSetting?: Selectable<DB.ExportSettings> | null
+  repositories: (Selectable<TenantDB.Repositories> & {
+    organizationId: string
+  })[]
+  exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
 
 interface AnalyzeAndUpsertParams {
@@ -44,14 +47,14 @@ export async function analyzeAndUpsert({
   // 2. upsert pull requests
   logger.info('upsert started...', orgId)
   for (const pr of pulls) {
-    await upsertPullRequest(pr)
+    await upsertPullRequest(orgId, pr)
   }
   logger.info('upsert pull requests completed.', orgId)
 
   // 3. upsert reviews
   logger.info('upsert reviews started...', orgId)
   for (const review of reviews) {
-    await upsertPullRequestReview(review)
+    await upsertPullRequestReview(orgId, review)
   }
   logger.info('upsert reviews completed.', orgId)
 
@@ -59,6 +62,7 @@ export async function analyzeAndUpsert({
   logger.info('upsert reviewers started...', orgId)
   for (const reviewer of reviewers) {
     await upsertPullRequestReviewers(
+      orgId,
       reviewer.repositoryId,
       reviewer.pullRequestNumber,
       reviewer.reviewerLogins,

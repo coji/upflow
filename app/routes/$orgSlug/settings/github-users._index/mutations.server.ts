@@ -1,16 +1,16 @@
-import { db } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 
 export const addGithubUser = async (params: {
   login: string
   displayName: string
   organizationId: string
 }) => {
-  await db
+  const tenantDb = getTenantDb(params.organizationId)
+  await tenantDb
     .insertInto('companyGithubUsers')
     .values({
       login: params.login,
       displayName: params.displayName,
-      organizationId: params.organizationId,
       updatedAt: new Date().toISOString(),
     })
     .execute()
@@ -23,7 +23,8 @@ export const updateGithubUser = async (params: {
   name: string | null
   email: string | null
 }) => {
-  await db
+  const tenantDb = getTenantDb(params.organizationId)
+  await tenantDb
     .updateTable('companyGithubUsers')
     .set({
       displayName: params.displayName,
@@ -32,7 +33,6 @@ export const updateGithubUser = async (params: {
       updatedAt: new Date().toISOString(),
     })
     .where('login', '=', params.login)
-    .where('organizationId', '=', params.organizationId)
     .execute()
 }
 
@@ -40,9 +40,9 @@ export const deleteGithubUser = async (
   login: string,
   organizationId: string,
 ) => {
-  await db
+  const tenantDb = getTenantDb(organizationId)
+  await tenantDb
     .deleteFrom('companyGithubUsers')
     .where('login', '=', login)
-    .where('organizationId', '=', organizationId)
     .execute()
 }

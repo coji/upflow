@@ -19,12 +19,13 @@ import {
   Stack,
   Textarea,
 } from '~/app/components/ui'
-import type { DB, Selectable } from '~/app/services/db.server'
+import type { Selectable } from '~/app/services/db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../+schema'
 import type { action } from '../../integration/index'
 
 interface IntegrationSettingsProps {
-  integration?: Selectable<DB.Integrations>
+  integration?: Selectable<TenantDB.Integrations>
 }
 
 export const IntegrationSettings = ({

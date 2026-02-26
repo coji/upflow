@@ -7,20 +7,15 @@ export const getRepository = async (
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
     .selectFrom('repositories')
-    .where('id', '=', repositoryId)
     .selectAll()
+    .where('id', '=', repositoryId)
     .executeTakeFirst()
 }
 
-export const listPullRequests = async (
-  organizationId: string,
-  repositoryId: string,
-) => {
+export const getIntegration = async (organizationId: string) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
-    .selectFrom('pullRequests')
-    .where('repositoryId', '=', repositoryId)
-    .orderBy('number', 'desc')
+    .selectFrom('integrations')
     .selectAll()
-    .execute()
+    .executeTakeFirst()
 }

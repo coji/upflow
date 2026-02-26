@@ -1,6 +1,11 @@
 import { nanoid } from 'nanoid'
 import { isReservedSlug } from '~/app/libs/auth.server'
-import { db, type DB } from '~/app/services/db.server'
+import { db, sql, type DB } from '~/app/services/db.server'
+import {
+  createTenantDb,
+  deleteTenantDb,
+  getTenantDb,
+} from '~/app/services/tenant-db.server'
 
 export const createOrganization = async ({
   organizationSlug,
@@ -15,7 +20,8 @@ export const createOrganization = async ({
     throw new Error(`"${organizationSlug}" is a reserved slug`)
   }
 
-  return await db.transaction().execute(async (tsx) => {
+  // 1. Create organization + member in shared DB
+  const { organization } = await db.transaction().execute(async (tsx) => {
     const organization = await tsx
       .insertInto('organizations')
       .values({
@@ -37,15 +43,29 @@ export const createOrganization = async ({
       })
       .execute()
 
-    await tsx
+    return { organization }
+  })
+
+  // 2. Create tenant DB file + apply migrations + default settings
+  try {
+    createTenantDb(organization.id)
+    const tenantDb = getTenantDb(organization.id)
+    await tenantDb
       .insertInto('organizationSettings')
       .values({
         id: nanoid(),
-        organizationId: organization.id,
-        updatedAt: new Date().toISOString(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .execute()
+  } catch (e) {
+    // Rollback: delete the organization if tenant DB creation fails
+    await db
+      .deleteFrom('organizations')
+      .where('id', '=', organization.id)
+      .execute()
+    await deleteTenantDb(organization.id)
+    throw e
+  }
 
-    return { organization }
-  })
+  return { organization }
 }

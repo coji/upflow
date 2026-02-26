@@ -1,5 +1,6 @@
+import type { Selectable } from 'kysely'
 import invariant from 'tiny-invariant'
-import type { DB, Selectable } from '~/app/services/db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
 import { createPathBuilder } from '../../helper/path-builder'
@@ -9,7 +10,7 @@ import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 
 export const createGitHubProvider = (
-  integration: Selectable<DB.Integrations>,
+  integration: Selectable<TenantDB.Integrations>,
 ): Provider => {
   const fetch: Provider['fetch'] = async (
     repository,
@@ -156,7 +157,7 @@ export const createGitHubProvider = (
     repositories,
     onProgress,
   ) => {
-    let allPulls: Selectable<DB.PullRequests>[] = []
+    let allPulls: Selectable<TenantDB.PullRequests>[] = []
     let allReviews: {
       id: string
       pullRequestNumber: number

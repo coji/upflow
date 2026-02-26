@@ -34,8 +34,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   try {
     const { sheetId, clientEmail, privateKey } = submission.value
-    await upsertExportSetting({
-      organizationId: organization.id,
+    await upsertExportSetting(organization.id, {
       sheetId,
       clientEmail,
       privateKey,

@@ -1,5 +1,5 @@
 import { sql } from 'kysely'
-import { db } from '~/app/services/db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 
 interface ListFilteredGithubUsersArgs {
   organizationId: string
@@ -18,7 +18,9 @@ export const listFilteredGithubUsers = async ({
   sortBy,
   sortOrder,
 }: ListFilteredGithubUsersArgs) => {
-  let query = db
+  const tenantDb = getTenantDb(organizationId)
+
+  let query = tenantDb
     .selectFrom('companyGithubUsers')
     .select([
       'companyGithubUsers.login',
@@ -28,7 +30,6 @@ export const listFilteredGithubUsers = async ({
       'companyGithubUsers.pictureUrl',
       'companyGithubUsers.createdAt',
     ])
-    .where('companyGithubUsers.organizationId', '=', organizationId)
 
   if (search) {
     query = query.where((eb) =>
@@ -40,10 +41,9 @@ export const listFilteredGithubUsers = async ({
     )
   }
 
-  let countQuery = db
+  let countQuery = tenantDb
     .selectFrom('companyGithubUsers')
     .select((eb) => eb.fn.count<string>('companyGithubUsers.login').as('count'))
-    .where('companyGithubUsers.organizationId', '=', organizationId)
 
   if (search) {
     countQuery = countQuery.where((eb) =>

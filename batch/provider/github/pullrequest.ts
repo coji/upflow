@@ -1,6 +1,7 @@
+import type { Selectable } from 'kysely'
 import { first } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import type { DB, Selectable } from '~/app/services/db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import {
   codingTime,
   deployTime,
@@ -117,7 +118,7 @@ function buildPullRequestRow(
   dates: PrDates,
   releasedAt: string | null,
   repositoryId: string,
-): Selectable<DB.PullRequests> {
+): Selectable<TenantDB.PullRequests> {
   return {
     repo: pr.repo,
     number: pr.number,
@@ -176,7 +177,7 @@ export const buildPullRequests = async (
     .filter((u) => u.length > 0)
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
 
-  const pulls: Selectable<DB.PullRequests>[] = []
+  const pulls: Selectable<TenantDB.PullRequests>[] = []
   const reviews: {
     id: string
     pullRequestNumber: number

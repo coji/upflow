@@ -15,8 +15,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
-  const repository = await getRepository(repositoryId)
-  if (!repository || repository.organizationId !== organization.id) {
+  const repository = await getRepository(organization.id, repositoryId)
+  if (!repository) {
     throw new Response('repository not found', { status: 404 })
   }
   return { organization, repositoryId, repository }
@@ -27,12 +27,12 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
-  const repository = await getRepository(repositoryId)
-  if (!repository || repository.organizationId !== organization.id) {
+  const repository = await getRepository(organization.id, repositoryId)
+  if (!repository) {
     throw new Response('repository not found', { status: 404 })
   }
 
-  await deleteRepository(repositoryId, organization.id)
+  await deleteRepository(organization.id, repositoryId)
 
   return redirect(`/${organization.slug}/settings/repositories`)
 }

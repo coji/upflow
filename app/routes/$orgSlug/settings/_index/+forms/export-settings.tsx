@@ -16,12 +16,13 @@ import {
   Stack,
   Textarea,
 } from '~/app/components/ui'
-import type { DB, Selectable } from '~/app/services/db.server'
+import type { Selectable } from '~/app/services/db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import { INTENTS, exportSettingsSchema as schema } from '../+schema'
 import type { action } from '../../export/index'
 
 interface ExportSettingsProps {
-  exportSetting?: Selectable<DB.ExportSettings>
+  exportSetting?: Selectable<TenantDB.ExportSettings>
 }
 
 export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {

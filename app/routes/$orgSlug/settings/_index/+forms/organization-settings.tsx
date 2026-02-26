@@ -24,6 +24,7 @@ import {
   Switch,
 } from '~/app/components/ui'
 import type { DB, Selectable } from '~/app/services/db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import { INTENTS, organizationSettingsSchema as schema } from '../+schema'
 import type { action } from '../../_index/index'
 
@@ -32,7 +33,7 @@ export const OrganizationSettings = ({
   organizationSetting,
 }: {
   organization: Selectable<DB.Organizations>
-  organizationSetting: Selectable<DB.OrganizationSettings>
+  organizationSetting: Selectable<TenantDB.OrganizationSettings>
 }) => {
   const actionData = useActionData<typeof action>()
   const [form, fields] = useForm({
