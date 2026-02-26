@@ -4,7 +4,7 @@ import { HStack, Heading, Stack } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { createFetcher } from '~/batch/provider/github/fetcher'
 import { createStore } from '~/batch/provider/github/store'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import { getPullRequest, getRepository } from './queries.server'
 
 export const handle = {

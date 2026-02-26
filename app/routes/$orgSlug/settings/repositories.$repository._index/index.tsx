@@ -2,12 +2,6 @@ import { zx } from '@coji/zodix/v4'
 import { Link } from 'react-router'
 import { z } from 'zod'
 import {
-  Badge,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  HStack,
   Table,
   TableBody,
   TableCell,
@@ -16,6 +10,7 @@ import {
   TableRow,
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 import { getRepository, listPullRequests } from './queries.server'
 
@@ -50,56 +45,48 @@ export default function RepositoryPullsIndexPage({
 }: Route.ComponentProps) {
   const slug = organization.slug
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <HStack>
-            <div>
-              {repository.owner}/{repository.repo}
-            </div>
-            <Badge variant="outline">repository</Badge>
-          </HStack>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-lg border shadow-xs">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>number</TableHead>
-                <TableHead>state</TableHead>
-                <TableHead>author</TableHead>
-                <TableHead>title</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pulls.map((pull) => {
-                return (
-                  <TableRow key={pull.number}>
-                    <TableCell>{pull.number}</TableCell>
-                    <TableCell>{pull.state}</TableCell>
-                    <TableCell>{pull.author}</TableCell>
-                    <TableCell
-                      style={{
-                        lineBreak: 'strict',
-                        wordBreak: 'normal',
-                        overflowWrap: 'anywhere',
-                      }}
+    <ContentSection
+      title={`${repository.owner}/${repository.repo}`}
+      desc="Pull requests tracked for this repository."
+      fullWidth
+    >
+      <div className="rounded-lg border shadow-xs">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>number</TableHead>
+              <TableHead>state</TableHead>
+              <TableHead>author</TableHead>
+              <TableHead>title</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pulls.map((pull) => {
+              return (
+                <TableRow key={pull.number}>
+                  <TableCell>{pull.number}</TableCell>
+                  <TableCell>{pull.state}</TableCell>
+                  <TableCell>{pull.author}</TableCell>
+                  <TableCell
+                    style={{
+                      lineBreak: 'strict',
+                      wordBreak: 'normal',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    <Link
+                      className="underline"
+                      to={`/${slug}/settings/repositories/${repositoryId}/${pull.number}`}
                     >
-                      <Link
-                        className="underline"
-                        to={`/${slug}/settings/repositories/${repositoryId}/${pull.number}`}
-                      >
-                        {pull.title}
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                      {pull.title}
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </ContentSection>
   )
 }

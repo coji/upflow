@@ -12,11 +12,6 @@ import { z } from 'zod'
 import { AppProviderBadge } from '~/app/components'
 import {
   Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
   Select,
@@ -28,6 +23,7 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 import {
   getIntegration,
@@ -88,8 +84,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 }
 
 const GithubRepositoryForm = ({
+  organization,
   repository,
 }: {
+  organization: { slug: string }
   repository: NonNullable<Awaited<ReturnType<typeof getRepository>>>
 }) => {
   const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] =
@@ -148,36 +146,35 @@ const GithubRepositoryForm = ({
           <Input {...getInputProps(releaseDetectionKey, { type: 'text' })} />
           <div className="text-destructive">{releaseDetectionKey.errors}</div>
         </fieldset>
-      </Stack>
-    </Form>
-  )
-}
 
-export default function EditRepositoryModal({
-  loaderData: { organization, repository, provider },
-}: Route.ComponentProps) {
-  const form = match(provider)
-    .with('github', () => <GithubRepositoryForm repository={repository} />)
-    .otherwise(() => <></>)
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Edit Repository</CardTitle>
-      </CardHeader>
-      <CardContent>{form}</CardContent>
-      <CardFooter>
         <Stack direction="row">
-          <Button type="submit" form="repository-edit-form">
-            Update
-          </Button>
+          <Button type="submit">Update</Button>
           <Button asChild variant="ghost">
             <Link to={`/${organization.slug}/settings/repositories`}>
               Cancel
             </Link>
           </Button>
         </Stack>
-      </CardFooter>
-    </Card>
+      </Stack>
+    </Form>
+  )
+}
+
+export default function EditRepositoryPage({
+  loaderData: { organization, repository, provider },
+}: Route.ComponentProps) {
+  const form = match(provider)
+    .with('github', () => (
+      <GithubRepositoryForm
+        organization={organization}
+        repository={repository}
+      />
+    ))
+    .otherwise(() => <></>)
+
+  return (
+    <ContentSection title="Edit Repository" desc="Update repository settings.">
+      {form}
+    </ContentSection>
   )
 }
