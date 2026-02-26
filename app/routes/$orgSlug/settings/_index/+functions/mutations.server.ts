@@ -36,8 +36,8 @@ export const updateOrganizationSetting = async (
 }
 
 export const deleteOrganization = async (id: string) => {
-  await db.deleteFrom('organizations').where('id', '=', id).execute()
   deleteTenantDb(id)
+  await db.deleteFrom('organizations').where('id', '=', id).execute()
 }
 
 export const upsertIntegration = async (
