@@ -5,4 +5,4 @@ pre-commit:
       run: npx prettier --cache --write {staged_files} && git add {staged_files}
     lint:
       glob: '*.{js,jsx,ts,tsx,mjs,cjs}'
-      run: npx biome check --write {staged_files} && git add {staged_files}
+      run: npx biome lint --write {staged_files} && git add {staged_files}
