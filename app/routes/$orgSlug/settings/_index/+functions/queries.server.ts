@@ -1,7 +1,10 @@
 import { db } from '~/app/services/db.server'
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+} from '~/app/services/tenant-db.server'
 
-export const getOrganization = async (organizationId: string) => {
+export const getOrganization = async (organizationId: OrganizationId) => {
   return await db
     .selectFrom('organizations')
     .selectAll()
@@ -9,7 +12,9 @@ export const getOrganization = async (organizationId: string) => {
     .executeTakeFirst()
 }
 
-export const getOrganizationSetting = async (organizationId: string) => {
+export const getOrganizationSetting = async (
+  organizationId: OrganizationId,
+) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
     .selectFrom('organizationSettings')
@@ -18,7 +23,7 @@ export const getOrganizationSetting = async (organizationId: string) => {
 }
 
 export const createDefaultOrganizationSetting = async (
-  organizationId: string,
+  organizationId: OrganizationId,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const id = crypto.randomUUID()
@@ -35,7 +40,7 @@ export const createDefaultOrganizationSetting = async (
   return row
 }
 
-export const getExportSetting = async (organizationId: string) => {
+export const getExportSetting = async (organizationId: OrganizationId) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
     .selectFrom('exportSettings')
@@ -43,7 +48,7 @@ export const getExportSetting = async (organizationId: string) => {
     .executeTakeFirst()
 }
 
-export const getIntegration = async (organizationId: string) => {
+export const getIntegration = async (organizationId: OrganizationId) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
     .selectFrom('integrations')

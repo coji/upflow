@@ -1,7 +1,10 @@
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+} from '~/app/services/tenant-db.server'
 
 export const deleteRepository = (
-  organizationId: string,
+  organizationId: OrganizationId,
   repositoryId: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)

@@ -8,6 +8,7 @@ import {
   createTenantDb,
   getTenantDb,
   getTenantDbPath,
+  type OrganizationId,
 } from '~/app/services/tenant-db.server'
 
 async function seed() {
@@ -87,11 +88,12 @@ async function seed() {
 
   // --- Tenant DB ---
   // Create tenant DB file and apply migrations
-  const tenantDbPath = getTenantDbPath(organization.id)
+  const orgId = organization.id as OrganizationId
+  const tenantDbPath = getTenantDbPath(orgId)
   consola.info(`Creating tenant DB at ${tenantDbPath}...`)
-  createTenantDb(organization.id)
+  createTenantDb(orgId)
 
-  const tenantDb = getTenantDb(organization.id)
+  const tenantDb = getTenantDb(orgId)
 
   // organization settings
   await tenantDb
@@ -170,7 +172,7 @@ async function seed() {
     .execute()
 
   // Close tenant DB connection to flush WAL before copying
-  await closeTenantDb(organization.id)
+  await closeTenantDb(orgId)
 
   // Copy tenant DB for type generation (used by db:generate:tenant)
   copyFileSync(tenantDbPath, './data/tenant_seed.db')

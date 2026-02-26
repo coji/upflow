@@ -13,6 +13,7 @@ export const createGitHubProvider = (
   integration: Selectable<TenantDB.Integrations>,
 ): Provider => {
   const fetch: Provider['fetch'] = async (
+    organizationId,
     repository,
     { refresh = false, halt = false },
   ) => {
@@ -27,11 +28,11 @@ export const createGitHubProvider = (
     })
     const aggregator = createAggregator()
     const store = createStore({
-      organizationId: repository.organizationId,
+      organizationId,
       repositoryId: repository.id,
     })
     const pathBuilder = createPathBuilder({
-      organizationId: repository.organizationId,
+      organizationId,
       repositoryId: repository.id,
     })
 
@@ -153,6 +154,7 @@ export const createGitHubProvider = (
   }
 
   const analyze: Provider['analyze'] = async (
+    organizationId,
     organizationSetting,
     repositories,
     onProgress,
@@ -188,13 +190,13 @@ export const createGitHubProvider = (
       onProgress?.({ repo: repository.repo, current, total })
 
       const store = createStore({
-        organizationId: repository.organizationId,
+        organizationId,
         repositoryId: repository.id,
       })
       const { pulls, reviews, reviewers, reviewResponses } =
         await buildPullRequests(
           {
-            organizationId: repository.organizationId,
+            organizationId,
             repositoryId: repository.id,
             releaseDetectionMethod:
               repository.releaseDetectionMethod ??

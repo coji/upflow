@@ -1,5 +1,5 @@
 import type { Selectable } from 'kysely'
-import type { TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import {
   upsertPullRequest,
@@ -11,14 +11,12 @@ import type { Provider } from '~/batch/provider'
 
 /** analyzeAndUpsert に渡す organization の必須フィールド */
 interface OrganizationForAnalyze {
-  id: string
+  id: OrganizationId
   organizationSetting: Pick<
     Selectable<TenantDB.OrganizationSettings>,
     'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
   >
-  repositories: (Selectable<TenantDB.Repositories> & {
-    organizationId: string
-  })[]
+  repositories: Selectable<TenantDB.Repositories>[]
   exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
 
@@ -39,6 +37,7 @@ export async function analyzeAndUpsert({
   // 1. analyze
   logger.info('analyze started...', orgId)
   const { pulls, reviews, reviewers, reviewResponses } = await provider.analyze(
+    orgId,
     organization.organizationSetting,
     organization.repositories,
   )

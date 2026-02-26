@@ -4,6 +4,7 @@ import { db, sql, type DB, type Updateable } from '~/app/services/db.server'
 import {
   deleteTenantDb,
   getTenantDb,
+  type OrganizationId,
   type TenantDB,
 } from '~/app/services/tenant-db.server'
 
@@ -19,7 +20,7 @@ export const updateOrganization = async (
 }
 
 export const updateOrganizationSetting = async (
-  organizationId: string,
+  organizationId: OrganizationId,
   data: Pick<
     Updateable<TenantDB.OrganizationSettings>,
     | 'releaseDetectionMethod'
@@ -35,13 +36,13 @@ export const updateOrganizationSetting = async (
     .execute()
 }
 
-export const deleteOrganization = async (id: string) => {
+export const deleteOrganization = async (id: OrganizationId) => {
   await deleteTenantDb(id)
   await db.deleteFrom('organizations').where('id', '=', id).execute()
 }
 
 export const upsertIntegration = async (
-  organizationId: string,
+  organizationId: OrganizationId,
   data: Omit<Insertable<TenantDB.Integrations>, 'id'>,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -64,7 +65,7 @@ export const upsertIntegration = async (
 }
 
 export const upsertExportSetting = async (
-  organizationId: string,
+  organizationId: OrganizationId,
   data: Omit<Insertable<TenantDB.ExportSettings>, 'id' | 'updatedAt'>,
 ) => {
   const tenantDb = getTenantDb(organizationId)

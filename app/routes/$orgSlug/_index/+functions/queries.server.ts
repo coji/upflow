@@ -1,9 +1,12 @@
 import { pipe, sortBy } from 'remeda'
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+} from '~/app/services/tenant-db.server'
 import { calculateBusinessHours } from './utils'
 
 export const getMergedPullRequestReport = async (
-  organizationId: string,
+  organizationId: OrganizationId,
   fromDateTime: string | null,
   toDateTime: string | null,
   objective: number,

@@ -1,5 +1,6 @@
 import consola from 'consola'
 import invariant from 'tiny-invariant'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { getOrganization } from '~/batch/db'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider/index'
@@ -20,7 +21,8 @@ export async function upsertCommand({ organizationId }: UpsertCommandProps) {
     return
   }
 
-  const organization = await getOrganization(organizationId)
+  const orgId = organizationId as OrganizationId
+  const organization = await getOrganization(orgId)
   invariant(organization.integration, 'integration should related')
   invariant(
     organization.organizationSetting,
@@ -32,8 +34,10 @@ export async function upsertCommand({ organizationId }: UpsertCommandProps) {
 
   await analyzeAndUpsert({
     organization: {
-      ...organization,
+      id: orgId,
       organizationSetting: organization.organizationSetting,
+      repositories: organization.repositories,
+      exportSetting: organization.exportSetting,
     },
     provider,
   })

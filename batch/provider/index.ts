@@ -1,26 +1,23 @@
 import type { Selectable } from 'kysely'
 import { match } from 'ts-pattern'
-import type { TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
 import { createGitHubProvider } from './github/provider'
-
-/** Repository with organizationId (added back by getTenantData for batch compatibility) */
-type RepositoryWithOrg = Selectable<TenantDB.Repositories> & {
-  organizationId: string
-}
 
 /** Provider が提供する機能の契約 */
 export interface Provider {
   fetch: (
-    repository: RepositoryWithOrg,
+    organizationId: OrganizationId,
+    repository: Selectable<TenantDB.Repositories>,
     options: { refresh?: boolean; halt?: boolean },
   ) => Promise<void>
 
   analyze: (
+    organizationId: OrganizationId,
     organizationSetting: Pick<
       Selectable<TenantDB.OrganizationSettings>,
       'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
     >,
-    repositories: RepositoryWithOrg[],
+    repositories: Selectable<TenantDB.Repositories>[],
     onProgress?: (progress: {
       repo: string
       current: number

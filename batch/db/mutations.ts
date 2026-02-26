@@ -1,9 +1,13 @@
 import type { Insertable } from 'kysely'
-import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+  type TenantDB,
+} from '~/app/services/tenant-db.server'
 import { timeFormatUTC } from '../helper/timeformat'
 
 export function upsertPullRequest(
-  organizationId: string,
+  organizationId: OrganizationId,
   data: Insertable<TenantDB.PullRequests>,
 ) {
   const firstCommittedAt = timeFormatUTC(data.firstCommittedAt)
@@ -54,7 +58,7 @@ export function upsertPullRequest(
 }
 
 export function upsertPullRequestReview(
-  organizationId: string,
+  organizationId: OrganizationId,
   data: Insertable<TenantDB.PullRequestReviews>,
 ) {
   const tenantDb = getTenantDb(organizationId)
@@ -73,7 +77,7 @@ export function upsertPullRequestReview(
 }
 
 export async function upsertPullRequestReviewers(
-  organizationId: string,
+  organizationId: OrganizationId,
   repositoryId: string,
   pullRequestNumber: number,
   reviewers: string[],

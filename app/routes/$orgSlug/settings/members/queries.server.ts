@@ -1,8 +1,9 @@
 import { sql } from 'kysely'
 import { db } from '~/app/services/db.server'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 
 interface ListFilteredMembersArgs {
-  organizationId: string
+  organizationId: OrganizationId
   name: string
   filters: Record<string, string[]>
   currentPage: number

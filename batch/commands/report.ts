@@ -1,5 +1,6 @@
 import consola from 'consola'
 import invariant from 'tiny-invariant'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { getOrganization, getPullRequestReport } from '~/batch/db'
 import { allConfigs } from '../config'
 import { timeFormatTz } from '../helper/timeformat'
@@ -19,7 +20,8 @@ export async function reportCommand({ organizationId }: reportCommandProps) {
     return
   }
 
-  const organization = await getOrganization(organizationId)
+  const orgId = organizationId as OrganizationId
+  const organization = await getOrganization(orgId)
   invariant(organization.integration, 'integration should related')
 
   console.log(
@@ -46,7 +48,7 @@ export async function reportCommand({ organizationId }: reportCommandProps) {
   )
   const tz = 'Asia/Tokyo'
 
-  const prList = await getPullRequestReport(organization.id)
+  const prList = await getPullRequestReport(orgId)
   for (const pr of prList) {
     console.log(
       [

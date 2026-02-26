@@ -13,6 +13,7 @@ import consola from 'consola'
 import 'dotenv/config'
 import fs from 'node:fs'
 import path from 'node:path'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { getOrganization, listAllOrganizations } from '~/batch/db/queries'
 import { createGitHubClient } from './lib/github'
 
@@ -38,7 +39,7 @@ async function main() {
     process.exit(1)
   }
 
-  const org = await getOrganization(orgs[0].id)
+  const org = await getOrganization(orgs[0].id as OrganizationId)
   if (!org.integration) {
     consola.error('No integration configured for organization:', org.name)
     process.exit(1)

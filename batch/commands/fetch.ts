@@ -1,5 +1,6 @@
 import consola from 'consola'
 import invariant from 'tiny-invariant'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { getOrganization } from '~/batch/db'
 import { allConfigs } from '../config'
 import { createProvider } from '../provider'
@@ -22,7 +23,8 @@ export async function fetchCommand(props: FetchCommandProps) {
     return
   }
 
-  const organization = await getOrganization(props.organizationId)
+  const orgId = props.organizationId as OrganizationId
+  const organization = await getOrganization(orgId)
   invariant(organization.integration, 'integration should related')
 
   const provider = createProvider(organization.integration)
@@ -34,7 +36,7 @@ export async function fetchCommand(props: FetchCommandProps) {
       : repo.id !== props.exclude
   })
   for (const repository of repositories) {
-    await provider.fetch(repository, {
+    await provider.fetch(orgId, repository, {
       refresh: props.refresh,
       halt: false,
     })

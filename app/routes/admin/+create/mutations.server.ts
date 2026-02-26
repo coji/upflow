@@ -5,6 +5,7 @@ import {
   createTenantDb,
   deleteTenantDb,
   getTenantDb,
+  type OrganizationId,
 } from '~/app/services/tenant-db.server'
 
 export const createOrganization = async ({
@@ -47,9 +48,10 @@ export const createOrganization = async ({
   })
 
   // 2. Create tenant DB file + apply migrations + default settings
+  const orgId = organization.id as OrganizationId
   try {
-    createTenantDb(organization.id)
-    const tenantDb = getTenantDb(organization.id)
+    createTenantDb(orgId)
+    const tenantDb = getTenantDb(orgId)
     await tenantDb
       .insertInto('organizationSettings')
       .values({
@@ -63,7 +65,7 @@ export const createOrganization = async ({
       .deleteFrom('organizations')
       .where('id', '=', organization.id)
       .execute()
-    await deleteTenantDb(organization.id)
+    await deleteTenantDb(orgId)
     throw e
   }
 

@@ -13,11 +13,14 @@ import type * as TenantDB from './tenant-type'
 
 export type { TenantDB }
 
+/** Branded type for organization IDs to prevent mixing with arbitrary strings */
+export type OrganizationId = string & { readonly __brand: 'OrganizationId' }
+
 const debug = createDebug('app:tenant-db')
 
 const tenantDbCache = new Map<string, Kysely<TenantDB.DB>>()
 
-function getTenantDbPath(organizationId: string): string {
+function getTenantDbPath(organizationId: OrganizationId): string {
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL environment variable is required')
   }
@@ -26,7 +29,9 @@ function getTenantDbPath(organizationId: string): string {
   return path.join(dir, `tenant_${organizationId}.db`)
 }
 
-export function getTenantDb(organizationId: string): Kysely<TenantDB.DB> {
+export function getTenantDb(
+  organizationId: OrganizationId,
+): Kysely<TenantDB.DB> {
   const cached = tenantDbCache.get(organizationId)
   if (cached) return cached
 
@@ -44,7 +49,9 @@ export function getTenantDb(organizationId: string): Kysely<TenantDB.DB> {
   return tenantDb
 }
 
-export async function closeTenantDb(organizationId: string): Promise<void> {
+export async function closeTenantDb(
+  organizationId: OrganizationId,
+): Promise<void> {
   const tenantDb = tenantDbCache.get(organizationId)
   if (tenantDb) {
     await tenantDb.destroy()
@@ -63,7 +70,7 @@ export async function closeAllTenantDbs(): Promise<void> {
  * Create a new tenant DB file and apply migrations.
  * Call this when creating a new organization.
  */
-export function createTenantDb(organizationId: string): void {
+export function createTenantDb(organizationId: OrganizationId): void {
   const tenantDbPath = getTenantDbPath(organizationId)
   execFileSync(
     'atlas',
@@ -83,7 +90,9 @@ export function createTenantDb(organizationId: string): void {
  * Delete the tenant DB file.
  * Call closeTenantDb first to release the connection.
  */
-export async function deleteTenantDb(organizationId: string): Promise<void> {
+export async function deleteTenantDb(
+  organizationId: OrganizationId,
+): Promise<void> {
   await closeTenantDb(organizationId)
   const tenantDbPath = getTenantDbPath(organizationId)
   if (existsSync(tenantDbPath)) {

@@ -1,4 +1,5 @@
 import path from 'node:path'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 
 /**
  * データディレクトリを取得
@@ -14,7 +15,7 @@ export const getDataDir = () => {
 }
 
 interface createPathBuilderProps {
-  organizationId: string
+  organizationId: OrganizationId
   repositoryId: string
 }
 export const createPathBuilder = ({

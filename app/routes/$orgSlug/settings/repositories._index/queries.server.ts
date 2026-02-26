@@ -1,8 +1,11 @@
 import { sql } from 'kysely'
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+} from '~/app/services/tenant-db.server'
 
 interface ListFilteredRepositoriesArgs {
-  organizationId: string
+  organizationId: OrganizationId
   repo: string
   currentPage: number
   pageSize: number

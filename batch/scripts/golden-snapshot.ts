@@ -2,6 +2,7 @@ import { cli } from 'cleye'
 import consola from 'consola'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { getOrganization, listAllOrganizations } from '~/batch/db'
 import { createProvider } from '~/batch/provider'
 
@@ -77,7 +78,7 @@ const sortReviewResponses = (responses: unknown[]) =>
 const main = async () => {
   const outPath = argv.flags.out
   const organizations = argv.flags.org
-    ? [await getOrganization(argv.flags.org)]
+    ? [await getOrganization(argv.flags.org as OrganizationId)]
     : await listAllOrganizations()
 
   const snapshot = {
@@ -124,6 +125,7 @@ const main = async () => {
     }
 
     const { pulls, reviewResponses } = await provider.analyze(
+      organization.id as OrganizationId,
       {
         releaseDetectionMethod: orgSetting.releaseDetectionMethod,
         releaseDetectionKey: orgSetting.releaseDetectionKey,
