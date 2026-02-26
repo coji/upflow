@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router'
+import { NavLink, useLocation, useNavigate } from 'react-router'
 import { buttonVariants } from '~/app/components/ui/button'
 import { ScrollArea, ScrollBar } from '~/app/components/ui/scroll-area'
 import {
@@ -27,10 +27,16 @@ export default function SidebarNav({
   const { pathname } = useLocation()
   const navigate = useNavigate()
 
+  const isEndHref = (href: string) => href === items[0]?.href
+
   const activeHref =
-    items.find(
-      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-    )?.href ??
+    [...items]
+      .sort((a, b) => b.href.length - a.href.length)
+      .find(
+        (item) =>
+          pathname === item.href ||
+          (!isEndHref(item.href) && pathname.startsWith(`${item.href}/`)),
+      )?.href ??
     items[0]?.href ??
     ''
 
@@ -66,20 +72,23 @@ export default function SidebarNav({
           {...props}
         >
           {items.map((item) => (
-            <Link
+            <NavLink
               key={item.href}
               to={item.href}
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                pathname === item.href || pathname.startsWith(`${item.href}/`)
-                  ? 'bg-muted hover:bg-muted'
-                  : 'hover:bg-transparent hover:underline',
-                'justify-start',
-              )}
+              end={isEndHref(item.href)}
+              className={({ isActive }) =>
+                cn(
+                  buttonVariants({ variant: 'ghost' }),
+                  isActive
+                    ? 'bg-muted hover:bg-muted'
+                    : 'hover:bg-transparent hover:underline',
+                  'justify-start',
+                )
+              }
             >
               <span>{item.icon}</span>
               {item.title}
-            </Link>
+            </NavLink>
           ))}
         </nav>
         <ScrollBar orientation="horizontal" />
