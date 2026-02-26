@@ -1,6 +1,12 @@
 import { CopyIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
+import {
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderHeading,
+  PageHeaderTitle,
+} from '~/app/components/layout/page-header'
 import { Button, Stack } from '~/app/components/ui'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
@@ -34,22 +40,26 @@ export default function OngoingPage({
 }: Route.ComponentProps) {
   return (
     <Stack>
-      <div className="text-right">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full md:w-auto"
-          onClick={() => {
-            navigator.clipboard
-              .writeText(generateMarkdown(pullRequests))
-              .then(() => toast.info(`Copied ${pullRequests.length} rows`))
-              .catch(() => toast.error('Failed to copy to clipboard'))
-          }}
-        >
-          <CopyIcon size="16" />
-        </Button>
-      </div>
+      <PageHeader>
+        <PageHeaderHeading>
+          <PageHeaderTitle>Ongoing</PageHeaderTitle>
+        </PageHeaderHeading>
+        <PageHeaderActions>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard
+                .writeText(generateMarkdown(pullRequests))
+                .then(() => toast.info(`Copied ${pullRequests.length} rows`))
+                .catch(() => toast.error('Failed to copy to clipboard'))
+            }}
+          >
+            <CopyIcon size="16" />
+          </Button>
+        </PageHeaderActions>
+      </PageHeader>
 
       <AppDataTable
         title={
