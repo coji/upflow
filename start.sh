@@ -9,12 +9,6 @@ set -ex
 
 DB_URL='sqlite:///upflow/data/data.db'
 
-# Check if atlas_schema_revisions table exists (Atlas migration history)
-if ! sqlite3 /upflow/data/data.db "SELECT 1 FROM atlas_schema_revisions LIMIT 1" 2>/dev/null; then
-  echo "Setting Atlas baseline for existing database..."
-  atlas migrate set 20251224122040 --env local --url "$DB_URL"
-fi
-
 # 1. Apply shared DB migrations
 atlas migrate apply --env local --url "$DB_URL"
 
