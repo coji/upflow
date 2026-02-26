@@ -15,13 +15,12 @@ import type { Route } from './+types/index'
 import { getRepository, listPullRequests } from './queries.server'
 
 export const handle = {
-  breadcrumb: ({
-    organization,
-    repositoryId,
-    repository,
-  }: Awaited<ReturnType<typeof loader>>) => ({
-    label: `${repository.owner}/${repository.repo}`,
-    to: `/${organization.slug}/settings/repositories/${repositoryId}`,
+  breadcrumb: (
+    data: Awaited<ReturnType<typeof loader>>,
+    params: { orgSlug: string; repository: string },
+  ) => ({
+    label: `${data.repository.owner}/${data.repository.repo}`,
+    to: `/${params.orgSlug}/settings/repositories/${params.repository}`,
   }),
 }
 
@@ -37,13 +36,13 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
   const pulls = await listPullRequests(repositoryId)
 
-  return { organization, repositoryId, repository, pulls }
+  return { repositoryId, repository, pulls }
 }
 
 export default function RepositoryPullsIndexPage({
-  loaderData: { organization, repositoryId, repository, pulls },
+  loaderData: { repositoryId, repository, pulls },
+  params,
 }: Route.ComponentProps) {
-  const slug = organization.slug
   return (
     <ContentSection
       title={`${repository.owner}/${repository.repo}`}
@@ -76,7 +75,7 @@ export default function RepositoryPullsIndexPage({
                   >
                     <Link
                       className="underline"
-                      to={`/${slug}/settings/repositories/${repositoryId}/${pull.number}`}
+                      to={`/${params.orgSlug}/settings/repositories/${repositoryId}/${pull.number}`}
                     >
                       {pull.title}
                     </Link>

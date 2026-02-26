@@ -16,9 +16,9 @@ import { changeMemberRole, removeMember } from './mutations.server'
 import { listFilteredMembers } from './queries.server'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Members',
-    to: `/${organization.slug}/settings/members`,
+    to: `/${params.orgSlug}/settings/members`,
   }),
 }
 
@@ -54,7 +54,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     sortOrder,
   })
 
-  return { organization, members, pagination }
+  return { members, pagination }
 }
 
 const changeRoleSchema = z.object({

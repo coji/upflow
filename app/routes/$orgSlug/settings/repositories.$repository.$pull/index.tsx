@@ -8,13 +8,12 @@ import type { Route } from './+types/index'
 import { getPullRequest, getRepository } from './queries.server'
 
 export const handle = {
-  breadcrumb: ({
-    organization,
-    repositoryId,
-    pull,
-  }: Awaited<ReturnType<typeof loader>>) => ({
-    label: pull?.number,
-    to: `/${organization.slug}/settings/repositories/${repositoryId}/${pull.number}`,
+  breadcrumb: (
+    data: Awaited<ReturnType<typeof loader>>,
+    params: { orgSlug: string; repository: string; pull: string },
+  ) => ({
+    label: data.pull?.number,
+    to: `/${params.orgSlug}/settings/repositories/${params.repository}/${params.pull}`,
   }),
 }
 

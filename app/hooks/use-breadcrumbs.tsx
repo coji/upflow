@@ -15,9 +15,9 @@ interface MatchedBreadcrumbItem {
   isCurrentPage?: boolean
 }
 
-function isBreadcrumbHandle(
-  handle: unknown,
-): handle is { breadcrumb: (params: unknown) => object } {
+function isBreadcrumbHandle(handle: unknown): handle is {
+  breadcrumb: (data: unknown, params: Record<string, string>) => object
+} {
   return (
     typeof handle === 'object' &&
     !!handle &&
@@ -37,7 +37,10 @@ export const useBreadcrumbs = () => {
       return null
     }
     return {
-      ...match.handle.breadcrumb(match.data),
+      ...match.handle.breadcrumb(
+        match.data,
+        match.params as Record<string, string>,
+      ),
       isCurrentPage: idx === breadcrumbMatches.length - 1,
     }
   }) as MatchedBreadcrumbItem[]

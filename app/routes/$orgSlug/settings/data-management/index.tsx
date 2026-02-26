@@ -17,9 +17,9 @@ import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Data Management',
-    to: `/${organization.slug}/settings/data-management`,
+    to: `/${params.orgSlug}/settings/data-management`,
   }),
 }
 
@@ -33,7 +33,6 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     .executeTakeFirst()
 
   return {
-    organization,
     refreshRequestedAt: organizationSetting?.refreshRequestedAt ?? null,
   }
 }

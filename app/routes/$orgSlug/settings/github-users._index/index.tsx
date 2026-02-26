@@ -19,9 +19,9 @@ import {
 import { listFilteredGithubUsers } from './queries.server'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'GitHub Users',
-    to: `/${organization.slug}/settings/github-users`,
+    to: `/${params.orgSlug}/settings/github-users`,
   }),
 }
 
@@ -52,7 +52,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     sortOrder,
   })
 
-  return { organization, githubUsers, pagination }
+  return { githubUsers, pagination }
 }
 
 const addSchema = z.object({

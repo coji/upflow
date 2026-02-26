@@ -9,9 +9,9 @@ import { deleteOrganizationSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Danger Zone',
-    to: `/${organization.slug}/settings/danger`,
+    to: `/${params.orgSlug}/settings/danger`,
   }),
 }
 

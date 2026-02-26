@@ -9,16 +9,16 @@ import { integrationSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Integration',
-    to: `/${organization.slug}/settings/integration`,
+    to: `/${params.orgSlug}/settings/integration`,
   }),
 }
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const integration = await getIntegration(organization.id)
-  return { organization, integration }
+  return { integration }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {

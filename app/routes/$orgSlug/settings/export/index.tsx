@@ -9,16 +9,16 @@ import { exportSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Export',
-    to: `/${organization.slug}/settings/export`,
+    to: `/${params.orgSlug}/settings/export`,
   }),
 }
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const exportSetting = await getExportSetting(organization.id)
-  return { organization, exportSetting }
+  return { exportSetting }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
