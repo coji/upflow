@@ -1,10 +1,13 @@
 import { consola } from 'consola'
 import 'dotenv/config'
 import { nanoid } from 'nanoid'
-import { execSync } from 'node:child_process'
 import { copyFileSync } from 'node:fs'
 import { db, sql } from '~/app/services/db.server'
-import { getTenantDb, getTenantDbPath } from '~/app/services/tenant-db.server'
+import {
+  createTenantDb,
+  getTenantDb,
+  getTenantDbPath,
+} from '~/app/services/tenant-db.server'
 
 async function seed() {
   // Clear existing shared data (child tables first for FK constraints)
@@ -85,10 +88,7 @@ async function seed() {
   // Create tenant DB file and apply migrations
   const tenantDbPath = getTenantDbPath(organization.id)
   consola.info(`Creating tenant DB at ${tenantDbPath}...`)
-  execSync(
-    `atlas migrate apply --env tenant --url 'sqlite://${tenantDbPath}'`,
-    { stdio: 'inherit' },
-  )
+  createTenantDb(organization.id)
 
   const tenantDb = getTenantDb(organization.id)
 
