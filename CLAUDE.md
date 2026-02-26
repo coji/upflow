@@ -156,6 +156,26 @@ return match(intent)
   .exhaustive()
 ```
 
+### UI Spacing Rules
+
+Consistent spacing patterns used throughout the app:
+
+| Context | Pattern | Gap |
+| --- | --- | --- |
+| Within a form field (label + input + error) | `<fieldset className="space-y-1">` | 0.25rem |
+| Between form fields | `<Stack>` (default gap) | 0.5rem (gap-2) |
+| Between page sections | `<Stack gap="6">` | 1.5rem |
+| Within a section (title + description) | `<div className="space-y-1">` | 0.25rem |
+
+```tsx
+{/* Form field pattern */}
+<fieldset className="space-y-1">
+  <Label htmlFor={field.id}>Label</Label>
+  <Input {...getInputProps(field, { type: 'text' })} />
+  <div className="text-destructive">{field.errors}</div>
+</fieldset>
+```
+
 ### Batch Processing
 
 CLI for data synchronization (`batch/cli.ts`):

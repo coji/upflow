@@ -103,24 +103,24 @@ const GithubRepositoryForm = ({
   return (
     <Form method="POST" {...getFormProps(form)}>
       <Stack>
-        <fieldset>
+        <fieldset className="space-y-1">
           <AppProviderBadge provider="github" />
           <input type="hidden" name="provider" value="github" />
         </fieldset>
 
-        <fieldset>
+        <fieldset className="space-y-1">
           <Label htmlFor={owner.id}>Owner</Label>
           <Input {...getInputProps(owner, { type: 'text' })} />
           <div className="text-destructive">{owner.errors}</div>
         </fieldset>
 
-        <fieldset>
+        <fieldset className="space-y-1">
           <Label htmlFor={repo.id}>Repo</Label>
           <Input {...getInputProps(repo, { type: 'text' })} />
           <div className="text-destructive">{repo.errors}</div>
         </fieldset>
 
-        <fieldset>
+        <fieldset className="space-y-1">
           <Label htmlFor={releaseDetectionMethod.id}>
             Release Detection Method
           </Label>
@@ -143,7 +143,7 @@ const GithubRepositoryForm = ({
           </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset className="space-y-1">
           <Label htmlFor={releaseDetectionKey.id}>Release Detection Key</Label>
           <Input {...getInputProps(releaseDetectionKey, { type: 'text' })} />
           <div className="text-destructive">{releaseDetectionKey.errors}</div>
