@@ -1,7 +1,7 @@
 import type { Selectable } from 'kysely'
 import { first } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import type { TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
 import {
   codingTime,
   deployTime,
@@ -40,7 +40,7 @@ interface PrDates {
 
 /** buildPullRequests の設定 */
 interface BuildConfig {
-  organizationId: string
+  organizationId: OrganizationId
   repositoryId: string
   releaseDetectionMethod: string
   releaseDetectionKey: string

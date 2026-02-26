@@ -1,7 +1,10 @@
 import { jsonArrayFrom } from 'kysely/helpers/sqlite'
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+} from '~/app/services/tenant-db.server'
 
-export const getIntegration = async (organizationId: string) => {
+export const getIntegration = async (organizationId: OrganizationId) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
     .selectFrom('integrations')
@@ -20,7 +23,7 @@ export const getIntegration = async (organizationId: string) => {
     .executeTakeFirst()
 }
 
-export const listRepositories = async (organizationId: string) => {
+export const listRepositories = async (organizationId: OrganizationId) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb.selectFrom('repositories').selectAll().execute()
 }

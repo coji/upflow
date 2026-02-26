@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { createPathBuilder } from '~/batch/helper/path-builder'
 import type {
   ShapedGitHubCommit,
@@ -10,7 +11,7 @@ import type {
 } from './model'
 
 interface createStoreProps {
-  organizationId: string
+  organizationId: OrganizationId
   repositoryId: string
 }
 export const createStore = ({

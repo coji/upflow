@@ -1,8 +1,9 @@
 import { db } from '~/app/services/db.server'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 
 export const changeMemberRole = async (
   memberId: string,
-  organizationId: string,
+  organizationId: OrganizationId,
   role: string,
 ) => {
   await db
@@ -15,7 +16,7 @@ export const changeMemberRole = async (
 
 export const removeMember = async (
   memberId: string,
-  organizationId: string,
+  organizationId: OrganizationId,
 ) => {
   const member = await db
     .selectFrom('members')

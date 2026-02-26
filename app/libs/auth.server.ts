@@ -4,6 +4,7 @@ import { organization } from 'better-auth/plugins/organization'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { db, dialect } from '~/app/services/db.server'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -182,7 +183,7 @@ export const isReservedSlug = (slug: string): boolean => {
 
 export interface OrgContext {
   user: NonNullable<Awaited<ReturnType<typeof getSession>>>['user']
-  organization: { id: string; name: string; slug: string }
+  organization: { id: OrganizationId; name: string; slug: string }
   membership: { id: string; role: string }
 }
 
@@ -216,7 +217,7 @@ export const requireOrgMember = async (
   return {
     user: session.user,
     organization: {
-      id: result.orgId,
+      id: result.orgId as OrganizationId,
       name: result.orgName,
       slug: result.orgSlug,
     },

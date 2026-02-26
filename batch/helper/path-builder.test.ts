@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { createPathBuilder, getDataDir } from './path-builder'
 
 describe('getDataDir', () => {
@@ -10,7 +11,7 @@ describe('getDataDir', () => {
 describe('path-builder', () => {
   test('jsonPath builds correct path', () => {
     const pathBuilder = createPathBuilder({
-      organizationId: 'test-company',
+      organizationId: 'test-company' as OrganizationId,
       repositoryId: 'test-repository',
     })
 

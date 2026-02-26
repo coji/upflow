@@ -1,7 +1,8 @@
 import { db } from '~/app/services/db.server'
+import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 
-export const getPullRequestReport = async (organizationId: string) => {
+export const getPullRequestReport = async (organizationId: OrganizationId) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
     .selectFrom('pullRequests')
@@ -11,7 +12,7 @@ export const getPullRequestReport = async (organizationId: string) => {
     .execute()
 }
 
-async function getTenantData(organizationId: string) {
+async function getTenantData(organizationId: OrganizationId) {
   const tenantDb = getTenantDb(organizationId)
   const [organizationSetting, integration, repositories, exportSetting] =
     await Promise.all([
@@ -57,9 +58,9 @@ async function getTenantData(organizationId: string) {
     ])
   return {
     organizationSetting: organizationSetting ?? null,
-    integration: integration ? { ...integration, organizationId } : null,
-    repositories: repositories.map((r) => ({ ...r, organizationId })),
-    exportSetting: exportSetting ? { ...exportSetting, organizationId } : null,
+    integration: integration ?? null,
+    repositories,
+    exportSetting: exportSetting ?? null,
   }
 }
 
@@ -71,19 +72,19 @@ export const listAllOrganizations = async () => {
 
   return Promise.all(
     orgs.map(async (org) => {
-      const tenantData = await getTenantData(org.id)
+      const tenantData = await getTenantData(org.id as OrganizationId)
       return { ...org, ...tenantData }
     }),
   )
 }
 
-export const getOrganization = async (organizationId: string) => {
+export const getOrganization = async (organizationId: OrganizationId) => {
   const org = await db
     .selectFrom('organizations')
     .select(['id', 'name', 'slug', 'createdAt'])
     .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  const tenantData = await getTenantData(org.id)
+  const tenantData = await getTenantData(org.id as OrganizationId)
   return { ...org, ...tenantData }
 }

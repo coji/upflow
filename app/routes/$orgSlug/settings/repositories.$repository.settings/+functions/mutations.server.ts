@@ -1,8 +1,12 @@
 import type { Updateable } from 'kysely'
-import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+  type TenantDB,
+} from '~/app/services/tenant-db.server'
 
 export const updateRepository = (
-  organizationId: string,
+  organizationId: OrganizationId,
   repositoryId: string,
   data: Pick<
     Updateable<TenantDB.Repositories>,

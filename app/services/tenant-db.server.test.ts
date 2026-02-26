@@ -17,6 +17,8 @@ vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 
 const { closeTenantDb, closeAllTenantDbs, deleteTenantDb, getTenantDb } =
   await import('./tenant-db.server')
+type OrganizationId = import('./tenant-db.server').OrganizationId
+const toOrgId = (s: string) => s as OrganizationId
 
 function createTestTenantDb(orgId: string): string {
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)
@@ -27,7 +29,7 @@ function createTestTenantDb(orgId: string): string {
 }
 
 describe('getTenantDb', () => {
-  const orgId = `test-org-get-${Date.now()}`
+  const orgId = toOrgId(`test-org-get-${Date.now()}`)
 
   beforeEach(() => {
     createTestTenantDb(orgId)
@@ -49,12 +51,12 @@ describe('getTenantDb', () => {
   })
 
   test('throws when tenant DB file does not exist', () => {
-    expect(() => getTenantDb('nonexistent-org')).toThrow()
+    expect(() => getTenantDb(toOrgId('nonexistent-org'))).toThrow()
   })
 })
 
 describe('closeTenantDb', () => {
-  const orgId = `test-org-close-${Date.now()}`
+  const orgId = toOrgId(`test-org-close-${Date.now()}`)
 
   beforeEach(() => {
     createTestTenantDb(orgId)
@@ -68,13 +70,13 @@ describe('closeTenantDb', () => {
   })
 
   test('does not throw for unknown orgId', async () => {
-    await expect(closeTenantDb('unknown-org')).resolves.not.toThrow()
+    await expect(closeTenantDb(toOrgId('unknown-org'))).resolves.not.toThrow()
   })
 })
 
 describe('closeAllTenantDbs', () => {
-  const orgId1 = `test-org-all-1-${Date.now()}`
-  const orgId2 = `test-org-all-2-${Date.now()}`
+  const orgId1 = toOrgId(`test-org-all-1-${Date.now()}`)
+  const orgId2 = toOrgId(`test-org-all-2-${Date.now()}`)
 
   beforeEach(() => {
     createTestTenantDb(orgId1)
@@ -98,7 +100,7 @@ describe('closeAllTenantDbs', () => {
 })
 
 describe('deleteTenantDb', () => {
-  const orgId = `test-org-delete-${Date.now()}`
+  const orgId = toOrgId(`test-org-delete-${Date.now()}`)
 
   test('deletes the DB file and WAL/SHM files', async () => {
     const dbPath = createTestTenantDb(orgId)
@@ -118,7 +120,7 @@ describe('deleteTenantDb', () => {
 
   test('does not throw when DB file does not exist', async () => {
     await expect(
-      deleteTenantDb('nonexistent-delete-org'),
+      deleteTenantDb(toOrgId('nonexistent-delete-org')),
     ).resolves.not.toThrow()
   })
 })

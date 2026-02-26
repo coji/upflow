@@ -1,9 +1,12 @@
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+} from '~/app/services/tenant-db.server'
 
 export const addGithubUser = async (params: {
   login: string
   displayName: string
-  organizationId: string
+  organizationId: OrganizationId
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
   await tenantDb
@@ -18,7 +21,7 @@ export const addGithubUser = async (params: {
 
 export const updateGithubUser = async (params: {
   login: string
-  organizationId: string
+  organizationId: OrganizationId
   displayName: string
   name: string | null
   email: string | null
@@ -38,7 +41,7 @@ export const updateGithubUser = async (params: {
 
 export const deleteGithubUser = async (
   login: string,
-  organizationId: string,
+  organizationId: OrganizationId,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   await tenantDb

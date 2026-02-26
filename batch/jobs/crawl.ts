@@ -1,4 +1,7 @@
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  type OrganizationId,
+} from '~/app/services/tenant-db.server'
 import { listAllOrganizations } from '~/batch/db'
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'
@@ -34,6 +37,8 @@ export const crawlJob = async () => {
       continue
     }
 
+    const orgId = organization.id as OrganizationId
+
     // refreshRequestedAt が設定されていれば full refresh
     const refresh = organization.organizationSetting.refreshRequestedAt != null
     if (refresh) {
@@ -44,13 +49,13 @@ export const crawlJob = async () => {
     // fetch
     for (const repository of organization.repositories) {
       logger.info('fetch started...')
-      await provider.fetch(repository, options)
+      await provider.fetch(orgId, repository, options)
       logger.info('fetch completed.')
     }
 
     // refresh フラグを消費
     if (refresh) {
-      const tenantDb = getTenantDb(organization.id)
+      const tenantDb = getTenantDb(orgId)
       await tenantDb
         .updateTable('organizationSettings')
         .set({ refreshRequestedAt: null })
@@ -61,8 +66,10 @@ export const crawlJob = async () => {
     // analyze + upsert + export
     await analyzeAndUpsert({
       organization: {
-        ...organization,
+        id: orgId,
         organizationSetting: organization.organizationSetting,
+        repositories: organization.repositories,
+        exportSetting: organization.exportSetting,
       },
       provider,
     })

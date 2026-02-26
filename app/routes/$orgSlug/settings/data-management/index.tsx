@@ -85,6 +85,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       }
 
       const { pulls, reviewResponses } = await provider.analyze(
+        orgContext.id,
         organization.organizationSetting,
         organization.repositories,
       )
