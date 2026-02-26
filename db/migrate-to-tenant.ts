@@ -216,8 +216,11 @@ if (allMatch) {
   consola.success('\nAll row counts match. Migration verified.')
 } else {
   consola.error(
-    '\nRow count mismatch detected! Check the data before proceeding.',
+    '\nRow count mismatch detected! Aborting before dropping tables.',
   )
+  consola.error('Restore from backup and investigate the issue.')
+  sourceDb.close()
+  process.exit(1)
 }
 
 // 5. Drop tenant tables from shared DB
