@@ -284,3 +284,46 @@ Phase 6 (データマイグレーションスクリプト)
   ↓
 Phase 7 (seed + テスト更新)
 ```
+
+---
+
+## フォローアップ TODO
+
+この PR のスコープ外として残した改善項目。
+
+### Branded OrganizationId 型の導入
+
+`organizationId: string` が ~50-60 箇所の関数シグネチャで使われており、誤った string を渡してもコンパイルエラーにならない。Branded type を導入して型安全性を強化する。
+
+```typescript
+// app/services/types.ts
+type OrganizationId = string & { readonly __brand: unique symbol }
+```
+
+影響範囲:
+
+- `app/services/tenant-db.server.ts` の全関数
+- `batch/db/mutations.ts`, `batch/db/queries.ts`
+- `batch/provider/index.ts` (`RepositoryWithOrg` 型)
+- 各 route の queries/mutations 関数
+
+### RepositoryWithOrg 型のリファクタリング
+
+tenant DB 分離後も `batch/provider` が `organizationId` をリポジトリに re-attach している。Provider の `fetch`/`analyze` インターフェースを見直して、`organizationId` をリポジトリではなく別パラメータとして渡す設計に変更する。
+
+```typescript
+// Before: repository に organizationId を付加
+type RepositoryWithOrg = Selectable<TenantDB.Repositories> & { organizationId: string }
+fetch(repository: RepositoryWithOrg, options)
+
+// After: organizationId を別引数に
+fetch(organizationId: OrganizationId, repository: Selectable<TenantDB.Repositories>, options)
+```
+
+影響範囲:
+
+- `batch/provider/index.ts` — Provider インターフェース
+- `batch/provider/github/provider.ts` — GitHub provider 実装
+- `batch/helper/path-builder.ts` — ファイルパス構築
+- `batch/jobs/crawl.ts` — 呼び出し元
+- `batch/usecases/analyze-and-upsert.ts` — 呼び出し元
