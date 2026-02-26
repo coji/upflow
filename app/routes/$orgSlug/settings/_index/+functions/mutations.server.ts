@@ -45,16 +45,21 @@ export const upsertIntegration = async (
   data: Omit<Insertable<TenantDB.Integrations>, 'id'>,
 ) => {
   const tenantDb = getTenantDb(organizationId)
+  const existing = await tenantDb
+    .selectFrom('integrations')
+    .select('id')
+    .executeTakeFirst()
+
+  if (existing) {
+    return await tenantDb
+      .updateTable('integrations')
+      .where('id', '=', existing.id)
+      .set(data)
+      .execute()
+  }
   return await tenantDb
     .insertInto('integrations')
     .values({ id: nanoid(), ...data })
-    .onConflict((oc) =>
-      oc.column('id').doUpdateSet((eb) => ({
-        provider: eb.ref('excluded.provider'),
-        method: eb.ref('excluded.method'),
-        privateToken: eb.ref('excluded.privateToken'),
-      })),
-    )
     .execute()
 }
 
@@ -63,16 +68,20 @@ export const upsertExportSetting = async (
   data: Omit<Insertable<TenantDB.ExportSettings>, 'id' | 'updatedAt'>,
 ) => {
   const tenantDb = getTenantDb(organizationId)
+  const existing = await tenantDb
+    .selectFrom('exportSettings')
+    .select('id')
+    .executeTakeFirst()
+
+  if (existing) {
+    return await tenantDb
+      .updateTable('exportSettings')
+      .where('id', '=', existing.id)
+      .set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
+      .execute()
+  }
   return await tenantDb
     .insertInto('exportSettings')
     .values({ id: nanoid(), ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
-    .onConflict((oc) =>
-      oc.column('id').doUpdateSet((eb) => ({
-        sheetId: eb.ref('excluded.sheetId'),
-        clientEmail: eb.ref('excluded.clientEmail'),
-        privateKey: eb.ref('excluded.privateKey'),
-        updatedAt: eb.ref('excluded.updatedAt'),
-      })),
-    )
     .execute()
 }
