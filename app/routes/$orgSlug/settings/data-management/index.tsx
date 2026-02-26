@@ -1,22 +1,10 @@
 import { data, useFetcher } from 'react-router'
 import { match } from 'ts-pattern'
 import {
-  PageHeader,
-  PageHeaderDescription,
-  PageHeaderHeading,
-  PageHeaderTitle,
-} from '~/app/components/layout/page-header'
-import {
   Alert,
   AlertDescription,
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
   Stack,
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
@@ -25,12 +13,13 @@ import { db } from '~/app/services/db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
 import { createProvider } from '~/batch/provider'
-import type { Route } from './+types/_layout'
+import ContentSection from '../+components/content-section'
+import type { Route } from './+types/index'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Data Management',
-    to: `/${organization.slug}/settings/data-management`,
+    to: `/${params.orgSlug}/settings/data-management`,
   }),
 }
 
@@ -44,7 +33,6 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     .executeTakeFirst()
 
   return {
-    organization,
     refreshRequestedAt: organizationSetting?.refreshRequestedAt ?? null,
   }
 }
@@ -134,43 +122,39 @@ function RefreshSection({
     (fetcher.data?.intent === 'refresh' && fetcher.data?.ok === true)
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Schedule Full Refresh
-          {isScheduled && <Badge variant="secondary">Scheduled</Badge>}
-        </CardTitle>
-        <CardDescription>
-          Queue a full re-fetch of all PR data from GitHub on the next scheduled
-          crawl (runs every 30 minutes).
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isScheduled && (
-          <Alert>
-            <AlertDescription>
-              Full refresh scheduled
-              {refreshRequestedAt &&
-                ` at ${dayjs(refreshRequestedAt).format('YYYY-MM-DD HH:mm:ss')}`}
-              . It will run on the next crawl job.
-            </AlertDescription>
-          </Alert>
-        )}
-        {fetcher.data?.error && (
-          <Alert variant="destructive">
-            <AlertDescription>{fetcher.data.error}</AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-      <CardFooter>
-        <fetcher.Form method="post">
+    <Stack>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            Schedule Full Refresh
+            {isScheduled && <Badge variant="secondary">Scheduled</Badge>}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            Re-fetch all PR data from GitHub on the next hourly crawl.
+          </p>
+        </div>
+        <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="refresh" />
           <Button type="submit" disabled={isScheduled || isSubmitting}>
-            {isScheduled ? 'Refresh Scheduled' : 'Schedule Full Refresh'}
+            {isScheduled ? 'Scheduled' : 'Schedule'}
           </Button>
         </fetcher.Form>
-      </CardFooter>
-    </Card>
+      </div>
+      {isScheduled && refreshRequestedAt && (
+        <Alert>
+          <AlertDescription>
+            Scheduled at{' '}
+            {dayjs(refreshRequestedAt).format('YYYY-MM-DD HH:mm:ss')}. It will
+            run on the next crawl job.
+          </AlertDescription>
+        </Alert>
+      )}
+      {fetcher.data?.error && (
+        <Alert variant="destructive">
+          <AlertDescription>{fetcher.data.error}</AlertDescription>
+        </Alert>
+      )}
+    </Stack>
   )
 }
 
@@ -181,36 +165,33 @@ function RecalculateSection() {
   const isSubmitting = fetcher.state !== 'idle'
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recalculate Cycle Times</CardTitle>
-        <CardDescription>
-          Recalculate pickup/review/deploy times based on current excluded users
-          settings.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {fetcher.data?.intent === 'recalculate' &&
-          fetcher.data?.ok === true && (
-            <Alert>
-              <AlertDescription>{fetcher.data.message}</AlertDescription>
-            </Alert>
-          )}
-        {fetcher.data?.intent === 'recalculate' && fetcher.data?.error && (
-          <Alert variant="destructive">
-            <AlertDescription>{fetcher.data.error}</AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-      <CardFooter>
-        <fetcher.Form method="post">
+    <Stack>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Recalculate Cycle Times</p>
+          <p className="text-muted-foreground text-xs">
+            Recalculate pickup/review/deploy times based on current excluded
+            users settings.
+          </p>
+        </div>
+        <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="recalculate" />
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Processing...' : 'Recalculate'}
           </Button>
         </fetcher.Form>
-      </CardFooter>
-    </Card>
+      </div>
+      {fetcher.data?.intent === 'recalculate' && fetcher.data?.ok === true && (
+        <Alert>
+          <AlertDescription>{fetcher.data.message}</AlertDescription>
+        </Alert>
+      )}
+      {fetcher.data?.intent === 'recalculate' && fetcher.data?.error && (
+        <Alert variant="destructive">
+          <AlertDescription>{fetcher.data.error}</AlertDescription>
+        </Alert>
+      )}
+    </Stack>
   )
 }
 
@@ -220,19 +201,14 @@ export default function DataManagementPage({
   loaderData: { refreshRequestedAt },
 }: Route.ComponentProps) {
   return (
-    <>
-      <PageHeader>
-        <PageHeaderHeading>
-          <PageHeaderTitle>Data Management</PageHeaderTitle>
-          <PageHeaderDescription>
-            Manage data refresh and recalculation for this organization.
-          </PageHeaderDescription>
-        </PageHeaderHeading>
-      </PageHeader>
-      <Stack>
+    <ContentSection
+      title="Data Management"
+      desc="Manage data refresh and recalculation for this organization."
+    >
+      <Stack gap="6">
         <RefreshSection refreshRequestedAt={refreshRequestedAt} />
         <RecalculateSection />
       </Stack>
-    </>
+    </ContentSection>
   )
 }

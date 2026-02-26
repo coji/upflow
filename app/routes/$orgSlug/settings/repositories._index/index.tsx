@@ -1,13 +1,8 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
-import {
-  PageHeader,
-  PageHeaderActions,
-  PageHeaderHeading,
-  PageHeaderTitle,
-} from '~/app/components/layout/page-header'
 import { Button } from '~/app/components/ui/button'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import ContentSection from '../+components/content-section'
 import { createColumns } from './+components/repo-columns'
 import { RepoTable } from './+components/repo-table'
 import {
@@ -15,7 +10,7 @@ import {
   QuerySchema,
   SortSchema,
 } from './+hooks/use-data-table-state'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import { listFilteredRepositories } from './queries.server'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
@@ -55,26 +50,26 @@ export default function OrganizationRepositoryIndexPage({
   const columns = useMemo(() => createColumns(slug), [slug])
 
   return (
-    <>
-      <PageHeader>
-        <PageHeaderHeading>
-          <PageHeaderTitle>Repositories</PageHeaderTitle>
-        </PageHeaderHeading>
-        <PageHeaderActions>
+    <ContentSection
+      title="Repositories"
+      desc="Manage repositories tracked by this organization."
+      fullWidth
+    >
+      {/** biome-ignore lint/complexity/noUselessFragments: false positive */}
+      <>
+        <div className="flex justify-end pb-2">
           <Button asChild>
             <Link to={`/${slug}/settings/repositories/add`}>
               Add Repository
             </Link>
           </Button>
-        </PageHeaderActions>
-      </PageHeader>
-      <div className="-mx-4 flex-1 overflow-auto px-4 py-1">
+        </div>
         <RepoTable
           data={repositories}
           columns={columns}
           pagination={pagination}
         />
-      </div>
-    </>
+      </>
+    </ContentSection>
   )
 }

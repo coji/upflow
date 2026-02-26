@@ -2,19 +2,10 @@ import { zx } from '@coji/zodix/v4'
 import { getFormProps, useForm } from '@conform-to/react'
 import { Form, Link, redirect } from 'react-router'
 import { z } from 'zod'
-import {
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  HStack,
-  Input,
-  Label,
-} from '~/app/components/ui'
+import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
-import type { Route } from './+types/_layout'
+import ContentSection from '../+components/content-section'
+import type { Route } from './+types/index'
 import { deleteRepository, getRepository } from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Delete' }) }
@@ -46,27 +37,28 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   return redirect(`/${organization.slug}/settings/repositories`)
 }
 
-const DeleteRepositoryPage = ({
+export default function DeleteRepositoryPage({
   loaderData: { organization, repository },
-}: Route.ComponentProps) => {
+}: Route.ComponentProps) {
   const [form] = useForm({ id: 'delete-repository-form' })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Delete repository</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <ContentSection
+      title="Delete Repository"
+      desc="This action cannot be undone."
+    >
+      <Stack>
         <Form method="POST" {...getFormProps(form)}>
-          <Label>Name</Label>
-          <Input
-            readOnly
-            disabled
-            defaultValue={`${repository.owner}/${repository.repo}`}
-          />
+          <fieldset className="space-y-1">
+            <Label>Name</Label>
+            <Input
+              readOnly
+              disabled
+              defaultValue={`${repository.owner}/${repository.repo}`}
+            />
+          </fieldset>
         </Form>
-      </CardContent>
-      <CardFooter>
+
         <HStack>
           <Button variant="destructive" type="submit" form={form.id}>
             Delete
@@ -77,8 +69,7 @@ const DeleteRepositoryPage = ({
             </Link>
           </Button>
         </HStack>
-      </CardFooter>
-    </Card>
+      </Stack>
+    </ContentSection>
   )
 }
-export default DeleteRepositoryPage

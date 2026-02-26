@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "run-s build:react-router build:job",
-    "build:job": "esbuild --platform=node --format=esm ./batch/job-schedular.ts --outdir=build --bundle --packages=external",
+    "build:job": "esbuild --platform=node --format=esm ./batch/job-scheduler.ts --outdir=build --bundle --packages=external",
     "build:react-router": "react-router build",
     "dev": "react-router dev",
     "start": "node server.mjs",

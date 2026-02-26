@@ -9,7 +9,7 @@ import dayjs from '~/app/libs/dayjs'
 import { columns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
 import { getEndOfWeek, getStartOfWeek, parseDate } from './+functions/utils'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import { getMergedPullRequestReport } from './functions.server'
 
 export type PullRequest = Awaited<

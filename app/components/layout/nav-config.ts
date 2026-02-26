@@ -1,12 +1,4 @@
-import {
-  DatabaseIcon,
-  GithubIcon,
-  GitPullRequestIcon,
-  LayoutDashboardIcon,
-  SettingsIcon,
-  TimerIcon,
-  UsersIcon,
-} from 'lucide-react'
+import { LayoutDashboardIcon, SettingsIcon, TimerIcon } from 'lucide-react'
 import type { NavGroupProps } from './types'
 
 export function getNavConfig(orgSlug: string): NavGroupProps[] {
@@ -30,26 +22,6 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
       title: 'Management',
       adminOnly: true,
       items: [
-        {
-          title: 'Members',
-          url: `/${orgSlug}/settings/members`,
-          icon: UsersIcon,
-        },
-        {
-          title: 'Repositories',
-          url: `/${orgSlug}/settings/repositories`,
-          icon: GitPullRequestIcon,
-        },
-        {
-          title: 'GitHub Users',
-          url: `/${orgSlug}/settings/github-users`,
-          icon: GithubIcon,
-        },
-        {
-          title: 'Data Management',
-          url: `/${orgSlug}/settings/data-management`,
-          icon: DatabaseIcon,
-        },
         {
           title: 'Settings',
           url: `/${orgSlug}/settings`,

@@ -12,11 +12,6 @@ import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   HStack,
   Input,
   Label,
@@ -29,8 +24,9 @@ import {
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { clearAllCache, getCachedData } from '~/app/services/cache.server'
+import ContentSection from '../+components/content-section'
 import { RepositoryItem, RepositoryList } from './+components'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import {
   addRepository,
   getIntegration,
@@ -116,9 +112,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       repo: submission.value.name,
     })
   } catch (e) {
+    console.error('Failed to add repository', e)
     return dataWithError(
       {},
-      { message: `Failed to add repository: ${String(e)}` },
+      { message: 'Failed to add repository. Please try again.' },
     )
   }
 
@@ -136,15 +133,44 @@ export default function AddRepositoryPage({
   const [searchParams, setSearchParams] = useSearchParams()
 
   return (
-    <Card>
-      <CardHeader>
-        <HStack>
-          <div className="flex-1">
-            <CardTitle>Add Repositories</CardTitle>
-            <CardDescription>
-              Add repositories to the organization
-            </CardDescription>
-          </div>
+    <ContentSection
+      title="Add Repositories"
+      desc="Add repositories to the organization."
+      fullWidth
+    >
+      <Stack>
+        <HStack className="justify-between">
+          <fieldset className="flex-1 space-y-1">
+            <Label>Organization</Label>
+            <Select
+              defaultValue={owner}
+              onValueChange={(value) => {
+                setSearchParams(
+                  (prev) => {
+                    prev.set('owner', value)
+                    prev.delete('cursor')
+                    prev.delete('query')
+                    prev.delete('refresh')
+                    return prev
+                  },
+                  {
+                    preventScrollReset: true,
+                  },
+                )
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select organization..." />
+              </SelectTrigger>
+              <SelectContent>
+                {owners.map((owner) => (
+                  <SelectItem key={owner} value={owner}>
+                    {owner}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </fieldset>
           <Form method="get">
             {/* 既存のURLパラメタをすべてつける */}
             {[...searchParams.entries()].map(([key, value]) => (
@@ -156,138 +182,106 @@ export default function AddRepositoryPage({
             </Button>
           </Form>
         </HStack>
-      </CardHeader>
-      <CardContent>
-        <Stack>
-          <Label>Organization</Label>
-          <Select
-            defaultValue={owner}
-            onValueChange={(value) => {
-              setSearchParams(
-                (prev) => {
-                  prev.set('owner', value)
-                  prev.delete('cursor')
-                  prev.delete('query')
-                  prev.delete('refresh')
-                  return prev
-                },
-                {
-                  preventScrollReset: true,
-                },
-              )
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select organization..." />
-            </SelectTrigger>
-            <SelectContent>
-              {owners.map((owner) => (
-                <SelectItem key={owner} value={owner}>
-                  {owner}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
-          <Form
-            method="get"
-            onSubmit={(event) => {
-              event.preventDefault()
-              const formData = new FormData(event.currentTarget)
-              const query = formData.get('query') as string
-              setSearchParams(
-                (prev) => {
-                  prev.set('query', query)
-                  prev.delete('refresh')
-                  return prev
-                },
-                {
-                  preventScrollReset: true,
-                },
-              )
-            }}
-          >
-            <HStack>
-              <Input
-                name="query"
-                type="search"
-                placeholder="Search repositories..."
-                defaultValue={query}
-              />
-              <Button type="submit" variant="outline">
-                Search
-              </Button>
-            </HStack>
-          </Form>
-
-          <RepositoryList>
-            {repos.length === 0 ? (
-              <div className="text-muted-foreground p-4 text-center text-sm">
-                No repositories found
-              </div>
-            ) : (
-              repos.map((repo, index) => (
-                <RepositoryItem
-                  key={repo.id}
-                  repo={repo}
-                  isAdded={integration.repositories.some(
-                    (r) => r.owner === repo.owner && r.repo === repo.name,
-                  )}
-                  isLast={index === repos.length - 1}
-                />
-              ))
-            )}
-          </RepositoryList>
-
+        <Form
+          method="get"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const formData = new FormData(event.currentTarget)
+            const query = formData.get('query') as string
+            setSearchParams(
+              (prev) => {
+                prev.set('query', query)
+                prev.delete('cursor')
+                prev.delete('refresh')
+                return prev
+              },
+              {
+                preventScrollReset: true,
+              },
+            )
+          }}
+        >
           <HStack>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={searchParams.get('cursor') === null}
-              onClick={() => {
-                setSearchParams(
-                  (prev) => {
-                    prev.delete('cursor')
-                    prev.delete('refresh')
-                    return prev
-                  },
-                  {
-                    preventScrollReset: true,
-                  },
-                )
-              }}
-            >
-              <ChevronsLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={!pageInfo.hasNextPage}
-              onClick={() => {
-                setSearchParams(
-                  (prev) => {
-                    if (pageInfo.endCursor) {
-                      prev.set('cursor', pageInfo.endCursor)
-                    } else {
-                      prev.delete('cursor')
-                    }
-                    prev.delete('refresh')
-                    return prev
-                  },
-                  {
-                    preventScrollReset: true,
-                  },
-                )
-              }}
-            >
-              <ChevronRightIcon className="h-4 w-4" />
+            <Input
+              name="query"
+              type="search"
+              placeholder="Search repositories..."
+              defaultValue={query}
+            />
+            <Button type="submit" variant="outline">
+              Search
             </Button>
           </HStack>
-        </Stack>
-      </CardContent>
-    </Card>
+        </Form>
+
+        <RepositoryList>
+          {repos.length === 0 ? (
+            <div className="text-muted-foreground p-4 text-center text-sm">
+              No repositories found
+            </div>
+          ) : (
+            repos.map((repo, index) => (
+              <RepositoryItem
+                key={repo.id}
+                repo={repo}
+                isAdded={integration.repositories.some(
+                  (r) => r.owner === repo.owner && r.repo === repo.name,
+                )}
+                isLast={index === repos.length - 1}
+              />
+            ))
+          )}
+        </RepositoryList>
+
+        <HStack>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={searchParams.get('cursor') === null}
+            onClick={() => {
+              setSearchParams(
+                (prev) => {
+                  prev.delete('cursor')
+                  prev.delete('refresh')
+                  return prev
+                },
+                {
+                  preventScrollReset: true,
+                },
+              )
+            }}
+          >
+            <ChevronsLeftIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={!pageInfo.hasNextPage}
+            onClick={() => {
+              setSearchParams(
+                (prev) => {
+                  if (pageInfo.endCursor) {
+                    prev.set('cursor', pageInfo.endCursor)
+                  } else {
+                    prev.delete('cursor')
+                  }
+                  prev.delete('refresh')
+                  return prev
+                },
+                {
+                  preventScrollReset: true,
+                },
+              )
+            }}
+          >
+            <ChevronRightIcon className="h-4 w-4" />
+          </Button>
+        </HStack>
+      </Stack>
+    </ContentSection>
   )
 }
 

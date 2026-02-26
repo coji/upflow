@@ -94,10 +94,11 @@ db/
 
 Uses `react-router-auto-routes` for file-based routing (`export default autoRoutes() satisfies RouteConfig`):
 
-- `_layout.tsx` - Layout routes (no URL segment)
-- `_index.tsx` - Index routes
+- `index.tsx` - Page component (leaf route). `_index.tsx` is an alias
+- `_layout.tsx` - Layout wrapper (renders `<Outlet>`, groups child routes)
 - `$param` - Dynamic segments
-- `+` prefix - Co-located files (not routes, e.g. `+components/`, `+hooks/`, `+functions/`)
+- `_` prefix on folders - Pathless layout group (e.g. `_auth/` → no `/auth` segment)
+- `+` prefix - Co-located files, not routes (e.g. `+components/`, `+functions/`)
 
 ### Database Pattern
 
@@ -135,7 +136,6 @@ Files with `.server.ts` suffix are server-only and won't be bundled for the clie
 - `queries.server.ts` - Database read operations
 - `mutations.server.ts` - Database write operations
 - `functions.server.ts` - General server utilities
-- `*.action.server.ts` - Form action handlers
 
 ### Form Handling
 
@@ -156,6 +156,15 @@ return match(intent)
   .exhaustive()
 ```
 
+### UI Spacing Rules
+
+Consistent spacing patterns used throughout the app:
+
+- **Within a form field** (label + input + error): `space-y-1`
+- **Between form fields**: `<Stack>` default gap (`gap-2`)
+- **Between page sections**: `<Stack gap="6">`
+- **Within a section** (title + description): `space-y-1`
+
 ### Batch Processing
 
 CLI for data synchronization (`batch/cli.ts`):
@@ -164,7 +173,7 @@ CLI for data synchronization (`batch/cli.ts`):
 - `report` - Generates cycle time reports
 - `upsert` - Updates database with processed data
 
-In production, these run on a schedule via `job-schedular.ts`.
+In production, these run on a schedule via `job-scheduler.ts`.
 
 ### Multi-Tenant Security
 

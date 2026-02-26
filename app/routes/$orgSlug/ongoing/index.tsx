@@ -6,7 +6,7 @@ import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
 import { columns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import { getOngoingPullRequestReport } from './functions.server'
 
 export const handle = {

@@ -70,7 +70,7 @@ const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
       <CardContent>
         <Form method="POST" {...getFormProps(form)}>
           <Stack>
-            <fieldset>
+            <fieldset className="space-y-1">
               <Label htmlFor={organizationSlug.id}>Organization Slug</Label>
               <Input
                 autoFocus
@@ -83,7 +83,7 @@ const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
               <div className="text-destructive">{organizationSlug.errors}</div>
             </fieldset>
 
-            <fieldset>
+            <fieldset className="space-y-1">
               <Label htmlFor={organizationName.id}>Organization Name</Label>
               <Input {...getInputProps(organizationName, { type: 'text' })} />
               <div className="text-destructive">{organizationName.errors}</div>

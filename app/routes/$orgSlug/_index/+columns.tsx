@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
 import { Badge, HStack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
-import type { PullRequest } from './_layout'
+import type { PullRequest } from './index'
 
 export const columns: ColumnDef<PullRequest>[] = [
   {

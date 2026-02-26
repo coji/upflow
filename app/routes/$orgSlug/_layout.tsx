@@ -9,7 +9,10 @@ import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/_layout'
 
 export interface RouteHandle {
-  breadcrumb?: (data?: unknown) => { label: string; to?: string }
+  breadcrumb?: (
+    data?: unknown,
+    params?: Record<string, string>,
+  ) => { label: string; to?: string }
   headerFixed?: boolean
   mainFixed?: boolean
 }
@@ -19,9 +22,12 @@ export const meta = ({ data }: Route.MetaArgs) => [
 ]
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
-    label: organization.name,
-    to: `/${organization.slug}`,
+  breadcrumb: (
+    data: Awaited<ReturnType<typeof loader>>,
+    params: { orgSlug: string },
+  ) => ({
+    label: data.organization.name,
+    to: `/${params.orgSlug}`,
   }),
 }
 

@@ -1,13 +1,8 @@
 import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import {
-  PageHeader,
-  PageHeaderDescription,
-  PageHeaderHeading,
-  PageHeaderTitle,
-} from '~/app/components/layout/page-header'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import ContentSection from '../+components/content-section'
 import { columns } from './+components/github-users-columns'
 import { GithubUsersTable } from './+components/github-users-table'
 import {
@@ -15,7 +10,7 @@ import {
   QuerySchema,
   SortSchema,
 } from './+hooks/use-data-table-state'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import {
   addGithubUser,
   deleteGithubUser,
@@ -24,9 +19,9 @@ import {
 import { listFilteredGithubUsers } from './queries.server'
 
 export const handle = {
-  breadcrumb: ({ organization }: Awaited<ReturnType<typeof loader>>) => ({
+  breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'GitHub Users',
-    to: `/${organization.slug}/settings/github-users`,
+    to: `/${params.orgSlug}/settings/github-users`,
   }),
 }
 
@@ -57,7 +52,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     sortOrder,
   })
 
-  return { organization, githubUsers, pagination }
+  return { githubUsers, pagination }
 }
 
 const addSchema = z.object({
@@ -112,22 +107,16 @@ export default function GithubUsersPage({
   loaderData: { githubUsers, pagination },
 }: Route.ComponentProps) {
   return (
-    <>
-      <PageHeader>
-        <PageHeaderHeading>
-          <PageHeaderTitle>GitHub Users</PageHeaderTitle>
-          <PageHeaderDescription>
-            Manage GitHub users linked to this organization.
-          </PageHeaderDescription>
-        </PageHeaderHeading>
-      </PageHeader>
-      <div className="-mx-4 flex-1 overflow-auto px-4 py-1">
-        <GithubUsersTable
-          data={githubUsers}
-          columns={columns}
-          pagination={pagination}
-        />
-      </div>
-    </>
+    <ContentSection
+      title="GitHub Users"
+      desc="Manage GitHub users linked to this organization."
+      fullWidth
+    >
+      <GithubUsersTable
+        data={githubUsers}
+        columns={columns}
+        pagination={pagination}
+      />
+    </ContentSection>
   )
 }
