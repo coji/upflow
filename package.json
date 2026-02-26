@@ -23,6 +23,7 @@
     "db:apply": "run-s db:apply:shared db:apply:tenant",
     "db:apply:shared": "atlas migrate apply --env local --url 'sqlite://data/data.db'",
     "db:apply:tenant": "tsx db/apply-tenant-migrations.ts",
+    "db:migrate-to-tenant": "tsx db/migrate-to-tenant.ts",
     "batch:golden:snapshot": "pnpm tsx --env-file .env batch/scripts/golden-snapshot.ts",
     "batch:golden:compare": "pnpm tsx --env-file .env batch/scripts/golden-compare.ts",
     "graphql:schema": "cp node_modules/@octokit/graphql-schema/schema.graphql batch/provider/github/schema.graphql",
