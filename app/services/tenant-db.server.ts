@@ -31,7 +31,7 @@ export function getTenantDb(organizationId: string): Kysely<TenantDB.DB> {
   if (cached) return cached
 
   const filename = getTenantDbPath(organizationId)
-  const database = new SQLite(filename)
+  const database = new SQLite(filename, { fileMustExist: true })
   database.pragma('journal_mode = WAL')
 
   const tenantDb = new Kysely<TenantDB.DB>({
