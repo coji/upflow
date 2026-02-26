@@ -44,18 +44,18 @@ export function getTenantDb(organizationId: string): Kysely<TenantDB.DB> {
   return tenantDb
 }
 
-export function closeTenantDb(organizationId: string): void {
+export async function closeTenantDb(organizationId: string): Promise<void> {
   const tenantDb = tenantDbCache.get(organizationId)
   if (tenantDb) {
-    tenantDb.destroy()
+    await tenantDb.destroy()
     tenantDbCache.delete(organizationId)
   }
 }
 
-export function closeAllTenantDbs(): void {
-  for (const [, tenantDb] of tenantDbCache) {
-    tenantDb.destroy()
-  }
+export async function closeAllTenantDbs(): Promise<void> {
+  await Promise.all(
+    [...tenantDbCache.values()].map((tenantDb) => tenantDb.destroy()),
+  )
   tenantDbCache.clear()
 }
 
@@ -83,8 +83,8 @@ export function createTenantDb(organizationId: string): void {
  * Delete the tenant DB file.
  * Call closeTenantDb first to release the connection.
  */
-export function deleteTenantDb(organizationId: string): void {
-  closeTenantDb(organizationId)
+export async function deleteTenantDb(organizationId: string): Promise<void> {
+  await closeTenantDb(organizationId)
   const tenantDbPath = getTenantDbPath(organizationId)
   if (existsSync(tenantDbPath)) {
     unlinkSync(tenantDbPath)

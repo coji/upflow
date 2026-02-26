@@ -36,7 +36,7 @@ export const updateOrganizationSetting = async (
 }
 
 export const deleteOrganization = async (id: string) => {
-  deleteTenantDb(id)
+  await deleteTenantDb(id)
   await db.deleteFrom('organizations').where('id', '=', id).execute()
 }
 

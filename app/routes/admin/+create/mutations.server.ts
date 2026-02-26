@@ -63,7 +63,7 @@ export const createOrganization = async ({
       .deleteFrom('organizations')
       .where('id', '=', organization.id)
       .execute()
-    deleteTenantDb(organization.id)
+    await deleteTenantDb(organization.id)
     throw e
   }
 

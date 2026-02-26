@@ -33,8 +33,8 @@ describe('getTenantDb', () => {
     createTestTenantDb(orgId)
   })
 
-  afterEach(() => {
-    closeTenantDb(orgId)
+  afterEach(async () => {
+    await closeTenantDb(orgId)
   })
 
   test('returns a Kysely instance for an existing tenant DB', () => {
@@ -60,15 +60,15 @@ describe('closeTenantDb', () => {
     createTestTenantDb(orgId)
   })
 
-  test('removes the cached instance', () => {
+  test('removes the cached instance', async () => {
     const db1 = getTenantDb(orgId)
-    closeTenantDb(orgId)
+    await closeTenantDb(orgId)
     const db2 = getTenantDb(orgId)
     expect(db2).not.toBe(db1)
   })
 
-  test('does not throw for unknown orgId', () => {
-    expect(() => closeTenantDb('unknown-org')).not.toThrow()
+  test('does not throw for unknown orgId', async () => {
+    await expect(closeTenantDb('unknown-org')).resolves.not.toThrow()
   })
 })
 
@@ -81,15 +81,15 @@ describe('closeAllTenantDbs', () => {
     createTestTenantDb(orgId2)
   })
 
-  afterEach(() => {
-    closeTenantDb(orgId1)
-    closeTenantDb(orgId2)
+  afterEach(async () => {
+    await closeTenantDb(orgId1)
+    await closeTenantDb(orgId2)
   })
 
-  test('clears all cached instances', () => {
+  test('clears all cached instances', async () => {
     const db1 = getTenantDb(orgId1)
     const db2 = getTenantDb(orgId2)
-    closeAllTenantDbs()
+    await closeAllTenantDbs()
     const db1New = getTenantDb(orgId1)
     const db2New = getTenantDb(orgId2)
     expect(db1New).not.toBe(db1)
@@ -100,7 +100,7 @@ describe('closeAllTenantDbs', () => {
 describe('deleteTenantDb', () => {
   const orgId = `test-org-delete-${Date.now()}`
 
-  test('deletes the DB file and WAL/SHM files', () => {
+  test('deletes the DB file and WAL/SHM files', async () => {
     const dbPath = createTestTenantDb(orgId)
     // Create WAL and SHM files
     writeFileSync(`${dbPath}-wal`, '')
@@ -109,14 +109,16 @@ describe('deleteTenantDb', () => {
     // Open a connection first so it gets cached
     getTenantDb(orgId)
 
-    deleteTenantDb(orgId)
+    await deleteTenantDb(orgId)
 
     expect(existsSync(dbPath)).toBe(false)
     expect(existsSync(`${dbPath}-wal`)).toBe(false)
     expect(existsSync(`${dbPath}-shm`)).toBe(false)
   })
 
-  test('does not throw when DB file does not exist', () => {
-    expect(() => deleteTenantDb('nonexistent-delete-org')).not.toThrow()
+  test('does not throw when DB file does not exist', async () => {
+    await expect(
+      deleteTenantDb('nonexistent-delete-org'),
+    ).resolves.not.toThrow()
   })
 })
