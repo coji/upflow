@@ -269,7 +269,7 @@ pnpm validate
 
 ## 実装順序
 
-```
+```text
 Phase 1 (スキーマ + ファクトリ)
   ↓
 Phase 2 (PoC: 1ルート切り替え + seed)
