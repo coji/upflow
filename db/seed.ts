@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 import { copyFileSync } from 'node:fs'
 import { db, sql } from '~/app/services/db.server'
 import {
+  closeTenantDb,
   createTenantDb,
   getTenantDb,
   getTenantDbPath,
@@ -167,6 +168,9 @@ async function seed() {
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .execute()
+
+  // Close tenant DB connection to flush WAL before copying
+  await closeTenantDb(organization.id)
 
   // Copy tenant DB for type generation (used by db:generate:tenant)
   copyFileSync(tenantDbPath, './data/tenant_seed.db')
