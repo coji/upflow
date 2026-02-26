@@ -30,7 +30,7 @@ import {
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { clearAllCache, getCachedData } from '~/app/services/cache.server'
 import { RepositoryItem, RepositoryList } from './+components'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import {
   addRepository,
   getIntegration,

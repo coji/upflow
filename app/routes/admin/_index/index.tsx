@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import { listOrganizations } from './queries.server'
 
 export const loader = async () => ({

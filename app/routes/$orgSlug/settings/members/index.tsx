@@ -1,13 +1,8 @@
 import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import {
-  PageHeader,
-  PageHeaderDescription,
-  PageHeaderHeading,
-  PageHeaderTitle,
-} from '~/app/components/layout/page-header'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import ContentSection from '../+components/content-section'
 import { columns } from './+components/members-columns'
 import { MembersTable } from './+components/members-table'
 import {
@@ -16,7 +11,7 @@ import {
   QuerySchema,
   SortSchema,
 } from './+hooks/use-data-table-state'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import { changeMemberRole, removeMember } from './mutations.server'
 import { listFilteredMembers } from './queries.server'
 
@@ -103,22 +98,12 @@ export default function OrganizationMembersPage({
   loaderData: { members, pagination },
 }: Route.ComponentProps) {
   return (
-    <>
-      <PageHeader>
-        <PageHeaderHeading>
-          <PageHeaderTitle>Members</PageHeaderTitle>
-          <PageHeaderDescription>
-            Manage organization members and their roles.
-          </PageHeaderDescription>
-        </PageHeaderHeading>
-      </PageHeader>
-      <div className="-mx-4 flex-1 overflow-auto px-4 py-1">
-        <MembersTable
-          data={members}
-          columns={columns}
-          pagination={pagination}
-        />
-      </div>
-    </>
+    <ContentSection
+      title="Members"
+      desc="Manage organization members and their roles."
+      fullWidth
+    >
+      <MembersTable data={members} columns={columns} pagination={pagination} />
+    </ContentSection>
   )
 }

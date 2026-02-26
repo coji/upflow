@@ -11,11 +11,6 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
   HStack,
   Input,
   Label,
@@ -30,7 +25,7 @@ import {
 } from '~/app/components/ui'
 import type { DB, Selectable } from '~/app/services/db.server'
 import { INTENTS, organizationSettingsSchema as schema } from '../+schema'
-import type { action } from './organization-settings.action.server'
+import type { action } from '../../_index/index'
 
 export const OrganizationSettings = ({
   organization,
@@ -56,108 +51,95 @@ export const OrganizationSettings = ({
   })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Organization</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form method="POST" {...getFormProps(form)}>
-          <Stack>
-            <fieldset>
-              <Label htmlFor={fields.name.id}>Organization Name</Label>
-              <Input {...getInputProps(fields.name, { type: 'text' })} />
-              <div className="text-destructive">{fields.name.errors}</div>
-            </fieldset>
+    <Form method="POST" {...getFormProps(form)}>
+      <Stack>
+        <fieldset className="space-y-1">
+          <Label htmlFor={fields.name.id}>Organization Name</Label>
+          <Input {...getInputProps(fields.name, { type: 'text' })} />
+          <div className="text-destructive">{fields.name.errors}</div>
+        </fieldset>
 
-            <fieldset>
-              <Label htmlFor={fields.releaseDetectionMethod.id}>
-                Release Detection Method
-              </Label>
-              <Select
-                name={fields.releaseDetectionMethod.name}
-                defaultValue={fields.releaseDetectionMethod.initialValue}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a method" />
-                </SelectTrigger>
-                <SelectContent
-                  {...getSelectProps(fields.releaseDetectionMethod)}
-                >
-                  <SelectGroup>
-                    <SelectItem value="branch">Branch</SelectItem>
-                    <SelectItem value="tags">Tags</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <div className="text-destructive">
-                {fields.releaseDetectionMethod.errors}
-              </div>
-            </fieldset>
+        <fieldset className="space-y-1">
+          <Label htmlFor={fields.releaseDetectionMethod.id}>
+            Release Detection Method
+          </Label>
+          <Select
+            name={fields.releaseDetectionMethod.name}
+            defaultValue={fields.releaseDetectionMethod.initialValue}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a method" />
+            </SelectTrigger>
+            <SelectContent {...getSelectProps(fields.releaseDetectionMethod)}>
+              <SelectGroup>
+                <SelectItem value="branch">Branch</SelectItem>
+                <SelectItem value="tags">Tags</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <div className="text-destructive">
+            {fields.releaseDetectionMethod.errors}
+          </div>
+        </fieldset>
 
-            <fieldset>
-              <Label htmlFor={fields.releaseDetectionKey.id}>
-                Release Detection Key
-              </Label>
-              <Input
-                {...getInputProps(fields.releaseDetectionKey, {
-                  type: 'text',
-                })}
-              />
-              <div className="text-destructive">
-                {fields.releaseDetectionKey.errors}
-              </div>
-            </fieldset>
+        <fieldset className="space-y-1">
+          <Label htmlFor={fields.releaseDetectionKey.id}>
+            Release Detection Key
+          </Label>
+          <Input
+            {...getInputProps(fields.releaseDetectionKey, {
+              type: 'text',
+            })}
+          />
+          <div className="text-destructive">
+            {fields.releaseDetectionKey.errors}
+          </div>
+        </fieldset>
 
-            <fieldset>
-              <HStack>
-                <Label htmlFor={fields.isActive.id}>Active</Label>
-                <Switch
-                  name={fields.isActive.name}
-                  id={fields.isActive.id}
-                  defaultChecked={fields.isActive.initialValue === '1'}
-                />
-              </HStack>
-              <div className="text-destructive">{fields.isActive.errors}</div>
-            </fieldset>
+        <fieldset className="space-y-1">
+          <HStack>
+            <Label htmlFor={fields.isActive.id}>Active</Label>
+            <Switch
+              name={fields.isActive.name}
+              id={fields.isActive.id}
+              defaultChecked={fields.isActive.initialValue === '1'}
+            />
+          </HStack>
+          <div className="text-destructive">{fields.isActive.errors}</div>
+        </fieldset>
 
-            <fieldset>
-              <Label htmlFor={fields.excludedUsers.id}>
-                Excluded Users (comma separated)
-              </Label>
-              <Input
-                {...getInputProps(fields.excludedUsers, { type: 'text' })}
-                placeholder="e.g. iris-tech-bot, some-other-bot"
-              />
-              <p className="text-muted-foreground text-sm">
-                Copilot is excluded by default. Add additional usernames to
-                exclude from cycle time calculations.
-              </p>
-              <div className="text-destructive">
-                {fields.excludedUsers.errors}
-              </div>
-            </fieldset>
+        <fieldset className="space-y-1">
+          <Label htmlFor={fields.excludedUsers.id}>
+            Excluded Users (comma separated)
+          </Label>
+          <Input
+            {...getInputProps(fields.excludedUsers, { type: 'text' })}
+            placeholder="e.g. iris-tech-bot, some-other-bot"
+          />
+          <p className="text-muted-foreground text-sm">
+            Copilot is excluded by default. Add additional usernames to exclude
+            from cycle time calculations.
+          </p>
+          <div className="text-destructive">{fields.excludedUsers.errors}</div>
+        </fieldset>
 
-            {form.errors && (
-              <Alert variant="destructive">
-                <AlertTitle>System Error</AlertTitle>
-                <AlertDescription>{form.errors}</AlertDescription>
-              </Alert>
-            )}
-          </Stack>
-        </Form>
-      </CardContent>
-      <CardFooter>
-        <Stack direction="row">
+        {form.errors && (
+          <Alert variant="destructive">
+            <AlertTitle>System Error</AlertTitle>
+            <AlertDescription>{form.errors}</AlertDescription>
+          </Alert>
+        )}
+
+        <div>
           <Button
             type="submit"
-            form={form.id}
             name="intent"
             value={INTENTS.organizationSettings}
           >
             Update
           </Button>
-        </Stack>
-      </CardFooter>
-    </Card>
+        </div>
+      </Stack>
+    </Form>
   )
 }

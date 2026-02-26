@@ -1,4 +1,4 @@
-import type { PullRequest } from '../_layout'
+import type { PullRequest } from '../index'
 
 export function generateMarkdown(pulls: PullRequest[]) {
   const header1 = '| Author | Repo | No | タイトル | 期間 |\n'

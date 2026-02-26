@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
-import type { Route } from './+types/_layout'
+import type { Route } from './+types/index'
 import { getRepository, listPullRequests } from './queries.server'
 
 export const handle = {

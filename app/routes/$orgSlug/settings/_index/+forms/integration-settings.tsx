@@ -12,11 +12,6 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
   HStack,
   Label,
   RadioGroup,
@@ -26,7 +21,7 @@ import {
 } from '~/app/components/ui'
 import type { DB, Selectable } from '~/app/services/db.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../+schema'
-import type { action } from './integration-settings.action.server'
+import type { action } from '../../integration/index'
 
 interface IntegrationSettingsProps {
   integration?: Selectable<DB.Integrations>
@@ -46,68 +41,53 @@ export const IntegrationSettings = ({
   })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Integration</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form method="POST" {...getFormProps(form)}>
-          <input
-            type="hidden"
-            name="intent"
-            value={INTENTS.integrationSettings}
-          />
-          <Stack>
-            <fieldset>
-              <Label htmlFor={provider.id}>Provider</Label>
-              <RadioGroup {...getInputProps(provider, { type: 'text' })}>
-                <HStack>
-                  <RadioGroupItem id="github" value="github" />
-                  <Label htmlFor="github">
-                    <HStack className="text-github gap-1">
-                      <Github />
-                      <span>GitHub</span>
-                    </HStack>
-                  </Label>
+    <Form method="POST" {...getFormProps(form)}>
+      <input type="hidden" name="intent" value={INTENTS.integrationSettings} />
+      <Stack>
+        <fieldset className="space-y-1">
+          <Label htmlFor={provider.id}>Provider</Label>
+          <RadioGroup {...getInputProps(provider, { type: 'text' })}>
+            <HStack>
+              <RadioGroupItem id="github" value="github" />
+              <Label htmlFor="github">
+                <HStack className="text-github gap-1">
+                  <Github />
+                  <span>GitHub</span>
                 </HStack>
-              </RadioGroup>
-              <div className="text-destructive">{provider.errors}</div>
-            </fieldset>
+              </Label>
+            </HStack>
+          </RadioGroup>
+          <div className="text-destructive">{provider.errors}</div>
+        </fieldset>
 
-            <fieldset>
-              <Label htmlFor={method.id}>Method</Label>
-              <RadioGroup {...getInputProps(method, { type: 'text' })}>
-                <HStack>
-                  <RadioGroupItem id="token" value="token" />
-                  <Label htmlFor="token">トークン</Label>
-                </HStack>
-              </RadioGroup>
-              <div className="text-destructive">{method.errors}</div>
-            </fieldset>
+        <fieldset className="space-y-1">
+          <Label htmlFor={method.id}>Method</Label>
+          <RadioGroup {...getInputProps(method, { type: 'text' })}>
+            <HStack>
+              <RadioGroupItem id="token" value="token" />
+              <Label htmlFor="token">Token</Label>
+            </HStack>
+          </RadioGroup>
+          <div className="text-destructive">{method.errors}</div>
+        </fieldset>
 
-            <fieldset>
-              <Label htmlFor={privateToken.id}>Private Token</Label>
-              <Textarea {...getTextareaProps(privateToken)} />
-              <div className="text-destructive">{privateToken.errors}</div>
-            </fieldset>
+        <fieldset className="space-y-1">
+          <Label htmlFor={privateToken.id}>Private Token</Label>
+          <Textarea {...getTextareaProps(privateToken)} />
+          <div className="text-destructive">{privateToken.errors}</div>
+        </fieldset>
 
-            {form.errors && (
-              <Alert variant="destructive">
-                <AlertTitle>システムエラー</AlertTitle>
-                <AlertDescription>{form.errors}</AlertDescription>
-              </Alert>
-            )}
-          </Stack>
-        </Form>
-      </CardContent>
+        {form.errors && (
+          <Alert variant="destructive">
+            <AlertTitle>System Error</AlertTitle>
+            <AlertDescription>{form.errors}</AlertDescription>
+          </Alert>
+        )}
 
-      <CardFooter>
-        <Stack direction="row">
-          <Button type="submit" form={form.id}>
-            Update
-          </Button>
-        </Stack>
-      </CardFooter>
-    </Card>
+        <div>
+          <Button type="submit">Update</Button>
+        </div>
+      </Stack>
+    </Form>
   )
 }
