@@ -6,7 +6,7 @@
   "scripts": {
     "build": "run-s build:react-router build:job build:db-scripts",
     "build:job": "esbuild --platform=node --format=esm ./batch/job-scheduler.ts --outdir=build --bundle --packages=external",
-    "build:db-scripts": "esbuild --platform=node --format=esm ./db/migrate-to-tenant.ts ./db/apply-tenant-migrations.ts --outdir=build/db --bundle --packages=external",
+    "build:db-scripts": "esbuild --platform=node --format=esm ./db/apply-tenant-migrations.ts --outdir=build/db --bundle --packages=external",
     "build:react-router": "react-router build",
     "dev": "react-router dev",
     "start": "node server.mjs",
@@ -24,7 +24,6 @@
     "db:apply": "run-s db:apply:shared db:apply:tenant",
     "db:apply:shared": "atlas migrate apply --env local --url 'sqlite://data/data.db'",
     "db:apply:tenant": "tsx db/apply-tenant-migrations.ts",
-    "db:migrate-to-tenant": "tsx db/migrate-to-tenant.ts",
     "batch:golden:snapshot": "pnpm tsx --env-file .env batch/scripts/golden-snapshot.ts",
     "batch:golden:compare": "pnpm tsx --env-file .env batch/scripts/golden-compare.ts",
     "graphql:schema": "cp node_modules/@octokit/graphql-schema/schema.graphql batch/provider/github/schema.graphql",
