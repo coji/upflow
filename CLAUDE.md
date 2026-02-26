@@ -94,10 +94,11 @@ db/
 
 Uses `react-router-auto-routes` for file-based routing (`export default autoRoutes() satisfies RouteConfig`):
 
-- `_layout.tsx` - Layout routes (no URL segment)
-- `_index.tsx` - Index routes
+- `index.tsx` - Page component (leaf route). `_index.tsx` is an alias
+- `_layout.tsx` - Layout wrapper (renders `<Outlet>`, groups child routes)
 - `$param` - Dynamic segments
-- `+` prefix - Co-located files (not routes, e.g. `+components/`, `+hooks/`, `+functions/`)
+- `_` prefix on folders - Pathless layout group (e.g. `_auth/` → no `/auth` segment)
+- `+` prefix - Co-located files, not routes (e.g. `+components/`, `+functions/`)
 
 ### Database Pattern
 
@@ -135,7 +136,6 @@ Files with `.server.ts` suffix are server-only and won't be bundled for the clie
 - `queries.server.ts` - Database read operations
 - `mutations.server.ts` - Database write operations
 - `functions.server.ts` - General server utilities
-- `*.action.server.ts` - Form action handlers
 
 ### Form Handling
 
@@ -160,23 +160,10 @@ return match(intent)
 
 Consistent spacing patterns used throughout the app:
 
-| Context                                     | Pattern                            | Gap            |
-| ------------------------------------------- | ---------------------------------- | -------------- |
-| Within a form field (label + input + error) | `<fieldset className="space-y-1">` | 0.25rem        |
-| Between form fields                         | `<Stack>` (default gap)            | 0.5rem (gap-2) |
-| Between page sections                       | `<Stack gap="6">`                  | 1.5rem         |
-| Within a section (title + description)      | `<div className="space-y-1">`      | 0.25rem        |
-
-```tsx
-{
-  /* Form field pattern */
-}
-;<fieldset className="space-y-1">
-  <Label htmlFor={field.id}>Label</Label>
-  <Input {...getInputProps(field, { type: 'text' })} />
-  <div className="text-destructive">{field.errors}</div>
-</fieldset>
-```
+- **Within a form field** (label + input + error): `space-y-1`
+- **Between form fields**: `<Stack>` default gap (`gap-2`)
+- **Between page sections**: `<Stack gap="6">`
+- **Within a section** (title + description): `space-y-1`
 
 ### Batch Processing
 
