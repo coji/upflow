@@ -38,11 +38,19 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     orgSlug,
   )
   const organizations = await getUserOrganizations(user.id)
-  return { user, organization, membership, organizations }
+
+  const cookieHeader = request.headers.get('Cookie') ?? ''
+  const sidebarState = cookieHeader
+    .split('; ')
+    .find((c) => c.startsWith('sidebar_state='))
+    ?.split('=')[1]
+  const defaultOpen = sidebarState !== 'false'
+
+  return { user, organization, membership, organizations, defaultOpen }
 }
 
 export default function OrgLayout({
-  loaderData: { user, organization, membership, organizations },
+  loaderData: { user, organization, membership, organizations, defaultOpen },
 }: Route.ComponentProps) {
   const { Breadcrumbs } = useBreadcrumbs()
   const matches = useMatches()
@@ -52,7 +60,7 @@ export default function OrgLayout({
   }, {}) as RouteHandle
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar
         user={user}
         organization={organization}
@@ -69,8 +77,9 @@ export default function OrgLayout({
           'flex h-svh flex-col',
         )}
       >
-        <Header fixed={handle.headerFixed} />
-        <Breadcrumbs />
+        <Header fixed={handle.headerFixed}>
+          <Breadcrumbs />
+        </Header>
         <Main fixed={handle.mainFixed}>
           <Outlet />
         </Main>

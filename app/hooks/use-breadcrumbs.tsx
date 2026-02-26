@@ -48,7 +48,7 @@ export const useBreadcrumbs = () => {
   const Breadcrumbs = () => {
     return (
       <Breadcrumb>
-        <BreadcrumbList className="px-4">
+        <BreadcrumbList>
           {breadcrumbItems.map((item, idx) => {
             return (
               <React.Fragment key={item.label}>
