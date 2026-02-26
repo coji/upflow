@@ -3,7 +3,7 @@ import compression from 'compression'
 import { consola } from 'consola'
 import express from 'express'
 import morgan from 'morgan'
-import { createJobSchedular } from './build/job-schedular.js'
+import { createJobScheduler } from './build/job-scheduler.js'
 
 const viteDevServer =
   process.env.NODE_ENV === 'production'
@@ -65,6 +65,6 @@ app.listen(port, () => {
 })
 
 if (process.env.NODE_ENV === 'production') {
-  const { startSchedular } = createJobSchedular()
-  startSchedular()
+  const { startScheduler } = createJobScheduler()
+  startScheduler()
 }

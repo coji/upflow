@@ -173,7 +173,7 @@ CLI for data synchronization (`batch/cli.ts`):
 - `report` - Generates cycle time reports
 - `upsert` - Updates database with processed data
 
-In production, these run on a schedule via `job-schedular.ts`.
+In production, these run on a schedule via `job-scheduler.ts`.
 
 ### Multi-Tenant Security
 
