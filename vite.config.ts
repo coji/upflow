@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     tailwindcss(),
     reactRouter(),
-    tsconfigPaths(),
+    tsconfigPaths({ ignoreConfigErrors: true }),
     mode !== 'production' && devtoolsJson(),
   ],
 }))

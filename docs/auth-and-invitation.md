@@ -4,11 +4,13 @@
 
 GitHub login と upflow ユーザーの紐付けは、**複数の経路で自動解決** する。ユーザーに手動操作を求めない。
 
-| 紐付け経路                 | 自動/手動 | タイミング                                             |
-| -------------------------- | --------- | ------------------------------------------------------ |
-| GitHub ログイン            | 自動      | ログイン時に `account_id` (= GitHub username) から解決 |
-| 招待時に GitHub login 指定 | 自動      | 招待 accept 時に紐付け                                 |
-| 管理者が設定画面で紐付け   | 手動      | フォールバック                                         |
+| 紐付け経路                 | 自動/手動 | タイミング                                                  |
+| -------------------------- | --------- | ----------------------------------------------------------- |
+| GitHub ログイン            | 自動      | ログイン時に GitHub API `/user` から取得した `login` で解決 |
+| 招待時に GitHub login 指定 | 自動      | 招待 accept 時に紐付け                                      |
+| 管理者が設定画面で紐付け   | 手動      | GitHub でログインしないメンバー向けのフォールバック         |
+
+> **注意**: Better Auth の `accounts.account_id` には GitHub の **numeric ID** が保存される（username ではない）。`companyGithubUsers.login` との紐付けには、ログイン時に GitHub API のプロフィール情報から取得できる `login` フィールドを使う。
 
 推奨パスは **GitHub ログイン**。upflow は GitHub の PR データを扱うツールなので、GitHub でログインするのが最も自然で、紐付けも即座に完了する。
 
@@ -61,8 +63,8 @@ GitHub login と upflow ユーザーの紐付けは、**複数の経路で自動
 socialProviders: {
   google: { ... },  // 既存
   github: {
-    clientId: process.env.GITHUB_APP_CLIENT_ID,
-    clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
   },
 },
 ```
@@ -74,28 +76,42 @@ socialProviders: {
 ### GitHub ログイン（推奨）
 
 1. ログイン画面で「GitHub でログイン」を選択
-2. Better Auth が `accounts` テーブルに `provider_id = 'github'`, `account_id = <GitHub username>` を保存
-3. ログイン完了時のフックで、ユーザーが所属する全組織の `company_github_users` テーブルを検索
-4. `login = account_id` のレコードが見つかれば `user_id` を自動設定
+2. Better Auth が `accounts` テーブルに `provider_id = 'github'`, `account_id = <GitHub numeric ID>` を保存
+3. Better Auth の GitHub provider は `getUserInfo` で GitHub API `/user` を呼び、レスポンスの `login`（= GitHub username）を取得できる
+4. ログイン完了時のフックで、`login` を使ってユーザーが所属する全組織の `company_github_users` テーブルを検索
+5. マッチするレコードが見つかれば `user_id` を自動設定
 
 ```typescript
-// ログイン後の自動紐付け（auth hook）
-const githubAccount = await db
-  .selectFrom('accounts')
-  .select('accountId')
-  .where('userId', '=', user.id)
-  .where('providerId', '=', 'github')
-  .executeTakeFirst()
+// Better Auth の GitHub provider 設定で login を取得
+socialProviders: {
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    mapProfileToUser: (profile) => ({
+      // profile.login = GitHub username (e.g. "octocat")
+      // profile.id = GitHub numeric ID (e.g. "1234567")
+      // users テーブルにカスタムカラムを追加するか、
+      // フック内で profile.login を直接使う
+    }),
+  },
+},
 
-if (githubAccount) {
+// ログイン後の自動紐付け（auth hook）
+// Better Auth の getUserInfo が返す data に GithubProfile 全体が含まれる
+// profile.login が GitHub username
+const githubLogin = profile.login // GitHub username
+
+if (githubLogin) {
   await db
     .updateTable('companyGithubUsers')
     .set({ userId: user.id })
-    .where('login', '=', githubAccount.accountId)
+    .where('login', '=', githubLogin)
     .where('userId', 'is', null)
     .execute()
 }
 ```
+
+> **実装上の注意**: `accounts.account_id` は GitHub の numeric ID であり、`companyGithubUsers.login`（GitHub username）とは一致しない。紐付けには auth フック内で GitHub API のプロフィール情報（`profile.login`）を使う必要がある。
 
 ### Google ログイン + 招待時紐付け
 
@@ -174,8 +190,8 @@ const { token } = await auth({ type: 'installation' })
 | 変数                                        | 用途                                     | 新規/既存 |
 | ------------------------------------------- | ---------------------------------------- | --------- |
 | `GITHUB_APP_ID`                             | GitHub App ID                            | 新規      |
-| `GITHUB_APP_CLIENT_ID`                      | GitHub App OAuth（ログイン用）           | 新規      |
-| `GITHUB_APP_CLIENT_SECRET`                  | GitHub App OAuth（ログイン用）           | 新規      |
+| `GITHUB_CLIENT_ID`                          | GitHub App OAuth（ログイン用）           | 新規      |
+| `GITHUB_CLIENT_SECRET`                      | GitHub App OAuth（ログイン用）           | 新規      |
 | `GITHUB_APP_PRIVATE_KEY`                    | GitHub App（installation token 生成）    | 新規      |
 | `RESEND_API_KEY`                            | 招待メール送信                           | 新規      |
 | `DATABASE_URL`                              | SQLite                                   | 既存      |

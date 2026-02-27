@@ -4,7 +4,11 @@ import { organization } from 'better-auth/plugins/organization'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { db, dialect } from '~/app/services/db.server'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
+import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
+import {
+  type OrganizationId,
+  getTenantDb,
+} from '~/app/services/tenant-db.server'
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -14,6 +18,107 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      getUserInfo: async (token) => {
+        if (!token.accessToken) {
+          console.error('[GitHub OAuth] No access token')
+          return null
+        }
+        const res = await fetch('https://api.github.com/user', {
+          headers: {
+            'User-Agent': 'upflow',
+            Authorization: `Bearer ${token.accessToken}`,
+          },
+          signal: AbortSignal.timeout(5_000),
+        })
+        if (!res.ok) {
+          console.error(
+            '[GitHub OAuth] /user failed:',
+            res.status,
+            await res.text(),
+          )
+          return null
+        }
+        const profile = (await res.json()) as {
+          id: number
+          login: string
+          name: string | null
+          email: string | null
+          avatar_url: string
+        }
+
+        // Check if this GitHub login is registered in any org's companyGithubUsers
+        const orgs = await db
+          .selectFrom('organizations')
+          .select(['id'])
+          .execute()
+        let isAllowed = false
+        const loginLower = profile.login.toLowerCase()
+        for (const { id } of orgs) {
+          try {
+            const tenantDb = getTenantDb(id as OrganizationId)
+            const match = await tenantDb
+              .selectFrom('companyGithubUsers')
+              .select(['login'])
+              .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
+              .executeTakeFirst()
+            if (match) {
+              isAllowed = true
+              break
+            }
+          } catch {
+            // skip unreachable tenant DBs
+          }
+        }
+        if (!isAllowed) {
+          console.warn(
+            `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
+          )
+          return null
+        }
+
+        const emailsRes = await fetch('https://api.github.com/user/emails', {
+          headers: {
+            'User-Agent': 'upflow',
+            Authorization: `Bearer ${token.accessToken}`,
+          },
+          signal: AbortSignal.timeout(5_000),
+        })
+        let emailVerified = false
+        if (emailsRes.ok) {
+          const emails = (await emailsRes.json()) as {
+            email: string
+            primary: boolean
+            verified: boolean
+          }[]
+          if (!profile.email && emails.length > 0) {
+            profile.email =
+              (emails.find((e) => e.primary) ?? emails[0])?.email ?? null
+          }
+          emailVerified =
+            emails.find((e) => e.email === profile.email)?.verified ?? false
+        } else {
+          console.warn(
+            '[GitHub OAuth] /user/emails failed:',
+            emailsRes.status,
+            await emailsRes.text(),
+          )
+        }
+
+        return {
+          user: {
+            id: String(profile.id),
+            name: profile.name || profile.login,
+            email: profile.email,
+            image: profile.avatar_url,
+            emailVerified,
+          },
+          data: profile,
+        }
+      },
     },
   },
   advanced: {
@@ -54,6 +159,9 @@ export const auth = betterAuth({
       refreshTokenExpiresAt: 'refresh_token_expires_at',
       userId: 'user_id',
     },
+    accountLinking: {
+      trustedProviders: ['google', 'github'],
+    },
   },
   verification: {
     disableCleanup: true,
@@ -62,6 +170,20 @@ export const auth = betterAuth({
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       expiresAt: 'expires_at',
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        after: async (session) => {
+          await linkGithubUserToCompanyUsers(session.userId).catch((error) => {
+            console.warn('[GitHub linking] post-session linking failed', {
+              userId: session.userId,
+              error,
+            })
+          })
+        },
+      },
     },
   },
   plugins: [
