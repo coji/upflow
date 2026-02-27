@@ -4,6 +4,7 @@ import { organization } from 'better-auth/plugins/organization'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { db, dialect } from '~/app/services/db.server'
+import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
 import type { OrganizationId } from '~/app/services/tenant-db.server'
 
 export const auth = betterAuth({
@@ -14,6 +15,75 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      getUserInfo: async (token) => {
+        if (!token.accessToken) {
+          console.error('[GitHub OAuth] No access token')
+          return null
+        }
+        const res = await fetch('https://api.github.com/user', {
+          headers: {
+            'User-Agent': 'upflow',
+            Authorization: `Bearer ${token.accessToken}`,
+          },
+        })
+        if (!res.ok) {
+          console.error(
+            '[GitHub OAuth] /user failed:',
+            res.status,
+            await res.text(),
+          )
+          return null
+        }
+        const profile = (await res.json()) as {
+          id: number
+          login: string
+          name: string | null
+          email: string | null
+          avatar_url: string
+        }
+
+        const emailsRes = await fetch('https://api.github.com/user/emails', {
+          headers: {
+            'User-Agent': 'upflow',
+            Authorization: `Bearer ${token.accessToken}`,
+          },
+        })
+        let emailVerified = false
+        if (emailsRes.ok) {
+          const emails = (await emailsRes.json()) as {
+            email: string
+            primary: boolean
+            verified: boolean
+          }[]
+          if (!profile.email && emails.length > 0) {
+            profile.email =
+              (emails.find((e) => e.primary) ?? emails[0])?.email ?? null
+          }
+          emailVerified =
+            emails.find((e) => e.email === profile.email)?.verified ?? false
+        } else {
+          console.warn(
+            '[GitHub OAuth] /user/emails failed:',
+            emailsRes.status,
+            await emailsRes.text(),
+          )
+        }
+
+        return {
+          user: {
+            id: String(profile.id),
+            name: profile.name || profile.login,
+            email: profile.email,
+            image: profile.avatar_url,
+            emailVerified,
+          },
+          data: profile,
+        }
+      },
     },
   },
   advanced: {
@@ -54,6 +124,9 @@ export const auth = betterAuth({
       refreshTokenExpiresAt: 'refresh_token_expires_at',
       userId: 'user_id',
     },
+    accountLinking: {
+      trustedProviders: ['google', 'github'],
+    },
   },
   verification: {
     disableCleanup: true,
@@ -62,6 +135,15 @@ export const auth = betterAuth({
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       expiresAt: 'expires_at',
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        after: async (session) => {
+          await linkGithubUserToCompanyUsers(session.userId).catch(() => {})
+        },
+      },
     },
   },
   plugins: [
