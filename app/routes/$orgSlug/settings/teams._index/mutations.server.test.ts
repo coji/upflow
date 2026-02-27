@@ -2,7 +2,15 @@ import SQLite from 'better-sqlite3'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest'
 
 const testDir = path.join(tmpdir(), `teams-mutations-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -42,6 +50,10 @@ function createFreshOrg(): OrganizationId {
 
 describe('teams mutations', () => {
   let orgId: OrganizationId
+
+  afterAll(() => {
+    vi.unstubAllEnvs()
+  })
 
   beforeEach(() => {
     orgId = createFreshOrg()

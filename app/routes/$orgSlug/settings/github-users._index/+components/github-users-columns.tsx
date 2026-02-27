@@ -54,7 +54,10 @@ function EditableDisplayName({
   return (
     <button
       type="button"
-      onClick={() => setEditing(true)}
+      onClick={() => {
+        setValue(displayName)
+        setEditing(true)
+      }}
       className="hover:bg-muted cursor-pointer rounded px-1 py-0.5 text-left"
       title="クリックして編集"
     >
