@@ -63,8 +63,8 @@ GitHub login と upflow ユーザーの紐付けは、**複数の経路で自動
 socialProviders: {
   google: { ... },  // 既存
   github: {
-    clientId: process.env.GITHUB_APP_CLIENT_ID,
-    clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
   },
 },
 ```
@@ -85,8 +85,8 @@ socialProviders: {
 // Better Auth の GitHub provider 設定で login を取得
 socialProviders: {
   github: {
-    clientId: process.env.GITHUB_APP_CLIENT_ID,
-    clientSecret: process.env.GITHUB_APP_CLIENT_SECRET,
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
     mapProfileToUser: (profile) => ({
       // profile.login = GitHub username (e.g. "octocat")
       // profile.id = GitHub numeric ID (e.g. "1234567")
@@ -190,8 +190,8 @@ const { token } = await auth({ type: 'installation' })
 | 変数                                        | 用途                                     | 新規/既存 |
 | ------------------------------------------- | ---------------------------------------- | --------- |
 | `GITHUB_APP_ID`                             | GitHub App ID                            | 新規      |
-| `GITHUB_APP_CLIENT_ID`                      | GitHub App OAuth（ログイン用）           | 新規      |
-| `GITHUB_APP_CLIENT_SECRET`                  | GitHub App OAuth（ログイン用）           | 新規      |
+| `GITHUB_CLIENT_ID`                          | GitHub App OAuth（ログイン用）           | 新規      |
+| `GITHUB_CLIENT_SECRET`                      | GitHub App OAuth（ログイン用）           | 新規      |
 | `GITHUB_APP_PRIVATE_KEY`                    | GitHub App（installation token 生成）    | 新規      |
 | `RESEND_API_KEY`                            | 招待メール送信                           | 新規      |
 | `DATABASE_URL`                              | SQLite                                   | 既存      |

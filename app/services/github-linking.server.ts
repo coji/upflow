@@ -29,6 +29,7 @@ export async function linkGithubUserToCompanyUsers(
       'User-Agent': 'upflow',
       Accept: 'application/vnd.github+json',
     },
+    signal: AbortSignal.timeout(5_000),
   })
 
   if (!res.ok) {
@@ -56,7 +57,9 @@ export async function linkGithubUserToCompanyUsers(
       await tenantDb
         .updateTable('companyGithubUsers')
         .set({ userId })
-        .where('login', '=', profile.login)
+        .where((eb) =>
+          eb(eb.fn('lower', ['login']), '=', profile.login.toLowerCase()),
+        )
         .where('userId', 'is', null)
         .execute()
     }),

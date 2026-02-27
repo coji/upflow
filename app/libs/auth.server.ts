@@ -32,6 +32,7 @@ export const auth = betterAuth({
             'User-Agent': 'upflow',
             Authorization: `Bearer ${token.accessToken}`,
           },
+          signal: AbortSignal.timeout(5_000),
         })
         if (!res.ok) {
           console.error(
@@ -54,22 +55,24 @@ export const auth = betterAuth({
           .selectFrom('organizations')
           .select(['id'])
           .execute()
-        const isAllowed = (
-          await Promise.all(
-            orgs.map(async ({ id }) => {
-              try {
-                const tenantDb = getTenantDb(id as OrganizationId)
-                return await tenantDb
-                  .selectFrom('companyGithubUsers')
-                  .select(['login'])
-                  .where('login', '=', profile.login)
-                  .executeTakeFirst()
-              } catch {
-                return undefined
-              }
-            }),
-          )
-        ).some(Boolean)
+        let isAllowed = false
+        const loginLower = profile.login.toLowerCase()
+        for (const { id } of orgs) {
+          try {
+            const tenantDb = getTenantDb(id as OrganizationId)
+            const match = await tenantDb
+              .selectFrom('companyGithubUsers')
+              .select(['login'])
+              .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
+              .executeTakeFirst()
+            if (match) {
+              isAllowed = true
+              break
+            }
+          } catch {
+            // skip unreachable tenant DBs
+          }
+        }
         if (!isAllowed) {
           console.warn(
             `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
@@ -82,6 +85,7 @@ export const auth = betterAuth({
             'User-Agent': 'upflow',
             Authorization: `Bearer ${token.accessToken}`,
           },
+          signal: AbortSignal.timeout(5_000),
         })
         let emailVerified = false
         if (emailsRes.ok) {
@@ -172,7 +176,12 @@ export const auth = betterAuth({
     session: {
       create: {
         after: async (session) => {
-          await linkGithubUserToCompanyUsers(session.userId).catch(() => {})
+          await linkGithubUserToCompanyUsers(session.userId).catch((error) => {
+            console.warn('[GitHub linking] post-session linking failed', {
+              userId: session.userId,
+              error,
+            })
+          })
         },
       },
     },
