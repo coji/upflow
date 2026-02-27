@@ -6,7 +6,7 @@ export default defineConfig((configEnv) =>
     viteConfigFn(configEnv),
     defineConfig({
       test: {
-        exclude: [...configDefaults.exclude, 'opensrc/**'],
+        exclude: [...configDefaults.exclude, 'opensrc/**', '.react-router/**'],
       },
     }),
   ),

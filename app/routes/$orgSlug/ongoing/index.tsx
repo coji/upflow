@@ -7,9 +7,11 @@ import {
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
+import { TeamFilter } from '~/app/components/team-filter'
 import { Button, Stack } from '~/app/components/ui'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
+import { listTeams } from '../settings/teams._index/queries.server'
 import { columns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
 import type { Route } from './+types/index'
@@ -27,16 +29,23 @@ export type PullRequest = Awaited<
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgMember(request, params.orgSlug)
+
+  const url = new URL(request.url)
+  const teamParam = url.searchParams.get('team')
+
+  const teams = await listTeams(organization.id)
+
   const pullRequests = await getOngoingPullRequestReport(
     organization.id,
     null,
     dayjs().utc().toISOString(),
+    teamParam || undefined,
   )
-  return { pullRequests }
+  return { pullRequests, teams }
 }
 
 export default function OngoingPage({
-  loaderData: { pullRequests },
+  loaderData: { pullRequests, teams },
 }: Route.ComponentProps) {
   return (
     <Stack>
@@ -45,6 +54,7 @@ export default function OngoingPage({
           <PageHeaderTitle>Ongoing</PageHeaderTitle>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <TeamFilter teams={teams} />
           <Button
             type="button"
             variant="outline"

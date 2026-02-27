@@ -1,9 +1,70 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { useState } from 'react'
+import { useFetcher } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
+import { Input } from '~/app/components/ui/input'
 import dayjs from '~/app/libs/dayjs'
 import type { GithubUserRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { GithubUserRowActions } from './github-user-row-actions'
+
+function EditableDisplayName({
+  login,
+  displayName,
+}: {
+  login: string
+  displayName: string
+}) {
+  const fetcher = useFetcher()
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(displayName)
+
+  const submit = () => {
+    if (value.trim() && value !== displayName) {
+      const formData = new FormData()
+      formData.set('intent', 'update')
+      formData.set('login', login)
+      formData.set('displayName', value.trim())
+      fetcher.submit(formData, { method: 'post' })
+    } else {
+      setValue(displayName)
+    }
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={submit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit()
+          if (e.key === 'Escape') {
+            setValue(displayName)
+            setEditing(false)
+          }
+        }}
+        className="h-7 w-40"
+        autoFocus
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setValue(displayName)
+        setEditing(true)
+      }}
+      className="hover:bg-muted cursor-pointer rounded px-1 py-0.5 text-left"
+      title="クリックして編集"
+    >
+      {displayName}
+    </button>
+  )
+}
 
 export const columns: ColumnDef<GithubUserRow>[] = [
   {
@@ -33,7 +94,12 @@ export const columns: ColumnDef<GithubUserRow>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Display Name" />
     ),
-    cell: ({ row }) => <span>{row.getValue('displayName')}</span>,
+    cell: ({ row }) => (
+      <EditableDisplayName
+        login={row.original.login}
+        displayName={row.getValue('displayName')}
+      />
+    ),
   },
   {
     accessorKey: 'name',

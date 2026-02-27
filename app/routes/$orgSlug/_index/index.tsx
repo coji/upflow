@@ -8,10 +8,12 @@ import {
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
+import { TeamFilter } from '~/app/components/team-filter'
 import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
 import WeeklyCalendar from '~/app/components/week-calendar'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
+import { listTeams } from '../settings/teams._index/queries.server'
 import { columns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
 import { getEndOfWeek, getStartOfWeek, parseDate } from './+functions/utils'
@@ -29,6 +31,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const fromParam = url.searchParams.get('from')
   const toParam = url.searchParams.get('to')
+  const teamParam = url.searchParams.get('team')
 
   let from: dayjs.Dayjs
   let to: dayjs.Dayjs
@@ -40,11 +43,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     to = getEndOfWeek()
   }
 
+  const teams = await listTeams(organization.id)
+
   const pullRequests = await getMergedPullRequestReport(
     organization.id,
     from.utc().toISOString(),
     to.utc().toISOString(),
     objective,
+    teamParam || undefined,
   )
 
   const achievementCount = pullRequests.filter((pr) => pr.achievement).length
@@ -58,6 +64,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     objective,
     achievementCount,
     achievementRate,
+    teams,
   }
 }
 
@@ -69,6 +76,7 @@ export default function OrganizationIndex({
     objective,
     achievementCount,
     achievementRate,
+    teams,
   },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
@@ -80,6 +88,7 @@ export default function OrganizationIndex({
           <PageHeaderTitle>Dashboard</PageHeaderTitle>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <TeamFilter teams={teams} />
           <Button
             type="button"
             variant="outline"

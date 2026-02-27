@@ -1,8 +1,11 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router'
+import { Link, data } from 'react-router'
+import { match } from 'ts-pattern'
+import { z } from 'zod'
 import { Button } from '~/app/components/ui/button'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import ContentSection from '../+components/content-section'
+import { listTeams } from '../teams._index/queries.server'
 import { createColumns } from './+components/repo-columns'
 import { RepoTable } from './+components/repo-table'
 import {
@@ -11,6 +14,7 @@ import {
   SortSchema,
 } from './+hooks/use-data-table-state'
 import type { Route } from './+types/index'
+import { updateRepositoryTeam } from './mutations.server'
 import { listFilteredRepositories } from './queries.server'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
@@ -40,14 +44,42 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     sortOrder,
   })
 
-  return { organization, repositories, pagination }
+  const teams = await listTeams(organization.id)
+
+  return { organization, repositories, pagination, teams }
+}
+
+const updateTeamSchema = z.object({
+  repositoryId: z.string().min(1),
+  teamId: z.string().nullable(),
+})
+
+export const action = async ({ request, params }: Route.ActionArgs) => {
+  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+  const formData = await request.formData()
+  const intent = String(formData.get('intent'))
+
+  return match(intent)
+    .with('updateTeam', async () => {
+      const parsed = updateTeamSchema.parse({
+        repositoryId: formData.get('repositoryId'),
+        teamId: formData.get('teamId') || null,
+      })
+      await updateRepositoryTeam(
+        organization.id,
+        parsed.repositoryId,
+        parsed.teamId,
+      )
+      return data({ ok: true })
+    })
+    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
 
 export default function OrganizationRepositoryIndexPage({
-  loaderData: { organization, repositories, pagination },
+  loaderData: { organization, repositories, pagination, teams },
 }: Route.ComponentProps) {
   const slug = organization.slug
-  const columns = useMemo(() => createColumns(slug), [slug])
+  const columns = useMemo(() => createColumns(slug, teams), [slug, teams])
 
   return (
     <ContentSection

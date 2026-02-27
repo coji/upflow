@@ -22,7 +22,11 @@ export const listFilteredRepositories = async ({
   sortOrder,
 }: ListFilteredRepositoriesArgs) => {
   const tenantDb = getTenantDb(organizationId)
-  let query = tenantDb.selectFrom('repositories').selectAll()
+  let query = tenantDb
+    .selectFrom('repositories')
+    .leftJoin('teams', 'repositories.teamId', 'teams.id')
+    .selectAll('repositories')
+    .select('teams.name as teamName')
 
   if (repo) {
     query = query.where((eb) =>
