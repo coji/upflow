@@ -1,6 +1,8 @@
 import { redirect, useSubmit } from 'react-router'
 import { AppLayout } from '~/app/components'
 import {
+  Alert,
+  AlertDescription,
   Button,
   Card,
   CardContent,
@@ -17,6 +19,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     throw redirect('/')
   }
 
+  const url = new URL(request.url)
+  const error = url.searchParams.get('error')
+
   const cookieHeader = request.headers.get('Cookie') ?? ''
   const lastProvider =
     cookieHeader
@@ -24,7 +29,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       .find((c) => c.startsWith('last_provider='))
       ?.split('=')[1] ?? null
 
-  return { lastProvider }
+  return { lastProvider, error }
 }
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -37,7 +42,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const provider = String(formData.get('provider') || 'google')
 
   const response = await auth.api.signInSocial({
-    body: { provider, callbackURL: '/' },
+    body: { provider, callbackURL: '/', errorCallbackURL: '/login' },
     asResponse: true,
   })
 
@@ -49,8 +54,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
   return redirect(data.url || '/', { headers: response.headers })
 }
 
+const errorMessages: Record<string, string> = {
+  unable_to_get_user_info:
+    'このGitHubアカウントはログインが許可されていません。管理者にお問い合わせください。',
+}
+
 export default function LoginPage({
-  loaderData: { lastProvider },
+  loaderData: { lastProvider, error },
 }: Route.ComponentProps) {
   const submit = useSubmit()
 
@@ -69,6 +79,16 @@ export default function LoginPage({
           <CardHeader className="text-center">
             <CardTitle>UpFlow</CardTitle>
           </CardHeader>
+
+          {error && (
+            <CardContent className="pb-0">
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {errorMessages[error] ?? 'ログインに失敗しました。'}
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          )}
 
           <CardContent className="space-y-3">
             <Button

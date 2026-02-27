@@ -5,7 +5,10 @@ import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { db, dialect } from '~/app/services/db.server'
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
+import {
+  type OrganizationId,
+  getTenantDb,
+} from '~/app/services/tenant-db.server'
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -44,6 +47,34 @@ export const auth = betterAuth({
           name: string | null
           email: string | null
           avatar_url: string
+        }
+
+        // Check if this GitHub login is registered in any org's companyGithubUsers
+        const orgs = await db
+          .selectFrom('organizations')
+          .select(['id'])
+          .execute()
+        const isAllowed = (
+          await Promise.all(
+            orgs.map(async ({ id }) => {
+              try {
+                const tenantDb = getTenantDb(id as OrganizationId)
+                return await tenantDb
+                  .selectFrom('companyGithubUsers')
+                  .select(['login'])
+                  .where('login', '=', profile.login)
+                  .executeTakeFirst()
+              } catch {
+                return undefined
+              }
+            }),
+          )
+        ).some(Boolean)
+        if (!isAllowed) {
+          console.warn(
+            `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
+          )
+          return null
         }
 
         const emailsRes = await fetch('https://api.github.com/user/emails', {
