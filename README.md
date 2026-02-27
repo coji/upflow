@@ -6,7 +6,7 @@ Development productivity dashboard that tracks pull request cycle times from Git
 
 - **Framework**: React Router v7 (SSR) + Express
 - **Database**: SQLite (multi-tenant, database-per-org) via Atlas + Kysely
-- **Auth**: better-auth with Google & GitHub OAuth
+- **Auth**: better-auth with GitHub OAuth
 - **UI**: shadcn/ui + Tailwind CSS v4
 - **Testing**: Vitest + Playwright
 - **Hosting**: Fly.io
@@ -38,8 +38,6 @@ Edit `.env` with your values:
 | `SESSION_SECRET`            | Secret for session encryption                      |
 | `BETTER_AUTH_SECRET`        | Secret for better-auth                             |
 | `BETTER_AUTH_URL`           | App URL (e.g. `http://localhost:5173`)             |
-| `GOOGLE_CLIENT_ID`          | Google OAuth client ID                             |
-| `GOOGLE_CLIENT_SECRET`      | Google OAuth client secret                         |
 | `GITHUB_CLIENT_ID`          | GitHub App client ID                               |
 | `GITHUB_CLIENT_SECRET`      | GitHub App client secret                           |
 | `INTEGRATION_PRIVATE_TOKEN` | GitHub PAT for PR data fetching                    |
@@ -89,9 +87,8 @@ pnpm db:generate  # Generate Kysely types
 
 ## Authentication
 
-- **Google OAuth**: Restricted by Google Workspace (internal users only)
-- **GitHub OAuth**: Restricted to users registered in `companyGithubUsers` (managed in Settings > GitHub Users)
-- Same-email accounts are automatically linked across providers
+- **GitHub OAuth only**: Users must be registered in `companyGithubUsers` by an org admin (Settings > GitHub Users)
+- On first GitHub login, users are automatically added as members to orgs where their GitHub login is registered
 
 ## License
 

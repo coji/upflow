@@ -52,7 +52,7 @@ pnpm test:e2e
 
 - **Framework**: React Router v7 (SSR mode) with Express server
 - **Database**: SQLite via Atlas (migrations) and Kysely (query builder, type generation)
-- **Auth**: better-auth with Google & GitHub OAuth, supporting organizations
+- **Auth**: better-auth with GitHub OAuth, supporting organizations
 - **UI**: shadcn/ui components (new-york style) with Tailwind CSS v4
 - **Testing**: Vitest (unit), Playwright (E2E)
 - **Linting**: Biome (lint), Prettier (format)

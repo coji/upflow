@@ -15,10 +15,6 @@ export const auth = betterAuth({
   secret: process.env.SESSION_SECRET,
   database: { dialect: dialect, type: 'sqlite' },
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    },
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
@@ -160,7 +156,7 @@ export const auth = betterAuth({
       userId: 'user_id',
     },
     accountLinking: {
-      trustedProviders: ['google', 'github'],
+      trustedProviders: ['github'],
     },
   },
   verification: {
