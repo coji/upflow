@@ -40,6 +40,7 @@ async function getTenantData(organizationId: OrganizationId) {
           'provider',
           'releaseDetectionKey',
           'releaseDetectionMethod',
+          'teamId',
           'updatedAt',
           'createdAt',
         ])

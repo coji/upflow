@@ -103,7 +103,15 @@ export interface Repositories {
   releaseDetectionKey: Generated<string>
   releaseDetectionMethod: Generated<string>
   repo: string
+  teamId: Generated<string | null>
   updatedAt: string
+}
+
+export interface Teams {
+  createdAt: Generated<string>
+  displayOrder: Generated<number>
+  id: string
+  name: string
 }
 
 export interface DB {
@@ -115,4 +123,5 @@ export interface DB {
   pullRequestReviews: PullRequestReviews
   pullRequests: PullRequests
   repositories: Repositories
+  teams: Teams
 }

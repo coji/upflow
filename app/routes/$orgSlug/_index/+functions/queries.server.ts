@@ -10,6 +10,7 @@ export const getMergedPullRequestReport = async (
   fromDateTime: string | null,
   toDateTime: string | null,
   objective: number,
+  teamId?: string | null,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const pullrequests = await tenantDb
@@ -24,6 +25,9 @@ export const getMergedPullRequestReport = async (
       qb.where('mergedAt', '>=', fromDateTime),
     )
     .$if(toDateTime !== null, (qb) => qb.where('mergedAt', '<=', toDateTime))
+    .$if(teamId != null, (qb) =>
+      qb.where('repositories.teamId', '=', teamId as string),
+    )
     .where('author', 'not like', '%[bot]')
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')

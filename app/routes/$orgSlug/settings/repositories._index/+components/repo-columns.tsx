@@ -1,13 +1,61 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLinkIcon } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, useFetcher } from 'react-router'
 import { match } from 'ts-pattern'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/app/components/ui'
 import { Badge } from '~/app/components/ui/badge'
+import type { TeamRow } from '../../teams._index/queries.server'
 import type { RepositoryRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { RepoRowActions } from './repo-row-actions'
 
-export const createColumns = (orgSlug: string): ColumnDef<RepositoryRow>[] => [
+function TeamSelect({
+  repositoryId,
+  currentTeamId,
+  teams,
+}: {
+  repositoryId: string
+  currentTeamId: string | null
+  teams: TeamRow[]
+}) {
+  const fetcher = useFetcher()
+
+  return (
+    <Select
+      defaultValue={currentTeamId ?? '__none__'}
+      onValueChange={(value) => {
+        const formData = new FormData()
+        formData.set('intent', 'updateTeam')
+        formData.set('repositoryId', repositoryId)
+        formData.set('teamId', value === '__none__' ? '' : value)
+        fetcher.submit(formData, { method: 'post' })
+      }}
+    >
+      <SelectTrigger className="h-8 w-36">
+        <SelectValue placeholder="未設定" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">未設定</SelectItem>
+        {teams.map((team) => (
+          <SelectItem key={team.id} value={team.id}>
+            {team.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+export const createColumns = (
+  orgSlug: string,
+  teams: TeamRow[],
+): ColumnDef<RepositoryRow>[] => [
   {
     id: 'repo',
     accessorFn: (row) => `${row.owner}/${row.repo}`,
@@ -31,6 +79,20 @@ export const createColumns = (orgSlug: string): ColumnDef<RepositoryRow>[] => [
       )
     },
     enableHiding: false,
+  },
+  {
+    accessorKey: 'teamName',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Team" />
+    ),
+    cell: ({ row }) => (
+      <TeamSelect
+        repositoryId={row.original.id}
+        currentTeamId={row.original.teamId}
+        teams={teams}
+      />
+    ),
+    enableSorting: false,
   },
   {
     accessorKey: 'releaseDetectionMethod',

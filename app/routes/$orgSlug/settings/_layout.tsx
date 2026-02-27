@@ -4,6 +4,7 @@ import {
   FileSpreadsheetIcon,
   GitPullRequestIcon,
   GithubIcon,
+  GroupIcon,
   PlugIcon,
   SettingsIcon,
   UsersIcon,
@@ -56,6 +57,11 @@ export default function SettingsLayout({
       title: 'Repositories',
       icon: <GitPullRequestIcon size={18} />,
       href: `/${orgSlug}/settings/repositories`,
+    },
+    {
+      title: 'Teams',
+      icon: <GroupIcon size={18} />,
+      href: `/${orgSlug}/settings/teams`,
     },
     {
       title: 'GitHub Users',

@@ -9,6 +9,7 @@ export const getOngoingPullRequestReport = async (
   organizationId: OrganizationId,
   fromDateTime: string | null,
   toDateTime: string | null,
+  teamId?: string | null,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const pullrequests = await tenantDb
@@ -24,6 +25,9 @@ export const getOngoingPullRequestReport = async (
     )
     .$if(toDateTime !== null, (qb) =>
       qb.where('pullRequestCreatedAt', '<=', toDateTime),
+    )
+    .$if(teamId != null, (qb) =>
+      qb.where('repositories.teamId', '=', teamId as string),
     )
     .where('mergedAt', 'is', null)
     .where('state', '=', 'open')

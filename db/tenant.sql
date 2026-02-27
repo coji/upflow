@@ -39,8 +39,10 @@ CREATE TABLE `repositories` (
   `release_detection_key` text NOT NULL DEFAULT 'production',
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `team_id` text NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `repositories_integration_id_fkey` FOREIGN KEY (`integration_id`) REFERENCES `integrations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+  CONSTRAINT `repositories_integration_id_fkey` FOREIGN KEY (`integration_id`) REFERENCES `integrations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `repositories_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
 );
 -- Create index "repositories_integration_id_owner_repo_key" to table: "repositories"
 CREATE UNIQUE INDEX `repositories_integration_id_owner_repo_key` ON `repositories` (`integration_id`, `owner`, `repo`);
@@ -95,6 +97,16 @@ CREATE TABLE `pull_request_reviewers` (
   CONSTRAINT `pull_request_reviewers_pk` PRIMARY KEY (`pull_request_number`, `repository_id`, `reviewer`),
   CONSTRAINT `pull_request_reviewers_pr_fkey` FOREIGN KEY (`pull_request_number`, `repository_id`) REFERENCES `pull_requests` (`number`, `repository_id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
+-- Create "teams" table
+CREATE TABLE `teams` (
+  `id` text NOT NULL,
+  `name` text NOT NULL,
+  `display_order` integer NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  PRIMARY KEY (`id`)
+);
+-- Create index "teams_name_key" to table: "teams"
+CREATE UNIQUE INDEX `teams_name_key` ON `teams` (`name`);
 -- Create "company_github_users" table
 CREATE TABLE `company_github_users` (
   `user_id` text NULL,
