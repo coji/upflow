@@ -52,7 +52,7 @@ pnpm test:e2e
 
 - **Framework**: React Router v7 (SSR mode) with Express server
 - **Database**: SQLite via Atlas (migrations) and Kysely (query builder, type generation)
-- **Auth**: better-auth with Google OAuth, supporting organizations
+- **Auth**: better-auth with Google & GitHub OAuth, supporting organizations
 - **UI**: shadcn/ui components (new-york style) with Tailwind CSS v4
 - **Testing**: Vitest (unit), Playwright (E2E)
 - **Linting**: Biome (lint), Prettier (format)
@@ -67,13 +67,15 @@ app/
 │   ├── _auth/             # Authentication routes (login, logout)
 │   ├── resources/         # Resource routes (org switcher data)
 │   └── api.auth.$.ts      # Auth API endpoint
-├── services/              # Server-side services
-│   ├── db.server.ts                   # Kysely database client
-│   ├── organization-scope-plugin.ts   # Kysely plugin for org scoping
-│   └── type.ts                        # Generated Kysely types (from kysely-codegen)
 ├── libs/                  # Shared utilities
 │   ├── auth.server.ts     # better-auth + org membership guards
 │   └── reserved-slugs.ts  # Reserved URL slugs
+├── services/              # Server-side services
+│   ├── db.server.ts                   # Kysely database client
+│   ├── tenant-db.server.ts            # Per-org tenant database
+│   ├── github-linking.server.ts       # GitHub login auto-linking to companyGithubUsers
+│   ├── organization-scope-plugin.ts   # Kysely plugin for org scoping
+│   └── type.ts                        # Generated Kysely types (from kysely-codegen)
 ├── components/            # React components
 │   └── ui/                # shadcn/ui components
 └── hooks/                 # Custom React hooks
