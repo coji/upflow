@@ -50,7 +50,7 @@ export function MembersTable({ columns, data, pagination }: DataTableProps) {
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar />
+      <DataTableToolbar table={table} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

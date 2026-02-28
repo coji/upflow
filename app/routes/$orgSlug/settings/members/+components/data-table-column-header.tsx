@@ -1,10 +1,5 @@
 import type { Column } from '@tanstack/react-table'
-import {
-  ArrowDownIcon,
-  ArrowUpDownIcon,
-  ArrowUpIcon,
-  EyeOffIcon,
-} from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, EyeOffIcon, XIcon } from 'lucide-react'
 import { Button } from '~/app/components/ui/button'
 import {
   DropdownMenu,
@@ -50,7 +45,7 @@ export function DataTableColumnHeader<TData, TValue>({
             ) : column.id === sort.sort_by && sort.sort_order === 'asc' ? (
               <ArrowUpIcon className="h-4 w-4" />
             ) : (
-              <ArrowUpDownIcon className="h-4 w-4" />
+              <span className="h-4 w-4" />
             )}
           </Button>
         </DropdownMenuTrigger>
@@ -71,6 +66,15 @@ export function DataTableColumnHeader<TData, TValue>({
             <ArrowDownIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
             Desc
           </DropdownMenuItem>
+          {column.id === sort.sort_by && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => updateSort({})}>
+                <XIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
+                Clear sort
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
             <EyeOffIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />

@@ -1,8 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { useState } from 'react'
 import { useFetcher } from 'react-router'
+import { EditableCell } from '~/app/components/editable-cell'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
-import { Input } from '~/app/components/ui/input'
 import { Switch } from '~/app/components/ui/switch'
 import dayjs from '~/app/libs/dayjs'
 import type { GithubUserRow } from '../queries.server'
@@ -17,53 +16,18 @@ function EditableDisplayName({
   displayName: string
 }) {
   const fetcher = useFetcher()
-  const [editing, setEditing] = useState(false)
-  const [value, setValue] = useState(displayName)
-
-  const submit = () => {
-    if (value.trim() && value !== displayName) {
-      const formData = new FormData()
-      formData.set('intent', 'update')
-      formData.set('login', login)
-      formData.set('displayName', value.trim())
-      fetcher.submit(formData, { method: 'post' })
-    } else {
-      setValue(displayName)
-    }
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <Input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={submit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit()
-          if (e.key === 'Escape') {
-            setValue(displayName)
-            setEditing(false)
-          }
-        }}
-        className="h-7 w-40"
-        autoFocus
-      />
-    )
-  }
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        setValue(displayName)
-        setEditing(true)
+    <EditableCell
+      value={displayName}
+      onSave={(newValue) => {
+        const formData = new FormData()
+        formData.set('intent', 'update')
+        formData.set('login', login)
+        formData.set('displayName', newValue)
+        fetcher.submit(formData, { method: 'post' })
       }}
-      className="hover:bg-muted cursor-pointer rounded px-1 py-0.5 text-left"
-      title="クリックして編集"
-    >
-      {displayName}
-    </button>
+    />
   )
 }
 

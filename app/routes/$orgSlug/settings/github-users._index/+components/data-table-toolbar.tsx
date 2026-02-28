@@ -1,12 +1,20 @@
+import type { Table } from '@tanstack/react-table'
 import { PlusIcon, XIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
+import { AppDataTableViewOptions } from '~/app/components/AppDataTableViewOption'
 import { SearchInput } from '~/app/components/search-input'
 import { Button } from '~/app/components/ui/button'
 import { Input } from '~/app/components/ui/input'
 import { useDataTableState } from '../+hooks/use-data-table-state'
 
-export function DataTableToolbar() {
+interface DataTableToolbarProps<TData> {
+  table: Table<TData>
+}
+
+export function DataTableToolbar<TData>({
+  table,
+}: DataTableToolbarProps<TData>) {
   const { queries, updateQueries, isFiltered, resetFilters } =
     useDataTableState()
   const fetcher = useFetcher()
@@ -85,6 +93,7 @@ export function DataTableToolbar() {
             追加
           </Button>
         )}
+        <AppDataTableViewOptions table={table} />
       </div>
     </div>
   )

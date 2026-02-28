@@ -1,8 +1,10 @@
-import { PencilIcon, PlusIcon, TrashIcon } from 'lucide-react'
+import { PlusIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 import { data, useFetcher } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
+import { ConfirmDialog } from '~/app/components/confirm-dialog'
+import { EditableCell } from '~/app/components/editable-cell'
 import { Button, HStack, Input, Stack } from '~/app/components/ui'
 import {
   Table,
@@ -113,92 +115,62 @@ function TeamRow({
 }: {
   team: { id: string; name: string; displayOrder: number }
 }) {
-  const fetcher = useFetcher()
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(team.name)
-  const [displayOrder, setDisplayOrder] = useState(String(team.displayOrder))
+  const updateFetcher = useFetcher()
+  const deleteFetcher = useFetcher()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const submitUpdate = (
+    fields: Partial<{ name: string; displayOrder: string }>,
+  ) => {
+    const formData = new FormData()
+    formData.set('intent', 'update')
+    formData.set('id', team.id)
+    formData.set('name', fields.name ?? team.name)
+    formData.set(
+      'displayOrder',
+      fields.displayOrder ?? String(team.displayOrder),
+    )
+    updateFetcher.submit(formData, { method: 'post' })
+  }
 
   return (
     <TableRow>
-      {editing ? (
-        <>
-          <TableCell>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="max-w-xs"
-              required
-            />
-          </TableCell>
-          <TableCell>
-            <Input
-              type="number"
-              value={displayOrder}
-              onChange={(e) => setDisplayOrder(e.target.value)}
-              className="w-20"
-            />
-          </TableCell>
-          <TableCell>
-            <HStack>
-              <fetcher.Form method="post" onSubmit={() => setEditing(false)}>
-                <input type="hidden" name="intent" value="update" />
-                <input type="hidden" name="id" value={team.id} />
-                <input type="hidden" name="name" value={name} />
-                <input type="hidden" name="displayOrder" value={displayOrder} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="outline"
-                  loading={fetcher.state !== 'idle'}
-                >
-                  保存
-                </Button>
-              </fetcher.Form>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setName(team.name)
-                  setDisplayOrder(String(team.displayOrder))
-                  setEditing(false)
-                }}
-              >
-                キャンセル
-              </Button>
-            </HStack>
-          </TableCell>
-        </>
-      ) : (
-        <>
-          <TableCell className="font-medium">{team.name}</TableCell>
-          <TableCell>{team.displayOrder}</TableCell>
-          <TableCell>
-            <HStack>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setEditing(true)}
-              >
-                <PencilIcon size={14} />
-              </Button>
-              <fetcher.Form method="post">
-                <input type="hidden" name="intent" value="delete" />
-                <input type="hidden" name="id" value={team.id} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="ghost"
-                  loading={fetcher.state !== 'idle'}
-                >
-                  <TrashIcon size={14} />
-                </Button>
-              </fetcher.Form>
-            </HStack>
-          </TableCell>
-        </>
-      )}
+      <TableCell>
+        <EditableCell
+          value={team.name}
+          onSave={(newValue) => submitUpdate({ name: newValue })}
+        />
+      </TableCell>
+      <TableCell>
+        <EditableCell
+          value={String(team.displayOrder)}
+          onSave={(newValue) => submitUpdate({ displayOrder: newValue })}
+          type="number"
+          className="w-20"
+        />
+      </TableCell>
+      <TableCell>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <TrashIcon size={14} />
+        </Button>
+        <ConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          title="チームの削除"
+          desc={`「${team.name}」を削除しますか？`}
+          confirmText="削除"
+          destructive
+          fetcher={deleteFetcher}
+        >
+          <input type="hidden" name="intent" value="delete" />
+          <input type="hidden" name="id" value={team.id} />
+        </ConfirmDialog>
+      </TableCell>
     </TableRow>
   )
 }
