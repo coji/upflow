@@ -47,7 +47,8 @@ const { closeTenantDb } = await import('~/app/services/tenant-db.server')
 type OrganizationId = import('~/app/services/tenant-db.server').OrganizationId
 const toOrgId = (s: string) => s as OrganizationId
 
-const { toggleGithubUserActive } = await import('./mutations.server')
+const { deleteGithubUser, toggleGithubUserActive } =
+  await import('./mutations.server')
 
 const TENANT_SCHEMA = `
   CREATE TABLE IF NOT EXISTS company_github_users (
@@ -122,12 +123,12 @@ function cleanSharedDb() {
   raw.close()
 }
 
+afterAll(() => {
+  vi.unstubAllEnvs()
+})
+
 describe('toggleGithubUserActive session invalidation', () => {
   let orgId: OrganizationId
-
-  afterAll(() => {
-    vi.unstubAllEnvs()
-  })
 
   beforeEach(() => {
     cleanSharedDb()
@@ -181,5 +182,38 @@ describe('toggleGithubUserActive session invalidation', () => {
         organizationId: orgId,
       }),
     ).resolves.not.toThrow()
+  })
+})
+
+describe('deleteGithubUser session invalidation', () => {
+  let orgId: OrganizationId
+
+  beforeEach(() => {
+    cleanSharedDb()
+    orgId = createFreshOrg()
+  })
+
+  afterEach(async () => {
+    await closeTenantDb(orgId)
+  })
+
+  test('deletes all sessions for the user', async () => {
+    const userId = 'user-delete-1'
+    seedUser(userId)
+    seedSession('sess-del-1', userId)
+    seedSession('sess-del-2', userId)
+    seedTenantGithubUser(orgId, 'octocat-del', userId)
+
+    expect(countSessions(userId)).toBe(2)
+
+    await deleteGithubUser('octocat-del', orgId)
+
+    expect(countSessions(userId)).toBe(0)
+  })
+
+  test('with null userId does not error', async () => {
+    seedTenantGithubUser(orgId, 'no-user-del', null)
+
+    await expect(deleteGithubUser('no-user-del', orgId)).resolves.not.toThrow()
   })
 })
