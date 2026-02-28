@@ -25,14 +25,19 @@ export const bulkUpdateRepositoryTeam = async (
   repositoryIds: string[],
   teamId: string | null,
 ) => {
-  const tenantDb = getTenantDb(organizationId)
-  const result = await tenantDb
-    .updateTable('repositories')
-    .set({ teamId })
-    .where('id', 'in', repositoryIds)
-    .executeTakeFirst()
+  const uniqueIds = [...new Set(repositoryIds)]
+  if (uniqueIds.length === 0) return
 
-  if (Number(result.numUpdatedRows ?? 0) !== repositoryIds.length) {
-    throw new Error('Some repositories were not found')
-  }
+  const tenantDb = getTenantDb(organizationId)
+  await tenantDb.transaction().execute(async (trx) => {
+    const result = await trx
+      .updateTable('repositories')
+      .set({ teamId })
+      .where('id', 'in', uniqueIds)
+      .executeTakeFirst()
+
+    if (Number(result.numUpdatedRows ?? 0) !== uniqueIds.length) {
+      throw new Error('Some repositories were not found')
+    }
+  })
 }

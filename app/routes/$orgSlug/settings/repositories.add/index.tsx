@@ -198,6 +198,7 @@ export default function AddRepositoryPage({
               variant="outline"
               size="icon"
               className="h-9 w-9"
+              aria-label="Refresh repository list"
             >
               <RefreshCwIcon className="text-muted-foreground scale-70" />
             </Button>

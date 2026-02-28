@@ -78,7 +78,7 @@ export const columns: ColumnDef<GithubUserRow>[] = [
   {
     accessorKey: 'isActive',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Login" />
+      <DataTableColumnHeader column={column} title="Login Status" />
     ),
     cell: ({ row }) => (
       <Badge variant={row.original.isActive ? 'default' : 'outline'}>
