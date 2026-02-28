@@ -122,7 +122,9 @@ export const createColumns = (
       <DataTableColumnHeader column={column} title="Method" />
     ),
     cell: ({ row }) => (
-      <Badge variant="outline">{row.getValue('releaseDetectionMethod')}</Badge>
+      <Badge variant="outline" className="capitalize">
+        {row.getValue('releaseDetectionMethod')}
+      </Badge>
     ),
     enableSorting: false,
   },

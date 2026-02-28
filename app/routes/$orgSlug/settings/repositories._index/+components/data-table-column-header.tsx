@@ -27,7 +27,7 @@ export function DataTableColumnHeader<TData, TValue>({
   const { sort, updateSort } = useDataTableState()
 
   if (!column.getCanSort()) {
-    return <div className={cn(className, 'text-xs')}>{title}</div>
+    return <div className={cn(className)}>{title}</div>
   }
 
   return (

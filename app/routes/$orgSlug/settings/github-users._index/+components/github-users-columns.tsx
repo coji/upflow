@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { useFetcher } from 'react-router'
+import { ExternalLinkIcon } from 'lucide-react'
+import { Link, useFetcher } from 'react-router'
 import { EditableCell } from '~/app/components/editable-cell'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Badge } from '~/app/components/ui/badge'
@@ -48,7 +49,14 @@ export const columns: ColumnDef<GithubUserRow>[] = [
               {login.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="font-medium">{login}</span>
+          <Link
+            to={`https://github.com/${login}`}
+            target="_blank"
+            className="inline-flex items-center gap-1 font-medium hover:underline"
+          >
+            {login}
+            <ExternalLinkIcon className="h-3 w-3" />
+          </Link>
         </div>
       )
     },
