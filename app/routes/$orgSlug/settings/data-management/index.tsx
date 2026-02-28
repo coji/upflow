@@ -84,27 +84,38 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         )
       }
 
-      const { pulls, reviewResponses } = await provider.analyze(
-        orgContext.id,
-        organization.organizationSetting,
-        organization.repositories,
-      )
+      try {
+        const { pulls, reviewResponses } = await provider.analyze(
+          orgContext.id,
+          organization.organizationSetting,
+          organization.repositories,
+        )
 
-      for (const pr of pulls) {
-        await upsertPullRequest(orgContext.id, pr)
+        for (const pr of pulls) {
+          await upsertPullRequest(orgContext.id, pr)
+        }
+
+        if (organization.exportSetting) {
+          const exporter = createSpreadsheetExporter(organization.exportSetting)
+          await exporter.exportPulls(pulls)
+          await exporter.exportReviewResponses(reviewResponses)
+        }
+
+        return data({
+          intent: 'recalculate' as const,
+          ok: true,
+          message: `Recalculation completed. ${pulls.length} PRs updated.`,
+        })
+      } catch (e) {
+        console.error('Recalculation failed', e)
+        return data(
+          {
+            intent: 'recalculate' as const,
+            error: e instanceof Error ? e.message : 'Recalculation failed',
+          },
+          { status: 500 },
+        )
       }
-
-      if (organization.exportSetting) {
-        const exporter = createSpreadsheetExporter(organization.exportSetting)
-        await exporter.exportPulls(pulls)
-        await exporter.exportReviewResponses(reviewResponses)
-      }
-
-      return data({
-        intent: 'recalculate' as const,
-        ok: true,
-        message: `Recalculation completed. ${pulls.length} PRs updated.`,
-      })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
