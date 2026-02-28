@@ -10,28 +10,31 @@ import {
   AlertDialogTitle,
 } from '~/app/components/ui/alert-dialog'
 import { Button } from '~/app/components/ui/button'
+import { cn } from '~/app/libs/utils'
 
-interface ConfirmDialogProps<T> {
+interface FormDialogProps<T> {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: React.ReactNode
   desc: React.JSX.Element | string
   cancelBtnText?: string
   confirmText?: React.ReactNode
-  destructive?: boolean
+  disabled?: boolean
   fetcher?: FetcherWithComponents<T>
   action?: string
+  className?: string
   children?: React.ReactNode
 }
 
-export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
+export function FormDialog<T>(props: FormDialogProps<T>) {
   const {
     title,
     desc,
     children,
+    className,
     confirmText,
     cancelBtnText,
-    destructive,
+    disabled = false,
     fetcher,
     action,
     ...actions
@@ -60,28 +63,24 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
 
   return (
     <AlertDialog {...actions}>
-      <AlertDialogContent>
-        <AlertDialogHeader className="text-left">
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div>{desc}</div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isSubmitting}>
-            {cancelBtnText ?? 'Cancel'}
-          </AlertDialogCancel>
-          <FormComponent method="POST" action={action}>
-            {children}
-            <Button
-              type="submit"
-              variant={destructive ? 'destructive' : 'default'}
-              disabled={isSubmitting}
-            >
+      <AlertDialogContent className={cn(className)}>
+        <FormComponent method="POST" action={action}>
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle>{title}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>{desc}</div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {children}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              {cancelBtnText ?? 'Cancel'}
+            </AlertDialogCancel>
+            <Button type="submit" disabled={disabled || isSubmitting}>
               {confirmText ?? 'Continue'}
             </Button>
-          </FormComponent>
-        </AlertDialogFooter>
+          </AlertDialogFooter>
+        </FormComponent>
       </AlertDialogContent>
     </AlertDialog>
   )

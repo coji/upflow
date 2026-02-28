@@ -3,6 +3,7 @@ import { MoreHorizontalIcon, TrashIcon, UserCogIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
+import { FormDialog } from '~/app/components/form-dialog'
 import { Button } from '~/app/components/ui/button'
 import {
   DropdownMenu,
@@ -94,7 +95,7 @@ function ChangeRoleDialog({
   const [role, setRole] = useState<string>(member.role)
 
   return (
-    <ConfirmDialog
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Change Role"
@@ -115,6 +116,6 @@ function ChangeRoleDialog({
           <SelectItem value="member">Member</SelectItem>
         </SelectContent>
       </Select>
-    </ConfirmDialog>
+    </FormDialog>
   )
 }

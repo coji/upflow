@@ -3,6 +3,7 @@ import { MoreHorizontalIcon, PencilIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
+import { FormDialog } from '~/app/components/form-dialog'
 import { Button } from '~/app/components/ui/button'
 import {
   DropdownMenu,
@@ -90,7 +91,7 @@ function EditGithubUserDialog({
   const [email, setEmail] = useState(user.email ?? '')
 
   return (
-    <ConfirmDialog
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Edit GitHub User"
@@ -129,6 +130,6 @@ function EditGithubUserDialog({
           />
         </div>
       </div>
-    </ConfirmDialog>
+    </FormDialog>
   )
 }
