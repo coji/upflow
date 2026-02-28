@@ -82,6 +82,7 @@ function ActiveToggle({
 
   return (
     <Switch
+      aria-label={`Toggle active status for ${login}`}
       checked={!!optimisticActive}
       onCheckedChange={() => {
         const formData = new FormData()

@@ -121,7 +121,7 @@ export async function upsertCompanyGithubUsers(
 
   const tenantDb = getTenantDb(organizationId)
   const now = new Date().toISOString()
-  const uniqueLogins = [...new Set(logins)]
+  const uniqueLogins = [...new Set(logins.map((l) => l.toLowerCase()))]
 
   await tenantDb
     .insertInto('companyGithubUsers')
