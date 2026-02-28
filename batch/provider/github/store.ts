@@ -1,7 +1,8 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
-import { createPathBuilder } from '~/batch/helper/path-builder'
+import { sql } from 'kysely'
+import {
+  type OrganizationId,
+  getTenantDbRaw,
+} from '~/app/services/tenant-db.server'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubPullRequest,
@@ -10,101 +11,159 @@ import type {
   ShapedGitHubTag,
 } from './model'
 
+interface RawDataRow {
+  pull_request_number: number
+  pull_request: string
+  commits: string
+  reviews: string
+  discussions: string
+}
+
+interface RawTagsRow {
+  tags: string
+}
+
 interface createStoreProps {
   organizationId: OrganizationId
   repositoryId: string
 }
+
 export const createStore = ({
   organizationId,
   repositoryId,
 }: createStoreProps) => {
-  const pathBuilder = createPathBuilder({ organizationId, repositoryId })
+  // Plugin-free DB to preserve JSON keys as-is (no CamelCase/ParseJSON transformation)
+  const db = getTenantDbRaw(organizationId)
 
-  /**
-   * JSON ファイルの読み込み
-   *
-   * @param filename
-   */
-  const load = async <T>(filename: string) =>
-    JSON.parse(await fs.readFile(pathBuilder.jsonPath(filename), 'utf-8')) as T
+  // --- save 系 ---
 
-  /**
-   * JSON ファイルの保存
-   *
-   * @param filename
-   * @param content
-   */
-  const save = async (filename: string, content: unknown) => {
-    // ディレクトリがなければ作成
-    await fs.mkdir(path.dirname(pathBuilder.jsonPath(filename)), {
-      recursive: true,
-    })
-    await fs.writeFile(
-      pathBuilder.jsonPath(filename),
-      JSON.stringify(content, null, 2),
-    )
-    // 書き込み後はキャッシュを無効化して read-after-write の一貫性を保つ
-    commitsCache.clear()
-    discussionsCache.clear()
-    reviewsCache.clear()
+  const savePrData = async (
+    pr: ShapedGitHubPullRequest,
+    data: {
+      commits: ShapedGitHubCommit[]
+      reviews: ShapedGitHubReview[]
+      discussions: ShapedGitHubReviewComment[]
+    },
+  ) => {
+    const prJson = JSON.stringify(pr)
+    const commitsJson = JSON.stringify(data.commits)
+    const reviewsJson = JSON.stringify(data.reviews)
+    const discussionsJson = JSON.stringify(data.discussions)
+
+    await sql`
+      INSERT INTO github_raw_data (repository_id, pull_request_number, pull_request, commits, reviews, discussions)
+      VALUES (${repositoryId}, ${pr.number}, ${prJson}, ${commitsJson}, ${reviewsJson}, ${discussionsJson})
+      ON CONFLICT (repository_id, pull_request_number) DO UPDATE SET
+        pull_request = ${prJson},
+        commits = ${commitsJson},
+        reviews = ${reviewsJson},
+        discussions = ${discussionsJson},
+        fetched_at = datetime('now')
+    `.execute(db)
   }
 
-  // メモ化キャッシュ（PR番号 → Promise）で同一ファイルの重複読み込みを防止
-  const commitsCache = new Map<number, Promise<ShapedGitHubCommit[]>>()
-  const discussionsCache = new Map<
+  const saveTags = async (tags: ShapedGitHubTag[]) => {
+    const tagsJson = JSON.stringify(tags)
+
+    await sql`
+      INSERT INTO github_raw_tags (repository_id, tags)
+      VALUES (${repositoryId}, ${tagsJson})
+      ON CONFLICT (repository_id) DO UPDATE SET
+        tags = ${tagsJson},
+        fetched_at = datetime('now')
+    `.execute(db)
+  }
+
+  // --- preload 系 (analyze 用の一括ロード) ---
+
+  let preloaded: Map<
     number,
-    Promise<ShapedGitHubReviewComment[]>
-  >()
-  const reviewsCache = new Map<number, Promise<ShapedGitHubReview[]>>()
+    {
+      pullRequest: ShapedGitHubPullRequest
+      commits: ShapedGitHubCommit[]
+      reviews: ShapedGitHubReview[]
+      discussions: ShapedGitHubReviewComment[]
+    }
+  > | null = null
 
-  // loaders
-  const commits = (number: number) => {
-    let cached = commitsCache.get(number)
-    if (!cached) {
-      cached = load<ShapedGitHubCommit[]>(
-        pathBuilder.commitsJsonFilename(number),
-      ).catch((error) => {
-        commitsCache.delete(number)
-        throw error
-      })
-      commitsCache.set(number, cached)
-    }
-    return cached
+  const parseRow = (row: RawDataRow) => ({
+    pullRequest: JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
+    commits: JSON.parse(row.commits) as ShapedGitHubCommit[],
+    reviews: JSON.parse(row.reviews) as ShapedGitHubReview[],
+    discussions: JSON.parse(row.discussions) as ShapedGitHubReviewComment[],
+  })
+
+  const preloadAll = async () => {
+    const result = await sql<RawDataRow>`
+      SELECT pull_request_number, pull_request, commits, reviews, discussions
+      FROM github_raw_data
+      WHERE repository_id = ${repositoryId}
+    `.execute(db)
+
+    preloaded = new Map(
+      result.rows.map((row) => [row.pull_request_number, parseRow(row)]),
+    )
   }
-  const discussions = (number: number) => {
-    let cached = discussionsCache.get(number)
-    if (!cached) {
-      cached = load<ShapedGitHubReviewComment[]>(
-        pathBuilder.discussionsJsonFilename(number),
-      ).catch((error) => {
-        discussionsCache.delete(number)
-        throw error
-      })
-      discussionsCache.set(number, cached)
+
+  // --- loader 系 ---
+
+  const loadRow = async (number: number) => {
+    if (preloaded) {
+      return preloaded.get(number) ?? null
     }
-    return cached
+    const result = await sql<RawDataRow>`
+      SELECT pull_request, commits, reviews, discussions
+      FROM github_raw_data
+      WHERE repository_id = ${repositoryId} AND pull_request_number = ${number}
+    `.execute(db)
+    const row = result.rows[0]
+    if (!row) return null
+    return parseRow(row)
   }
-  const reviews = (number: number) => {
-    let cached = reviewsCache.get(number)
-    if (!cached) {
-      cached = load<ShapedGitHubReview[]>(
-        pathBuilder.reviewJsonFilename(number),
-      ).catch((error) => {
-        reviewsCache.delete(number)
-        throw error
-      })
-      reviewsCache.set(number, cached)
+
+  const commits = async (number: number) => {
+    const row = await loadRow(number)
+    return row?.commits ?? []
+  }
+
+  const reviews = async (number: number) => {
+    const row = await loadRow(number)
+    return row?.reviews ?? []
+  }
+
+  const discussions = async (number: number) => {
+    const row = await loadRow(number)
+    return row?.discussions ?? []
+  }
+
+  const pullrequests = async (): Promise<ShapedGitHubPullRequest[]> => {
+    if (preloaded) {
+      return [...preloaded.values()].map((v) => v.pullRequest)
     }
-    return cached
+    const result = await sql<Pick<RawDataRow, 'pull_request'>>`
+      SELECT pull_request
+      FROM github_raw_data
+      WHERE repository_id = ${repositoryId}
+    `.execute(db)
+    return result.rows.map(
+      (row) => JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
+    )
   }
-  const pullrequests = async () =>
-    load<ShapedGitHubPullRequest[]>('pullrequests.json')
-  const tags = async () => load<ShapedGitHubTag[]>('tags.json')
+
+  const tags = async (): Promise<ShapedGitHubTag[]> => {
+    const result = await sql<RawTagsRow>`
+      SELECT tags
+      FROM github_raw_tags
+      WHERE repository_id = ${repositoryId}
+    `.execute(db)
+    const row = result.rows[0]
+    return row ? (JSON.parse(row.tags) as ShapedGitHubTag[]) : []
+  }
 
   return {
-    load,
-    save,
-    path: pathBuilder,
+    savePrData,
+    saveTags,
+    preloadAll,
     loader: {
       commits,
       discussions,

@@ -18,7 +18,10 @@ export type OrganizationId = string & { readonly __brand: 'OrganizationId' }
 
 const debug = createDebug('app:tenant-db')
 
-const tenantDbCache = new Map<string, Kysely<TenantDB.DB>>()
+const tenantDbCache = new Map<
+  string,
+  { db: Kysely<TenantDB.DB>; rawDb: Kysely<TenantDB.DB> }
+>()
 
 function getTenantDbPath(organizationId: OrganizationId): string {
   if (!process.env.DATABASE_URL) {
@@ -29,9 +32,7 @@ function getTenantDbPath(organizationId: OrganizationId): string {
   return path.join(dir, `tenant_${organizationId}.db`)
 }
 
-export function getTenantDb(
-  organizationId: OrganizationId,
-): Kysely<TenantDB.DB> {
+function getOrCreateEntry(organizationId: OrganizationId) {
   const cached = tenantDbCache.get(organizationId)
   if (cached) return cached
 
@@ -39,29 +40,55 @@ export function getTenantDb(
   const database = new SQLite(filename, { fileMustExist: true })
   database.pragma('journal_mode = WAL')
 
-  const tenantDb = new Kysely<TenantDB.DB>({
-    dialect: new SqliteDialect({ database }),
-    log: (event) => debug(event.query.sql, event.query.parameters),
+  const dialect = new SqliteDialect({ database })
+  const log = (event: {
+    query: { sql: string; parameters: readonly unknown[] }
+  }) => debug(event.query.sql, event.query.parameters)
+
+  const db = new Kysely<TenantDB.DB>({
+    dialect,
+    log,
     plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
   })
 
-  tenantDbCache.set(organizationId, tenantDb)
-  return tenantDb
+  // Plugin-free instance sharing the same SQLite connection.
+  // Use for raw JSON data that must not be key-transformed.
+  const rawDb = new Kysely<TenantDB.DB>({ dialect, log })
+
+  const entry = { db, rawDb }
+  tenantDbCache.set(organizationId, entry)
+  return entry
+}
+
+export function getTenantDb(
+  organizationId: OrganizationId,
+): Kysely<TenantDB.DB> {
+  return getOrCreateEntry(organizationId).db
+}
+
+/**
+ * Plugin-free Kysely instance (no CamelCasePlugin / ParseJSONResultsPlugin).
+ * Use when storing/loading raw JSON blobs whose keys must be preserved as-is.
+ */
+export function getTenantDbRaw(
+  organizationId: OrganizationId,
+): Kysely<TenantDB.DB> {
+  return getOrCreateEntry(organizationId).rawDb
 }
 
 export async function closeTenantDb(
   organizationId: OrganizationId,
 ): Promise<void> {
-  const tenantDb = tenantDbCache.get(organizationId)
-  if (tenantDb) {
-    await tenantDb.destroy()
+  const entry = tenantDbCache.get(organizationId)
+  if (entry) {
+    await entry.db.destroy()
     tenantDbCache.delete(organizationId)
   }
 }
 
 export async function closeAllTenantDbs(): Promise<void> {
   await Promise.all(
-    [...tenantDbCache.values()].map((tenantDb) => tenantDb.destroy()),
+    [...tenantDbCache.values()].map((entry) => entry.db.destroy()),
   )
   tenantDbCache.clear()
 }
