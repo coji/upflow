@@ -38,6 +38,26 @@ describe('safeRedirectTo', () => {
     expect(safeRedirectTo('evil.com')).toBe('/')
   })
 
+  test('accepts root path', () => {
+    expect(safeRedirectTo('/')).toBe('/')
+  })
+
+  test('accepts path with hash fragment', () => {
+    expect(safeRedirectTo('/page#section')).toBe('/page#section')
+  })
+
+  test('rejects javascript: scheme', () => {
+    expect(safeRedirectTo('javascript:alert(1)')).toBe('/')
+  })
+
+  test('rejects data: scheme', () => {
+    expect(safeRedirectTo('data:text/html,<h1>hi</h1>')).toBe('/')
+  })
+
+  test('rejects URLs with leading space', () => {
+    expect(safeRedirectTo(' /evil')).toBe('/')
+  })
+
   test('uses custom fallback', () => {
     expect(safeRedirectTo(null, '/dashboard')).toBe('/dashboard')
   })
