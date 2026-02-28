@@ -149,10 +149,8 @@ export const createStore = ({
       .select('pullRequest')
       .where('repositoryId', '=', repositoryId)
       .execute()
-    // ParseJSONResultsPlugin が TEXT → object に自動パースするため型アサーションで補正
-    return rows.map(
-      (row) => row.pullRequest as unknown as ShapedGitHubPullRequest,
-    )
+    // ParseJSONResultsPlugin が TEXT → object に自動パース済み
+    return rows.map((row) => row.pullRequest as ShapedGitHubPullRequest)
   }
 
   const tags = async (): Promise<ShapedGitHubTag[]> => {
@@ -161,8 +159,8 @@ export const createStore = ({
       .select('tags')
       .where('repositoryId', '=', repositoryId)
       .executeTakeFirst()
-    // ParseJSONResultsPlugin が TEXT → object に自動パースするため型アサーションで補正
-    return row ? (row.tags as unknown as ShapedGitHubTag[]) : []
+    // ParseJSONResultsPlugin が TEXT → object に自動パース済み
+    return row ? (row.tags as ShapedGitHubTag[]) : []
   }
 
   return {

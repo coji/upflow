@@ -47,19 +47,19 @@ export interface ExportSettings {
 }
 
 export interface GithubRawData {
-  commits: string
-  discussions: string
+  commits: ColumnType<unknown, string, string>
+  discussions: ColumnType<unknown, string, string>
   fetchedAt: Generated<string>
-  pullRequest: string
+  pullRequest: ColumnType<unknown, string, string>
   pullRequestNumber: number
   repositoryId: string
-  reviews: string
+  reviews: ColumnType<unknown, string, string>
 }
 
 export interface GithubRawTags {
   fetchedAt: Generated<string>
   repositoryId: string
-  tags: string
+  tags: ColumnType<unknown, string, string>
 }
 
 export interface Integrations {
