@@ -42,12 +42,12 @@ export const createStore = ({
         discussions: JSON.stringify(data.discussions),
       })
       .onConflict((oc) =>
-        oc.columns(['repositoryId', 'pullRequestNumber']).doUpdateSet({
-          pullRequest: JSON.stringify(pr),
-          commits: JSON.stringify(data.commits),
-          reviews: JSON.stringify(data.reviews),
-          discussions: JSON.stringify(data.discussions),
-        }),
+        oc.columns(['repositoryId', 'pullRequestNumber']).doUpdateSet((eb) => ({
+          pullRequest: eb.ref('excluded.pullRequest'),
+          commits: eb.ref('excluded.commits'),
+          reviews: eb.ref('excluded.reviews'),
+          discussions: eb.ref('excluded.discussions'),
+        })),
       )
       .execute()
   }
@@ -60,9 +60,9 @@ export const createStore = ({
         tags: JSON.stringify(tags),
       })
       .onConflict((oc) =>
-        oc.columns(['repositoryId']).doUpdateSet({
-          tags: JSON.stringify(tags),
-        }),
+        oc.columns(['repositoryId']).doUpdateSet((eb) => ({
+          tags: eb.ref('excluded.tags'),
+        })),
       )
       .execute()
   }
@@ -149,6 +149,7 @@ export const createStore = ({
       .select('pullRequest')
       .where('repositoryId', '=', repositoryId)
       .execute()
+    // ParseJSONResultsPlugin が TEXT → object に自動パースするため型アサーションで補正
     return rows.map(
       (row) => row.pullRequest as unknown as ShapedGitHubPullRequest,
     )
@@ -160,6 +161,7 @@ export const createStore = ({
       .select('tags')
       .where('repositoryId', '=', repositoryId)
       .executeTakeFirst()
+    // ParseJSONResultsPlugin が TEXT → object に自動パースするため型アサーションで補正
     return row ? (row.tags as unknown as ShapedGitHubTag[]) : []
   }
 

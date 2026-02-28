@@ -239,7 +239,7 @@ export const buildPullRequests = async (
         buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
       )
 
-      // 7. レビュー情報を収集（PENDING レビューは submitted_at がないため除外）
+      // 7. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）
       for (const review of rawArtifacts.reviews) {
         if (!review.user || !review.submittedAt || review.state === 'PENDING')
           continue

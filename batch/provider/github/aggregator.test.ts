@@ -26,7 +26,7 @@ describe('leastCreatedMergeRequest', () => {
     changedFiles: null,
   }
 
-  test('should return a least updated_at object', () => {
+  test('should return a least updatedAt object', () => {
     const ret = leastUpdatedPullRequest([
       { ...prototype, number: 1, updatedAt: '2022-01-01T00:00:0.0Z' },
       { ...prototype, number: 2, updatedAt: '2022-01-02T00:00:0.0Z' },

@@ -29,7 +29,9 @@ function getTenantDbPath(organizationId: OrganizationId): string {
   return path.join(dir, `tenant_${organizationId}.db`)
 }
 
-function getOrCreateDb(organizationId: OrganizationId) {
+export function getTenantDb(
+  organizationId: OrganizationId,
+): Kysely<TenantDB.DB> {
   const cached = tenantDbCache.get(organizationId)
   if (cached) return cached
 
@@ -37,25 +39,14 @@ function getOrCreateDb(organizationId: OrganizationId) {
   const database = new SQLite(filename, { fileMustExist: true })
   database.pragma('journal_mode = WAL')
 
-  const dialect = new SqliteDialect({ database })
-  const log = (event: {
-    query: { sql: string; parameters: readonly unknown[] }
-  }) => debug(event.query.sql, event.query.parameters)
-
   const db = new Kysely<TenantDB.DB>({
-    dialect,
-    log,
+    dialect: new SqliteDialect({ database }),
+    log: (event) => debug(event.query.sql, event.query.parameters),
     plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
   })
 
   tenantDbCache.set(organizationId, db)
   return db
-}
-
-export function getTenantDb(
-  organizationId: OrganizationId,
-): Kysely<TenantDB.DB> {
-  return getOrCreateDb(organizationId)
 }
 
 export async function closeTenantDb(

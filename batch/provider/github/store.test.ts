@@ -67,11 +67,20 @@ function setupTenantDb() {
       PRIMARY KEY (repository_id),
       FOREIGN KEY (repository_id) REFERENCES repositories(id)
     );
-    INSERT INTO integrations (id, provider, method, private_token)
-    VALUES ('int-1', 'github', 'token', 'test-token');
-    INSERT INTO repositories (id, integration_id, provider, owner, repo, updated_at)
-    VALUES ('${repositoryId}', 'int-1', 'github', 'test-owner', 'test-repo', '2024-01-01T00:00:00Z');
   `)
+  db.prepare(
+    'INSERT INTO integrations (id, provider, method, private_token) VALUES (?, ?, ?, ?)',
+  ).run('int-1', 'github', 'token', 'test-token')
+  db.prepare(
+    'INSERT INTO repositories (id, integration_id, provider, owner, repo, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run(
+    repositoryId,
+    'int-1',
+    'github',
+    'test-owner',
+    'test-repo',
+    '2024-01-01T00:00:00Z',
+  )
   db.close()
 }
 
