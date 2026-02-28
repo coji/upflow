@@ -15,4 +15,4 @@ atlas migrate apply --env local --url "$DB_URL"
 # 2. Apply tenant migrations to all existing tenant DBs
 node build/db/apply-tenant-migrations.js
 
-node server.mjs
+exec node server.mjs
