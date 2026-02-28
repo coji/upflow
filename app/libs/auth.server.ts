@@ -321,7 +321,11 @@ export const safeRedirectTo = (
   redirectTo: string | null | undefined,
   fallback = '/',
 ): string => {
-  if (redirectTo?.startsWith('/') && !redirectTo.startsWith('//')) {
+  if (
+    redirectTo?.startsWith('/') &&
+    !redirectTo.startsWith('//') &&
+    !redirectTo.startsWith('/\\')
+  ) {
     return redirectTo
   }
   return fallback

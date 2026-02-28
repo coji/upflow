@@ -26,6 +26,10 @@ describe('safeRedirectTo', () => {
     expect(safeRedirectTo('//evil.com')).toBe('/')
   })
 
+  test('rejects backslash-prefixed URLs (/\\evil.com)', () => {
+    expect(safeRedirectTo('/\\evil.com')).toBe('/')
+  })
+
   test('rejects absolute URLs (https://evil.com)', () => {
     expect(safeRedirectTo('https://evil.com')).toBe('/')
   })

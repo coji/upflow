@@ -20,7 +20,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   const session = await getSession(request)
   if (session) {
-    throw redirect(redirectTo)
+    throw redirect(redirectTo === '/login' ? '/' : redirectTo)
   }
 
   return { error, redirectTo }
