@@ -136,7 +136,7 @@ function RefreshSection({
         </div>
         <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="refresh" />
-          <Button type="submit" disabled={isScheduled || isSubmitting}>
+          <Button type="submit" loading={isSubmitting} disabled={isScheduled}>
             {isScheduled ? 'Scheduled' : 'Schedule'}
           </Button>
         </fetcher.Form>
@@ -177,8 +177,8 @@ function RecalculateSection() {
         </div>
         <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="recalculate" />
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Processing...' : 'Recalculate'}
+          <Button type="submit" loading={isSubmitting}>
+            Recalculate
           </Button>
         </fetcher.Form>
       </div>

@@ -1,15 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Form, useNavigation, type FetcherWithComponents } from 'react-router'
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '~/app/components/ui/alert-dialog'
 import { Button } from '~/app/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/app/components/ui/dialog'
 import { cn } from '~/app/libs/utils'
 
 interface FormDialogProps<T> {
@@ -37,23 +36,16 @@ export function FormDialog<T>(props: FormDialogProps<T>) {
     disabled = false,
     fetcher,
     action,
-    ...actions
+    ...dialogProps
   } = props
   const navigation = useNavigation()
-  const didSubmitRef = useRef(false)
 
+  // Close when fetcher returns new data (new ref each response)
   useEffect(() => {
-    if (fetcher?.state === 'submitting') {
-      didSubmitRef.current = true
+    if (fetcher?.data) {
+      dialogProps.onOpenChange(false)
     }
-  }, [fetcher?.state])
-
-  useEffect(() => {
-    if (didSubmitRef.current && fetcher?.state === 'idle' && fetcher.data) {
-      actions.onOpenChange(false)
-      didSubmitRef.current = false
-    }
-  }, [fetcher?.state, fetcher?.data])
+  }, [fetcher?.data])
 
   const isSubmitting = fetcher
     ? fetcher.state === 'submitting'
@@ -62,26 +54,31 @@ export function FormDialog<T>(props: FormDialogProps<T>) {
   const FormComponent = fetcher ? fetcher.Form : Form
 
   return (
-    <AlertDialog {...actions}>
-      <AlertDialogContent className={cn(className)}>
-        <FormComponent method="POST" action={action}>
-          <AlertDialogHeader className="text-left">
-            <AlertDialogTitle>{title}</AlertDialogTitle>
-            <AlertDialogDescription asChild>
+    <Dialog {...dialogProps}>
+      <DialogContent className={cn(className)}>
+        <FormComponent method="POST" action={action} className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription asChild>
               <div>{desc}</div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+            </DialogDescription>
+          </DialogHeader>
           {children}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => dialogProps.onOpenChange(false)}
+            >
               {cancelBtnText ?? 'Cancel'}
-            </AlertDialogCancel>
-            <Button type="submit" disabled={disabled || isSubmitting}>
+            </Button>
+            <Button type="submit" loading={isSubmitting} disabled={disabled}>
               {confirmText ?? 'Continue'}
             </Button>
-          </AlertDialogFooter>
+          </DialogFooter>
         </FormComponent>
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogContent>
+    </Dialog>
   )
 }

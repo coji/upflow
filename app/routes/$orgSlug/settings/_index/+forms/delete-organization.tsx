@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, Link, useActionData } from 'react-router'
+import { Form, Link, useActionData, useNavigation } from 'react-router'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
 import { INTENTS, deleteOrganizationSchema as schema } from '../+schema'
@@ -18,6 +18,10 @@ export const DeleteOrganization = ({
   organization,
 }: DeleteOrganizationProps) => {
   const actionData = useActionData<typeof action>()
+  const navigation = useNavigation()
+  const isSubmitting =
+    navigation.state === 'submitting' &&
+    navigation.formData?.get('intent') === INTENTS.deleteOrganization
   const [form, { confirm }] = useForm({
     lastResult:
       (actionData?.intent === INTENTS.deleteOrganization &&
@@ -65,6 +69,7 @@ export const DeleteOrganization = ({
           form={form.id}
           name="intent"
           value={INTENTS.deleteOrganization}
+          loading={isSubmitting}
         >
           DELETE
         </Button>

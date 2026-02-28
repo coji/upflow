@@ -1,6 +1,6 @@
 import type { Row } from '@tanstack/react-table'
 import { MoreHorizontalIcon, PencilIcon, TrashIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { FormDialog } from '~/app/components/form-dialog'
@@ -63,14 +63,12 @@ export function GithubUserRowActions({ row }: { row: Row<GithubUserRow> }) {
         <input type="hidden" name="login" value={user.login} />
       </ConfirmDialog>
 
-      {editOpen && (
-        <EditGithubUserDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          user={user}
-          fetcher={editFetcher}
-        />
-      )}
+      <EditGithubUserDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        user={user}
+        fetcher={editFetcher}
+      />
     </>
   )
 }
@@ -89,6 +87,15 @@ function EditGithubUserDialog({
   const [displayName, setDisplayName] = useState(user.displayName)
   const [name, setName] = useState(user.name ?? '')
   const [email, setEmail] = useState(user.email ?? '')
+
+  // Reset form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setDisplayName(user.displayName)
+      setName(user.name ?? '')
+      setEmail(user.email ?? '')
+    }
+  }, [open, user])
 
   return (
     <FormDialog

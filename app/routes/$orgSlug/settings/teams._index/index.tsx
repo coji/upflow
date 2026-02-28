@@ -94,7 +94,12 @@ function AddTeamForm() {
           className="max-w-xs"
           required
         />
-        <Button type="submit" size="sm" disabled={!name.trim()}>
+        <Button
+          type="submit"
+          size="sm"
+          loading={fetcher.state !== 'idle'}
+          disabled={!name.trim()}
+        >
           <PlusIcon size={16} />
           追加
         </Button>
@@ -140,7 +145,12 @@ function TeamRow({
                 <input type="hidden" name="id" value={team.id} />
                 <input type="hidden" name="name" value={name} />
                 <input type="hidden" name="displayOrder" value={displayOrder} />
-                <Button type="submit" size="sm" variant="outline">
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="outline"
+                  loading={fetcher.state !== 'idle'}
+                >
                   保存
                 </Button>
               </fetcher.Form>
@@ -176,7 +186,12 @@ function TeamRow({
               <fetcher.Form method="post">
                 <input type="hidden" name="intent" value="delete" />
                 <input type="hidden" name="id" value={team.id} />
-                <Button type="submit" size="sm" variant="ghost">
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="ghost"
+                  loading={fetcher.state !== 'idle'}
+                >
                   <TrashIcon size={14} />
                 </Button>
               </fetcher.Form>

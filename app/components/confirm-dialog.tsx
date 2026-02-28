@@ -76,7 +76,7 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
             <Button
               type="submit"
               variant={destructive ? 'destructive' : 'default'}
-              disabled={isSubmitting}
+              loading={isSubmitting}
             >
               {confirmText ?? 'Continue'}
             </Button>

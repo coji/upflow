@@ -5,7 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, useActionData } from 'react-router'
+import { Form, useActionData, useNavigation } from 'react-router'
 import {
   Alert,
   AlertDescription,
@@ -29,6 +29,10 @@ interface ExportSettingsProps {
 
 export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
   const actionData = useActionData<typeof action>()
+  const navigation = useNavigation()
+  const isSubmitting =
+    navigation.state === 'submitting' &&
+    navigation.formData?.get('intent') === INTENTS.exportSettings
   const [form, { sheetId, clientEmail, privateKey }] = useForm({
     lastResult:
       (actionData?.intent === INTENTS.exportSettings &&
@@ -67,7 +71,12 @@ export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
         )}
 
         <div>
-          <Button type="submit" name="intent" value={INTENTS.exportSettings}>
+          <Button
+            type="submit"
+            name="intent"
+            value={INTENTS.exportSettings}
+            loading={isSubmitting}
+          >
             Update
           </Button>
         </div>

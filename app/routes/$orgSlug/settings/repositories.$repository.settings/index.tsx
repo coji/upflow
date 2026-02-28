@@ -6,7 +6,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, Link, data, redirect } from 'react-router'
+import { Form, Link, data, redirect, useNavigation } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { AppProviderBadge } from '~/app/components'
@@ -90,6 +90,8 @@ const GithubRepositoryForm = ({
   organization: { slug: string }
   repository: NonNullable<Awaited<ReturnType<typeof getRepository>>>
 }) => {
+  const navigation = useNavigation()
+  const isSubmitting = navigation.state === 'submitting'
   const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] =
     useForm({
       id: 'repository-edit-form',
@@ -148,7 +150,9 @@ const GithubRepositoryForm = ({
         </fieldset>
 
         <Stack direction="row">
-          <Button type="submit">Update</Button>
+          <Button type="submit" loading={isSubmitting}>
+            Update
+          </Button>
           <Button asChild variant="ghost">
             <Link to={`/${organization.slug}/settings/repositories`}>
               Cancel

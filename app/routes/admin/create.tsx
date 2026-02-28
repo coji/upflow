@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, href, Link, redirect } from 'react-router'
+import { Form, href, Link, redirect, useNavigation } from 'react-router'
 import { z } from 'zod'
 import {
   Alert,
@@ -57,6 +57,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
 }
 
 const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
+  const navigation = useNavigation()
+  const isSubmitting = navigation.state === 'submitting'
   const [form, { organizationSlug, organizationName }] = useForm({
     lastResult: actionData?.lastResult,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
@@ -100,7 +102,7 @@ const OrganizationNewPage = ({ actionData }: Route.ComponentProps) => {
       </CardContent>
       <CardFooter>
         <HStack>
-          <Button type="submit" form={form.id}>
+          <Button type="submit" form={form.id} loading={isSubmitting}>
             Create
           </Button>
 

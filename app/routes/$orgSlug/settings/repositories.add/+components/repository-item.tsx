@@ -42,9 +42,10 @@ export const RepositoryItem = ({
           type="submit"
           size="sm"
           variant="outline"
-          disabled={isAdded || fetcher.state !== 'idle'}
+          loading={fetcher.state !== 'idle'}
+          disabled={isAdded}
         >
-          {isAdded ? 'Added' : fetcher.state !== 'idle' ? 'Adding...' : 'Add'}
+          {isAdded ? 'Added' : 'Add'}
         </Button>
       </fetcher.Form>
     </HStack>

@@ -1,6 +1,6 @@
 import type { Row } from '@tanstack/react-table'
 import { MoreHorizontalIcon, TrashIcon, UserCogIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { FormDialog } from '~/app/components/form-dialog'
@@ -68,14 +68,12 @@ export function MemberRowActions({ row }: { row: Row<MemberRow> }) {
         <input type="hidden" name="memberId" value={member.id} />
       </ConfirmDialog>
 
-      {roleOpen && (
-        <ChangeRoleDialog
-          open={roleOpen}
-          onOpenChange={setRoleOpen}
-          member={member}
-          fetcher={roleFetcher}
-        />
-      )}
+      <ChangeRoleDialog
+        open={roleOpen}
+        onOpenChange={setRoleOpen}
+        member={member}
+        fetcher={roleFetcher}
+      />
     </>
   )
 }
@@ -91,8 +89,14 @@ function ChangeRoleDialog({
   member: MemberRow
   fetcher: ReturnType<typeof useFetcher>
 }) {
-  // Select の onValueChange が string を返すため string に広げる
   const [role, setRole] = useState<string>(member.role)
+
+  // Reset form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setRole(member.role)
+    }
+  }, [open, member])
 
   return (
     <FormDialog
