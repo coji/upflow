@@ -18,10 +18,7 @@ export type OrganizationId = string & { readonly __brand: 'OrganizationId' }
 
 const debug = createDebug('app:tenant-db')
 
-const tenantDbCache = new Map<
-  string,
-  { db: Kysely<TenantDB.DB>; rawDb: Kysely<TenantDB.DB> }
->()
+const tenantDbCache = new Map<string, Kysely<TenantDB.DB>>()
 
 function getTenantDbPath(organizationId: OrganizationId): string {
   if (!process.env.DATABASE_URL) {
@@ -32,7 +29,7 @@ function getTenantDbPath(organizationId: OrganizationId): string {
   return path.join(dir, `tenant_${organizationId}.db`)
 }
 
-function getOrCreateEntry(organizationId: OrganizationId) {
+function getOrCreateDb(organizationId: OrganizationId) {
   const cached = tenantDbCache.get(organizationId)
   if (cached) return cached
 
@@ -51,45 +48,28 @@ function getOrCreateEntry(organizationId: OrganizationId) {
     plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
   })
 
-  // Plugin-free instance sharing the same SQLite connection.
-  // Use for raw JSON data that must not be key-transformed.
-  const rawDb = new Kysely<TenantDB.DB>({ dialect, log })
-
-  const entry = { db, rawDb }
-  tenantDbCache.set(organizationId, entry)
-  return entry
+  tenantDbCache.set(organizationId, db)
+  return db
 }
 
 export function getTenantDb(
   organizationId: OrganizationId,
 ): Kysely<TenantDB.DB> {
-  return getOrCreateEntry(organizationId).db
-}
-
-/**
- * Plugin-free Kysely instance (no CamelCasePlugin / ParseJSONResultsPlugin).
- * Use when storing/loading raw JSON blobs whose keys must be preserved as-is.
- */
-export function getTenantDbRaw(
-  organizationId: OrganizationId,
-): Kysely<TenantDB.DB> {
-  return getOrCreateEntry(organizationId).rawDb
+  return getOrCreateDb(organizationId)
 }
 
 export async function closeTenantDb(
   organizationId: OrganizationId,
 ): Promise<void> {
-  const entry = tenantDbCache.get(organizationId)
-  if (entry) {
-    await entry.db.destroy()
+  const db = tenantDbCache.get(organizationId)
+  if (db) {
+    await db.destroy()
     tenantDbCache.delete(organizationId)
   }
 }
 
 export async function closeAllTenantDbs(): Promise<void> {
-  await Promise.all(
-    [...tenantDbCache.values()].map((entry) => entry.db.destroy()),
-  )
+  await Promise.all([...tenantDbCache.values()].map((db) => db.destroy()))
   tenantDbCache.clear()
 }
 

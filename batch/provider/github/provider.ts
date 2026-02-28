@@ -37,8 +37,7 @@ export const createGitHubProvider = (
     const leastMergeRequest = aggregator.leastUpdatedPullRequest(
       await store.loader.pullrequests().catch(() => []),
     )
-    const lastFetchedAt =
-      leastMergeRequest?.updated_at ?? '2000-01-01T00:00:00Z'
+    const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
     logger.info(`last fetched at: ${lastFetchedAt}`)
 
     if (halt) {
@@ -114,9 +113,9 @@ export const createGitHubProvider = (
           return
         }
 
-        const isUpdated = pr.updated_at > lastFetchedAt
+        const isUpdated = pr.updatedAt > lastFetchedAt
         if (!isUpdated) {
-          logger.debug('skip', pr.number, pr.state, pr.updated_at)
+          logger.debug('skip', pr.number, pr.state, pr.updatedAt)
           continue
         }
 

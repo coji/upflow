@@ -447,15 +447,15 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
                 .map((n) => n.login) ?? [],
             reviewers: reviewerLogins,
             draft: node.isDraft,
-            source_branch: node.headRefName,
-            target_branch: node.baseRefName,
-            created_at: node.createdAt,
-            updated_at: node.updatedAt,
-            merged_at: node.mergedAt ?? null,
-            merge_commit_sha: node.mergeCommit?.oid ?? null,
+            sourceBranch: node.headRefName,
+            targetBranch: node.baseRefName,
+            createdAt: node.createdAt,
+            updatedAt: node.updatedAt,
+            mergedAt: node.mergedAt ?? null,
+            mergeCommitSha: node.mergeCommit?.oid ?? null,
             additions: node.additions ?? null,
             deletions: node.deletions ?? null,
-            changed_files: node.changedFiles ?? null,
+            changedFiles: node.changedFiles ?? null,
           },
         ]
       }
@@ -541,7 +541,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           user: node.author?.login ?? null,
           isBot: node.author?.__typename === 'Bot',
           url: node.url,
-          created_at: node.createdAt,
+          createdAt: node.createdAt,
         })
       }
 
@@ -578,7 +578,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             user: node.author?.login ?? null,
             isBot: node.author?.__typename === 'Bot',
             url: node.url,
-            created_at: node.createdAt,
+            createdAt: node.createdAt,
           })
         }
       }
@@ -592,7 +592,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       | ShapedGitHubReviewComment
     )[]
     allComments.sort(
-      (a, b) => dayjs(a.created_at).unix() - dayjs(b.created_at).unix(),
+      (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
     )
     return allComments
   }
@@ -625,7 +625,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             isBot: node.author?.__typename === 'Bot',
             state: node.state,
             url: node.url,
-            submitted_at: node.submittedAt ?? null,
+            submittedAt: node.submittedAt ?? null,
           },
         ]
       }
@@ -683,7 +683,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         if (committedDate) {
           allTags = [
             ...allTags,
-            { name: node.name, sha, committed_at: committedDate },
+            { name: node.name, sha, committedAt: committedDate },
           ]
         }
       }
@@ -775,15 +775,15 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
               .map((n) => n.login) ?? [],
           reviewers: reviewerLogins,
           draft: node.isDraft,
-          source_branch: node.headRefName,
-          target_branch: node.baseRefName,
-          created_at: node.createdAt,
-          updated_at: node.updatedAt,
-          merged_at: node.mergedAt ?? null,
-          merge_commit_sha: node.mergeCommit?.oid ?? null,
+          sourceBranch: node.headRefName,
+          targetBranch: node.baseRefName,
+          createdAt: node.createdAt,
+          updatedAt: node.updatedAt,
+          mergedAt: node.mergedAt ?? null,
+          mergeCommitSha: node.mergeCommit?.oid ?? null,
           additions: node.additions ?? null,
           deletions: node.deletions ?? null,
-          changed_files: node.changedFiles ?? null,
+          changedFiles: node.changedFiles ?? null,
         }
 
         // commits
@@ -812,7 +812,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
               isBot: reviewNode.author?.__typename === 'Bot',
               state: reviewNode.state,
               url: reviewNode.url,
-              submitted_at: reviewNode.submittedAt ?? null,
+              submittedAt: reviewNode.submittedAt ?? null,
             })
           }
         }
@@ -832,7 +832,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
               user: commentNode.author?.login ?? null,
               isBot: commentNode.author?.__typename === 'Bot',
               url: commentNode.url,
-              created_at: commentNode.createdAt,
+              createdAt: commentNode.createdAt,
             })
           }
         }
@@ -853,7 +853,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
                 user: commentNode.author?.login ?? null,
                 isBot: commentNode.author?.__typename === 'Bot',
                 url: commentNode.url,
-                created_at: commentNode.createdAt,
+                createdAt: commentNode.createdAt,
               })
             }
           }
@@ -861,7 +861,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
 
         // コメントを時系列でソート
         prComments.sort(
-          (a, b) => dayjs(a.created_at).unix() - dayjs(b.created_at).unix(),
+          (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
         )
 
         allResults.push({

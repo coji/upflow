@@ -1,7 +1,6 @@
-import { sql } from 'kysely'
 import {
   type OrganizationId,
-  getTenantDbRaw,
+  getTenantDb,
 } from '~/app/services/tenant-db.server'
 import type {
   ShapedGitHubCommit,
@@ -10,18 +9,6 @@ import type {
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
 } from './model'
-
-interface RawDataRow {
-  pull_request_number: number
-  pull_request: string
-  commits: string
-  reviews: string
-  discussions: string
-}
-
-interface RawTagsRow {
-  tags: string
-}
 
 interface createStoreProps {
   organizationId: OrganizationId
@@ -32,8 +19,7 @@ export const createStore = ({
   organizationId,
   repositoryId,
 }: createStoreProps) => {
-  // Plugin-free DB to preserve JSON keys as-is (no CamelCase/ParseJSON transformation)
-  const db = getTenantDbRaw(organizationId)
+  const db = getTenantDb(organizationId)
 
   // --- save 系 ---
 
@@ -45,33 +31,40 @@ export const createStore = ({
       discussions: ShapedGitHubReviewComment[]
     },
   ) => {
-    const prJson = JSON.stringify(pr)
-    const commitsJson = JSON.stringify(data.commits)
-    const reviewsJson = JSON.stringify(data.reviews)
-    const discussionsJson = JSON.stringify(data.discussions)
-
-    await sql`
-      INSERT INTO github_raw_data (repository_id, pull_request_number, pull_request, commits, reviews, discussions)
-      VALUES (${repositoryId}, ${pr.number}, ${prJson}, ${commitsJson}, ${reviewsJson}, ${discussionsJson})
-      ON CONFLICT (repository_id, pull_request_number) DO UPDATE SET
-        pull_request = ${prJson},
-        commits = ${commitsJson},
-        reviews = ${reviewsJson},
-        discussions = ${discussionsJson},
-        fetched_at = datetime('now')
-    `.execute(db)
+    await db
+      .insertInto('githubRawData')
+      .values({
+        repositoryId,
+        pullRequestNumber: pr.number,
+        pullRequest: JSON.stringify(pr),
+        commits: JSON.stringify(data.commits),
+        reviews: JSON.stringify(data.reviews),
+        discussions: JSON.stringify(data.discussions),
+      })
+      .onConflict((oc) =>
+        oc.columns(['repositoryId', 'pullRequestNumber']).doUpdateSet({
+          pullRequest: JSON.stringify(pr),
+          commits: JSON.stringify(data.commits),
+          reviews: JSON.stringify(data.reviews),
+          discussions: JSON.stringify(data.discussions),
+        }),
+      )
+      .execute()
   }
 
   const saveTags = async (tags: ShapedGitHubTag[]) => {
-    const tagsJson = JSON.stringify(tags)
-
-    await sql`
-      INSERT INTO github_raw_tags (repository_id, tags)
-      VALUES (${repositoryId}, ${tagsJson})
-      ON CONFLICT (repository_id) DO UPDATE SET
-        tags = ${tagsJson},
-        fetched_at = datetime('now')
-    `.execute(db)
+    await db
+      .insertInto('githubRawTags')
+      .values({
+        repositoryId,
+        tags: JSON.stringify(tags),
+      })
+      .onConflict((oc) =>
+        oc.columns(['repositoryId']).doUpdateSet({
+          tags: JSON.stringify(tags),
+        }),
+      )
+      .execute()
   }
 
   // --- preload 系 (analyze 用の一括ロード) ---
@@ -86,22 +79,33 @@ export const createStore = ({
     }
   > | null = null
 
-  const parseRow = (row: RawDataRow) => ({
-    pullRequest: JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
-    commits: JSON.parse(row.commits) as ShapedGitHubCommit[],
-    reviews: JSON.parse(row.reviews) as ShapedGitHubReview[],
-    discussions: JSON.parse(row.discussions) as ShapedGitHubReviewComment[],
+  const parseRow = (row: {
+    pullRequest: unknown
+    commits: unknown
+    reviews: unknown
+    discussions: unknown
+  }) => ({
+    pullRequest: row.pullRequest as ShapedGitHubPullRequest,
+    commits: row.commits as ShapedGitHubCommit[],
+    reviews: row.reviews as ShapedGitHubReview[],
+    discussions: row.discussions as ShapedGitHubReviewComment[],
   })
 
   const preloadAll = async () => {
-    const result = await sql<RawDataRow>`
-      SELECT pull_request_number, pull_request, commits, reviews, discussions
-      FROM github_raw_data
-      WHERE repository_id = ${repositoryId}
-    `.execute(db)
+    const rows = await db
+      .selectFrom('githubRawData')
+      .select([
+        'pullRequestNumber',
+        'pullRequest',
+        'commits',
+        'reviews',
+        'discussions',
+      ])
+      .where('repositoryId', '=', repositoryId)
+      .execute()
 
     preloaded = new Map(
-      result.rows.map((row) => [row.pull_request_number, parseRow(row)]),
+      rows.map((row) => [row.pullRequestNumber, parseRow(row)]),
     )
   }
 
@@ -111,12 +115,12 @@ export const createStore = ({
     if (preloaded) {
       return preloaded.get(number) ?? null
     }
-    const result = await sql<RawDataRow>`
-      SELECT pull_request, commits, reviews, discussions
-      FROM github_raw_data
-      WHERE repository_id = ${repositoryId} AND pull_request_number = ${number}
-    `.execute(db)
-    const row = result.rows[0]
+    const row = await db
+      .selectFrom('githubRawData')
+      .select(['pullRequest', 'commits', 'reviews', 'discussions'])
+      .where('repositoryId', '=', repositoryId)
+      .where('pullRequestNumber', '=', number)
+      .executeTakeFirst()
     if (!row) return null
     return parseRow(row)
   }
@@ -140,24 +144,23 @@ export const createStore = ({
     if (preloaded) {
       return [...preloaded.values()].map((v) => v.pullRequest)
     }
-    const result = await sql<Pick<RawDataRow, 'pull_request'>>`
-      SELECT pull_request
-      FROM github_raw_data
-      WHERE repository_id = ${repositoryId}
-    `.execute(db)
-    return result.rows.map(
-      (row) => JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
+    const rows = await db
+      .selectFrom('githubRawData')
+      .select('pullRequest')
+      .where('repositoryId', '=', repositoryId)
+      .execute()
+    return rows.map(
+      (row) => row.pullRequest as unknown as ShapedGitHubPullRequest,
     )
   }
 
   const tags = async (): Promise<ShapedGitHubTag[]> => {
-    const result = await sql<RawTagsRow>`
-      SELECT tags
-      FROM github_raw_tags
-      WHERE repository_id = ${repositoryId}
-    `.execute(db)
-    const row = result.rows[0]
-    return row ? (JSON.parse(row.tags) as ShapedGitHubTag[]) : []
+    const row = await db
+      .selectFrom('githubRawTags')
+      .select('tags')
+      .where('repositoryId', '=', repositoryId)
+      .executeTakeFirst()
+    return row ? (row.tags as unknown as ShapedGitHubTag[]) : []
   }
 
   return {

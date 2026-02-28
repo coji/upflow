@@ -103,15 +103,15 @@ const makePr = (number: number): ShapedGitHubPullRequest => ({
   assignees: [],
   reviewers: ['reviewer1'],
   draft: false,
-  source_branch: 'feature',
-  target_branch: 'main',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-02T00:00:00Z',
-  merged_at: '2024-01-02T00:00:00Z',
-  merge_commit_sha: 'abc123',
+  sourceBranch: 'feature',
+  targetBranch: 'main',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-02T00:00:00Z',
+  mergedAt: '2024-01-02T00:00:00Z',
+  mergeCommitSha: 'abc123',
   additions: 10,
   deletions: 5,
-  changed_files: 2,
+  changedFiles: 2,
 })
 
 const makeCommits = (n: number): ShapedGitHubCommit[] => [
@@ -130,7 +130,7 @@ const makeReviews = (n: number): ShapedGitHubReview[] => [
     isBot: false,
     state: 'APPROVED',
     url: `https://github.com/review/${n}`,
-    submitted_at: '2024-01-01T12:00:00Z',
+    submittedAt: '2024-01-01T12:00:00Z',
   },
 ]
 
@@ -140,7 +140,7 @@ const makeDiscussions = (n: number): ShapedGitHubReviewComment[] => [
     user: 'reviewer1',
     isBot: false,
     url: `https://github.com/comment/${n}`,
-    created_at: '2024-01-01T10:00:00Z',
+    createdAt: '2024-01-01T10:00:00Z',
   },
 ]
 
@@ -215,8 +215,8 @@ describe('store', () => {
   test('saveTags and loader.tags round-trip', async () => {
     const store = createStore({ organizationId: orgId, repositoryId })
     const tags: ShapedGitHubTag[] = [
-      { name: 'v1.0.0', sha: 'abc', committed_at: '2024-01-01T00:00:00Z' },
-      { name: 'v1.1.0', sha: 'def', committed_at: '2024-01-02T00:00:00Z' },
+      { name: 'v1.0.0', sha: 'abc', committedAt: '2024-01-01T00:00:00Z' },
+      { name: 'v1.1.0', sha: 'def', committedAt: '2024-01-02T00:00:00Z' },
     ]
 
     await store.saveTags(tags)
