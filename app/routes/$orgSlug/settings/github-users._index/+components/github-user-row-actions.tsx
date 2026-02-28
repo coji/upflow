@@ -17,7 +17,13 @@ import { Input } from '~/app/components/ui/input'
 import { Label } from '~/app/components/ui/label'
 import type { GithubUserRow } from '../queries.server'
 
-export function GithubUserRowActions({ row }: { row: Row<GithubUserRow> }) {
+export function GithubUserRowActions({
+  row,
+  isSelf,
+}: {
+  row: Row<GithubUserRow>
+  isSelf: boolean
+}) {
   const user = row.original
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -43,9 +49,10 @@ export function GithubUserRowActions({ row }: { row: Row<GithubUserRow> }) {
           <DropdownMenuItem
             onClick={() => setDeleteOpen(true)}
             className="text-destructive"
+            disabled={isSelf}
           >
             <TrashIcon className="mr-2 h-4 w-4" />
-            Delete
+            Delete {isSelf && '(You)'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

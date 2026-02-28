@@ -141,6 +141,11 @@ export const columns: ColumnDef<GithubUserRow>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => <GithubUserRowActions row={row} />,
+    cell: ({ row, table }) => (
+      <GithubUserRowActions
+        row={row}
+        isSelf={row.original.login === table.options.meta?.currentGithubLogin}
+      />
+    ),
   },
 ]

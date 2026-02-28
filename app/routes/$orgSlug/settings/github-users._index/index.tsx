@@ -120,7 +120,11 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     })
     .with('delete', async () => {
       const { login } = deleteSchema.parse({ login: formData.get('login') })
-      await deleteGithubUser(login, organization.id)
+      try {
+        await deleteGithubUser(login, organization.id, user.id)
+      } catch (e) {
+        return data({ error: String(e) }, { status: 400 })
+      }
       return data({ ok: true })
     })
     .with('toggle-active', async () => {

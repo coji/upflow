@@ -224,7 +224,7 @@ describe('deleteGithubUser session invalidation', () => {
 
     expect(countSessions(userId)).toBe(2)
 
-    await deleteGithubUser('octocat-del', orgId)
+    await deleteGithubUser('octocat-del', orgId, 'other-user')
 
     expect(countSessions(userId)).toBe(0)
   })
@@ -232,6 +232,18 @@ describe('deleteGithubUser session invalidation', () => {
   test('with null userId does not error', async () => {
     seedTenantGithubUser(orgId, 'no-user-del', null)
 
-    await expect(deleteGithubUser('no-user-del', orgId)).resolves.not.toThrow()
+    await expect(
+      deleteGithubUser('no-user-del', orgId, 'other-user'),
+    ).resolves.not.toThrow()
+  })
+
+  test('throws when deleting yourself', async () => {
+    const userId = 'user-self-delete'
+    seedUser(userId)
+    seedTenantGithubUser(orgId, 'self-del', userId)
+
+    await expect(deleteGithubUser('self-del', orgId, userId)).rejects.toThrow(
+      'Cannot delete yourself',
+    )
   })
 })

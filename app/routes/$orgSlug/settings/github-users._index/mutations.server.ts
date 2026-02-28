@@ -51,16 +51,21 @@ export const updateGithubUser = async (params: {
 export const deleteGithubUser = async (
   login: string,
   organizationId: OrganizationId,
+  currentUserId: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)
 
-  // Revoke all sessions for the user before deleting
   const row = await tenantDb
     .selectFrom('companyGithubUsers')
     .select('userId')
     .where('login', '=', login)
     .executeTakeFirst()
 
+  if (row?.userId === currentUserId) {
+    throw new Error('Cannot delete yourself')
+  }
+
+  // Revoke all sessions for the user before deleting
   if (row?.userId) {
     await db.deleteFrom('sessions').where('userId', '=', row.userId).execute()
   }
