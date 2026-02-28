@@ -203,3 +203,12 @@ Source code for dependencies is available in `opensrc/` for deeper understanding
 npx opensrc <package>           # npm package (e.g., npx opensrc zod)
 npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
 ```
+
+### PR前チェックリスト
+
+1. `pnpm validate` が通る（lint, format, typecheck, build, test）
+2. スキーマ変更時: `pnpm db:setup` が通る
+3. マイグレーション: 本番DBの既存データで安全に適用できる
+4. 追加・変更したロジックにユニットテストがある
+5. 凝集度が高いか: 関数・モジュールが単一の責務に集中しているか。複数の関心事が混在していたら分割する
+6. 結合度が低いか: 依存を引数で受け取れるようにしてテスト可能にする。ロジックの重複は共通化する
