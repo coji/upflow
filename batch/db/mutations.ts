@@ -120,17 +120,23 @@ export async function upsertCompanyGithubUsers(
   if (logins.length === 0) return
 
   const tenantDb = getTenantDb(organizationId)
-  for (const login of logins) {
-    await tenantDb
-      .insertInto('companyGithubUsers')
-      .values({
+  const now = new Date().toISOString()
+  const uniqueLogins = [...new Set(logins)]
+
+  await tenantDb
+    .insertInto('companyGithubUsers')
+    .values(
+      uniqueLogins.map((login) => ({
         login,
         displayName: login,
         isActive: 0,
-        updatedAt: new Date().toISOString(),
-      })
-      .onConflict((oc) => oc.column('login').doNothing())
-      .execute()
-  }
-  logger.info(`upserted ${logins.length} company github users.`, organizationId)
+        updatedAt: now,
+      })),
+    )
+    .onConflict((oc) => oc.column('login').doNothing())
+    .execute()
+  logger.info(
+    `upserted ${uniqueLogins.length} company github users.`,
+    organizationId,
+  )
 }

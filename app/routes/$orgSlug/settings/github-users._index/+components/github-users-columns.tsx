@@ -81,21 +81,16 @@ function ActiveToggle({
       : isActive
 
   return (
-    <fetcher.Form method="post">
-      <input type="hidden" name="intent" value="toggle-active" />
-      <input type="hidden" name="login" value={login} />
-      <input type="hidden" name="isActive" value={optimisticActive ? 0 : 1} />
-      <Switch
-        checked={!!optimisticActive}
-        onCheckedChange={() => {
-          const formData = new FormData()
-          formData.set('intent', 'toggle-active')
-          formData.set('login', login)
-          formData.set('isActive', String(optimisticActive ? 0 : 1))
-          fetcher.submit(formData, { method: 'post' })
-        }}
-      />
-    </fetcher.Form>
+    <Switch
+      checked={!!optimisticActive}
+      onCheckedChange={() => {
+        const formData = new FormData()
+        formData.set('intent', 'toggle-active')
+        formData.set('login', login)
+        formData.set('isActive', String(optimisticActive ? 0 : 1))
+        fetcher.submit(formData, { method: 'post' })
+      }}
+    />
   )
 }
 

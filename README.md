@@ -87,8 +87,10 @@ pnpm db:generate  # Generate Kysely types
 
 ## Authentication
 
-- **GitHub OAuth only**: Users must be registered in `companyGithubUsers` by an org admin (Settings > GitHub Users)
-- On first GitHub login, users are automatically added as members to orgs where their GitHub login is registered
+- **GitHub OAuth only**: Login requires the user's GitHub login to be in `companyGithubUsers` with `isActive=1`
+- **Batch auto-registration**: PR authors and reviewers are automatically added to `companyGithubUsers` as inactive (`isActive=0`). An admin enables them via the Active toggle in Settings > GitHub Users
+- **First-user bootstrap**: On a fresh database with no users, the first GitHub login is allowed unconditionally and promoted to super admin
+- On login, users are automatically added as members to orgs where their GitHub login is registered and active
 
 ## License
 

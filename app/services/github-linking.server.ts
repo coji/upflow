@@ -70,7 +70,9 @@ export async function linkGithubUserToCompanyUsers(
         .where('userId', 'is', null)
         .execute()
 
-      // Auto-add as org member if not already a member
+      // Auto-add as org member if not already a member.
+      // Check-then-insert with a try/catch guard for concurrent races
+      // (members table has no unique constraint on org+user).
       const existingMember = await db
         .selectFrom('members')
         .select(['id'])
@@ -79,19 +81,23 @@ export async function linkGithubUserToCompanyUsers(
         .executeTakeFirst()
 
       if (!existingMember) {
-        await db
-          .insertInto('members')
-          .values({
-            id: nanoid(),
-            organizationId: orgId,
-            userId,
-            role: 'member',
-            createdAt: new Date().toISOString(),
-          })
-          .execute()
-        console.info(
-          `[GitHub linking] Auto-added user ${userId} to org ${orgId}`,
-        )
+        try {
+          await db
+            .insertInto('members')
+            .values({
+              id: nanoid(),
+              organizationId: orgId,
+              userId,
+              role: 'member',
+              createdAt: new Date().toISOString(),
+            })
+            .execute()
+          console.info(
+            `[GitHub linking] Auto-added user ${userId} to org ${orgId}`,
+          )
+        } catch {
+          // Concurrent insert — member already exists, safe to ignore
+        }
       }
     } catch (error) {
       console.warn(`[GitHub linking] Failed to process org ${orgId}:`, error)

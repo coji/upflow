@@ -191,17 +191,22 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // First-user bootstrap: promote to super admin
-          const count = await db
-            .selectFrom('users')
-            .select((eb) => eb.fn.countAll<string>().as('count'))
-            .executeTakeFirstOrThrow()
-          if (Number(count.count) === 1) {
-            await db
-              .updateTable('users')
-              .set({ role: 'admin' })
-              .where('id', '=', user.id)
-              .execute()
+          // First-user bootstrap: promote to super admin atomically.
+          // The WHERE ensures only one user can be promoted even under
+          // concurrent requests (no existing admin → UPDATE matches).
+          const result = await db
+            .updateTable('users')
+            .set({ role: 'admin' })
+            .where('id', '=', user.id)
+            .where(({ not, exists, selectFrom }) =>
+              not(
+                exists(
+                  selectFrom('users').select('id').where('role', '=', 'admin'),
+                ),
+              ),
+            )
+            .executeTakeFirst()
+          if (result.numUpdatedRows > 0n) {
             console.info(
               `[Bootstrap] First user ${user.id} promoted to super admin`,
             )
