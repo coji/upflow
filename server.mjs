@@ -67,9 +67,8 @@ const server = app.listen(port, () => {
 // Graceful shutdown
 function shutdown() {
   consola.info('Shutting down...')
-  server.close(() => {
-    process.exit(0)
-  })
+  server.close()
+  process.exit(0)
 }
 process.on('SIGINT', shutdown)
 process.on('SIGTERM', shutdown)
