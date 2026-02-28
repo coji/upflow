@@ -122,6 +122,8 @@ pnpm db:generate
 
 Types are generated to `app/services/type.ts` from the database.
 
+**マイグレーション作成時の注意**: Atlas が自動生成した SQL は必ずレビューする。`DROP TABLE` は `IF EXISTS` を付ける。destructive な操作は本番 DB 相当の状態でテストしてからデプロイする。
+
 ### Path Aliases
 
 Use `~/` prefix for imports from `app/` directory:
