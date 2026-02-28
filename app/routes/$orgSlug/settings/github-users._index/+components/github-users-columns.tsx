@@ -34,9 +34,11 @@ function EditableDisplayName({
 function ActiveToggle({
   login,
   isActive,
+  isSelf,
 }: {
   login: string
   isActive: number
+  isSelf: boolean
 }) {
   const fetcher = useFetcher()
   const optimisticActive =
@@ -48,7 +50,7 @@ function ActiveToggle({
     <Switch
       aria-label={`Toggle active status for ${login}`}
       checked={!!optimisticActive}
-      disabled={fetcher.state !== 'idle'}
+      disabled={fetcher.state !== 'idle' || (isSelf && !!optimisticActive)}
       onCheckedChange={() => {
         const formData = new FormData()
         formData.set('intent', 'toggle-active')
@@ -118,10 +120,11 @@ export const columns: ColumnDef<GithubUserRow>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Active" />
     ),
-    cell: ({ row }) => (
+    cell: ({ row, table }) => (
       <ActiveToggle
         login={row.original.login}
         isActive={row.original.isActive}
+        isSelf={row.original.login === table.options.meta?.currentGithubLogin}
       />
     ),
   },

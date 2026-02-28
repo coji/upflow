@@ -26,18 +26,23 @@ declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     className: string
   }
+  interface TableMeta<TData extends RowData> {
+    currentGithubLogin?: string | null
+  }
 }
 
 interface DataTableProps {
   columns: ColumnDef<GithubUserRow>[]
   data: GithubUserRow[]
   pagination: PaginationProps
+  currentGithubLogin: string | null
 }
 
 export function GithubUsersTable({
   columns,
   data,
   pagination,
+  currentGithubLogin,
 }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
@@ -48,6 +53,7 @@ export function GithubUsersTable({
     state: { columnVisibility },
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
+    meta: { currentGithubLogin },
   })
 
   return (

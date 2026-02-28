@@ -152,6 +152,7 @@ describe('toggleGithubUserActive session invalidation', () => {
       login: 'octocat',
       isActive: 0,
       organizationId: orgId,
+      currentUserId: 'other-user',
     })
 
     expect(countSessions(userId)).toBe(0)
@@ -167,6 +168,7 @@ describe('toggleGithubUserActive session invalidation', () => {
       login: 'octocat2',
       isActive: 1,
       organizationId: orgId,
+      currentUserId: 'other-user',
     })
 
     expect(countSessions(userId)).toBe(1)
@@ -180,8 +182,24 @@ describe('toggleGithubUserActive session invalidation', () => {
         login: 'new-user',
         isActive: 0,
         organizationId: orgId,
+        currentUserId: 'other-user',
       }),
     ).resolves.not.toThrow()
+  })
+
+  test('isActive=0 throws when deactivating yourself', async () => {
+    const userId = 'user-self-deactivate'
+    seedUser(userId)
+    seedTenantGithubUser(orgId, 'self-user', userId)
+
+    await expect(
+      toggleGithubUserActive({
+        login: 'self-user',
+        isActive: 0,
+        organizationId: orgId,
+        currentUserId: userId,
+      }),
+    ).rejects.toThrow('Cannot deactivate yourself')
   })
 })
 

@@ -27,7 +27,7 @@ declare module '@tanstack/react-table' {
     className: string
   }
   interface TableMeta<TData extends RowData> {
-    currentMembershipId: string
+    currentMembershipId?: string
   }
 }
 

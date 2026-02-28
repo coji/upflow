@@ -75,16 +75,21 @@ export const toggleGithubUserActive = async (params: {
   login: string
   isActive: 0 | 1
   organizationId: OrganizationId
+  currentUserId: string
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
 
-  // When deactivating, revoke all sessions for the user immediately
+  // When deactivating, check if the target is the current user
   if (params.isActive === 0) {
     const row = await tenantDb
       .selectFrom('companyGithubUsers')
       .select('userId')
       .where('login', '=', params.login)
       .executeTakeFirst()
+
+    if (row?.userId === params.currentUserId) {
+      throw new Error('Cannot deactivate yourself')
+    }
 
     if (row?.userId) {
       await db.deleteFrom('sessions').where('userId', '=', row.userId).execute()
