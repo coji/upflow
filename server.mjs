@@ -60,9 +60,19 @@ app.all(
 )
 
 const port = process.env.PORT || 3000
-app.listen(port, () => {
+const server = app.listen(port, () => {
   consola.info(`Express server listening on port ${port}`)
 })
+
+// Graceful shutdown
+function shutdown() {
+  consola.info('Shutting down...')
+  server.close(() => {
+    process.exit(0)
+  })
+}
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
 
 if (process.env.NODE_ENV === 'production') {
   const { startScheduler } = createJobScheduler()

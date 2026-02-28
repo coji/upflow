@@ -6,7 +6,7 @@
 app = "upflow"
 primary_region = "nrt"
 kill_signal = "SIGINT"
-kill_timeout = "5s"
+kill_timeout = "3s"
 swap_size_mb = 512
 
 [experimental]
@@ -43,9 +43,9 @@ swap_size_mb = 512
     grace_period = "1s"
 
   [[services.http_checks]]
-    interval = "10s"
+    interval = "3s"
     timeout = "2s"
-    grace_period = "5s"
+    grace_period = "10s"
     method = "get"
     path = "/healthcheck"
     protocol = "http"
