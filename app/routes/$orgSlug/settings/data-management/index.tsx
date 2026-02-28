@@ -84,27 +84,41 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         )
       }
 
-      const { pulls, reviewResponses } = await provider.analyze(
-        orgContext.id,
-        organization.organizationSetting,
-        organization.repositories,
-      )
+      try {
+        const { pulls, reviewResponses } = await provider.analyze(
+          orgContext.id,
+          organization.organizationSetting,
+          organization.repositories,
+        )
 
-      for (const pr of pulls) {
-        await upsertPullRequest(orgContext.id, pr)
+        for (const pr of pulls) {
+          await upsertPullRequest(orgContext.id, pr)
+        }
+
+        if (organization.exportSetting) {
+          const exporter = createSpreadsheetExporter(organization.exportSetting)
+          await exporter.exportPulls(pulls)
+          await exporter.exportReviewResponses(reviewResponses)
+        }
+
+        return data({
+          intent: 'recalculate' as const,
+          ok: true,
+          message: `Recalculation completed. ${pulls.length} PRs updated.`,
+        })
+      } catch (e) {
+        console.error(
+          'Recalculation failed:',
+          e instanceof Error ? e.message : 'Unknown error',
+        )
+        return data(
+          {
+            intent: 'recalculate' as const,
+            error: 'Recalculation failed. Please try again later.',
+          },
+          { status: 500 },
+        )
       }
-
-      if (organization.exportSetting) {
-        const exporter = createSpreadsheetExporter(organization.exportSetting)
-        await exporter.exportPulls(pulls)
-        await exporter.exportReviewResponses(reviewResponses)
-      }
-
-      return data({
-        intent: 'recalculate' as const,
-        ok: true,
-        message: `Recalculation completed. ${pulls.length} PRs updated.`,
-      })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
@@ -136,7 +150,7 @@ function RefreshSection({
         </div>
         <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="refresh" />
-          <Button type="submit" disabled={isScheduled || isSubmitting}>
+          <Button type="submit" loading={isSubmitting} disabled={isScheduled}>
             {isScheduled ? 'Scheduled' : 'Schedule'}
           </Button>
         </fetcher.Form>
@@ -177,8 +191,8 @@ function RecalculateSection() {
         </div>
         <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="recalculate" />
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Processing...' : 'Recalculate'}
+          <Button type="submit" loading={isSubmitting}>
+            Recalculate
           </Button>
         </fetcher.Form>
       </div>

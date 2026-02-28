@@ -29,13 +29,13 @@ export function AppDataTableViewOptions<TData>({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
           <Settings2Icon className="h-4 w-4" />
-          オプション
+          Options
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
         {hideableColumns.length > 0 && (
           <>
-            <DropdownMenuLabel>列の表示</DropdownMenuLabel>
+            <DropdownMenuLabel>Columns</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {hideableColumns.map((column) => {
               const title = match(column.columnDef.header)

@@ -2,9 +2,11 @@ import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
 import { columns } from './+components/github-users-columns'
 import { GithubUsersTable } from './+components/github-users-table'
+import { searchGithubUsers } from './+functions/search-github-users.server'
 import {
   PaginationSchema,
   QuerySchema,
@@ -27,11 +29,21 @@ export const handle = {
 }
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+  const { organization, user } = await requireOrgAdmin(request, params.orgSlug)
   const searchParams = new URL(request.url).searchParams
 
-  const { search } = QuerySchema.parse({
+  // GitHub user search for combobox candidates
+  const q = searchParams.get('q')
+  if (q !== null) {
+    const candidates = q.trim()
+      ? await searchGithubUsers(organization.id, q.trim())
+      : []
+    return Response.json({ candidates })
+  }
+
+  const { search, loginStatus } = QuerySchema.parse({
     search: searchParams.get('search'),
+    loginStatus: searchParams.get('loginStatus'),
   })
 
   const { sort_by: sortBy, sort_order: sortOrder } = SortSchema.parse({
@@ -44,16 +56,31 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     per_page: searchParams.get('per_page'),
   })
 
+  const isActive: 0 | 1 | undefined =
+    loginStatus === 'allowed' ? 1 : loginStatus === 'denied' ? 0 : undefined
+
   const { data: githubUsers, pagination } = await listFilteredGithubUsers({
     organizationId: organization.id,
     search,
+    isActive,
     currentPage,
     pageSize,
     sortBy,
     sortOrder,
   })
 
-  return { githubUsers, pagination }
+  const tenantDb = getTenantDb(organization.id)
+  const currentGithubUser = await tenantDb
+    .selectFrom('companyGithubUsers')
+    .select('login')
+    .where('userId', '=', user.id)
+    .executeTakeFirst()
+
+  return {
+    githubUsers,
+    pagination,
+    currentGithubLogin: currentGithubUser?.login ?? null,
+  }
 }
 
 const addSchema = z.object({
@@ -64,8 +91,6 @@ const addSchema = z.object({
 const updateSchema = z.object({
   login: z.string().min(1),
   displayName: z.string().min(1),
-  name: z.string().nullable().default(null),
-  email: z.string().nullable().default(null),
 })
 
 const deleteSchema = z.object({
@@ -83,7 +108,7 @@ const toggleActiveSchema = z.object({
 })
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+  const { organization, user } = await requireOrgAdmin(request, params.orgSlug)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 
@@ -100,15 +125,17 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       const parsed = updateSchema.parse({
         login: formData.get('login'),
         displayName: formData.get('displayName'),
-        name: formData.get('name') || null,
-        email: formData.get('email') || null,
       })
       await updateGithubUser({ ...parsed, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('delete', async () => {
       const { login } = deleteSchema.parse({ login: formData.get('login') })
-      await deleteGithubUser(login, organization.id)
+      try {
+        await deleteGithubUser(login, organization.id, user.id)
+      } catch (e) {
+        return data({ error: String(e) }, { status: 400 })
+      }
       return data({ ok: true })
     })
     .with('toggle-active', async () => {
@@ -116,17 +143,22 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         login: formData.get('login'),
         isActive: formData.get('isActive'),
       })
-      await toggleGithubUserActive({
-        ...parsed,
-        organizationId: organization.id,
-      })
+      try {
+        await toggleGithubUserActive({
+          ...parsed,
+          organizationId: organization.id,
+          currentUserId: user.id,
+        })
+      } catch (e) {
+        return data({ error: String(e) }, { status: 400 })
+      }
       return data({ ok: true })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
 
 export default function GithubUsersPage({
-  loaderData: { githubUsers, pagination },
+  loaderData: { githubUsers, pagination, currentGithubLogin },
 }: Route.ComponentProps) {
   return (
     <ContentSection
@@ -138,6 +170,7 @@ export default function GithubUsersPage({
         data={githubUsers}
         columns={columns}
         pagination={pagination}
+        currentGithubLogin={currentGithubLogin}
       />
     </ContentSection>
   )

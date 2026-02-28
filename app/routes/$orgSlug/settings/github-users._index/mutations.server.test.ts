@@ -54,9 +54,6 @@ const TENANT_SCHEMA = `
   CREATE TABLE IF NOT EXISTS company_github_users (
     user_id text NULL,
     login text NOT NULL PRIMARY KEY,
-    name text NULL,
-    email text NULL,
-    picture_url text NULL,
     display_name text NOT NULL,
     is_active integer NOT NULL DEFAULT 0,
     updated_at datetime NOT NULL,
@@ -152,6 +149,7 @@ describe('toggleGithubUserActive session invalidation', () => {
       login: 'octocat',
       isActive: 0,
       organizationId: orgId,
+      currentUserId: 'other-user',
     })
 
     expect(countSessions(userId)).toBe(0)
@@ -167,6 +165,7 @@ describe('toggleGithubUserActive session invalidation', () => {
       login: 'octocat2',
       isActive: 1,
       organizationId: orgId,
+      currentUserId: 'other-user',
     })
 
     expect(countSessions(userId)).toBe(1)
@@ -180,8 +179,24 @@ describe('toggleGithubUserActive session invalidation', () => {
         login: 'new-user',
         isActive: 0,
         organizationId: orgId,
+        currentUserId: 'other-user',
       }),
     ).resolves.not.toThrow()
+  })
+
+  test('isActive=0 throws when deactivating yourself', async () => {
+    const userId = 'user-self-deactivate'
+    seedUser(userId)
+    seedTenantGithubUser(orgId, 'self-user', userId)
+
+    await expect(
+      toggleGithubUserActive({
+        login: 'self-user',
+        isActive: 0,
+        organizationId: orgId,
+        currentUserId: userId,
+      }),
+    ).rejects.toThrow('Cannot deactivate yourself')
   })
 })
 
@@ -206,7 +221,7 @@ describe('deleteGithubUser session invalidation', () => {
 
     expect(countSessions(userId)).toBe(2)
 
-    await deleteGithubUser('octocat-del', orgId)
+    await deleteGithubUser('octocat-del', orgId, 'other-user')
 
     expect(countSessions(userId)).toBe(0)
   })
@@ -214,6 +229,18 @@ describe('deleteGithubUser session invalidation', () => {
   test('with null userId does not error', async () => {
     seedTenantGithubUser(orgId, 'no-user-del', null)
 
-    await expect(deleteGithubUser('no-user-del', orgId)).resolves.not.toThrow()
+    await expect(
+      deleteGithubUser('no-user-del', orgId, 'other-user'),
+    ).resolves.not.toThrow()
+  })
+
+  test('throws when deleting yourself', async () => {
+    const userId = 'user-self-delete'
+    seedUser(userId)
+    seedTenantGithubUser(orgId, 'self-del', userId)
+
+    await expect(deleteGithubUser('self-del', orgId, userId)).rejects.toThrow(
+      'Cannot delete yourself',
+    )
   })
 })

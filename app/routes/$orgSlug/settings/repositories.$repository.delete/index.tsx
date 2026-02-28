@@ -1,6 +1,6 @@
 import { zx } from '@coji/zodix/v4'
 import { getFormProps, useForm } from '@conform-to/react'
-import { Form, Link, redirect } from 'react-router'
+import { Form, Link, redirect, useNavigation } from 'react-router'
 import { z } from 'zod'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
@@ -40,6 +40,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 export default function DeleteRepositoryPage({
   loaderData: { organization, repository },
 }: Route.ComponentProps) {
+  const navigation = useNavigation()
+  const isSubmitting = navigation.state === 'submitting'
   const [form] = useForm({ id: 'delete-repository-form' })
 
   return (
@@ -60,7 +62,12 @@ export default function DeleteRepositoryPage({
         </Form>
 
         <HStack>
-          <Button variant="destructive" type="submit" form={form.id}>
+          <Button
+            variant="destructive"
+            type="submit"
+            form={form.id}
+            loading={isSubmitting}
+          >
             Delete
           </Button>
           <Button asChild variant="ghost">

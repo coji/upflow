@@ -1,5 +1,5 @@
 import { SearchIcon, XIcon } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Input } from '~/app/components/ui/input'
 import { cn } from '~/app/libs/utils'
 
@@ -20,7 +20,10 @@ export function SearchInput({
   const inputRef = useRef<HTMLInputElement>(null)
   const isComposingRef = useRef(false)
 
-  const value = controlledValue ?? internalValue
+  // Sync from external value (e.g. Reset button, back navigation)
+  useEffect(() => {
+    setInternalValue(controlledValue ?? '')
+  }, [controlledValue])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
@@ -49,7 +52,7 @@ export function SearchInput({
       <SearchIcon className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
       <Input
         ref={inputRef}
-        value={value}
+        value={internalValue}
         onChange={handleChange}
         onCompositionStart={() => {
           isComposingRef.current = true
@@ -58,7 +61,7 @@ export function SearchInput({
         placeholder={placeholder}
         className="pr-8 pl-8"
       />
-      {value && (
+      {internalValue && (
         <button
           type="button"
           onClick={handleClear}

@@ -1,11 +1,26 @@
 import { XIcon } from 'lucide-react'
 import { SearchInput } from '~/app/components/search-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/app/components/ui'
 import { Button } from '~/app/components/ui/button'
 import { useDataTableState } from '../+hooks/use-data-table-state'
 
 export function DataTableToolbar() {
-  const { queries, updateQueries, isFiltered, resetFilters } =
-    useDataTableState()
+  const {
+    queries,
+    filters,
+    updateQueries,
+    updateFilters,
+    isFiltered,
+    resetFilters,
+  } = useDataTableState()
+
+  const currentRole = filters.role.length === 1 ? filters.role[0] : '__all__'
 
   return (
     <div className="flex items-center justify-between">
@@ -18,6 +33,22 @@ export function DataTableToolbar() {
           placeholder="Filter by name..."
           className="w-48 lg:w-64"
         />
+        <Select
+          value={currentRole}
+          onValueChange={(value) => {
+            updateFilters({ role: value === '__all__' ? [] : [value] })
+          }}
+        >
+          <SelectTrigger className="h-8 w-32">
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All Roles</SelectItem>
+            <SelectItem value="owner">Owner</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="member">Member</SelectItem>
+          </SelectContent>
+        </Select>
         {isFiltered && (
           <Button
             variant="ghost"

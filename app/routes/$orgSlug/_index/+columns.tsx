@@ -42,9 +42,9 @@ export const columns: ColumnDef<PullRequest>[] = [
   },
   {
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="初コミット" />
+      <AppSortableHeader column={column} title="First Commit" />
     ),
-    id: '初コミット',
+    id: 'First Commit',
     accessorKey: 'firstCommittedAt',
     cell: ({ row }) =>
       row.original.firstCommittedAt
@@ -57,9 +57,9 @@ export const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'pullRequestCreatedAt',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="PR作成" />
+      <AppSortableHeader column={column} title="PR Created" />
     ),
-    id: 'PR作成',
+    id: 'PR Created',
     cell: ({ row }) =>
       row.original.pullRequestCreatedAt
         ? dayjs
@@ -71,9 +71,9 @@ export const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'firstReviewedAt',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="初レビュー" />
+      <AppSortableHeader column={column} title="First Review" />
     ),
-    id: '初レビュー',
+    id: 'First Review',
     cell: ({ row }) =>
       row.original.firstReviewedAt
         ? dayjs
@@ -85,9 +85,9 @@ export const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'mergedAt',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="マージ" />
+      <AppSortableHeader column={column} title="Merged" />
     ),
-    id: 'マージ',
+    id: 'Merged',
     cell: ({ row }) =>
       row.original.mergedAt
         ? dayjs
@@ -99,12 +99,12 @@ export const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'createAndMergeDiff',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="マージまで" />
+      <AppSortableHeader column={column} title="Time to Merge" />
     ),
     cell: ({ row }) => (
       <HStack>
-        <div>{row.original.createAndMergeDiff?.toFixed(1)}日</div>
-        {!row.original.achievement && <Badge variant="destructive">超過</Badge>}
+        <div>{row.original.createAndMergeDiff?.toFixed(1)}d</div>
+        {!row.original.achievement && <Badge variant="destructive">Over</Badge>}
       </HStack>
     ),
     enableHiding: false,

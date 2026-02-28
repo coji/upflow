@@ -27,9 +27,6 @@ function setupTenantDb() {
     CREATE TABLE IF NOT EXISTS company_github_users (
       user_id TEXT NULL,
       login TEXT NOT NULL PRIMARY KEY,
-      name TEXT NULL,
-      email TEXT NULL,
-      picture_url TEXT NULL,
       display_name TEXT NOT NULL,
       is_active INTEGER NOT NULL DEFAULT 0,
       updated_at DATETIME NOT NULL,

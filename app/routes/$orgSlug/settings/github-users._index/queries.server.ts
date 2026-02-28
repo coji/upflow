@@ -1,4 +1,5 @@
-import { sql } from 'kysely'
+import { sql, type SqlBool } from 'kysely'
+import { escapeLike } from '~/app/libs/db-utils'
 import {
   getTenantDb,
   type OrganizationId,
@@ -7,6 +8,7 @@ import {
 interface ListFilteredGithubUsersArgs {
   organizationId: OrganizationId
   search: string
+  isActive?: 0 | 1
   currentPage: number
   pageSize: number
   sortBy?: string
@@ -16,6 +18,7 @@ interface ListFilteredGithubUsersArgs {
 export const listFilteredGithubUsers = async ({
   organizationId,
   search,
+  isActive,
   currentPage,
   pageSize,
   sortBy,
@@ -28,21 +31,22 @@ export const listFilteredGithubUsers = async ({
     .select([
       'companyGithubUsers.login',
       'companyGithubUsers.displayName',
-      'companyGithubUsers.name',
-      'companyGithubUsers.email',
-      'companyGithubUsers.pictureUrl',
       'companyGithubUsers.isActive',
       'companyGithubUsers.createdAt',
     ])
 
   if (search) {
+    const pattern = `%${escapeLike(search)}%`
     query = query.where((eb) =>
       eb.or([
-        eb('companyGithubUsers.login', 'like', `%${search}%`),
-        eb('companyGithubUsers.displayName', 'like', `%${search}%`),
-        eb('companyGithubUsers.name', 'like', `%${search}%`),
+        sql<SqlBool>`companyGithubUsers.login LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`companyGithubUsers.displayName LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
+  }
+
+  if (isActive !== undefined) {
+    query = query.where('companyGithubUsers.isActive', '=', isActive)
   }
 
   let countQuery = tenantDb
@@ -50,20 +54,22 @@ export const listFilteredGithubUsers = async ({
     .select((eb) => eb.fn.count<string>('companyGithubUsers.login').as('count'))
 
   if (search) {
+    const pattern = `%${escapeLike(search)}%`
     countQuery = countQuery.where((eb) =>
       eb.or([
-        eb('companyGithubUsers.login', 'like', `%${search}%`),
-        eb('companyGithubUsers.displayName', 'like', `%${search}%`),
-        eb('companyGithubUsers.name', 'like', `%${search}%`),
+        sql<SqlBool>`companyGithubUsers.login LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`companyGithubUsers.displayName LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
+  }
+
+  if (isActive !== undefined) {
+    countQuery = countQuery.where('isActive', '=', isActive)
   }
 
   const sortFieldMap: Record<string, string> = {
     login: 'companyGithubUsers.login',
     displayName: 'companyGithubUsers.displayName',
-    name: 'companyGithubUsers.name',
-    email: 'companyGithubUsers.email',
     isActive: 'companyGithubUsers.isActive',
     createdAt: 'companyGithubUsers.createdAt',
   }

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '~/app/components/ui'
 import { Badge } from '~/app/components/ui/badge'
+import { Checkbox } from '~/app/components/ui/checkbox'
 import type { TeamRow } from '../../teams._index/queries.server'
 import type { RepositoryRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
@@ -38,10 +39,10 @@ function TeamSelect({
       }}
     >
       <SelectTrigger className="h-8 w-36">
-        <SelectValue placeholder="未設定" />
+        <SelectValue placeholder="Unassigned" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="__none__">未設定</SelectItem>
+        <SelectItem value="__none__">Unassigned</SelectItem>
         {teams.map((team) => (
           <SelectItem key={team.id} value={team.id}>
             {team.name}
@@ -57,6 +58,28 @@ export const createColumns = (
   teams: TeamRow[],
 ): ColumnDef<RepositoryRow>[] => [
   {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label={`Select ${row.original.owner}/${row.original.repo}`}
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
     id: 'repo',
     accessorFn: (row) => `${row.owner}/${row.repo}`,
     header: ({ column }) => (
@@ -71,6 +94,7 @@ export const createColumns = (
         <Link
           to={repoUrl}
           target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-1 font-medium hover:underline"
         >
           {owner}/{repo}
@@ -92,7 +116,6 @@ export const createColumns = (
         teams={teams}
       />
     ),
-    enableSorting: false,
   },
   {
     accessorKey: 'releaseDetectionMethod',
@@ -100,7 +123,9 @@ export const createColumns = (
       <DataTableColumnHeader column={column} title="Method" />
     ),
     cell: ({ row }) => (
-      <Badge variant="outline">{row.getValue('releaseDetectionMethod')}</Badge>
+      <Badge variant="outline" className="capitalize">
+        {row.getValue('releaseDetectionMethod')}
+      </Badge>
     ),
     enableSorting: false,
   },

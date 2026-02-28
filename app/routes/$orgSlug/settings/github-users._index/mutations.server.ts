@@ -15,13 +15,12 @@ export const addGithubUser = async (params: {
     .values({
       login: params.login,
       displayName: params.displayName,
-      isActive: 1,
+      isActive: 0,
       updatedAt: new Date().toISOString(),
     })
     .onConflict((oc) =>
       oc.column('login').doUpdateSet({
         displayName: params.displayName,
-        isActive: 1,
         updatedAt: new Date().toISOString(),
       }),
     )
@@ -32,16 +31,12 @@ export const updateGithubUser = async (params: {
   login: string
   organizationId: OrganizationId
   displayName: string
-  name: string | null
-  email: string | null
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
   await tenantDb
     .updateTable('companyGithubUsers')
     .set({
       displayName: params.displayName,
-      name: params.name,
-      email: params.email,
       updatedAt: new Date().toISOString(),
     })
     .where('login', '=', params.login)
@@ -51,16 +46,21 @@ export const updateGithubUser = async (params: {
 export const deleteGithubUser = async (
   login: string,
   organizationId: OrganizationId,
+  currentUserId: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)
 
-  // Revoke all sessions for the user before deleting
   const row = await tenantDb
     .selectFrom('companyGithubUsers')
     .select('userId')
     .where('login', '=', login)
     .executeTakeFirst()
 
+  if (row?.userId === currentUserId) {
+    throw new Error('Cannot delete yourself')
+  }
+
+  // Revoke all sessions for the user before deleting
   if (row?.userId) {
     await db.deleteFrom('sessions').where('userId', '=', row.userId).execute()
   }
@@ -75,16 +75,21 @@ export const toggleGithubUserActive = async (params: {
   login: string
   isActive: 0 | 1
   organizationId: OrganizationId
+  currentUserId: string
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
 
-  // When deactivating, revoke all sessions for the user immediately
+  // When deactivating, check if the target is the current user
   if (params.isActive === 0) {
     const row = await tenantDb
       .selectFrom('companyGithubUsers')
       .select('userId')
       .where('login', '=', params.login)
       .executeTakeFirst()
+
+    if (row?.userId === params.currentUserId) {
+      throw new Error('Cannot deactivate yourself')
+    }
 
     if (row?.userId) {
       await db.deleteFrom('sessions').where('userId', '=', row.userId).execute()

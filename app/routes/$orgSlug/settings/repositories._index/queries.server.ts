@@ -1,4 +1,5 @@
-import { sql } from 'kysely'
+import { sql, type SqlBool } from 'kysely'
+import { escapeLike } from '~/app/libs/db-utils'
 import {
   getTenantDb,
   type OrganizationId,
@@ -7,6 +8,7 @@ import {
 interface ListFilteredRepositoriesArgs {
   organizationId: OrganizationId
   repo: string
+  teamId?: string
   currentPage: number
   pageSize: number
   sortBy?: string
@@ -16,6 +18,7 @@ interface ListFilteredRepositoriesArgs {
 export const listFilteredRepositories = async ({
   organizationId,
   repo,
+  teamId,
   currentPage,
   pageSize,
   sortBy,
@@ -29,12 +32,17 @@ export const listFilteredRepositories = async ({
     .select('teams.name as teamName')
 
   if (repo) {
+    const pattern = `%${escapeLike(repo)}%`
     query = query.where((eb) =>
       eb.or([
-        eb('repositories.owner', 'like', `%${repo}%`),
-        eb('repositories.repo', 'like', `%${repo}%`),
+        sql<SqlBool>`repositories.owner LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`repositories.repo LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
+  }
+
+  if (teamId) {
+    query = query.where('repositories.teamId', '=', teamId)
   }
 
   let countQuery = tenantDb
@@ -42,17 +50,23 @@ export const listFilteredRepositories = async ({
     .select((eb) => eb.fn.count<string>('repositories.id').as('count'))
 
   if (repo) {
+    const pattern = `%${escapeLike(repo)}%`
     countQuery = countQuery.where((eb) =>
       eb.or([
-        eb('repositories.owner', 'like', `%${repo}%`),
-        eb('repositories.repo', 'like', `%${repo}%`),
+        sql<SqlBool>`repositories.owner LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`repositories.repo LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
+  }
+
+  if (teamId) {
+    countQuery = countQuery.where('teamId', '=', teamId)
   }
 
   const sortFieldMap: Record<string, string> = {
     repo: 'repositories.repo',
     owner: 'repositories.owner',
+    teamName: 'teams.name',
     releaseDetectionMethod: 'repositories.releaseDetectionMethod',
     createdAt: 'repositories.createdAt',
   }

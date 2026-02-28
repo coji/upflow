@@ -5,7 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, useActionData } from 'react-router'
+import { Form, useActionData, useNavigation } from 'react-router'
 import {
   Alert,
   AlertDescription,
@@ -41,6 +41,10 @@ export const OrganizationSettings = ({
   }
 }) => {
   const actionData = useActionData<typeof action>()
+  const navigation = useNavigation()
+  const isSubmitting =
+    navigation.state === 'submitting' &&
+    navigation.formData?.get('intent') === INTENTS.organizationSettings
   const [form, fields] = useForm({
     lastResult:
       (actionData?.intent === INTENTS.organizationSettings &&
@@ -141,6 +145,7 @@ export const OrganizationSettings = ({
             type="submit"
             name="intent"
             value={INTENTS.organizationSettings}
+            loading={isSubmitting}
           >
             Update
           </Button>

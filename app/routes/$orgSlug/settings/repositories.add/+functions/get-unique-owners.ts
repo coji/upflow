@@ -1,117 +1,34 @@
-// ユニークなオーナー一覧を取得する関数
-export async function getUniqueOwners(token: string): Promise<string[]> {
-  const [viewerOrganizations, viewableRepositoriesOrganizations] =
-    await Promise.all([
-      getViewerOrganizations(token),
-      getViewableRepositoriesOrganizations(token),
-    ])
-
-  return Array.from(
-    new Set([...viewerOrganizations, ...viewableRepositoriesOrganizations]),
-  )
-}
-
-const getViewerOrganizations = async (token: string) => {
-  const owners = new Set<string>()
-  let cursor: string | undefined
-  let hasNextPage = true
-
-  const query = `
-    query ($cursor: String) {
-      viewer {
-        organizations(first: 100, after: $cursor) {
-          nodes {
-            login
-          }
-          pageInfo { endCursor hasNextPage }
-        }
-      }
-    }
-  `
-
-  while (hasNextPage) {
-    const res: Response = await fetch('https://api.github.com/graphql', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query, variables: { cursor } }),
-    })
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(
-        `GitHub API error (HTTP ${res.status}): ${text.slice(0, 200)}`,
-      )
-    }
-    const json = await res.json()
-    if (!json.data?.viewer) {
-      throw new Error(
-        `GitHub API error: ${JSON.stringify(json.errors ?? json.message ?? 'unknown')}`,
-      )
-    }
-    const organizations = json.data.viewer.organizations
-    for (const node of organizations.nodes) {
-      owners.add(node.login)
-    }
-    hasNextPage = organizations.pageInfo.hasNextPage
-    cursor = organizations.pageInfo.endCursor
-  }
-
-  return Array.from(owners)
-}
-
 /**
- *  参照可能なリポジトリのオーナー一覧を取得する
+ * REST API GET /user/repos でアクセス可能なリポジトリの
+ * ユニークなオーナー一覧を取得する。
+ * Fine-grained PAT では GraphQL viewer.repositories や
+ * viewer.organizations が制限されるが、REST API なら取得できる。
  */
-const getViewableRepositoriesOrganizations = async (
-  token: string,
-): Promise<string[]> => {
+export async function getUniqueOwners(token: string): Promise<string[]> {
   const owners = new Set<string>()
-  let cursor: string | undefined
-  let hasNextPage = true
+  let page = 1
 
-  const query = `
-    query ($cursor: String) {
-      viewer {
-        repositories(first: 100, after: $cursor, affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) {
-          nodes {
-            owner { login }
-          }
-          pageInfo { endCursor hasNextPage }
-        }
-      }
-    }
-  `
-
-  while (hasNextPage) {
-    const res: Response = await fetch('https://api.github.com/graphql', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+  while (true) {
+    const res = await fetch(
+      `https://api.github.com/user/repos?per_page=100&page=${page}&affiliation=owner,collaborator,organization_member`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+        },
       },
-      body: JSON.stringify({ query, variables: { cursor } }),
-    })
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(
-        `GitHub API error (HTTP ${res.status}): ${text.slice(0, 200)}`,
-      )
+    )
+    if (!res.ok) break
+    const repos: { owner: { login: string } }[] = await res.json()
+    if (repos.length === 0) break
+    for (const repo of repos) {
+      owners.add(repo.owner.login)
     }
-    const json = await res.json()
-    if (!json.data?.viewer) {
-      throw new Error(
-        `GitHub API error: ${JSON.stringify(json.errors ?? json.message ?? 'unknown')}`,
-      )
-    }
-    const repoData = json.data.viewer.repositories
-    for (const node of repoData.nodes) {
-      owners.add(node.owner.login)
-    }
-    hasNextPage = repoData.pageInfo.hasNextPage
-    cursor = repoData.pageInfo.endCursor
+    if (repos.length < 100) break
+    page++
   }
 
-  return Array.from(owners)
+  return Array.from(owners).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: 'base' }),
+  )
 }

@@ -1,8 +1,9 @@
 import type { Row } from '@tanstack/react-table'
 import { MoreHorizontalIcon, TrashIcon, UserCogIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
+import { FormDialog } from '~/app/components/form-dialog'
 import { Button } from '~/app/components/ui/button'
 import {
   DropdownMenu,
@@ -21,8 +22,15 @@ import {
 } from '~/app/components/ui/select'
 import type { MemberRow } from '../queries.server'
 
-export function MemberRowActions({ row }: { row: Row<MemberRow> }) {
+export function MemberRowActions({
+  row,
+  currentMembershipId,
+}: {
+  row: Row<MemberRow>
+  currentMembershipId?: string
+}) {
   const member = row.original
+  const isSelf = member.id === currentMembershipId
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const deleteFetcher = useFetcher()
@@ -40,16 +48,17 @@ export function MemberRowActions({ row }: { row: Row<MemberRow> }) {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setRoleOpen(true)}>
+          <DropdownMenuItem onClick={() => setRoleOpen(true)} disabled={isSelf}>
             <UserCogIcon className="mr-2 h-4 w-4" />
-            Change Role
+            Change Role {isSelf && '(You)'}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => setDeleteOpen(true)}
             className="text-destructive"
+            disabled={isSelf}
           >
             <TrashIcon className="mr-2 h-4 w-4" />
-            Remove
+            Remove {isSelf && '(You)'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -67,14 +76,12 @@ export function MemberRowActions({ row }: { row: Row<MemberRow> }) {
         <input type="hidden" name="memberId" value={member.id} />
       </ConfirmDialog>
 
-      {roleOpen && (
-        <ChangeRoleDialog
-          open={roleOpen}
-          onOpenChange={setRoleOpen}
-          member={member}
-          fetcher={roleFetcher}
-        />
-      )}
+      <ChangeRoleDialog
+        open={roleOpen}
+        onOpenChange={setRoleOpen}
+        member={member}
+        fetcher={roleFetcher}
+      />
     </>
   )
 }
@@ -90,11 +97,17 @@ function ChangeRoleDialog({
   member: MemberRow
   fetcher: ReturnType<typeof useFetcher>
 }) {
-  // Select の onValueChange が string を返すため string に広げる
   const [role, setRole] = useState<string>(member.role)
 
+  // Reset form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setRole(member.role)
+    }
+  }, [open, member])
+
   return (
-    <ConfirmDialog
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Change Role"
@@ -115,6 +128,6 @@ function ChangeRoleDialog({
           <SelectItem value="member">Member</SelectItem>
         </SelectContent>
       </Select>
-    </ConfirmDialog>
+    </FormDialog>
   )
 }

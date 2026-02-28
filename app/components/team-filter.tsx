@@ -33,10 +33,10 @@ export function TeamFilter({ teams }: { teams: Team[] }) {
       }}
     >
       <SelectTrigger className="h-8 w-44">
-        <SelectValue placeholder="全チーム" />
+        <SelectValue placeholder="All Teams" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="__all__">全チーム</SelectItem>
+        <SelectItem value="__all__">All Teams</SelectItem>
         {teams.map((team) => (
           <SelectItem key={team.id} value={team.id}>
             {team.name}

@@ -29,58 +29,62 @@ export const getRepositoriesByOwnerAndKeyword = async ({
   if (!owner) {
     return {
       repos: [],
-      pageInfo: {
-        endCursor: null,
-        hasNextPage: false,
-      },
+      pageInfo: { endCursor: null, hasNextPage: false },
     }
   }
 
-  // 検索クエリ例: "user:owner in:name キーワード"
-  const queryString = `user:${owner} in:name ${keyword} sort:updated-desc`
-  const query = `
-    query ($queryString: String!, $cursor: String) {
-      search(query: $queryString, type: REPOSITORY, first: 10, after: $cursor) {
-        nodes {
-          ... on Repository {
-            id
-            name
-            visibility
-            owner { login }
-            pushedAt
-          }
-        }
-        pageInfo {
-          endCursor
-          hasNextPage
-        }
-      }
-    }
-  `
+  // REST Search API: GET /search/repositories
+  const q = `user:${owner}${keyword ? ` ${keyword} in:name` : ''}`
+  const page = cursor ? Number.parseInt(cursor, 10) : 1
+  const perPage = 10
 
-  const res = await fetch('https://api.github.com/graphql', {
-    method: 'POST',
+  const url = new URL('https://api.github.com/search/repositories')
+  url.searchParams.set('q', q)
+  url.searchParams.set('per_page', String(perPage))
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('sort', 'updated')
+  url.searchParams.set('order', 'desc')
+
+  const res = await fetch(url.toString(), {
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github+json',
     },
-    body: JSON.stringify({ query, variables: { queryString, cursor } }),
   })
-  const json = await res.json()
-  const repoData = json.data.search
 
-  const repos: Repository[] = repoData.nodes
-    // biome-ignore lint/suspicious/noExplicitAny: 型定義が面倒なのでanyで受け取る
-    .map((node: any) => ({
-      id: node.id,
-      owner: node.owner.login,
-      name: node.name,
-      visibility: node.visibility,
-      pushedAt: node.pushedAt,
-    }))
+  if (!res.ok) {
+    return {
+      repos: [],
+      pageInfo: { endCursor: null, hasNextPage: false },
+    }
+  }
+
+  const json = await res.json()
+  const totalCount: number = json.total_count ?? 0
+
+  const repos: Repository[] = (json.items ?? []).map(
+    (item: {
+      node_id: string
+      name: string
+      visibility: string
+      owner: { login: string }
+      pushed_at: string | null
+    }) => ({
+      id: item.node_id,
+      name: item.name,
+      visibility: item.visibility ?? 'private',
+      owner: item.owner.login,
+      pushedAt: item.pushed_at,
+    }),
+  )
+
+  const hasNextPage = page * perPage < totalCount
 
   return {
     repos,
-    pageInfo: repoData.pageInfo,
+    pageInfo: {
+      endCursor: hasNextPage ? String(page + 1) : null,
+      hasNextPage,
+    },
   }
 }

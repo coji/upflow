@@ -221,7 +221,6 @@ CREATE TABLE `company_github_users` (
   `login` text NOT NULL,
   `name` text NULL,
   `email` text NULL,
-  `picture_url` text NULL,
   `display_name` text NOT NULL,
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),

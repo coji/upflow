@@ -26,15 +26,24 @@ declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     className: string
   }
+  interface TableMeta<TData extends RowData> {
+    currentMembershipId?: string
+  }
 }
 
 interface DataTableProps {
   columns: ColumnDef<MemberRow>[]
   data: MemberRow[]
   pagination: PaginationProps
+  currentMembershipId: string
 }
 
-export function MembersTable({ columns, data, pagination }: DataTableProps) {
+export function MembersTable({
+  columns,
+  data,
+  pagination,
+  currentMembershipId,
+}: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
   const table = useReactTable({
@@ -46,6 +55,7 @@ export function MembersTable({ columns, data, pagination }: DataTableProps) {
     },
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
+    meta: { currentMembershipId },
   })
 
   return (

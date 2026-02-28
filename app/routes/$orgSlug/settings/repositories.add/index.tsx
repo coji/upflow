@@ -67,10 +67,16 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw new Error('integration not configured')
   }
   const token = integration.privateToken
-  const owners = await getCachedData(
-    'owners',
+  const registeredOwners = [
+    ...new Set(integration.repositories.map((r) => r.owner)),
+  ]
+  const apiOwners = await getCachedData(
+    `owners-${organization.id}`,
     () => getUniqueOwners(token),
     300000, // 5 minutes
+  )
+  const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
+    (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
   )
   if (owner && !owners.includes(owner)) {
     // invalid
@@ -78,7 +84,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 
   const { pageInfo, repos } = await getCachedData(
-    `repos-${owner}-${cursor}-${query}`,
+    `repos-${organization.id}-${owner}-${cursor}-${query}`,
     () =>
       getRepositoriesByOwnerAndKeyword({
         token,
@@ -89,7 +95,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     300000, // 5 minutes
   )
 
-  return { integration, pageInfo, query, owner, owners, repos }
+  return {
+    registeredRepos: integration.repositories,
+    pageInfo,
+    query,
+    owner,
+    owners,
+    repos,
+  }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
@@ -112,7 +125,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       repo: submission.value.name,
     })
   } catch (e) {
-    console.error('Failed to add repository', e)
+    console.error(
+      'Failed to add repository:',
+      e instanceof Error ? e.message : 'Unknown error',
+    )
     return dataWithError(
       {},
       { message: 'Failed to add repository. Please try again.' },
@@ -128,7 +144,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 }
 
 export default function AddRepositoryPage({
-  loaderData: { integration, pageInfo, query, owner, owners, repos },
+  loaderData: { registeredRepos, pageInfo, query, owner, owners, repos },
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -139,8 +155,8 @@ export default function AddRepositoryPage({
       fullWidth
     >
       <Stack>
-        <HStack className="justify-between">
-          <fieldset className="flex-1 space-y-1">
+        <div className="flex items-end justify-between gap-2">
+          <fieldset className="flex flex-1 flex-col gap-1">
             <Label>Organization</Label>
             <Select
               defaultValue={owner}
@@ -159,7 +175,7 @@ export default function AddRepositoryPage({
                 )
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select organization..." />
               </SelectTrigger>
               <SelectContent>
@@ -177,11 +193,17 @@ export default function AddRepositoryPage({
               <input key={key} type="hidden" name={key} value={value} />
             ))}
             <input type="hidden" name="refresh" value="true" />
-            <Button type="submit" variant="outline" size="icon">
+            <Button
+              type="submit"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              aria-label="Refresh repository list"
+            >
               <RefreshCwIcon className="text-muted-foreground scale-70" />
             </Button>
           </Form>
-        </HStack>
+        </div>
 
         <Form
           method="get"
@@ -225,7 +247,7 @@ export default function AddRepositoryPage({
               <RepositoryItem
                 key={repo.id}
                 repo={repo}
-                isAdded={integration.repositories.some(
+                isAdded={registeredRepos.some(
                   (r) => r.owner === repo.owner && r.repo === repo.name,
                 )}
                 isLast={index === repos.length - 1}

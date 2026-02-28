@@ -5,7 +5,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, useActionData } from 'react-router'
+import { Form, useActionData, useNavigation } from 'react-router'
 import Github from '~/app/components/icons/Github'
 import {
   Alert,
@@ -26,7 +26,7 @@ interface IntegrationSettingsProps {
   integration?: {
     provider: string
     method: string
-    privateToken: string | null
+    hasToken: boolean
   }
 }
 
@@ -34,12 +34,18 @@ export const IntegrationSettings = ({
   integration,
 }: IntegrationSettingsProps) => {
   const actionData = useActionData<typeof action>()
+  const navigation = useNavigation()
+  const isSubmitting =
+    navigation.state === 'submitting' &&
+    navigation.formData?.get('intent') === INTENTS.integrationSettings
   const [form, { provider, method, privateToken }] = useForm({
     lastResult:
       actionData?.intent === INTENTS.integrationSettings
         ? actionData.lastResult
         : undefined,
-    defaultValue: integration,
+    defaultValue: integration
+      ? { provider: integration.provider, method: integration.method }
+      : undefined,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
@@ -76,7 +82,14 @@ export const IntegrationSettings = ({
 
         <fieldset className="space-y-1">
           <Label htmlFor={privateToken.id}>Private Token</Label>
-          <Textarea {...getTextareaProps(privateToken)} />
+          <Textarea
+            {...getTextareaProps(privateToken)}
+            placeholder={
+              integration?.hasToken
+                ? 'Token is set. Enter a new value to update.'
+                : undefined
+            }
+          />
           <div className="text-destructive">{privateToken.errors}</div>
         </fieldset>
 
@@ -88,7 +101,9 @@ export const IntegrationSettings = ({
         )}
 
         <div>
-          <Button type="submit">Update</Button>
+          <Button type="submit" loading={isSubmitting}>
+            Update
+          </Button>
         </div>
       </Stack>
     </Form>

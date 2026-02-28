@@ -49,7 +49,10 @@ export const columns: ColumnDef<MemberRow>[] = [
     cell: ({ row }) => {
       const role = row.getValue<string>('role')
       return (
-        <Badge variant={role === 'owner' ? 'default' : 'secondary'}>
+        <Badge
+          variant={role === 'owner' ? 'default' : 'secondary'}
+          className="capitalize"
+        >
           {role}
         </Badge>
       )
@@ -69,6 +72,11 @@ export const columns: ColumnDef<MemberRow>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => <MemberRowActions row={row} />,
+    cell: ({ row, table }) => (
+      <MemberRowActions
+        row={row}
+        currentMembershipId={table.options.meta?.currentMembershipId}
+      />
+    ),
   },
 ]

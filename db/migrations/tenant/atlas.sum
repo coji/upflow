@@ -1,5 +1,7 @@
-h1:BTuLa6s9+ETq3nxs5dYtKvjkAXj+CuntyEkxO8I9bzc=
+h1:yWLPhLYU5KVGz+YTbJAZ1+DY2pPNvfTusZIctEdo8ug=
 20260226112249_initial_tenant.sql h1:dIhBg2gzyh+ZjLzPXdHYafd5e62yIEjk1eFlllEyYX0=
 20260226233619_add_teams.sql h1:n8MRMUA4BgeXYEnL9HJPc8mnXh8lqIfrCcdYtFFoWqw=
 20260227163239.sql h1:ENMZUW7zHK8UjG2TdYlBOZSVPPUCXftIw5U5k2C54oo=
 20260228064258.sql h1:QUDs4NLBw1f3w//yw28F667oskN85tx5C+LRFVexhB8=
+20260228120000_drop_github_user_name_email.sql h1:W2HIW8cGnifE1LUKEfPzz1c2rM95cSpVulxz3rLgH5g=
+20260228130000_drop_picture_url.sql h1:0QS+ShOTGObsOkrZ/dFABUPi8mraSmbusm0Ljrt5xAg=

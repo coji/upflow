@@ -10,21 +10,17 @@ import {
   AlertDialogTitle,
 } from '~/app/components/ui/alert-dialog'
 import { Button } from '~/app/components/ui/button'
-import { cn } from '~/app/libs/utils'
 
 interface ConfirmDialogProps<T> {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: React.ReactNode
-  disabled?: boolean
   desc: React.JSX.Element | string
   cancelBtnText?: string
   confirmText?: React.ReactNode
   destructive?: boolean
-  isLoading?: boolean
   fetcher?: FetcherWithComponents<T>
   action?: string
-  className?: string
   children?: React.ReactNode
 }
 
@@ -33,12 +29,9 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
     title,
     desc,
     children,
-    className,
     confirmText,
     cancelBtnText,
     destructive,
-    isLoading,
-    disabled = false,
     fetcher,
     action,
     ...actions
@@ -52,17 +45,25 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
     }
   }, [fetcher?.state])
 
-  // Close dialog when fetcher completes successfully
   useEffect(() => {
-    if (didSubmitRef.current && fetcher?.state === 'idle' && fetcher.data) {
-      actions.onOpenChange(false)
+    if (didSubmitRef.current && fetcher?.state === 'idle') {
+      const responseData = fetcher.data as Record<string, unknown> | undefined
+      if (responseData && !('error' in responseData)) {
+        actions.onOpenChange(false)
+      }
       didSubmitRef.current = false
     }
   }, [fetcher?.state, fetcher?.data])
 
+  const isSubmitting = fetcher
+    ? fetcher.state !== 'idle'
+    : navigation.state !== 'idle'
+
+  const FormComponent = fetcher ? fetcher.Form : Form
+
   return (
     <AlertDialog {...actions}>
-      <AlertDialogContent className={cn(className && className)}>
+      <AlertDialogContent>
         <AlertDialogHeader className="text-left">
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription asChild>
@@ -70,36 +71,19 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>
+          <AlertDialogCancel disabled={isSubmitting}>
             {cancelBtnText ?? 'Cancel'}
           </AlertDialogCancel>
-          {fetcher ? (
-            <fetcher.Form method="POST" action={action}>
-              {children}
-              <Button
-                type="submit"
-                variant={destructive ? 'destructive' : 'default'}
-                disabled={
-                  disabled || isLoading || fetcher.state === 'submitting'
-                }
-              >
-                {confirmText ?? 'Continue'}
-              </Button>
-            </fetcher.Form>
-          ) : (
-            <Form method="POST" action={action}>
-              {children}
-              <Button
-                type="submit"
-                variant={destructive ? 'destructive' : 'default'}
-                disabled={
-                  disabled || isLoading || navigation.state === 'submitting'
-                }
-              >
-                {confirmText ?? 'Continue'}
-              </Button>
-            </Form>
-          )}
+          <FormComponent method="POST" action={action}>
+            {children}
+            <Button
+              type="submit"
+              variant={destructive ? 'destructive' : 'default'}
+              loading={isSubmitting}
+            >
+              {confirmText ?? 'Continue'}
+            </Button>
+          </FormComponent>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

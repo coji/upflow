@@ -28,11 +28,8 @@ export interface AtlasSchemaRevisions {
 export interface CompanyGithubUsers {
   createdAt: Generated<string>
   displayName: string
-  email: string | null
   isActive: 0 | 1
   login: string
-  name: string | null
-  pictureUrl: string | null
   updatedAt: string
   userId: string | null
 }

@@ -20,7 +20,7 @@ export const DropdownMenuLogout = () => {
         fetcher.submit(null, { method: 'POST', action: href('/logout') })
       }
     >
-      ログアウト
+      Sign Out
     </DropdownMenuItem>
   )
 }

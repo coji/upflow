@@ -23,6 +23,9 @@ importers:
       '@googleapis/sheets':
         specifier: 13.0.1
         version: 13.0.1
+      '@holiday-jp/holiday_jp':
+        specifier: 2.5.1
+        version: 2.5.1
       '@octokit/plugin-rest-endpoint-methods':
         specifier: 17.0.0
         version: 17.0.0(@octokit/core@7.0.6)
@@ -745,6 +748,9 @@ packages:
     peerDependencies:
       graphql: ^15.5.0 || ^16.0.0 || ^17.0.0
       typescript: ^5.0.0
+
+  '@holiday-jp/holiday_jp@2.5.1':
+    resolution: {integrity: sha512-KuXfzsp0xlP830WDZRbsHj99wJzamx4fS55usUJFz+oHZmZ4gJfVdyiyv/rIWK+O7RgfHSi5j5Ajy0ZK/Vlnyg==}
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -5208,6 +5214,8 @@ snapshots:
       '@0no-co/graphql.web': 1.2.0(graphql@16.12.0)
       graphql: 16.12.0
       typescript: 5.9.3
+
+  '@holiday-jp/holiday_jp@2.5.1': {}
 
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
