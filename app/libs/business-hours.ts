@@ -26,7 +26,9 @@ export const calculateBusinessHours = (
     // 土日・祝日を除外
     const dayOfWeek = startDate.day()
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-    const isHoliday = holidayJp.isHoliday(startDate.toDate())
+    const isHoliday = holidayJp.isHoliday(
+      new Date(startDate.year(), startDate.month(), startDate.date()),
+    )
     if (!isWeekend && !isHoliday) {
       totalHours += currentEnd.diff(startDate, 'hour', true)
     }

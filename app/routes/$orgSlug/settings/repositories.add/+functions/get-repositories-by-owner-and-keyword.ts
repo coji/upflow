@@ -34,7 +34,7 @@ export const getRepositoriesByOwnerAndKeyword = async ({
   }
 
   // REST Search API: GET /search/repositories
-  const q = `user:${owner}${keyword ? ` ${keyword} in:name` : ''} sort:updated-desc`
+  const q = `user:${owner}${keyword ? ` ${keyword} in:name` : ''}`
   const page = cursor ? Number.parseInt(cursor, 10) : 1
   const perPage = 10
 
@@ -43,6 +43,7 @@ export const getRepositoriesByOwnerAndKeyword = async ({
   url.searchParams.set('per_page', String(perPage))
   url.searchParams.set('page', String(page))
   url.searchParams.set('sort', 'updated')
+  url.searchParams.set('order', 'desc')
 
   const res = await fetch(url.toString(), {
     headers: {
