@@ -3,7 +3,6 @@ import invariant from 'tiny-invariant'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
-import { createPathBuilder } from '../../helper/path-builder'
 import { createAggregator } from './aggregator'
 import { createFetcher } from './fetcher'
 import { buildPullRequests } from './pullrequest'
@@ -31,20 +30,14 @@ export const createGitHubProvider = (
       organizationId,
       repositoryId: repository.id,
     })
-    const pathBuilder = createPathBuilder({
-      organizationId,
-      repositoryId: repository.id,
-    })
 
     logger.info('fetch started: ', `${repository.owner}/${repository.repo}`)
-    logger.info('path: ', pathBuilder.jsonPath(''))
 
     // PR の最終更新日時を起点とする
     const leastMergeRequest = aggregator.leastUpdatedPullRequest(
       await store.loader.pullrequests().catch(() => []),
     )
-    const lastFetchedAt =
-      leastMergeRequest?.updated_at ?? '2000-01-01T00:00:00Z'
+    const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
     logger.info(`last fetched at: ${lastFetchedAt}`)
 
     if (halt) {
@@ -56,7 +49,7 @@ export const createGitHubProvider = (
     if (repository.releaseDetectionMethod === 'tags') {
       logger.info('fetching all tags...')
       const allTags = await fetcher.tags()
-      await store.save('tags.json', allTags)
+      await store.saveTags(allTags)
       logger.info('fetching all tags completed.')
     }
 
@@ -66,7 +59,6 @@ export const createGitHubProvider = (
       const allDetails = await fetcher.pullrequestsWithDetails()
       logger.info(`fetched ${allDetails.length} PRs with details.`)
 
-      const allPullRequests = []
       for (const detail of allDetails) {
         if (halt) {
           logger.fatal('halted')
@@ -81,7 +73,6 @@ export const createGitHubProvider = (
           logger.info(`${pr.number} commits overflow, fetching individually...`)
           commits = await fetcher.commits(pr.number)
         }
-        await store.save(store.path.commitsJsonFilename(pr.number), commits)
 
         // reviews: オーバーフロー時は個別取得でフォールバック
         let { reviews } = detail
@@ -89,7 +80,6 @@ export const createGitHubProvider = (
           logger.info(`${pr.number} reviews overflow, fetching individually...`)
           reviews = await fetcher.reviews(pr.number)
         }
-        await store.save(store.path.reviewJsonFilename(pr.number), reviews)
 
         // comments: オーバーフロー時は個別取得でフォールバック
         let { comments } = detail
@@ -103,16 +93,14 @@ export const createGitHubProvider = (
           )
           comments = await fetcher.comments(pr.number)
         }
-        await store.save(
-          store.path.discussionsJsonFilename(pr.number),
-          comments,
-        )
 
-        allPullRequests.push(pr)
+        await store.savePrData(pr, {
+          commits,
+          reviews,
+          discussions: comments,
+        })
         logger.info(`${pr.number} saved`)
       }
-
-      await store.save('pullrequests.json', allPullRequests)
     } else {
       // インクリメンタル: PR一覧だけ取得し、更新分のみ個別に詳細取得
       logger.info('fetching all pullrequests...')
@@ -125,29 +113,23 @@ export const createGitHubProvider = (
           return
         }
 
-        const isUpdated = pr.updated_at > lastFetchedAt
+        const isUpdated = pr.updatedAt > lastFetchedAt
         if (!isUpdated) {
-          logger.debug('skip', pr.number, pr.state, pr.updated_at)
+          logger.debug('skip', pr.number, pr.state, pr.updatedAt)
           continue
         }
 
         logger.info(`${pr.number} commits`)
-        const allCommits = await fetcher.commits(pr.number)
-        await store.save(store.path.commitsJsonFilename(pr.number), allCommits)
+        const commits = await fetcher.commits(pr.number)
 
         logger.info(`${pr.number} review comments`)
         const discussions = await fetcher.comments(pr.number)
-        await store.save(
-          store.path.discussionsJsonFilename(pr.number),
-          discussions,
-        )
 
         logger.info(`${pr.number} reviews`)
         const reviews = await fetcher.reviews(pr.number)
-        await store.save(store.path.reviewJsonFilename(pr.number), reviews)
-      }
 
-      await store.save('pullrequests.json', allPullRequests)
+        await store.savePrData(pr, { commits, reviews, discussions })
+      }
     }
 
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
@@ -193,6 +175,9 @@ export const createGitHubProvider = (
         organizationId,
         repositoryId: repository.id,
       })
+      // 一括ロードで analyze 中の個別クエリを O(1) にする
+      await store.preloadAll()
+
       const { pulls, reviews, reviewers, reviewResponses } =
         await buildPullRequests(
           {

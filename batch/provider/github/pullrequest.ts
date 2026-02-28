@@ -101,12 +101,12 @@ function computeDates(
     firstCommittedAt: nullOrDate(
       artifacts.commits.length > 0 ? artifacts.commits[0].date : null,
     ),
-    pullRequestCreatedAt: nullOrDate(pr.created_at) ?? '',
+    pullRequestCreatedAt: nullOrDate(pr.createdAt) ?? '',
     firstReviewedAt: nullOrDate(
-      first(artifacts.discussions)?.created_at ??
-        first(artifacts.reviews)?.submitted_at,
+      first(artifacts.discussions)?.createdAt ??
+        first(artifacts.reviews)?.submittedAt,
     ),
-    mergedAt: nullOrDate(pr.merged_at),
+    mergedAt: nullOrDate(pr.mergedAt),
   }
 }
 
@@ -122,9 +122,9 @@ function buildPullRequestRow(
   return {
     repo: pr.repo,
     number: pr.number,
-    sourceBranch: pr.source_branch,
-    targetBranch: pr.target_branch,
-    state: pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state,
+    sourceBranch: pr.sourceBranch,
+    targetBranch: pr.targetBranch,
+    state: pr.state === 'closed' && !!pr.mergedAt ? 'merged' : pr.state,
     author: pr.author ?? '',
     title: pr.title,
     url: pr.url,
@@ -158,10 +158,10 @@ function buildPullRequestRow(
       releasedAt,
     }),
     repositoryId,
-    updatedAt: nullOrDate(pr.updated_at),
+    updatedAt: nullOrDate(pr.updatedAt),
     additions: pr.additions,
     deletions: pr.deletions,
-    changedFiles: pr.changed_files,
+    changedFiles: pr.changedFiles,
   }
 }
 
@@ -224,7 +224,7 @@ export const buildPullRequests = async (
 
       // 5. リリース日時計算（I/O を含む）
       const releasedAt =
-        pr.merged_at && pr.merge_commit_sha
+        pr.mergedAt && pr.mergeCommitSha
           ? await findReleaseDate(
               pullrequests,
               loaders,
@@ -239,9 +239,9 @@ export const buildPullRequests = async (
         buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
       )
 
-      // 7. レビュー情報を収集（PENDING レビューは submitted_at がないため除外）
+      // 7. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）
       for (const review of rawArtifacts.reviews) {
-        if (!review.user || !review.submitted_at || review.state === 'PENDING')
+        if (!review.user || !review.submittedAt || review.state === 'PENDING')
           continue
         reviews.push({
           id: String(review.id),
@@ -249,7 +249,7 @@ export const buildPullRequests = async (
           repositoryId: config.repositoryId,
           reviewer: review.user,
           state: review.state,
-          submittedAt: review.submitted_at,
+          submittedAt: review.submittedAt,
           url: review.url,
         })
       }

@@ -39,30 +39,28 @@ export function getTenantDb(
   const database = new SQLite(filename, { fileMustExist: true })
   database.pragma('journal_mode = WAL')
 
-  const tenantDb = new Kysely<TenantDB.DB>({
+  const db = new Kysely<TenantDB.DB>({
     dialect: new SqliteDialect({ database }),
     log: (event) => debug(event.query.sql, event.query.parameters),
     plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
   })
 
-  tenantDbCache.set(organizationId, tenantDb)
-  return tenantDb
+  tenantDbCache.set(organizationId, db)
+  return db
 }
 
 export async function closeTenantDb(
   organizationId: OrganizationId,
 ): Promise<void> {
-  const tenantDb = tenantDbCache.get(organizationId)
-  if (tenantDb) {
-    await tenantDb.destroy()
+  const db = tenantDbCache.get(organizationId)
+  if (db) {
+    await db.destroy()
     tenantDbCache.delete(organizationId)
   }
 }
 
 export async function closeAllTenantDbs(): Promise<void> {
-  await Promise.all(
-    [...tenantDbCache.values()].map((tenantDb) => tenantDb.destroy()),
-  )
+  await Promise.all([...tenantDbCache.values()].map((db) => db.destroy()))
   tenantDbCache.clear()
 }
 

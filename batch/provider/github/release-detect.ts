@@ -1,5 +1,6 @@
 import * as R from 'remeda'
 import dayjs from '~/app/libs/dayjs'
+import { logger } from '~/batch/helper/logger'
 import type { ShapedGitHubPullRequest } from './model'
 import type { PullRequestLoaders } from './types'
 
@@ -11,12 +12,12 @@ const mergedPullRequests = (
     allPullRequests,
     R.filter(
       (pr) =>
-        pr.target_branch === targetBranch &&
+        pr.targetBranch === targetBranch &&
         pr.state === 'closed' &&
-        pr.merged_at !== null,
+        pr.mergedAt !== null,
     ), // 一旦mainブランチ固定
-    // biome-ignore lint/style/noNonNullAssertion: merged_atはnullじゃないことが保証されている
-    R.sortBy((pr) => pr.merged_at!),
+    // biome-ignore lint/style/noNonNullAssertion: mergedAtはnullじゃないことが保証されている
+    R.sortBy((pr) => pr.mergedAt!),
   )
 }
 
@@ -36,11 +37,9 @@ const findReleaseDateByBranch = async (
 ) => {
   for (const m of mergedPullRequests(allPullRequests, branch)) {
     if (
-      (await loaders.commits(m.number)).some(
-        (c) => c.sha === pr.merge_commit_sha,
-      )
+      (await loaders.commits(m.number)).some((c) => c.sha === pr.mergeCommitSha)
     ) {
-      return m.merged_at
+      return m.mergedAt
     }
   }
   return null
@@ -60,16 +59,22 @@ const findReleaseDateByTag = async (
   pr: ShapedGitHubPullRequest,
   tagCondition: string,
 ) => {
-  if (pr.merged_at === null) return null
+  if (pr.mergedAt === null) return null
 
-  const tagRegexp = new RegExp(tagCondition)
+  let tagRegexp: RegExp
+  try {
+    tagRegexp = new RegExp(tagCondition)
+  } catch {
+    logger.error(`Invalid tag regex pattern: ${tagCondition}`)
+    return null
+  }
   const allReleaseTags = (await loaders.tags())
     .filter((t) => tagRegexp.test(t.name)) // リリース用のタグを抽出
-    .sort((a, b) => dayjs(a.committed_at).unix() - dayjs(b.committed_at).unix()) // 古い順に並べる
+    .sort((a, b) => dayjs(a.committedAt).unix() - dayjs(b.committedAt).unix()) // 古い順に並べる
 
   for (const releaseTag of allReleaseTags) {
-    if (dayjs(pr.merged_at).unix() <= dayjs(releaseTag.committed_at).unix()) {
-      return releaseTag.committed_at
+    if (dayjs(pr.mergedAt).unix() <= dayjs(releaseTag.committedAt).unix()) {
+      return releaseTag.committedAt
     }
   }
   return null

@@ -46,6 +46,22 @@ export interface ExportSettings {
   updatedAt: string
 }
 
+export interface GithubRawData {
+  commits: ColumnType<unknown, string, string>
+  discussions: ColumnType<unknown, string, string>
+  fetchedAt: Generated<string>
+  pullRequest: ColumnType<unknown, string, string>
+  pullRequestNumber: number
+  repositoryId: string
+  reviews: ColumnType<unknown, string, string>
+}
+
+export interface GithubRawTags {
+  fetchedAt: Generated<string>
+  repositoryId: string
+  tags: ColumnType<unknown, string, string>
+}
+
 export interface Integrations {
   id: string
   method: 'token'
@@ -131,6 +147,8 @@ export interface DB {
   atlasSchemaRevisions: AtlasSchemaRevisions
   companyGithubUsers: CompanyGithubUsers
   exportSettings: ExportSettings
+  githubRawData: GithubRawData
+  githubRawTags: GithubRawTags
   integrations: Integrations
   organizationSettings: OrganizationSettings
   pullRequestReviewers: PullRequestReviewers

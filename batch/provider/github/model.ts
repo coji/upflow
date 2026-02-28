@@ -22,15 +22,15 @@ export type ShapedGitHubPullRequest = {
   assignees: string[]
   reviewers: string[]
   draft: boolean
-  source_branch: GitHubPullRequest['head']['ref']
-  target_branch: GitHubPullRequest['base']['ref']
-  created_at: GitHubPullRequest['created_at']
-  updated_at: GitHubPullRequest['updated_at']
-  merged_at: GitHubPullRequest['merged_at'] | null
-  merge_commit_sha: GitHubPullRequest['merge_commit_sha'] | null
+  sourceBranch: GitHubPullRequest['head']['ref']
+  targetBranch: GitHubPullRequest['base']['ref']
+  createdAt: GitHubPullRequest['created_at']
+  updatedAt: GitHubPullRequest['updated_at']
+  mergedAt: GitHubPullRequest['merged_at'] | null
+  mergeCommitSha: GitHubPullRequest['merge_commit_sha'] | null
   additions: number | null
   deletions: number | null
-  changed_files: number | null
+  changedFiles: number | null
 }
 
 export type ShapedGitHubCommit = {
@@ -45,7 +45,7 @@ export type ShapedGitHubIssueComment = {
   user: NonNullable<GithubIssueComment['user']>['login'] | null
   isBot: boolean
   url: GithubIssueComment['html_url']
-  created_at: GithubIssueComment['created_at']
+  createdAt: GithubIssueComment['created_at']
 }
 
 export type ShapedGitHubReviewComment = {
@@ -53,7 +53,7 @@ export type ShapedGitHubReviewComment = {
   user: GitHubReviewComment['user']['login'] | null
   isBot: boolean
   url: GitHubReviewComment['html_url']
-  created_at: GitHubReviewComment['created_at']
+  createdAt: GitHubReviewComment['created_at']
 }
 
 export type ShapedGitHubReview = {
@@ -67,14 +67,14 @@ export type ShapedGitHubReview = {
     | 'DISMISSED'
     | 'PENDING'
   url: GitHubReview['html_url']
-  submitted_at: NonNullable<GitHubReview['submitted_at']> | null
+  submittedAt: NonNullable<GitHubReview['submitted_at']> | null
 }
 
 // タグ
 export type ShapedGitHubTag = {
   name: string
   sha: string
-  committed_at: string
+  committedAt: string
 }
 
 // PR + 関連データを一括取得した結果

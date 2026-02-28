@@ -18,6 +18,11 @@ export default defineConfig({
       'organization_settings.release_detection_method':
         'Generated<"branch" | "tags">',
       'repositories.release_detection_method': 'Generated<"branch" | "tags">',
+      'github_raw_data.pull_request': 'ColumnType<unknown, string, string>',
+      'github_raw_data.commits': 'ColumnType<unknown, string, string>',
+      'github_raw_data.reviews': 'ColumnType<unknown, string, string>',
+      'github_raw_data.discussions': 'ColumnType<unknown, string, string>',
+      'github_raw_tags.tags': 'ColumnType<unknown, string, string>',
     },
   },
 })
