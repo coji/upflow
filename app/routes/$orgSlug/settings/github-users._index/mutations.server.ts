@@ -1,3 +1,4 @@
+import { db } from '~/app/services/db.server'
 import {
   getTenantDb,
   type OrganizationId,
@@ -64,6 +65,20 @@ export const toggleGithubUserActive = async (params: {
   organizationId: OrganizationId
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
+
+  // When deactivating, revoke all sessions for the user immediately
+  if (params.isActive === 0) {
+    const row = await tenantDb
+      .selectFrom('companyGithubUsers')
+      .select('userId')
+      .where('login', '=', params.login)
+      .executeTakeFirst()
+
+    if (row?.userId) {
+      await db.deleteFrom('sessions').where('userId', '=', row.userId).execute()
+    }
+  }
+
   await tenantDb
     .updateTable('companyGithubUsers')
     .set({
