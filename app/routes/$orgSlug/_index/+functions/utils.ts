@@ -31,35 +31,4 @@ export function getEndOfWeek(now = new Date(), timezone = 'Asia/Tokyo') {
   return startOfWeek.add(7, 'day').subtract(1, 'second')
 }
 
-// 2つの日時間の時間を計算する関数（土日を除外）
-export const calculateBusinessHours = (
-  start: string,
-  end: string,
-  timezone = 'Asia/Tokyo',
-): number => {
-  // 開始/終了日時をタイムゾーンを考慮して解析
-  let startDate = dayjs(start).tz(timezone)
-  const endDate = dayjs(end).tz(timezone)
-
-  let totalHours = 0
-
-  // 1日ずつ進めて計算
-  while (startDate.isBefore(endDate)) {
-    // 現在の日の終わり (23:59:59)
-    const dayEnd = startDate.endOf('day')
-
-    // 今日の終わりか終了日時の早い方
-    const currentEnd = dayEnd.isBefore(endDate) ? dayEnd : endDate
-
-    // 土日を除外 (day() === 0 は日曜日、6 は土曜日)
-    const dayOfWeek = startDate.day()
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      totalHours += currentEnd.diff(startDate, 'hour', true)
-    }
-
-    // 翌日の0時に設定
-    startDate = startDate.add(1, 'day').startOf('day')
-  }
-
-  return totalHours
-}
+export { calculateBusinessHours } from '~/app/libs/business-hours'
