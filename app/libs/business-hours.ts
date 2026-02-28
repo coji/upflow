@@ -1,7 +1,8 @@
+import holidayJp from '@holiday-jp/holiday_jp'
 import dayjs from '~/app/libs/dayjs'
 
 /**
- * 2つの日時間の営業時間を計算する（土日を除外）
+ * 2つの日時間の営業時間を計算する（土日・日本の祝日を除外）
  */
 export const calculateBusinessHours = (
   start: string,
@@ -22,9 +23,11 @@ export const calculateBusinessHours = (
     // 今日の終わりか終了日時の早い方
     const currentEnd = dayEnd.isBefore(endDate) ? dayEnd : endDate
 
-    // 土日を除外 (day() === 0 は日曜日、6 は土曜日)
+    // 土日・祝日を除外
     const dayOfWeek = startDate.day()
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+    const isHoliday = holidayJp.isHoliday(startDate.toDate())
+    if (!isWeekend && !isHoliday) {
       totalHours += currentEnd.diff(startDate, 'hour', true)
     }
 
