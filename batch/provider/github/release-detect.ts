@@ -1,5 +1,6 @@
 import * as R from 'remeda'
 import dayjs from '~/app/libs/dayjs'
+import { logger } from '~/batch/helper/logger'
 import type { ShapedGitHubPullRequest } from './model'
 import type { PullRequestLoaders } from './types'
 
@@ -60,7 +61,13 @@ const findReleaseDateByTag = async (
 ) => {
   if (pr.mergedAt === null) return null
 
-  const tagRegexp = new RegExp(tagCondition)
+  let tagRegexp: RegExp
+  try {
+    tagRegexp = new RegExp(tagCondition)
+  } catch {
+    logger.error(`Invalid tag regex pattern: ${tagCondition}`)
+    return null
+  }
   const allReleaseTags = (await loaders.tags())
     .filter((t) => tagRegexp.test(t.name)) // リリース用のタグを抽出
     .sort((a, b) => dayjs(a.committedAt).unix() - dayjs(b.committedAt).unix()) // 古い順に並べる

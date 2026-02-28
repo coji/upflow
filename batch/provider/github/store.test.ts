@@ -2,7 +2,15 @@ import SQLite from 'better-sqlite3'
 import { mkdirSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubPullRequest,
@@ -19,6 +27,10 @@ writeFileSync(testDbPath, '')
 
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
+
+afterAll(() => {
+  vi.unstubAllEnvs()
+})
 
 const { closeTenantDb } = await import('~/app/services/tenant-db.server')
 type OrganizationId = import('~/app/services/tenant-db.server').OrganizationId
