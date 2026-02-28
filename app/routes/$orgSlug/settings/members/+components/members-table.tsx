@@ -60,7 +60,7 @@ export function MembersTable({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} />
+      <DataTableToolbar />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

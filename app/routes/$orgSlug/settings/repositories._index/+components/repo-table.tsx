@@ -60,7 +60,7 @@ export function RepoTable({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} teams={teams} />
+      <DataTableToolbar teams={teams} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

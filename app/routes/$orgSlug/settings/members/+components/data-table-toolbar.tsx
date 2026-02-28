@@ -1,6 +1,4 @@
-import type { Table } from '@tanstack/react-table'
 import { XIcon } from 'lucide-react'
-import { AppDataTableViewOptions } from '~/app/components/AppDataTableViewOption'
 import { SearchInput } from '~/app/components/search-input'
 import {
   Select,
@@ -12,13 +10,7 @@ import {
 import { Button } from '~/app/components/ui/button'
 import { useDataTableState } from '../+hooks/use-data-table-state'
 
-interface DataTableToolbarProps<TData> {
-  table: Table<TData>
-}
-
-export function DataTableToolbar<TData>({
-  table,
-}: DataTableToolbarProps<TData>) {
+export function DataTableToolbar() {
   const {
     queries,
     filters,
@@ -68,7 +60,6 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <AppDataTableViewOptions table={table} />
     </div>
   )
 }

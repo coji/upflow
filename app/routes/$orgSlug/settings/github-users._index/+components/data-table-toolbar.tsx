@@ -2,7 +2,6 @@ import type { Table } from '@tanstack/react-table'
 import { ExternalLinkIcon, LoaderIcon, PlusIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFetcher, useSearchParams } from 'react-router'
-import { AppDataTableViewOptions } from '~/app/components/AppDataTableViewOption'
 import { SearchInput } from '~/app/components/search-input'
 import {
   Select,
@@ -210,7 +209,6 @@ export function DataTableToolbar<TData>({
             </Command>
           </PopoverContent>
         </Popover>
-        <AppDataTableViewOptions table={table} />
       </div>
     </div>
   )
