@@ -38,10 +38,14 @@ export const listFilteredMembers = async ({
     query = query.where('users.name', 'like', `%${name}%`)
   }
 
-  const validRoles = ['owner', 'admin', 'member'] as const
-  const roleValues = (filters.role ?? []).filter(
-    (r): r is (typeof validRoles)[number] =>
-      (validRoles as readonly string[]).includes(r),
+  type Role = 'owner' | 'admin' | 'member'
+  const validRoles: ReadonlySet<string> = new Set<Role>([
+    'owner',
+    'admin',
+    'member',
+  ])
+  const roleValues = (filters.role ?? []).filter((r): r is Role =>
+    validRoles.has(r),
   )
   if (roleValues.length > 0) {
     query = query.where('members.role', 'in', roleValues)
