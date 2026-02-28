@@ -10,19 +10,20 @@ import {
   CardTitle,
   Center,
 } from '~/app/components/ui'
-import { auth, getSession } from '~/app/libs/auth.server'
+import { auth, getSession, safeRedirectTo } from '~/app/libs/auth.server'
 import type { Route } from './+types/login'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const session = await getSession(request)
-  if (session) {
-    throw redirect('/')
-  }
-
   const url = new URL(request.url)
+  const redirectTo = safeRedirectTo(url.searchParams.get('redirectTo'))
   const error = url.searchParams.get('error')
 
-  return { error }
+  const session = await getSession(request)
+  if (session) {
+    throw redirect(redirectTo)
+  }
+
+  return { error, redirectTo }
 }
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -31,10 +32,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     throw redirect('/')
   }
 
+  const formData = await request.formData()
+  const redirectTo = safeRedirectTo(formData.get('redirectTo') as string | null)
+
   const response = await auth.api.signInSocial({
     body: {
       provider: 'github',
-      callbackURL: '/',
+      callbackURL: redirectTo,
       errorCallbackURL: '/login',
     },
     asResponse: true,
@@ -45,7 +49,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   const data = await response.json()
-  return redirect(data.url || '/', { headers: response.headers })
+  return redirect(data.url || redirectTo, { headers: response.headers })
 }
 
 const errorMessages: Record<string, string> = {
@@ -54,7 +58,7 @@ const errorMessages: Record<string, string> = {
 }
 
 export default function LoginPage({
-  loaderData: { error },
+  loaderData: { error, redirectTo },
 }: Route.ComponentProps) {
   return (
     <AppLayout>
@@ -76,6 +80,7 @@ export default function LoginPage({
 
           <CardContent>
             <form method="POST">
+              <input type="hidden" name="redirectTo" value={redirectTo} />
               <Button className="w-full" variant="default" type="submit">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
