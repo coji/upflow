@@ -124,10 +124,7 @@ function buildPullRequestRow(
     number: pr.number,
     sourceBranch: pr.source_branch,
     targetBranch: pr.target_branch,
-    state: (pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state) as
-      | 'open'
-      | 'closed'
-      | 'merged',
+    state: pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state,
     author: pr.author ?? '',
     title: pr.title,
     url: pr.url,
@@ -244,17 +241,14 @@ export const buildPullRequests = async (
 
       // 7. レビュー情報を収集（PENDING レビューは submitted_at がないため除外）
       for (const review of rawArtifacts.reviews) {
-        if (!review.user || !review.submitted_at) continue
+        if (!review.user || !review.submitted_at || review.state === 'PENDING')
+          continue
         reviews.push({
           id: String(review.id),
           pullRequestNumber: pr.number,
           repositoryId: config.repositoryId,
           reviewer: review.user,
-          state: review.state as
-            | 'APPROVED'
-            | 'CHANGES_REQUESTED'
-            | 'COMMENTED'
-            | 'DISMISSED',
+          state: review.state,
           submittedAt: review.submitted_at,
           url: review.url,
         })

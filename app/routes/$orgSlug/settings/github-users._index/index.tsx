@@ -74,7 +74,12 @@ const deleteSchema = z.object({
 
 const toggleActiveSchema = z.object({
   login: z.string().min(1),
-  isActive: z.coerce.number().int().min(0).max(1) as z.ZodType<0 | 1>,
+  isActive: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(1)
+    .pipe(z.union([z.literal(0), z.literal(1)])),
 })
 
 export const action = async ({ request, params }: Route.ActionArgs) => {

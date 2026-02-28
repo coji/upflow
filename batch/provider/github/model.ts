@@ -15,7 +15,7 @@ export type ShapedGitHubPullRequest = {
   organization: GitHubPullRequest['base']['repo']['owner']['login']
   repo: GitHubPullRequest['base']['repo']['name']
   number: GitHubPullRequest['number']
-  state: GitHubPullRequest['state']
+  state: 'open' | 'closed'
   title: GitHubPullRequest['title']
   url: GitHubPullRequest['html_url']
   author: NonNullable<GitHubPullRequest['user']>['login'] | null
@@ -60,7 +60,12 @@ export type ShapedGitHubReview = {
   id: GitHubReview['id']
   user: NonNullable<GitHubReview['user']>['login'] | null
   isBot: boolean
-  state: GitHubReview['state']
+  state:
+    | 'APPROVED'
+    | 'CHANGES_REQUESTED'
+    | 'COMMENTED'
+    | 'DISMISSED'
+    | 'PENDING'
   url: GitHubReview['html_url']
   submitted_at: NonNullable<GitHubReview['submitted_at']> | null
 }
