@@ -67,10 +67,16 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw new Error('integration not configured')
   }
   const token = integration.privateToken
-  const owners = await getCachedData(
+  const registeredOwners = [
+    ...new Set(integration.repositories.map((r) => r.owner)),
+  ]
+  const apiOwners = await getCachedData(
     'owners',
     () => getUniqueOwners(token),
     300000, // 5 minutes
+  )
+  const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
+    (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
   )
   if (owner && !owners.includes(owner)) {
     // invalid
@@ -139,8 +145,8 @@ export default function AddRepositoryPage({
       fullWidth
     >
       <Stack>
-        <HStack className="justify-between">
-          <fieldset className="flex-1 space-y-1">
+        <div className="flex items-end justify-between gap-2">
+          <fieldset className="flex flex-1 flex-col gap-1">
             <Label>Organization</Label>
             <Select
               defaultValue={owner}
@@ -159,7 +165,7 @@ export default function AddRepositoryPage({
                 )
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select organization..." />
               </SelectTrigger>
               <SelectContent>
@@ -177,11 +183,16 @@ export default function AddRepositoryPage({
               <input key={key} type="hidden" name={key} value={value} />
             ))}
             <input type="hidden" name="refresh" value="true" />
-            <Button type="submit" variant="outline" size="icon">
+            <Button
+              type="submit"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+            >
               <RefreshCwIcon className="text-muted-foreground scale-70" />
             </Button>
           </Form>
-        </HStack>
+        </div>
 
         <Form
           method="get"
