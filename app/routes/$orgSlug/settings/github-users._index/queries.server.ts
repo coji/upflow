@@ -7,6 +7,7 @@ import {
 interface ListFilteredGithubUsersArgs {
   organizationId: OrganizationId
   search: string
+  isActive?: 0 | 1
   currentPage: number
   pageSize: number
   sortBy?: string
@@ -16,6 +17,7 @@ interface ListFilteredGithubUsersArgs {
 export const listFilteredGithubUsers = async ({
   organizationId,
   search,
+  isActive,
   currentPage,
   pageSize,
   sortBy,
@@ -41,6 +43,10 @@ export const listFilteredGithubUsers = async ({
     )
   }
 
+  if (isActive !== undefined) {
+    query = query.where('companyGithubUsers.isActive', '=', isActive)
+  }
+
   let countQuery = tenantDb
     .selectFrom('companyGithubUsers')
     .select((eb) => eb.fn.count<string>('companyGithubUsers.login').as('count'))
@@ -52,6 +58,10 @@ export const listFilteredGithubUsers = async ({
         eb('companyGithubUsers.displayName', 'like', `%${search}%`),
       ]),
     )
+  }
+
+  if (isActive !== undefined) {
+    countQuery = countQuery.where('isActive', '=', isActive)
   }
 
   const sortFieldMap: Record<string, string> = {

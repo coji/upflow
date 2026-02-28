@@ -1,9 +1,16 @@
 import type { Table } from '@tanstack/react-table'
 import { ExternalLinkIcon, LoaderIcon, PlusIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useFetcher } from 'react-router'
+import { useFetcher, useSearchParams } from 'react-router'
 import { AppDataTableViewOptions } from '~/app/components/AppDataTableViewOption'
 import { SearchInput } from '~/app/components/search-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Button } from '~/app/components/ui/button'
 import {
@@ -28,8 +35,10 @@ interface DataTableToolbarProps<TData> {
 export function DataTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { queries, updateQueries, isFiltered, resetFilters } =
     useDataTableState()
+  const currentLoginStatus = searchParams.get('loginStatus') ?? '__all__'
   const searchFetcher = useFetcher<{
     candidates: { login: string; avatarUrl: string }[]
   }>()
@@ -85,6 +94,32 @@ export function DataTableToolbar<TData>({
           placeholder="Filter GitHub users..."
           className="w-48 lg:w-64"
         />
+        <Select
+          value={currentLoginStatus}
+          onValueChange={(value) => {
+            setSearchParams(
+              (prev) => {
+                if (value === '__all__') {
+                  prev.delete('loginStatus')
+                } else {
+                  prev.set('loginStatus', value)
+                }
+                prev.delete('page')
+                return prev
+              },
+              { preventScrollReset: true },
+            )
+          }}
+        >
+          <SelectTrigger className="h-8 w-32">
+            <SelectValue placeholder="Login" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All</SelectItem>
+            <SelectItem value="allowed">Allowed</SelectItem>
+            <SelectItem value="denied">Denied</SelectItem>
+          </SelectContent>
+        </Select>
         {isFiltered && (
           <Button
             variant="ghost"

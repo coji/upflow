@@ -41,8 +41,9 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     return Response.json({ candidates })
   }
 
-  const { search } = QuerySchema.parse({
+  const { search, loginStatus } = QuerySchema.parse({
     search: searchParams.get('search'),
+    loginStatus: searchParams.get('loginStatus'),
   })
 
   const { sort_by: sortBy, sort_order: sortOrder } = SortSchema.parse({
@@ -55,9 +56,13 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     per_page: searchParams.get('per_page'),
   })
 
+  const isActive: 0 | 1 | undefined =
+    loginStatus === 'allowed' ? 1 : loginStatus === 'denied' ? 0 : undefined
+
   const { data: githubUsers, pagination } = await listFilteredGithubUsers({
     organizationId: organization.id,
     search,
+    isActive,
     currentPage,
     pageSize,
     sortBy,

@@ -11,6 +11,10 @@ export const QuerySchema = z.object({
     (val) => (val === null ? undefined : val),
     z.string().optional().default(''),
   ),
+  loginStatus: z.preprocess(
+    (val) => (val === null ? undefined : val),
+    z.string().optional().default(''),
+  ),
 })
 
 export const SortSchema = z.object({
@@ -53,6 +57,7 @@ export function useDataTableState() {
   const queries: Queries = useMemo(() => {
     return QuerySchema.parse({
       search: searchParams.get('search'),
+      loginStatus: searchParams.get('loginStatus'),
     })
   }, [searchParams])
 
