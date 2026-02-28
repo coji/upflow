@@ -124,7 +124,10 @@ function buildPullRequestRow(
     number: pr.number,
     sourceBranch: pr.source_branch,
     targetBranch: pr.target_branch,
-    state: pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state,
+    state: (pr.state === 'closed' && !!pr.merged_at ? 'merged' : pr.state) as
+      | 'open'
+      | 'closed'
+      | 'merged',
     author: pr.author ?? '',
     title: pr.title,
     url: pr.url,
@@ -183,7 +186,7 @@ export const buildPullRequests = async (
     pullRequestNumber: number
     repositoryId: string
     reviewer: string
-    state: string
+    state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
     submittedAt: string
     url: string
   }[] = []
@@ -247,7 +250,11 @@ export const buildPullRequests = async (
           pullRequestNumber: pr.number,
           repositoryId: config.repositoryId,
           reviewer: review.user,
-          state: review.state,
+          state: review.state as
+            | 'APPROVED'
+            | 'CHANGES_REQUESTED'
+            | 'COMMENTED'
+            | 'DISMISSED',
           submittedAt: review.submitted_at,
           url: review.url,
         })

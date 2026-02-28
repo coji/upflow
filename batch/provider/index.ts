@@ -30,7 +30,7 @@ export interface Provider {
       pullRequestNumber: number
       repositoryId: string
       reviewer: string
-      state: string
+      state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
       submittedAt: string
       url: string
     }[]

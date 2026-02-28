@@ -38,7 +38,7 @@ export const listFilteredMembers = async ({
     query = query.where('users.name', 'like', `%${name}%`)
   }
 
-  const roleValues = filters.role ?? []
+  const roleValues = (filters.role ?? []) as ('owner' | 'admin' | 'member')[]
   if (roleValues.length > 0) {
     query = query.where('members.role', 'in', roleValues)
   }

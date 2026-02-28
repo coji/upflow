@@ -90,7 +90,7 @@ function ChangeRoleDialog({
   member: MemberRow
   fetcher: ReturnType<typeof useFetcher>
 }) {
-  const [role, setRole] = useState(member.role)
+  const [role, setRole] = useState<string>(member.role)
 
   return (
     <ConfirmDialog

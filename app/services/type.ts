@@ -56,7 +56,7 @@ export interface Members {
   createdAt: string;
   id: string;
   organizationId: string;
-  role: string;
+  role: "owner" | "admin" | "member";
   userId: string;
 }
 
@@ -108,7 +108,7 @@ export interface Users {
   id: string;
   image: string | null;
   name: string;
-  role: string;
+  role: "admin" | "user";
   updatedAt: string;
 }
 
