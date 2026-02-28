@@ -94,7 +94,6 @@ export const columns: ColumnDef<GithubUserRow>[] = [
         {row.original.isActive ? 'Allowed' : 'Denied'}
       </Badge>
     ),
-    enableSorting: false,
   },
   {
     accessorKey: 'createdAt',
