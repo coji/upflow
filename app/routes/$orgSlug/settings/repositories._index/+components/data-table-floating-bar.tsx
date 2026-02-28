@@ -53,7 +53,7 @@ export function DataTableFloatingBar({
     <div className="fixed inset-x-0 bottom-6 z-50 mx-4 flex justify-center sm:mx-auto sm:max-w-md">
       <div className="bg-background flex w-full items-center gap-2 rounded-lg border px-3 py-2 shadow-lg">
         <span className="text-muted-foreground min-w-0 flex-1 text-sm font-medium whitespace-nowrap">
-          {selectedCount} 件選択中
+          {selectedCount} selected
         </span>
 
         <div className="flex shrink-0 items-center gap-1">
@@ -62,11 +62,11 @@ export function DataTableFloatingBar({
               {isSubmitting ? (
                 <LoaderIcon className="h-4 w-4 animate-spin" />
               ) : (
-                <SelectValue placeholder="Team 設定" />
+                <SelectValue placeholder="Set Team" />
               )}
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">未設定</SelectItem>
+              <SelectItem value="__none__">Unassigned</SelectItem>
               {teams.map((team) => (
                 <SelectItem key={team.id} value={team.id}>
                   {team.name}
@@ -84,7 +84,7 @@ export function DataTableFloatingBar({
             disabled={isSubmitting}
           >
             <XIcon className="h-4 w-4" />
-            解除
+            Deselect
           </Button>
         </div>
       </div>

@@ -136,13 +136,13 @@ export function DataTableToolbar<TData>({
           <PopoverTrigger asChild>
             <Button size="sm">
               <PlusIcon className="mr-1 h-4 w-4" />
-              追加
+              Add
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-72 p-0" align="end">
             <Command shouldFilter={false}>
               <CommandInput
-                placeholder="GitHub login を検索..."
+                placeholder="Search GitHub login..."
                 value={searchValue}
                 onValueChange={setSearchValue}
                 onCompositionStart={() => {
@@ -160,7 +160,7 @@ export function DataTableToolbar<TData>({
                   </div>
                 ) : searchValue.trim() ? (
                   <>
-                    <CommandEmpty>見つかりませんでした</CommandEmpty>
+                    <CommandEmpty>No results found</CommandEmpty>
                     <CommandGroup>
                       {candidates.map((user) => (
                         <CommandItem
@@ -183,7 +183,7 @@ export function DataTableToolbar<TData>({
                             <span>{user.login}</span>
                             {existingLogins.has(user.login) && (
                               <span className="text-muted-foreground ml-2 text-xs">
-                                登録済み
+                                Registered
                               </span>
                             )}
                           </div>
@@ -202,7 +202,7 @@ export function DataTableToolbar<TData>({
                   </>
                 ) : (
                   <div className="text-muted-foreground py-6 text-center text-sm">
-                    GitHub login を入力してください
+                    Enter a GitHub login
                   </div>
                 )}
               </CommandList>

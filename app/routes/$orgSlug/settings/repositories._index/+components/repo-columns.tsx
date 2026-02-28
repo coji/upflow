@@ -39,10 +39,10 @@ function TeamSelect({
       }}
     >
       <SelectTrigger className="h-8 w-36">
-        <SelectValue placeholder="未設定" />
+        <SelectValue placeholder="Unassigned" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="__none__">未設定</SelectItem>
+        <SelectItem value="__none__">Unassigned</SelectItem>
         {teams.map((team) => (
           <SelectItem key={team.id} value={team.id}>
             {team.name}

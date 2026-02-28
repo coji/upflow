@@ -90,7 +90,7 @@ function AddTeamForm() {
       <HStack>
         <Input
           name="name"
-          placeholder="チーム名を入力"
+          placeholder="Enter team name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="max-w-xs"
@@ -103,7 +103,7 @@ function AddTeamForm() {
           disabled={!name.trim()}
         >
           <PlusIcon size={16} />
-          追加
+          Add
         </Button>
       </HStack>
     </fetcher.Form>
@@ -163,9 +163,9 @@ function TeamRow({
         <ConfirmDialog
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
-          title="チームの削除"
-          desc={`「${team.name}」を削除しますか？`}
-          confirmText="削除"
+          title="Delete Team"
+          desc={`Are you sure you want to delete "${team.name}"?`}
+          confirmText="Delete"
           destructive
           fetcher={deleteFetcher}
         >
@@ -181,10 +181,7 @@ export default function TeamsPage({
   loaderData: { teams },
 }: Route.ComponentProps) {
   return (
-    <ContentSection
-      title="Teams"
-      desc="リポジトリをチーム（事業部）ごとにグループ化して管理します。"
-    >
+    <ContentSection title="Teams" desc="Group and manage repositories by team.">
       <Stack gap="4">
         <AddTeamForm />
 
@@ -192,8 +189,8 @@ export default function TeamsPage({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>チーム名</TableHead>
-                <TableHead className="w-24">表示順</TableHead>
+                <TableHead>Team Name</TableHead>
+                <TableHead className="w-24">Order</TableHead>
                 <TableHead className="w-32" />
               </TableRow>
             </TableHeader>
@@ -203,7 +200,7 @@ export default function TeamsPage({
               ) : (
                 <TableRow>
                   <TableCell colSpan={3} className="h-24 text-center">
-                    チームがまだ登録されていません。
+                    No teams registered yet.
                   </TableCell>
                 </TableRow>
               )}
