@@ -2,15 +2,19 @@ import type { Table } from '@tanstack/react-table'
 import { XIcon } from 'lucide-react'
 import { AppDataTableViewOptions } from '~/app/components/AppDataTableViewOption'
 import { SearchInput } from '~/app/components/search-input'
+import { TeamFilter } from '~/app/components/team-filter'
 import { Button } from '~/app/components/ui/button'
 import { useDataTableState } from '../+hooks/use-data-table-state'
+import type { TeamRow } from '../../teams._index/queries.server'
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
+  teams: TeamRow[]
 }
 
 export function DataTableToolbar<TData>({
   table,
+  teams,
 }: DataTableToolbarProps<TData>) {
   const { queries, updateQueries, isFiltered, resetFilters } =
     useDataTableState()
@@ -26,6 +30,7 @@ export function DataTableToolbar<TData>({
           placeholder="Filter repositories..."
           className="w-48 lg:w-64"
         />
+        <TeamFilter teams={teams} />
         {isFiltered && (
           <Button
             variant="ghost"

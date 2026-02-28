@@ -24,8 +24,9 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const searchParams = new URL(request.url).searchParams
 
-  const { repo } = QuerySchema.parse({
+  const { repo, team } = QuerySchema.parse({
     repo: searchParams.get('repo'),
+    team: searchParams.get('team'),
   })
 
   const { sort_by: sortBy, sort_order: sortOrder } = SortSchema.parse({
@@ -41,6 +42,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { data: repositories, pagination } = await listFilteredRepositories({
     organizationId: organization.id,
     repo,
+    teamId: team || undefined,
     currentPage,
     pageSize,
     sortBy,

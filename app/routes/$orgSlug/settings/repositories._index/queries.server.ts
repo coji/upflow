@@ -7,6 +7,7 @@ import {
 interface ListFilteredRepositoriesArgs {
   organizationId: OrganizationId
   repo: string
+  teamId?: string
   currentPage: number
   pageSize: number
   sortBy?: string
@@ -16,6 +17,7 @@ interface ListFilteredRepositoriesArgs {
 export const listFilteredRepositories = async ({
   organizationId,
   repo,
+  teamId,
   currentPage,
   pageSize,
   sortBy,
@@ -37,6 +39,10 @@ export const listFilteredRepositories = async ({
     )
   }
 
+  if (teamId) {
+    query = query.where('repositories.teamId', '=', teamId)
+  }
+
   let countQuery = tenantDb
     .selectFrom('repositories')
     .select((eb) => eb.fn.count<string>('repositories.id').as('count'))
@@ -48,6 +54,10 @@ export const listFilteredRepositories = async ({
         eb('repositories.repo', 'like', `%${repo}%`),
       ]),
     )
+  }
+
+  if (teamId) {
+    countQuery = countQuery.where('teamId', '=', teamId)
   }
 
   const sortFieldMap: Record<string, string> = {
