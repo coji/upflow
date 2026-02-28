@@ -1,4 +1,4 @@
-import { sql } from 'kysely'
+import { sql, type SqlBool } from 'kysely'
 import { escapeLike } from '~/app/libs/db-utils'
 import {
   getTenantDb,
@@ -35,8 +35,8 @@ export const listFilteredRepositories = async ({
     const pattern = `%${escapeLike(repo)}%`
     query = query.where((eb) =>
       eb.or([
-        eb('repositories.owner', 'like', pattern),
-        eb('repositories.repo', 'like', pattern),
+        sql<SqlBool>`repositories.owner LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`repositories.repo LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
   }
@@ -53,8 +53,8 @@ export const listFilteredRepositories = async ({
     const pattern = `%${escapeLike(repo)}%`
     countQuery = countQuery.where((eb) =>
       eb.or([
-        eb('repositories.owner', 'like', pattern),
-        eb('repositories.repo', 'like', pattern),
+        sql<SqlBool>`repositories.owner LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`repositories.repo LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
   }

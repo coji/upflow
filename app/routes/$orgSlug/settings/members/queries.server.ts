@@ -1,4 +1,4 @@
-import { sql } from 'kysely'
+import { type SqlBool, sql } from 'kysely'
 import { escapeLike } from '~/app/libs/db-utils'
 import { db } from '~/app/services/db.server'
 import type { OrganizationId } from '~/app/services/tenant-db.server'
@@ -36,7 +36,8 @@ export const listFilteredMembers = async ({
     .where('members.organizationId', '=', organizationId)
 
   if (name) {
-    query = query.where('users.name', 'like', `%${escapeLike(name)}%`)
+    const pattern = `%${escapeLike(name)}%`
+    query = query.where(sql<SqlBool>`users.name LIKE ${pattern} ESCAPE '\\'`)
   }
 
   type Role = 'owner' | 'admin' | 'member'
@@ -59,7 +60,10 @@ export const listFilteredMembers = async ({
     .where('members.organizationId', '=', organizationId)
 
   if (name) {
-    countQuery = countQuery.where('users.name', 'like', `%${escapeLike(name)}%`)
+    const pattern = `%${escapeLike(name)}%`
+    countQuery = countQuery.where(
+      sql<SqlBool>`users.name LIKE ${pattern} ESCAPE '\\'`,
+    )
   }
   if (roleValues.length > 0) {
     countQuery = countQuery.where('members.role', 'in', roleValues)
