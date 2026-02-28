@@ -84,6 +84,7 @@ function ActiveToggle({
     <Switch
       aria-label={`Toggle active status for ${login}`}
       checked={!!optimisticActive}
+      disabled={fetcher.state !== 'idle'}
       onCheckedChange={() => {
         const formData = new FormData()
         formData.set('intent', 'toggle-active')
