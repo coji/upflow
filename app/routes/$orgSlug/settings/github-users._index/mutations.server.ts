@@ -15,13 +15,12 @@ export const addGithubUser = async (params: {
     .values({
       login: params.login,
       displayName: params.displayName,
-      isActive: 1,
+      isActive: 0,
       updatedAt: new Date().toISOString(),
     })
     .onConflict((oc) =>
       oc.column('login').doUpdateSet({
         displayName: params.displayName,
-        isActive: 1,
         updatedAt: new Date().toISOString(),
       }),
     )
@@ -32,16 +31,12 @@ export const updateGithubUser = async (params: {
   login: string
   organizationId: OrganizationId
   displayName: string
-  name: string | null
-  email: string | null
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
   await tenantDb
     .updateTable('companyGithubUsers')
     .set({
       displayName: params.displayName,
-      name: params.name,
-      email: params.email,
       updatedAt: new Date().toISOString(),
     })
     .where('login', '=', params.login)

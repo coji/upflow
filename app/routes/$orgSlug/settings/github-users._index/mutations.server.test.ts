@@ -54,9 +54,6 @@ const TENANT_SCHEMA = `
   CREATE TABLE IF NOT EXISTS company_github_users (
     user_id text NULL,
     login text NOT NULL PRIMARY KEY,
-    name text NULL,
-    email text NULL,
-    picture_url text NULL,
     display_name text NOT NULL,
     is_active integer NOT NULL DEFAULT 0,
     updated_at datetime NOT NULL,

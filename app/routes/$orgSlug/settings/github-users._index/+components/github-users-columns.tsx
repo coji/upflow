@@ -20,6 +20,7 @@ function EditableDisplayName({
   return (
     <EditableCell
       value={displayName}
+      pending={fetcher.state !== 'idle'}
       onSave={(newValue) => {
         const formData = new FormData()
         formData.set('intent', 'update')
@@ -39,11 +40,10 @@ export const columns: ColumnDef<GithubUserRow>[] = [
     ),
     cell: ({ row }) => {
       const login = row.getValue<string>('login')
-      const pictureUrl = row.original.pictureUrl
       return (
         <div className="flex items-center gap-2">
           <Avatar className="size-7">
-            <AvatarImage src={pictureUrl ?? undefined} alt={login} />
+            <AvatarImage src={`https://github.com/${login}.png`} alt={login} />
             <AvatarFallback className="text-xs">
               {login.slice(0, 2).toUpperCase()}
             </AvatarFallback>
@@ -64,24 +64,6 @@ export const columns: ColumnDef<GithubUserRow>[] = [
         login={row.original.login}
         displayName={row.getValue('displayName')}
       />
-    ),
-  },
-  {
-    accessorKey: 'name',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
-    ),
-    cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.getValue('name')}</span>
-    ),
-  },
-  {
-    accessorKey: 'email',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Email" />
-    ),
-    cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.getValue('email')}</span>
     ),
   },
   {

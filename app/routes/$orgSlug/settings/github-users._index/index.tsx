@@ -6,6 +6,7 @@ import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
 import { columns } from './+components/github-users-columns'
 import { GithubUsersTable } from './+components/github-users-table'
+import { searchGithubUsers } from './+functions/search-github-users.server'
 import {
   PaginationSchema,
   QuerySchema,
@@ -30,6 +31,15 @@ export const handle = {
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization, user } = await requireOrgAdmin(request, params.orgSlug)
   const searchParams = new URL(request.url).searchParams
+
+  // GitHub user search for combobox candidates
+  const q = searchParams.get('q')
+  if (q !== null) {
+    const candidates = q.trim()
+      ? await searchGithubUsers(organization.id, q.trim())
+      : []
+    return Response.json({ candidates })
+  }
 
   const { search } = QuerySchema.parse({
     search: searchParams.get('search'),
@@ -76,8 +86,6 @@ const addSchema = z.object({
 const updateSchema = z.object({
   login: z.string().min(1),
   displayName: z.string().min(1),
-  name: z.string().nullable().default(null),
-  email: z.string().nullable().default(null),
 })
 
 const deleteSchema = z.object({
@@ -112,8 +120,6 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       const parsed = updateSchema.parse({
         login: formData.get('login'),
         displayName: formData.get('displayName'),
-        name: formData.get('name') || null,
-        email: formData.get('email') || null,
       })
       await updateGithubUser({ ...parsed, organizationId: organization.id })
       return data({ ok: true })

@@ -138,12 +138,14 @@ function TeamRow({
       <TableCell>
         <EditableCell
           value={team.name}
+          pending={updateFetcher.state !== 'idle'}
           onSave={(newValue) => submitUpdate({ name: newValue })}
         />
       </TableCell>
       <TableCell>
         <EditableCell
           value={String(team.displayOrder)}
+          pending={updateFetcher.state !== 'idle'}
           onSave={(newValue) => submitUpdate({ displayOrder: newValue })}
           type="number"
           className="w-20"

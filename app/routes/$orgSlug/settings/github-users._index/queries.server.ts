@@ -28,9 +28,6 @@ export const listFilteredGithubUsers = async ({
     .select([
       'companyGithubUsers.login',
       'companyGithubUsers.displayName',
-      'companyGithubUsers.name',
-      'companyGithubUsers.email',
-      'companyGithubUsers.pictureUrl',
       'companyGithubUsers.isActive',
       'companyGithubUsers.createdAt',
     ])
@@ -40,7 +37,6 @@ export const listFilteredGithubUsers = async ({
       eb.or([
         eb('companyGithubUsers.login', 'like', `%${search}%`),
         eb('companyGithubUsers.displayName', 'like', `%${search}%`),
-        eb('companyGithubUsers.name', 'like', `%${search}%`),
       ]),
     )
   }
@@ -54,7 +50,6 @@ export const listFilteredGithubUsers = async ({
       eb.or([
         eb('companyGithubUsers.login', 'like', `%${search}%`),
         eb('companyGithubUsers.displayName', 'like', `%${search}%`),
-        eb('companyGithubUsers.name', 'like', `%${search}%`),
       ]),
     )
   }
@@ -62,8 +57,6 @@ export const listFilteredGithubUsers = async ({
   const sortFieldMap: Record<string, string> = {
     login: 'companyGithubUsers.login',
     displayName: 'companyGithubUsers.displayName',
-    name: 'companyGithubUsers.name',
-    email: 'companyGithubUsers.email',
     isActive: 'companyGithubUsers.isActive',
     createdAt: 'companyGithubUsers.createdAt',
   }

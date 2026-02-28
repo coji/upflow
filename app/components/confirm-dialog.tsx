@@ -53,8 +53,8 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
   }, [fetcher?.state, fetcher?.data])
 
   const isSubmitting = fetcher
-    ? fetcher.state === 'submitting'
-    : navigation.state === 'submitting'
+    ? fetcher.state !== 'idle'
+    : navigation.state !== 'idle'
 
   const FormComponent = fetcher ? fetcher.Form : Form
 
