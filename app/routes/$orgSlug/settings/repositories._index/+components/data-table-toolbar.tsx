@@ -1,4 +1,5 @@
 import { XIcon } from 'lucide-react'
+import { Link } from 'react-router'
 import { SearchInput } from '~/app/components/search-input'
 import { TeamFilter } from '~/app/components/team-filter'
 import { Button } from '~/app/components/ui/button'
@@ -7,9 +8,10 @@ import type { TeamRow } from '../../teams._index/queries.server'
 
 interface DataTableToolbarProps {
   teams: TeamRow[]
+  orgSlug: string
 }
 
-export function DataTableToolbar({ teams }: DataTableToolbarProps) {
+export function DataTableToolbar({ teams, orgSlug }: DataTableToolbarProps) {
   const { queries, updateQueries, isFiltered, resetFilters } =
     useDataTableState()
 
@@ -36,6 +38,9 @@ export function DataTableToolbar({ teams }: DataTableToolbarProps) {
           </Button>
         )}
       </div>
+      <Button asChild>
+        <Link to={`/${orgSlug}/settings/repositories/add`}>Add</Link>
+      </Button>
     </div>
   )
 }

@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
-import { Link, data } from 'react-router'
+import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import { Button } from '~/app/components/ui/button'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import ContentSection from '../+components/content-section'
 import { listTeams } from '../teams._index/queries.server'
@@ -109,22 +108,13 @@ export default function OrganizationRepositoryIndexPage({
       desc="Manage repositories tracked by this organization."
       fullWidth
     >
-      {/** biome-ignore lint/complexity/noUselessFragments: false positive */}
-      <>
-        <div className="flex justify-end pb-2">
-          <Button asChild>
-            <Link to={`/${slug}/settings/repositories/add`}>
-              Add Repository
-            </Link>
-          </Button>
-        </div>
-        <RepoTable
-          data={repositories}
-          columns={columns}
-          pagination={pagination}
-          teams={teams}
-        />
-      </>
+      <RepoTable
+        data={repositories}
+        columns={columns}
+        pagination={pagination}
+        teams={teams}
+        orgSlug={slug}
+      />
     </ContentSection>
   )
 }
