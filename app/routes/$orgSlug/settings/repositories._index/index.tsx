@@ -14,7 +14,10 @@ import {
   SortSchema,
 } from './+hooks/use-data-table-state'
 import type { Route } from './+types/index'
-import { updateRepositoryTeam } from './mutations.server'
+import {
+  bulkUpdateRepositoryTeam,
+  updateRepositoryTeam,
+} from './mutations.server'
 import { listFilteredRepositories } from './queries.server'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
@@ -54,6 +57,11 @@ const updateTeamSchema = z.object({
   teamId: z.string().nullable(),
 })
 
+const bulkUpdateTeamSchema = z.object({
+  repositoryIds: z.array(z.string().min(1)).min(1),
+  teamId: z.string().nullable(),
+})
+
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const formData = await request.formData()
@@ -68,6 +76,18 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       await updateRepositoryTeam(
         organization.id,
         parsed.repositoryId,
+        parsed.teamId,
+      )
+      return data({ ok: true })
+    })
+    .with('bulkUpdateTeam', async () => {
+      const parsed = bulkUpdateTeamSchema.parse({
+        repositoryIds: formData.getAll('repositoryIds'),
+        teamId: formData.get('teamId') || null,
+      })
+      await bulkUpdateRepositoryTeam(
+        organization.id,
+        parsed.repositoryIds,
         parsed.teamId,
       )
       return data({ ok: true })
@@ -100,6 +120,7 @@ export default function OrganizationRepositoryIndexPage({
           data={repositories}
           columns={columns}
           pagination={pagination}
+          teams={teams}
         />
       </>
     </ContentSection>

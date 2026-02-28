@@ -53,6 +53,7 @@ export const listFilteredRepositories = async ({
   const sortFieldMap: Record<string, string> = {
     repo: 'repositories.repo',
     owner: 'repositories.owner',
+    teamName: 'teams.name',
     releaseDetectionMethod: 'repositories.releaseDetectionMethod',
     createdAt: 'repositories.createdAt',
   }

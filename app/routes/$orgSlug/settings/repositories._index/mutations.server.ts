@@ -19,3 +19,16 @@ export const updateRepositoryTeam = async (
     throw new Error('Repository not found')
   }
 }
+
+export const bulkUpdateRepositoryTeam = async (
+  organizationId: OrganizationId,
+  repositoryIds: string[],
+  teamId: string | null,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  await tenantDb
+    .updateTable('repositories')
+    .set({ teamId })
+    .where('id', 'in', repositoryIds)
+    .execute()
+}

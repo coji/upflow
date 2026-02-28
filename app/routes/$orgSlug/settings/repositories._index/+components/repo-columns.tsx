@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '~/app/components/ui'
 import { Badge } from '~/app/components/ui/badge'
+import { Checkbox } from '~/app/components/ui/checkbox'
 import type { TeamRow } from '../../teams._index/queries.server'
 import type { RepositoryRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
@@ -57,6 +58,28 @@ export const createColumns = (
   teams: TeamRow[],
 ): ColumnDef<RepositoryRow>[] => [
   {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
     id: 'repo',
     accessorFn: (row) => `${row.owner}/${row.repo}`,
     header: ({ column }) => (
@@ -92,7 +115,6 @@ export const createColumns = (
         teams={teams}
       />
     ),
-    enableSorting: false,
   },
   {
     accessorKey: 'releaseDetectionMethod',

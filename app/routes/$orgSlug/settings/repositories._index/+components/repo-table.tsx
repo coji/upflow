@@ -1,6 +1,7 @@
 import {
   type ColumnDef,
   type RowData,
+  type RowSelectionState,
   type VisibilityState,
   flexRender,
   getCoreRowModel,
@@ -15,7 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
+import type { TeamRow } from '../../teams._index/queries.server'
 import type { RepositoryRow } from '../queries.server'
+import { DataTableFloatingBar } from './data-table-floating-bar'
 import {
   DataTablePagination,
   type PaginationProps,
@@ -32,17 +35,26 @@ interface DataTableProps {
   columns: ColumnDef<RepositoryRow>[]
   data: RepositoryRow[]
   pagination: PaginationProps
+  teams: TeamRow[]
 }
 
-export function RepoTable({ columns, data, pagination }: DataTableProps) {
+export function RepoTable({
+  columns,
+  data,
+  pagination,
+  teams,
+}: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
   const table = useReactTable({
     data,
     columns,
     getRowId: (row) => row.id,
-    state: { columnVisibility },
+    state: { columnVisibility, rowSelection },
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
   })
 
@@ -74,7 +86,11 @@ export function RepoTable({ columns, data, pagination }: DataTableProps) {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="group/row">
+                <TableRow
+                  key={row.id}
+                  className="group/row"
+                  data-state={row.getIsSelected() && 'selected'}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
@@ -102,6 +118,7 @@ export function RepoTable({ columns, data, pagination }: DataTableProps) {
         </Table>
       </div>
       <DataTablePagination pagination={pagination} />
+      <DataTableFloatingBar table={table} teams={teams} />
     </div>
   )
 }
