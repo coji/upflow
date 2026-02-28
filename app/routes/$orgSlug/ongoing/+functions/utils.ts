@@ -11,24 +11,36 @@ export function getStartOfWeek(timezone = 'Asia/Tokyo') {
 
 // 2つの日時間の時間を計算する関数（土日を除外）
 export const calculateBusinessHours = (start: string, end: string): number => {
-  let startTime = dayjs(start)
+  const startTime = dayjs(start)
   const endTime = dayjs(end)
-  let totalHours = 0
 
-  // 開始日から終了日までループ
-  while (startTime.isBefore(endTime)) {
-    // 土日を除外
-    if (startTime.weekday() !== 0 && startTime.weekday() !== 6) {
-      totalHours += 24 // 1日を時間で加算（必要に応じて調整）
+  let current = startTime.startOf('day')
+  const endDay = endTime.startOf('day')
+  let businessDays = 0
+
+  // 開始日から終了日の前日まで、平日をカウント
+  while (current.isBefore(endDay)) {
+    if (current.weekday() !== 0 && current.weekday() !== 6) {
+      businessDays++
     }
-    startTime = startTime.add(1, 'day') // 次の日に進む
+    current = current.add(1, 'day')
   }
 
-  // 最終日の時間も計算する（終了時刻がその日のうちなら）
+  // 開始日の端数を引く（平日の場合）
+  if (startTime.weekday() !== 0 && startTime.weekday() !== 6) {
+    const startDayElapsed = startTime.diff(
+      startTime.startOf('day'),
+      'hour',
+      true,
+    )
+    businessDays -= startDayElapsed / 24
+  }
+
+  // 終了日の端数を足す（平日の場合）
   if (endTime.weekday() !== 0 && endTime.weekday() !== 6) {
-    const hoursLastDay = endTime.diff(endTime.startOf('day'), 'hour')
-    totalHours += hoursLastDay
+    const endDayElapsed = endTime.diff(endDay, 'hour', true)
+    businessDays += endDayElapsed / 24
   }
 
-  return totalHours
+  return businessDays * 24
 }
