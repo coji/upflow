@@ -1,4 +1,4 @@
-import { XIcon } from 'lucide-react'
+import { PlusIcon, XIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { SearchInput } from '~/app/components/search-input'
 import { TeamFilter } from '~/app/components/team-filter'
@@ -39,7 +39,10 @@ export function DataTableToolbar({ teams, orgSlug }: DataTableToolbarProps) {
         )}
       </div>
       <Button asChild>
-        <Link to={`/${orgSlug}/settings/repositories/add`}>Add</Link>
+        <Link to={`/${orgSlug}/settings/repositories/add`}>
+          <PlusIcon className="h-4 w-4" />
+          Add
+        </Link>
       </Button>
     </div>
   )
