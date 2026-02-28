@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Form, useNavigation, type FetcherWithComponents } from 'react-router'
 import { Button } from '~/app/components/ui/button'
 import {
@@ -40,12 +40,24 @@ export function FormDialog<T>(props: FormDialogProps<T>) {
   } = props
   const navigation = useNavigation()
 
-  // Close when fetcher returns new data (new ref each response)
+  // Close only when fetcher completes successfully after our submission
+  const didSubmitRef = useRef(false)
+
   useEffect(() => {
-    if (fetcher?.data) {
-      dialogProps.onOpenChange(false)
+    if (fetcher?.state === 'submitting') {
+      didSubmitRef.current = true
     }
-  }, [fetcher?.data])
+  }, [fetcher?.state])
+
+  useEffect(() => {
+    if (didSubmitRef.current && fetcher?.state === 'idle') {
+      const responseData = fetcher.data as Record<string, unknown> | undefined
+      if (responseData && !('error' in responseData)) {
+        dialogProps.onOpenChange(false)
+      }
+      didSubmitRef.current = false
+    }
+  }, [fetcher?.state, fetcher?.data])
 
   const isSubmitting = fetcher
     ? fetcher.state === 'submitting'

@@ -1,4 +1,5 @@
 import { sql } from 'kysely'
+import { escapeLike } from '~/app/libs/db-utils'
 import {
   getTenantDb,
   type OrganizationId,
@@ -35,10 +36,11 @@ export const listFilteredGithubUsers = async ({
     ])
 
   if (search) {
+    const pattern = `%${escapeLike(search)}%`
     query = query.where((eb) =>
       eb.or([
-        eb('companyGithubUsers.login', 'like', `%${search}%`),
-        eb('companyGithubUsers.displayName', 'like', `%${search}%`),
+        eb('companyGithubUsers.login', 'like', pattern),
+        eb('companyGithubUsers.displayName', 'like', pattern),
       ]),
     )
   }
@@ -52,10 +54,11 @@ export const listFilteredGithubUsers = async ({
     .select((eb) => eb.fn.count<string>('companyGithubUsers.login').as('count'))
 
   if (search) {
+    const pattern = `%${escapeLike(search)}%`
     countQuery = countQuery.where((eb) =>
       eb.or([
-        eb('companyGithubUsers.login', 'like', `%${search}%`),
-        eb('companyGithubUsers.displayName', 'like', `%${search}%`),
+        eb('companyGithubUsers.login', 'like', pattern),
+        eb('companyGithubUsers.displayName', 'like', pattern),
       ]),
     )
   }

@@ -46,8 +46,11 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
   }, [fetcher?.state])
 
   useEffect(() => {
-    if (didSubmitRef.current && fetcher?.state === 'idle' && fetcher.data) {
-      actions.onOpenChange(false)
+    if (didSubmitRef.current && fetcher?.state === 'idle') {
+      const responseData = fetcher.data as Record<string, unknown> | undefined
+      if (responseData && !('error' in responseData)) {
+        actions.onOpenChange(false)
+      }
       didSubmitRef.current = false
     }
   }, [fetcher?.state, fetcher?.data])

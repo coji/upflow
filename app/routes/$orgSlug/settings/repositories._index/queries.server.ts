@@ -1,4 +1,5 @@
 import { sql } from 'kysely'
+import { escapeLike } from '~/app/libs/db-utils'
 import {
   getTenantDb,
   type OrganizationId,
@@ -31,10 +32,11 @@ export const listFilteredRepositories = async ({
     .select('teams.name as teamName')
 
   if (repo) {
+    const pattern = `%${escapeLike(repo)}%`
     query = query.where((eb) =>
       eb.or([
-        eb('repositories.owner', 'like', `%${repo}%`),
-        eb('repositories.repo', 'like', `%${repo}%`),
+        eb('repositories.owner', 'like', pattern),
+        eb('repositories.repo', 'like', pattern),
       ]),
     )
   }
@@ -48,10 +50,11 @@ export const listFilteredRepositories = async ({
     .select((eb) => eb.fn.count<string>('repositories.id').as('count'))
 
   if (repo) {
+    const pattern = `%${escapeLike(repo)}%`
     countQuery = countQuery.where((eb) =>
       eb.or([
-        eb('repositories.owner', 'like', `%${repo}%`),
-        eb('repositories.repo', 'like', `%${repo}%`),
+        eb('repositories.owner', 'like', pattern),
+        eb('repositories.repo', 'like', pattern),
       ]),
     )
   }
