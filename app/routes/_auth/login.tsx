@@ -20,7 +20,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   const session = await getSession(request)
   if (session) {
-    throw redirect(redirectTo === '/login' ? '/' : redirectTo)
+    throw redirect(redirectTo.startsWith('/login') ? '/' : redirectTo)
   }
 
   return { error, redirectTo }
@@ -33,13 +33,16 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   const formData = await request.formData()
-  const redirectTo = safeRedirectTo(formData.get('redirectTo') as string | null)
+  const rawRedirectTo = safeRedirectTo(
+    formData.get('redirectTo') as string | null,
+  )
+  const redirectTo = rawRedirectTo.startsWith('/login') ? '/' : rawRedirectTo
 
   const response = await auth.api.signInSocial({
     body: {
       provider: 'github',
       callbackURL: redirectTo,
-      errorCallbackURL: '/login',
+      errorCallbackURL: `/login?redirectTo=${encodeURIComponent(redirectTo)}`,
     },
     asResponse: true,
   })
