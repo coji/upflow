@@ -3,12 +3,16 @@ import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, Link, useActionData } from 'react-router'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
-import type { DB, Selectable } from '~/app/services/db.server'
 import { INTENTS, deleteOrganizationSchema as schema } from '../+schema'
 import type { action } from '../../danger/index'
 
 interface DeleteOrganizationProps {
-  organization: Selectable<DB.Organizations>
+  organization: {
+    id: string
+    name: string
+    slug: string
+    createdAt: string
+  }
 }
 export const DeleteOrganization = ({
   organization,
