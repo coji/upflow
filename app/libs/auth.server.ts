@@ -15,10 +15,6 @@ export const auth = betterAuth({
   secret: process.env.SESSION_SECRET,
   database: { dialect: dialect, type: 'sqlite' },
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    },
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
@@ -50,34 +46,53 @@ export const auth = betterAuth({
           avatar_url: string
         }
 
-        // Check if this GitHub login is registered in any org's companyGithubUsers
-        const orgs = await db
-          .selectFrom('organizations')
-          .select(['id'])
-          .execute()
-        let isAllowed = false
-        const loginLower = profile.login.toLowerCase()
-        for (const { id } of orgs) {
-          try {
-            const tenantDb = getTenantDb(id as OrganizationId)
-            const match = await tenantDb
-              .selectFrom('companyGithubUsers')
-              .select(['login'])
-              .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
-              .executeTakeFirst()
-            if (match) {
-              isAllowed = true
-              break
+        // First-user bootstrap: if no users exist yet, allow login unconditionally
+        const userCount = await db
+          .selectFrom('users')
+          .select((eb) => eb.fn.countAll<string>().as('count'))
+          .executeTakeFirstOrThrow()
+        const isFirstUser = Number(userCount.count) === 0
+
+        if (!isFirstUser) {
+          // Check if this GitHub login is registered in any org's companyGithubUsers
+          const orgs = await db
+            .selectFrom('organizations')
+            .select(['id'])
+            .execute()
+          let isAllowed = false
+          let isRegisteredButInactive = false
+          const loginLower = profile.login.toLowerCase()
+          for (const { id } of orgs) {
+            try {
+              const tenantDb = getTenantDb(id as OrganizationId)
+              const match = await tenantDb
+                .selectFrom('companyGithubUsers')
+                .select(['login', 'isActive'])
+                .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
+                .executeTakeFirst()
+              if (match) {
+                if (match.isActive) {
+                  isAllowed = true
+                  break
+                }
+                isRegisteredButInactive = true
+              }
+            } catch {
+              // skip unreachable tenant DBs
             }
-          } catch {
-            // skip unreachable tenant DBs
           }
-        }
-        if (!isAllowed) {
-          console.warn(
-            `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
-          )
-          return null
+          if (!isAllowed) {
+            if (isRegisteredButInactive) {
+              console.warn(
+                `[GitHub OAuth] Login denied: ${profile.login} is registered but inactive`,
+              )
+            } else {
+              console.warn(
+                `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
+              )
+            }
+            return null
+          }
         }
 
         const emailsRes = await fetch('https://api.github.com/user/emails', {
@@ -160,7 +175,7 @@ export const auth = betterAuth({
       userId: 'user_id',
     },
     accountLinking: {
-      trustedProviders: ['google', 'github'],
+      trustedProviders: ['github'],
     },
   },
   verification: {
@@ -173,6 +188,32 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // First-user bootstrap: promote to super admin atomically.
+          // The WHERE ensures only one user can be promoted even under
+          // concurrent requests (no existing admin → UPDATE matches).
+          const result = await db
+            .updateTable('users')
+            .set({ role: 'admin' })
+            .where('id', '=', user.id)
+            .where(({ not, exists, selectFrom }) =>
+              not(
+                exists(
+                  selectFrom('users').select('id').where('role', '=', 'admin'),
+                ),
+              ),
+            )
+            .executeTakeFirst()
+          if (result.numUpdatedRows > 0n) {
+            console.info(
+              `[Bootstrap] First user ${user.id} promoted to super admin`,
+            )
+          }
+        },
+      },
+    },
     session: {
       create: {
         after: async (session) => {

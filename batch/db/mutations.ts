@@ -4,6 +4,7 @@ import {
   type OrganizationId,
   type TenantDB,
 } from '~/app/services/tenant-db.server'
+import { logger } from '../helper/logger'
 import { timeFormatUTC } from '../helper/timeformat'
 
 export function upsertPullRequest(
@@ -106,4 +107,36 @@ export async function upsertPullRequestReviewers(
       )
       .execute()
   })
+}
+
+/**
+ * batch で発見した GitHub ユーザーを companyGithubUsers に自動登録する。
+ * isActive: 0（無効）で挿入し、既存レコードは一切上書きしない。
+ */
+export async function upsertCompanyGithubUsers(
+  organizationId: OrganizationId,
+  logins: string[],
+) {
+  if (logins.length === 0) return
+
+  const tenantDb = getTenantDb(organizationId)
+  const now = new Date().toISOString()
+  const uniqueLogins = [...new Set(logins.map((l) => l.toLowerCase()))]
+
+  await tenantDb
+    .insertInto('companyGithubUsers')
+    .values(
+      uniqueLogins.map((login) => ({
+        login,
+        displayName: login,
+        isActive: 0,
+        updatedAt: now,
+      })),
+    )
+    .onConflict((oc) => oc.column('login').doNothing())
+    .execute()
+  logger.info(
+    `upserted ${uniqueLogins.length} company github users.`,
+    organizationId,
+  )
 }

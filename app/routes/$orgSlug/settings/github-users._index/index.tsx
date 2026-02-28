@@ -14,6 +14,7 @@ import type { Route } from './+types/index'
 import {
   addGithubUser,
   deleteGithubUser,
+  toggleGithubUserActive,
   updateGithubUser,
 } from './mutations.server'
 import { listFilteredGithubUsers } from './queries.server'
@@ -71,6 +72,11 @@ const deleteSchema = z.object({
   login: z.string().min(1),
 })
 
+const toggleActiveSchema = z.object({
+  login: z.string().min(1),
+  isActive: z.coerce.number().int().min(0).max(1),
+})
+
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const formData = await request.formData()
@@ -98,6 +104,17 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     .with('delete', async () => {
       const { login } = deleteSchema.parse({ login: formData.get('login') })
       await deleteGithubUser(login, organization.id)
+      return data({ ok: true })
+    })
+    .with('toggle-active', async () => {
+      const parsed = toggleActiveSchema.parse({
+        login: formData.get('login'),
+        isActive: formData.get('isActive'),
+      })
+      await toggleGithubUserActive({
+        ...parsed,
+        organizationId: organization.id,
+      })
       return data({ ok: true })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))

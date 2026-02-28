@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useFetcher } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Input } from '~/app/components/ui/input'
+import { Switch } from '~/app/components/ui/switch'
 import dayjs from '~/app/libs/dayjs'
 import type { GithubUserRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
@@ -66,6 +67,35 @@ function EditableDisplayName({
   )
 }
 
+function ActiveToggle({
+  login,
+  isActive,
+}: {
+  login: string
+  isActive: number
+}) {
+  const fetcher = useFetcher()
+  const optimisticActive =
+    fetcher.formData != null
+      ? Number(fetcher.formData.get('isActive'))
+      : isActive
+
+  return (
+    <Switch
+      aria-label={`Toggle active status for ${login}`}
+      checked={!!optimisticActive}
+      disabled={fetcher.state !== 'idle'}
+      onCheckedChange={() => {
+        const formData = new FormData()
+        formData.set('intent', 'toggle-active')
+        formData.set('login', login)
+        formData.set('isActive', String(optimisticActive ? 0 : 1))
+        fetcher.submit(formData, { method: 'post' })
+      }}
+    />
+  )
+}
+
 export const columns: ColumnDef<GithubUserRow>[] = [
   {
     accessorKey: 'login',
@@ -117,6 +147,18 @@ export const columns: ColumnDef<GithubUserRow>[] = [
     ),
     cell: ({ row }) => (
       <span className="text-muted-foreground">{row.getValue('email')}</span>
+    ),
+  },
+  {
+    accessorKey: 'isActive',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Active" />
+    ),
+    cell: ({ row }) => (
+      <ActiveToggle
+        login={row.original.login}
+        isActive={row.original.isActive}
+      />
     ),
   },
   {

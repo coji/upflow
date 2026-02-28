@@ -40,36 +40,6 @@ export interface AtlasSchemaRevisions {
   version: string;
 }
 
-export interface CompanyGithubUsers {
-  createdAt: Generated<string>;
-  displayName: string;
-  email: string | null;
-  login: string;
-  name: string | null;
-  organizationId: string;
-  pictureUrl: string | null;
-  updatedAt: string;
-  userId: string | null;
-}
-
-export interface ExportSettings {
-  clientEmail: string;
-  createdAt: Generated<string>;
-  id: string;
-  organizationId: string;
-  privateKey: string;
-  sheetId: string;
-  updatedAt: string;
-}
-
-export interface Integrations {
-  id: string;
-  method: string;
-  organizationId: string;
-  privateToken: string | null;
-  provider: string;
-}
-
 export interface Invitations {
   createdAt: Generated<string>;
   email: string;
@@ -97,74 +67,6 @@ export interface Organizations {
   metadata: string | null;
   name: string;
   slug: string;
-}
-
-export interface OrganizationSettings {
-  createdAt: Generated<string>;
-  excludedUsers: Generated<string>;
-  id: string;
-  isActive: Generated<number>;
-  organizationId: string;
-  refreshRequestedAt: string | null;
-  releaseDetectionKey: Generated<string>;
-  releaseDetectionMethod: Generated<string>;
-  updatedAt: string;
-}
-
-export interface PullRequestReviewers {
-  pullRequestNumber: number;
-  repositoryId: string;
-  requestedAt: string | null;
-  reviewer: string;
-}
-
-export interface PullRequestReviews {
-  id: string;
-  pullRequestNumber: number;
-  repositoryId: string;
-  reviewer: string;
-  state: string;
-  submittedAt: string;
-  url: string;
-}
-
-export interface PullRequests {
-  additions: number | null;
-  author: string;
-  changedFiles: number | null;
-  codingTime: number | null;
-  deletions: number | null;
-  deployTime: number | null;
-  firstCommittedAt: string | null;
-  firstReviewedAt: string | null;
-  mergedAt: string | null;
-  number: number;
-  pickupTime: number | null;
-  pullRequestCreatedAt: string;
-  releasedAt: string | null;
-  repo: string;
-  repositoryId: string;
-  reviewTime: number | null;
-  sourceBranch: string;
-  state: string;
-  targetBranch: string;
-  title: string;
-  totalTime: number | null;
-  updatedAt: string | null;
-  url: string;
-}
-
-export interface Repositories {
-  createdAt: Generated<string>;
-  id: string;
-  integrationId: string;
-  organizationId: string;
-  owner: string;
-  provider: string;
-  releaseDetectionKey: Generated<string>;
-  releaseDetectionMethod: Generated<string>;
-  repo: string;
-  updatedAt: string;
 }
 
 export interface Sessions {
@@ -222,17 +124,9 @@ export interface Verifications {
 export interface DB {
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
-  companyGithubUsers: CompanyGithubUsers;
-  exportSettings: ExportSettings;
-  integrations: Integrations;
   invitations: Invitations;
   members: Members;
   organizations: Organizations;
-  organizationSettings: OrganizationSettings;
-  pullRequestReviewers: PullRequestReviewers;
-  pullRequestReviews: PullRequestReviews;
-  pullRequests: PullRequests;
-  repositories: Repositories;
   sessions: Sessions;
   teamMembers: TeamMembers;
   teams: Teams;
