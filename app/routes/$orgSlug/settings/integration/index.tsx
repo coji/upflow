@@ -18,7 +18,15 @@ export const handle = {
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
   const integration = await getIntegration(organization.id)
-  return { integration }
+  // Never send privateToken to the client
+  const safeIntegration = integration
+    ? {
+        provider: integration.provider,
+        method: integration.method,
+        hasToken: !!integration.privateToken,
+      }
+    : undefined
+  return { integration: safeIntegration }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
@@ -33,9 +41,30 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   try {
-    await upsertIntegration(organization.id, submission.value)
+    const { privateToken, ...rest } = submission.value
+    // If token is empty, keep existing; if new integration, require token
+    if (!privateToken) {
+      const existing = await getIntegration(organization.id)
+      if (!existing?.privateToken) {
+        return {
+          intent: 'integration-settings' as const,
+          lastResult: submission.reply({
+            formErrors: ['Private token is required for new integrations.'],
+          }),
+        }
+      }
+      await upsertIntegration(organization.id, {
+        ...rest,
+        privateToken: existing.privateToken,
+      })
+    } else {
+      await upsertIntegration(organization.id, { ...rest, privateToken })
+    }
   } catch (e) {
-    console.error('Integration upsert failed', e)
+    console.error(
+      'Integration upsert failed:',
+      e instanceof Error ? e.message : 'Unknown error',
+    )
     return {
       intent: 'integration-settings' as const,
       lastResult: submission.reply({

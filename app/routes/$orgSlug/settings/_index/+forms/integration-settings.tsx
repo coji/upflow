@@ -26,7 +26,7 @@ interface IntegrationSettingsProps {
   integration?: {
     provider: string
     method: string
-    privateToken: string | null
+    hasToken: boolean
   }
 }
 
@@ -43,7 +43,9 @@ export const IntegrationSettings = ({
       actionData?.intent === INTENTS.integrationSettings
         ? actionData.lastResult
         : undefined,
-    defaultValue: integration,
+    defaultValue: integration
+      ? { provider: integration.provider, method: integration.method }
+      : undefined,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
@@ -80,7 +82,14 @@ export const IntegrationSettings = ({
 
         <fieldset className="space-y-1">
           <Label htmlFor={privateToken.id}>Private Token</Label>
-          <Textarea {...getTextareaProps(privateToken)} />
+          <Textarea
+            {...getTextareaProps(privateToken)}
+            placeholder={
+              integration?.hasToken
+                ? 'Token is set. Enter a new value to update.'
+                : undefined
+            }
+          />
           <div className="text-destructive">{privateToken.errors}</div>
         </fieldset>
 

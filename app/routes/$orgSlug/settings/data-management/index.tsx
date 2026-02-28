@@ -107,7 +107,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
           message: `Recalculation completed. ${pulls.length} PRs updated.`,
         })
       } catch (e) {
-        console.error('Recalculation failed', e)
+        console.error(
+          'Recalculation failed:',
+          e instanceof Error ? e.message : 'Unknown error',
+        )
         return data(
           {
             intent: 'recalculate' as const,

@@ -95,7 +95,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     300000, // 5 minutes
   )
 
-  return { integration, pageInfo, query, owner, owners, repos }
+  return {
+    registeredRepos: integration.repositories,
+    pageInfo,
+    query,
+    owner,
+    owners,
+    repos,
+  }
 }
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
@@ -118,7 +125,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       repo: submission.value.name,
     })
   } catch (e) {
-    console.error('Failed to add repository', e)
+    console.error(
+      'Failed to add repository:',
+      e instanceof Error ? e.message : 'Unknown error',
+    )
     return dataWithError(
       {},
       { message: 'Failed to add repository. Please try again.' },
@@ -134,7 +144,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 }
 
 export default function AddRepositoryPage({
-  loaderData: { integration, pageInfo, query, owner, owners, repos },
+  loaderData: { registeredRepos, pageInfo, query, owner, owners, repos },
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -236,7 +246,7 @@ export default function AddRepositoryPage({
               <RepositoryItem
                 key={repo.id}
                 repo={repo}
-                isAdded={integration.repositories.some(
+                isAdded={registeredRepos.some(
                   (r) => r.owner === repo.owner && r.repo === repo.name,
                 )}
                 isLast={index === repos.length - 1}

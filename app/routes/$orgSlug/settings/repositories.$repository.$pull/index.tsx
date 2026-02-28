@@ -63,7 +63,6 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return {
     organization,
     repositoryId,
-    repository,
     pull,
     storeData,
     fetchData,
