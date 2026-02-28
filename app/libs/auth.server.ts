@@ -317,10 +317,30 @@ export const getSession = async (request: Request) => {
   return await auth.api.getSession(request)
 }
 
+export const safeRedirectTo = (
+  redirectTo: string | null | undefined,
+  fallback = '/',
+): string => {
+  if (
+    redirectTo?.startsWith('/') &&
+    !redirectTo.startsWith('//') &&
+    !redirectTo.startsWith('/\\')
+  ) {
+    return redirectTo
+  }
+  return fallback
+}
+
+const loginRedirect = (request: Request): never => {
+  const url = new URL(request.url)
+  const redirectTo = url.pathname + url.search
+  throw redirect(`/login?redirectTo=${encodeURIComponent(redirectTo)}`)
+}
+
 export const requireUser = async (request: Request) => {
   const session = await getSession(request)
   if (!session) {
-    throw redirect(href('/login'))
+    throw loginRedirect(request)
   }
   return session
 }
@@ -328,7 +348,7 @@ export const requireUser = async (request: Request) => {
 export const requireSuperAdmin = async (request: Request) => {
   const session = await getSession(request)
   if (!session) {
-    throw redirect(href('/login'))
+    throw loginRedirect(request)
   }
   if (session.user.role !== 'admin') {
     throw redirect(href('/'))
@@ -356,7 +376,7 @@ export const requireOrgMember = async (
 ): Promise<OrgContext> => {
   const session = await getSession(request)
   if (!session) {
-    throw redirect(href('/login'))
+    throw loginRedirect(request)
   }
 
   const result = await db
@@ -374,7 +394,8 @@ export const requireOrgMember = async (
     .executeTakeFirst()
 
   if (!result) {
-    throw redirect('/no-org')
+    const firstOrg = await getFirstOrganization(session.user.id)
+    throw redirect(firstOrg ? `/${firstOrg.slug}` : '/no-org')
   }
 
   return {
