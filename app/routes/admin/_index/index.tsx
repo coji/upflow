@@ -61,7 +61,7 @@ const AdminOrganizationIndex = ({
         <Button asChild className="w-full" variant="outline">
           <Link to={href('/admin/create')}>
             <PlusCircleIcon />
-            新規作成
+            Create New
           </Link>
         </Button>
       </CardFooter>

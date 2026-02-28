@@ -106,7 +106,7 @@ const WeeklyCalendar = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" size="sm">
-          週を選択
+          Select Week
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">

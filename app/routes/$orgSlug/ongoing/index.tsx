@@ -72,12 +72,7 @@ export default function OngoingPage({
       </PageHeader>
 
       <AppDataTable
-        title={
-          <div>
-            進行中のプルリクエスト {pullRequests.length}
-            <small>件</small>
-          </div>
-        }
+        title={<div>Ongoing pull requests: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
       />

@@ -136,29 +136,25 @@ export default function OrganizationIndex({
         <div className="flex-1" />
 
         <div>
-          <Label>目標</Label>
+          <Label>Objective</Label>
           <div className="grid grid-cols-2 gap-x-4">
-            <div>マージまで</div>
+            <div>Time to Merge</div>
             <div>
+              {'< '}
               {objective.toFixed(1)}
-              <small>日未満</small>
+              <small>d</small>
             </div>
-            <div>達成率</div>
+            <div>Achievement</div>
             <div>
               {achievementRate.toFixed(1)}
-              <small>% ({achievementCount.toLocaleString()}件)</small>
+              <small>% ({achievementCount.toLocaleString()})</small>
             </div>
           </div>
         </div>
       </div>
 
       <AppDataTable
-        title={
-          <div>
-            今週マージされたプルリクエスト {pullRequests.length}{' '}
-            <small>件</small>
-          </div>
-        }
+        title={<div>Merged this week: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
       />

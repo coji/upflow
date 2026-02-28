@@ -69,7 +69,7 @@ export function EditableCell({
         setEditing(true)
       }}
       className="hover:bg-muted flex h-7 cursor-pointer items-center gap-1 rounded px-2 text-left"
-      title="クリックして編集"
+      title="Click to edit"
     >
       <span className={isSaving ? 'text-muted-foreground' : undefined}>
         {displayValue}

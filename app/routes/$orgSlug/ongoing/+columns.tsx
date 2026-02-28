@@ -42,9 +42,9 @@ export const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'firstCommittedAt',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="初コミット" />
+      <AppSortableHeader column={column} title="First Commit" />
     ),
-    id: '初コミット',
+    id: 'First Commit',
     cell: ({ row }) =>
       row.original.firstCommittedAt
         ? dayjs
@@ -56,9 +56,9 @@ export const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'pullRequestCreatedAt',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="PR作成" />
+      <AppSortableHeader column={column} title="PR Created" />
     ),
-    id: 'PR作成',
+    id: 'PR Created',
     cell: ({ row }) =>
       row.original.pullRequestCreatedAt
         ? dayjs
@@ -70,9 +70,9 @@ export const columns: ColumnDef<PullRequest>[] = [
   {
     accessorKey: 'firstReviewedAt',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="初レビュー" />
+      <AppSortableHeader column={column} title="First Review" />
     ),
-    id: '初レビュー',
+    id: 'First Review',
     cell: ({ row }) =>
       row.original.firstReviewedAt
         ? dayjs
@@ -90,7 +90,7 @@ export const columns: ColumnDef<PullRequest>[] = [
     cell: ({ row }) => (
       <span className="whitespace-nowrap">
         {row.original.createAndNowDiff.toFixed(1)}
-        <small>日</small>
+        <small>d</small>
       </span>
     ),
     enableHiding: false,

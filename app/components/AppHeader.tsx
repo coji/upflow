@@ -69,9 +69,9 @@ export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               {isAdmin ? (
-                <Link to={href('/')}>ユーザー画面</Link>
+                <Link to={href('/')}>User View</Link>
               ) : (
-                <Link to={href('/admin')}>管理画面</Link>
+                <Link to={href('/admin')}>Admin</Link>
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />

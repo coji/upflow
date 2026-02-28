@@ -31,23 +31,23 @@ export default function NoOrgPage({
         <Card className="max-w-md">
           <CardHeader className="text-center">
             <CardTitle>
-              {isSuperAdmin ? '組織を作成してください' : '招待をお待ちください'}
+              {isSuperAdmin ? 'Create an Organization' : 'Awaiting Invitation'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-center">
             {isSuperAdmin ? (
               <>
                 <p className="text-muted-foreground">
-                  まだ組織がありません。最初の組織を作成してください。
+                  No organizations yet. Create your first organization.
                 </p>
                 <Button asChild className="w-full">
-                  <Link to="/admin/create">組織を作成</Link>
+                  <Link to="/admin/create">Create Organization</Link>
                 </Button>
               </>
             ) : (
               <p className="text-muted-foreground">
-                {user.name} さんはまだどの組織にも所属していません。
-                管理者からの招待をお待ちください。
+                {user.name} is not a member of any organization yet. Please wait
+                for an invitation from an administrator.
               </p>
             )}
             <Button
@@ -63,7 +63,7 @@ export default function NoOrgPage({
                 })
               }
             >
-              ログアウト
+              Sign Out
             </Button>
           </CardContent>
         </Card>
