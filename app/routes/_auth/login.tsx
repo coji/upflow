@@ -50,7 +50,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 const errorMessages: Record<string, string> = {
   unable_to_get_user_info:
-    'このGitHubアカウントはログインが許可されていません。管理者にお問い合わせください。',
+    'このGitHubアカウントはログインが許可されていません。管理者に有効化を依頼してください。',
 }
 
 export default function LoginPage({

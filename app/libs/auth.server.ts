@@ -60,28 +60,37 @@ export const auth = betterAuth({
             .select(['id'])
             .execute()
           let isAllowed = false
+          let isRegisteredButInactive = false
           const loginLower = profile.login.toLowerCase()
           for (const { id } of orgs) {
             try {
               const tenantDb = getTenantDb(id as OrganizationId)
               const match = await tenantDb
                 .selectFrom('companyGithubUsers')
-                .select(['login'])
+                .select(['login', 'isActive'])
                 .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
-                .where('isActive', '=', 1)
                 .executeTakeFirst()
               if (match) {
-                isAllowed = true
-                break
+                if (match.isActive) {
+                  isAllowed = true
+                  break
+                }
+                isRegisteredButInactive = true
               }
             } catch {
               // skip unreachable tenant DBs
             }
           }
           if (!isAllowed) {
-            console.warn(
-              `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
-            )
+            if (isRegisteredButInactive) {
+              console.warn(
+                `[GitHub OAuth] Login denied: ${profile.login} is registered but inactive`,
+              )
+            } else {
+              console.warn(
+                `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
+              )
+            }
             return null
           }
         }

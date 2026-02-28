@@ -1,75 +1,106 @@
 # 認証・メンバー管理 設計書
 
-## 1. プロダクトのフェーズと前提
+## 1. プロダクトの前提
 
-upflow は現在 **クローズドβ** フェーズ。運営者（super admin）が直接コンサルとして支援する開発チームに提供している。
+upflow は OSS の開発生産性ダッシュボード。GitHub の PR データを解析してサイクルタイムを可視化する。
 
-- ユーザーは運営者が知っている人のみ
-- org 作成は super admin が行う
-- メンバー追加は **admin が GitHub login を登録** する方式
-- 将来的にオープン化する可能性はあるが、今は考えない
+- 認証は GitHub OAuth のみ
+- ユーザー管理は `companyGithubUsers` テーブルの `isActive` フラグで制御
+- 初回デプロイ時は最初のログインユーザーが super admin になる
 
-## 2. 設計方針
+## 2. テーブルの役割
 
-### GitHub オンリー + admin による GitHub アカウント登録
+| テーブル             | DB     | 役割                                                                  |
+| -------------------- | ------ | --------------------------------------------------------------------- |
+| `users`              | shared | better-auth が管理するユーザーアカウント                              |
+| `members`            | shared | `users` と `organizations` の多対多リレーション（org メンバーシップ） |
+| `companyGithubUsers` | tenant | GitHub login の許可リスト + PR author/reviewer との紐付けマスタ       |
 
-| 層                         | 何をするか                   | どう制御するか                                          |
-| -------------------------- | ---------------------------- | ------------------------------------------------------- |
-| **認証（ログイン）**       | ユーザーを識別する           | GitHub OAuth のみ                                       |
-| **認可（サイトアクセス）** | サイトへのログインを許可する | `companyGithubUsers` に登録されている GitHub login のみ |
-| **認可（org アクセス）**   | org のデータを見せる         | `companyGithubUsers` がある org に自動メンバー追加      |
+- `companyGithubUsers` = 「この GitHub ユーザーは org に所属してよい」という**事前登録リスト**
+- `members` = better-auth の**実際の org メンバーシップ**（ログイン時に自動作成）
 
-**`companyGithubUsers` テーブルが allowlist と org 所属を兼ねる。**
+batch が発見した GitHub ユーザーは `members` には入れられない（`users` レコードが必要で、それは GitHub OAuth ログインしないと作れない）。
+だから `companyGithubUsers` がゲートとして先に存在し、ログイン時に `members` が自動作成される。
+
+## 3. 設計方針
+
+### GitHub オンリー + isActive による制御
+
+| 層                         | 何をするか                   | どう制御するか                                                   |
+| -------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| **認証（ログイン）**       | ユーザーを識別する           | GitHub OAuth のみ                                                |
+| **認可（サイトアクセス）** | サイトへのログインを許可する | `companyGithubUsers` に `isActive=1` で登録されている login のみ |
+| **認可（org アクセス）**   | org のデータを見せる         | `companyGithubUsers` がある org に自動メンバー追加               |
+
+### isActive フラグ
+
+| 値          | 意味                         | 登録元                                              |
+| ----------- | ---------------------------- | --------------------------------------------------- |
+| `0`（無効） | 登録されているがログイン不可 | batch による自動登録                                |
+| `1`（有効） | ログイン可能                 | admin による手動追加、または admin がトグルで有効化 |
 
 ### なぜこの方式か
 
 - upflow は GitHub の PR データを扱うツール → GitHub ログインが最も自然
 - `companyGithubUsers` は元々 PR author と upflow ユーザーの紐付けテーブル → allowlist として再利用できる
-- admin が GitHub login を登録する UI を追加するだけで招待フローが完成する
+- batch が PR author/reviewer を自動登録 → admin は有効化するだけ
 - メールアドレスに依存しない（GitHub login で照合）
-- Google OAuth を削除することで認証フローがシンプルになる
 
-## 3. フロー
+## 4. フロー
 
-### 新メンバー追加
+### 初回セットアップ（本番デプロイ）
 
 ```
-1. admin が org の GitHub Users 設定画面で GitHub login を登録（例: "coji"）
-2. そのユーザーに /login のURLを伝える（Slack、口頭など）
+1. デプロイ + db:apply でマイグレーション適用
+2. 最初のユーザーが /login → 「GitHub でログイン」
+3. users テーブルが空なので allowlist チェックをスキップ → ログイン許可
+4. user.create.after フックで users が1人だけ → super admin に昇格
+5. super admin が /admin から org を作成
+6. org の GitHub Users 設定画面で GitHub login を管理
+```
+
+### batch によるユーザー自動登録
+
+```
+1. batch が PR データを解析
+2. PR author / reviewer / requested reviewer の login を収集
+3. companyGithubUsers に INSERT ... ON CONFLICT DO NOTHING
+   → isActive: 0（無効）、displayName: login（仮名）
+4. admin が GitHub Users 設定画面で Active トグルを有効化
+5. そのユーザーがログイン可能になる
+```
+
+### 新メンバーのログイン
+
+```
+1. admin が GitHub Users 設定画面で Active トグルを有効化（または手動追加）
+2. そのユーザーに /login の URL を伝える
 3. ユーザーが /login → 「GitHub でログイン」
 4. getUserInfo で全 org の companyGithubUsers をチェック
-   → 登録済み → ログイン許可
-   → 未登録 → ログイン拒否（エラーメッセージ表示）
+   → isActive=1 で登録済み → ログイン許可
+   → 未登録 or isActive=0 → ログイン拒否（エラーメッセージ表示）
 5. ログイン後、companyGithubUsers にいる org に自動的にメンバー追加
 6. ダッシュボードへリダイレクト
 ```
 
-### リピートログイン
+### メンバー無効化
 
 ```
-1. /login → 「GitHub でログイン」
-2. getUserInfo チェック → 許可（既に登録済み）
-3. 既に org メンバーなのでそのままダッシュボードへ
-```
-
-### メンバー削除
-
-```
-1. admin が GitHub Users 設定画面で GitHub login を削除
+1. admin が GitHub Users 設定画面で Active トグルを無効化
 2. そのユーザーは次回ログイン時に getUserInfo チェックで拒否される
 3. 既存セッションは有効期限まで有効（即時無効化は将来検討）
 ```
 
-## 4. 自動メンバー追加の仕組み
+## 5. 自動メンバー追加の仕組み
 
 GitHub ログイン成功後の session hook で以下を行う:
 
 1. GitHub API `/user` から `profile.login` を取得
-2. ユーザーが所属する org を `members` テーブルから取得
+2. 全 org の `companyGithubUsers` を検索（`isActive=1` のもの）
 3. **所属していない org** で `companyGithubUsers` に `login` が登録されている場合 → `members` に自動追加
 4. `companyGithubUsers.userId` を自動設定（PR author との紐付け）
 
-これにより、admin が GitHub login を登録するだけで:
+これにより、admin が Active を有効化するだけで:
 
 - ログイン許可
 - org メンバー追加
@@ -77,76 +108,28 @@ GitHub ログイン成功後の session hook で以下を行う:
 
 の3つが自動的に解決する。
 
-## 5. 既存機能への影響
+## 6. GitHub Users 設定画面
 
-### 削除するもの
+- **手動追加フォーム**: GitHub login を入力して追加（`isActive=1` で作成）
+- **Active トグル**: Switch で有効/無効を切り替え（optimistic UI）
+- **一覧表示**: login, display name, name, email, active, created
+- **編集・削除**: ドロップダウンメニューから
 
-- Google OAuth プロバイダ（`socialProviders.google`）
-- ログイン画面の Google ボタン
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` 環境変数
-- `trustedProviders` によるアカウントリンク設定（プロバイダが1つなので不要）
+## 7. 将来の拡張
 
-### 変更するもの
-
-- ログイン画面 → GitHub ボタンのみ（last-provider beacon も不要に）
-- `getUserInfo` → allowlist チェックはそのまま維持
-- session hook → org 自動メンバー追加ロジックを追加
-
-### 追加するもの
-
-- GitHub Users 設定画面に手動追加フォーム（GitHub login 入力）
-- org 自動メンバー追加ロジック（`github-linking.server.ts` を拡張）
-
-## 6. GitHub Users 設定画面の変更
-
-### 現状
-
-- PR author から自動取得された GitHub ユーザーの一覧表示のみ
-- 手動追加 UI なし
-
-### 変更後
-
-- **手動追加フォーム**: GitHub login を入力して追加
-- 一覧表示（既存）
-- 削除ボタン（既存 or 追加）
-
-追加時に GitHub API で login の存在確認をするとベター（typo 防止）。
-
-## 7. 将来のオープン化に向けて
-
-| 項目               | クローズドβ（現在）           | オープン（将来）                |
+| 項目               | 現在                          | 将来                            |
 | ------------------ | ----------------------------- | ------------------------------- |
 | ログインプロバイダ | GitHub のみ                   | GitHub + Google（再追加）       |
 | サイトアクセス制御 | companyGithubUsers allowlist  | 制限なし（誰でもログイン可）    |
 | org 参加           | companyGithubUsers 登録で自動 | 招待リンク + セルフサインアップ |
 | org 作成           | super admin のみ              | ユーザーが自分で作成可          |
+| セッション無効化   | 有効期限まで有効              | Active 無効化時に即時無効化     |
 
-## 8. 実装ステップ
+## 8. 必要な環境変数
 
-### Phase 1: GitHub オンリー化 + 自動メンバー追加
-
-1. Google OAuth 削除（auth.server.ts、login.tsx、環境変数）
-2. ログイン画面を GitHub ボタンのみに簡略化
-3. session hook に org 自動メンバー追加ロジックを追加
-4. GitHub Users 設定画面に手動追加フォームを実装
-
-### Phase 2: 運用改善（必要に応じて）
-
-5. GitHub login 追加時に GitHub API で存在確認
-6. メンバー削除時の即時セッション無効化
-7. admin 向けのメンバー管理画面（org メンバー一覧 + role 変更）
-
-### Phase 3: GitHub App によるデータ取得（将来）
-
-8. GitHub App の installation token でバッチ処理
-9. `INTEGRATION_PRIVATE_TOKEN` の廃止
-
-## 9. 必要な環境変数
-
-| 変数                                            | 用途                 | ステータス    |
-| ----------------------------------------------- | -------------------- | ------------- |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`     | GitHub OAuth         | 既存          |
-| `BETTER_AUTH_URL` / `SESSION_SECRET`            | Better Auth          | 既存          |
-| `DATABASE_URL`                                  | SQLite               | 既存          |
-| `INTEGRATION_PRIVATE_TOKEN`                     | GitHub API（バッチ） | 既存→将来廃止 |
-| ~~`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`~~ | ~~Google OAuth~~     | **削除**      |
+| 変数                                        | 用途                 | ステータス    |
+| ------------------------------------------- | -------------------- | ------------- |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth         | 必須          |
+| `BETTER_AUTH_URL` / `SESSION_SECRET`        | Better Auth          | 必須          |
+| `DATABASE_URL`                              | SQLite               | 必須          |
+| `INTEGRATION_PRIVATE_TOKEN`                 | GitHub API（バッチ） | 必須→将来廃止 |
