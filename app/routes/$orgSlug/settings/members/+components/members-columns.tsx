@@ -72,6 +72,11 @@ export const columns: ColumnDef<MemberRow>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => <MemberRowActions row={row} />,
+    cell: ({ row, table }) => (
+      <MemberRowActions
+        row={row}
+        currentMembershipId={table.options.meta?.currentMembershipId}
+      />
+    ),
   },
 ]

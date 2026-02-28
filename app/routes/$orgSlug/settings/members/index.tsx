@@ -23,7 +23,10 @@ export const handle = {
 }
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+  const { organization, membership } = await requireOrgAdmin(
+    request,
+    params.orgSlug,
+  )
   const searchParams = new URL(request.url).searchParams
 
   const { name } = QuerySchema.parse({
@@ -54,7 +57,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     sortOrder,
   })
 
-  return { members, pagination }
+  return { members, pagination, currentMembershipId: membership.id }
 }
 
 const changeRoleSchema = z.object({
@@ -67,7 +70,10 @@ const removeMemberSchema = z.object({
 })
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+  const { organization, membership } = await requireOrgAdmin(
+    request,
+    params.orgSlug,
+  )
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 
@@ -77,7 +83,11 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         memberId: formData.get('memberId'),
         role: formData.get('role'),
       })
-      await changeMemberRole(memberId, organization.id, role)
+      try {
+        await changeMemberRole(memberId, organization.id, role, membership.id)
+      } catch (e) {
+        return data({ error: String(e) }, { status: 400 })
+      }
       return data({ ok: true })
     })
     .with('removeMember', async () => {
@@ -85,7 +95,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         memberId: formData.get('memberId'),
       })
       try {
-        await removeMember(memberId, organization.id)
+        await removeMember(memberId, organization.id, membership.id)
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }
@@ -95,7 +105,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 }
 
 export default function OrganizationMembersPage({
-  loaderData: { members, pagination },
+  loaderData: { members, pagination, currentMembershipId },
 }: Route.ComponentProps) {
   return (
     <ContentSection
@@ -103,7 +113,12 @@ export default function OrganizationMembersPage({
       desc="Manage organization members and their roles."
       fullWidth
     >
-      <MembersTable data={members} columns={columns} pagination={pagination} />
+      <MembersTable
+        data={members}
+        columns={columns}
+        pagination={pagination}
+        currentMembershipId={currentMembershipId}
+      />
     </ContentSection>
   )
 }

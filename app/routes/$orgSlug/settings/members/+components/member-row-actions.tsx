@@ -22,8 +22,15 @@ import {
 } from '~/app/components/ui/select'
 import type { MemberRow } from '../queries.server'
 
-export function MemberRowActions({ row }: { row: Row<MemberRow> }) {
+export function MemberRowActions({
+  row,
+  currentMembershipId,
+}: {
+  row: Row<MemberRow>
+  currentMembershipId?: string
+}) {
   const member = row.original
+  const isSelf = member.id === currentMembershipId
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const deleteFetcher = useFetcher()
@@ -41,16 +48,17 @@ export function MemberRowActions({ row }: { row: Row<MemberRow> }) {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setRoleOpen(true)}>
+          <DropdownMenuItem onClick={() => setRoleOpen(true)} disabled={isSelf}>
             <UserCogIcon className="mr-2 h-4 w-4" />
-            Change Role
+            Change Role {isSelf && '(You)'}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => setDeleteOpen(true)}
             className="text-destructive"
+            disabled={isSelf}
           >
             <TrashIcon className="mr-2 h-4 w-4" />
-            Remove
+            Remove {isSelf && '(You)'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
