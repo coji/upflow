@@ -6,11 +6,20 @@ import path from 'node:path'
 
 const DATA_DIR = 'data'
 const REMOTE_DATA_DIR = '/upflow/data'
+const VALID_APP_NAME = /^[a-z0-9-]+$/
+const VALID_DB_FILENAME = /^[\w.-]+\.db$/
 
 interface PullDbOptions {
   app: string
   noBackup: boolean
   noSanitize: boolean
+}
+
+function validateAppName(app: string) {
+  if (!VALID_APP_NAME.test(app)) {
+    consola.error(`Invalid app name: ${app}`)
+    process.exit(1)
+  }
 }
 
 function backupExistingData() {
@@ -23,7 +32,12 @@ function backupExistingData() {
   const backupDir = path.join(DATA_DIR, `backup_${timestamp}`)
   fs.mkdirSync(backupDir, { recursive: true })
 
-  const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.db'))
+  const files = fs
+    .readdirSync(DATA_DIR)
+    .filter(
+      (f) =>
+        f.endsWith('.db') || f.endsWith('.db-wal') || f.endsWith('.db-shm'),
+    )
   for (const file of files) {
     const src = path.join(DATA_DIR, file)
     const dest = path.join(backupDir, file)
@@ -45,6 +59,7 @@ function listRemoteTenantDbs(app: string): string[] {
       .split('\n')
       .filter(Boolean)
       .map((line) => path.basename(line.trim()))
+      .filter((name) => VALID_DB_FILENAME.test(name))
   } catch (error) {
     const stderr =
       error instanceof Error && 'stderr' in error
@@ -96,6 +111,8 @@ function sanitizeExportSettings(dbPath: string) {
 export function pullDbCommand(options: PullDbOptions) {
   const { app, noBackup, noSanitize } = options
 
+  validateAppName(app)
+
   consola.info(`Pulling databases from Fly app: ${app}`)
 
   // Step 1: Backup existing data
@@ -127,10 +144,10 @@ export function pullDbCommand(options: PullDbOptions) {
 
   consola.success(`Pulled ${pulledCount}/${filesToPull.length} database(s)`)
 
-  // Step 4: Sanitize export settings
+  // Step 4: Sanitize export settings in all pulled databases
   if (!noSanitize) {
     consola.start('Sanitizing export settings...')
-    for (const file of tenantDbs) {
+    for (const file of filesToPull) {
       const dbPath = path.join(DATA_DIR, file)
       if (fs.existsSync(dbPath)) {
         sanitizeExportSettings(dbPath)
