@@ -14,8 +14,16 @@ export const addGithubUser = async (params: {
     .values({
       login: params.login,
       displayName: params.displayName,
+      isActive: 1,
       updatedAt: new Date().toISOString(),
     })
+    .onConflict((oc) =>
+      oc.column('login').doUpdateSet({
+        displayName: params.displayName,
+        isActive: 1,
+        updatedAt: new Date().toISOString(),
+      }),
+    )
     .execute()
 }
 
@@ -47,5 +55,21 @@ export const deleteGithubUser = async (
   await tenantDb
     .deleteFrom('companyGithubUsers')
     .where('login', '=', login)
+    .execute()
+}
+
+export const toggleGithubUserActive = async (params: {
+  login: string
+  isActive: number
+  organizationId: OrganizationId
+}) => {
+  const tenantDb = getTenantDb(params.organizationId)
+  await tenantDb
+    .updateTable('companyGithubUsers')
+    .set({
+      isActive: params.isActive,
+      updatedAt: new Date().toISOString(),
+    })
+    .where('login', '=', params.login)
     .execute()
 }

@@ -31,6 +31,7 @@ export const listFilteredGithubUsers = async ({
       'companyGithubUsers.name',
       'companyGithubUsers.email',
       'companyGithubUsers.pictureUrl',
+      'companyGithubUsers.isActive',
       'companyGithubUsers.createdAt',
     ])
 
@@ -63,6 +64,7 @@ export const listFilteredGithubUsers = async ({
     displayName: 'companyGithubUsers.displayName',
     name: 'companyGithubUsers.name',
     email: 'companyGithubUsers.email',
+    isActive: 'companyGithubUsers.isActive',
     createdAt: 'companyGithubUsers.createdAt',
   }
   const safeSortBy = sortFieldMap[sortBy ?? ''] ?? sortFieldMap.login

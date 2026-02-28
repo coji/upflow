@@ -55,6 +55,7 @@ export async function linkGithubUserToCompanyUsers(
         .selectFrom('companyGithubUsers')
         .select(['login'])
         .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
+        .where('isActive', '=', 1)
         .executeTakeFirst()
 
       if (!match) {

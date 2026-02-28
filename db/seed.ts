@@ -162,11 +162,13 @@ async function seed() {
   }
 
   // company github users
+  const adminGithubLogin = process.env.SEED_ADMIN_GITHUB_LOGIN ?? 'test_user'
   await tenantDb
     .insertInto('companyGithubUsers')
     .values({
-      login: 'test_user',
-      displayName: 'Test User',
+      login: adminGithubLogin,
+      displayName: user.name ?? adminGithubLogin,
+      isActive: 1,
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .execute()

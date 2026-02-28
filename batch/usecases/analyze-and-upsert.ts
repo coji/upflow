@@ -2,6 +2,7 @@ import type { Selectable } from 'kysely'
 import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import {
+  upsertCompanyGithubUsers,
   upsertPullRequest,
   upsertPullRequestReview,
   upsertPullRequestReviewers,
@@ -43,21 +44,37 @@ export async function analyzeAndUpsert({
   )
   logger.info('analyze completed.', orgId)
 
-  // 2. upsert pull requests
+  // 2. auto-register discovered GitHub users (inactive)
+  const discoveredLogins = new Set<string>()
+  for (const pr of pulls) {
+    if (pr.author) discoveredLogins.add(pr.author)
+  }
+  for (const review of reviews) {
+    if (review.reviewer) discoveredLogins.add(review.reviewer)
+  }
+  for (const reviewer of reviewers) {
+    for (const login of reviewer.reviewerLogins) {
+      discoveredLogins.add(login)
+    }
+  }
+  await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
+  logger.info('auto-register github users completed.', orgId)
+
+  // 3. upsert pull requests
   logger.info('upsert started...', orgId)
   for (const pr of pulls) {
     await upsertPullRequest(orgId, pr)
   }
   logger.info('upsert pull requests completed.', orgId)
 
-  // 3. upsert reviews
+  // 4. upsert reviews
   logger.info('upsert reviews started...', orgId)
   for (const review of reviews) {
     await upsertPullRequestReview(orgId, review)
   }
   logger.info('upsert reviews completed.', orgId)
 
-  // 4. upsert reviewers
+  // 5. upsert reviewers
   logger.info('upsert reviewers started...', orgId)
   for (const reviewer of reviewers) {
     await upsertPullRequestReviewers(
@@ -69,7 +86,7 @@ export async function analyzeAndUpsert({
   }
   logger.info('upsert reviewers completed.', orgId)
 
-  // 5. export (optional)
+  // 6. export (optional)
   if (organization.exportSetting) {
     logger.info('exporting to spreadsheet...', orgId)
     const exporter = createSpreadsheetExporter(organization.exportSetting)
