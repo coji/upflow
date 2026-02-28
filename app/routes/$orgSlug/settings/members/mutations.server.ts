@@ -4,7 +4,7 @@ import type { OrganizationId } from '~/app/services/tenant-db.server'
 export const changeMemberRole = async (
   memberId: string,
   organizationId: OrganizationId,
-  role: string,
+  role: 'owner' | 'admin' | 'member',
 ) => {
   await db
     .updateTable('members')

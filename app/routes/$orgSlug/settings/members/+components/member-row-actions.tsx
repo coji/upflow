@@ -90,7 +90,8 @@ function ChangeRoleDialog({
   member: MemberRow
   fetcher: ReturnType<typeof useFetcher>
 }) {
-  const [role, setRole] = useState(member.role)
+  // Select の onValueChange が string を返すため string に広げる
+  const [role, setRole] = useState<string>(member.role)
 
   return (
     <ConfirmDialog

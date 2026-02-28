@@ -73,7 +73,7 @@ export const deleteGithubUser = async (
 
 export const toggleGithubUserActive = async (params: {
   login: string
-  isActive: number
+  isActive: 0 | 1
   organizationId: OrganizationId
 }) => {
   const tenantDb = getTenantDb(params.organizationId)

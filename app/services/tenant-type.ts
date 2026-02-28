@@ -29,7 +29,7 @@ export interface CompanyGithubUsers {
   createdAt: Generated<string>
   displayName: string
   email: string | null
-  isActive: Generated<number>
+  isActive: 0 | 1
   login: string
   name: string | null
   pictureUrl: string | null
@@ -48,19 +48,19 @@ export interface ExportSettings {
 
 export interface Integrations {
   id: string
-  method: string
+  method: 'token'
   privateToken: string | null
-  provider: string
+  provider: 'github'
 }
 
 export interface OrganizationSettings {
   createdAt: Generated<string>
   excludedUsers: Generated<string>
   id: string
-  isActive: Generated<number>
+  isActive: Generated<0 | 1>
   refreshRequestedAt: string | null
   releaseDetectionKey: Generated<string>
-  releaseDetectionMethod: Generated<string>
+  releaseDetectionMethod: Generated<'branch' | 'tags'>
   updatedAt: string
 }
 
@@ -76,7 +76,7 @@ export interface PullRequestReviews {
   pullRequestNumber: number
   repositoryId: string
   reviewer: string
-  state: string
+  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
   submittedAt: string
   url: string
 }
@@ -99,7 +99,7 @@ export interface PullRequests {
   repositoryId: string
   reviewTime: number | null
   sourceBranch: string
-  state: string
+  state: 'open' | 'closed' | 'merged'
   targetBranch: string
   title: string
   totalTime: number | null
@@ -112,9 +112,9 @@ export interface Repositories {
   id: string
   integrationId: string
   owner: string
-  provider: string
+  provider: 'github'
   releaseDetectionKey: Generated<string>
-  releaseDetectionMethod: Generated<string>
+  releaseDetectionMethod: Generated<'branch' | 'tags'>
   repo: string
   teamId: string | null
   updatedAt: string

@@ -183,7 +183,7 @@ export const buildPullRequests = async (
     pullRequestNumber: number
     repositoryId: string
     reviewer: string
-    state: string
+    state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
     submittedAt: string
     url: string
   }[] = []
@@ -241,7 +241,8 @@ export const buildPullRequests = async (
 
       // 7. レビュー情報を収集（PENDING レビューは submitted_at がないため除外）
       for (const review of rawArtifacts.reviews) {
-        if (!review.user || !review.submitted_at) continue
+        if (!review.user || !review.submitted_at || review.state === 'PENDING')
+          continue
         reviews.push({
           id: String(review.id),
           pullRequestNumber: pr.number,

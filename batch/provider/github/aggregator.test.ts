@@ -6,7 +6,7 @@ describe('leastCreatedMergeRequest', () => {
   const prototype: ShapedGitHubPullRequest = {
     repo: '',
     number: 0,
-    state: '',
+    state: 'open',
     title: '',
     created_at: '',
     updated_at: '',

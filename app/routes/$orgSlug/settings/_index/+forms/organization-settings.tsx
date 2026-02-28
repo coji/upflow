@@ -23,8 +23,6 @@ import {
   Stack,
   Switch,
 } from '~/app/components/ui'
-import type { DB, Selectable } from '~/app/services/db.server'
-import type { TenantDB } from '~/app/services/tenant-db.server'
 import { INTENTS, organizationSettingsSchema as schema } from '../+schema'
 import type { action } from '../../_index/index'
 
@@ -32,8 +30,15 @@ export const OrganizationSettings = ({
   organization,
   organizationSetting,
 }: {
-  organization: Selectable<DB.Organizations>
-  organizationSetting: Selectable<TenantDB.OrganizationSettings>
+  organization: {
+    name: string
+  }
+  organizationSetting: {
+    releaseDetectionMethod: string
+    releaseDetectionKey: string
+    isActive: number
+    excludedUsers: string
+  }
 }) => {
   const actionData = useActionData<typeof action>()
   const [form, fields] = useForm({
