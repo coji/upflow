@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { useFetcher } from 'react-router'
 import { EditableCell } from '~/app/components/editable-cell'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
-import { Switch } from '~/app/components/ui/switch'
+import { Badge } from '~/app/components/ui/badge'
 import dayjs from '~/app/libs/dayjs'
 import type { GithubUserRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
@@ -25,37 +25,6 @@ function EditableDisplayName({
         formData.set('intent', 'update')
         formData.set('login', login)
         formData.set('displayName', newValue)
-        fetcher.submit(formData, { method: 'post' })
-      }}
-    />
-  )
-}
-
-function ActiveToggle({
-  login,
-  isActive,
-  isSelf,
-}: {
-  login: string
-  isActive: number
-  isSelf: boolean
-}) {
-  const fetcher = useFetcher()
-  const optimisticActive =
-    fetcher.formData != null
-      ? Number(fetcher.formData.get('isActive'))
-      : isActive
-
-  return (
-    <Switch
-      aria-label={`Toggle active status for ${login}`}
-      checked={!!optimisticActive}
-      disabled={fetcher.state !== 'idle' || (isSelf && !!optimisticActive)}
-      onCheckedChange={() => {
-        const formData = new FormData()
-        formData.set('intent', 'toggle-active')
-        formData.set('login', login)
-        formData.set('isActive', String(optimisticActive ? 0 : 1))
         fetcher.submit(formData, { method: 'post' })
       }}
     />
@@ -118,15 +87,14 @@ export const columns: ColumnDef<GithubUserRow>[] = [
   {
     accessorKey: 'isActive',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Active" />
+      <DataTableColumnHeader column={column} title="Login" />
     ),
-    cell: ({ row, table }) => (
-      <ActiveToggle
-        login={row.original.login}
-        isActive={row.original.isActive}
-        isSelf={row.original.login === table.options.meta?.currentGithubLogin}
-      />
+    cell: ({ row }) => (
+      <Badge variant={row.original.isActive ? 'default' : 'outline'}>
+        {row.original.isActive ? 'Allowed' : 'Denied'}
+      </Badge>
     ),
+    enableSorting: false,
   },
   {
     accessorKey: 'createdAt',
