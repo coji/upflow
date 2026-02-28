@@ -71,7 +71,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     ...new Set(integration.repositories.map((r) => r.owner)),
   ]
   const apiOwners = await getCachedData(
-    'owners',
+    `owners-${organization.id}`,
     () => getUniqueOwners(token),
     300000, // 5 minutes
   )
@@ -84,7 +84,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 
   const { pageInfo, repos } = await getCachedData(
-    `repos-${owner}-${cursor}-${query}`,
+    `repos-${organization.id}-${owner}-${cursor}-${query}`,
     () =>
       getRepositoriesByOwnerAndKeyword({
         token,

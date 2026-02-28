@@ -30,7 +30,8 @@ export function DataTableFloatingBar({
   const isSubmitting = fetcher.state !== 'idle'
 
   useEffect(() => {
-    if (fetcher.data && fetcher.state === 'idle') {
+    const responseData = fetcher.data as Record<string, unknown> | undefined
+    if (fetcher.state === 'idle' && responseData?.ok) {
       table.resetRowSelection()
     }
   }, [fetcher.data, fetcher.state, table])

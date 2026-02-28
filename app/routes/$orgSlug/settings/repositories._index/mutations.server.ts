@@ -26,9 +26,13 @@ export const bulkUpdateRepositoryTeam = async (
   teamId: string | null,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  await tenantDb
+  const result = await tenantDb
     .updateTable('repositories')
     .set({ teamId })
     .where('id', 'in', repositoryIds)
-    .execute()
+    .executeTakeFirst()
+
+  if (Number(result.numUpdatedRows ?? 0) !== repositoryIds.length) {
+    throw new Error('Some repositories were not found')
+  }
 }

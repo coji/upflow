@@ -114,7 +114,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         return data(
           {
             intent: 'recalculate' as const,
-            error: e instanceof Error ? e.message : 'Recalculation failed',
+            error: 'Recalculation failed. Please try again later.',
           },
           { status: 500 },
         )

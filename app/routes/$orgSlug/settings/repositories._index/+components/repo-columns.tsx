@@ -73,7 +73,7 @@ export const createColumns = (
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
+        aria-label={`Select ${row.original.owner}/${row.original.repo}`}
       />
     ),
     enableSorting: false,
@@ -94,6 +94,7 @@ export const createColumns = (
         <Link
           to={repoUrl}
           target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-1 font-medium hover:underline"
         >
           {owner}/{repo}
