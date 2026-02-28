@@ -46,35 +46,44 @@ export const auth = betterAuth({
           avatar_url: string
         }
 
-        // Check if this GitHub login is registered in any org's companyGithubUsers
-        const orgs = await db
-          .selectFrom('organizations')
-          .select(['id'])
-          .execute()
-        let isAllowed = false
-        const loginLower = profile.login.toLowerCase()
-        for (const { id } of orgs) {
-          try {
-            const tenantDb = getTenantDb(id as OrganizationId)
-            const match = await tenantDb
-              .selectFrom('companyGithubUsers')
-              .select(['login'])
-              .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
-              .where('isActive', '=', 1)
-              .executeTakeFirst()
-            if (match) {
-              isAllowed = true
-              break
+        // First-user bootstrap: if no users exist yet, allow login unconditionally
+        const userCount = await db
+          .selectFrom('users')
+          .select((eb) => eb.fn.countAll<string>().as('count'))
+          .executeTakeFirstOrThrow()
+        const isFirstUser = Number(userCount.count) === 0
+
+        if (!isFirstUser) {
+          // Check if this GitHub login is registered in any org's companyGithubUsers
+          const orgs = await db
+            .selectFrom('organizations')
+            .select(['id'])
+            .execute()
+          let isAllowed = false
+          const loginLower = profile.login.toLowerCase()
+          for (const { id } of orgs) {
+            try {
+              const tenantDb = getTenantDb(id as OrganizationId)
+              const match = await tenantDb
+                .selectFrom('companyGithubUsers')
+                .select(['login'])
+                .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
+                .where('isActive', '=', 1)
+                .executeTakeFirst()
+              if (match) {
+                isAllowed = true
+                break
+              }
+            } catch {
+              // skip unreachable tenant DBs
             }
-          } catch {
-            // skip unreachable tenant DBs
           }
-        }
-        if (!isAllowed) {
-          console.warn(
-            `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
-          )
-          return null
+          if (!isAllowed) {
+            console.warn(
+              `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
+            )
+            return null
+          }
         }
 
         const emailsRes = await fetch('https://api.github.com/user/emails', {
@@ -170,6 +179,27 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // First-user bootstrap: promote to super admin
+          const count = await db
+            .selectFrom('users')
+            .select((eb) => eb.fn.countAll<string>().as('count'))
+            .executeTakeFirstOrThrow()
+          if (Number(count.count) === 1) {
+            await db
+              .updateTable('users')
+              .set({ role: 'admin' })
+              .where('id', '=', user.id)
+              .execute()
+            console.info(
+              `[Bootstrap] First user ${user.id} promoted to super admin`,
+            )
+          }
+        },
+      },
+    },
     session: {
       create: {
         after: async (session) => {
