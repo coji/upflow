@@ -53,6 +53,18 @@ export const deleteGithubUser = async (
   organizationId: OrganizationId,
 ) => {
   const tenantDb = getTenantDb(organizationId)
+
+  // Revoke all sessions for the user before deleting
+  const row = await tenantDb
+    .selectFrom('companyGithubUsers')
+    .select('userId')
+    .where('login', '=', login)
+    .executeTakeFirst()
+
+  if (row?.userId) {
+    await db.deleteFrom('sessions').where('userId', '=', row.userId).execute()
+  }
+
   await tenantDb
     .deleteFrom('companyGithubUsers')
     .where('login', '=', login)
