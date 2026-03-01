@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
+import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
 import type { PullRequest } from './index'
 
@@ -9,7 +10,23 @@ export const columns: ColumnDef<PullRequest>[] = [
     header: ({ column }) => (
       <AppSortableHeader column={column} title="author" />
     ),
-    cell: ({ cell }) => cell.row.original.authorDisplayName || cell.getValue(),
+    cell: ({ row }) => {
+      const login = row.original.author
+      return (
+        <div className="flex items-center gap-2">
+          <Avatar className="size-6">
+            <AvatarImage
+              src={`https://github.com/${login}.png?size=48`}
+              alt={login}
+            />
+            <AvatarFallback className="text-xs">
+              {login.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <span>{row.original.authorDisplayName || login}</span>
+        </div>
+      )
+    },
     enableHiding: false,
   },
   {
