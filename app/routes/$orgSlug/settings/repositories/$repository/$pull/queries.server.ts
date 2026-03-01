@@ -48,7 +48,7 @@ export const getPullRequestRawData = async (
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
     .selectFrom('githubRawData')
-    .select(['commits', 'reviews', 'discussions'])
+    .select(['commits', 'reviews', 'discussions', 'timelineItems'])
     .where('repositoryId', '=', repositoryId)
     .where('pullRequestNumber', '=', pullRequestNumber)
     .executeTakeFirst()

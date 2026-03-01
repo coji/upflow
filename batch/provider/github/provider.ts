@@ -4,7 +4,7 @@ import type { TenantDB } from '~/app/services/tenant-db.server'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
 import { createAggregator } from './aggregator'
-import { createFetcher } from './fetcher'
+import { buildRequestedAtMap, createFetcher } from './fetcher'
 import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 
@@ -98,6 +98,7 @@ export const createGitHubProvider = (
           commits,
           reviews,
           discussions: comments,
+          timelineItems: detail.timelineItems,
         })
         logger.info(`${pr.number} saved`)
       }
@@ -128,7 +129,24 @@ export const createGitHubProvider = (
         logger.info(`${pr.number} reviews`)
         const reviews = await fetcher.reviews(pr.number)
 
-        await store.savePrData(pr, { commits, reviews, discussions })
+        // timeline items を取得
+        logger.info(`${pr.number} timeline items`)
+        const timelineItems = await fetcher.timelineItems(pr.number)
+
+        // reviewers の requestedAt を補完
+        if (pr.reviewers.length > 0) {
+          const requestedAtMap = buildRequestedAtMap(timelineItems)
+          for (const r of pr.reviewers) {
+            r.requestedAt = requestedAtMap.get(r.login) ?? null
+          }
+        }
+
+        await store.savePrData(pr, {
+          commits,
+          reviews,
+          discussions,
+          timelineItems,
+        })
       }
     }
 
@@ -154,7 +172,7 @@ export const createGitHubProvider = (
     let allReviewers: {
       pullRequestNumber: number
       repositoryId: string
-      reviewerLogins: string[]
+      reviewers: { login: string; requestedAt: string | null }[]
     }[] = []
     let allReviewResponses: {
       repo: string

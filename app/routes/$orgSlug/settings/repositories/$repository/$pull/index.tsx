@@ -61,8 +61,9 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
           commits: rawData.commits as unknown[],
           reviews: rawData.reviews as unknown[],
           discussions: rawData.discussions as unknown[],
+          timelineItems: (rawData.timelineItems ?? []) as unknown[],
         }
-      : { commits: [], reviews: [], discussions: [] },
+      : { commits: [], reviews: [], discussions: [], timelineItems: [] },
     processedReviews,
     processedReviewers,
   }
@@ -104,12 +105,19 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
   return match(intent)
     .with('compare', async () => {
-      const [commits, comments, reviews] = await Promise.all([
+      const [commits, comments, reviews, timelineItems] = await Promise.all([
         fetcher.commits(pullId),
         fetcher.comments(pullId),
         fetcher.reviews(pullId),
+        fetcher.timelineItems(pullId),
       ])
-      return { intent: 'compare' as const, commits, comments, reviews }
+      return {
+        intent: 'compare' as const,
+        commits,
+        comments,
+        reviews,
+        timelineItems,
+      }
     })
     .with('refresh', async () => {
       // 1. Get existing PR shape from raw data
@@ -125,11 +133,12 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       }
       const pr = shapedPr as unknown as ShapedGitHubPullRequest
 
-      // 2. Re-fetch commits/comments/reviews from GitHub
-      const [commits, comments, reviews] = await Promise.all([
+      // 2. Re-fetch commits/comments/reviews/timelineItems from GitHub
+      const [commits, comments, reviews, timelineItems] = await Promise.all([
         fetcher.commits(pullId),
         fetcher.comments(pullId),
         fetcher.reviews(pullId),
+        fetcher.timelineItems(pullId),
       ])
 
       // 3. Save raw data via store
@@ -137,7 +146,12 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         organizationId: organization.id,
         repositoryId,
       })
-      await store.savePrData(pr, { commits, reviews, discussions: comments })
+      await store.savePrData(pr, {
+        commits,
+        reviews,
+        discussions: comments,
+        timelineItems,
+      })
 
       // 4. Get organization settings for build config
       const settings = await getOrganizationSettings(organization.id)
@@ -365,6 +379,11 @@ const RepositoryPullsIndexPage = ({
           title="Discussions"
           storeItems={storeData.discussions}
           githubItems={compareData?.comments}
+        />
+        <ComparisonSection
+          title="Timeline Items"
+          storeItems={storeData.timelineItems}
+          githubItems={compareData?.timelineItems}
         />
       </Stack>
 

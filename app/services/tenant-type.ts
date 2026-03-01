@@ -51,6 +51,7 @@ export interface GithubRawData {
   pullRequestNumber: number
   repositoryId: string
   reviews: ColumnType<unknown, string, string>
+  timelineItems: string | null
 }
 
 export interface GithubRawTags {

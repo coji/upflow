@@ -8,6 +8,7 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
+  ShapedTimelineItem,
 } from './model'
 
 interface createStoreProps {
@@ -29,6 +30,7 @@ export const createStore = ({
       commits: ShapedGitHubCommit[]
       reviews: ShapedGitHubReview[]
       discussions: ShapedGitHubReviewComment[]
+      timelineItems?: ShapedTimelineItem[]
     },
   ) => {
     await db
@@ -40,6 +42,9 @@ export const createStore = ({
         commits: JSON.stringify(data.commits),
         reviews: JSON.stringify(data.reviews),
         discussions: JSON.stringify(data.discussions),
+        timelineItems: data.timelineItems
+          ? JSON.stringify(data.timelineItems)
+          : null,
       })
       .onConflict((oc) =>
         oc.columns(['repositoryId', 'pullRequestNumber']).doUpdateSet((eb) => ({
@@ -47,6 +52,7 @@ export const createStore = ({
           commits: eb.ref('excluded.commits'),
           reviews: eb.ref('excluded.reviews'),
           discussions: eb.ref('excluded.discussions'),
+          timelineItems: eb.ref('excluded.timelineItems'),
         })),
       )
       .execute()
@@ -76,6 +82,7 @@ export const createStore = ({
       commits: ShapedGitHubCommit[]
       reviews: ShapedGitHubReview[]
       discussions: ShapedGitHubReviewComment[]
+      timelineItems: ShapedTimelineItem[]
     }
   > | null = null
 
@@ -84,11 +91,13 @@ export const createStore = ({
     commits: unknown
     reviews: unknown
     discussions: unknown
+    timelineItems?: unknown
   }) => ({
     pullRequest: row.pullRequest as ShapedGitHubPullRequest,
     commits: row.commits as ShapedGitHubCommit[],
     reviews: row.reviews as ShapedGitHubReview[],
     discussions: row.discussions as ShapedGitHubReviewComment[],
+    timelineItems: (row.timelineItems as ShapedTimelineItem[] | null) ?? [],
   })
 
   const preloadAll = async () => {
@@ -100,6 +109,7 @@ export const createStore = ({
         'commits',
         'reviews',
         'discussions',
+        'timelineItems',
       ])
       .where('repositoryId', '=', repositoryId)
       .execute()
@@ -117,7 +127,13 @@ export const createStore = ({
     }
     const row = await db
       .selectFrom('githubRawData')
-      .select(['pullRequest', 'commits', 'reviews', 'discussions'])
+      .select([
+        'pullRequest',
+        'commits',
+        'reviews',
+        'discussions',
+        'timelineItems',
+      ])
       .where('repositoryId', '=', repositoryId)
       .where('pullRequestNumber', '=', number)
       .executeTakeFirst()
@@ -138,6 +154,13 @@ export const createStore = ({
   const discussions = async (number: number) => {
     const row = await loadRow(number)
     return row?.discussions ?? []
+  }
+
+  const timelineItems = async (
+    number: number,
+  ): Promise<ShapedTimelineItem[]> => {
+    const row = await loadRow(number)
+    return row?.timelineItems ?? []
   }
 
   const pullrequests = async (): Promise<ShapedGitHubPullRequest[]> => {
@@ -173,6 +196,7 @@ export const createStore = ({
       reviews,
       pullrequests,
       tags,
+      timelineItems,
     },
   }
 }

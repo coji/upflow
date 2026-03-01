@@ -17,6 +17,7 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
+  ShapedTimelineItem,
 } from './model'
 
 // Set up a temp directory for tenant DB
@@ -68,6 +69,7 @@ function setupTenantDb() {
       commits text NOT NULL,
       reviews text NOT NULL,
       discussions text NOT NULL,
+      timeline_items text NULL,
       fetched_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
       PRIMARY KEY (repository_id, pull_request_number),
       FOREIGN KEY (repository_id) REFERENCES repositories(id)
@@ -122,7 +124,7 @@ const makePr = (number: number): ShapedGitHubPullRequest => ({
   url: `https://github.com/test-owner/test-repo/pull/${number}`,
   author: 'user1',
   assignees: [],
-  reviewers: ['reviewer1'],
+  reviewers: [{ login: 'reviewer1', requestedAt: '2024-01-01T06:00:00Z' }],
   draft: false,
   sourceBranch: 'feature',
   targetBranch: 'main',
@@ -166,6 +168,24 @@ const makeDiscussions = (n: number): ShapedGitHubReviewComment[] => [
   },
 ]
 
+const makeTimelineItems = (n: number): ShapedTimelineItem[] => [
+  {
+    type: 'ReviewRequestedEvent',
+    createdAt: '2024-01-01T06:00:00Z',
+    reviewer: 'reviewer1',
+  },
+  {
+    type: 'ReadyForReviewEvent',
+    createdAt: '2024-01-01T05:00:00Z',
+    actor: 'user1',
+  },
+  {
+    type: 'MergedEvent',
+    createdAt: '2024-01-02T00:00:00Z',
+    actor: `user${n}`,
+  },
+]
+
 describe('store', () => {
   beforeEach(async () => {
     cleanupTenantDb()
@@ -184,13 +204,20 @@ describe('store', () => {
     const commits = makeCommits(1)
     const reviews = makeReviews(1)
     const discussions = makeDiscussions(1)
+    const timelineItems = makeTimelineItems(1)
 
-    await store.savePrData(pr, { commits, reviews, discussions })
+    await store.savePrData(pr, {
+      commits,
+      reviews,
+      discussions,
+      timelineItems,
+    })
 
     expect(await store.loader.pullrequests()).toEqual([pr])
     expect(await store.loader.commits(1)).toEqual(commits)
     expect(await store.loader.reviews(1)).toEqual(reviews)
     expect(await store.loader.discussions(1)).toEqual(discussions)
+    expect(await store.loader.timelineItems(1)).toEqual(timelineItems)
   })
 
   test('savePrData upserts on conflict', async () => {
@@ -232,6 +259,20 @@ describe('store', () => {
     expect(await store.loader.commits(999)).toEqual([])
     expect(await store.loader.reviews(999)).toEqual([])
     expect(await store.loader.discussions(999)).toEqual([])
+    expect(await store.loader.timelineItems(999)).toEqual([])
+  })
+
+  test('timelineItems defaults to empty when not provided', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    const pr = makePr(1)
+
+    await store.savePrData(pr, {
+      commits: makeCommits(1),
+      reviews: makeReviews(1),
+      discussions: makeDiscussions(1),
+    })
+
+    expect(await store.loader.timelineItems(1)).toEqual([])
   })
 
   test('saveTags and loader.tags round-trip', async () => {

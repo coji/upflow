@@ -11,6 +11,7 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
+  ShapedTimelineItem,
 } from './model'
 
 const GetPullRequestsQuery = graphql(`
@@ -79,22 +80,112 @@ const GetPullRequestsQuery = graphql(`
               }
             }
           }
-          timelineItems(first: 20, itemTypes: [REVIEW_REQUESTED_EVENT]) {
-            nodes {
-              ... on ReviewRequestedEvent {
-                createdAt
-                requestedReviewer {
-                  __typename
-                  ... on User {
-                    login
-                  }
-                  ... on Bot {
-                    login
-                  }
-                  ... on Mannequin {
-                    login
-                  }
+        }
+      }
+    }
+  }
+`)
+
+const GetPullRequestTimelineQuery = graphql(`
+  query GetPullRequestTimeline($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        timelineItems(
+          first: 100
+          itemTypes: [
+            REVIEW_REQUESTED_EVENT
+            REVIEW_REQUEST_REMOVED_EVENT
+            READY_FOR_REVIEW_EVENT
+            CONVERT_TO_DRAFT_EVENT
+            REVIEW_DISMISSED_EVENT
+            DEPLOYED_EVENT
+            CLOSED_EVENT
+            REOPENED_EVENT
+            MERGED_EVENT
+            HEAD_REF_FORCE_PUSHED_EVENT
+          ]
+        ) {
+          nodes {
+            __typename
+            ... on ReviewRequestedEvent {
+              createdAt
+              requestedReviewer {
+                __typename
+                ... on User {
+                  login
                 }
+                ... on Bot {
+                  login
+                }
+                ... on Mannequin {
+                  login
+                }
+              }
+            }
+            ... on ReviewRequestRemovedEvent {
+              createdAt
+              requestedReviewer {
+                __typename
+                ... on User {
+                  login
+                }
+                ... on Bot {
+                  login
+                }
+                ... on Mannequin {
+                  login
+                }
+              }
+            }
+            ... on ReadyForReviewEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on ConvertToDraftEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on ReviewDismissedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on DeployedEvent {
+              createdAt
+              actor {
+                login
+              }
+              deployment {
+                environment
+              }
+            }
+            ... on ClosedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on ReopenedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on MergedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on HeadRefForcePushedEvent {
+              createdAt
+              actor {
+                login
               }
             }
           }
@@ -292,8 +383,23 @@ const GetPullRequestsWithDetailsQuery = graphql(`
               }
             }
           }
-          timelineItems(first: 20, itemTypes: [REVIEW_REQUESTED_EVENT]) {
+          timelineItems(
+            first: 50
+            itemTypes: [
+              REVIEW_REQUESTED_EVENT
+              REVIEW_REQUEST_REMOVED_EVENT
+              READY_FOR_REVIEW_EVENT
+              CONVERT_TO_DRAFT_EVENT
+              REVIEW_DISMISSED_EVENT
+              DEPLOYED_EVENT
+              CLOSED_EVENT
+              REOPENED_EVENT
+              MERGED_EVENT
+              HEAD_REF_FORCE_PUSHED_EVENT
+            ]
+          ) {
             nodes {
+              __typename
               ... on ReviewRequestedEvent {
                 createdAt
                 requestedReviewer {
@@ -307,6 +413,72 @@ const GetPullRequestsWithDetailsQuery = graphql(`
                   ... on Mannequin {
                     login
                   }
+                }
+              }
+              ... on ReviewRequestRemovedEvent {
+                createdAt
+                requestedReviewer {
+                  __typename
+                  ... on User {
+                    login
+                  }
+                  ... on Bot {
+                    login
+                  }
+                  ... on Mannequin {
+                    login
+                  }
+                }
+              }
+              ... on ReadyForReviewEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on ConvertToDraftEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on ReviewDismissedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on DeployedEvent {
+                createdAt
+                actor {
+                  login
+                }
+                deployment {
+                  environment
+                }
+              }
+              ... on ClosedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on ReopenedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on MergedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on HeadRefForcePushedEvent {
+                createdAt
+                actor {
+                  login
                 }
               }
             }
@@ -473,6 +645,68 @@ function handleGraphQLError<T>(
   throw error
 }
 
+/**
+ * GraphQL の timelineItems ノードを ShapedTimelineItem[] に変換
+ */
+function shapeTimelineNodes(
+  nodes: readonly (Record<string, unknown> | null)[],
+): ShapedTimelineItem[] {
+  const items: ShapedTimelineItem[] = []
+  for (const node of nodes) {
+    if (!node || !('__typename' in node) || !('createdAt' in node)) continue
+    const type = node.__typename as string
+    const createdAt = node.createdAt as string
+
+    // ReviewRequestedEvent / ReviewRequestRemovedEvent: reviewer 情報
+    if ('requestedReviewer' in node && node.requestedReviewer) {
+      const rr = node.requestedReviewer as { login?: string; name?: string }
+      items.push({
+        type,
+        createdAt,
+        reviewer: rr.login ?? rr.name ?? null,
+      })
+      continue
+    }
+
+    // DeployedEvent: environment 情報
+    if ('deployment' in node && node.deployment) {
+      const dep = node.deployment as { environment?: string }
+      items.push({
+        type,
+        createdAt,
+        actor: (node.actor as { login?: string } | null)?.login ?? null,
+        environment: dep.environment ?? null,
+      })
+      continue
+    }
+
+    // その他: actor 情報
+    items.push({
+      type,
+      createdAt,
+      actor: (node.actor as { login?: string } | null)?.login ?? null,
+    })
+  }
+  return items
+}
+
+/**
+ * ShapedTimelineItem[] から login → 最新の requestedAt マッピングを構築
+ */
+export function buildRequestedAtMap(
+  items: ShapedTimelineItem[],
+): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const item of items) {
+    if (item.type !== 'ReviewRequestedEvent' || !item.reviewer) continue
+    const existing = map.get(item.reviewer)
+    if (!existing || item.createdAt > existing) {
+      map.set(item.reviewer, item.createdAt)
+    }
+  }
+  return map
+}
+
 interface createFetcherProps {
   owner: string
   repo: string
@@ -492,7 +726,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let allPulls: ShapedGitHubPullRequest[] = []
     let cursor: string | null = null
     let hasNextPage = true
-    const pageSizeRef = { value: 50 }
+    const pageSizeRef = { value: 100 }
 
     while (hasNextPage) {
       let result: PullRequestsResult
@@ -536,28 +770,8 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         const state =
           node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
 
-        // timelineItems から login → 最新の requestedAt マッピングを構築
-        const requestedAtMap = new Map<string, string>()
-        if (node.timelineItems?.nodes) {
-          for (const item of node.timelineItems.nodes) {
-            if (!item || !('createdAt' in item) || !item.requestedReviewer)
-              continue
-            const reviewer = item.requestedReviewer
-            if (
-              reviewer.__typename === 'User' ||
-              reviewer.__typename === 'Bot' ||
-              reviewer.__typename === 'Mannequin'
-            ) {
-              // 同じ reviewer に複数回リクエストがある場合は最新を採用
-              const existing = requestedAtMap.get(reviewer.login)
-              if (!existing || item.createdAt > existing) {
-                requestedAtMap.set(reviewer.login, item.createdAt)
-              }
-            }
-          }
-        }
-
-        // reviewRequests（現在の pending reviewer）と requestedAt を統合
+        // reviewRequests（現在の pending reviewer）を取得
+        // requestedAt は pullrequestsWithDetails() のフルリフレッシュ時のみ取得
         const reviewers: { login: string; requestedAt: string | null }[] = []
         if (node.reviewRequests?.nodes) {
           for (const rr of node.reviewRequests.nodes) {
@@ -570,7 +784,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             ) {
               reviewers.push({
                 login: reviewer.login,
-                requestedAt: requestedAtMap.get(reviewer.login) ?? null,
+                requestedAt: null,
               })
             }
           }
@@ -894,25 +1108,16 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         const state =
           node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
 
-        // timelineItems から login → 最新の requestedAt マッピングを構築
-        const requestedAtMap = new Map<string, string>()
-        if (node.timelineItems?.nodes) {
-          for (const item of node.timelineItems.nodes) {
-            if (!item || !('createdAt' in item) || !item.requestedReviewer)
-              continue
-            const reviewer = item.requestedReviewer
-            if (
-              reviewer.__typename === 'User' ||
-              reviewer.__typename === 'Bot' ||
-              reviewer.__typename === 'Mannequin'
-            ) {
-              const existing = requestedAtMap.get(reviewer.login)
-              if (!existing || item.createdAt > existing) {
-                requestedAtMap.set(reviewer.login, item.createdAt)
-              }
-            }
-          }
-        }
+        // timelineItems をローデータとしてパース
+        const prTimelineItems = node.timelineItems?.nodes
+          ? shapeTimelineNodes(
+              node.timelineItems.nodes as readonly (Record<
+                string,
+                unknown
+              > | null)[],
+            )
+          : []
+        const requestedAtMap = buildRequestedAtMap(prTimelineItems)
 
         // reviewRequests（現在の pending reviewer）と requestedAt を統合
         const reviewers: { login: string; requestedAt: string | null }[] = []
@@ -1050,6 +1255,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           commits: prCommits,
           reviews: prReviews,
           comments: prComments,
+          timelineItems: prTimelineItems,
           needsMoreCommits: node.commits?.pageInfo.hasNextPage ?? false,
           needsMoreReviews: node.reviews?.pageInfo.hasNextPage ?? false,
           needsMoreComments: node.comments?.pageInfo.hasNextPage ?? false,
@@ -1066,12 +1272,34 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return allResults
   }
 
+  /**
+   * 単一 PR の timeline items をローデータとして取得
+   */
+  const timelineItems = async (
+    pullNumber: number,
+  ): Promise<ShapedTimelineItem[]> => {
+    type Result = ResultOf<typeof GetPullRequestTimelineQuery>
+
+    const queryStr = print(GetPullRequestTimelineQuery)
+    const result = await octokit.graphql<Result>(queryStr, {
+      owner,
+      repo,
+      number: pullNumber,
+    })
+
+    const nodes = result.repository?.pullRequest?.timelineItems?.nodes
+    if (!nodes) return []
+
+    return shapeTimelineNodes(nodes)
+  }
+
   return {
     pullrequests,
     pullrequestsWithDetails,
     commits,
     comments,
     reviews,
+    timelineItems,
     tags,
   }
 }
