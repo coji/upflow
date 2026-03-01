@@ -60,22 +60,31 @@ export async function classifyPullRequests(
   logger.info(`Classifying ${unclassifiedPRs.length} PRs...`, organizationId)
 
   // 2. rawPullRequest から files を抽出して分類用の入力を作成
-  const prInputs = unclassifiedPRs.map((pr) => {
-    const raw = (
-      typeof pr.rawPullRequest === 'string'
-        ? JSON.parse(pr.rawPullRequest)
-        : pr.rawPullRequest
-    ) as ShapedGitHubPullRequest
+  const prInputs = unclassifiedPRs.flatMap((pr) => {
+    try {
+      const raw = (
+        typeof pr.rawPullRequest === 'string'
+          ? JSON.parse(pr.rawPullRequest)
+          : pr.rawPullRequest
+      ) as ShapedGitHubPullRequest
 
-    return {
-      number: pr.number,
-      repositoryId: pr.repositoryId,
-      title: pr.title,
-      author: pr.author,
-      additions: pr.additions,
-      deletions: pr.deletions,
-      changedFiles: pr.changedFiles,
-      files: raw.files ?? [],
+      return [
+        {
+          number: pr.number,
+          repositoryId: pr.repositoryId,
+          title: pr.title,
+          author: pr.author,
+          additions: pr.additions,
+          deletions: pr.deletions,
+          changedFiles: pr.changedFiles,
+          files: raw.files ?? [],
+        },
+      ]
+    } catch (err) {
+      logger.warn(
+        `Skipping PR #${pr.number} in ${pr.repositoryId}: invalid rawPullRequest (${err instanceof Error ? err.message : String(err)})`,
+      )
+      return []
     }
   })
 
@@ -85,7 +94,7 @@ export async function classifyPullRequests(
   // 4. 結果を DB に保存
   const now = new Date().toISOString()
   for (const pr of prInputs) {
-    const classification = result.results.get(String(pr.number))
+    const classification = result.results.get(`${pr.repositoryId}#${pr.number}`)
     if (!classification) continue
 
     await tenantDb

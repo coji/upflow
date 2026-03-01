@@ -23,7 +23,7 @@ lab での実データ分析（実顧客組織、約5,000 PR）では:
 
 - **構造を見せる**: 個人の問題ではなくシステムの問題として可視化する
 - **議論を促す**: 答えを出すのではなく、チームが考える材料を提供する
-- **既存データで**: 新しいバッチ処理やスキーマ変更なしで実現する
+- **既存データ活用**: 基本は既存データで実現し、LLM分類のみオプショナルに追加
 
 ---
 
@@ -35,7 +35,7 @@ lab での実データ分析（実顧客組織、約5,000 PR）では:
 
 ### 画面構成
 
-```
+```text
 ┌────────────┬──────────────────────────────────────────────┐
 │ Sidebar    │                                              │
 │            │  Review Bottleneck          [Team▼] [3M▼]   │
@@ -50,9 +50,8 @@ lab での実データ分析（実顧客組織、約5,000 PR）では:
 │            │                                              │
 │            │  ┌──── B. 同時に抱えるほど遅くなる ───────┐ │
 │            │  │                                         │ │
-│            │  │  [散布図: WIP数 × review_time]          │ │
-│            │  │  WIP=1 → 中央値Xh                       │ │
-│            │  │  WIP=3+ → 中央値Yh (Z倍)               │ │
+│            │  │  [棒グラフ: WIP別 review_time 中央値]   │ │
+│            │  │  WIP 0-1: Xh  WIP 2: Yh  WIP 3+: Zh   │ │
 │            │  └─────────────────────────────────────────┘ │
 │            │                                              │
 │            │  ┌──── C. 自動化でキューを減らせる ───────┐ │
@@ -95,15 +94,14 @@ lab での実データ分析（実顧客組織、約5,000 PR）では:
 
 **ロジック**:
 
-1. マージ済みPRそれぞれに対して、そのPRの作成時点での author の WIP数（同じ author が同時に open していた PR 数）を算出
-2. WIP数 × review_time の散布図を描画
-3. WIP数別の中央値を折れ線で重ねて傾向を示す
+1. マージ済みPRそれぞれに対して、そのPRの作成時点での author の WIP数（同じ author が同時に open していた PR 数）を clientLoader で算出
+2. WIP数をグループ化（0-1 / 2 / 3 / 4+）し、各グループの review_time 中央値を計算
 
-**UI**: 散布図（Recharts ScatterChart）+ 折れ線オーバーレイ
+**UI**: グループ別棒グラフ（Recharts BarChart）
 
-- X軸: WIP数、Y軸: review_time（時間）
-- WIP別中央値の折れ線で傾向を強調
-- 補助テキスト: 「WIP 1件の中央値: Xh → 3件以上: Yh（Z倍）」
+- X軸: WIPグループ（WIP 0-1, WIP 2, WIP 3, WIP 4+）、Y軸: review_time 中央値（時間）
+- 各バーの下に n=件数 を表示
+- 補助テキスト: 「WIP 0-1 の中央値: Xh → WIP 3+: Yh（Z倍）」
 
 **フィルタ**: チーム + 期間
 
@@ -141,11 +139,15 @@ lab での実データ分析（実顧客組織、約5,000 PR）では:
 
 ## 5. ファイル構成
 
-```
+```text
 app/routes/$orgSlug/reviews/
-├── index.tsx                    # ページコンポーネント + loader
+├── index.tsx                    # ページ + loader + clientLoader（集計処理）
 ├── +functions/
-│   └── queries.server.ts        # 3つのクエリ関数
+│   ├── queries.server.ts        # 3つのクエリ関数
+│   ├── aggregate.ts             # clientLoader 用集計ロジック（純粋関数）
+│   ├── aggregate.test.ts        # 集計ロジックのテスト
+│   ├── classify.ts              # PRサイズ分類（LLMフォールバック付き）
+│   └── classify.test.ts         # 分類ロジックのテスト
 └── +components/
     ├── reviewer-queue-chart.tsx  # A. レビュアー別キュー深度
     ├── wip-cycle-chart.tsx       # B. WIP vs サイクルタイム
@@ -177,13 +179,13 @@ app/components/layout/
 | `repositories`           | チーム紐付け                       |
 | `company_github_users`   | 表示名                             |
 
-新規テーブル・カラム追加: **なし**
+新規テーブル追加: **なし**
+LLM分類用カラム追加（`pull_requests`）: `complexity`, `complexity_reason`, `risk_areas`, `classified_at`, `classifier_model`
 
 ---
 
 ## 7. 将来の拡張
 
-- LLM ベースの PR サイズ分類（lab 実験 004/005 で検証済み、XS+S 自動マージで 50% 削減）
 - レビュアー × author のヒートマップ（誰が誰の PR をレビューしているか）
 - レビュー負荷のジニ係数（偏りの数値化）
 - Slack 通知連携（キューが閾値を超えたらアラート）

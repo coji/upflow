@@ -19,6 +19,7 @@ export interface LLMClassification {
 }
 
 interface PRInput {
+  repositoryId: string
   number: number
   title: string
   author: string | null
@@ -26,6 +27,10 @@ interface PRInput {
   deletions: number | null
   changedFiles: number | null
   files: { path: string; additions: number; deletions: number }[]
+}
+
+function toResultKey(pr: Pick<PRInput, 'repositoryId' | 'number'>): string {
+  return `${pr.repositoryId}#${pr.number}`
 }
 
 interface TokenUsage {
@@ -179,7 +184,7 @@ export async function batchClassifyPRs(
   for (let i = 0; i < prs.length; i += concurrency) {
     const batch = prs.slice(i, i + concurrency)
     const promises = batch.map(async (pr) => {
-      const key = `${pr.number}`
+      const key = toResultKey(pr)
       try {
         const result = await classifySinglePR(ai, model, pr)
         results.set(key, result.classification)
