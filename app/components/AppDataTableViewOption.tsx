@@ -1,5 +1,6 @@
 import type { Table } from '@tanstack/react-table'
 import { Settings2Icon } from 'lucide-react'
+import type React from 'react'
 import { match, P } from 'ts-pattern'
 import {
   Button,
@@ -13,9 +14,11 @@ import {
 
 interface AppDataTableViewOptionsProps<TData> {
   table: Table<TData>
+  children?: React.ReactNode
 }
 export function AppDataTableViewOptions<TData>({
   table,
+  children,
 }: AppDataTableViewOptionsProps<TData>) {
   const hideableColumns = table
     .getAllColumns()
@@ -33,6 +36,12 @@ export function AppDataTableViewOptions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
+        {children && (
+          <>
+            {children}
+            <DropdownMenuSeparator />
+          </>
+        )}
         {hideableColumns.length > 0 && (
           <>
             <DropdownMenuLabel>Columns</DropdownMenuLabel>

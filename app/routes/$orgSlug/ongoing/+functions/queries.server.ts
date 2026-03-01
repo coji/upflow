@@ -1,4 +1,5 @@
 import { pipe, sortBy } from 'remeda'
+import dayjs from '~/app/libs/dayjs'
 import {
   getTenantDb,
   type OrganizationId,
@@ -10,6 +11,7 @@ export const getOngoingPullRequestReport = async (
   fromDateTime: string | null,
   toDateTime: string | null,
   teamId?: string | null,
+  businessDaysOnly = true,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const pullrequests = await tenantDb
@@ -33,19 +35,30 @@ export const getOngoingPullRequestReport = async (
     .where('state', '=', 'open')
     .where('author', 'not like', '%[bot]')
     .orderBy('pullRequestCreatedAt', 'desc')
-    .selectAll('pullRequests')
-    .select('companyGithubUsers.displayName as authorDisplayName')
+    .select([
+      'pullRequests.author',
+      'pullRequests.repo',
+      'pullRequests.number',
+      'pullRequests.title',
+      'pullRequests.url',
+      'pullRequests.firstCommittedAt',
+      'pullRequests.pullRequestCreatedAt',
+      'pullRequests.firstReviewedAt',
+      'companyGithubUsers.displayName as authorDisplayName',
+    ])
     .execute()
+
+  const now = new Date().toISOString()
 
   return pipe(
     pullrequests.map((pr) => {
+      const startDate = pr.firstCommittedAt ?? pr.pullRequestCreatedAt
+      const diffHours = businessDaysOnly
+        ? calculateBusinessHours(startDate, now)
+        : dayjs(now).diff(dayjs(startDate), 'hour', true)
       return {
         ...pr,
-        createAndNowDiff:
-          calculateBusinessHours(
-            pr.pullRequestCreatedAt,
-            new Date().toISOString(),
-          ) / 24, // 作成日からの経過時間（営業時間のみカウント）
+        createAndNowDiff: diffHours / 24,
       }
     }),
     sortBy((pr) => (pr.createAndNowDiff ? -pr.createAndNowDiff : 0)),
