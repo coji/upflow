@@ -1,4 +1,9 @@
-import { LayoutDashboardIcon, SettingsIcon, TimerIcon } from 'lucide-react'
+import {
+  GitPullRequestIcon,
+  LayoutDashboardIcon,
+  SettingsIcon,
+  TimerIcon,
+} from 'lucide-react'
 import type { NavGroupProps } from './types'
 
 export function getNavConfig(orgSlug: string): NavGroupProps[] {
@@ -15,6 +20,11 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
           title: 'Ongoing',
           url: `/${orgSlug}/ongoing`,
           icon: TimerIcon,
+        },
+        {
+          title: 'Reviews',
+          url: `/${orgSlug}/reviews`,
+          icon: GitPullRequestIcon,
         },
       ],
     },
