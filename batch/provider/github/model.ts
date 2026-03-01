@@ -27,6 +27,7 @@ export type ShapedGitHubPullRequest = {
   createdAt: GitHubPullRequest['created_at']
   updatedAt: GitHubPullRequest['updated_at']
   mergedAt: GitHubPullRequest['merged_at'] | null
+  closedAt: string | null
   mergeCommitSha: GitHubPullRequest['merge_commit_sha'] | null
   additions: number | null
   deletions: number | null

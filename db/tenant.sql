@@ -60,6 +60,7 @@ CREATE TABLE `pull_requests` (
   `pull_request_created_at` text NOT NULL,
   `first_reviewed_at` text NULL,
   `merged_at` text NULL,
+  `closed_at` text NULL,
   `released_at` text NULL,
   `coding_time` real NULL,
   `pickup_time` real NULL,

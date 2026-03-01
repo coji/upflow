@@ -139,6 +139,7 @@ export interface QueueHistoryRawRow {
   requestedAt: string
   resolvedAt: string | null
   mergedAt: string | null
+  closedAt: string | null
 }
 
 export interface WeeklyQueuePoint {
@@ -164,6 +165,7 @@ function computeQueueLengthForDay(
     if (r.requestedAt > day) return false
     if (r.resolvedAt !== null && r.resolvedAt <= day) return false
     if (r.mergedAt !== null && r.mergedAt <= day) return false
+    if (r.closedAt !== null && r.closedAt <= day) return false
     return true
   }).length
 }

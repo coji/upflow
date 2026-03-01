@@ -41,6 +41,7 @@ const GetPullRequestsQuery = graphql(`
           createdAt
           updatedAt
           mergedAt
+          closedAt
           additions
           deletions
           changedFiles
@@ -337,6 +338,7 @@ const GetPullRequestsWithDetailsQuery = graphql(`
           createdAt
           updatedAt
           mergedAt
+          closedAt
           additions
           deletions
           changedFiles
@@ -701,8 +703,31 @@ interface createFetcherProps {
   repo: string
   token: string
 }
+const REQUEST_TIMEOUT_MS = 30_000
+
 export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
   const octokit = new Octokit({ auth: token })
+
+  /** タイムアウト付き GraphQL リクエスト */
+  function graphqlWithTimeout<T>(
+    query: string,
+    variables: Record<string, unknown>,
+  ): Promise<T> {
+    return Promise.race([
+      octokit.graphql<T>(query, variables),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              Object.assign(new Error('GraphQL request timeout'), {
+                status: 504,
+              }),
+            ),
+          REQUEST_TIMEOUT_MS,
+        ),
+      ),
+    ])
+  }
 
   /**
    * プロジェクトのすべてのプルリク情報を GraphQL で取得
@@ -720,7 +745,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     while (hasNextPage) {
       let result: PullRequestsResult
       try {
-        result = await octokit.graphql<PullRequestsResult>(queryStr, {
+        result = await graphqlWithTimeout<PullRequestsResult>(queryStr, {
           owner,
           repo,
           cursor,
@@ -809,6 +834,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             createdAt: node.createdAt,
             updatedAt: node.updatedAt,
             mergedAt: node.mergedAt ?? null,
+            closedAt: node.closedAt ?? null,
             mergeCommitSha: node.mergeCommit?.oid ?? null,
             additions: node.additions ?? null,
             deletions: node.deletions ?? null,
@@ -834,7 +860,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: CommitsResult = await octokit.graphql<CommitsResult>(
+      const result: CommitsResult = await graphqlWithTimeout<CommitsResult>(
         queryStr,
         { owner, repo, number: pullNumber, cursor },
       )
@@ -878,7 +904,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasMoreComments = true
 
     while (hasMoreComments) {
-      const result: CommentsResult = await octokit.graphql<CommentsResult>(
+      const result: CommentsResult = await graphqlWithTimeout<CommentsResult>(
         queryStr,
         {
           owner,
@@ -913,7 +939,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasMoreThreads = true
 
     while (hasMoreThreads) {
-      const result: CommentsResult = await octokit.graphql<CommentsResult>(
+      const result: CommentsResult = await graphqlWithTimeout<CommentsResult>(
         queryStr,
         {
           owner,
@@ -964,7 +990,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: ReviewsResult = await octokit.graphql<ReviewsResult>(
+      const result: ReviewsResult = await graphqlWithTimeout<ReviewsResult>(
         queryStr,
         { owner, repo, number: pullNumber, cursor },
       )
@@ -1005,11 +1031,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: TagsResult = await octokit.graphql<TagsResult>(queryStr, {
-        owner,
-        repo,
-        cursor,
-      })
+      const result: TagsResult = await graphqlWithTimeout<TagsResult>(
+        queryStr,
+        {
+          owner,
+          repo,
+          cursor,
+        },
+      )
 
       const refs = result.repository?.refs
       if (!refs || !refs.nodes) break
@@ -1071,7 +1100,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     while (hasNextPage) {
       let result: Result
       try {
-        result = await octokit.graphql<Result>(queryStr, {
+        result = await graphqlWithTimeout<Result>(queryStr, {
           owner,
           repo,
           cursor,
@@ -1160,6 +1189,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           createdAt: node.createdAt,
           updatedAt: node.updatedAt,
           mergedAt: node.mergedAt ?? null,
+          closedAt: node.closedAt ?? null,
           mergeCommitSha: node.mergeCommit?.oid ?? null,
           additions: node.additions ?? null,
           deletions: node.deletions ?? null,
@@ -1278,7 +1308,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     type Result = ResultOf<typeof GetPullRequestTimelineQuery>
 
     const queryStr = print(GetPullRequestTimelineQuery)
-    const result = await octokit.graphql<Result>(queryStr, {
+    const result = await graphqlWithTimeout<Result>(queryStr, {
       owner,
       repo,
       number: pullNumber,

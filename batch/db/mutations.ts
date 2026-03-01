@@ -15,6 +15,7 @@ export function upsertPullRequest(
   const pullRequestCreatedAt = timeFormatUTC(data.pullRequestCreatedAt)
   const firstReviewedAt = timeFormatUTC(data.firstReviewedAt)
   const mergedAt = timeFormatUTC(data.mergedAt)
+  const closedAt = timeFormatUTC(data.closedAt)
   const releasedAt = timeFormatUTC(data.releasedAt)
   const updatedAt = timeFormatUTC(data.updatedAt)
 
@@ -27,6 +28,7 @@ export function upsertPullRequest(
       pullRequestCreatedAt,
       firstReviewedAt,
       mergedAt,
+      closedAt,
       releasedAt,
       updatedAt,
     })
@@ -40,6 +42,7 @@ export function upsertPullRequest(
         targetBranch: eb.ref('excluded.targetBranch'),
         sourceBranch: eb.ref('excluded.sourceBranch'),
         mergedAt: eb.ref('excluded.mergedAt'),
+        closedAt: eb.ref('excluded.closedAt'),
         releasedAt: eb.ref('excluded.releasedAt'),
         firstCommittedAt: eb.ref('excluded.firstCommittedAt'),
         pullRequestCreatedAt: eb.ref('excluded.pullRequestCreatedAt'),

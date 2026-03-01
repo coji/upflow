@@ -101,6 +101,7 @@ export interface PullRequests {
   changedFiles: number | null
   classifiedAt: string | null
   classifierModel: string | null
+  closedAt: string | null
   codingTime: number | null
   complexity: string | null
   complexityReason: string | null

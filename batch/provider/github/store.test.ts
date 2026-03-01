@@ -131,6 +131,7 @@ const makePr = (number: number): ShapedGitHubPullRequest => ({
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-02T00:00:00Z',
   mergedAt: '2024-01-02T00:00:00Z',
+  closedAt: '2024-01-02T00:00:00Z',
   mergeCommitSha: 'abc123',
   additions: 10,
   deletions: 5,

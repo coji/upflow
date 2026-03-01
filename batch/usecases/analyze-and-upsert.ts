@@ -1,5 +1,9 @@
-import type { Selectable } from 'kysely'
-import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
+import { sql, type Selectable } from 'kysely'
+import {
+  getTenantDb,
+  type OrganizationId,
+  type TenantDB,
+} from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import {
   upsertCompanyGithubUsers,
@@ -102,6 +106,11 @@ export async function analyzeAndUpsert({
       logger.error('export to spreadsheet failed.', orgId, e)
     }
   }
+
+  // 8. WAL checkpoint to prevent WAL file from growing unbounded
+  const tenantDb = getTenantDb(orgId)
+  await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
+  logger.info('WAL checkpoint completed.', orgId)
 
   return { pulls, reviewResponses }
 }

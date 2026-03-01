@@ -143,6 +143,7 @@ const queueRow = (
   requestedAt: '2024-01-15T00:00:00Z',
   resolvedAt: '2024-01-20T00:00:00Z',
   mergedAt: '2024-01-22T00:00:00Z',
+  closedAt: null,
   ...overrides,
 })
 

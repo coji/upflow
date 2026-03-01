@@ -93,6 +93,7 @@ export const getQueueHistoryRawData = async (
       'pullRequestReviewers.requestedAt',
       'resolvedReview.firstResolvedAt as resolvedAt',
       'pullRequests.mergedAt',
+      'pullRequests.closedAt',
     ])
     .execute()
 }

@@ -72,6 +72,33 @@ function listRemoteTenantDbs(app: string): string[] {
   }
 }
 
+/**
+ * リモート DB の WAL をメイン DB ファイルにフラッシュする。
+ * WAL モードで動作中の DB は -wal ファイルに未コミットの変更を持つため、
+ * .db ファイルだけ pull すると不整合（orphan index 等）が発生する。
+ */
+function checkpointRemoteDbs(app: string, dbFiles: string[]) {
+  consola.start('Checkpointing remote databases (flushing WAL)...')
+  let succeeded = 0
+  for (const f of dbFiles) {
+    const dbPath = `${REMOTE_DATA_DIR}/${f}`
+    try {
+      execSync(
+        `fly ssh console -a ${app} -C 'sqlite3 ${dbPath} "PRAGMA wal_checkpoint(TRUNCATE);"'`,
+        { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] },
+      )
+      succeeded++
+    } catch {
+      consola.warn(
+        `WAL checkpoint failed for ${f}, will pull WAL files instead`,
+      )
+    }
+  }
+  if (succeeded > 0) {
+    consola.success(`Checkpointed ${succeeded}/${dbFiles.length} database(s)`)
+  }
+}
+
 function pullFile(app: string, remoteFile: string, localFile: string) {
   // fly ssh sftp get refuses to overwrite existing files
   if (fs.existsSync(localFile)) {
@@ -81,6 +108,14 @@ function pullFile(app: string, remoteFile: string, localFile: string) {
   execSync(`fly ssh sftp get -a ${app} ${remoteFile} ${localFile}`, {
     stdio: 'inherit',
   })
+}
+
+function tryPullFile(app: string, remoteFile: string, localFile: string) {
+  try {
+    pullFile(app, remoteFile, localFile)
+  } catch {
+    // WAL/SHM files may not exist (e.g. after checkpoint), ignore
+  }
 }
 
 function sanitizeExportSettings(dbPath: string) {
@@ -131,11 +166,25 @@ export function pullDbCommand(options: PullDbOptions) {
     `Found ${filesToPull.length} database(s): ${filesToPull.join(', ')}`,
   )
 
-  // Step 3: Pull each file
+  // Step 3: Checkpoint WAL on remote before pulling
+  checkpointRemoteDbs(app, filesToPull)
+
+  // Step 4: Pull each file (+ WAL/SHM as fallback)
   let pulledCount = 0
   for (const file of filesToPull) {
     try {
       pullFile(app, `${REMOTE_DATA_DIR}/${file}`, path.join(DATA_DIR, file))
+      // Also pull WAL and SHM files if they exist (safety net)
+      tryPullFile(
+        app,
+        `${REMOTE_DATA_DIR}/${file}-wal`,
+        path.join(DATA_DIR, `${file}-wal`),
+      )
+      tryPullFile(
+        app,
+        `${REMOTE_DATA_DIR}/${file}-shm`,
+        path.join(DATA_DIR, `${file}-shm`),
+      )
       pulledCount++
     } catch (error) {
       consola.error(`Failed to pull ${file}:`, error)
@@ -144,7 +193,7 @@ export function pullDbCommand(options: PullDbOptions) {
 
   consola.success(`Pulled ${pulledCount}/${filesToPull.length} database(s)`)
 
-  // Step 4: Sanitize export settings in all pulled databases
+  // Step 5: Sanitize export settings in all pulled databases
   if (!noSanitize) {
     consola.start('Sanitizing export settings...')
     for (const file of filesToPull) {

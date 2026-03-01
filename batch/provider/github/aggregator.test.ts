@@ -11,6 +11,7 @@ describe('leastCreatedMergeRequest', () => {
     createdAt: '',
     updatedAt: '',
     mergedAt: '',
+    closedAt: null,
     mergeCommitSha: '',
     url: '',
     author: '',

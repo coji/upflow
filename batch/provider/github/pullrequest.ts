@@ -133,6 +133,7 @@ function buildPullRequestRow(
     pullRequestCreatedAt: dates.pullRequestCreatedAt,
     firstReviewedAt: dates.firstReviewedAt,
     mergedAt: dates.mergedAt,
+    closedAt: nullOrDate(pr.closedAt),
     releasedAt,
     codingTime: codingTime({
       firstCommittedAt: dates.firstCommittedAt,

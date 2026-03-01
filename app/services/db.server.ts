@@ -23,6 +23,7 @@ if (!process.env.DATABASE_URL) {
 const filename = `${process.env.NODE_ENV === 'production' ? '' : '.'}${new URL(process.env.DATABASE_URL).pathname}`
 const database = new SQLite(filename)
 database.pragma('journal_mode = WAL')
+database.pragma('wal_autocheckpoint = 1000')
 export const dialect = new SqliteDialect({ database })
 export const db = new Kysely<DB.DB>({
   dialect,

@@ -53,104 +53,47 @@ export const createGitHubProvider = (
       logger.info('fetching all tags completed.')
     }
 
-    if (refresh) {
-      // フルリフレッシュ: ネストクエリで一括取得（N+1 回避）
-      logger.info('fetching all pullrequests with details (nested query)...')
-      const allDetails = await fetcher.pullrequestsWithDetails()
-      logger.info(`fetched ${allDetails.length} PRs with details.`)
+    // PR 一覧を取得
+    logger.info('fetching all pullrequests...')
+    const allPullRequests = await fetcher.pullrequests()
+    logger.info(`fetched ${allPullRequests.length} PRs.`)
 
-      for (const detail of allDetails) {
-        if (halt) {
-          logger.fatal('halted')
-          return
-        }
-
-        const { pr } = detail
-
-        // commits: オーバーフロー時は個別取得でフォールバック
-        let { commits } = detail
-        if (detail.needsMoreCommits) {
-          logger.info(`${pr.number} commits overflow, fetching individually...`)
-          commits = await fetcher.commits(pr.number)
-        }
-
-        // reviews: オーバーフロー時は個別取得でフォールバック
-        let { reviews } = detail
-        if (detail.needsMoreReviews) {
-          logger.info(`${pr.number} reviews overflow, fetching individually...`)
-          reviews = await fetcher.reviews(pr.number)
-        }
-
-        // comments: オーバーフロー時は個別取得でフォールバック
-        let { comments } = detail
-        if (
-          detail.needsMoreComments ||
-          detail.needsMoreReviewThreads ||
-          detail.needsMoreReviewThreadComments
-        ) {
-          logger.info(
-            `${pr.number} comments overflow, fetching individually...`,
-          )
-          comments = await fetcher.comments(pr.number)
-        }
-
-        // timelineItems: オーバーフロー時は個別取得でフォールバック
-        let { timelineItems } = detail
-        if (detail.needsMoreTimelineItems) {
-          logger.info(
-            `${pr.number} timeline items overflow, fetching individually...`,
-          )
-          timelineItems = await fetcher.timelineItems(pr.number)
-        }
-
-        // files: 常に個別取得（ネストクエリから除外済み）
-        const files = await fetcher.files(pr.number)
-        pr.files = files
-
-        await store.savePrData(pr, {
-          commits,
-          reviews,
-          discussions: comments,
-          timelineItems,
-        })
-        logger.info(`${pr.number} saved`)
+    let processed = 0
+    for (const pr of allPullRequests) {
+      if (halt) {
+        logger.fatal('halted')
+        return
       }
-    } else {
-      // インクリメンタル: PR一覧だけ取得し、更新分のみ個別に詳細取得
-      logger.info('fetching all pullrequests...')
-      const allPullRequests = await fetcher.pullrequests()
-      logger.info(`fetched ${allPullRequests.length} PRs.`)
 
-      for (const pr of allPullRequests) {
-        if (halt) {
-          logger.fatal('halted')
-          return
-        }
-
+      // refresh でなければ更新分のみ
+      if (!refresh) {
         const isUpdated = pr.updatedAt > lastFetchedAt
         if (!isUpdated) {
           logger.debug('skip', pr.number, pr.state, pr.updatedAt)
           continue
         }
-
-        logger.info(`${pr.number} fetching details...`)
-        const [commits, discussions, reviews, timelineItems, files] =
-          await Promise.all([
-            fetcher.commits(pr.number),
-            fetcher.comments(pr.number),
-            fetcher.reviews(pr.number),
-            fetcher.timelineItems(pr.number),
-            fetcher.files(pr.number),
-          ])
-        pr.files = files
-
-        await store.savePrData(pr, {
-          commits,
-          reviews,
-          discussions,
-          timelineItems,
-        })
       }
+
+      processed++
+      logger.info(
+        `${pr.number} fetching details... (${processed}/${refresh ? allPullRequests.length : '?'})`,
+      )
+      const [commits, discussions, reviews, timelineItems, files] =
+        await Promise.all([
+          fetcher.commits(pr.number),
+          fetcher.comments(pr.number),
+          fetcher.reviews(pr.number),
+          fetcher.timelineItems(pr.number),
+          fetcher.files(pr.number),
+        ])
+      pr.files = files
+
+      await store.savePrData(pr, {
+        commits,
+        reviews,
+        discussions,
+        timelineItems,
+      })
     }
 
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
