@@ -77,9 +77,9 @@ export const getReviewerQueueDistribution = async (
 
 /**
  * B. WIP数とサイクルタイムの相関データ
- * 各マージ済みPRに対して、作成時点でのauthorのWIP数を算出
+ * マージ済みPRの生データを返す。WIP数の計算はクライアント側で行う。
  */
-export const getWipCycleCorrelation = async (
+export const getWipCycleRawData = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
@@ -102,21 +102,13 @@ export const getWipCycleCorrelation = async (
     )
     .select([
       'pullRequests.author',
-      'pullRequests.repo',
       'pullRequests.number',
+      'pullRequests.repositoryId',
       'pullRequests.title',
       'pullRequests.reviewTime',
-      'pullRequests.pickupTime',
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.mergedAt',
       'companyGithubUsers.displayName as authorDisplayName',
-      sql<number>`(
-        SELECT count(*) FROM pull_requests other
-        WHERE other.author = pull_requests.author
-          AND other.pull_request_created_at <= pull_requests.pull_request_created_at
-          AND (other.merged_at IS NULL OR other.merged_at > pull_requests.pull_request_created_at)
-          AND (other.number != pull_requests.number OR other.repository_id != pull_requests.repository_id)
-      )`.as('wipCount'),
     ])
     .execute()
 }

@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import {
   Bar,
   BarChart,
@@ -21,12 +20,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '~/app/components/ui/chart'
-import { getPRComplexity, type PRSizeLabel } from '../+functions/classify'
-import type { getPRSizeDistribution } from '../+functions/queries.server'
+import type { PRSizeAggregation } from '../+functions/aggregate'
+import type { PRSizeLabel } from '../+functions/classify'
 
-type SizeData = Awaited<ReturnType<typeof getPRSizeDistribution>>
-
-const SIZE_ORDER: PRSizeLabel[] = ['XS', 'S', 'M', 'L', 'XL']
 const SIZE_COLORS: Record<PRSizeLabel, string> = {
   XS: 'hsl(var(--chart-2))',
   S: 'hsl(var(--chart-2))',
@@ -46,69 +42,16 @@ const timeConfig = {
   },
 } satisfies ChartConfig
 
-function median(values: number[]): number | null {
-  if (values.length === 0) return null
-  const sorted = [...values].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 !== 0
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2
-}
-
 function formatHours(h: number): string {
   if (h < 1) return `${(h * 60).toFixed(0)}m`
   if (h < 24) return `${h.toFixed(1)}h`
   return `${(h / 24).toFixed(1)}d`
 }
 
-export function PRSizeChart({ data }: { data: SizeData }) {
-  const { countData, timeData, insight } = useMemo(() => {
-    const bySize: Record<
-      PRSizeLabel,
-      { count: number; reviewTimes: number[] }
-    > = {
-      XS: { count: 0, reviewTimes: [] },
-      S: { count: 0, reviewTimes: [] },
-      M: { count: 0, reviewTimes: [] },
-      L: { count: 0, reviewTimes: [] },
-      XL: { count: 0, reviewTimes: [] },
-    }
+export function PRSizeChart({ data }: { data: PRSizeAggregation }) {
+  const { countData, timeData, insight } = data
 
-    for (const pr of data) {
-      const size = getPRComplexity(pr)
-      bySize[size].count++
-      if (pr.reviewTime !== null && pr.reviewTime > 0) {
-        bySize[size].reviewTimes.push(pr.reviewTime * 24) // days to hours
-      }
-    }
-
-    const counts = SIZE_ORDER.map((size) => ({
-      size,
-      count: bySize[size].count,
-    }))
-
-    const times = SIZE_ORDER.map((size) => ({
-      size,
-      medianHours: median(bySize[size].reviewTimes) ?? 0,
-    }))
-
-    const total = data.length
-    const xsS = bySize.XS.count + bySize.S.count
-    const xsSPct = total > 0 ? ((xsS / total) * 100).toFixed(0) : '0'
-    const xsSMedian = median([
-      ...bySize.XS.reviewTimes,
-      ...bySize.S.reviewTimes,
-    ])
-
-    let insightText: string | null = null
-    if (total > 0 && xsSMedian !== null) {
-      insightText = `全PRの ${xsSPct}% が XS/S サイズ（${xsS}件）。review time 中央値 ${formatHours(xsSMedian)}。これらを自動マージすればレビュー負荷を大幅に削減可能。`
-    }
-
-    return { countData: counts, timeData: times, insight: insightText }
-  }, [data])
-
-  if (data.length === 0) {
+  if (countData.every((d) => d.count === 0)) {
     return (
       <Card>
         <CardHeader>

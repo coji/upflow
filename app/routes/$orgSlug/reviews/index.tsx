@@ -21,10 +21,11 @@ import { listTeams } from '../settings/teams._index/queries.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { ReviewerQueueChart } from './+components/reviewer-queue-chart'
 import { WipCycleChart } from './+components/wip-cycle-chart'
+import { aggregatePRSize, aggregateWipCycle } from './+functions/aggregate'
 import {
   getPRSizeDistribution,
   getReviewerQueueDistribution,
-  getWipCycleCorrelation,
+  getWipCycleRawData,
 } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
@@ -49,19 +50,48 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   const teams = await listTeams(organization.id)
 
-  const [reviewerQueue, wipCycle, prSizes] = await Promise.all([
+  const [reviewerQueue, wipCycleRaw, prSizesRaw] = await Promise.all([
     getReviewerQueueDistribution(organization.id, teamParam),
-    getWipCycleCorrelation(organization.id, sinceDate, teamParam),
+    getWipCycleRawData(organization.id, sinceDate, teamParam),
     getPRSizeDistribution(organization.id, sinceDate, teamParam),
   ])
 
   return {
     teams,
     reviewerQueue,
-    wipCycle,
-    prSizes,
+    wipCycleRaw,
+    prSizesRaw,
     periodMonths,
   }
+}
+
+export const clientLoader = async ({
+  serverLoader,
+}: Route.ClientLoaderArgs) => {
+  const { teams, reviewerQueue, wipCycleRaw, prSizesRaw, periodMonths } =
+    await serverLoader()
+
+  return {
+    teams,
+    reviewerQueue,
+    wipCycle: aggregateWipCycle(wipCycleRaw),
+    prSizes: aggregatePRSize(prSizesRaw),
+    periodMonths,
+  }
+}
+clientLoader.hydrate = true as const
+
+export function HydrateFallback() {
+  return (
+    <Stack gap="6">
+      <PageHeader>
+        <PageHeaderHeading>
+          <PageHeaderTitle>Review Bottleneck</PageHeaderTitle>
+          <PageHeaderDescription>Loading...</PageHeaderDescription>
+        </PageHeaderHeading>
+      </PageHeader>
+    </Stack>
+  )
 }
 
 export default function ReviewsPage({
