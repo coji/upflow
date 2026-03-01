@@ -38,6 +38,13 @@ const GetPullRequestsQuery = graphql(`
           additions
           deletions
           changedFiles
+          files(first: 100) {
+            nodes {
+              path
+              additions
+              deletions
+            }
+          }
           headRefName
           baseRefName
           mergeCommit {
@@ -224,6 +231,13 @@ const GetPullRequestsWithDetailsQuery = graphql(`
           additions
           deletions
           changedFiles
+          files(first: 100) {
+            nodes {
+              path
+              additions
+              deletions
+            }
+          }
           headRefName
           baseRefName
           mergeCommit {
@@ -456,6 +470,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             additions: node.additions ?? null,
             deletions: node.deletions ?? null,
             changedFiles: node.changedFiles ?? null,
+            files:
+              node.files?.nodes
+                ?.filter((f) => f != null)
+                .map((f) => ({
+                  path: f.path,
+                  additions: f.additions,
+                  deletions: f.deletions,
+                })) ?? [],
           },
         ]
       }
@@ -784,6 +806,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           additions: node.additions ?? null,
           deletions: node.deletions ?? null,
           changedFiles: node.changedFiles ?? null,
+          files:
+            node.files?.nodes
+              ?.filter((f) => f != null)
+              .map((f) => ({
+                path: f.path,
+                additions: f.additions,
+                deletions: f.deletions,
+              })) ?? [],
         }
 
         // commits

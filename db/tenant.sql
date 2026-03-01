@@ -71,6 +71,11 @@ CREATE TABLE `pull_requests` (
   `additions` integer NULL,
   `deletions` integer NULL,
   `changed_files` integer NULL,
+  `complexity` text NULL,
+  `complexity_reason` text NULL,
+  `risk_areas` text NULL,
+  `classified_at` text NULL,
+  `classifier_model` text NULL,
   PRIMARY KEY (`number`, `repository_id`),
   CONSTRAINT `pull_requests_repository_id_fkey` FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );

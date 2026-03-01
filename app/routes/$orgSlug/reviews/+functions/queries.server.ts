@@ -147,6 +147,7 @@ export const getPRSizeDistribution = async (
       'pullRequests.changedFiles',
       'pullRequests.reviewTime',
       'pullRequests.pickupTime',
+      'pullRequests.complexity',
     ])
     .execute()
 }

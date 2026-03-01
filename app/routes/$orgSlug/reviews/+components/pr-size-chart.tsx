@@ -21,7 +21,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '~/app/components/ui/chart'
-import { classifyPRSize, type PRSizeLabel } from '../+functions/classify'
+import { getPRComplexity, type PRSizeLabel } from '../+functions/classify'
 import type { getPRSizeDistribution } from '../+functions/queries.server'
 
 type SizeData = Awaited<ReturnType<typeof getPRSizeDistribution>>
@@ -75,7 +75,7 @@ export function PRSizeChart({ data }: { data: SizeData }) {
     }
 
     for (const pr of data) {
-      const size = classifyPRSize(pr.additions, pr.deletions)
+      const size = getPRComplexity(pr)
       bySize[size].count++
       if (pr.reviewTime !== null && pr.reviewTime > 0) {
         bySize[size].reviewTimes.push(pr.reviewTime * 24) // days to hours

@@ -124,7 +124,7 @@ export const OrganizationSettings = ({
           </Label>
           <Input
             {...getInputProps(fields.excludedUsers, { type: 'text' })}
-            placeholder="e.g. iris-tech-bot, some-other-bot"
+            placeholder="e.g. my-org-bot, some-other-bot"
           />
           <p className="text-muted-foreground text-sm">
             Copilot is excluded by default. Add additional usernames to exclude

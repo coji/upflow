@@ -162,6 +162,11 @@ function buildPullRequestRow(
     additions: pr.additions,
     deletions: pr.deletions,
     changedFiles: pr.changedFiles,
+    complexity: null,
+    complexityReason: null,
+    riskAreas: null,
+    classifiedAt: null,
+    classifierModel: null,
   }
 }
 

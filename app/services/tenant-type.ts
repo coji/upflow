@@ -98,7 +98,11 @@ export interface PullRequests {
   additions: number | null
   author: string
   changedFiles: number | null
+  classifiedAt: string | null
+  classifierModel: string | null
   codingTime: number | null
+  complexity: string | null
+  complexityReason: string | null
   deletions: number | null
   deployTime: number | null
   firstCommittedAt: string | null
@@ -111,6 +115,7 @@ export interface PullRequests {
   repo: string
   repositoryId: string
   reviewTime: number | null
+  riskAreas: string | null
   sourceBranch: string
   state: 'open' | 'closed' | 'merged'
   targetBranch: string

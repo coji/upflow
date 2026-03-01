@@ -24,6 +24,7 @@ describe('leastCreatedMergeRequest', () => {
     additions: null,
     deletions: null,
     changedFiles: null,
+    files: [],
   }
 
   test('should return a least updatedAt object', () => {

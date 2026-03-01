@@ -133,6 +133,7 @@ const makePr = (number: number): ShapedGitHubPullRequest => ({
   additions: 10,
   deletions: 5,
   changedFiles: 2,
+  files: [],
 })
 
 const makeCommits = (n: number): ShapedGitHubCommit[] => [

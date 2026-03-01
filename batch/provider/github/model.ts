@@ -31,6 +31,7 @@ export type ShapedGitHubPullRequest = {
   additions: number | null
   deletions: number | null
   changedFiles: number | null
+  files: { path: string; additions: number; deletions: number }[]
 }
 
 export type ShapedGitHubCommit = {

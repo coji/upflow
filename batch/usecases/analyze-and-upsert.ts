@@ -9,6 +9,7 @@ import {
 } from '~/batch/db'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
+import { classifyPullRequests } from './classify-pull-requests'
 
 /** analyzeAndUpsert に渡す organization の必須フィールド */
 interface OrganizationForAnalyze {
@@ -86,7 +87,10 @@ export async function analyzeAndUpsert({
   }
   logger.info('upsert reviewers completed.', orgId)
 
-  // 6. export (optional)
+  // 6. classify PRs with LLM (optional, requires GEMINI_API_KEY)
+  await classifyPullRequests(orgId)
+
+  // 7. export (optional)
   if (organization.exportSetting) {
     logger.info('exporting to spreadsheet...', orgId)
     const exporter = createSpreadsheetExporter(organization.exportSetting)
