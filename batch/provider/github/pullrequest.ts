@@ -195,7 +195,7 @@ export const buildPullRequests = async (
   const reviewers: {
     pullRequestNumber: number
     repositoryId: string
-    reviewerLogins: string[]
+    reviewers: { login: string; requestedAt: string | null }[]
   }[] = []
   const reviewResponses: {
     repo: string
@@ -260,12 +260,12 @@ export const buildPullRequests = async (
       }
 
       // 8. レビュアー（レビュー依頼先）情報を収集
-      const reviewerLogins = pr.reviewers ?? []
-      if (reviewerLogins.length > 0) {
+      const prReviewers = pr.reviewers ?? []
+      if (prReviewers.length > 0) {
         reviewers.push({
           pullRequestNumber: pr.number,
           repositoryId: config.repositoryId,
-          reviewerLogins,
+          reviewers: prReviewers,
         })
       }
     } catch (e) {

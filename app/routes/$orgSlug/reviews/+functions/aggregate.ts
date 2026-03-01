@@ -25,6 +25,7 @@ function formatHours(h: number): string {
 
 export interface WipRawRow {
   author: string
+  authorDisplayName: string | null
   number: number
   repositoryId: string
   title: string
@@ -33,6 +34,11 @@ export interface WipRawRow {
   reviewTime: number | null
   pullRequestCreatedAt: string
   mergedAt: string | null
+  additions: number | null
+  deletions: number | null
+  complexity: string | null
+  complexityReason: string | null
+  riskAreas: string | null
 }
 
 export interface WipGroup {
@@ -127,9 +133,102 @@ export function computeWipLabels(
     })
 }
 
+// --- A. Queue Trend (週次キュー長トレンド) ---
+
+export interface QueueHistoryRawRow {
+  requestedAt: string
+  resolvedAt: string | null
+  mergedAt: string | null
+}
+
+export interface WeeklyQueuePoint {
+  weekLabel: string // 'MM/DD'
+  maxQueue: number
+  medianQueue: number
+}
+
+export interface QueueTrendAggregation {
+  weeks: WeeklyQueuePoint[]
+  insight: string | null
+}
+
+/**
+ * ある日 D のキュー長を計算:
+ * requestedAt <= D かつ (resolvedAt == null || resolvedAt > D) かつ (mergedAt == null || mergedAt > D)
+ */
+function computeQueueLengthForDay(
+  rows: QueueHistoryRawRow[],
+  day: string,
+): number {
+  return rows.filter((r) => {
+    if (r.requestedAt > day) return false
+    if (r.resolvedAt !== null && r.resolvedAt <= day) return false
+    if (r.mergedAt !== null && r.mergedAt <= day) return false
+    return true
+  }).length
+}
+
+export function aggregateWeeklyQueueTrend(
+  data: QueueHistoryRawRow[],
+  sinceDate: string,
+): QueueTrendAggregation {
+  if (data.length === 0) {
+    return { weeks: [], insight: null }
+  }
+
+  const since = new Date(sinceDate)
+  const today = new Date()
+
+  // 各週の月曜日を列挙（sinceDateから今日まで）
+  const weekStarts: Date[] = []
+  const cursor = new Date(since)
+  // 月曜始まりに揃える
+  const dayOfWeek = cursor.getDay()
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  cursor.setDate(cursor.getDate() + diffToMonday)
+
+  while (cursor <= today) {
+    weekStarts.push(new Date(cursor))
+    cursor.setDate(cursor.getDate() + 7)
+  }
+
+  const weeks: WeeklyQueuePoint[] = weekStarts.map((weekStart) => {
+    const dailyQueues: number[] = []
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(weekStart)
+      day.setDate(day.getDate() + d)
+      if (day > today) break
+      const dayStr = day.toISOString()
+      dailyQueues.push(computeQueueLengthForDay(data, dayStr))
+    }
+
+    const maxQueue = Math.max(...dailyQueues)
+    const medianQueue = median(dailyQueues) ?? 0
+
+    const label = `${String(weekStart.getMonth() + 1).padStart(2, '0')}/${String(weekStart.getDate()).padStart(2, '0')}`
+
+    return { weekLabel: label, maxQueue, medianQueue }
+  })
+
+  // Insight: 直近4週 vs その前の4週
+  let insight: string | null = null
+  if (weeks.length >= 8) {
+    const recent4 = weeks.slice(-4)
+    const prev4 = weeks.slice(-8, -4)
+    const recentAvg =
+      recent4.reduce((s, w) => s + w.medianQueue, 0) / recent4.length
+    const prevAvg = prev4.reduce((s, w) => s + w.medianQueue, 0) / prev4.length
+    if (prevAvg > 0 && recentAvg > prevAvg * 1.2) {
+      insight = `直近4週のキュー中央値が前4週比 ${((recentAvg / prevAvg) * 100 - 100).toFixed(0)}% 増加。レビュワー追加を検討してください。`
+    }
+  }
+
+  return { weeks, insight }
+}
+
 // --- C. PR Size Distribution ---
 
-const SIZE_ORDER: PRSizeLabel[] = ['XS', 'S', 'M', 'L', 'XL']
+const SIZE_ORDER: PRSizeLabel[] = ['XS', 'S', 'M', 'L', 'XL', 'Unclassified']
 
 export interface PRSizeRawRow {
   number: number
@@ -137,10 +236,13 @@ export interface PRSizeRawRow {
   url: string
   repo: string
   author: string
+  authorDisplayName: string | null
   additions: number | null
   deletions: number | null
   reviewTime: number | null
   complexity: string | null
+  complexityReason: string | null
+  riskAreas: string | null
 }
 
 export interface SizeCountItem {
@@ -167,6 +269,7 @@ export function aggregatePRSize(data: PRSizeRawRow[]): PRSizeAggregation {
       M: { count: 0, reviewTimes: [] },
       L: { count: 0, reviewTimes: [] },
       XL: { count: 0, reviewTimes: [] },
+      Unclassified: { count: 0, reviewTimes: [] },
     }
 
   for (const pr of data) {

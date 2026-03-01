@@ -26,21 +26,22 @@ import { getPRComplexity, type PRSizeLabel } from '../+functions/classify'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 const SIZE_COLORS: Record<PRSizeLabel, string> = {
-  XS: 'hsl(var(--chart-2))',
-  S: 'hsl(var(--chart-2))',
-  M: 'hsl(var(--chart-1))',
-  L: 'hsl(var(--chart-4))',
-  XL: 'hsl(var(--destructive))',
+  XS: 'var(--color-chart-2)',
+  S: 'var(--color-chart-2)',
+  M: 'var(--color-chart-1)',
+  L: 'var(--color-chart-4)',
+  XL: 'var(--color-destructive)',
+  Unclassified: 'var(--color-muted-foreground)',
 }
 
 const countConfig = {
-  count: { label: 'PRs', color: 'hsl(var(--chart-1))' },
+  count: { label: 'PRs', color: 'var(--color-chart-1)' },
 } satisfies ChartConfig
 
 const timeConfig = {
   medianHours: {
     label: 'Median Review Time (h)',
-    color: 'hsl(var(--chart-3))',
+    color: 'var(--color-chart-3)',
   },
 } satisfies ChartConfig
 
@@ -82,7 +83,11 @@ export function PRSizeChart({
           url: pr.url,
           repo: pr.repo,
           author: pr.author,
+          authorDisplayName: pr.authorDisplayName,
           reviewTime: pr.reviewTime,
+          size: getPRComplexity(pr),
+          complexityReason: pr.complexityReason,
+          riskAreas: pr.riskAreas,
         }))
     : []
 

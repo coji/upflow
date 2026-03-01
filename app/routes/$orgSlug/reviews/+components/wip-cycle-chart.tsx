@@ -22,6 +22,7 @@ import {
   ChartTooltipContent,
 } from '~/app/components/ui/chart'
 import type { WipAggregation, WipRawRow } from '../+functions/aggregate'
+import { getPRComplexity } from '../+functions/classify'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 type WipLabeledRow = WipRawRow & { wipLabel: string }
@@ -29,7 +30,7 @@ type WipLabeledRow = WipRawRow & { wipLabel: string }
 const chartConfig = {
   medianHours: {
     label: 'Median Review Time (h)',
-    color: 'hsl(var(--chart-1))',
+    color: 'var(--color-chart-1)',
   },
 } satisfies ChartConfig
 
@@ -40,10 +41,10 @@ function formatHours(h: number): string {
 }
 
 function getBarColor(label: string): string {
-  if (label === 'WIP 0-1') return 'hsl(var(--chart-2))'
-  if (label === 'WIP 2') return 'hsl(var(--chart-1))'
-  if (label === 'WIP 3') return 'hsl(var(--chart-4))'
-  return 'hsl(var(--destructive))'
+  if (label === 'WIP 0-1') return 'var(--color-chart-2)'
+  if (label === 'WIP 2') return 'var(--color-chart-1)'
+  if (label === 'WIP 3') return 'var(--color-chart-4)'
+  return 'var(--color-destructive)'
 }
 
 export function WipCycleChart({
@@ -78,7 +79,11 @@ export function WipCycleChart({
           url: pr.url,
           repo: pr.repo,
           author: pr.author,
+          authorDisplayName: pr.authorDisplayName,
           reviewTime: pr.reviewTime,
+          size: getPRComplexity(pr),
+          complexityReason: pr.complexityReason,
+          riskAreas: pr.riskAreas,
         }))
     : []
 

@@ -1,18 +1,21 @@
-import { sql, type SqlBool } from 'kysely'
+import { sql } from 'kysely'
 import {
   getTenantDb,
   type OrganizationId,
 } from '~/app/services/tenant-db.server'
 
 /**
- * A. レビュアー別のキュー — 共通のベースクエリ
+ * A. キュー履歴の生データ
+ * 各 reviewer 割り当てについて「いつからいつまで pending だったか」を返す。
+ * 期間中に open だったものすべてを取る。
  */
-const reviewerQueueBaseQuery = (
+export const getQueueHistoryRawData = async (
   organizationId: OrganizationId,
+  sinceDate: string,
   teamId?: string | null,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  return tenantDb
+  return await tenantDb
     .selectFrom('pullRequestReviewers')
     .innerJoin('pullRequests', (join) =>
       join
@@ -29,78 +32,67 @@ const reviewerQueueBaseQuery = (
     )
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .leftJoin(
-      'companyGithubUsers',
-      'pullRequestReviewers.reviewer',
-      'companyGithubUsers.login',
+      (eb) =>
+        eb
+          .selectFrom('pullRequestReviews')
+          .select([
+            'pullRequestReviews.pullRequestNumber',
+            'pullRequestReviews.repositoryId',
+            'pullRequestReviews.reviewer',
+            sql<string>`min(pull_request_reviews.submitted_at)`.as(
+              'firstResolvedAt',
+            ),
+          ])
+          .where('pullRequestReviews.state', 'in', [
+            'APPROVED',
+            'CHANGES_REQUESTED',
+          ])
+          .groupBy([
+            'pullRequestReviews.pullRequestNumber',
+            'pullRequestReviews.repositoryId',
+            'pullRequestReviews.reviewer',
+          ])
+          .as('resolvedReview'),
+      (join) =>
+        join
+          .onRef(
+            'resolvedReview.pullRequestNumber',
+            '=',
+            'pullRequestReviewers.pullRequestNumber',
+          )
+          .onRef(
+            'resolvedReview.repositoryId',
+            '=',
+            'pullRequestReviewers.repositoryId',
+          )
+          .onRef(
+            'resolvedReview.reviewer',
+            '=',
+            'pullRequestReviewers.reviewer',
+          ),
     )
-    .where('pullRequests.state', '=', 'open')
-    .where('pullRequests.mergedAt', 'is', null)
-    .where(({ not, exists, selectFrom }) =>
-      not(
-        exists(
-          selectFrom('pullRequestReviews')
-            .whereRef(
-              'pullRequestReviews.pullRequestNumber',
-              '=',
-              'pullRequestReviewers.pullRequestNumber',
-            )
-            .whereRef(
-              'pullRequestReviews.repositoryId',
-              '=',
-              'pullRequestReviewers.repositoryId',
-            )
-            .whereRef(
-              'pullRequestReviews.reviewer',
-              '=',
-              'pullRequestReviewers.reviewer',
-            )
-            .where('pullRequestReviews.state', 'in', [
-              'APPROVED',
-              'CHANGES_REQUESTED',
-            ])
-            .select(sql<SqlBool>`1`.as('one')),
-        ),
-      ),
+    .where('pullRequestReviewers.requestedAt', 'is not', null)
+    // 期間中に open だったものすべてを取る
+    .where('pullRequestReviewers.requestedAt', '<=', new Date().toISOString())
+    .where(({ or, eb }) =>
+      or([
+        eb('resolvedReview.firstResolvedAt', 'is', null),
+        eb('resolvedReview.firstResolvedAt', '>=', sinceDate),
+      ]),
+    )
+    .where(({ or, eb }) =>
+      or([
+        eb('pullRequests.mergedAt', 'is', null),
+        eb('pullRequests.mergedAt', '>=', sinceDate),
+      ]),
     )
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-}
-
-/**
- * A-1. レビュアー別のキュー深度（集計済み）
- */
-export const getReviewerQueueDistribution = async (
-  organizationId: OrganizationId,
-  teamId?: string | null,
-) => {
-  return await reviewerQueueBaseQuery(organizationId, teamId)
-    .groupBy('pullRequestReviewers.reviewer')
-    .orderBy(sql`count(*)`, 'desc')
     .select([
-      'pullRequestReviewers.reviewer',
-      'companyGithubUsers.displayName',
-      sql<number>`count(*)`.as('queueCount'),
-    ])
-    .execute()
-}
-
-/**
- * A-2. レビュアー別のキュー — 個別PR一覧（ドリルダウン用）
- */
-export const getReviewerQueuePRs = async (
-  organizationId: OrganizationId,
-  teamId?: string | null,
-) => {
-  return await reviewerQueueBaseQuery(organizationId, teamId)
-    .select([
-      'pullRequestReviewers.reviewer',
-      'pullRequests.number',
-      'pullRequests.title',
-      'pullRequests.url',
-      'pullRequests.repo',
-      'pullRequests.author',
-      'pullRequests.pullRequestCreatedAt',
+      'pullRequestReviewers.requestedAt',
+      'resolvedReview.firstResolvedAt as resolvedAt',
+      'pullRequests.mergedAt',
     ])
     .execute()
 }
@@ -140,6 +132,11 @@ export const getWipCycleRawData = async (
       'pullRequests.reviewTime',
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.mergedAt',
+      'pullRequests.additions',
+      'pullRequests.deletions',
+      'pullRequests.complexity',
+      'pullRequests.complexityReason',
+      'pullRequests.riskAreas',
       'companyGithubUsers.displayName as authorDisplayName',
     ])
     .execute()
@@ -157,6 +154,11 @@ export const getPRSizeDistribution = async (
   return await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .leftJoin(
+      'companyGithubUsers',
+      'pullRequests.author',
+      'companyGithubUsers.login',
+    )
     .where('pullRequests.mergedAt', 'is not', null)
     .where('pullRequests.author', 'not like', '%[bot]')
     .where('pullRequests.mergedAt', '>=', sinceDate)
@@ -177,6 +179,9 @@ export const getPRSizeDistribution = async (
       'pullRequests.reviewTime',
       'pullRequests.pickupTime',
       'pullRequests.complexity',
+      'pullRequests.complexityReason',
+      'pullRequests.riskAreas',
+      'companyGithubUsers.displayName as authorDisplayName',
     ])
     .execute()
 }

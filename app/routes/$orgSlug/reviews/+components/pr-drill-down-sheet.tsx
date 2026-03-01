@@ -1,4 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Sheet,
   SheetContent,
@@ -13,7 +14,11 @@ export interface DrillDownPR {
   url: string
   repo: string
   author: string
+  authorDisplayName?: string | null
   reviewTime?: number | null
+  size?: string | null
+  complexityReason?: string | null
+  riskAreas?: string | null
 }
 
 function formatHours(h: number): string {
@@ -46,7 +51,7 @@ export function PRDrillDownSheet({
             {description ?? `${prs.length} pull requests`}
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-6">
           <div className="divide-y">
             {prs.map((pr) => (
               <div
@@ -63,8 +68,22 @@ export function PRDrillDownSheet({
                     {pr.repo}#{pr.number}
                     <ExternalLinkIcon className="ml-0.5 inline-block h-3 w-3" />
                   </a>
-                  <span className="text-muted-foreground text-xs">
-                    by {pr.author}
+                  {pr.size && (
+                    <span className="bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
+                      {pr.size}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <Avatar className="size-4">
+                      <AvatarImage
+                        src={`https://github.com/${pr.author}.png`}
+                        alt={pr.author}
+                      />
+                      <AvatarFallback className="text-[8px]">
+                        {pr.author.slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {pr.authorDisplayName ?? pr.author}
                   </span>
                   {pr.reviewTime != null && pr.reviewTime > 0 && (
                     <span className="text-muted-foreground ml-auto text-xs">
@@ -74,12 +93,18 @@ export function PRDrillDownSheet({
                 </div>
                 <a
                   href={pr.url}
-                  className="truncate text-sm text-blue-500 hover:underline"
+                  className="truncate text-sm hover:underline"
                   target="_blank"
                   rel="noreferrer noopener"
                 >
                   {pr.title}
                 </a>
+                {(pr.complexityReason || pr.riskAreas) && (
+                  <div className="text-muted-foreground space-y-0.5 text-xs">
+                    {pr.complexityReason && <p>{pr.complexityReason}</p>}
+                    {pr.riskAreas && <p>Risk: {pr.riskAreas}</p>}
+                  </div>
+                )}
               </div>
             ))}
           </div>

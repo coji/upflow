@@ -54,8 +54,8 @@ export async function analyzeAndUpsert({
     if (review.reviewer) discoveredLogins.add(review.reviewer)
   }
   for (const reviewer of reviewers) {
-    for (const login of reviewer.reviewerLogins) {
-      discoveredLogins.add(login)
+    for (const r of reviewer.reviewers) {
+      discoveredLogins.add(r.login)
     }
   }
   await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
@@ -82,7 +82,7 @@ export async function analyzeAndUpsert({
       orgId,
       reviewer.repositoryId,
       reviewer.pullRequestNumber,
-      reviewer.reviewerLogins,
+      reviewer.reviewers,
     )
   }
   logger.info('upsert reviewers completed.', orgId)

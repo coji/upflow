@@ -37,7 +37,7 @@ export interface Provider {
     reviewers: {
       pullRequestNumber: number
       repositoryId: string
-      reviewerLogins: string[]
+      reviewers: { login: string; requestedAt: string | null }[]
     }[]
     reviewResponses: {
       repo: string
