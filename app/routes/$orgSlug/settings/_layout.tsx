@@ -100,7 +100,7 @@ export default function SettingsLayout({
         <aside className="top-0 lg:sticky lg:w-52">
           <SidebarNav items={sidebarNavItems} />
         </aside>
-        <div className="flex w-full overflow-y-hidden p-1 pr-4">
+        <div className="flex min-w-0 flex-1 overflow-y-hidden p-1 pr-4">
           <Outlet />
         </div>
       </div>
