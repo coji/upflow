@@ -33,8 +33,17 @@ export const getOngoingPullRequestReport = async (
     .where('state', '=', 'open')
     .where('author', 'not like', '%[bot]')
     .orderBy('pullRequestCreatedAt', 'desc')
-    .selectAll('pullRequests')
-    .select('companyGithubUsers.displayName as authorDisplayName')
+    .select([
+      'pullRequests.author',
+      'pullRequests.repo',
+      'pullRequests.number',
+      'pullRequests.title',
+      'pullRequests.url',
+      'pullRequests.firstCommittedAt',
+      'pullRequests.pullRequestCreatedAt',
+      'pullRequests.firstReviewedAt',
+      'companyGithubUsers.displayName as authorDisplayName',
+    ])
     .execute()
 
   return pipe(
