@@ -106,6 +106,34 @@ export const createGitHubProvider = (
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
   }
 
+  const backfill: Provider['backfill'] = async (organizationId, repository) => {
+    invariant(repository.repo, 'repo not specified')
+    invariant(repository.owner, 'owner not specified')
+    invariant(integration.privateToken, 'private token not specified')
+
+    const fetcher = createFetcher({
+      owner: repository.owner,
+      repo: repository.repo,
+      token: integration.privateToken,
+    })
+    const store = createStore({
+      organizationId,
+      repositoryId: repository.id,
+    })
+
+    logger.info('backfill started: ', `${repository.owner}/${repository.repo}`)
+
+    // PR 一覧を取得（メタデータのみ、詳細は不要）
+    const allPullRequests = await fetcher.pullrequests()
+    logger.info(`fetched ${allPullRequests.length} PR metadata.`)
+
+    // raw データの pullRequest JSON だけを更新
+    const updated = await store.updatePrMetadata(allPullRequests)
+    logger.info(
+      `updated ${updated} raw records in ${repository.owner}/${repository.repo}`,
+    )
+  }
+
   const analyze: Provider['analyze'] = async (
     organizationId,
     organizationSetting,
@@ -180,6 +208,7 @@ export const createGitHubProvider = (
 
   return {
     fetch,
+    backfill,
     analyze,
   }
 }

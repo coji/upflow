@@ -58,6 +58,27 @@ export const createStore = ({
       .execute()
   }
 
+  /**
+   * PR メタデータ（pullRequest JSON）だけを更新する。
+   * commits/reviews 等はそのまま残る。
+   * 既に raw データがある PR のみ更新し、ない PR は無視する。
+   */
+  const updatePrMetadata = async (prs: ShapedGitHubPullRequest[]) => {
+    let updated = 0
+    for (const pr of prs) {
+      const result = await db
+        .updateTable('githubRawData')
+        .set({ pullRequest: JSON.stringify(pr) })
+        .where('repositoryId', '=', repositoryId)
+        .where('pullRequestNumber', '=', pr.number)
+        .execute()
+      if (result[0].numUpdatedRows > 0n) {
+        updated++
+      }
+    }
+    return updated
+  }
+
   const saveTags = async (tags: ShapedGitHubTag[]) => {
     await db
       .insertInto('githubRawTags')
@@ -188,6 +209,7 @@ export const createStore = ({
 
   return {
     savePrData,
+    updatePrMetadata,
     saveTags,
     preloadAll,
     loader: {

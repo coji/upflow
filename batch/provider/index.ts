@@ -11,6 +11,12 @@ export interface Provider {
     options: { refresh?: boolean; halt?: boolean },
   ) => Promise<void>
 
+  /** PR メタデータだけを再取得して raw データを更新する（軽量 backfill） */
+  backfill: (
+    organizationId: OrganizationId,
+    repository: Selectable<TenantDB.Repositories>,
+  ) => Promise<void>
+
   analyze: (
     organizationId: OrganizationId,
     organizationSetting: Pick<

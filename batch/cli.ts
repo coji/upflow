@@ -1,8 +1,23 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
+import { backfillCommand } from './commands/backfill'
 import { fetchCommand } from './commands/fetch'
 import { reportCommand } from './commands/report'
 import { upsertCommand } from './commands/upsert'
+
+const backfill = command(
+  {
+    name: 'backfill',
+    parameters: ['[organization id]'],
+    help: {
+      description:
+        'Re-fetch PR metadata to fill missing fields in raw data. Run upsert after this.',
+    },
+  },
+  (argv) => {
+    backfillCommand({ organizationId: argv._.organizationId })
+  },
+)
 
 const fetch = command(
   {
@@ -56,5 +71,5 @@ const upsert = command(
 )
 
 cli({
-  commands: [fetch, report, upsert],
+  commands: [backfill, fetch, report, upsert],
 })
