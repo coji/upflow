@@ -4,9 +4,10 @@ import { Form, Link, redirect, useNavigation } from 'react-router'
 import { z } from 'zod'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
-import ContentSection from '../+components/content-section'
+import ContentSection from '../../../+components/content-section'
+import { getRepository } from '../queries.server'
+import { deleteRepository } from './+functions/mutations.server'
 import type { Route } from './+types/index'
-import { deleteRepository, getRepository } from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Delete' }) }
 

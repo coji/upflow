@@ -4,7 +4,7 @@ import {
   type OrganizationId,
 } from '~/app/services/tenant-db.server'
 
-export const getRepository = async (
+export const getRepositoryWithIntegration = async (
   organizationId: OrganizationId,
   repositoryId: string,
 ) => {
@@ -38,4 +38,19 @@ export const getPullRequest = async (
     .where('number', '=', number)
     .selectAll()
     .executeTakeFirst()
+}
+
+export const getPullRequestRawData = async (
+  organizationId: OrganizationId,
+  repositoryId: string,
+  pullRequestNumber: number,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('githubRawData')
+    .select(['commits', 'reviews', 'discussions'])
+    .where('repositoryId', '=', repositoryId)
+    .where('pullRequestNumber', '=', pullRequestNumber)
+    .executeTakeFirst()
+  return row ?? null
 }

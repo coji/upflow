@@ -77,6 +77,9 @@ importers:
       debug:
         specifier: 4.4.3
         version: 4.4.3
+      diff:
+        specifier: 8.0.3
+        version: 8.0.3
       dotenv:
         specifier: 17.2.3
         version: 17.2.3
