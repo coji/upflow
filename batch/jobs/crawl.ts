@@ -1,3 +1,4 @@
+import { clearAllCache } from '~/app/services/cache.server'
 import {
   getTenantDb,
   type OrganizationId,
@@ -75,5 +76,7 @@ export const crawlJob = async () => {
     })
   }
 
+  // バッチ完了後にダッシュボードのキャッシュをクリア
+  clearAllCache()
   logger.info('crawl completed.')
 }

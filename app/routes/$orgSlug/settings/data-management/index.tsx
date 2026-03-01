@@ -9,6 +9,7 @@ import {
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
+import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
@@ -101,6 +102,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
           await exporter.exportReviewResponses(reviewResponses)
         }
 
+        clearAllCache()
         return data({
           intent: 'recalculate' as const,
           ok: true,
