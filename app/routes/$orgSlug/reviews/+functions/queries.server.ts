@@ -5,14 +5,14 @@ import {
 } from '~/app/services/tenant-db.server'
 
 /**
- * A. レビュアー別のキュー深度（現在openなPRに対する未レビュー依頼数）
+ * A. レビュアー別のキュー — 共通のベースクエリ
  */
-export const getReviewerQueueDistribution = async (
+const reviewerQueueBaseQuery = (
   organizationId: OrganizationId,
   teamId?: string | null,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  return await tenantDb
+  return tenantDb
     .selectFrom('pullRequestReviewers')
     .innerJoin('pullRequests', (join) =>
       join
@@ -65,12 +65,42 @@ export const getReviewerQueueDistribution = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
+}
+
+/**
+ * A-1. レビュアー別のキュー深度（集計済み）
+ */
+export const getReviewerQueueDistribution = async (
+  organizationId: OrganizationId,
+  teamId?: string | null,
+) => {
+  return await reviewerQueueBaseQuery(organizationId, teamId)
     .groupBy('pullRequestReviewers.reviewer')
     .orderBy(sql`count(*)`, 'desc')
     .select([
       'pullRequestReviewers.reviewer',
       'companyGithubUsers.displayName',
       sql<number>`count(*)`.as('queueCount'),
+    ])
+    .execute()
+}
+
+/**
+ * A-2. レビュアー別のキュー — 個別PR一覧（ドリルダウン用）
+ */
+export const getReviewerQueuePRs = async (
+  organizationId: OrganizationId,
+  teamId?: string | null,
+) => {
+  return await reviewerQueueBaseQuery(organizationId, teamId)
+    .select([
+      'pullRequestReviewers.reviewer',
+      'pullRequests.number',
+      'pullRequests.title',
+      'pullRequests.url',
+      'pullRequests.repo',
+      'pullRequests.author',
+      'pullRequests.pullRequestCreatedAt',
     ])
     .execute()
 }
@@ -105,6 +135,8 @@ export const getWipCycleRawData = async (
       'pullRequests.number',
       'pullRequests.repositoryId',
       'pullRequests.title',
+      'pullRequests.url',
+      'pullRequests.repo',
       'pullRequests.reviewTime',
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.mergedAt',
@@ -134,6 +166,11 @@ export const getPRSizeDistribution = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .select([
+      'pullRequests.number',
+      'pullRequests.title',
+      'pullRequests.url',
+      'pullRequests.repo',
+      'pullRequests.author',
       'pullRequests.additions',
       'pullRequests.deletions',
       'pullRequests.changedFiles',

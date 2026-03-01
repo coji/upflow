@@ -22,10 +22,15 @@ import { listTeams } from '../settings/teams._index/queries.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { ReviewerQueueChart } from './+components/reviewer-queue-chart'
 import { WipCycleChart } from './+components/wip-cycle-chart'
-import { aggregatePRSize, aggregateWipCycle } from './+functions/aggregate'
+import {
+  aggregatePRSize,
+  aggregateWipCycle,
+  computeWipLabels,
+} from './+functions/aggregate'
 import {
   getPRSizeDistribution,
   getReviewerQueueDistribution,
+  getReviewerQueuePRs,
   getWipCycleRawData,
 } from './+functions/queries.server'
 import type { Route } from './+types/index'
@@ -42,7 +47,12 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')
-  const periodMonths = Number(url.searchParams.get('period') || '3')
+  const VALID_PERIODS = [1, 3, 6, 12]
+  const periodMonths = VALID_PERIODS.includes(
+    Number(url.searchParams.get('period')),
+  )
+    ? Number(url.searchParams.get('period'))
+    : 3
 
   const sinceDate = dayjs()
     .subtract(periodMonths, 'month')
@@ -54,20 +64,23 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const cacheKey = `reviews:${organization.id}:${teamParam ?? 'all'}:${periodMonths}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const [reviewerQueue, wipCycleRaw, prSizesRaw] = await getCachedData(
-    cacheKey,
-    () =>
-      Promise.all([
-        getReviewerQueueDistribution(organization.id, teamParam),
-        getWipCycleRawData(organization.id, sinceDate, teamParam),
-        getPRSizeDistribution(organization.id, sinceDate, teamParam),
-      ]),
-    FIVE_MINUTES,
-  )
+  const [reviewerQueue, reviewerQueueRawPRs, wipCycleRaw, prSizesRaw] =
+    await getCachedData(
+      cacheKey,
+      () =>
+        Promise.all([
+          getReviewerQueueDistribution(organization.id, teamParam),
+          getReviewerQueuePRs(organization.id, teamParam),
+          getWipCycleRawData(organization.id, sinceDate, teamParam),
+          getPRSizeDistribution(organization.id, sinceDate, teamParam),
+        ]),
+      FIVE_MINUTES,
+    )
 
   return {
     teams,
     reviewerQueue,
+    reviewerQueueRawPRs,
     wipCycleRaw,
     prSizesRaw,
     periodMonths,
@@ -77,14 +90,23 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 export const clientLoader = async ({
   serverLoader,
 }: Route.ClientLoaderArgs) => {
-  const { teams, reviewerQueue, wipCycleRaw, prSizesRaw, periodMonths } =
-    await serverLoader()
+  const {
+    teams,
+    reviewerQueue,
+    reviewerQueueRawPRs,
+    wipCycleRaw,
+    prSizesRaw,
+    periodMonths,
+  } = await serverLoader()
 
   return {
     teams,
     reviewerQueue,
+    reviewerQueueRawPRs,
     wipCycle: aggregateWipCycle(wipCycleRaw),
+    wipCycleLabeled: computeWipLabels(wipCycleRaw),
     prSizes: aggregatePRSize(prSizesRaw),
+    prSizesRaw,
     periodMonths,
   }
 }
@@ -104,7 +126,16 @@ export function HydrateFallback() {
 }
 
 export default function ReviewsPage({
-  loaderData: { teams, reviewerQueue, wipCycle, prSizes, periodMonths },
+  loaderData: {
+    teams,
+    reviewerQueue,
+    reviewerQueueRawPRs,
+    wipCycle,
+    wipCycleLabeled,
+    prSizes,
+    prSizesRaw,
+    periodMonths,
+  },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
 
@@ -142,9 +173,9 @@ export default function ReviewsPage({
         </PageHeaderActions>
       </PageHeader>
 
-      <ReviewerQueueChart data={reviewerQueue} />
-      <WipCycleChart data={wipCycle} />
-      <PRSizeChart data={prSizes} />
+      <ReviewerQueueChart data={reviewerQueue} rawPRs={reviewerQueueRawPRs} />
+      <WipCycleChart data={wipCycle} rawData={wipCycleLabeled} />
+      <PRSizeChart data={prSizes} rawData={prSizesRaw} />
     </Stack>
   )
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -20,8 +21,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '~/app/components/ui/chart'
-import type { PRSizeAggregation } from '../+functions/aggregate'
-import type { PRSizeLabel } from '../+functions/classify'
+import type { PRSizeAggregation, PRSizeRawRow } from '../+functions/aggregate'
+import { getPRComplexity, type PRSizeLabel } from '../+functions/classify'
+import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 const SIZE_COLORS: Record<PRSizeLabel, string> = {
   XS: 'hsl(var(--chart-2))',
@@ -48,7 +50,14 @@ function formatHours(h: number): string {
   return `${(h / 24).toFixed(1)}d`
 }
 
-export function PRSizeChart({ data }: { data: PRSizeAggregation }) {
+export function PRSizeChart({
+  data,
+  rawData,
+}: {
+  data: PRSizeAggregation
+  rawData: PRSizeRawRow[]
+}) {
+  const [selectedSize, setSelectedSize] = useState<PRSizeLabel | null>(null)
   const { countData, timeData, insight } = data
 
   if (countData.every((d) => d.count === 0)) {
@@ -62,6 +71,24 @@ export function PRSizeChart({ data }: { data: PRSizeAggregation }) {
         </CardHeader>
       </Card>
     )
+  }
+
+  const selectedPRs = selectedSize
+    ? rawData
+        .filter((pr) => getPRComplexity(pr) === selectedSize)
+        .map((pr) => ({
+          number: pr.number,
+          title: pr.title,
+          url: pr.url,
+          repo: pr.repo,
+          author: pr.author,
+          reviewTime: pr.reviewTime,
+        }))
+    : []
+
+  const handleSizeClick = (size: PRSizeLabel) => {
+    const count = countData.find((d) => d.size === size)?.count ?? 0
+    if (count > 0) setSelectedSize(size)
   }
 
   return (
@@ -90,7 +117,12 @@ export function PRSizeChart({ data }: { data: PRSizeAggregation }) {
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="count" radius={4}>
                   {countData.map((entry) => (
-                    <Cell key={entry.size} fill={SIZE_COLORS[entry.size]} />
+                    <Cell
+                      key={entry.size}
+                      fill={SIZE_COLORS[entry.size]}
+                      className="cursor-pointer"
+                      onClick={() => handleSizeClick(entry.size)}
+                    />
                   ))}
                   <LabelList dataKey="count" position="top" />
                 </Bar>
@@ -122,6 +154,8 @@ export function PRSizeChart({ data }: { data: PRSizeAggregation }) {
                     <Cell
                       key={entry.size}
                       fill={SIZE_COLORS[entry.size as PRSizeLabel]}
+                      className="cursor-pointer"
+                      onClick={() => handleSizeClick(entry.size as PRSizeLabel)}
                     />
                   ))}
                   <LabelList
@@ -141,6 +175,16 @@ export function PRSizeChart({ data }: { data: PRSizeAggregation }) {
           </p>
         )}
       </CardContent>
+
+      <PRDrillDownSheet
+        open={selectedSize !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedSize(null)
+        }}
+        title={`${selectedSize} PRs`}
+        description={`${selectedPRs.length} pull requests classified as ${selectedSize}`}
+        prs={selectedPRs}
+      />
     </Card>
   )
 }

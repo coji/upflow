@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -20,9 +21,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '~/app/components/ui/chart'
-import type { getReviewerQueueDistribution } from '../+functions/queries.server'
+import type {
+  getReviewerQueueDistribution,
+  getReviewerQueuePRs,
+} from '../+functions/queries.server'
+import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 type QueueData = Awaited<ReturnType<typeof getReviewerQueueDistribution>>
+type QueuePRs = Awaited<ReturnType<typeof getReviewerQueuePRs>>
 
 const chartConfig = {
   queueCount: {
@@ -37,7 +43,15 @@ function getBarColor(count: number): string {
   return 'hsl(var(--chart-2))'
 }
 
-export function ReviewerQueueChart({ data }: { data: QueueData }) {
+export function ReviewerQueueChart({
+  data,
+  rawPRs,
+}: {
+  data: QueueData
+  rawPRs: QueuePRs
+}) {
+  const [selectedReviewer, setSelectedReviewer] = useState<string | null>(null)
+
   if (data.length === 0) {
     return (
       <Card>
@@ -52,11 +66,28 @@ export function ReviewerQueueChart({ data }: { data: QueueData }) {
   }
 
   const chartData = data.map((d) => ({
+    reviewerLogin: d.reviewer,
     reviewer: d.displayName || d.reviewer,
     queueCount: d.queueCount,
   }))
 
   const chartHeight = Math.max(200, chartData.length * 40 + 60)
+
+  const selectedPRs = selectedReviewer
+    ? rawPRs
+        .filter((pr) => pr.reviewer === selectedReviewer)
+        .map((pr) => ({
+          number: pr.number,
+          title: pr.title,
+          url: pr.url,
+          repo: pr.repo,
+          author: pr.author,
+        }))
+    : []
+
+  const selectedDisplayName =
+    chartData.find((d) => d.reviewerLogin === selectedReviewer)?.reviewer ??
+    selectedReviewer
 
   return (
     <Card>
@@ -85,8 +116,10 @@ export function ReviewerQueueChart({ data }: { data: QueueData }) {
             <Bar dataKey="queueCount" radius={4}>
               {chartData.map((entry) => (
                 <Cell
-                  key={entry.reviewer}
+                  key={entry.reviewerLogin}
                   fill={getBarColor(entry.queueCount)}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedReviewer(entry.reviewerLogin)}
                 />
               ))}
               <LabelList dataKey="queueCount" position="right" />
@@ -94,6 +127,15 @@ export function ReviewerQueueChart({ data }: { data: QueueData }) {
           </BarChart>
         </ChartContainer>
       </CardContent>
+
+      <PRDrillDownSheet
+        open={selectedReviewer !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedReviewer(null)
+        }}
+        title={`PRs waiting for ${selectedDisplayName}`}
+        prs={selectedPRs}
+      />
     </Card>
   )
 }

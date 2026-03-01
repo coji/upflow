@@ -23,10 +23,13 @@ function formatHours(h: number): string {
 
 // --- B. WIP vs Review Time ---
 
-interface WipRawRow {
+export interface WipRawRow {
   author: string
   number: number
   repositoryId: string
+  title: string
+  url: string
+  repo: string
   reviewTime: number | null
   pullRequestCreatedAt: string
   mergedAt: string | null
@@ -95,11 +98,45 @@ export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
   return { groups, insight }
 }
 
+function getWipLabel(wipCount: number): string {
+  if (wipCount <= 1) return 'WIP 0-1'
+  if (wipCount === 2) return 'WIP 2'
+  if (wipCount === 3) return 'WIP 3'
+  return 'WIP 4+'
+}
+
+/**
+ * 各PRにWIPラベルを付与して返す（ドリルダウンフィルタ用）
+ */
+export function computeWipLabels(
+  data: WipRawRow[],
+): (WipRawRow & { wipLabel: string })[] {
+  return data
+    .filter((d) => d.reviewTime !== null && d.reviewTime > 0)
+    .map((pr) => {
+      const wipCount = data.filter(
+        (other) =>
+          other.author === pr.author &&
+          other.pullRequestCreatedAt <= pr.pullRequestCreatedAt &&
+          (other.mergedAt === null ||
+            other.mergedAt > pr.pullRequestCreatedAt) &&
+          (other.number !== pr.number ||
+            other.repositoryId !== pr.repositoryId),
+      ).length
+      return { ...pr, wipLabel: getWipLabel(wipCount) }
+    })
+}
+
 // --- C. PR Size Distribution ---
 
 const SIZE_ORDER: PRSizeLabel[] = ['XS', 'S', 'M', 'L', 'XL']
 
-interface PRSizeRawRow {
+export interface PRSizeRawRow {
+  number: number
+  title: string
+  url: string
+  repo: string
+  author: string
   additions: number | null
   deletions: number | null
   reviewTime: number | null

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -20,7 +21,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '~/app/components/ui/chart'
-import type { WipAggregation } from '../+functions/aggregate'
+import type { WipAggregation, WipRawRow } from '../+functions/aggregate'
+import { PRDrillDownSheet } from './pr-drill-down-sheet'
+
+type WipLabeledRow = WipRawRow & { wipLabel: string }
 
 const chartConfig = {
   medianHours: {
@@ -42,7 +46,14 @@ function getBarColor(label: string): string {
   return 'hsl(var(--destructive))'
 }
 
-export function WipCycleChart({ data }: { data: WipAggregation }) {
+export function WipCycleChart({
+  data,
+  rawData,
+}: {
+  data: WipAggregation
+  rawData: WipLabeledRow[]
+}) {
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null)
   const { groups, insight } = data
 
   if (groups.length === 0) {
@@ -57,6 +68,19 @@ export function WipCycleChart({ data }: { data: WipAggregation }) {
       </Card>
     )
   }
+
+  const selectedPRs = selectedLabel
+    ? rawData
+        .filter((pr) => pr.wipLabel === selectedLabel)
+        .map((pr) => ({
+          number: pr.number,
+          title: pr.title,
+          url: pr.url,
+          repo: pr.repo,
+          author: pr.author,
+          reviewTime: pr.reviewTime,
+        }))
+    : []
 
   return (
     <Card>
@@ -85,7 +109,12 @@ export function WipCycleChart({ data }: { data: WipAggregation }) {
             />
             <Bar dataKey="medianHours" radius={4}>
               {groups.map((entry) => (
-                <Cell key={entry.label} fill={getBarColor(entry.label)} />
+                <Cell
+                  key={entry.label}
+                  fill={getBarColor(entry.label)}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedLabel(entry.label)}
+                />
               ))}
               <LabelList
                 dataKey="medianHours"
@@ -106,6 +135,16 @@ export function WipCycleChart({ data }: { data: WipAggregation }) {
           </p>
         )}
       </CardContent>
+
+      <PRDrillDownSheet
+        open={selectedLabel !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedLabel(null)
+        }}
+        title={`${selectedLabel} PRs`}
+        description={`${selectedPRs.length} pull requests with ${selectedLabel} concurrent open PRs`}
+        prs={selectedPRs}
+      />
     </Card>
   )
 }
