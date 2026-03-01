@@ -25,12 +25,14 @@ interface AppDataTableProps<TData, TValue> {
   title?: React.ReactNode
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  optionsChildren?: React.ReactNode
 }
 
 export function AppDataTable<TData, TValue>({
   title,
   columns,
   data,
+  optionsChildren,
 }: AppDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] =
@@ -62,7 +64,9 @@ export function AppDataTable<TData, TValue>({
       <HStack>
         <div>{title}</div>
         <div className="flex-1" />
-        <AppDataTableViewOptions table={table} />
+        <AppDataTableViewOptions table={table}>
+          {optionsChildren}
+        </AppDataTableViewOptions>
       </HStack>
       <div className="rounded-md border">
         <Table>

@@ -10,6 +10,10 @@ import {
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
 import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
+import {
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+} from '~/app/components/ui/dropdown-menu'
 import WeeklyCalendar from '~/app/components/week-calendar'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
@@ -32,6 +36,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const fromParam = url.searchParams.get('from')
   const toParam = url.searchParams.get('to')
   const teamParam = url.searchParams.get('team')
+  const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
 
   let from: dayjs.Dayjs
   let to: dayjs.Dayjs
@@ -51,6 +56,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     to.utc().toISOString(),
     objective,
     teamParam || undefined,
+    businessDaysOnly,
   )
 
   const achievementCount = pullRequests.filter((pr) => pr.achievement).length
@@ -65,6 +71,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     achievementCount,
     achievementRate,
     teams,
+    businessDaysOnly,
   }
 }
 
@@ -77,6 +84,7 @@ export default function OrganizationIndex({
     achievementCount,
     achievementRate,
     teams,
+    businessDaysOnly,
   },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
@@ -157,6 +165,26 @@ export default function OrganizationIndex({
         title={<div>Merged this week: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
+        optionsChildren={
+          <>
+            <DropdownMenuLabel>Duration</DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+              checked={businessDaysOnly}
+              onCheckedChange={(checked) => {
+                setSearchParams((prev) => {
+                  if (checked) {
+                    prev.delete('businessDays')
+                  } else {
+                    prev.set('businessDays', '0')
+                  }
+                  return prev
+                })
+              }}
+            >
+              Business days only
+            </DropdownMenuCheckboxItem>
+          </>
+        }
       />
     </Stack>
   )

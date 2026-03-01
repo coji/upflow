@@ -1,4 +1,5 @@
 import { pipe, sortBy } from 'remeda'
+import dayjs from '~/app/libs/dayjs'
 import {
   getTenantDb,
   type OrganizationId,
@@ -11,6 +12,7 @@ export const getMergedPullRequestReport = async (
   toDateTime: string | null,
   objective: number,
   teamId?: string | null,
+  businessDaysOnly = true,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const pullrequests = await tenantDb
@@ -48,11 +50,16 @@ export const getMergedPullRequestReport = async (
   return pipe(
     pullrequests.map((pr) => {
       const createAndMergeDiff = pr.mergedAt
-        ? // 最初のコミットからマージまでの日数を計算
-          calculateBusinessHours(
-            pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
-            pr.mergedAt,
-          ) / 24
+        ? (businessDaysOnly
+            ? calculateBusinessHours(
+                pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
+                pr.mergedAt,
+              )
+            : dayjs(pr.mergedAt).diff(
+                dayjs(pr.firstCommittedAt ?? pr.pullRequestCreatedAt),
+                'hour',
+                true,
+              )) / 24
         : null
       const achievement =
         createAndMergeDiff !== null ? createAndMergeDiff < objective : false

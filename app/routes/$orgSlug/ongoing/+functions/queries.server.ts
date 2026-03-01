@@ -1,4 +1,5 @@
 import { pipe, sortBy } from 'remeda'
+import dayjs from '~/app/libs/dayjs'
 import {
   getTenantDb,
   type OrganizationId,
@@ -10,6 +11,7 @@ export const getOngoingPullRequestReport = async (
   fromDateTime: string | null,
   toDateTime: string | null,
   teamId?: string | null,
+  businessDaysOnly = true,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const pullrequests = await tenantDb
@@ -46,15 +48,16 @@ export const getOngoingPullRequestReport = async (
     ])
     .execute()
 
+  const now = new Date().toISOString()
+
   return pipe(
     pullrequests.map((pr) => {
+      const diffHours = businessDaysOnly
+        ? calculateBusinessHours(pr.pullRequestCreatedAt, now)
+        : dayjs(now).diff(dayjs(pr.pullRequestCreatedAt), 'hour', true)
       return {
         ...pr,
-        createAndNowDiff:
-          calculateBusinessHours(
-            pr.pullRequestCreatedAt,
-            new Date().toISOString(),
-          ) / 24, // 作成日からの経過時間（営業時間のみカウント）
+        createAndNowDiff: diffHours / 24,
       }
     }),
     sortBy((pr) => (pr.createAndNowDiff ? -pr.createAndNowDiff : 0)),

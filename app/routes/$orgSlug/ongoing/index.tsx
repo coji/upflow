@@ -1,4 +1,5 @@
 import { CopyIcon } from 'lucide-react'
+import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
 import {
@@ -9,6 +10,10 @@ import {
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
 import { Button, Stack } from '~/app/components/ui'
+import {
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+} from '~/app/components/ui/dropdown-menu'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
 import { listTeams } from '../settings/teams._index/queries.server'
@@ -32,6 +37,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')
+  const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
 
   const teams = await listTeams(organization.id)
 
@@ -40,13 +46,16 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     null,
     dayjs().utc().toISOString(),
     teamParam || undefined,
+    businessDaysOnly,
   )
-  return { pullRequests, teams }
+  return { pullRequests, teams, businessDaysOnly }
 }
 
 export default function OngoingPage({
-  loaderData: { pullRequests, teams },
+  loaderData: { pullRequests, teams, businessDaysOnly },
 }: Route.ComponentProps) {
+  const [, setSearchParams] = useSearchParams()
+
   return (
     <Stack>
       <PageHeader>
@@ -75,6 +84,26 @@ export default function OngoingPage({
         title={<div>Ongoing pull requests: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
+        optionsChildren={
+          <>
+            <DropdownMenuLabel>Duration</DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+              checked={businessDaysOnly}
+              onCheckedChange={(checked) => {
+                setSearchParams((prev) => {
+                  if (checked) {
+                    prev.delete('businessDays')
+                  } else {
+                    prev.set('businessDays', '0')
+                  }
+                  return prev
+                })
+              }}
+            >
+              Business days only
+            </DropdownMenuCheckboxItem>
+          </>
+        }
       />
     </Stack>
   )
