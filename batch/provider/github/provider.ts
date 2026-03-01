@@ -4,7 +4,7 @@ import type { TenantDB } from '~/app/services/tenant-db.server'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
 import { createAggregator } from './aggregator'
-import { buildRequestedAtMap, createFetcher } from './fetcher'
+import { createFetcher } from './fetcher'
 import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 
@@ -143,14 +143,6 @@ export const createGitHubProvider = (
             fetcher.files(pr.number),
           ])
         pr.files = files
-
-        // reviewers の requestedAt を補完
-        if (pr.reviewers.length > 0) {
-          const requestedAtMap = buildRequestedAtMap(timelineItems)
-          for (const r of pr.reviewers) {
-            r.requestedAt = requestedAtMap.get(r.login) ?? null
-          }
-        }
 
         await store.savePrData(pr, {
           commits,

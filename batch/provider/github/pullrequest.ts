@@ -10,6 +10,7 @@ import {
   totalTime,
 } from '~/batch/bizlogic/cycletime'
 import { logger } from '~/batch/helper/logger'
+import { buildRequestedAtMap } from './fetcher'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubPullRequest,
@@ -260,12 +261,18 @@ export const buildPullRequests = async (
       }
 
       // 8. レビュアー（レビュー依頼先）情報を収集
+      //    timeline_items から requestedAt を補完する
       const prReviewers = pr.reviewers ?? []
       if (prReviewers.length > 0) {
+        const timelineItems = await loaders.timelineItems(pr.number)
+        const requestedAtMap = buildRequestedAtMap(timelineItems)
         reviewers.push({
           pullRequestNumber: pr.number,
           repositoryId: config.repositoryId,
-          reviewers: prReviewers,
+          reviewers: prReviewers.map((r) => ({
+            ...r,
+            requestedAt: requestedAtMap.get(r.login) ?? r.requestedAt,
+          })),
         })
       }
     } catch (e) {
