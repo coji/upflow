@@ -44,13 +44,6 @@ const GetPullRequestsQuery = graphql(`
           additions
           deletions
           changedFiles
-          files(first: 100) {
-            nodes {
-              path
-              additions
-              deletions
-            }
-          }
           headRefName
           baseRefName
           mergeCommit {
@@ -347,13 +340,6 @@ const GetPullRequestsWithDetailsQuery = graphql(`
           additions
           deletions
           changedFiles
-          files(first: 100) {
-            nodes {
-              path
-              additions
-              deletions
-            }
-          }
           headRefName
           baseRefName
           mergeCommit {
@@ -827,14 +813,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             additions: node.additions ?? null,
             deletions: node.deletions ?? null,
             changedFiles: node.changedFiles ?? null,
-            files:
-              node.files?.nodes
-                ?.filter((f) => f != null)
-                .map((f) => ({
-                  path: f.path,
-                  additions: f.additions,
-                  deletions: f.deletions,
-                })) ?? [],
+            files: [],
           },
         ]
       }
@@ -1185,14 +1164,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           additions: node.additions ?? null,
           deletions: node.deletions ?? null,
           changedFiles: node.changedFiles ?? null,
-          files:
-            node.files?.nodes
-              ?.filter((f) => f != null)
-              .map((f) => ({
-                path: f.path,
-                additions: f.additions,
-                deletions: f.deletions,
-              })) ?? [],
+          files: [],
         }
 
         // commits
@@ -1318,6 +1290,39 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return shapeTimelineNodes(nodes)
   }
 
+  /**
+   * PR のファイル一覧を REST API で取得
+   */
+  const files = async (pullNumber: number) => {
+    const allFiles: { path: string; additions: number; deletions: number }[] =
+      []
+    let page = 1
+
+    while (true) {
+      const { data } = await octokit.rest.pulls.listFiles({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        per_page: 100,
+        page,
+      })
+      if (data.length === 0) break
+
+      for (const f of data) {
+        allFiles.push({
+          path: f.filename,
+          additions: f.additions,
+          deletions: f.deletions,
+        })
+      }
+
+      if (data.length < 100) break
+      page++
+    }
+
+    return allFiles
+  }
+
   return {
     pullrequests,
     pullrequestsWithDetails,
@@ -1325,6 +1330,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     comments,
     reviews,
     timelineItems,
+    files,
     tags,
   }
 }

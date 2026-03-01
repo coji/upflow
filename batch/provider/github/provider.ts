@@ -103,6 +103,10 @@ export const createGitHubProvider = (
           timelineItems = await fetcher.timelineItems(pr.number)
         }
 
+        // files: 常に個別取得（ネストクエリから除外済み）
+        const files = await fetcher.files(pr.number)
+        pr.files = files
+
         await store.savePrData(pr, {
           commits,
           reviews,
@@ -129,18 +133,16 @@ export const createGitHubProvider = (
           continue
         }
 
-        logger.info(`${pr.number} commits`)
-        const commits = await fetcher.commits(pr.number)
-
-        logger.info(`${pr.number} review comments`)
-        const discussions = await fetcher.comments(pr.number)
-
-        logger.info(`${pr.number} reviews`)
-        const reviews = await fetcher.reviews(pr.number)
-
-        // timeline items を取得
-        logger.info(`${pr.number} timeline items`)
-        const timelineItems = await fetcher.timelineItems(pr.number)
+        logger.info(`${pr.number} fetching details...`)
+        const [commits, discussions, reviews, timelineItems, files] =
+          await Promise.all([
+            fetcher.commits(pr.number),
+            fetcher.comments(pr.number),
+            fetcher.reviews(pr.number),
+            fetcher.timelineItems(pr.number),
+            fetcher.files(pr.number),
+          ])
+        pr.files = files
 
         // reviewers の requestedAt を補完
         if (pr.reviewers.length > 0) {
