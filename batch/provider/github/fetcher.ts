@@ -14,10 +14,15 @@ import type {
 } from './model'
 
 const GetPullRequestsQuery = graphql(`
-  query GetPullRequests($owner: String!, $repo: String!, $cursor: String) {
+  query GetPullRequests(
+    $owner: String!
+    $repo: String!
+    $cursor: String
+    $first: Int = 100
+  ) {
     repository(owner: $owner, name: $repo) {
       pullRequests(
-        first: 100
+        first: $first
         after: $cursor
         orderBy: { field: CREATED_AT, direction: DESC }
       ) {
@@ -70,6 +75,25 @@ const GetPullRequestsQuery = graphql(`
                 }
                 ... on Mannequin {
                   login
+                }
+              }
+            }
+          }
+          timelineItems(first: 20, itemTypes: [REVIEW_REQUESTED_EVENT]) {
+            nodes {
+              ... on ReviewRequestedEvent {
+                createdAt
+                requestedReviewer {
+                  __typename
+                  ... on User {
+                    login
+                  }
+                  ... on Bot {
+                    login
+                  }
+                  ... on Mannequin {
+                    login
+                  }
                 }
               }
             }
@@ -207,10 +231,11 @@ const GetPullRequestsWithDetailsQuery = graphql(`
     $owner: String!
     $repo: String!
     $cursor: String
+    $first: Int = 25
   ) {
     repository(owner: $owner, name: $repo) {
       pullRequests(
-        first: 25
+        first: $first
         after: $cursor
         orderBy: { field: CREATED_AT, direction: DESC }
       ) {
@@ -263,6 +288,25 @@ const GetPullRequestsWithDetailsQuery = graphql(`
                 }
                 ... on Mannequin {
                   login
+                }
+              }
+            }
+          }
+          timelineItems(first: 20, itemTypes: [REVIEW_REQUESTED_EVENT]) {
+            nodes {
+              ... on ReviewRequestedEvent {
+                createdAt
+                requestedReviewer {
+                  __typename
+                  ... on User {
+                    login
+                  }
+                  ... on Bot {
+                    login
+                  }
+                  ... on Mannequin {
+                    login
+                  }
                 }
               }
             }
@@ -373,6 +417,62 @@ const GetTagsQuery = graphql(`
   }
 `)
 
+/**
+ * GitHub GraphQL の 502/504 タイムアウトに対してページサイズを縮小してリトライする。
+ * @returns 'retry' ならページサイズ縮小済みで continue すべき、それ以外は結果 or throw
+ */
+function handleGraphQLError<T>(
+  error: unknown,
+  pageSize: { value: number },
+  minPageSize: number,
+  label: string,
+): { action: 'retry' } | { action: 'use'; data: T } {
+  const status =
+    error && typeof error === 'object' && 'status' in error
+      ? (error as { status: number }).status
+      : null
+
+  // HTTP 502/504
+  if ((status === 502 || status === 504) && pageSize.value > minPageSize) {
+    pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
+    logger.warn(
+      `${label}: GitHub API timeout (${status}), reducing page size to ${pageSize.value}`,
+    )
+    return { action: 'retry' }
+  }
+
+  // GraphQL partial error (data + errors)
+  if (
+    error &&
+    typeof error === 'object' &&
+    'data' in error &&
+    error.data != null
+  ) {
+    const partialData = error.data as T
+    // data はあるが中身が空の場合はタイムアウト起因の可能性が高い
+    const repo =
+      partialData &&
+      typeof partialData === 'object' &&
+      'repository' in partialData
+        ? (partialData as { repository: unknown }).repository
+        : undefined
+    if (!repo && pageSize.value > minPageSize) {
+      pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
+      logger.warn(
+        `${label}: partial error with null repository, reducing page size to ${pageSize.value}`,
+      )
+      return { action: 'retry' }
+    }
+    logger.warn(
+      `${label}: GraphQL partial error`,
+      'errors' in error ? JSON.stringify(error.errors) : '',
+    )
+    return { action: 'use', data: partialData }
+  }
+
+  throw error
+}
+
 interface createFetcherProps {
   owner: string
   repo: string
@@ -392,6 +492,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let allPulls: ShapedGitHubPullRequest[] = []
     let cursor: string | null = null
     let hasNextPage = true
+    const pageSizeRef = { value: 50 }
 
     while (hasNextPage) {
       let result: PullRequestsResult
@@ -400,27 +501,33 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           owner,
           repo,
           cursor,
+          first: pageSizeRef.value,
         })
       } catch (error: unknown) {
-        // GraphQL partial error: エラーがあってもデータが返る場合がある
-        if (
-          error &&
-          typeof error === 'object' &&
-          'data' in error &&
-          error.data != null
-        ) {
-          logger.warn(
-            'GraphQL partial error in pullrequests():',
-            'errors' in error ? JSON.stringify(error.errors) : error,
-          )
-          result = error.data as PullRequestsResult
-        } else {
-          throw error
-        }
+        const handled = handleGraphQLError<PullRequestsResult>(
+          error,
+          pageSizeRef,
+          10,
+          'pullrequests()',
+        )
+        if (handled.action === 'retry') continue
+        result = handled.data
       }
 
       const pullRequests = result?.repository?.pullRequests
-      if (!pullRequests || !pullRequests.nodes) break
+      if (!pullRequests || !pullRequests.nodes) {
+        logger.warn(
+          'pullrequests(): unexpected empty response',
+          JSON.stringify({
+            hasRepository: !!result?.repository,
+            hasPullRequests: !!pullRequests,
+            hasNodes: !!pullRequests?.nodes,
+            pageSize: pageSizeRef.value,
+            cursor,
+          }),
+        )
+        break
+      }
 
       for (const node of pullRequests.nodes) {
         if (!node || !node.databaseId) continue
@@ -429,7 +536,29 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         const state =
           node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
 
-        const reviewerLogins: string[] = []
+        // timelineItems から login → 最新の requestedAt マッピングを構築
+        const requestedAtMap = new Map<string, string>()
+        if (node.timelineItems?.nodes) {
+          for (const item of node.timelineItems.nodes) {
+            if (!item || !('createdAt' in item) || !item.requestedReviewer)
+              continue
+            const reviewer = item.requestedReviewer
+            if (
+              reviewer.__typename === 'User' ||
+              reviewer.__typename === 'Bot' ||
+              reviewer.__typename === 'Mannequin'
+            ) {
+              // 同じ reviewer に複数回リクエストがある場合は最新を採用
+              const existing = requestedAtMap.get(reviewer.login)
+              if (!existing || item.createdAt > existing) {
+                requestedAtMap.set(reviewer.login, item.createdAt)
+              }
+            }
+          }
+        }
+
+        // reviewRequests（現在の pending reviewer）と requestedAt を統合
+        const reviewers: { login: string; requestedAt: string | null }[] = []
         if (node.reviewRequests?.nodes) {
           for (const rr of node.reviewRequests.nodes) {
             const reviewer = rr?.requestedReviewer
@@ -439,7 +568,10 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
                 reviewer.__typename === 'Bot' ||
                 reviewer.__typename === 'Mannequin')
             ) {
-              reviewerLogins.push(reviewer.login)
+              reviewers.push({
+                login: reviewer.login,
+                requestedAt: requestedAtMap.get(reviewer.login) ?? null,
+              })
             }
           }
         }
@@ -459,7 +591,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
               node.assignees.nodes
                 ?.filter((n) => n != null)
                 .map((n) => n.login) ?? [],
-            reviewers: reviewerLogins,
+            reviewers,
             draft: node.isDraft,
             sourceBranch: node.headRefName,
             targetBranch: node.baseRefName,
@@ -730,6 +862,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     const allResults: ShapedGitHubPullRequestWithDetails[] = []
     let cursor: string | null = null
     let hasNextPage = true
+    const pageSizeRef = { value: 25 }
 
     while (hasNextPage) {
       let result: Result
@@ -738,23 +871,17 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           owner,
           repo,
           cursor,
+          first: pageSizeRef.value,
         })
       } catch (error: unknown) {
-        // GraphQL partial error: エラーがあってもデータが返る場合がある
-        if (
-          error &&
-          typeof error === 'object' &&
-          'data' in error &&
-          error.data != null
-        ) {
-          logger.warn(
-            'GraphQL partial error in pullrequestsWithDetails():',
-            'errors' in error ? JSON.stringify(error.errors) : error,
-          )
-          result = error.data as Result
-        } else {
-          throw error
-        }
+        const handled = handleGraphQLError<Result>(
+          error,
+          pageSizeRef,
+          5,
+          'pullrequestsWithDetails()',
+        )
+        if (handled.action === 'retry') continue
+        result = handled.data
       }
 
       const pullRequests = result?.repository?.pullRequests
@@ -767,7 +894,28 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         const state =
           node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
 
-        const reviewerLogins: string[] = []
+        // timelineItems から login → 最新の requestedAt マッピングを構築
+        const requestedAtMap = new Map<string, string>()
+        if (node.timelineItems?.nodes) {
+          for (const item of node.timelineItems.nodes) {
+            if (!item || !('createdAt' in item) || !item.requestedReviewer)
+              continue
+            const reviewer = item.requestedReviewer
+            if (
+              reviewer.__typename === 'User' ||
+              reviewer.__typename === 'Bot' ||
+              reviewer.__typename === 'Mannequin'
+            ) {
+              const existing = requestedAtMap.get(reviewer.login)
+              if (!existing || item.createdAt > existing) {
+                requestedAtMap.set(reviewer.login, item.createdAt)
+              }
+            }
+          }
+        }
+
+        // reviewRequests（現在の pending reviewer）と requestedAt を統合
+        const reviewers: { login: string; requestedAt: string | null }[] = []
         if (node.reviewRequests?.nodes) {
           for (const rr of node.reviewRequests.nodes) {
             const reviewer = rr?.requestedReviewer
@@ -777,7 +925,10 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
                 reviewer.__typename === 'Bot' ||
                 reviewer.__typename === 'Mannequin')
             ) {
-              reviewerLogins.push(reviewer.login)
+              reviewers.push({
+                login: reviewer.login,
+                requestedAt: requestedAtMap.get(reviewer.login) ?? null,
+              })
             }
           }
         }
@@ -795,7 +946,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             node.assignees.nodes
               ?.filter((n) => n != null)
               .map((n) => n.login) ?? [],
-          reviewers: reviewerLogins,
+          reviewers,
           draft: node.isDraft,
           sourceBranch: node.headRefName,
           targetBranch: node.baseRefName,

@@ -81,7 +81,7 @@ export async function upsertPullRequestReviewers(
   organizationId: OrganizationId,
   repositoryId: string,
   pullRequestNumber: number,
-  reviewers: string[],
+  reviewers: { login: string; requestedAt: string | null }[],
 ) {
   const tenantDb = getTenantDb(organizationId)
   await tenantDb.transaction().execute(async (trx) => {
@@ -92,17 +92,23 @@ export async function upsertPullRequestReviewers(
       .where('pullRequestNumber', '=', pullRequestNumber)
       .execute()
 
-    const uniqueReviewers = [...new Set(reviewers)]
+    const seen = new Set<string>()
+    const uniqueReviewers = reviewers.filter((r) => {
+      if (!r.login) return false
+      if (seen.has(r.login)) return false
+      seen.add(r.login)
+      return true
+    })
     if (uniqueReviewers.length === 0) return
 
     await trx
       .insertInto('pullRequestReviewers')
       .values(
-        uniqueReviewers.map((reviewer) => ({
+        uniqueReviewers.map((r) => ({
           pullRequestNumber,
           repositoryId,
-          reviewer,
-          requestedAt: null,
+          reviewer: r.login,
+          requestedAt: r.requestedAt,
         })),
       )
       .execute()

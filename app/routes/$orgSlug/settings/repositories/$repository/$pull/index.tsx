@@ -1,16 +1,29 @@
 import { zx } from '@coji/zodix/v4'
 import { createPatch } from 'diff'
-import { useMemo } from 'react'
-import { useFetcher } from 'react-router'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFetcher, useRevalidator } from 'react-router'
+import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
+import {
+  upsertPullRequest,
+  upsertPullRequestReview,
+  upsertPullRequestReviewers,
+} from '~/batch/db/mutations'
 import { createFetcher } from '~/batch/provider/github/fetcher'
+import type { ShapedGitHubPullRequest } from '~/batch/provider/github/model'
+import { buildPullRequests } from '~/batch/provider/github/pullrequest'
+import { createStore } from '~/batch/provider/github/store'
 import type { Route } from './+types/index'
 import {
+  getOrganizationSettings,
   getPullRequest,
   getPullRequestRawData,
+  getPullRequestReviewers,
+  getPullRequestReviews,
   getRepositoryWithIntegration,
+  getShapedPullRequest,
 } from './queries.server'
 
 export const handle = {
@@ -35,11 +48,11 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw new Response('Pull request not found', { status: 404 })
   }
 
-  const rawData = await getPullRequestRawData(
-    organization.id,
-    repositoryId,
-    pullId,
-  )
+  const [rawData, processedReviews, processedReviewers] = await Promise.all([
+    getPullRequestRawData(organization.id, repositoryId, pullId),
+    getPullRequestReviews(organization.id, repositoryId, pullId),
+    getPullRequestReviewers(organization.id, repositoryId, pullId),
+  ])
 
   return {
     pull,
@@ -50,8 +63,12 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
           discussions: rawData.discussions as unknown[],
         }
       : { commits: [], reviews: [], discussions: [] },
+    processedReviews,
+    processedReviewers,
   }
 }
+
+const intentSchema = z.enum(['compare', 'refresh'])
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
@@ -59,6 +76,9 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     repository: z.string(),
     pull: zx.NumAsString,
   })
+
+  const formData = await request.formData()
+  const intent = intentSchema.parse(formData.get('intent'))
 
   const repository = await getRepositoryWithIntegration(
     organization.id,
@@ -82,13 +102,78 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     token: repository.integration.privateToken,
   })
 
-  const [commits, comments, reviews] = await Promise.all([
-    fetcher.commits(pullId),
-    fetcher.comments(pullId),
-    fetcher.reviews(pullId),
-  ])
+  return match(intent)
+    .with('compare', async () => {
+      const [commits, comments, reviews] = await Promise.all([
+        fetcher.commits(pullId),
+        fetcher.comments(pullId),
+        fetcher.reviews(pullId),
+      ])
+      return { intent: 'compare' as const, commits, comments, reviews }
+    })
+    .with('refresh', async () => {
+      // 1. Get existing PR shape from raw data
+      const shapedPr = await getShapedPullRequest(
+        organization.id,
+        repositoryId,
+        pullId,
+      )
+      if (!shapedPr) {
+        throw new Response('Raw PR data not found. Run Compare first.', {
+          status: 404,
+        })
+      }
+      const pr = shapedPr as unknown as ShapedGitHubPullRequest
 
-  return { commits, comments, reviews }
+      // 2. Re-fetch commits/comments/reviews from GitHub
+      const [commits, comments, reviews] = await Promise.all([
+        fetcher.commits(pullId),
+        fetcher.comments(pullId),
+        fetcher.reviews(pullId),
+      ])
+
+      // 3. Save raw data via store
+      const store = createStore({
+        organizationId: organization.id,
+        repositoryId,
+      })
+      await store.savePrData(pr, { commits, reviews, discussions: comments })
+
+      // 4. Get organization settings for build config
+      const settings = await getOrganizationSettings(organization.id)
+
+      // 5. Build pull request data (analyze)
+      const result = await buildPullRequests(
+        {
+          organizationId: organization.id,
+          repositoryId,
+          excludedUsers: settings?.excludedUsers ?? '',
+          releaseDetectionMethod: settings?.releaseDetectionMethod ?? 'branch',
+          releaseDetectionKey: settings?.releaseDetectionKey ?? '',
+        },
+        [pr],
+        store.loader,
+      )
+
+      // 6. Upsert to DB
+      for (const pull of result.pulls) {
+        await upsertPullRequest(organization.id, pull)
+      }
+      for (const review of result.reviews) {
+        await upsertPullRequestReview(organization.id, review)
+      }
+      for (const reviewer of result.reviewers) {
+        await upsertPullRequestReviewers(
+          organization.id,
+          reviewer.repositoryId,
+          reviewer.pullRequestNumber,
+          reviewer.reviewers,
+        )
+      }
+
+      return { intent: 'refresh' as const, success: true }
+    })
+    .exhaustive()
 }
 
 const UnifiedDiff = ({
@@ -200,11 +285,33 @@ const ComparisonSection = ({
 }
 
 const RepositoryPullsIndexPage = ({
-  loaderData: { pull, storeData },
+  loaderData: { pull, storeData, processedReviews, processedReviewers },
 }: Route.ComponentProps) => {
   const compareFetcher = useFetcher<typeof action>()
-  const isComparing = compareFetcher.state !== 'idle'
-  const githubData = compareFetcher.data
+  const refreshFetcher = useFetcher<typeof action>()
+  const revalidator = useRevalidator()
+
+  const isComparing =
+    compareFetcher.state !== 'idle' &&
+    compareFetcher.formData?.get('intent') === 'compare'
+  const isRefreshing =
+    refreshFetcher.state !== 'idle' &&
+    refreshFetcher.formData?.get('intent') === 'refresh'
+
+  const compareData =
+    compareFetcher.data?.intent === 'compare' ? compareFetcher.data : undefined
+
+  const refreshData =
+    refreshFetcher.data?.intent === 'refresh' ? refreshFetcher.data : undefined
+
+  // Revalidate loader data after successful refresh (once)
+  const lastRefreshRef = useRef<typeof refreshData>(undefined)
+  useEffect(() => {
+    if (refreshData?.success && refreshData !== lastRefreshRef.current) {
+      lastRefreshRef.current = refreshData
+      revalidator.revalidate()
+    }
+  }, [refreshData, revalidator])
 
   return (
     <Stack gap="6">
@@ -220,30 +327,78 @@ const RepositoryPullsIndexPage = ({
         </details>
       </div>
 
-      <div>
+      <HStack>
         <compareFetcher.Form method="post">
-          <Button type="submit" disabled={isComparing}>
+          <input type="hidden" name="intent" value="compare" />
+          <Button type="submit" disabled={isComparing || isRefreshing}>
             {isComparing ? 'Fetching from GitHub...' : 'Compare with GitHub'}
           </Button>
         </compareFetcher.Form>
-      </div>
+
+        <refreshFetcher.Form method="post">
+          <input type="hidden" name="intent" value="refresh" />
+          <Button
+            type="submit"
+            variant="secondary"
+            disabled={isComparing || isRefreshing}
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh (Re-fetch & Save)'}
+          </Button>
+        </refreshFetcher.Form>
+
+        {refreshData?.success && <Badge variant="default">Refreshed</Badge>}
+      </HStack>
 
       <Stack gap="4">
+        <Heading>Raw Data (githubRawData)</Heading>
         <ComparisonSection
           title="Commits"
           storeItems={storeData.commits}
-          githubItems={githubData?.commits}
+          githubItems={compareData?.commits}
         />
         <ComparisonSection
           title="Reviews"
           storeItems={storeData.reviews}
-          githubItems={githubData?.reviews}
+          githubItems={compareData?.reviews}
         />
         <ComparisonSection
           title="Discussions"
           storeItems={storeData.discussions}
-          githubItems={githubData?.comments}
+          githubItems={compareData?.comments}
         />
+      </Stack>
+
+      <Stack gap="4">
+        <Heading>Processed Data</Heading>
+        <div className="space-y-2">
+          <HStack>
+            <Heading>Pull Request Reviews</Heading>
+            <Badge variant="secondary">{processedReviews.length}件</Badge>
+          </HStack>
+          <details>
+            <summary className="text-muted-foreground cursor-pointer text-sm">
+              pullRequestReviews (JSON)
+            </summary>
+            <pre className="bg-muted max-h-64 overflow-auto rounded p-2 text-xs">
+              {JSON.stringify(processedReviews, null, 2)}
+            </pre>
+          </details>
+        </div>
+
+        <div className="space-y-2">
+          <HStack>
+            <Heading>Pull Request Reviewers</Heading>
+            <Badge variant="secondary">{processedReviewers.length} 件</Badge>
+          </HStack>
+          <details>
+            <summary className="text-muted-foreground cursor-pointer text-sm">
+              pullRequestReviewers (JSON)
+            </summary>
+            <pre className="bg-muted max-h-64 overflow-auto rounded p-2 text-xs">
+              {JSON.stringify(processedReviewers, null, 2)}
+            </pre>
+          </details>
+        </div>
       </Stack>
     </Stack>
   )
