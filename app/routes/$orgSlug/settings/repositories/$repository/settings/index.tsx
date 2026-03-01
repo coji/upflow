@@ -23,13 +23,11 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
-import ContentSection from '../+components/content-section'
+import ContentSection from '../../../+components/content-section'
+import { getRepository } from '../queries.server'
+import { updateRepository } from './+functions/mutations.server'
+import { getIntegration } from './+functions/queries.server'
 import type { Route } from './+types/index'
-import {
-  getIntegration,
-  getRepository,
-  updateRepository,
-} from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Edit' }) }
 

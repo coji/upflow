@@ -3,14 +3,15 @@ import {
   type OrganizationId,
 } from '~/app/services/tenant-db.server'
 
-export const getRepository = async (
+export const listPullRequests = async (
   organizationId: OrganizationId,
   repositoryId: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
-    .selectFrom('repositories')
+    .selectFrom('pullRequests')
+    .where('repositoryId', '=', repositoryId)
+    .orderBy('number', 'desc')
     .selectAll()
-    .where('id', '=', repositoryId)
-    .executeTakeFirst()
+    .execute()
 }

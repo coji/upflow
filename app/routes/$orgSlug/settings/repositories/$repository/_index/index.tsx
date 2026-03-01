@@ -10,19 +10,9 @@ import {
   TableRow,
 } from '~/app/components/ui'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
-import ContentSection from '../+components/content-section'
+import ContentSection from '../../../+components/content-section'
 import type { Route } from './+types/index'
-import { getRepository, listPullRequests } from './queries.server'
-
-export const handle = {
-  breadcrumb: (
-    data: Awaited<ReturnType<typeof loader>>,
-    params: { orgSlug: string; repository: string },
-  ) => ({
-    label: `${data.repository.owner}/${data.repository.repo}`,
-    to: `/${params.orgSlug}/settings/repositories/${params.repository}`,
-  }),
-}
+import { listPullRequests } from './queries.server'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgAdmin(request, params.orgSlug)
@@ -30,22 +20,18 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     repository: z.string(),
   })
 
-  const repository = await getRepository(organization.id, repositoryId)
-  if (!repository) {
-    throw new Response('repository not found', { status: 404 })
-  }
   const pulls = await listPullRequests(organization.id, repositoryId)
 
-  return { repositoryId, repository, pulls }
+  return { repositoryId, pulls }
 }
 
 export default function RepositoryPullsIndexPage({
-  loaderData: { repositoryId, repository, pulls },
+  loaderData: { repositoryId, pulls },
   params,
 }: Route.ComponentProps) {
   return (
     <ContentSection
-      title={`${repository.owner}/${repository.repo}`}
+      title="Pull Requests"
       desc="Pull requests tracked for this repository."
       fullWidth
     >
