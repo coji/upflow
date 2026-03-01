@@ -47,6 +47,15 @@ describe('calculateBusinessHours', () => {
     expect(result).toBe(0)
   })
 
+  test('returns 0 for a Japanese holiday falling on a weekend', () => {
+    // 2024-02-11 is 建国記念の日 (National Foundation Day) and a Sunday
+    const result = calculateBusinessHours(
+      '2024-02-11T10:00:00+09:00',
+      '2024-02-11T18:00:00+09:00',
+    )
+    expect(result).toBe(0)
+  })
+
   test('returns 0 for a Japanese holiday (New Year)', () => {
     // Jan 1, 2024 is a Japanese holiday (元日) and also Monday
     const result = calculateBusinessHours(

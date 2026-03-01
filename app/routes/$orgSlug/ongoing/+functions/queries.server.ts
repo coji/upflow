@@ -52,9 +52,10 @@ export const getOngoingPullRequestReport = async (
 
   return pipe(
     pullrequests.map((pr) => {
+      const startDate = pr.firstCommittedAt ?? pr.pullRequestCreatedAt
       const diffHours = businessDaysOnly
-        ? calculateBusinessHours(pr.pullRequestCreatedAt, now)
-        : dayjs(now).diff(dayjs(pr.pullRequestCreatedAt), 'hour', true)
+        ? calculateBusinessHours(startDate, now)
+        : dayjs(now).diff(dayjs(startDate), 'hour', true)
       return {
         ...pr,
         createAndNowDiff: diffHours / 24,
