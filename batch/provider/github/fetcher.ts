@@ -750,8 +750,16 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
 
       const pullRequests = result?.repository?.pullRequests
       if (!pullRequests || !pullRequests.nodes) {
+        // 200 OK だが repository が null → タイムアウト起因の可能性
+        if (pageSizeRef.value > 10) {
+          pageSizeRef.value = Math.max(10, Math.floor(pageSizeRef.value / 2))
+          logger.warn(
+            `pullrequests(): empty response, reducing page size to ${pageSizeRef.value}`,
+          )
+          continue
+        }
         logger.warn(
-          'pullrequests(): unexpected empty response',
+          'pullrequests(): unexpected empty response (already at min page size)',
           JSON.stringify({
             hasRepository: !!result?.repository,
             hasPullRequests: !!pullRequests,
@@ -1099,7 +1107,19 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       }
 
       const pullRequests = result?.repository?.pullRequests
-      if (!pullRequests || !pullRequests.nodes) break
+      if (!pullRequests || !pullRequests.nodes) {
+        if (pageSizeRef.value > 5) {
+          pageSizeRef.value = Math.max(5, Math.floor(pageSizeRef.value / 2))
+          logger.warn(
+            `pullrequestsWithDetails(): empty response, reducing page size to ${pageSizeRef.value}`,
+          )
+          continue
+        }
+        logger.warn(
+          'pullrequestsWithDetails(): empty response at min page size, stopping',
+        )
+        break
+      }
 
       for (const node of pullRequests.nodes) {
         if (!node || !node.databaseId) continue
