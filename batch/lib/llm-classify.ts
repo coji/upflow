@@ -185,18 +185,31 @@ export async function batchClassifyPRs(
     const batch = prs.slice(i, i + concurrency)
     const promises = batch.map(async (pr) => {
       const key = toResultKey(pr)
-      try {
-        const result = await classifySinglePR(ai, model, pr)
-        results.set(key, result.classification)
-        totalUsage.promptTokens += result.usage.promptTokens
-        totalUsage.candidatesTokens += result.usage.candidatesTokens
-        totalUsage.totalTokens += result.usage.totalTokens
-        successCount++
-      } catch (err) {
-        logger.warn(
-          `Failed to classify PR ${pr.repositoryId}#${pr.number}: ${err instanceof Error ? err.message : String(err)}`,
-        )
-        errorCount++
+      const maxRetries = 3
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const result = await classifySinglePR(ai, model, pr)
+          results.set(key, result.classification)
+          totalUsage.promptTokens += result.usage.promptTokens
+          totalUsage.candidatesTokens += result.usage.candidatesTokens
+          totalUsage.totalTokens += result.usage.totalTokens
+          successCount++
+          return
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          if (attempt < maxRetries) {
+            const delay = 1000 * 2 ** attempt // 1s, 2s, 4s
+            logger.warn(
+              `Retrying PR ${pr.repositoryId}#${pr.number} (attempt ${attempt + 1}/${maxRetries}): ${msg}`,
+            )
+            await new Promise((r) => setTimeout(r, delay))
+          } else {
+            logger.warn(
+              `Failed to classify PR ${pr.repositoryId}#${pr.number} after ${maxRetries} retries: ${msg}`,
+            )
+            errorCount++
+          }
+        }
       }
     })
     await Promise.all(promises)
