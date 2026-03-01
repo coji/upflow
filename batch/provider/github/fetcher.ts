@@ -398,6 +398,9 @@ const GetPullRequestsWithDetailsQuery = graphql(`
               HEAD_REF_FORCE_PUSHED_EVENT
             ]
           ) {
+            pageInfo {
+              hasNextPage
+            }
             nodes {
               __typename
               ... on ReviewRequestedEvent {
@@ -1282,6 +1285,8 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           needsMoreReviewThreads:
             node.reviewThreads?.pageInfo.hasNextPage ?? false,
           needsMoreReviewThreadComments,
+          needsMoreTimelineItems:
+            node.timelineItems?.pageInfo.hasNextPage ?? false,
         })
       }
 

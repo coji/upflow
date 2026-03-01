@@ -100,4 +100,5 @@ export type ShapedGitHubPullRequestWithDetails = {
   needsMoreComments: boolean
   needsMoreReviewThreads: boolean
   needsMoreReviewThreadComments: boolean
+  needsMoreTimelineItems: boolean
 }

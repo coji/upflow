@@ -94,11 +94,20 @@ export const createGitHubProvider = (
           comments = await fetcher.comments(pr.number)
         }
 
+        // timelineItems: オーバーフロー時は個別取得でフォールバック
+        let { timelineItems } = detail
+        if (detail.needsMoreTimelineItems) {
+          logger.info(
+            `${pr.number} timeline items overflow, fetching individually...`,
+          )
+          timelineItems = await fetcher.timelineItems(pr.number)
+        }
+
         await store.savePrData(pr, {
           commits,
           reviews,
           discussions: comments,
-          timelineItems: detail.timelineItems,
+          timelineItems,
         })
         logger.info(`${pr.number} saved`)
       }
