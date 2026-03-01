@@ -55,7 +55,7 @@ export async function analyzeAndUpsert({
   }
   for (const reviewer of reviewers) {
     for (const r of reviewer.reviewers) {
-      discoveredLogins.add(r.login)
+      if (r.login) discoveredLogins.add(r.login)
     }
   }
   await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
@@ -92,11 +92,15 @@ export async function analyzeAndUpsert({
 
   // 7. export (optional)
   if (organization.exportSetting) {
-    logger.info('exporting to spreadsheet...', orgId)
-    const exporter = createSpreadsheetExporter(organization.exportSetting)
-    await exporter.exportPulls(pulls)
-    await exporter.exportReviewResponses(reviewResponses)
-    logger.info('export to spreadsheet done.', orgId)
+    try {
+      logger.info('exporting to spreadsheet...', orgId)
+      const exporter = createSpreadsheetExporter(organization.exportSetting)
+      await exporter.exportPulls(pulls)
+      await exporter.exportReviewResponses(reviewResponses)
+      logger.info('export to spreadsheet done.', orgId)
+    } catch (e) {
+      logger.error('export to spreadsheet failed.', orgId, e)
+    }
   }
 
   return { pulls, reviewResponses }

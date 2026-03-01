@@ -194,7 +194,7 @@ export async function batchClassifyPRs(
         successCount++
       } catch (err) {
         logger.warn(
-          `Failed to classify PR #${pr.number}: ${err instanceof Error ? err.message : String(err)}`,
+          `Failed to classify PR ${pr.repositoryId}#${pr.number}: ${err instanceof Error ? err.message : String(err)}`,
         )
         errorCount++
       }
