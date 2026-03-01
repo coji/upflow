@@ -78,22 +78,29 @@ export const createGitHubProvider = (
       logger.info(
         `${pr.number} fetching details... (${processed}/${refresh ? allPullRequests.length : '?'})`,
       )
-      const [commits, discussions, reviews, timelineItems, files] =
-        await Promise.all([
-          fetcher.commits(pr.number),
-          fetcher.comments(pr.number),
-          fetcher.reviews(pr.number),
-          fetcher.timelineItems(pr.number),
-          fetcher.files(pr.number),
-        ])
-      pr.files = files
+      try {
+        const [commits, discussions, reviews, timelineItems, files] =
+          await Promise.all([
+            fetcher.commits(pr.number),
+            fetcher.comments(pr.number),
+            fetcher.reviews(pr.number),
+            fetcher.timelineItems(pr.number),
+            fetcher.files(pr.number),
+          ])
+        pr.files = files
 
-      await store.savePrData(pr, {
-        commits,
-        reviews,
-        discussions,
-        timelineItems,
-      })
+        await store.savePrData(pr, {
+          commits,
+          reviews,
+          discussions,
+          timelineItems,
+        })
+      } catch (e) {
+        logger.warn(
+          `${pr.number} failed, skipping:`,
+          e instanceof Error ? e.message : e,
+        )
+      }
     }
 
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
