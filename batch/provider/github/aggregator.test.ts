@@ -8,6 +8,7 @@ describe('leastCreatedMergeRequest', () => {
     number: 0,
     state: 'open',
     title: '',
+    body: null,
     createdAt: '',
     updatedAt: '',
     mergedAt: '',

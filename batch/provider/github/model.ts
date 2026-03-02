@@ -17,6 +17,7 @@ export type ShapedGitHubPullRequest = {
   number: GitHubPullRequest['number']
   state: 'open' | 'closed'
   title: GitHubPullRequest['title']
+  body: string | null
   url: GitHubPullRequest['html_url']
   author: NonNullable<GitHubPullRequest['user']>['login'] | null
   assignees: string[]

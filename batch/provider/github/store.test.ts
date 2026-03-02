@@ -121,6 +121,7 @@ const makePr = (number: number): ShapedGitHubPullRequest => ({
   number,
   state: 'closed',
   title: `PR #${number}`,
+  body: null,
   url: `https://github.com/test-owner/test-repo/pull/${number}`,
   author: 'user1',
   assignees: [],

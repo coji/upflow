@@ -36,6 +36,7 @@ const GetPullRequestsQuery = graphql(`
           number
           state
           title
+          body
           url
           isDraft
           createdAt
@@ -333,6 +334,7 @@ const GetPullRequestsWithDetailsQuery = graphql(`
           number
           state
           title
+          body
           url
           isDraft
           createdAt
@@ -821,6 +823,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             number: node.number,
             state,
             title: node.title,
+            body: node.body ?? null,
             url: node.url,
             author: node.author?.login ?? null,
             assignees:
@@ -1176,6 +1179,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           number: node.number,
           state,
           title: node.title,
+          body: node.body ?? null,
           url: node.url,
           author: node.author?.login ?? null,
           assignees:
