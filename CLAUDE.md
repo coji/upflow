@@ -231,7 +231,7 @@ npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
 
 ### LLM プロンプト作成・編集
 
-LLM に投げるプロンプト（system instruction 等）を作成・編集する際は、必ず `docs/gemini-3-prompting-guide.md` を確認し、ベストプラクティスに従うこと。
+LLM に投げるプロンプト（system instruction 等）を作成・編集する際は、必ず `docs/guides/gemini-prompting.md` を確認し、ベストプラクティスに従うこと。
 
 ### PR前チェックリスト
 
