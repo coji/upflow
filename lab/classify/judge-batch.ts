@@ -24,10 +24,8 @@
  *   pnpm tsx lab/classify/judge-batch.ts --cancel
  */
 import { type GoogleGenAI, JobState } from '@google/genai'
-import Database from 'better-sqlite3'
 import 'dotenv/config'
 import fs from 'node:fs'
-import path from 'node:path'
 import {
   BATCH_JOB_PATH,
   DEFAULT_FILES,
@@ -150,10 +148,10 @@ async function judgePRsBatch(
   ai: GoogleGenAI,
   model: string,
   prs: PRRecord[],
-  db: Database.Database,
+  prompts: Map<string, string>,
 ): Promise<Map<string, { label: string; reason: string }>> {
   const inlinedRequests = prs.map((pr) => ({
-    contents: buildPrompt(pr, db),
+    contents: prompts.get(prKey(pr))!,
     metadata: { pr_key: prKey(pr) },
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
@@ -227,6 +225,7 @@ function buildGoldenFromResults(
   results: Map<string, { label: string; reason: string }>,
   prs: PRRecord[],
   model: string,
+  prompts: Map<string, string>,
 ): GoldenSet {
   const now = new Date().toISOString()
   const golden: GoldenSet = {}
@@ -248,6 +247,7 @@ function buildGoldenFromResults(
       reason: result.reason,
       judgedAt: now,
       judgedModel: model,
+      prompt: prompts.get(key) ?? '',
     }
   }
 
@@ -366,6 +366,7 @@ async function main() {
         reason: result.reason,
         judgedAt: now,
         judgedModel: resumeModel,
+        prompt: '', // unavailable for resumed jobs
       }
     }
 
@@ -385,23 +386,23 @@ async function main() {
   // Normal flow: create new batch job with all PRs
   console.log(`Model: ${model}`)
 
-  const db = new Database(path.join('data', 'tenant_iris.db'), {
-    readonly: true,
-  })
-
   const prs = loadPRsFromSamples(files)
   if (prs.length === 0) {
     console.log('No PRs found in sample files.')
-    db.close()
     return
   }
 
   console.log(`\nTotal: ${prs.length} unique PRs to judge`)
 
-  const results = await judgePRsBatch(ai, model, prs, db)
-  db.close()
+  // Build prompts once, reuse in batch request and golden output
+  const prompts = new Map<string, string>()
+  for (const pr of prs) {
+    prompts.set(prKey(pr), buildPrompt(pr))
+  }
 
-  const golden = buildGoldenFromResults(results, prs, model)
+  const results = await judgePRsBatch(ai, model, prs, prompts)
+
+  const golden = buildGoldenFromResults(results, prs, model, prompts)
   const meta: GoldenMeta = {
     createdAt: new Date().toISOString(),
     model,

@@ -14,9 +14,7 @@
  *   pnpm tsx lab/classify/judge.ts --continue
  */
 import type { GoogleGenAI } from '@google/genai'
-import Database from 'better-sqlite3'
 import 'dotenv/config'
-import path from 'node:path'
 import {
   DEFAULT_FILES,
   DEFAULT_MODEL,
@@ -112,14 +110,9 @@ async function main() {
   const { GoogleGenAI } = await import('@google/genai')
   const ai = new GoogleGenAI({ apiKey })
 
-  const db = new Database(path.join('data', 'tenant_iris.db'), {
-    readonly: true,
-  })
-
   const prs = loadPRsFromSamples(files)
   if (prs.length === 0) {
     console.log('No PRs found in sample files.')
-    db.close()
     return
   }
 
@@ -141,7 +134,6 @@ async function main() {
 
   if (limited.length === 0) {
     console.log('All PRs already judged.')
-    db.close()
     printGoldenSummary(golden)
     return
   }
@@ -155,7 +147,7 @@ async function main() {
     const progress = `[${completed}/${limited.length}]`
 
     try {
-      const prompt = buildPrompt(pr, db)
+      const prompt = buildPrompt(pr)
       const result = await classifyOne(ai, model, prompt, thinkingBudget)
 
       golden[key] = {
@@ -170,6 +162,7 @@ async function main() {
         reason: result.reason,
         judgedAt: new Date().toISOString(),
         judgedModel: model,
+        prompt,
       }
 
       // Save after each entry — safe to Ctrl+C
@@ -185,8 +178,6 @@ async function main() {
       )
     }
   }
-
-  db.close()
 
   // Save with meta envelope + archive
   const meta: GoldenMeta = {

@@ -14,7 +14,7 @@ import type { ShapedGitHubPullRequest } from '~/batch/provider/github/model'
  */
 export async function classifyPullRequests(
   organizationId: OrganizationId,
-  options?: { force?: boolean },
+  options?: { force?: boolean; limit?: number },
 ) {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -48,6 +48,10 @@ export async function classifyPullRequests(
 
   if (!options?.force) {
     query = query.where('pullRequests.classifiedAt', 'is', null)
+  }
+
+  if (options?.limit) {
+    query = query.limit(options.limit)
   }
 
   const unclassifiedPRs = await query.execute()
@@ -107,7 +111,7 @@ export async function classifyPullRequests(
         complexityReason: classification.reason,
         riskAreas: JSON.stringify(classification.risk_areas),
         classifiedAt: now,
-        classifierModel: 'gemini-2.5-flash-lite',
+        classifierModel: result.model,
       })
       .where('number', '=', pr.number)
       .where('repositoryId', '=', pr.repositoryId)

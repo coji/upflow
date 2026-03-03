@@ -1,21 +1,60 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
 import { backfillCommand } from './commands/backfill'
+import { classifyCommand } from './commands/classify'
 import { fetchCommand } from './commands/fetch'
 import { reportCommand } from './commands/report'
 import { upsertCommand } from './commands/upsert'
+
+const classify = command(
+  {
+    name: 'classify',
+    parameters: ['[organization id]'],
+    flags: {
+      force: {
+        type: Boolean,
+        description: 'Re-classify all PRs (default: only unclassified)',
+        default: false,
+      },
+      limit: {
+        type: Number,
+        description: 'Max number of PRs to classify',
+      },
+    },
+    help: {
+      description: 'Classify PRs with LLM. Requires GEMINI_API_KEY.',
+    },
+  },
+  (argv) => {
+    classifyCommand({
+      organizationId: argv._.organizationId,
+      force: argv.flags.force,
+      limit: argv.flags.limit,
+    })
+  },
+)
 
 const backfill = command(
   {
     name: 'backfill',
     parameters: ['[organization id]'],
+    flags: {
+      files: {
+        type: Boolean,
+        description: 'Backfill PR file lists only (REST API)',
+        default: false,
+      },
+    },
     help: {
       description:
         'Re-fetch PR metadata to fill missing fields in raw data. Run upsert after this.',
     },
   },
   (argv) => {
-    backfillCommand({ organizationId: argv._.organizationId })
+    backfillCommand({
+      organizationId: argv._.organizationId,
+      files: argv.flags.files,
+    })
   },
 )
 
@@ -71,5 +110,5 @@ const upsert = command(
 )
 
 cli({
-  commands: [backfill, fetch, report, upsert],
+  commands: [backfill, classify, fetch, report, upsert],
 })

@@ -12,7 +12,6 @@
  * golden.json が必要。先に judge.ts を実行すること。
  */
 import { GoogleGenAI } from '@google/genai'
-import Database from 'better-sqlite3'
 import 'dotenv/config'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
@@ -21,13 +20,9 @@ import {
   DATA_DIR,
   GOLDEN_PATH,
   RESPONSE_SCHEMA,
-  buildPrompt,
   loadGoldenFile,
   type GoldenEntry,
-  type PRRecord,
 } from './judge-common'
-
-const DB_PATH = path.join('data', 'tenant_iris.db')
 const EVALS_DIR = path.join(DATA_DIR, 'evals')
 const PROMPT_PATH = path.join('batch', 'lib', 'llm-classify.ts')
 
@@ -49,21 +44,6 @@ function extractSystemInstruction(): string {
 
 function promptHash(prompt: string): string {
   return createHash('sha256').update(prompt).digest('hex').slice(0, 8)
-}
-
-/** Convert GoldenEntry to PRRecord shape for buildPrompt */
-function goldenEntryToPRRecord(entry: GoldenEntry): PRRecord {
-  return {
-    number: entry.number,
-    repository_id: entry.repositoryId,
-    title: entry.title,
-    author: null,
-    additions: entry.additions,
-    deletions: entry.deletions,
-    changed_files: entry.changedFiles,
-    current_label: entry.currentLabel,
-    complexity_reason: '',
-  }
 }
 
 async function classifyOne(
@@ -291,7 +271,6 @@ async function main() {
     }
   }
 
-  const db = new Database(DB_PATH, { readonly: true })
   const ai = new GoogleGenAI({ apiKey })
 
   const predictions: { golden: string; predicted: string; key: string }[] = []
@@ -327,7 +306,12 @@ async function main() {
     processed++
 
     try {
-      const prPrompt = buildPrompt(goldenEntryToPRRecord(entry), db)
+      if (!entry.prompt) {
+        skipped++
+        console.warn(`Skipped (no prompt): ${key}`)
+        continue
+      }
+      const prPrompt = entry.prompt
       const result = await classifyOne(ai, model, systemPrompt, prPrompt)
 
       predictions.push({
@@ -365,8 +349,6 @@ async function main() {
       }
     }
   }
-
-  db.close()
 
   // Results
   const metrics = computeMetrics(predictions)

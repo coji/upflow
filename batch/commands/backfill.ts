@@ -7,6 +7,7 @@ import { createProvider } from '../provider'
 
 interface BackfillCommandProps {
   organizationId?: string
+  files?: boolean
 }
 
 export async function backfillCommand(props: BackfillCommandProps) {
@@ -28,7 +29,7 @@ export async function backfillCommand(props: BackfillCommandProps) {
   invariant(provider, `unknown provider: ${organization.integration.provider}`)
 
   for (const repository of organization.repositories) {
-    await provider.backfill(orgId, repository)
+    await provider.backfill(orgId, repository, { files: props.files })
   }
 
   consola.success('backfill completed. Run `upsert` to apply changes.')

@@ -15,6 +15,7 @@ export interface Provider {
   backfill: (
     organizationId: OrganizationId,
     repository: Selectable<TenantDB.Repositories>,
+    options?: { files?: boolean },
   ) => Promise<void>
 
   analyze: (

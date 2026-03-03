@@ -106,7 +106,11 @@ export const createGitHubProvider = (
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
   }
 
-  const backfill: Provider['backfill'] = async (organizationId, repository) => {
+  const backfill: Provider['backfill'] = async (
+    organizationId,
+    repository,
+    options,
+  ) => {
     invariant(repository.repo, 'repo not specified')
     invariant(repository.owner, 'owner not specified')
     invariant(integration.privateToken, 'private token not specified')
@@ -122,6 +126,27 @@ export const createGitHubProvider = (
     })
 
     logger.info('backfill started: ', `${repository.owner}/${repository.repo}`)
+
+    if (options?.files) {
+      // files のみ backfill: raw data の pullRequest JSON に files を追加
+      const prs = await store.loader.pullrequests()
+      logger.info(`backfilling files for ${prs.length} PRs...`)
+      let updated = 0
+      for (const pr of prs) {
+        if (pr.files && pr.files.length > 0) continue // already has files
+        const files = await fetcher.files(pr.number)
+        pr.files = files
+        await store.updatePrMetadata([pr])
+        updated++
+        if (updated % 100 === 0) {
+          logger.info(`  files backfilled: ${updated}/${prs.length}`)
+        }
+      }
+      logger.info(
+        `backfilled files for ${updated} PRs in ${repository.owner}/${repository.repo}`,
+      )
+      return
+    }
 
     // PR 一覧を取得（メタデータのみ、詳細は不要）
     const allPullRequests = await fetcher.pullrequests()

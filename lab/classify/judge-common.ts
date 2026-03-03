@@ -4,7 +4,6 @@
  * 型定義・定数・ユーティリティを共有する。
  */
 import { Type } from '@google/genai'
-import Database from 'better-sqlite3'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -17,14 +16,8 @@ export const GOLDEN_PATH = path.join(GOLDEN_DIR, 'golden.json')
 export const GOLDEN_ARCHIVE_DIR = path.join(GOLDEN_DIR, 'archive')
 export const BATCH_JOB_PATH = path.join(DATA_DIR, 'batch-job.json')
 
-export const DEFAULT_MODEL = 'gemini-3.1-pro-preview'
-export const DEFAULT_FILES = [
-  'xl_all.json',
-  'xs_suspicious.json',
-  's_sample.json',
-  'm_sample.json',
-  'l_sample.json',
-]
+export const DEFAULT_MODEL = 'gemini-3-flash-preview'
+export const DEFAULT_FILES = ['stratified.json']
 
 // ── types ──────────────────────────────────────────────────────────
 
@@ -38,6 +31,10 @@ export interface PRRecord {
   changed_files: number | null
   current_label: string
   complexity_reason: string
+  body: string | null
+  source_branch: string | null
+  target_branch: string | null
+  files: { path: string; additions: number; deletions: number }[]
 }
 
 export interface GoldenEntry {
@@ -52,6 +49,7 @@ export interface GoldenEntry {
   reason: string
   judgedAt: string
   judgedModel: string
+  prompt: string
 }
 
 export type GoldenSet = Record<string, GoldenEntry>
@@ -190,79 +188,32 @@ export function prKey(pr: PRRecord): string {
   return `${pr.repository_id}#${pr.number}`
 }
 
-// ── raw PR data from sqlite ────────────────────────────────────────
-
-export function getRawPrData(
-  db: Database.Database,
-  repositoryId: string,
-  number: number,
-): {
-  fileList: string
-  body: string | null
-  sourceBranch: string | null
-  targetBranch: string | null
-} {
-  const row = db
-    .prepare(
-      'SELECT pull_request FROM github_raw_data WHERE repository_id = ? AND pull_request_number = ?',
-    )
-    .get(repositoryId, number) as { pull_request: string } | undefined
-  if (!row)
-    return {
-      fileList: '(no file data)',
-      body: null,
-      sourceBranch: null,
-      targetBranch: null,
-    }
-  try {
-    const raw = JSON.parse(row.pull_request)
-    const files = (raw.files ?? []) as {
-      path: string
-      additions: number
-      deletions: number
-    }[]
-    let fileList: string
-    if (files.length === 0) {
-      fileList = '(no file data)'
-    } else {
-      const listed = files
-        .slice(0, 30)
-        .map((f) => `  ${f.path} (+${f.additions}/-${f.deletions})`)
-        .join('\n')
-      fileList =
-        files.length > 30
-          ? `${listed}\n  ... (${files.length} files total)`
-          : listed
-    }
-    return {
-      fileList,
-      body: raw.body ?? null,
-      sourceBranch: raw.sourceBranch ?? null,
-      targetBranch: raw.targetBranch ?? null,
-    }
-  } catch {
-    return {
-      fileList: '(parse error)',
-      body: null,
-      sourceBranch: null,
-      targetBranch: null,
-    }
-  }
-}
-
 // ── prompt builder ─────────────────────────────────────────────────
 
-export function buildPrompt(pr: PRRecord, db: Database.Database): string {
-  const rawData = getRawPrData(db, pr.repository_id, pr.number)
+function formatFileList(
+  files: { path: string; additions: number; deletions: number }[] | undefined,
+): string {
+  if (!files || files.length === 0) return '(no file data)'
+  const listed = files
+    .slice(0, 30)
+    .map((f) => `  ${f.path} (+${f.additions}/-${f.deletions})`)
+    .join('\n')
+  return files.length > 30
+    ? `${listed}\n  ... (${files.length} files total)`
+    : listed
+}
 
+export function buildPrompt(pr: PRRecord): string {
   const branchesTag =
-    rawData.sourceBranch && rawData.targetBranch
-      ? `\n  <branches>${rawData.sourceBranch} → ${rawData.targetBranch}</branches>`
+    pr.source_branch && pr.target_branch
+      ? `\n  <branches>${pr.source_branch} → ${pr.target_branch}</branches>`
       : ''
 
-  const descriptionTag = rawData.body
-    ? `\n  <description>${rawData.body.slice(0, 2000)}</description>`
+  const descriptionTag = pr.body
+    ? `\n  <description>${pr.body.slice(0, 2000)}</description>`
     : ''
+
+  const fileList = formatFileList(pr.files)
 
   return `<pr>
   <number>${pr.number}</number>
@@ -270,7 +221,7 @@ export function buildPrompt(pr: PRRecord, db: Database.Database): string {
   <author>${pr.author ?? 'unknown'}</author>${branchesTag}
   <stats additions="${pr.additions ?? 0}" deletions="${pr.deletions ?? 0}" files="${pr.changed_files ?? 0}" />${descriptionTag}
   <files>
-${rawData.fileList}
+${fileList}
   </files>
 </pr>
 
