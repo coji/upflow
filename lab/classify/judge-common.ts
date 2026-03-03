@@ -12,7 +12,9 @@ import path from 'node:path'
 
 export const DATA_DIR = path.join(import.meta.dirname, 'data')
 export const SAMPLES_DIR = path.join(DATA_DIR, 'samples')
-export const GOLDEN_PATH = path.join(DATA_DIR, 'golden.json')
+export const GOLDEN_DIR = path.join(DATA_DIR, 'golden')
+export const GOLDEN_PATH = path.join(GOLDEN_DIR, 'golden.json')
+export const GOLDEN_ARCHIVE_DIR = path.join(GOLDEN_DIR, 'archive')
 export const BATCH_JOB_PATH = path.join(DATA_DIR, 'batch-job.json')
 
 export const DEFAULT_MODEL = 'gemini-3.1-pro-preview'
@@ -53,6 +55,19 @@ export interface GoldenEntry {
 }
 
 export type GoldenSet = Record<string, GoldenEntry>
+
+export interface GoldenMeta {
+  createdAt: string
+  model: string
+  thinkingBudget: number
+  sampleFiles: string[]
+  entryCount: number
+}
+
+export interface GoldenFile {
+  meta: GoldenMeta
+  entries: GoldenSet
+}
 
 // ── prompt / schema ────────────────────────────────────────────────
 
@@ -131,15 +146,42 @@ export const RESPONSE_SCHEMA = {
 
 // ── golden I/O ─────────────────────────────────────────────────────
 
+/** Load golden set — handles both flat (legacy) and envelope format */
 export function loadGolden(): GoldenSet {
-  if (fs.existsSync(GOLDEN_PATH)) {
-    return JSON.parse(fs.readFileSync(GOLDEN_PATH, 'utf-8'))
-  }
-  return {}
+  if (!fs.existsSync(GOLDEN_PATH)) return {}
+  const raw = JSON.parse(fs.readFileSync(GOLDEN_PATH, 'utf-8'))
+  // Envelope format has { meta, entries }
+  if (raw.meta && raw.entries) return raw.entries as GoldenSet
+  // Legacy flat format
+  return raw as GoldenSet
 }
 
-export function saveGolden(golden: GoldenSet) {
-  fs.writeFileSync(GOLDEN_PATH, JSON.stringify(golden, null, 2))
+/** Load full golden file including meta (returns null if no meta) */
+export function loadGoldenFile(): GoldenFile | null {
+  if (!fs.existsSync(GOLDEN_PATH)) return null
+  const raw = JSON.parse(fs.readFileSync(GOLDEN_PATH, 'utf-8'))
+  if (raw.meta && raw.entries) return raw as GoldenFile
+  return null
+}
+
+/** Save golden set, optionally with meta envelope + archive copy */
+export function saveGolden(golden: GoldenSet, meta?: GoldenMeta) {
+  if (meta) {
+    const file: GoldenFile = {
+      meta: { ...meta, entryCount: Object.keys(golden).length },
+      entries: golden,
+    }
+    fs.mkdirSync(GOLDEN_ARCHIVE_DIR, { recursive: true }) // creates GOLDEN_DIR too
+    fs.writeFileSync(GOLDEN_PATH, JSON.stringify(file, null, 2))
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    fs.writeFileSync(
+      path.join(GOLDEN_ARCHIVE_DIR, `golden_${ts}.json`),
+      JSON.stringify(file, null, 2),
+    )
+  } else {
+    fs.mkdirSync(GOLDEN_DIR, { recursive: true })
+    fs.writeFileSync(GOLDEN_PATH, JSON.stringify(golden, null, 2))
+  }
 }
 
 // ── key helper ─────────────────────────────────────────────────────

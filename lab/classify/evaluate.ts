@@ -1,119 +1,43 @@
 /**
  * プロンプト評価スクリプト
  *
- * golden.json と Gemini の分類結果を比較してプロンプトの精度を評価する。
+ * golden.json と本番分類器(Gemini)の分類結果を比較してプロンプトの精度を評価する。
  *
  * Usage:
- *   pnpm tsx lab/scripts/evaluate.ts
+ *   pnpm tsx lab/classify/evaluate.ts
+ *   pnpm tsx lab/classify/evaluate.ts --model gemini-2.5-flash-lite
+ *   pnpm tsx lab/classify/evaluate.ts --limit 10
+ *   pnpm tsx lab/classify/evaluate.ts --continue   # 前回の eval を途中から再開
  *
  * golden.json が必要。先に judge.ts を実行すること。
  */
-import { GoogleGenAI, Type } from '@google/genai'
+import { GoogleGenAI } from '@google/genai'
 import Database from 'better-sqlite3'
+import 'dotenv/config'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import {
+  DATA_DIR,
+  GOLDEN_PATH,
+  RESPONSE_SCHEMA,
+  buildPrompt,
+  loadGoldenFile,
+  type GoldenEntry,
+  type PRRecord,
+} from './judge-common'
 
-const DATA_DIR = path.join(import.meta.dirname, 'data')
-const GOLDEN_PATH = path.join(DATA_DIR, 'golden.json')
 const DB_PATH = path.join('data', 'tenant_iris.db')
-
-// Import the current prompt from the actual source
+const EVALS_DIR = path.join(DATA_DIR, 'evals')
 const PROMPT_PATH = path.join('batch', 'lib', 'llm-classify.ts')
-
-interface GoldenEntry {
-  number: number
-  repositoryId: string
-  title: string
-  additions: number | null
-  deletions: number | null
-  changedFiles: number | null
-  currentLabel: string
-  goldenLabel: string
-  reason: string
-}
-
-type GoldenSet = Record<string, GoldenEntry>
 
 const LEVELS = ['XS', 'S', 'M', 'L', 'XL'] as const
 function levelIndex(level: string): number {
   return LEVELS.indexOf(level as (typeof LEVELS)[number])
 }
 
-const RESPONSE_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    complexity: {
-      type: Type.STRING,
-      enum: ['XS', 'S', 'M', 'L', 'XL'],
-    },
-    reason: {
-      type: Type.STRING,
-    },
-  },
-  required: ['complexity', 'reason'],
-} as const
-
-async function classifyWithGemini(
-  ai: GoogleGenAI,
-  model: string,
-  systemPrompt: string,
-  pr: {
-    number: number
-    title: string
-    author: string | null
-    body: string | null
-    sourceBranch: string | null
-    targetBranch: string | null
-    additions: number
-    deletions: number
-    changedFiles: number
-    files: { path: string; additions: number; deletions: number }[]
-  },
-): Promise<{ complexity: string; reason: string }> {
-  const fileList =
-    pr.files.length > 0
-      ? pr.files
-          .slice(0, 50)
-          .map((f) => `  ${f.path} (+${f.additions}/-${f.deletions})`)
-          .join('\n')
-      : '(no file list available)'
-
-  const branchesTag =
-    pr.sourceBranch && pr.targetBranch
-      ? `\n  <branches>${pr.sourceBranch} → ${pr.targetBranch}</branches>`
-      : ''
-
-  const descriptionTag = pr.body
-    ? `\n  <description>${pr.body.slice(0, 2000)}</description>`
-    : ''
-
-  const prompt = `<pr>
-  <number>${pr.number}</number>
-  <title>${pr.title}</title>
-  <author>${pr.author ?? 'unknown'}</author>${branchesTag}
-  <stats additions="${pr.additions}" deletions="${pr.deletions}" files="${pr.changedFiles}" />${descriptionTag}
-  <files>
-${fileList}
-  </files>
-</pr>
-
-Classify this PR's review complexity.`
-
-  const response = await ai.models.generateContent({
-    model,
-    contents: prompt,
-    config: {
-      systemInstruction: systemPrompt,
-      responseMimeType: 'application/json',
-      responseSchema: RESPONSE_SCHEMA,
-      thinkingConfig: { thinkingBudget: 0 },
-    },
-  })
-
-  const text = response.text
-  if (!text) throw new Error('Empty response')
-  return JSON.parse(text)
-}
+const MAX_RETRIES = 5
+const INITIAL_BACKOFF_MS = 2_000
 
 function extractSystemInstruction(): string {
   const source = fs.readFileSync(PROMPT_PATH, 'utf-8')
@@ -121,6 +45,65 @@ function extractSystemInstruction(): string {
   if (!match)
     throw new Error('Could not extract SYSTEM_INSTRUCTION from source')
   return match[1]
+}
+
+function promptHash(prompt: string): string {
+  return createHash('sha256').update(prompt).digest('hex').slice(0, 8)
+}
+
+/** Convert GoldenEntry to PRRecord shape for buildPrompt */
+function goldenEntryToPRRecord(entry: GoldenEntry): PRRecord {
+  return {
+    number: entry.number,
+    repository_id: entry.repositoryId,
+    title: entry.title,
+    author: null,
+    additions: entry.additions,
+    deletions: entry.deletions,
+    changed_files: entry.changedFiles,
+    current_label: entry.currentLabel,
+    complexity_reason: '',
+  }
+}
+
+async function classifyOne(
+  ai: GoogleGenAI,
+  model: string,
+  systemPrompt: string,
+  prPrompt: string,
+): Promise<{ complexity: string; reason: string }> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prPrompt,
+        config: {
+          systemInstruction: systemPrompt,
+          responseMimeType: 'application/json',
+          responseSchema: RESPONSE_SCHEMA,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      })
+
+      const text = response.text
+      if (!text) throw new Error('Empty response')
+      return JSON.parse(text)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      const is4xx = /"code"\s*:\s*4\d{2}\b/.test(msg)
+      if (is4xx) throw err // Don't retry client errors
+      if (attempt < MAX_RETRIES) {
+        const wait = INITIAL_BACKOFF_MS * 2 ** attempt
+        console.warn(
+          `  Retry ${attempt + 1}/${MAX_RETRIES} in ${wait}ms — ${msg}`,
+        )
+        await new Promise((r) => setTimeout(r, wait))
+      } else {
+        throw err
+      }
+    }
+  }
+  throw new Error('unreachable')
 }
 
 interface ConfusionMatrix {
@@ -200,6 +183,29 @@ function printMetrics(metrics: ConfusionMatrix) {
   console.log(`Avg drift: ${metrics.avgDrift.toFixed(2)} levels`)
 }
 
+interface EvalResult {
+  timestamp: string
+  model: string
+  promptHash: string
+  promptPreview: string
+  goldenMeta: { createdAt: string; model: string; entryCount: number } | null
+  metrics: {
+    accuracy: number
+    avgDrift: number
+    perClass: ConfusionMatrix['perClass']
+  }
+  disagreements: {
+    key: string
+    title: string
+    stats: string
+    golden: string
+    predicted: string
+    reason: string
+  }[]
+  evaluatedKeys: string[]
+  totalEvaluated: number
+}
+
 async function main() {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -212,73 +218,124 @@ async function main() {
     process.exit(1)
   }
 
-  const golden: GoldenSet = JSON.parse(fs.readFileSync(GOLDEN_PATH, 'utf-8'))
+  // Parse args
+  const args = process.argv.slice(2)
+  let model = 'gemini-3-flash-preview'
+  let limit = Number.POSITIVE_INFINITY
+  let continueMode = false
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--model' && args[i + 1]) {
+      model = args[i + 1]
+      i++
+    } else if (args[i] === '--limit' && args[i + 1]) {
+      limit = Number.parseInt(args[i + 1], 10)
+      i++
+    } else if (args[i] === '--continue') {
+      continueMode = true
+    }
+  }
+
+  // Single parse of golden.json
+  const goldenFile = loadGoldenFile()
+  const golden =
+    goldenFile?.entries ??
+    (() => {
+      // Legacy flat format fallback
+      const raw = JSON.parse(fs.readFileSync(GOLDEN_PATH, 'utf-8'))
+      return raw as Record<string, GoldenEntry>
+    })()
   const goldenEntries = Object.entries(golden)
   console.log(`Golden set: ${goldenEntries.length} entries`)
 
   // Extract current prompt from source
   const systemPrompt = extractSystemInstruction()
+  const hash = promptHash(systemPrompt)
+  console.log(`Prompt hash: ${hash}`)
   console.log(`Prompt extracted from ${PROMPT_PATH}`)
-  console.log(`First 100 chars: ${systemPrompt.slice(0, 100)}...`)
-
-  // Parse --model flag
-  const args = process.argv.slice(2)
-  const modelIdx = args.indexOf('--model')
-  const model =
-    modelIdx >= 0 && args[modelIdx + 1]
-      ? args[modelIdx + 1]
-      : 'gemini-2.5-flash-lite'
   console.log(`Model: ${model}`)
 
-  // Load raw PR data for file lists
+  // --continue: find latest eval with same promptHash and skip already-evaluated keys
+  let alreadyEvaluated = new Set<string>()
+  let previousResult: EvalResult | null = null
+  if (continueMode) {
+    const evalFiles = fs.existsSync(EVALS_DIR)
+      ? fs
+          .readdirSync(EVALS_DIR)
+          .filter((f) => f.endsWith('.json'))
+          .sort()
+          .reverse()
+      : []
+    for (const f of evalFiles) {
+      try {
+        const data: EvalResult = JSON.parse(
+          fs.readFileSync(path.join(EVALS_DIR, f), 'utf-8'),
+        )
+        if (data.promptHash === hash) {
+          previousResult = data
+          // Use evaluatedKeys if available, fall back to disagreements only
+          const keys =
+            data.evaluatedKeys ?? data.disagreements.map((d) => d.key)
+          for (const k of keys) alreadyEvaluated.add(k)
+          console.log(
+            `--continue: found ${f} with ${data.totalEvaluated} entries, skipping ${alreadyEvaluated.size}`,
+          )
+          break
+        }
+      } catch {
+        // skip invalid files
+      }
+    }
+    if (!previousResult) {
+      console.log('--continue: no previous eval found for this prompt hash')
+    }
+  }
+
   const db = new Database(DB_PATH, { readonly: true })
   const ai = new GoogleGenAI({ apiKey })
 
   const predictions: { golden: string; predicted: string; key: string }[] = []
-  const disagreements: {
-    key: string
-    title: string
-    stats: string
-    golden: string
-    predicted: string
-    reason: string
-  }[] = []
+  const disagreements: EvalResult['disagreements'] = []
+  const evaluatedKeys: string[] = []
+
+  // If continuing, carry forward previous results
+  if (previousResult) {
+    for (const d of previousResult.disagreements) {
+      disagreements.push(d)
+    }
+    if (previousResult.evaluatedKeys) {
+      evaluatedKeys.push(...previousResult.evaluatedKeys)
+    }
+  }
+
+  let toEvaluate = goldenEntries
+  if (continueMode && alreadyEvaluated.size > 0) {
+    toEvaluate = goldenEntries.filter(([key]) => !alreadyEvaluated.has(key))
+    console.log(
+      `--continue: skipping ${goldenEntries.length - toEvaluate.length}, ${toEvaluate.length} remaining`,
+    )
+  }
+
+  const limited = toEvaluate.slice(0, limit)
+  if (limit < toEvaluate.length) {
+    console.log(`--limit: processing ${limited.length} of ${toEvaluate.length}`)
+  }
 
   let processed = 0
-  for (const [key, entry] of goldenEntries) {
+  let skipped = 0
+  for (const [key, entry] of limited) {
     processed++
 
-    // Get raw PR data for file list
-    const raw = db
-      .prepare(
-        'SELECT pull_request FROM github_raw_data WHERE repository_id = ? AND pull_request_number = ?',
-      )
-      .get(entry.repositoryId, entry.number) as
-      | { pull_request: string }
-      | undefined
-
-    const rawPr = raw ? JSON.parse(raw.pull_request) : null
-    const files = rawPr?.files ?? []
-
     try {
-      const result = await classifyWithGemini(ai, model, systemPrompt, {
-        number: entry.number,
-        title: entry.title,
-        author: null,
-        body: rawPr?.body ?? null,
-        sourceBranch: rawPr?.sourceBranch ?? null,
-        targetBranch: rawPr?.targetBranch ?? null,
-        additions: entry.additions ?? 0,
-        deletions: entry.deletions ?? 0,
-        changedFiles: entry.changedFiles ?? 0,
-        files,
-      })
+      const prPrompt = buildPrompt(goldenEntryToPRRecord(entry), db)
+      const result = await classifyOne(ai, model, systemPrompt, prPrompt)
 
       predictions.push({
         golden: entry.goldenLabel,
         predicted: result.complexity,
         key,
       })
+      evaluatedKeys.push(key)
 
       if (result.complexity !== entry.goldenLabel) {
         disagreements.push({
@@ -292,15 +349,20 @@ async function main() {
       }
 
       if (processed % 20 === 0) {
-        console.log(`Evaluated ${processed}/${goldenEntries.length}...`)
+        console.log(`Evaluated ${processed}/${limited.length}...`)
       }
 
       // Rate limit
       await new Promise((r) => setTimeout(r, 200))
     } catch (err) {
-      console.warn(
-        `Failed: ${key} — ${err instanceof Error ? err.message : err}`,
-      )
+      skipped++
+      const msg = err instanceof Error ? err.message : String(err)
+      const is4xx = /"code"\s*:\s*4\d{2}\b/.test(msg)
+      if (is4xx) {
+        console.warn(`Skipped (4xx): ${key} — ${msg}`)
+      } else {
+        console.warn(`Failed: ${key} — ${msg}`)
+      }
     }
   }
 
@@ -326,32 +388,37 @@ async function main() {
   }
 
   // Save results
-  const evalsDir = path.join(DATA_DIR, 'evals')
-  fs.mkdirSync(evalsDir, { recursive: true })
+  fs.mkdirSync(EVALS_DIR, { recursive: true })
   const resultPath = path.join(
-    evalsDir,
+    EVALS_DIR,
     `eval_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.json`,
   )
-  fs.writeFileSync(
-    resultPath,
-    JSON.stringify(
-      {
-        timestamp: new Date().toISOString(),
-        model,
-        promptPreview: systemPrompt.slice(0, 200),
-        metrics: {
-          accuracy: metrics.accuracy,
-          avgDrift: metrics.avgDrift,
-          perClass: metrics.perClass,
-        },
-        disagreements,
-        totalEvaluated: predictions.length,
-      },
-      null,
-      2,
-    ),
-  )
+
+  const evalResult: EvalResult = {
+    timestamp: new Date().toISOString(),
+    model,
+    promptHash: hash,
+    promptPreview: systemPrompt.slice(0, 200),
+    goldenMeta: goldenFile
+      ? {
+          createdAt: goldenFile.meta.createdAt,
+          model: goldenFile.meta.model,
+          entryCount: goldenFile.meta.entryCount,
+        }
+      : null,
+    metrics: {
+      accuracy: metrics.accuracy,
+      avgDrift: metrics.avgDrift,
+      perClass: metrics.perClass,
+    },
+    disagreements,
+    evaluatedKeys,
+    totalEvaluated: predictions.length,
+  }
+
+  fs.writeFileSync(resultPath, JSON.stringify(evalResult, null, 2))
   console.log(`\nResults saved to ${resultPath}`)
+  if (skipped > 0) console.log(`Skipped: ${skipped}`)
 }
 
 main().catch(console.error)

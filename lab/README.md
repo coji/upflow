@@ -51,59 +51,76 @@ open http://localhost:8787/review-queue-player.html
 | 004 | LLM Classification Compare   | Gemini Flash vs ルールベース分類比較        |
 | 005 | LLM Automerge Simulation     | LLM分類ベースの自動マージ再シミュレーション |
 
-## Classify — ゴールデンセット管理
+## Classify — PR 分類のゴールデンセット管理 & 評価
 
-`lab/classify/` に PR 分類のゴールデンセット（正解ラベル）を管理するツールがある。
+`lab/classify/` に PR 分類の正解ラベル（golden set）を管理し、本番分類器を評価するツール群がある。
 
-### judge.ts — Batch API でラベル生成
+### サイクル
 
-Gemini Batch Prediction API で PR を分類し、`lab/classify/data/golden.json` に正解ラベルを書き出す。
-成功時は golden.json を**丸ごと上書き**する（前回の結果は残らない）。失敗時は更新しない。
-
-```bash
-# 新規ジョブ投入（全サンプルファイル）
-pnpm tsx lab/classify/judge.ts
-
-# 特定ファイルだけ
-pnpm tsx lab/classify/judge.ts --file xl_all.json
+```
+1. judge.ts       →  data/golden/golden.json          (LLMがPRを分類 → golden labels)
+                      data/golden/archive/golden_*.json (控え)
+2. evaluate.ts    →  data/evals/eval_*.json            (本番分類器 vs golden を比較)
+3. compare.ts     →  stdout                            (2つの eval を並べて差分表示)
 ```
 
-Batch API のジョブは Google 側で非同期実行される（数分〜数十分）。ジョブ投入時に `lab/classify/data/batch-job.json` にジョブ名が保存されるので、途中でプロセスが死んでも再開できる。
+### judge.ts — ラベル生成（メイン）
 
-```bash
-# ジョブの状態を1回確認
-pnpm tsx lab/classify/judge.ts --status
-
-# ポーリング再開（完了まで30秒間隔で状態表示→結果取得→golden.json 更新）
-pnpm tsx lab/classify/judge.ts --resume
-
-# ジョブ名を直接指定して再開（batch-job.json がない場合）
-pnpm tsx lab/classify/judge.ts --resume batches/xxxxx
-```
-
-### judge-sequential.ts — 逐次実行でラベル生成
-
-Batch API がスタックする場合の代替手段。1件ずつ `generateContent` で分類し、1件完了ごとに golden.json に追記保存する。Ctrl+C で途中停止しても完了分は残る。
-
-各エントリに `judgedAt`（ISO 8601）と `judgedModel` が記録されるので、どのモデル・いつの結果かがわかる。
+1件ずつ `generateContent` で分類し、1件完了ごとに golden.json に追記保存する。Ctrl+C で途中停止しても完了分は残る。完了時にメタデータ付きのエンベロープ形式で保存し、アーカイブにも控えを保存する。
 
 ```bash
 # 全サンプルファイル
-pnpm tsx lab/classify/judge-sequential.ts
+pnpm tsx lab/classify/judge.ts
 
-# 特定ファイルだけ
-pnpm tsx lab/classify/judge-sequential.ts --file s_sample.json
+# 特定ファイルだけ / モデル指定 / 件数制限
+pnpm tsx lab/classify/judge.ts --file s_sample.json
+pnpm tsx lab/classify/judge.ts --model gemini-2.5-pro
+pnpm tsx lab/classify/judge.ts --limit 10
 
-# モデル指定
-pnpm tsx lab/classify/judge-sequential.ts --model gemini-2.5-pro
+# 途中から再開
+pnpm tsx lab/classify/judge.ts --continue
 ```
 
-### evaluate.ts
+### judge-batch.ts — Batch API でラベル生成（大量データ向け）
+
+Gemini Batch Prediction API で PR を一括分類する。50% コスト削減＋レート制限回避。大量データ投入時に使う。
+
+```bash
+# 新規ジョブ投入
+pnpm tsx lab/classify/judge-batch.ts
+
+# ジョブの状態確認 / 再開 / キャンセル
+pnpm tsx lab/classify/judge-batch.ts --status
+pnpm tsx lab/classify/judge-batch.ts --resume
+pnpm tsx lab/classify/judge-batch.ts --cancel
+```
+
+### evaluate.ts — 本番プロンプトの評価
+
+golden.json を使って本番分類器（`batch/lib/llm-classify.ts` のプロンプト）を評価する。
+eval 結果には `promptHash`（プロンプトの SHA-256 先頭8文字）が含まれ、どのプロンプトでの結果か追跡できる。
 
 ```bash
 # ゴールデンセット全体で分類器を評価
 pnpm tsx lab/classify/evaluate.ts
+
+# モデル指定 / 件数制限
+pnpm tsx lab/classify/evaluate.ts --model gemini-3-flash-preview
+pnpm tsx lab/classify/evaluate.ts --limit 50
+
+# 前回の eval を途中から再開（同じ promptHash の最新 eval を探す）
+pnpm tsx lab/classify/evaluate.ts --continue
 ```
+
+### compare.ts — Eval 差分比較
+
+2つの eval JSON を並べて差分を表示する。API 呼び出しなし。
+
+```bash
+pnpm tsx lab/classify/compare.ts data/evals/eval_A.json data/evals/eval_B.json
+```
+
+表示内容: accuracy / avgDrift のデルタ、per-class F1 のデルタ、改善・悪化した PR のリスト
 
 ## 新しい実験の追加
 
