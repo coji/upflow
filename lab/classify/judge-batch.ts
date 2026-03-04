@@ -334,13 +334,14 @@ async function main() {
       console.log('Cancel requested.')
       const job = await ai.batches.get({ name: saved.name })
       console.log(`State: ${job.state}`)
+      removeBatchJob()
+      console.log('Removed batch-job.json')
     } catch (err) {
       console.error(
         `Failed to cancel: ${err instanceof Error ? err.message : err}`,
       )
+      console.log('batch-job.json preserved for retry')
     }
-    removeBatchJob()
-    console.log('Removed batch-job.json')
     return
   }
 

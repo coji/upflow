@@ -403,4 +403,7 @@ async function main() {
   if (skipped > 0) console.log(`Skipped: ${skipped}`)
 }
 
-main().catch(console.error)
+main().catch((err) => {
+  console.error(err)
+  process.exitCode = 1
+})

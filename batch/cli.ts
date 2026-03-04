@@ -25,8 +25,8 @@ const classify = command(
       description: 'Classify PRs with LLM. Requires GEMINI_API_KEY.',
     },
   },
-  (argv) => {
-    classifyCommand({
+  async (argv) => {
+    await classifyCommand({
       organizationId: argv._.organizationId,
       force: argv.flags.force,
       limit: argv.flags.limit,
@@ -50,8 +50,8 @@ const backfill = command(
         'Re-fetch PR metadata to fill missing fields in raw data. Run upsert after this.',
     },
   },
-  (argv) => {
-    backfillCommand({
+  async (argv) => {
+    await backfillCommand({
       organizationId: argv._.organizationId,
       files: argv.flags.files,
     })
@@ -75,9 +75,9 @@ const fetch = command(
     },
     help: { description: 'Fetch all resources from provider api.' },
   },
-  (argv) => {
+  async (argv) => {
     const { help, ...rest } = argv.flags
-    fetchCommand({
+    await fetchCommand({
       organizationId: argv._.organizationId,
       repositoryId: argv._.repositoryId,
       ...rest,
@@ -91,9 +91,9 @@ const report = command(
     parameters: ['[organization id]'],
     help: { description: 'Report cycletime from fetched resources.' },
   },
-  (argv) => {
+  async (argv) => {
     const { help, ...rest } = argv.flags
-    reportCommand({ organizationId: argv._.organizationId, ...rest })
+    await reportCommand({ organizationId: argv._.organizationId, ...rest })
   },
 )
 
@@ -103,9 +103,9 @@ const upsert = command(
     parameters: ['[organization id]'],
     help: { description: 'upsert report data to frontend database.' },
   },
-  (argv) => {
+  async (argv) => {
     const { help, ...rest } = argv.flags
-    upsertCommand({ organizationId: argv._.organizationId, ...rest })
+    await upsertCommand({ organizationId: argv._.organizationId, ...rest })
   },
 )
 
