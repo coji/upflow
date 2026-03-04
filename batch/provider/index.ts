@@ -11,6 +11,13 @@ export interface Provider {
     options: { refresh?: boolean; halt?: boolean },
   ) => Promise<void>
 
+  /** PR メタデータだけを再取得して raw データを更新する（軽量 backfill） */
+  backfill: (
+    organizationId: OrganizationId,
+    repository: Selectable<TenantDB.Repositories>,
+    options?: { files?: boolean },
+  ) => Promise<void>
+
   analyze: (
     organizationId: OrganizationId,
     organizationSetting: Pick<
@@ -37,7 +44,7 @@ export interface Provider {
     reviewers: {
       pullRequestNumber: number
       repositoryId: string
-      reviewerLogins: string[]
+      reviewers: { login: string; requestedAt: string | null }[]
     }[]
     reviewResponses: {
       repo: string

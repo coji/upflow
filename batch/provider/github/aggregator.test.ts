@@ -8,9 +8,11 @@ describe('leastCreatedMergeRequest', () => {
     number: 0,
     state: 'open',
     title: '',
+    body: null,
     createdAt: '',
     updatedAt: '',
     mergedAt: '',
+    closedAt: null,
     mergeCommitSha: '',
     url: '',
     author: '',
@@ -24,6 +26,7 @@ describe('leastCreatedMergeRequest', () => {
     additions: null,
     deletions: null,
     changedFiles: null,
+    files: [],
   }
 
   test('should return a least updatedAt object', () => {

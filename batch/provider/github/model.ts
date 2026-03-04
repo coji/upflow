@@ -17,20 +17,23 @@ export type ShapedGitHubPullRequest = {
   number: GitHubPullRequest['number']
   state: 'open' | 'closed'
   title: GitHubPullRequest['title']
+  body: string | null
   url: GitHubPullRequest['html_url']
   author: NonNullable<GitHubPullRequest['user']>['login'] | null
   assignees: string[]
-  reviewers: string[]
+  reviewers: { login: string; requestedAt: string | null }[]
   draft: boolean
   sourceBranch: GitHubPullRequest['head']['ref']
   targetBranch: GitHubPullRequest['base']['ref']
   createdAt: GitHubPullRequest['created_at']
   updatedAt: GitHubPullRequest['updated_at']
   mergedAt: GitHubPullRequest['merged_at'] | null
+  closedAt: string | null
   mergeCommitSha: GitHubPullRequest['merge_commit_sha'] | null
   additions: number | null
   deletions: number | null
   changedFiles: number | null
+  files: { path: string; additions: number; deletions: number }[]
 }
 
 export type ShapedGitHubCommit = {
@@ -77,16 +80,27 @@ export type ShapedGitHubTag = {
   committedAt: string
 }
 
+// Timeline item (ローデータ保存用)
+export type ShapedTimelineItem = {
+  type: string
+  createdAt: string
+  actor?: string | null
+  reviewer?: string | null
+  environment?: string | null
+}
+
 // PR + 関連データを一括取得した結果
 export type ShapedGitHubPullRequestWithDetails = {
   pr: ShapedGitHubPullRequest
   commits: ShapedGitHubCommit[]
   reviews: ShapedGitHubReview[]
   comments: (ShapedGitHubIssueComment | ShapedGitHubReviewComment)[]
+  timelineItems: ShapedTimelineItem[]
   /** 制限を超えて追加取得が必要かどうか */
   needsMoreCommits: boolean
   needsMoreReviews: boolean
   needsMoreComments: boolean
   needsMoreReviewThreads: boolean
   needsMoreReviewThreadComments: boolean
+  needsMoreTimelineItems: boolean
 }

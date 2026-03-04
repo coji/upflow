@@ -173,11 +173,34 @@ Consistent spacing patterns used throughout the app:
 
 CLI for data synchronization (`batch/cli.ts`):
 
-- `fetch` - Fetches PR data from GitHub
+- `fetch` - Fetches PR data from GitHub API → raw データ保存
+- `backfill` - PR メタデータだけ再取得して raw データを更新（軽量）
+- `upsert` - raw データ → DB 変換（API call なし）
 - `report` - Generates cycle time reports
-- `upsert` - Updates database with processed data
 
-In production, these run on a schedule via `job-scheduler.ts`.
+In production, `fetch` → `upsert` が定期実行される（`job-scheduler.ts`）。
+
+#### 開発時のデータ管理
+
+マイグレーションで新カラムを追加した後のローカル DB 更新手順:
+
+```bash
+# 本番 DB を取得してスキーマ更新
+pnpm ops pull-db -- --app <fly-app>
+pnpm db:apply
+
+# 新カラムを埋める（ほとんどのケースはこれで十分）
+pnpm tsx batch/cli.ts backfill <org-id>
+pnpm tsx batch/cli.ts upsert <org-id>
+```
+
+| ケース                                | コマンド              | API call   | 所要時間    |
+| ------------------------------------- | --------------------- | ---------- | ----------- |
+| raw にあるデータの新カラム            | `upsert` のみ         | なし       | 数分        |
+| PR メタデータの新フィールド           | `backfill` → `upsert` | PR一覧のみ | 数十秒+数分 |
+| 詳細データ（commits等）の新フィールド | `fetch --refresh`     | 全PR×5 API | 30分〜      |
+
+`fetch --refresh` はほぼ不要。`backfill` + `upsert` で済むケースがほとんど。
 
 ### Multi-Tenant Security
 
@@ -205,6 +228,10 @@ Source code for dependencies is available in `opensrc/` for deeper understanding
 npx opensrc <package>           # npm package (e.g., npx opensrc zod)
 npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
 ```
+
+### LLM プロンプト作成・編集
+
+LLM に投げるプロンプト（system instruction 等）を作成・編集する際は、必ず `docs/guides/gemini-prompting.md` を確認し、ベストプラクティスに従うこと。
 
 ### PR前チェックリスト
 

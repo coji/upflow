@@ -11,13 +11,19 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
   ShapedGitHubTag,
+  ShapedTimelineItem,
 } from './model'
 
 const GetPullRequestsQuery = graphql(`
-  query GetPullRequests($owner: String!, $repo: String!, $cursor: String) {
+  query GetPullRequests(
+    $owner: String!
+    $repo: String!
+    $cursor: String
+    $first: Int = 100
+  ) {
     repository(owner: $owner, name: $repo) {
       pullRequests(
-        first: 100
+        first: $first
         after: $cursor
         orderBy: { field: CREATED_AT, direction: DESC }
       ) {
@@ -30,11 +36,13 @@ const GetPullRequestsQuery = graphql(`
           number
           state
           title
+          body
           url
           isDraft
           createdAt
           updatedAt
           mergedAt
+          closedAt
           additions
           deletions
           changedFiles
@@ -64,6 +72,115 @@ const GetPullRequestsQuery = graphql(`
                 ... on Mannequin {
                   login
                 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`)
+
+const GetPullRequestTimelineQuery = graphql(`
+  query GetPullRequestTimeline($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        timelineItems(
+          first: 100
+          itemTypes: [
+            REVIEW_REQUESTED_EVENT
+            REVIEW_REQUEST_REMOVED_EVENT
+            READY_FOR_REVIEW_EVENT
+            CONVERT_TO_DRAFT_EVENT
+            REVIEW_DISMISSED_EVENT
+            DEPLOYED_EVENT
+            CLOSED_EVENT
+            REOPENED_EVENT
+            MERGED_EVENT
+            HEAD_REF_FORCE_PUSHED_EVENT
+          ]
+        ) {
+          nodes {
+            __typename
+            ... on ReviewRequestedEvent {
+              createdAt
+              requestedReviewer {
+                __typename
+                ... on User {
+                  login
+                }
+                ... on Bot {
+                  login
+                }
+                ... on Mannequin {
+                  login
+                }
+              }
+            }
+            ... on ReviewRequestRemovedEvent {
+              createdAt
+              requestedReviewer {
+                __typename
+                ... on User {
+                  login
+                }
+                ... on Bot {
+                  login
+                }
+                ... on Mannequin {
+                  login
+                }
+              }
+            }
+            ... on ReadyForReviewEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on ConvertToDraftEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on ReviewDismissedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on DeployedEvent {
+              createdAt
+              actor {
+                login
+              }
+              deployment {
+                environment
+              }
+            }
+            ... on ClosedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on ReopenedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on MergedEvent {
+              createdAt
+              actor {
+                login
+              }
+            }
+            ... on HeadRefForcePushedEvent {
+              createdAt
+              actor {
+                login
               }
             }
           }
@@ -200,10 +317,11 @@ const GetPullRequestsWithDetailsQuery = graphql(`
     $owner: String!
     $repo: String!
     $cursor: String
+    $first: Int = 25
   ) {
     repository(owner: $owner, name: $repo) {
       pullRequests(
-        first: 25
+        first: $first
         after: $cursor
         orderBy: { field: CREATED_AT, direction: DESC }
       ) {
@@ -216,11 +334,13 @@ const GetPullRequestsWithDetailsQuery = graphql(`
           number
           state
           title
+          body
           url
           isDraft
           createdAt
           updatedAt
           mergedAt
+          closedAt
           additions
           deletions
           changedFiles
@@ -248,6 +368,109 @@ const GetPullRequestsWithDetailsQuery = graphql(`
                   login
                 }
                 ... on Mannequin {
+                  login
+                }
+              }
+            }
+          }
+          timelineItems(
+            first: 50
+            itemTypes: [
+              REVIEW_REQUESTED_EVENT
+              REVIEW_REQUEST_REMOVED_EVENT
+              READY_FOR_REVIEW_EVENT
+              CONVERT_TO_DRAFT_EVENT
+              REVIEW_DISMISSED_EVENT
+              DEPLOYED_EVENT
+              CLOSED_EVENT
+              REOPENED_EVENT
+              MERGED_EVENT
+              HEAD_REF_FORCE_PUSHED_EVENT
+            ]
+          ) {
+            pageInfo {
+              hasNextPage
+            }
+            nodes {
+              __typename
+              ... on ReviewRequestedEvent {
+                createdAt
+                requestedReviewer {
+                  __typename
+                  ... on User {
+                    login
+                  }
+                  ... on Bot {
+                    login
+                  }
+                  ... on Mannequin {
+                    login
+                  }
+                }
+              }
+              ... on ReviewRequestRemovedEvent {
+                createdAt
+                requestedReviewer {
+                  __typename
+                  ... on User {
+                    login
+                  }
+                  ... on Bot {
+                    login
+                  }
+                  ... on Mannequin {
+                    login
+                  }
+                }
+              }
+              ... on ReadyForReviewEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on ConvertToDraftEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on ReviewDismissedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on DeployedEvent {
+                createdAt
+                actor {
+                  login
+                }
+                deployment {
+                  environment
+                }
+              }
+              ... on ClosedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on ReopenedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on MergedEvent {
+                createdAt
+                actor {
+                  login
+                }
+              }
+              ... on HeadRefForcePushedEvent {
+                createdAt
+                actor {
                   login
                 }
               }
@@ -359,13 +582,154 @@ const GetTagsQuery = graphql(`
   }
 `)
 
+/**
+ * GitHub GraphQL の 502/504 タイムアウトに対してページサイズを縮小してリトライする。
+ * @returns 'retry' ならページサイズ縮小済みで continue すべき、それ以外は結果 or throw
+ */
+function handleGraphQLError<T>(
+  error: unknown,
+  pageSize: { value: number },
+  minPageSize: number,
+  label: string,
+): { action: 'retry' } | { action: 'use'; data: T } {
+  const status =
+    error && typeof error === 'object' && 'status' in error
+      ? (error as { status: number }).status
+      : null
+
+  // HTTP 502/504
+  if ((status === 502 || status === 504) && pageSize.value > minPageSize) {
+    pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
+    logger.warn(
+      `${label}: GitHub API timeout (${status}), reducing page size to ${pageSize.value}`,
+    )
+    return { action: 'retry' }
+  }
+
+  // GraphQL partial error (data + errors)
+  if (
+    error &&
+    typeof error === 'object' &&
+    'data' in error &&
+    error.data != null
+  ) {
+    const partialData = error.data as T
+    // data はあるが中身が空の場合はタイムアウト起因の可能性が高い
+    const repo =
+      partialData &&
+      typeof partialData === 'object' &&
+      'repository' in partialData
+        ? (partialData as { repository: unknown }).repository
+        : undefined
+    if (!repo && pageSize.value > minPageSize) {
+      pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
+      logger.warn(
+        `${label}: partial error with null repository, reducing page size to ${pageSize.value}`,
+      )
+      return { action: 'retry' }
+    }
+    logger.warn(
+      `${label}: GraphQL partial error`,
+      'errors' in error ? JSON.stringify(error.errors) : '',
+    )
+    return { action: 'use', data: partialData }
+  }
+
+  throw error
+}
+
+/**
+ * GraphQL の timelineItems ノードを ShapedTimelineItem[] に変換
+ */
+function shapeTimelineNodes(
+  nodes: readonly (Record<string, unknown> | null)[],
+): ShapedTimelineItem[] {
+  const items: ShapedTimelineItem[] = []
+  for (const node of nodes) {
+    if (!node || !('__typename' in node) || !('createdAt' in node)) continue
+    const type = node.__typename as string
+    const createdAt = node.createdAt as string
+
+    // ReviewRequestedEvent / ReviewRequestRemovedEvent: reviewer 情報
+    if ('requestedReviewer' in node && node.requestedReviewer) {
+      const rr = node.requestedReviewer as { login?: string; name?: string }
+      items.push({
+        type,
+        createdAt,
+        reviewer: rr.login ?? rr.name ?? null,
+      })
+      continue
+    }
+
+    // DeployedEvent: environment 情報
+    if ('deployment' in node && node.deployment) {
+      const dep = node.deployment as { environment?: string }
+      items.push({
+        type,
+        createdAt,
+        actor: (node.actor as { login?: string } | null)?.login ?? null,
+        environment: dep.environment ?? null,
+      })
+      continue
+    }
+
+    // その他: actor 情報
+    items.push({
+      type,
+      createdAt,
+      actor: (node.actor as { login?: string } | null)?.login ?? null,
+    })
+  }
+  return items
+}
+
+/**
+ * ShapedTimelineItem[] から login → 最新の requestedAt マッピングを構築
+ */
+export function buildRequestedAtMap(
+  items: ShapedTimelineItem[],
+): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const item of items) {
+    if (item.type !== 'ReviewRequestedEvent' || !item.reviewer) continue
+    const existing = map.get(item.reviewer)
+    if (!existing || item.createdAt > existing) {
+      map.set(item.reviewer, item.createdAt)
+    }
+  }
+  return map
+}
+
 interface createFetcherProps {
   owner: string
   repo: string
   token: string
 }
+const REQUEST_TIMEOUT_MS = 30_000
+
 export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
   const octokit = new Octokit({ auth: token })
+
+  /** タイムアウト付き GraphQL リクエスト */
+  function graphqlWithTimeout<T>(
+    query: string,
+    variables: Record<string, unknown>,
+  ): Promise<T> {
+    return Promise.race([
+      octokit.graphql<T>(query, variables),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              Object.assign(new Error('GraphQL request timeout'), {
+                status: 504,
+              }),
+            ),
+          REQUEST_TIMEOUT_MS,
+        ),
+      ),
+    ])
+  }
 
   /**
    * プロジェクトのすべてのプルリク情報を GraphQL で取得
@@ -378,35 +742,50 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let allPulls: ShapedGitHubPullRequest[] = []
     let cursor: string | null = null
     let hasNextPage = true
+    const pageSizeRef = { value: 100 }
 
     while (hasNextPage) {
       let result: PullRequestsResult
       try {
-        result = await octokit.graphql<PullRequestsResult>(queryStr, {
+        result = await graphqlWithTimeout<PullRequestsResult>(queryStr, {
           owner,
           repo,
           cursor,
+          first: pageSizeRef.value,
         })
       } catch (error: unknown) {
-        // GraphQL partial error: エラーがあってもデータが返る場合がある
-        if (
-          error &&
-          typeof error === 'object' &&
-          'data' in error &&
-          error.data != null
-        ) {
-          logger.warn(
-            'GraphQL partial error in pullrequests():',
-            'errors' in error ? JSON.stringify(error.errors) : error,
-          )
-          result = error.data as PullRequestsResult
-        } else {
-          throw error
-        }
+        const handled = handleGraphQLError<PullRequestsResult>(
+          error,
+          pageSizeRef,
+          10,
+          'pullrequests()',
+        )
+        if (handled.action === 'retry') continue
+        result = handled.data
       }
 
       const pullRequests = result?.repository?.pullRequests
-      if (!pullRequests || !pullRequests.nodes) break
+      if (!pullRequests || !pullRequests.nodes) {
+        // 200 OK だが repository が null → タイムアウト起因の可能性
+        if (pageSizeRef.value > 10) {
+          pageSizeRef.value = Math.max(10, Math.floor(pageSizeRef.value / 2))
+          logger.warn(
+            `pullrequests(): empty response, reducing page size to ${pageSizeRef.value}`,
+          )
+          continue
+        }
+        logger.warn(
+          'pullrequests(): unexpected empty response (already at min page size)',
+          JSON.stringify({
+            hasRepository: !!result?.repository,
+            hasPullRequests: !!pullRequests,
+            hasNodes: !!pullRequests?.nodes,
+            pageSize: pageSizeRef.value,
+            cursor,
+          }),
+        )
+        break
+      }
 
       for (const node of pullRequests.nodes) {
         if (!node || !node.databaseId) continue
@@ -415,7 +794,9 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         const state =
           node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
 
-        const reviewerLogins: string[] = []
+        // reviewRequests（現在の pending reviewer）を取得
+        // requestedAt は pullrequestsWithDetails() のフルリフレッシュ時のみ取得
+        const reviewers: { login: string; requestedAt: string | null }[] = []
         if (node.reviewRequests?.nodes) {
           for (const rr of node.reviewRequests.nodes) {
             const reviewer = rr?.requestedReviewer
@@ -425,7 +806,10 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
                 reviewer.__typename === 'Bot' ||
                 reviewer.__typename === 'Mannequin')
             ) {
-              reviewerLogins.push(reviewer.login)
+              reviewers.push({
+                login: reviewer.login,
+                requestedAt: null,
+              })
             }
           }
         }
@@ -439,23 +823,26 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
             number: node.number,
             state,
             title: node.title,
+            body: node.body ?? null,
             url: node.url,
             author: node.author?.login ?? null,
             assignees:
               node.assignees.nodes
                 ?.filter((n) => n != null)
                 .map((n) => n.login) ?? [],
-            reviewers: reviewerLogins,
+            reviewers,
             draft: node.isDraft,
             sourceBranch: node.headRefName,
             targetBranch: node.baseRefName,
             createdAt: node.createdAt,
             updatedAt: node.updatedAt,
             mergedAt: node.mergedAt ?? null,
+            closedAt: node.closedAt ?? null,
             mergeCommitSha: node.mergeCommit?.oid ?? null,
             additions: node.additions ?? null,
             deletions: node.deletions ?? null,
             changedFiles: node.changedFiles ?? null,
+            files: [],
           },
         ]
       }
@@ -476,7 +863,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: CommitsResult = await octokit.graphql<CommitsResult>(
+      const result: CommitsResult = await graphqlWithTimeout<CommitsResult>(
         queryStr,
         { owner, repo, number: pullNumber, cursor },
       )
@@ -520,7 +907,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasMoreComments = true
 
     while (hasMoreComments) {
-      const result: CommentsResult = await octokit.graphql<CommentsResult>(
+      const result: CommentsResult = await graphqlWithTimeout<CommentsResult>(
         queryStr,
         {
           owner,
@@ -555,7 +942,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasMoreThreads = true
 
     while (hasMoreThreads) {
-      const result: CommentsResult = await octokit.graphql<CommentsResult>(
+      const result: CommentsResult = await graphqlWithTimeout<CommentsResult>(
         queryStr,
         {
           owner,
@@ -606,7 +993,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: ReviewsResult = await octokit.graphql<ReviewsResult>(
+      const result: ReviewsResult = await graphqlWithTimeout<ReviewsResult>(
         queryStr,
         { owner, repo, number: pullNumber, cursor },
       )
@@ -647,11 +1034,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     let hasNextPage = true
 
     while (hasNextPage) {
-      const result: TagsResult = await octokit.graphql<TagsResult>(queryStr, {
-        owner,
-        repo,
-        cursor,
-      })
+      const result: TagsResult = await graphqlWithTimeout<TagsResult>(
+        queryStr,
+        {
+          owner,
+          repo,
+          cursor,
+        },
+      )
 
       const refs = result.repository?.refs
       if (!refs || !refs.nodes) break
@@ -708,35 +1098,42 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     const allResults: ShapedGitHubPullRequestWithDetails[] = []
     let cursor: string | null = null
     let hasNextPage = true
+    const pageSizeRef = { value: 25 }
 
     while (hasNextPage) {
       let result: Result
       try {
-        result = await octokit.graphql<Result>(queryStr, {
+        result = await graphqlWithTimeout<Result>(queryStr, {
           owner,
           repo,
           cursor,
+          first: pageSizeRef.value,
         })
       } catch (error: unknown) {
-        // GraphQL partial error: エラーがあってもデータが返る場合がある
-        if (
-          error &&
-          typeof error === 'object' &&
-          'data' in error &&
-          error.data != null
-        ) {
-          logger.warn(
-            'GraphQL partial error in pullrequestsWithDetails():',
-            'errors' in error ? JSON.stringify(error.errors) : error,
-          )
-          result = error.data as Result
-        } else {
-          throw error
-        }
+        const handled = handleGraphQLError<Result>(
+          error,
+          pageSizeRef,
+          5,
+          'pullrequestsWithDetails()',
+        )
+        if (handled.action === 'retry') continue
+        result = handled.data
       }
 
       const pullRequests = result?.repository?.pullRequests
-      if (!pullRequests || !pullRequests.nodes) break
+      if (!pullRequests || !pullRequests.nodes) {
+        if (pageSizeRef.value > 5) {
+          pageSizeRef.value = Math.max(5, Math.floor(pageSizeRef.value / 2))
+          logger.warn(
+            `pullrequestsWithDetails(): empty response, reducing page size to ${pageSizeRef.value}`,
+          )
+          continue
+        }
+        logger.warn(
+          'pullrequestsWithDetails(): empty response at min page size, stopping',
+        )
+        break
+      }
 
       for (const node of pullRequests.nodes) {
         if (!node || !node.databaseId) continue
@@ -745,7 +1142,19 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         const state =
           node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
 
-        const reviewerLogins: string[] = []
+        // timelineItems をローデータとしてパース
+        const prTimelineItems = node.timelineItems?.nodes
+          ? shapeTimelineNodes(
+              node.timelineItems.nodes as readonly (Record<
+                string,
+                unknown
+              > | null)[],
+            )
+          : []
+        const requestedAtMap = buildRequestedAtMap(prTimelineItems)
+
+        // reviewRequests（現在の pending reviewer）と requestedAt を統合
+        const reviewers: { login: string; requestedAt: string | null }[] = []
         if (node.reviewRequests?.nodes) {
           for (const rr of node.reviewRequests.nodes) {
             const reviewer = rr?.requestedReviewer
@@ -755,7 +1164,10 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
                 reviewer.__typename === 'Bot' ||
                 reviewer.__typename === 'Mannequin')
             ) {
-              reviewerLogins.push(reviewer.login)
+              reviewers.push({
+                login: reviewer.login,
+                requestedAt: requestedAtMap.get(reviewer.login) ?? null,
+              })
             }
           }
         }
@@ -767,23 +1179,26 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           number: node.number,
           state,
           title: node.title,
+          body: node.body ?? null,
           url: node.url,
           author: node.author?.login ?? null,
           assignees:
             node.assignees.nodes
               ?.filter((n) => n != null)
               .map((n) => n.login) ?? [],
-          reviewers: reviewerLogins,
+          reviewers,
           draft: node.isDraft,
           sourceBranch: node.headRefName,
           targetBranch: node.baseRefName,
           createdAt: node.createdAt,
           updatedAt: node.updatedAt,
           mergedAt: node.mergedAt ?? null,
+          closedAt: node.closedAt ?? null,
           mergeCommitSha: node.mergeCommit?.oid ?? null,
           additions: node.additions ?? null,
           deletions: node.deletions ?? null,
           changedFiles: node.changedFiles ?? null,
+          files: [],
         }
 
         // commits
@@ -869,12 +1284,15 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           commits: prCommits,
           reviews: prReviews,
           comments: prComments,
+          timelineItems: prTimelineItems,
           needsMoreCommits: node.commits?.pageInfo.hasNextPage ?? false,
           needsMoreReviews: node.reviews?.pageInfo.hasNextPage ?? false,
           needsMoreComments: node.comments?.pageInfo.hasNextPage ?? false,
           needsMoreReviewThreads:
             node.reviewThreads?.pageInfo.hasNextPage ?? false,
           needsMoreReviewThreadComments,
+          needsMoreTimelineItems:
+            node.timelineItems?.pageInfo.hasNextPage ?? false,
         })
       }
 
@@ -885,12 +1303,68 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     return allResults
   }
 
+  /**
+   * 単一 PR の timeline items をローデータとして取得
+   */
+  const timelineItems = async (
+    pullNumber: number,
+  ): Promise<ShapedTimelineItem[]> => {
+    type Result = ResultOf<typeof GetPullRequestTimelineQuery>
+
+    const queryStr = print(GetPullRequestTimelineQuery)
+    const result = await graphqlWithTimeout<Result>(queryStr, {
+      owner,
+      repo,
+      number: pullNumber,
+    })
+
+    const nodes = result.repository?.pullRequest?.timelineItems?.nodes
+    if (!nodes) return []
+
+    return shapeTimelineNodes(nodes)
+  }
+
+  /**
+   * PR のファイル一覧を REST API で取得
+   */
+  const files = async (pullNumber: number) => {
+    const allFiles: { path: string; additions: number; deletions: number }[] =
+      []
+    let page = 1
+
+    while (true) {
+      const { data } = await octokit.rest.pulls.listFiles({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        per_page: 100,
+        page,
+      })
+      if (data.length === 0) break
+
+      for (const f of data) {
+        allFiles.push({
+          path: f.filename,
+          additions: f.additions,
+          deletions: f.deletions,
+        })
+      }
+
+      if (data.length < 100) break
+      page++
+    }
+
+    return allFiles
+  }
+
   return {
     pullrequests,
     pullrequestsWithDetails,
     commits,
     comments,
     reviews,
+    timelineItems,
+    files,
     tags,
   }
 }

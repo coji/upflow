@@ -10,6 +10,7 @@ import {
   totalTime,
 } from '~/batch/bizlogic/cycletime'
 import { logger } from '~/batch/helper/logger'
+import { buildRequestedAtMap } from './fetcher'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubPullRequest,
@@ -132,6 +133,7 @@ function buildPullRequestRow(
     pullRequestCreatedAt: dates.pullRequestCreatedAt,
     firstReviewedAt: dates.firstReviewedAt,
     mergedAt: dates.mergedAt,
+    closedAt: nullOrDate(pr.closedAt),
     releasedAt,
     codingTime: codingTime({
       firstCommittedAt: dates.firstCommittedAt,
@@ -162,6 +164,11 @@ function buildPullRequestRow(
     additions: pr.additions,
     deletions: pr.deletions,
     changedFiles: pr.changedFiles,
+    complexity: null,
+    complexityReason: null,
+    riskAreas: null,
+    classifiedAt: null,
+    classifierModel: null,
   }
 }
 
@@ -190,7 +197,7 @@ export const buildPullRequests = async (
   const reviewers: {
     pullRequestNumber: number
     repositoryId: string
-    reviewerLogins: string[]
+    reviewers: { login: string; requestedAt: string | null }[]
   }[] = []
   const reviewResponses: {
     repo: string
@@ -255,12 +262,18 @@ export const buildPullRequests = async (
       }
 
       // 8. レビュアー（レビュー依頼先）情報を収集
-      const reviewerLogins = pr.reviewers ?? []
-      if (reviewerLogins.length > 0) {
+      //    timeline_items から requestedAt を補完する
+      const prReviewers = pr.reviewers ?? []
+      if (prReviewers.length > 0) {
+        const timelineItems = await loaders.timelineItems(pr.number)
+        const requestedAtMap = buildRequestedAtMap(timelineItems)
         reviewers.push({
           pullRequestNumber: pr.number,
           repositoryId: config.repositoryId,
-          reviewerLogins,
+          reviewers: prReviewers.map((r) => ({
+            ...r,
+            requestedAt: requestedAtMap.get(r.login) ?? r.requestedAt,
+          })),
         })
       }
     } catch (e) {

@@ -38,6 +38,7 @@ export function getTenantDb(
   const filename = getTenantDbPath(organizationId)
   const database = new SQLite(filename, { fileMustExist: true })
   database.pragma('journal_mode = WAL')
+  database.pragma('wal_autocheckpoint = 1000')
 
   const db = new Kysely<TenantDB.DB>({
     dialect: new SqliteDialect({ database }),

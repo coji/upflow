@@ -48,9 +48,62 @@ export const getPullRequestRawData = async (
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
     .selectFrom('githubRawData')
-    .select(['commits', 'reviews', 'discussions'])
+    .select(['commits', 'reviews', 'discussions', 'timelineItems'])
     .where('repositoryId', '=', repositoryId)
     .where('pullRequestNumber', '=', pullRequestNumber)
     .executeTakeFirst()
   return row ?? null
+}
+
+export const getOrganizationSettings = async (
+  organizationId: OrganizationId,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
+    .selectFrom('organizationSettings')
+    .select(['releaseDetectionMethod', 'releaseDetectionKey', 'excludedUsers'])
+    .executeTakeFirst()
+}
+
+export const getShapedPullRequest = async (
+  organizationId: OrganizationId,
+  repositoryId: string,
+  pullRequestNumber: number,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('githubRawData')
+    .select('pullRequest')
+    .where('repositoryId', '=', repositoryId)
+    .where('pullRequestNumber', '=', pullRequestNumber)
+    .executeTakeFirst()
+  return row?.pullRequest ?? null
+}
+
+export const getPullRequestReviews = async (
+  organizationId: OrganizationId,
+  repositoryId: string,
+  pullRequestNumber: number,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
+    .selectFrom('pullRequestReviews')
+    .where('repositoryId', '=', repositoryId)
+    .where('pullRequestNumber', '=', pullRequestNumber)
+    .selectAll()
+    .execute()
+}
+
+export const getPullRequestReviewers = async (
+  organizationId: OrganizationId,
+  repositoryId: string,
+  pullRequestNumber: number,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
+    .selectFrom('pullRequestReviewers')
+    .where('repositoryId', '=', repositoryId)
+    .where('pullRequestNumber', '=', pullRequestNumber)
+    .selectAll()
+    .execute()
 }

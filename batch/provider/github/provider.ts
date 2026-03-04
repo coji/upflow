@@ -53,86 +53,120 @@ export const createGitHubProvider = (
       logger.info('fetching all tags completed.')
     }
 
-    if (refresh) {
-      // フルリフレッシュ: ネストクエリで一括取得（N+1 回避）
-      logger.info('fetching all pullrequests with details (nested query)...')
-      const allDetails = await fetcher.pullrequestsWithDetails()
-      logger.info(`fetched ${allDetails.length} PRs with details.`)
+    // PR 一覧を取得
+    logger.info('fetching all pullrequests...')
+    const allPullRequests = await fetcher.pullrequests()
+    logger.info(`fetched ${allPullRequests.length} PRs.`)
 
-      for (const detail of allDetails) {
-        if (halt) {
-          logger.fatal('halted')
-          return
-        }
-
-        const { pr } = detail
-
-        // commits: オーバーフロー時は個別取得でフォールバック
-        let { commits } = detail
-        if (detail.needsMoreCommits) {
-          logger.info(`${pr.number} commits overflow, fetching individually...`)
-          commits = await fetcher.commits(pr.number)
-        }
-
-        // reviews: オーバーフロー時は個別取得でフォールバック
-        let { reviews } = detail
-        if (detail.needsMoreReviews) {
-          logger.info(`${pr.number} reviews overflow, fetching individually...`)
-          reviews = await fetcher.reviews(pr.number)
-        }
-
-        // comments: オーバーフロー時は個別取得でフォールバック
-        let { comments } = detail
-        if (
-          detail.needsMoreComments ||
-          detail.needsMoreReviewThreads ||
-          detail.needsMoreReviewThreadComments
-        ) {
-          logger.info(
-            `${pr.number} comments overflow, fetching individually...`,
-          )
-          comments = await fetcher.comments(pr.number)
-        }
-
-        await store.savePrData(pr, {
-          commits,
-          reviews,
-          discussions: comments,
-        })
-        logger.info(`${pr.number} saved`)
+    let processed = 0
+    for (const pr of allPullRequests) {
+      if (halt) {
+        logger.fatal('halted')
+        return
       }
-    } else {
-      // インクリメンタル: PR一覧だけ取得し、更新分のみ個別に詳細取得
-      logger.info('fetching all pullrequests...')
-      const allPullRequests = await fetcher.pullrequests()
-      logger.info(`fetched ${allPullRequests.length} PRs.`)
 
-      for (const pr of allPullRequests) {
-        if (halt) {
-          logger.fatal('halted')
-          return
-        }
-
+      // refresh でなければ更新分のみ
+      if (!refresh) {
         const isUpdated = pr.updatedAt > lastFetchedAt
         if (!isUpdated) {
           logger.debug('skip', pr.number, pr.state, pr.updatedAt)
           continue
         }
+      }
 
-        logger.info(`${pr.number} commits`)
-        const commits = await fetcher.commits(pr.number)
+      processed++
+      logger.info(
+        `${pr.number} fetching details... (${processed}/${refresh ? allPullRequests.length : '?'})`,
+      )
+      try {
+        const [commits, discussions, reviews, timelineItems, files] =
+          await Promise.all([
+            fetcher.commits(pr.number),
+            fetcher.comments(pr.number),
+            fetcher.reviews(pr.number),
+            fetcher.timelineItems(pr.number),
+            fetcher.files(pr.number),
+          ])
+        pr.files = files
 
-        logger.info(`${pr.number} review comments`)
-        const discussions = await fetcher.comments(pr.number)
-
-        logger.info(`${pr.number} reviews`)
-        const reviews = await fetcher.reviews(pr.number)
-
-        await store.savePrData(pr, { commits, reviews, discussions })
+        await store.savePrData(pr, {
+          commits,
+          reviews,
+          discussions,
+          timelineItems,
+        })
+      } catch (e) {
+        logger.warn(
+          `${pr.number} failed, skipping:`,
+          e instanceof Error ? e.message : e,
+        )
       }
     }
 
     logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
+  }
+
+  const backfill: Provider['backfill'] = async (
+    organizationId,
+    repository,
+    options,
+  ) => {
+    invariant(repository.repo, 'repo not specified')
+    invariant(repository.owner, 'owner not specified')
+    invariant(integration.privateToken, 'private token not specified')
+
+    const fetcher = createFetcher({
+      owner: repository.owner,
+      repo: repository.repo,
+      token: integration.privateToken,
+    })
+    const store = createStore({
+      organizationId,
+      repositoryId: repository.id,
+    })
+
+    logger.info('backfill started: ', `${repository.owner}/${repository.repo}`)
+
+    if (options?.files) {
+      // files のみ backfill: raw data の pullRequest JSON に files を追加
+      const prs = await store.loader.pullrequests()
+      logger.info(`backfilling files for ${prs.length} PRs...`)
+      let updated = 0
+      let errors = 0
+      for (const pr of prs) {
+        if (pr.files && pr.files.length > 0) continue // already has files
+        try {
+          const files = await fetcher.files(pr.number)
+          pr.files = files
+          await store.updatePrMetadata([pr])
+          updated++
+        } catch (err) {
+          errors++
+          logger.warn(
+            `  failed to backfill files for PR #${pr.number}: ${err instanceof Error ? err.message : err}`,
+          )
+        }
+        if ((updated + errors) % 100 === 0) {
+          logger.info(
+            `  files backfilled: ${updated}/${prs.length} (${errors} errors)`,
+          )
+        }
+      }
+      logger.info(
+        `backfilled files for ${updated} PRs in ${repository.owner}/${repository.repo}${errors > 0 ? ` (${errors} errors)` : ''}`,
+      )
+      return
+    }
+
+    // PR 一覧を取得（メタデータのみ、詳細は不要）
+    const allPullRequests = await fetcher.pullrequests()
+    logger.info(`fetched ${allPullRequests.length} PR metadata.`)
+
+    // raw データの pullRequest JSON だけを更新
+    const updated = await store.updatePrMetadata(allPullRequests)
+    logger.info(
+      `updated ${updated} raw records in ${repository.owner}/${repository.repo}`,
+    )
   }
 
   const analyze: Provider['analyze'] = async (
@@ -154,7 +188,7 @@ export const createGitHubProvider = (
     let allReviewers: {
       pullRequestNumber: number
       repositoryId: string
-      reviewerLogins: string[]
+      reviewers: { login: string; requestedAt: string | null }[]
     }[] = []
     let allReviewResponses: {
       repo: string
@@ -209,6 +243,7 @@ export const createGitHubProvider = (
 
   return {
     fetch,
+    backfill,
     analyze,
   }
 }

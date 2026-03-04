@@ -1,5 +1,9 @@
-import type { Selectable } from 'kysely'
-import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
+import { sql, type Selectable } from 'kysely'
+import {
+  getTenantDb,
+  type OrganizationId,
+  type TenantDB,
+} from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import {
   upsertCompanyGithubUsers,
@@ -9,6 +13,7 @@ import {
 } from '~/batch/db'
 import { logger } from '~/batch/helper/logger'
 import type { Provider } from '~/batch/provider'
+import { classifyPullRequests } from './classify-pull-requests'
 
 /** analyzeAndUpsert に渡す organization の必須フィールド */
 interface OrganizationForAnalyze {
@@ -53,8 +58,8 @@ export async function analyzeAndUpsert({
     if (review.reviewer) discoveredLogins.add(review.reviewer)
   }
   for (const reviewer of reviewers) {
-    for (const login of reviewer.reviewerLogins) {
-      discoveredLogins.add(login)
+    for (const r of reviewer.reviewers) {
+      if (r.login) discoveredLogins.add(r.login)
     }
   }
   await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
@@ -81,19 +86,31 @@ export async function analyzeAndUpsert({
       orgId,
       reviewer.repositoryId,
       reviewer.pullRequestNumber,
-      reviewer.reviewerLogins,
+      reviewer.reviewers,
     )
   }
   logger.info('upsert reviewers completed.', orgId)
 
-  // 6. export (optional)
+  // 6. classify PRs with LLM (optional, requires GEMINI_API_KEY)
+  await classifyPullRequests(orgId)
+
+  // 7. export (optional)
   if (organization.exportSetting) {
-    logger.info('exporting to spreadsheet...', orgId)
-    const exporter = createSpreadsheetExporter(organization.exportSetting)
-    await exporter.exportPulls(pulls)
-    await exporter.exportReviewResponses(reviewResponses)
-    logger.info('export to spreadsheet done.', orgId)
+    try {
+      logger.info('exporting to spreadsheet...', orgId)
+      const exporter = createSpreadsheetExporter(organization.exportSetting)
+      await exporter.exportPulls(pulls)
+      await exporter.exportReviewResponses(reviewResponses)
+      logger.info('export to spreadsheet done.', orgId)
+    } catch (e) {
+      logger.error('export to spreadsheet failed.', orgId, e)
+    }
   }
+
+  // 8. WAL checkpoint to prevent WAL file from growing unbounded
+  const tenantDb = getTenantDb(orgId)
+  await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
+  logger.info('WAL checkpoint completed.', orgId)
 
   return { pulls, reviewResponses }
 }

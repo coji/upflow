@@ -60,6 +60,7 @@ CREATE TABLE `pull_requests` (
   `pull_request_created_at` text NOT NULL,
   `first_reviewed_at` text NULL,
   `merged_at` text NULL,
+  `closed_at` text NULL,
   `released_at` text NULL,
   `coding_time` real NULL,
   `pickup_time` real NULL,
@@ -71,6 +72,11 @@ CREATE TABLE `pull_requests` (
   `additions` integer NULL,
   `deletions` integer NULL,
   `changed_files` integer NULL,
+  `complexity` text NULL,
+  `complexity_reason` text NULL,
+  `risk_areas` text NULL,
+  `classified_at` text NULL,
+  `classifier_model` text NULL,
   PRIMARY KEY (`number`, `repository_id`),
   CONSTRAINT `pull_requests_repository_id_fkey` FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
@@ -115,6 +121,7 @@ CREATE TABLE `github_raw_data` (
   `commits` text NOT NULL,
   `reviews` text NOT NULL,
   `discussions` text NOT NULL,
+  `timeline_items` text NULL,
   `fetched_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   PRIMARY KEY (`repository_id`, `pull_request_number`),
   CONSTRAINT `github_raw_data_repository_id_fkey`

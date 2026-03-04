@@ -15,6 +15,7 @@ export function upsertPullRequest(
   const pullRequestCreatedAt = timeFormatUTC(data.pullRequestCreatedAt)
   const firstReviewedAt = timeFormatUTC(data.firstReviewedAt)
   const mergedAt = timeFormatUTC(data.mergedAt)
+  const closedAt = timeFormatUTC(data.closedAt)
   const releasedAt = timeFormatUTC(data.releasedAt)
   const updatedAt = timeFormatUTC(data.updatedAt)
 
@@ -27,6 +28,7 @@ export function upsertPullRequest(
       pullRequestCreatedAt,
       firstReviewedAt,
       mergedAt,
+      closedAt,
       releasedAt,
       updatedAt,
     })
@@ -40,6 +42,7 @@ export function upsertPullRequest(
         targetBranch: eb.ref('excluded.targetBranch'),
         sourceBranch: eb.ref('excluded.sourceBranch'),
         mergedAt: eb.ref('excluded.mergedAt'),
+        closedAt: eb.ref('excluded.closedAt'),
         releasedAt: eb.ref('excluded.releasedAt'),
         firstCommittedAt: eb.ref('excluded.firstCommittedAt'),
         pullRequestCreatedAt: eb.ref('excluded.pullRequestCreatedAt'),
@@ -81,7 +84,7 @@ export async function upsertPullRequestReviewers(
   organizationId: OrganizationId,
   repositoryId: string,
   pullRequestNumber: number,
-  reviewers: string[],
+  reviewers: { login: string; requestedAt: string | null }[],
 ) {
   const tenantDb = getTenantDb(organizationId)
   await tenantDb.transaction().execute(async (trx) => {
@@ -92,17 +95,23 @@ export async function upsertPullRequestReviewers(
       .where('pullRequestNumber', '=', pullRequestNumber)
       .execute()
 
-    const uniqueReviewers = [...new Set(reviewers)]
+    const seen = new Set<string>()
+    const uniqueReviewers = reviewers.filter((r) => {
+      if (!r.login) return false
+      if (seen.has(r.login)) return false
+      seen.add(r.login)
+      return true
+    })
     if (uniqueReviewers.length === 0) return
 
     await trx
       .insertInto('pullRequestReviewers')
       .values(
-        uniqueReviewers.map((reviewer) => ({
+        uniqueReviewers.map((r) => ({
           pullRequestNumber,
           repositoryId,
-          reviewer,
-          requestedAt: null,
+          reviewer: r.login,
+          requestedAt: r.requestedAt,
         })),
       )
       .execute()
@@ -121,7 +130,9 @@ export async function upsertCompanyGithubUsers(
 
   const tenantDb = getTenantDb(organizationId)
   const now = new Date().toISOString()
-  const uniqueLogins = [...new Set(logins.map((l) => l.toLowerCase()))]
+  const uniqueLogins = [
+    ...new Set(logins.filter(Boolean).map((l) => l.toLowerCase())),
+  ]
 
   await tenantDb
     .insertInto('companyGithubUsers')
