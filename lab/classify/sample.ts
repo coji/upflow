@@ -109,7 +109,7 @@ function main() {
               p.changed_files, p.complexity, p.complexity_reason,
               g.pull_request AS raw_pull_request
        FROM pull_requests p
-       LEFT JOIN github_raw_data g
+       INNER JOIN github_raw_data g
          ON g.repository_id = p.repository_id AND g.pull_request_number = p.number
        WHERE p.complexity IS NOT NULL`,
     )
