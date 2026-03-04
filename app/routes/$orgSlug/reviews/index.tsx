@@ -40,6 +40,7 @@ const PERIOD_OPTIONS = [
   { value: '3', label: '3 months' },
   { value: '6', label: '6 months' },
   { value: '12', label: '1 year' },
+  { value: 'all', label: 'All time' },
 ] as const
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
@@ -47,17 +48,19 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')
+  const periodParam = url.searchParams.get('period')
   const VALID_PERIODS = [1, 3, 6, 12]
-  const periodMonths = VALID_PERIODS.includes(
-    Number(url.searchParams.get('period')),
-  )
-    ? Number(url.searchParams.get('period'))
-    : 3
+  const periodMonths =
+    periodParam === 'all'
+      ? 'all'
+      : VALID_PERIODS.includes(Number(periodParam))
+        ? Number(periodParam)
+        : 3
 
-  const sinceDate = dayjs()
-    .subtract(periodMonths, 'month')
-    .startOf('day')
-    .toISOString()
+  const sinceDate =
+    periodMonths === 'all'
+      ? '2000-01-01T00:00:00.000Z'
+      : dayjs().subtract(periodMonths, 'month').startOf('day').toISOString()
 
   const teams = await listTeams(organization.id)
 
