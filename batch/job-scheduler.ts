@@ -9,18 +9,19 @@ export const createJobScheduler = () => {
     let isRunning = false
 
     schedule.scheduleJob('30 * * * *', async () => {
+      if (isRunning) {
+        logger.warn('crawl job already running, skipping.')
+        return
+      }
+      isRunning = true
       try {
-        if (isRunning) throw new Error('crawl job already running.')
-        isRunning = true
         logger.info('crawl job started.')
-
         await crawlJob()
-
-        isRunning = false
         logger.info('crawl job completed.')
       } catch (e) {
-        isRunning = false
         logger.error(e)
+      } finally {
+        isRunning = false
       }
     })
   }
