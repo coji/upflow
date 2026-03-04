@@ -40,6 +40,7 @@
     "@conform-to/react": "1.16.0",
     "@conform-to/zod": "1.16.0",
     "@epic-web/remember": "1.1.0",
+    "@google/genai": "1.42.0",
     "@googleapis/sheets": "13.0.1",
     "@holiday-jp/holiday_jp": "2.5.1",
     "@octokit/plugin-rest-endpoint-methods": "17.0.0",
@@ -94,7 +95,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
-    "@google/genai": "1.42.0",
     "@octokit/graphql-schema": "15.26.1",
     "@octokit/types": "16.0.0",
     "@playwright/test": "1.58.0",
