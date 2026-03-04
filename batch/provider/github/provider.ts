@@ -132,18 +132,28 @@ export const createGitHubProvider = (
       const prs = await store.loader.pullrequests()
       logger.info(`backfilling files for ${prs.length} PRs...`)
       let updated = 0
+      let errors = 0
       for (const pr of prs) {
         if (pr.files && pr.files.length > 0) continue // already has files
-        const files = await fetcher.files(pr.number)
-        pr.files = files
-        await store.updatePrMetadata([pr])
-        updated++
-        if (updated % 100 === 0) {
-          logger.info(`  files backfilled: ${updated}/${prs.length}`)
+        try {
+          const files = await fetcher.files(pr.number)
+          pr.files = files
+          await store.updatePrMetadata([pr])
+          updated++
+        } catch (err) {
+          errors++
+          logger.warn(
+            `  failed to backfill files for PR #${pr.number}: ${err instanceof Error ? err.message : err}`,
+          )
+        }
+        if ((updated + errors) % 100 === 0) {
+          logger.info(
+            `  files backfilled: ${updated}/${prs.length} (${errors} errors)`,
+          )
         }
       }
       logger.info(
-        `backfilled files for ${updated} PRs in ${repository.owner}/${repository.repo}`,
+        `backfilled files for ${updated} PRs in ${repository.owner}/${repository.repo}${errors > 0 ? ` (${errors} errors)` : ''}`,
       )
       return
     }

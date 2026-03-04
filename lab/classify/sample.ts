@@ -89,10 +89,20 @@ function main() {
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--per-label' && args[i + 1]) {
-      perLabel = Number.parseInt(args[i + 1], 10)
+      const n = Number.parseInt(args[i + 1], 10)
+      if (Number.isNaN(n) || n <= 0) {
+        console.error(`Invalid --per-label value: ${args[i + 1]}`)
+        process.exit(1)
+      }
+      perLabel = n
       i++
     } else if (args[i] === '--seed' && args[i + 1]) {
-      seed = Number.parseInt(args[i + 1], 10)
+      const n = Number.parseInt(args[i + 1], 10)
+      if (Number.isNaN(n)) {
+        console.error(`Invalid --seed value: ${args[i + 1]}`)
+        process.exit(1)
+      }
+      seed = n
       i++
     }
   }

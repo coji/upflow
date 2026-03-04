@@ -127,6 +127,14 @@ const RESPONSE_SCHEMA = {
   required: ['complexity', 'reason', 'risk_areas'],
 } as const
 
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 async function classifySinglePR(
   ai: GoogleGenAI,
   model: string,
@@ -143,17 +151,17 @@ async function classifySinglePR(
 
   const branchesTag =
     pr.sourceBranch && pr.targetBranch
-      ? `\n  <branches>${pr.sourceBranch} → ${pr.targetBranch}</branches>`
+      ? `\n  <branches>${escapeXml(pr.sourceBranch)} → ${escapeXml(pr.targetBranch)}</branches>`
       : ''
 
   const descriptionTag = pr.body
-    ? `\n  <description>${pr.body.slice(0, 2000)}</description>`
+    ? `\n  <description>${escapeXml(pr.body.slice(0, 2000))}</description>`
     : ''
 
   const prompt = `<pr>
   <number>${pr.number}</number>
-  <title>${pr.title}</title>
-  <author>${pr.author ?? 'unknown'}</author>${branchesTag}
+  <title>${escapeXml(pr.title)}</title>
+  <author>${escapeXml(pr.author ?? 'unknown')}</author>${branchesTag}
   <stats additions="${pr.additions ?? 0}" deletions="${pr.deletions ?? 0}" files="${pr.changedFiles ?? 0}" />${descriptionTag}
   <files>
 ${fileList}

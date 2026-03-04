@@ -190,6 +190,14 @@ export function prKey(pr: PRRecord): string {
 
 // ── prompt builder ─────────────────────────────────────────────────
 
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 function formatFileList(
   files: { path: string; additions: number; deletions: number }[] | undefined,
 ): string {
@@ -206,19 +214,19 @@ function formatFileList(
 export function buildPrompt(pr: PRRecord): string {
   const branchesTag =
     pr.source_branch && pr.target_branch
-      ? `\n  <branches>${pr.source_branch} → ${pr.target_branch}</branches>`
+      ? `\n  <branches>${escapeXml(pr.source_branch)} → ${escapeXml(pr.target_branch)}</branches>`
       : ''
 
   const descriptionTag = pr.body
-    ? `\n  <description>${pr.body.slice(0, 2000)}</description>`
+    ? `\n  <description>${escapeXml(pr.body.slice(0, 2000))}</description>`
     : ''
 
   const fileList = formatFileList(pr.files)
 
   return `<pr>
   <number>${pr.number}</number>
-  <title>${pr.title}</title>
-  <author>${pr.author ?? 'unknown'}</author>${branchesTag}
+  <title>${escapeXml(pr.title)}</title>
+  <author>${escapeXml(pr.author ?? 'unknown')}</author>${branchesTag}
   <stats additions="${pr.additions ?? 0}" deletions="${pr.deletions ?? 0}" files="${pr.changed_files ?? 0}" />${descriptionTag}
   <files>
 ${fileList}
