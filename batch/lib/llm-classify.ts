@@ -135,8 +135,10 @@ async function classifySinglePR(
   const fileList =
     pr.files.length > 0
       ? pr.files
+          .slice(0, 30)
           .map((f) => `  ${f.path} (+${f.additions}/-${f.deletions})`)
-          .join('\n')
+          .join('\n') +
+        (pr.files.length > 30 ? `\n  ... (${pr.files.length} files total)` : '')
       : '(no file list available)'
 
   const branchesTag =
@@ -230,7 +232,7 @@ export async function batchClassifyPRs(
 
   const ai = new GoogleGenAI({ apiKey })
   const model = options?.model ?? DEFAULT_MODEL
-  const concurrency = options?.concurrency ?? 5
+  const concurrency = Math.max(1, options?.concurrency ?? 5)
   const delayMs = options?.delayMs ?? 200
 
   const results = new Map<string, LLMClassification>()
