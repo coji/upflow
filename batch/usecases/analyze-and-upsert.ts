@@ -8,8 +8,8 @@ import {
   upsertPullRequestReview,
   upsertPullRequestReviewers,
 } from '~/batch/db'
+import { analyzeRepos } from '~/batch/github/analyze-repos'
 import { logger } from '~/batch/helper/logger'
-import type { Provider } from '~/batch/provider'
 import { classifyPullRequests } from './classify-pull-requests'
 
 /** analyzeAndUpsert に渡す organization の必須フィールド */
@@ -25,7 +25,6 @@ interface OrganizationForAnalyze {
 
 interface AnalyzeAndUpsertParams {
   organization: OrganizationForAnalyze
-  provider: Provider
 }
 
 /**
@@ -33,13 +32,12 @@ interface AnalyzeAndUpsertParams {
  */
 export async function analyzeAndUpsert({
   organization,
-  provider,
 }: AnalyzeAndUpsertParams) {
   const orgId = organization.id
 
   // 1. analyze
   logger.info('analyze started...', orgId)
-  const { pulls, reviews, reviewers, reviewResponses } = await provider.analyze(
+  const { pulls, reviews, reviewers, reviewResponses } = await analyzeRepos(
     orgId,
     organization.organizationSetting,
     organization.repositories,

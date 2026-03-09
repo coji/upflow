@@ -1,5 +1,7 @@
 import consola from 'consola'
-import { requireOrganizationWithProvider } from './helpers'
+import invariant from 'tiny-invariant'
+import { backfillRepo } from '~/batch/github/backfill-repo'
+import { requireOrganization } from './helpers'
 
 interface BackfillCommandProps {
   organizationId?: string
@@ -7,13 +9,16 @@ interface BackfillCommandProps {
 }
 
 export async function backfillCommand(props: BackfillCommandProps) {
-  const result = await requireOrganizationWithProvider(props.organizationId)
+  const result = await requireOrganization(props.organizationId)
   if (!result) return
 
-  const { orgId, organization, provider } = result
+  const { orgId, organization } = result
+  invariant(organization.integration, 'integration should related')
 
   for (const repository of organization.repositories) {
-    await provider.backfill(orgId, repository, { files: props.files })
+    await backfillRepo(orgId, repository, organization.integration, {
+      files: props.files,
+    })
   }
 
   consola.success('backfill completed. Run `upsert` to apply changes.')

@@ -13,7 +13,7 @@ import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
-import { createProvider } from '~/batch/provider'
+import { analyzeRepos } from '~/batch/github/analyze-repos'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
@@ -74,19 +74,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         )
       }
 
-      const provider = createProvider(organization.integration)
-      if (!provider) {
-        return data(
-          {
-            intent: 'recalculate' as const,
-            error: `Unknown provider: ${organization.integration.provider}`,
-          },
-          { status: 400 },
-        )
-      }
-
       try {
-        const { pulls, reviewResponses } = await provider.analyze(
+        const { pulls, reviewResponses } = await analyzeRepos(
           orgContext.id,
           organization.organizationSetting,
           organization.repositories,

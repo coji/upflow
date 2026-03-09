@@ -11,10 +11,10 @@ import {
   upsertPullRequestReview,
   upsertPullRequestReviewers,
 } from '~/batch/db/mutations'
-import { createFetcher } from '~/batch/provider/github/fetcher'
-import type { ShapedGitHubPullRequest } from '~/batch/provider/github/model'
-import { buildPullRequests } from '~/batch/provider/github/pullrequest'
-import { createStore } from '~/batch/provider/github/store'
+import { createFetcher } from '~/batch/github/fetcher'
+import type { ShapedGitHubPullRequest } from '~/batch/github/model'
+import { buildPullRequests } from '~/batch/github/pullrequest'
+import { createStore } from '~/batch/github/store'
 import type { Route } from './+types/index'
 import {
   getOrganizationSettings,

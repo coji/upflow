@@ -1,16 +1,16 @@
 import invariant from 'tiny-invariant'
 import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
-import { requireOrganizationWithProvider } from './helpers'
+import { requireOrganization } from './helpers'
 
 interface UpsertCommandProps {
   organizationId?: string
 }
 
 export async function upsertCommand({ organizationId }: UpsertCommandProps) {
-  const result = await requireOrganizationWithProvider(organizationId)
+  const result = await requireOrganization(organizationId)
   if (!result) return
 
-  const { orgId, organization, provider } = result
+  const { orgId, organization } = result
   invariant(
     organization.organizationSetting,
     'organization setting should related',
@@ -23,6 +23,5 @@ export async function upsertCommand({ organizationId }: UpsertCommandProps) {
       repositories: organization.repositories,
       exportSetting: organization.exportSetting,
     },
-    provider,
   })
 }

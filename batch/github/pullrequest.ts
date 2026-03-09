@@ -20,7 +20,12 @@ import type {
 } from './model'
 import { findReleaseDate } from './release-detect'
 import { analyzeReviewResponse } from './review-response'
-import type { PullRequestLoaders } from './types'
+import type {
+  AnalyzedReview,
+  AnalyzedReviewResponse,
+  AnalyzedReviewer,
+  PullRequestLoaders,
+} from './types'
 
 // デフォルトで除外するユーザー (GitHub API で [bot] 接尾辞なしで記録されるbot)
 const DEFAULT_EXCLUDED_USERS = ['Copilot']
@@ -186,27 +191,9 @@ export const buildPullRequests = async (
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
 
   const pulls: Selectable<TenantDB.PullRequests>[] = []
-  const reviews: {
-    id: string
-    pullRequestNumber: number
-    repositoryId: string
-    reviewer: string
-    state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
-    submittedAt: string
-    url: string
-  }[] = []
-  const reviewers: {
-    pullRequestNumber: number
-    repositoryId: string
-    reviewers: { login: string; requestedAt: string | null }[]
-  }[] = []
-  const reviewResponses: {
-    repo: string
-    number: string
-    author: string
-    createdAt: string
-    responseTime: number
-  }[] = []
+  const reviews: AnalyzedReview[] = []
+  const reviewers: AnalyzedReviewer[] = []
+  const reviewResponses: AnalyzedReviewResponse[] = []
 
   for (const pr of pullrequests) {
     try {

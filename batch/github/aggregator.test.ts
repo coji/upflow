@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { leastUpdatedPullRequest } from './aggregator'
+import { latestUpdatedPullRequest } from './aggregator'
 import type { ShapedGitHubPullRequest } from './model'
 
 describe('leastCreatedMergeRequest', () => {
@@ -30,7 +30,7 @@ describe('leastCreatedMergeRequest', () => {
   }
 
   test('should return a least updatedAt object', () => {
-    const ret = leastUpdatedPullRequest([
+    const ret = latestUpdatedPullRequest([
       { ...prototype, number: 1, updatedAt: '2022-01-01T00:00:0.0Z' },
       { ...prototype, number: 2, updatedAt: '2022-01-02T00:00:0.0Z' },
       { ...prototype, number: 3, updatedAt: '2022-01-01T00:00:0.0Z' },
@@ -40,7 +40,7 @@ describe('leastCreatedMergeRequest', () => {
 
   test('should returns null when empty array specified', () => {
     const subject: ShapedGitHubPullRequest[] = []
-    const ret = leastUpdatedPullRequest(subject)
+    const ret = latestUpdatedPullRequest(subject)
     expect(ret).toBeNull()
   })
 })

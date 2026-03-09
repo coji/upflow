@@ -2,8 +2,8 @@ import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { listAllOrganizations } from '~/batch/db'
+import { fetchRepo } from '~/batch/github/fetch-repo'
 import { logger } from '../helper/logger'
-import { createProvider } from '../provider'
 import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
 
 export const crawlJob = async () => {
@@ -26,17 +26,6 @@ export const crawlJob = async () => {
         continue
       }
 
-      const provider = createProvider(integration)
-      if (!provider) {
-        logger.error(
-          'provider cant detected',
-          organization.id,
-          organization.name,
-          integration.provider,
-        )
-        continue
-      }
-
       const orgId = organization.id as OrganizationId
 
       // refreshRequestedAt が設定されていれば full refresh
@@ -50,7 +39,7 @@ export const crawlJob = async () => {
       // fetch
       for (const repository of organization.repositories) {
         logger.info('fetch started...')
-        await provider.fetch(orgId, repository, options)
+        await fetchRepo(orgId, repository, integration, options)
         logger.info('fetch completed.')
       }
 
@@ -72,7 +61,6 @@ export const crawlJob = async () => {
           repositories: organization.repositories,
           exportSetting: organization.exportSetting,
         },
-        provider,
       })
     }
 
