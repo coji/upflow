@@ -40,6 +40,7 @@ export function FormDialog<T>(props: FormDialogProps<T>) {
     ...dialogProps
   } = props
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dialogProps is a spread rest object that changes every render
   const onClose = useCallback(() => dialogProps.onOpenChange(false), [])
   const { isSubmitting, FormComponent } = useFormDialogState({
     fetcher,

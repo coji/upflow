@@ -15,5 +15,9 @@ export async function requireOrganization(organizationId: string | undefined) {
   }
   const orgId = organizationId as OrganizationId
   const organization = await getOrganization(orgId)
+  if (!organization) {
+    consola.error(`Organization not found: ${organizationId}`)
+    return undefined
+  }
   return { orgId, organization }
 }
