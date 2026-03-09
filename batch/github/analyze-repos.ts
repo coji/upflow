@@ -22,10 +22,10 @@ export async function analyzeRepos(
     total: number
   }) => void,
 ) {
-  let allPulls: Selectable<TenantDB.PullRequests>[] = []
-  let allReviews: AnalyzedReview[] = []
-  let allReviewers: AnalyzedReviewer[] = []
-  let allReviewResponses: AnalyzedReviewResponse[] = []
+  const allPulls: Selectable<TenantDB.PullRequests>[] = []
+  const allReviews: AnalyzedReview[] = []
+  const allReviewers: AnalyzedReviewer[] = []
+  const allReviewResponses: AnalyzedReviewResponse[] = []
 
   const total = repositories.length
   let current = 0
@@ -57,10 +57,10 @@ export async function analyzeRepos(
         await store.loader.pullrequests(),
         store.loader,
       )
-    allPulls = [...allPulls, ...pulls]
-    allReviews = [...allReviews, ...reviews]
-    allReviewers = [...allReviewers, ...reviewers]
-    allReviewResponses = [...allReviewResponses, ...reviewResponses]
+    allPulls.push(...pulls)
+    allReviews.push(...reviews)
+    allReviewers.push(...reviewers)
+    allReviewResponses.push(...reviewResponses)
   }
   return {
     pulls: allPulls,

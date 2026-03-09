@@ -18,7 +18,11 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
 } from './model'
-import { findReleaseDate } from './release-detect'
+import {
+  buildBranchReleaseMap,
+  buildTagReleaseList,
+  findReleaseDateFromTags,
+} from './release-detect'
 import { analyzeReviewResponse } from './review-response'
 import type {
   AnalyzedReview,
@@ -190,6 +194,23 @@ export const buildPullRequests = async (
     .filter((u) => u.length > 0)
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
 
+  // リリース日ルックアップを事前構築（O(n²) → O(1) or O(log n) per PR）
+  let branchReleaseMap: Map<string, string> | null = null
+  let tagReleaseList: { committedAt: string }[] | null = null
+
+  if (config.releaseDetectionMethod === 'branch') {
+    branchReleaseMap = await buildBranchReleaseMap(
+      pullrequests,
+      loaders,
+      config.releaseDetectionKey,
+    )
+  } else if (config.releaseDetectionMethod === 'tags') {
+    tagReleaseList = await buildTagReleaseList(
+      loaders,
+      config.releaseDetectionKey,
+    )
+  }
+
   const pulls: Selectable<TenantDB.PullRequests>[] = []
   const reviews: AnalyzedReview[] = []
   const reviewers: AnalyzedReviewer[] = []
@@ -217,17 +238,15 @@ export const buildPullRequests = async (
       // 4. 日時計算（純粋関数）
       const dates = computeDates(pr, artifacts)
 
-      // 5. リリース日時計算（I/O を含む）
-      const releasedAt =
-        pr.mergedAt && pr.mergeCommitSha
-          ? await findReleaseDate(
-              pullrequests,
-              loaders,
-              pr,
-              config.releaseDetectionMethod,
-              config.releaseDetectionKey,
-            )
-          : null
+      // 5. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
+      let releasedAt: string | null = null
+      if (pr.mergedAt && pr.mergeCommitSha) {
+        if (branchReleaseMap) {
+          releasedAt = branchReleaseMap.get(pr.mergeCommitSha) ?? null
+        } else if (tagReleaseList) {
+          releasedAt = findReleaseDateFromTags(pr.mergedAt, tagReleaseList)
+        }
+      }
 
       // 6. PR 行データ生成（純粋関数）
       pulls.push(

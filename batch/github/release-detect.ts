@@ -1,107 +1,85 @@
 import * as R from 'remeda'
-import dayjs from '~/app/libs/dayjs'
 import { logger } from '~/batch/helper/logger'
 import type { ShapedGitHubPullRequest } from './model'
 import type { PullRequestLoaders } from './types'
 
-const mergedPullRequests = (
+/**
+ * ブランチ基準のリリース日ルックアップを事前構築する。
+ * mergeCommitSha → releasedAt のマップを返す。
+ */
+export async function buildBranchReleaseMap(
   allPullRequests: ShapedGitHubPullRequest[],
-  targetBranch: string,
-) => {
-  return R.pipe(
+  loaders: Pick<PullRequestLoaders, 'commits'>,
+  releaseBranch: string,
+): Promise<Map<string, string>> {
+  const releaseMap = new Map<string, string>()
+
+  // リリースブランチにマージされた PR を古い順に取得
+  const releasePrs = R.pipe(
     allPullRequests,
     R.filter(
       (pr) =>
-        pr.targetBranch === targetBranch &&
+        pr.targetBranch === releaseBranch &&
         pr.state === 'closed' &&
         pr.mergedAt !== null,
-    ), // 一旦mainブランチ固定
-    // biome-ignore lint/style/noNonNullAssertion: mergedAtはnullじゃないことが保証されている
+    ),
+    // biome-ignore lint/style/noNonNullAssertion: mergedAt is guaranteed non-null by filter above
     R.sortBy((pr) => pr.mergedAt!),
   )
-}
 
-/**
- * ブランチ基準でリリース日を探す
- * @param allPullRequests
- * @param loaders
- * @param pr
- * @param branch
- * @returns
- */
-const findReleaseDateByBranch = async (
-  allPullRequests: ShapedGitHubPullRequest[],
-  loaders: Pick<PullRequestLoaders, 'commits'>,
-  pr: ShapedGitHubPullRequest,
-  branch: string,
-) => {
-  for (const m of mergedPullRequests(allPullRequests, branch)) {
-    if (
-      (await loaders.commits(m.number)).some((c) => c.sha === pr.mergeCommitSha)
-    ) {
-      return m.mergedAt
+  for (const releasePr of releasePrs) {
+    const commits = await loaders.commits(releasePr.number)
+    for (const commit of commits) {
+      // 最初に見つかったリリース PR が最も早いリリース
+      if (!releaseMap.has(commit.sha)) {
+        // biome-ignore lint/style/noNonNullAssertion: mergedAt is guaranteed non-null by filter above
+        releaseMap.set(commit.sha, releasePr.mergedAt!)
+      }
     }
   }
-  return null
+
+  return releaseMap
 }
 
 /**
- * タグ基準でリリース日を探す
- * @param allPullRequests
- * @param loaders
- * @param pr
- * @param tagCondition
- * @returns
+ * タグ基準のリリース日ルックアップ用にソート済みタグリストを構築する。
  */
-const findReleaseDateByTag = async (
-  _allPullRequests: ShapedGitHubPullRequest[],
+export async function buildTagReleaseList(
   loaders: Pick<PullRequestLoaders, 'tags'>,
-  pr: ShapedGitHubPullRequest,
   tagCondition: string,
-) => {
-  if (pr.mergedAt === null) return null
-
+): Promise<{ committedAt: string }[]> {
   let tagRegexp: RegExp
   try {
     tagRegexp = new RegExp(tagCondition)
   } catch {
     logger.error(`Invalid tag regex pattern: ${tagCondition}`)
-    return null
+    return []
   }
-  const allReleaseTags = (await loaders.tags())
-    .filter((t) => tagRegexp.test(t.name)) // リリース用のタグを抽出
-    .sort((a, b) => dayjs(a.committedAt).unix() - dayjs(b.committedAt).unix()) // 古い順に並べる
 
-  for (const releaseTag of allReleaseTags) {
-    if (dayjs(pr.mergedAt).unix() <= dayjs(releaseTag.committedAt).unix()) {
-      return releaseTag.committedAt
-    }
-  }
-  return null
+  const allTags = await loaders.tags()
+  return allTags
+    .filter((t) => tagRegexp.test(t.name))
+    .sort((a, b) => a.committedAt.localeCompare(b.committedAt))
 }
 
-export const findReleaseDate = async (
-  allPullRequests: ShapedGitHubPullRequest[],
-  loaders: Pick<PullRequestLoaders, 'commits' | 'tags'>,
-  pr: ShapedGitHubPullRequest,
-  releaseDetectionMethod: string,
-  releaseDetectionKey: string,
-) => {
-  if (releaseDetectionMethod === 'branch') {
-    return await findReleaseDateByBranch(
-      allPullRequests,
-      loaders,
-      pr,
-      releaseDetectionKey,
-    )
+/**
+ * タグリストから PR のリリース日を O(log n) で検索する。
+ * sortedTags は committedAt 昇順。
+ */
+export function findReleaseDateFromTags(
+  mergedAt: string,
+  sortedTags: { committedAt: string }[],
+): string | null {
+  // mergedAt 以降の最初のタグを探す（二分探索）
+  let lo = 0
+  let hi = sortedTags.length
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1
+    if (sortedTags[mid].committedAt < mergedAt) {
+      lo = mid + 1
+    } else {
+      hi = mid
+    }
   }
-  if (releaseDetectionMethod === 'tags') {
-    return await findReleaseDateByTag(
-      allPullRequests,
-      loaders,
-      pr,
-      releaseDetectionKey,
-    )
-  }
-  return null
+  return lo < sortedTags.length ? sortedTags[lo].committedAt : null
 }

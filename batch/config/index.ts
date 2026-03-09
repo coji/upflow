@@ -25,8 +25,3 @@ export const allConfigs = async () => {
   })
   return configs
 }
-
-export const loadConfig = async (organizationId: OrganizationId) => {
-  const configs = await allConfigs()
-  return configs.find((config) => config.organizationId === organizationId)
-}

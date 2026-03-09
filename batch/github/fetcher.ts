@@ -1,6 +1,5 @@
 import { print } from 'graphql'
 import { Octokit } from 'octokit'
-import dayjs from '~/app/libs/dayjs'
 import { logger } from '~/batch/helper/logger'
 import { graphql, type ResultOf } from './graphql'
 import type {
@@ -739,7 +738,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     type PullRequestsResult = ResultOf<typeof GetPullRequestsQuery>
 
     const queryStr = print(GetPullRequestsQuery)
-    let allPulls: ShapedGitHubPullRequest[] = []
+    const allPulls: ShapedGitHubPullRequest[] = []
     let cursor: string | null = null
     let hasNextPage = true
     const pageSizeRef = { value: 100 }
@@ -814,37 +813,34 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           }
         }
 
-        allPulls = [
-          ...allPulls,
-          {
-            id: node.databaseId,
-            organization: owner,
-            repo,
-            number: node.number,
-            state,
-            title: node.title,
-            body: node.body ?? null,
-            url: node.url,
-            author: node.author?.login ?? null,
-            assignees:
-              node.assignees.nodes
-                ?.filter((n) => n != null)
-                .map((n) => n.login) ?? [],
-            reviewers,
-            draft: node.isDraft,
-            sourceBranch: node.headRefName,
-            targetBranch: node.baseRefName,
-            createdAt: node.createdAt,
-            updatedAt: node.updatedAt,
-            mergedAt: node.mergedAt ?? null,
-            closedAt: node.closedAt ?? null,
-            mergeCommitSha: node.mergeCommit?.oid ?? null,
-            additions: node.additions ?? null,
-            deletions: node.deletions ?? null,
-            changedFiles: node.changedFiles ?? null,
-            files: [],
-          },
-        ]
+        allPulls.push({
+          id: node.databaseId,
+          organization: owner,
+          repo,
+          number: node.number,
+          state,
+          title: node.title,
+          body: node.body ?? null,
+          url: node.url,
+          author: node.author?.login ?? null,
+          assignees:
+            node.assignees.nodes
+              ?.filter((n) => n != null)
+              .map((n) => n.login) ?? [],
+          reviewers,
+          draft: node.isDraft,
+          sourceBranch: node.headRefName,
+          targetBranch: node.baseRefName,
+          createdAt: node.createdAt,
+          updatedAt: node.updatedAt,
+          mergedAt: node.mergedAt ?? null,
+          closedAt: node.closedAt ?? null,
+          mergeCommitSha: node.mergeCommit?.oid ?? null,
+          additions: node.additions ?? null,
+          deletions: node.deletions ?? null,
+          changedFiles: node.changedFiles ?? null,
+          files: [],
+        })
       }
 
       hasNextPage = pullRequests.pageInfo.hasNextPage
@@ -858,7 +854,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     type CommitsResult = ResultOf<typeof GetPullRequestCommitsQuery>
 
     const queryStr = print(GetPullRequestCommitsQuery)
-    let allCommits: ShapedGitHubCommit[] = []
+    const allCommits: ShapedGitHubCommit[] = []
     let cursor: string | null = null
     let hasNextPage = true
 
@@ -875,15 +871,12 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         if (!node) continue
         const c = node.commit
 
-        allCommits = [
-          ...allCommits,
-          {
-            sha: c.oid,
-            url: c.commitUrl,
-            committer: c.committer?.user?.login ?? null,
-            date: c.committedDate,
-          },
-        ]
+        allCommits.push({
+          sha: c.oid,
+          url: c.commitUrl,
+          committer: c.committer?.user?.login ?? null,
+          date: c.committedDate,
+        })
       }
 
       hasNextPage = commits.pageInfo.hasNextPage
@@ -978,9 +971,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       | ShapedGitHubIssueComment
       | ShapedGitHubReviewComment
     )[]
-    allComments.sort(
-      (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
-    )
+    allComments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     return allComments
   }
 
@@ -988,7 +979,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     type ReviewsResult = ResultOf<typeof GetPullRequestReviewsQuery>
 
     const queryStr = print(GetPullRequestReviewsQuery)
-    let allReviews: ShapedGitHubReview[] = []
+    const allReviews: ShapedGitHubReview[] = []
     let cursor: string | null = null
     let hasNextPage = true
 
@@ -1004,17 +995,14 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
       for (const node of reviews.nodes) {
         if (!node || !node.databaseId) continue
 
-        allReviews = [
-          ...allReviews,
-          {
-            id: node.databaseId,
-            user: node.author?.login ?? null,
-            isBot: node.author?.__typename === 'Bot',
-            state: node.state,
-            url: node.url,
-            submittedAt: node.submittedAt ?? null,
-          },
-        ]
+        allReviews.push({
+          id: node.databaseId,
+          user: node.author?.login ?? null,
+          isBot: node.author?.__typename === 'Bot',
+          state: node.state,
+          url: node.url,
+          submittedAt: node.submittedAt ?? null,
+        })
       }
 
       hasNextPage = reviews.pageInfo.hasNextPage
@@ -1029,7 +1017,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
     type TagsResult = ResultOf<typeof GetTagsQuery>
 
     const queryStr = print(GetTagsQuery)
-    let allTags: ShapedGitHubTag[] = []
+    const allTags: ShapedGitHubTag[] = []
     let cursor: string | null = null
     let hasNextPage = true
 
@@ -1071,10 +1059,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         }
 
         if (committedDate) {
-          allTags = [
-            ...allTags,
-            { name: node.name, sha, committedAt: committedDate },
-          ]
+          allTags.push({ name: node.name, sha, committedAt: committedDate })
         }
       }
 
@@ -1275,9 +1260,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
         }
 
         // コメントを時系列でソート
-        prComments.sort(
-          (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
-        )
+        prComments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
         allResults.push({
           pr,

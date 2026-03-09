@@ -11,7 +11,10 @@ import { requireOrgAdmin } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
 import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
-import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
+import {
+  exportPulls,
+  exportReviewResponses,
+} from '~/batch/bizlogic/export-spreadsheet'
 import { getOrganization, upsertPullRequest } from '~/batch/db'
 import { analyzeRepos } from '~/batch/github/analyze-repos'
 import ContentSection from '../+components/content-section'
@@ -86,9 +89,11 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         }
 
         if (organization.exportSetting) {
-          const exporter = createSpreadsheetExporter(organization.exportSetting)
-          await exporter.exportPulls(pulls)
-          await exporter.exportReviewResponses(reviewResponses)
+          await exportPulls(organization.exportSetting, pulls)
+          await exportReviewResponses(
+            organization.exportSetting,
+            reviewResponses,
+          )
         }
 
         clearAllCache()
