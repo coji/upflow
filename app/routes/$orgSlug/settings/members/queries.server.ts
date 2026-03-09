@@ -1,5 +1,5 @@
 import { type SqlBool, sql } from 'kysely'
-import { escapeLike } from '~/app/libs/db-utils'
+import { calcPagination, escapeLike } from '~/app/libs/db-utils'
 import { db } from '~/app/services/db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -86,18 +86,13 @@ export const listFilteredMembers = async ({
     countQuery.executeTakeFirst(),
   ])
 
-  const totalItems = Number(countResult?.count ?? 0)
-  const totalPages = Math.ceil(totalItems / pageSize) || 1
-  const newCurrentPage = Math.min(currentPage, totalPages)
-
   return {
     data: rows,
-    pagination: {
-      currentPage: newCurrentPage,
+    pagination: calcPagination(
+      Number(countResult?.count ?? 0),
+      currentPage,
       pageSize,
-      totalPages,
-      totalItems,
-    },
+    ),
   }
 }
 

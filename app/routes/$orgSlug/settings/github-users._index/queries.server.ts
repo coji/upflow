@@ -1,5 +1,5 @@
 import { sql, type SqlBool } from 'kysely'
-import { escapeLike } from '~/app/libs/db-utils'
+import { calcPagination, escapeLike } from '~/app/libs/db-utils'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -37,8 +37,8 @@ export const listFilteredGithubUsers = async ({
     const pattern = `%${escapeLike(search)}%`
     query = query.where((eb) =>
       eb.or([
-        sql<SqlBool>`companyGithubUsers.login LIKE ${pattern} ESCAPE '\\'`,
-        sql<SqlBool>`companyGithubUsers.displayName LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`${sql.ref('companyGithubUsers.login')} LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`${sql.ref('companyGithubUsers.displayName')} LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
   }
@@ -55,14 +55,14 @@ export const listFilteredGithubUsers = async ({
     const pattern = `%${escapeLike(search)}%`
     countQuery = countQuery.where((eb) =>
       eb.or([
-        sql<SqlBool>`companyGithubUsers.login LIKE ${pattern} ESCAPE '\\'`,
-        sql<SqlBool>`companyGithubUsers.displayName LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`${sql.ref('companyGithubUsers.login')} LIKE ${pattern} ESCAPE '\\'`,
+        sql<SqlBool>`${sql.ref('companyGithubUsers.displayName')} LIKE ${pattern} ESCAPE '\\'`,
       ]),
     )
   }
 
   if (isActive !== undefined) {
-    countQuery = countQuery.where('isActive', '=', isActive)
+    countQuery = countQuery.where('companyGithubUsers.isActive', '=', isActive)
   }
 
   const sortFieldMap: Record<string, string> = {
@@ -82,18 +82,13 @@ export const listFilteredGithubUsers = async ({
     countQuery.executeTakeFirst(),
   ])
 
-  const totalItems = Number(countResult?.count ?? 0)
-  const totalPages = Math.ceil(totalItems / pageSize) || 1
-  const newCurrentPage = Math.min(currentPage, totalPages)
-
   return {
     data: rows,
-    pagination: {
-      currentPage: newCurrentPage,
+    pagination: calcPagination(
+      Number(countResult?.count ?? 0),
+      currentPage,
       pageSize,
-      totalPages,
-      totalItems,
-    },
+    ),
   }
 }
 
