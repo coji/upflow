@@ -38,7 +38,6 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
     ...actions
   } = props
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: actions is a spread rest object that changes every render
   const onClose = useCallback(() => actions.onOpenChange(false), [])
   const { isSubmitting, FormComponent } = useFormDialogState({
     fetcher,
