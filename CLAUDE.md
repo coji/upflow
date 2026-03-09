@@ -74,7 +74,6 @@ app/
 │   ├── db.server.ts                   # Kysely database client
 │   ├── tenant-db.server.ts            # Per-org tenant database
 │   ├── github-linking.server.ts       # GitHub login auto-linking to companyGithubUsers
-│   ├── organization-scope-plugin.ts   # Kysely plugin for org scoping
 │   └── type.ts                        # Generated Kysely types (from kysely-codegen)
 ├── components/            # React components
 │   └── ui/                # shadcn/ui components

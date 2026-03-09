@@ -47,6 +47,11 @@ export async function buildTagReleaseList(
   loaders: Pick<PullRequestLoaders, 'tags'>,
   tagCondition: string,
 ): Promise<{ committedAt: string }[]> {
+  if (tagCondition.length > 200) {
+    logger.error(`Tag regex pattern too long (${tagCondition.length} chars)`)
+    return []
+  }
+
   let tagRegexp: RegExp
   try {
     tagRegexp = new RegExp(tagCondition)
