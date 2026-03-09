@@ -5,8 +5,8 @@ import {
   createTenantDb,
   deleteTenantDb,
   getTenantDb,
-  type OrganizationId,
 } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const createOrganization = async ({
   organizationSlug,

@@ -1,8 +1,6 @@
 import { clearAllCache } from '~/app/services/cache.server'
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { listAllOrganizations } from '~/batch/db'
 import { logger } from '../helper/logger'
 import { createProvider } from '../provider'

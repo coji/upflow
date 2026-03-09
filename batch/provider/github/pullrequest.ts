@@ -1,7 +1,8 @@
 import type { Selectable } from 'kysely'
 import { first } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import {
   codingTime,
   deployTime,

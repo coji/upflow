@@ -4,9 +4,9 @@ import { db, sql, type DB, type Updateable } from '~/app/services/db.server'
 import {
   deleteTenantDb,
   getTenantDb,
-  type OrganizationId,
   type TenantDB,
 } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const updateOrganization = async (
   id: string,

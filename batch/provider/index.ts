@@ -1,6 +1,7 @@
 import type { Selectable } from 'kysely'
 import { match } from 'ts-pattern'
-import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { createGitHubProvider } from './github/provider'
 
 /** Provider が提供する機能の契約 */

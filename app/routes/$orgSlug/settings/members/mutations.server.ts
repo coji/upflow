@@ -1,5 +1,5 @@
 import { db } from '~/app/services/db.server'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const changeMemberRole = async (
   memberId: string,

@@ -26,13 +26,11 @@ import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { clearAllCache, getCachedData } from '~/app/services/cache.server'
 import ContentSection from '../+components/content-section'
 import { RepositoryItem, RepositoryList } from './+components'
+import { getRepositoriesByOwnerAndKeyword } from './+functions/get-repositories-by-owner-and-keyword'
+import { getUniqueOwners } from './+functions/get-unique-owners'
+import { addRepository } from './+functions/mutations.server'
+import { getIntegration } from './+functions/queries.server'
 import type { Route } from './+types/index'
-import {
-  addRepository,
-  getIntegration,
-  getRepositoriesByOwnerAndKeyword,
-  getUniqueOwners,
-} from './functions.server'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 

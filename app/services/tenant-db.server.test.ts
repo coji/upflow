@@ -17,7 +17,7 @@ vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 
 const { closeTenantDb, closeAllTenantDbs, deleteTenantDb, getTenantDb } =
   await import('./tenant-db.server')
-type OrganizationId = import('./tenant-db.server').OrganizationId
+type OrganizationId = import('~/app/types/organization').OrganizationId
 const toOrgId = (s: string) => s as OrganizationId
 
 function createTestTenantDb(orgId: string): string {

@@ -1,9 +1,6 @@
 import type { Insertable } from 'kysely'
-import {
-  getTenantDb,
-  type OrganizationId,
-  type TenantDB,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { logger } from '../helper/logger'
 import { timeFormatUTC } from '../helper/timeformat'
 

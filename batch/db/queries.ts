@@ -1,6 +1,6 @@
 import { db } from '~/app/services/db.server'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const getPullRequestReport = async (organizationId: OrganizationId) => {
   const tenantDb = getTenantDb(organizationId)

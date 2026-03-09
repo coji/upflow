@@ -21,7 +21,7 @@ vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 
 const { closeTenantDb } = await import('~/app/services/tenant-db.server')
-type OrganizationId = import('~/app/services/tenant-db.server').OrganizationId
+type OrganizationId = import('~/app/types/organization').OrganizationId
 const toOrgId = (s: string) => s as OrganizationId
 
 const { updateRepositoryTeam, bulkUpdateRepositoryTeam } =

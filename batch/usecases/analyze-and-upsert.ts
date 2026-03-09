@@ -1,9 +1,6 @@
 import { sql, type Selectable } from 'kysely'
-import {
-  getTenantDb,
-  type OrganizationId,
-  type TenantDB,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
 import {
   upsertCompanyGithubUsers,

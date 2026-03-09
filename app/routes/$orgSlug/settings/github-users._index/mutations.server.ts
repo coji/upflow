@@ -1,8 +1,6 @@
 import { db } from '~/app/services/db.server'
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const addGithubUser = async (params: {
   login: string

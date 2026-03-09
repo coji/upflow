@@ -9,12 +9,12 @@ import {
 import { execFileSync } from 'node:child_process'
 import { existsSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
+import type { OrganizationId } from '~/app/types/organization'
 import type * as TenantDB from './tenant-type'
 
 export type { TenantDB }
 
-/** Branded type for organization IDs to prevent mixing with arbitrary strings */
-export type OrganizationId = string & { readonly __brand: 'OrganizationId' }
+export type { OrganizationId } from '~/app/types/organization'
 
 const debug = createDebug('app:tenant-db')
 

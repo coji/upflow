@@ -213,12 +213,7 @@ All org-scoped routes live under `app/routes/$orgSlug/`. Key rules:
 
 Org-scoped tables (have `organizationId` column): `companyGithubUsers`, `exportSettings`, `integrations`, `invitations`, `members`, `organizationSettings`, `repositories`, `teams`
 
-**OrganizationScopePlugin** (`app/services/organization-scope-plugin.ts`): Kysely plugin that auto-injects `WHERE organization_id = ?` into SELECT/UPDATE/DELETE on scoped tables. Use for defense-in-depth:
-
-```typescript
-import { db, OrganizationScopePlugin } from '~/app/services/db.server'
-const scopedDb = db.withPlugin(new OrganizationScopePlugin(organization.id))
-```
+**Org scoping in queries**: There is no automatic plugin for org scoping. Every UPDATE/DELETE on org-scoped tables must manually include `WHERE organizationId = ?` with a server-derived value. Tenant-specific data lives in per-org SQLite databases accessed via `getTenantDb(organizationId)`.
 
 ### Source Code Reference
 

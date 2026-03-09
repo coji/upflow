@@ -1,10 +1,8 @@
 import { pipe, sortBy } from 'remeda'
+import { calculateBusinessHours } from '~/app/libs/business-hours'
 import dayjs from '~/app/libs/dayjs'
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
-import { calculateBusinessHours } from './utils'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const getMergedPullRequestReport = async (
   organizationId: OrganizationId,

@@ -1,9 +1,4 @@
-import consola from 'consola'
-import invariant from 'tiny-invariant'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
-import { getOrganization } from '~/batch/db'
-import { allConfigs } from '../config'
-import { createProvider } from '../provider'
+import { requireOrganizationWithProvider } from './helpers'
 
 interface FetchCommandProps {
   organizationId?: string
@@ -13,22 +8,10 @@ interface FetchCommandProps {
 }
 
 export async function fetchCommand(props: FetchCommandProps) {
-  if (!props.organizationId) {
-    consola.error('Error: organization id should specify')
-    consola.info(
-      (await allConfigs())
-        .map((o) => `${o.organizationName}\t${o.organizationId}`)
-        .join('\n'),
-    )
-    return
-  }
+  const result = await requireOrganizationWithProvider(props.organizationId)
+  if (!result) return
 
-  const orgId = props.organizationId as OrganizationId
-  const organization = await getOrganization(orgId)
-  invariant(organization.integration, 'integration should related')
-
-  const provider = createProvider(organization.integration)
-  invariant(provider, `unknown provider: ${organization.integration.provider}`)
+  const { orgId, organization, provider } = result
 
   const repositories = organization.repositories.filter((repo) => {
     return props.repositoryId

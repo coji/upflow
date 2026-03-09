@@ -1,7 +1,5 @@
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const listPullRequests = async (
   organizationId: OrganizationId,

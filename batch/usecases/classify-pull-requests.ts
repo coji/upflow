@@ -1,7 +1,5 @@
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { logger } from '~/batch/helper/logger'
 import { batchClassifyPRs } from '~/batch/lib/llm-classify'
 import type { ShapedGitHubPullRequest } from '~/batch/provider/github/model'
