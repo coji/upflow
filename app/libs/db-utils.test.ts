@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { escapeLike } from './db-utils'
+import { calcPagination, escapeLike } from './db-utils'
 
 describe('escapeLike', () => {
   it('returns plain strings unchanged', () => {
@@ -24,5 +24,34 @@ describe('escapeLike', () => {
 
   it('handles empty string', () => {
     expect(escapeLike('')).toBe('')
+  })
+})
+
+describe('calcPagination', () => {
+  it('calculates basic pagination', () => {
+    expect(calcPagination(100, 1, 10)).toEqual({
+      currentPage: 1,
+      pageSize: 10,
+      totalPages: 10,
+      totalItems: 100,
+    })
+  })
+
+  it('clamps currentPage to totalPages', () => {
+    expect(calcPagination(5, 3, 10)).toEqual({
+      currentPage: 1,
+      pageSize: 10,
+      totalPages: 1,
+      totalItems: 5,
+    })
+  })
+
+  it('returns 1 page for zero items', () => {
+    expect(calcPagination(0, 1, 10)).toEqual({
+      currentPage: 1,
+      pageSize: 10,
+      totalPages: 1,
+      totalItems: 0,
+    })
   })
 })
