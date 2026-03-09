@@ -1,9 +1,6 @@
 import type { Insertable } from 'kysely'
-import {
-  getTenantDb,
-  type OrganizationId,
-  type TenantDB,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { logger } from '../helper/logger'
 import { timeFormatUTC } from '../helper/timeformat'
 
@@ -78,6 +75,85 @@ export function upsertPullRequestReview(
       })),
     )
     .executeTakeFirst()
+}
+
+export async function batchUpsertPullRequests(
+  organizationId: OrganizationId,
+  rows: Insertable<TenantDB.PullRequests>[],
+  chunkSize = 50,
+) {
+  if (rows.length === 0) return
+  const tenantDb = getTenantDb(organizationId)
+
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize)
+    const values = chunk.map((data) => ({
+      ...data,
+      firstCommittedAt: timeFormatUTC(data.firstCommittedAt),
+      pullRequestCreatedAt: timeFormatUTC(data.pullRequestCreatedAt),
+      firstReviewedAt: timeFormatUTC(data.firstReviewedAt),
+      mergedAt: timeFormatUTC(data.mergedAt),
+      closedAt: timeFormatUTC(data.closedAt),
+      releasedAt: timeFormatUTC(data.releasedAt),
+      updatedAt: timeFormatUTC(data.updatedAt),
+    }))
+
+    await tenantDb
+      .insertInto('pullRequests')
+      .values(values)
+      .onConflict((oc) =>
+        oc.columns(['repositoryId', 'number']).doUpdateSet((eb) => ({
+          repo: eb.ref('excluded.repo'),
+          author: eb.ref('excluded.author'),
+          title: eb.ref('excluded.title'),
+          url: eb.ref('excluded.url'),
+          state: eb.ref('excluded.state'),
+          targetBranch: eb.ref('excluded.targetBranch'),
+          sourceBranch: eb.ref('excluded.sourceBranch'),
+          mergedAt: eb.ref('excluded.mergedAt'),
+          closedAt: eb.ref('excluded.closedAt'),
+          releasedAt: eb.ref('excluded.releasedAt'),
+          firstCommittedAt: eb.ref('excluded.firstCommittedAt'),
+          pullRequestCreatedAt: eb.ref('excluded.pullRequestCreatedAt'),
+          firstReviewedAt: eb.ref('excluded.firstReviewedAt'),
+          codingTime: eb.ref('excluded.codingTime'),
+          pickupTime: eb.ref('excluded.pickupTime'),
+          reviewTime: eb.ref('excluded.reviewTime'),
+          deployTime: eb.ref('excluded.deployTime'),
+          totalTime: eb.ref('excluded.totalTime'),
+          updatedAt: eb.ref('excluded.updatedAt'),
+          additions: eb.ref('excluded.additions'),
+          deletions: eb.ref('excluded.deletions'),
+          changedFiles: eb.ref('excluded.changedFiles'),
+        })),
+      )
+      .execute()
+  }
+}
+
+export async function batchUpsertPullRequestReviews(
+  organizationId: OrganizationId,
+  rows: Insertable<TenantDB.PullRequestReviews>[],
+  chunkSize = 100,
+) {
+  if (rows.length === 0) return
+  const tenantDb = getTenantDb(organizationId)
+
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize)
+    await tenantDb
+      .insertInto('pullRequestReviews')
+      .values(chunk)
+      .onConflict((oc) =>
+        oc.column('id').doUpdateSet((eb) => ({
+          state: eb.ref('excluded.state'),
+          url: eb.ref('excluded.url'),
+          reviewer: eb.ref('excluded.reviewer'),
+          submittedAt: eb.ref('excluded.submittedAt'),
+        })),
+      )
+      .execute()
+  }
 }
 
 export async function upsertPullRequestReviewers(

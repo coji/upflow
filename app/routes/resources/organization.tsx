@@ -11,7 +11,7 @@ import {
 } from '~/app/components/ui'
 import { requireUser } from '~/app/libs/auth.server'
 import { cn } from '~/app/libs/utils'
-import { listUserOrganizations } from '~/app/routes/resources/+organization/functions.server'
+import { listUserOrganizations } from '~/app/routes/resources/+organization/functions/queries.server'
 import { useCurrentOrganization } from '~/app/routes/resources/+organization/hooks/useCurrentOrganization'
 import type { Route } from './+types/organization'
 

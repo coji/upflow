@@ -21,8 +21,8 @@
     "plugins": [
       {
         "name": "gql.tada/ts-plugin",
-        "schema": "./batch/provider/github/schema.graphql",
-        "tadaOutputLocation": "./batch/provider/github/graphql-env.d.ts"
+        "schema": "./batch/github/schema.graphql",
+        "tadaOutputLocation": "./batch/github/graphql-env.d.ts"
       }
     ],
     "skipLibCheck": true,

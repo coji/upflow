@@ -1,7 +1,7 @@
 import { type SqlBool, sql } from 'kysely'
 import { escapeLike } from '~/app/libs/db-utils'
 import { db } from '~/app/services/db.server'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 interface ListFilteredMembersArgs {
   organizationId: OrganizationId

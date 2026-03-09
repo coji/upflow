@@ -14,7 +14,7 @@ vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 
 const { getTenantDb, closeTenantDb } =
   await import('~/app/services/tenant-db.server')
-type OrganizationId = import('~/app/services/tenant-db.server').OrganizationId
+type OrganizationId = import('~/app/types/organization').OrganizationId
 
 const { upsertCompanyGithubUsers } = await import('./mutations')
 

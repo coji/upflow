@@ -19,8 +19,8 @@ import dayjs from '~/app/libs/dayjs'
 import { listTeams } from '../settings/teams._index/queries.server'
 import { columns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
+import { getOngoingPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
-import { getOngoingPullRequestReport } from './functions.server'
 
 export const handle = {
   breadcrumb: () => ({

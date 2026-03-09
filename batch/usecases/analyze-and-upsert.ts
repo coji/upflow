@@ -1,18 +1,18 @@
 import { sql, type Selectable } from 'kysely'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import {
-  getTenantDb,
-  type OrganizationId,
-  type TenantDB,
-} from '~/app/services/tenant-db.server'
-import { createSpreadsheetExporter } from '~/batch/bizlogic/export-spreadsheet'
+  exportPulls,
+  exportReviewResponses,
+} from '~/batch/bizlogic/export-spreadsheet'
 import {
+  batchUpsertPullRequestReviews,
+  batchUpsertPullRequests,
   upsertCompanyGithubUsers,
-  upsertPullRequest,
-  upsertPullRequestReview,
   upsertPullRequestReviewers,
 } from '~/batch/db'
+import { analyzeRepos } from '~/batch/github/analyze-repos'
 import { logger } from '~/batch/helper/logger'
-import type { Provider } from '~/batch/provider'
 import { classifyPullRequests } from './classify-pull-requests'
 
 /** analyzeAndUpsert に渡す organization の必須フィールド */
@@ -28,7 +28,6 @@ interface OrganizationForAnalyze {
 
 interface AnalyzeAndUpsertParams {
   organization: OrganizationForAnalyze
-  provider: Provider
 }
 
 /**
@@ -36,13 +35,12 @@ interface AnalyzeAndUpsertParams {
  */
 export async function analyzeAndUpsert({
   organization,
-  provider,
 }: AnalyzeAndUpsertParams) {
   const orgId = organization.id
 
   // 1. analyze
   logger.info('analyze started...', orgId)
-  const { pulls, reviews, reviewers, reviewResponses } = await provider.analyze(
+  const { pulls, reviews, reviewers, reviewResponses } = await analyzeRepos(
     orgId,
     organization.organizationSetting,
     organization.repositories,
@@ -67,16 +65,23 @@ export async function analyzeAndUpsert({
 
   // 3. upsert pull requests
   logger.info('upsert started...', orgId)
-  for (const pr of pulls) {
-    await upsertPullRequest(orgId, pr)
-  }
+  await batchUpsertPullRequests(orgId, pulls)
   logger.info('upsert pull requests completed.', orgId)
 
   // 4. upsert reviews
   logger.info('upsert reviews started...', orgId)
-  for (const review of reviews) {
-    await upsertPullRequestReview(orgId, review)
-  }
+  await batchUpsertPullRequestReviews(
+    orgId,
+    reviews.map((r) => ({
+      id: r.id,
+      pullRequestNumber: r.pullRequestNumber,
+      repositoryId: r.repositoryId,
+      reviewer: r.reviewer,
+      state: r.state,
+      submittedAt: r.submittedAt,
+      url: r.url,
+    })),
+  )
   logger.info('upsert reviews completed.', orgId)
 
   // 5. upsert reviewers
@@ -98,9 +103,8 @@ export async function analyzeAndUpsert({
   if (organization.exportSetting) {
     try {
       logger.info('exporting to spreadsheet...', orgId)
-      const exporter = createSpreadsheetExporter(organization.exportSetting)
-      await exporter.exportPulls(pulls)
-      await exporter.exportReviewResponses(reviewResponses)
+      await exportPulls(organization.exportSetting, pulls)
+      await exportReviewResponses(organization.exportSetting, reviewResponses)
       logger.info('export to spreadsheet done.', orgId)
     } catch (e) {
       logger.error('export to spreadsheet failed.', orgId, e)

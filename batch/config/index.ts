@@ -1,4 +1,4 @@
-import type { OrganizationId } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { listAllOrganizations } from '~/batch/db'
 
 export interface Config {
@@ -24,9 +24,4 @@ export const allConfigs = async () => {
     } satisfies Config
   })
   return configs
-}
-
-export const loadConfig = async (organizationId: OrganizationId) => {
-  const configs = await allConfigs()
-  return configs.find((config) => config.organizationId === organizationId)
 }

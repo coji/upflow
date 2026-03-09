@@ -1,7 +1,6 @@
 import consola from 'consola'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
-import { allConfigs } from '../config'
 import { classifyPullRequests } from '../usecases/classify-pull-requests'
+import { requireOrganization } from './helpers'
 
 interface ClassifyCommandProps {
   organizationId?: string
@@ -14,17 +13,10 @@ export async function classifyCommand({
   force,
   limit,
 }: ClassifyCommandProps) {
-  if (!organizationId) {
-    consola.error('organization id required')
-    consola.info(
-      (await allConfigs())
-        .map((o) => `${o.organizationName}\t${o.organizationId}`)
-        .join('\n'),
-    )
-    return
-  }
+  const result = await requireOrganization(organizationId)
+  if (!result) return
 
-  const orgId = organizationId as OrganizationId
+  const { orgId } = result
   const flags = [
     force ? 'force' : null,
     limit ? `limit=${limit}` : null,

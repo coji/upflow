@@ -6,8 +6,8 @@
       "**",
       "!app/styles/globals.css",
       "!lab",
-      "!batch/provider/github/graphql-env.d.ts",
-      "!batch/provider/github/schema.graphql"
+      "!batch/github/graphql-env.d.ts",
+      "!batch/github/schema.graphql"
     ]
   },
   "vcs": {

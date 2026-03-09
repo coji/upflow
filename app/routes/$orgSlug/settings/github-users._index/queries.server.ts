@@ -1,9 +1,7 @@
 import { sql, type SqlBool } from 'kysely'
 import { escapeLike } from '~/app/libs/db-utils'
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 interface ListFilteredGithubUsersArgs {
   organizationId: OrganizationId

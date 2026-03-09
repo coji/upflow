@@ -1,9 +1,7 @@
 import { nanoid } from 'nanoid'
 import { sql } from '~/app/services/db.server'
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const addRepository = async (
   organizationId: OrganizationId,

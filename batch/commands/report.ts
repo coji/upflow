@@ -1,27 +1,17 @@
-import consola from 'consola'
 import invariant from 'tiny-invariant'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
-import { getOrganization, getPullRequestReport } from '~/batch/db'
-import { allConfigs } from '../config'
+import { getPullRequestReport } from '~/batch/db'
 import { timeFormatTz } from '../helper/timeformat'
+import { requireOrganization } from './helpers'
 
 interface reportCommandProps {
   organizationId?: string
 }
 
 export async function reportCommand({ organizationId }: reportCommandProps) {
-  if (!organizationId) {
-    consola.error('config should specified')
-    consola.info(
-      (await allConfigs())
-        .map((c) => `${c.organizationName}\t${c.organizationId}`)
-        .join('\n'),
-    )
-    return
-  }
+  const result = await requireOrganization(organizationId)
+  if (!result) return
 
-  const orgId = organizationId as OrganizationId
-  const organization = await getOrganization(orgId)
+  const { orgId, organization } = result
   invariant(organization.integration, 'integration should related')
 
   console.log(

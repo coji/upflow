@@ -1,10 +1,8 @@
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
+import type { ShapedGitHubPullRequest } from '~/batch/github/model'
 import { logger } from '~/batch/helper/logger'
 import { batchClassifyPRs } from '~/batch/lib/llm-classify'
-import type { ShapedGitHubPullRequest } from '~/batch/provider/github/model'
 
 /**
  * 未分類の PR を LLM で分類し、結果を DB に保存する。

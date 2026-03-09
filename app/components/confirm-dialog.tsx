@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { Form, useNavigation, type FetcherWithComponents } from 'react-router'
+import { useCallback } from 'react'
+import type { FetcherWithComponents } from 'react-router'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from '~/app/components/ui/alert-dialog'
 import { Button } from '~/app/components/ui/button'
+import { useFormDialogState } from '~/app/hooks/use-form-dialog-state'
 
 interface ConfirmDialogProps<T> {
   open: boolean
@@ -36,30 +37,12 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
     action,
     ...actions
   } = props
-  const navigation = useNavigation()
-  const didSubmitRef = useRef(false)
 
-  useEffect(() => {
-    if (fetcher?.state === 'submitting') {
-      didSubmitRef.current = true
-    }
-  }, [fetcher?.state])
-
-  useEffect(() => {
-    if (didSubmitRef.current && fetcher?.state === 'idle') {
-      const responseData = fetcher.data as Record<string, unknown> | undefined
-      if (responseData && !('error' in responseData)) {
-        actions.onOpenChange(false)
-      }
-      didSubmitRef.current = false
-    }
-  }, [fetcher?.state, fetcher?.data])
-
-  const isSubmitting = fetcher
-    ? fetcher.state !== 'idle'
-    : navigation.state !== 'idle'
-
-  const FormComponent = fetcher ? fetcher.Form : Form
+  const onClose = useCallback(() => actions.onOpenChange(false), [])
+  const { isSubmitting, FormComponent } = useFormDialogState({
+    fetcher,
+    onClose,
+  })
 
   return (
     <AlertDialog {...actions}>

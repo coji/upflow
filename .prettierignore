@@ -1,4 +1,4 @@
 pnpm-lock.yaml
 app/services/type.ts
-batch/provider/github/schema.graphql
-batch/provider/github/graphql-env.d.ts
+batch/github/schema.graphql
+batch/github/graphql-env.d.ts

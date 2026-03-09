@@ -1,36 +1,20 @@
-import consola from 'consola'
 import invariant from 'tiny-invariant'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
-import { getOrganization } from '~/batch/db'
-import { allConfigs } from '../config'
-import { createProvider } from '../provider/index'
 import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
+import { requireOrganization } from './helpers'
 
 interface UpsertCommandProps {
   organizationId?: string
 }
 
 export async function upsertCommand({ organizationId }: UpsertCommandProps) {
-  if (!organizationId) {
-    consola.error('config should specified')
-    consola.info(
-      (await allConfigs())
-        .map((o) => `${o.organizationName}\t${o.organizationId}`)
-        .join('\n'),
-    )
-    return
-  }
+  const result = await requireOrganization(organizationId)
+  if (!result) return
 
-  const orgId = organizationId as OrganizationId
-  const organization = await getOrganization(orgId)
-  invariant(organization.integration, 'integration should related')
+  const { orgId, organization } = result
   invariant(
     organization.organizationSetting,
     'organization setting should related',
   )
-
-  const provider = createProvider(organization.integration)
-  invariant(provider, `unknown provider ${organization.integration.provider}`)
 
   await analyzeAndUpsert({
     organization: {
@@ -39,6 +23,5 @@ export async function upsertCommand({ organizationId }: UpsertCommandProps) {
       repositories: organization.repositories,
       exportSetting: organization.exportSetting,
     },
-    provider,
   })
 }

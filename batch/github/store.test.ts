@@ -34,7 +34,7 @@ afterAll(() => {
 })
 
 const { closeTenantDb } = await import('~/app/services/tenant-db.server')
-type OrganizationId = import('~/app/services/tenant-db.server').OrganizationId
+type OrganizationId = import('~/app/types/organization').OrganizationId
 const { createStore } = await import('./store')
 
 const orgId = 'test-org' as OrganizationId

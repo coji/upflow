@@ -1,7 +1,8 @@
 import type { Selectable } from 'kysely'
 import { first } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
-import type { OrganizationId, TenantDB } from '~/app/services/tenant-db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import {
   codingTime,
   deployTime,
@@ -17,9 +18,18 @@ import type {
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
 } from './model'
-import { findReleaseDate } from './release-detect'
+import {
+  buildBranchReleaseMap,
+  buildTagReleaseList,
+  findReleaseDateFromTags,
+} from './release-detect'
 import { analyzeReviewResponse } from './review-response'
-import type { PullRequestLoaders } from './types'
+import type {
+  AnalyzedReview,
+  AnalyzedReviewResponse,
+  AnalyzedReviewer,
+  PullRequestLoaders,
+} from './types'
 
 // デフォルトで除外するユーザー (GitHub API で [bot] 接尾辞なしで記録されるbot)
 const DEFAULT_EXCLUDED_USERS = ['Copilot']
@@ -125,7 +135,7 @@ function buildPullRequestRow(
     number: pr.number,
     sourceBranch: pr.sourceBranch,
     targetBranch: pr.targetBranch,
-    state: pr.state === 'closed' && !!pr.mergedAt ? 'merged' : pr.state,
+    state: pr.state === 'closed' && pr.mergedAt ? 'merged' : pr.state,
     author: pr.author ?? '',
     title: pr.title,
     url: pr.url,
@@ -184,28 +194,27 @@ export const buildPullRequests = async (
     .filter((u) => u.length > 0)
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
 
+  // リリース日ルックアップを事前構築（O(n²) → O(1) or O(log n) per PR）
+  let branchReleaseMap: Map<string, string> | null = null
+  let tagReleaseList: { committedAt: string }[] | null = null
+
+  if (config.releaseDetectionMethod === 'branch') {
+    branchReleaseMap = await buildBranchReleaseMap(
+      pullrequests,
+      loaders,
+      config.releaseDetectionKey,
+    )
+  } else if (config.releaseDetectionMethod === 'tags') {
+    tagReleaseList = await buildTagReleaseList(
+      loaders,
+      config.releaseDetectionKey,
+    )
+  }
+
   const pulls: Selectable<TenantDB.PullRequests>[] = []
-  const reviews: {
-    id: string
-    pullRequestNumber: number
-    repositoryId: string
-    reviewer: string
-    state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
-    submittedAt: string
-    url: string
-  }[] = []
-  const reviewers: {
-    pullRequestNumber: number
-    repositoryId: string
-    reviewers: { login: string; requestedAt: string | null }[]
-  }[] = []
-  const reviewResponses: {
-    repo: string
-    number: string
-    author: string
-    createdAt: string
-    responseTime: number
-  }[] = []
+  const reviews: AnalyzedReview[] = []
+  const reviewers: AnalyzedReviewer[] = []
+  const reviewResponses: AnalyzedReviewResponse[] = []
 
   for (const pr of pullrequests) {
     try {
@@ -229,17 +238,15 @@ export const buildPullRequests = async (
       // 4. 日時計算（純粋関数）
       const dates = computeDates(pr, artifacts)
 
-      // 5. リリース日時計算（I/O を含む）
-      const releasedAt =
-        pr.mergedAt && pr.mergeCommitSha
-          ? await findReleaseDate(
-              pullrequests,
-              loaders,
-              pr,
-              config.releaseDetectionMethod,
-              config.releaseDetectionKey,
-            )
-          : null
+      // 5. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
+      let releasedAt: string | null = null
+      if (pr.mergedAt && pr.mergeCommitSha) {
+        if (branchReleaseMap) {
+          releasedAt = branchReleaseMap.get(pr.mergeCommitSha) ?? null
+        } else if (tagReleaseList) {
+          releasedAt = findReleaseDateFromTags(pr.mergedAt, tagReleaseList)
+        }
+      }
 
       // 6. PR 行データ生成（純粋関数）
       pulls.push(

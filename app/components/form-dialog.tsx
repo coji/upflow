@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { Form, useNavigation, type FetcherWithComponents } from 'react-router'
+import { useCallback } from 'react'
+import type { FetcherWithComponents } from 'react-router'
 import { Button } from '~/app/components/ui/button'
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/app/components/ui/dialog'
+import { useFormDialogState } from '~/app/hooks/use-form-dialog-state'
 import { cn } from '~/app/libs/utils'
 
 interface FormDialogProps<T> {
@@ -38,32 +39,12 @@ export function FormDialog<T>(props: FormDialogProps<T>) {
     action,
     ...dialogProps
   } = props
-  const navigation = useNavigation()
 
-  // Close only when fetcher completes successfully after our submission
-  const didSubmitRef = useRef(false)
-
-  useEffect(() => {
-    if (fetcher?.state === 'submitting') {
-      didSubmitRef.current = true
-    }
-  }, [fetcher?.state])
-
-  useEffect(() => {
-    if (didSubmitRef.current && fetcher?.state === 'idle') {
-      const responseData = fetcher.data as Record<string, unknown> | undefined
-      if (responseData && !('error' in responseData)) {
-        dialogProps.onOpenChange(false)
-      }
-      didSubmitRef.current = false
-    }
-  }, [fetcher?.state, fetcher?.data])
-
-  const isSubmitting = fetcher
-    ? fetcher.state === 'submitting'
-    : navigation.state === 'submitting'
-
-  const FormComponent = fetcher ? fetcher.Form : Form
+  const onClose = useCallback(() => dialogProps.onOpenChange(false), [])
+  const { isSubmitting, FormComponent } = useFormDialogState({
+    fetcher,
+    onClose,
+  })
 
   return (
     <Dialog {...dialogProps}>

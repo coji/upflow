@@ -1,8 +1,6 @@
 import { sql } from 'kysely'
-import {
-  getTenantDb,
-  type OrganizationId,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 /**
  * A. キュー履歴の生データ

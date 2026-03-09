@@ -30,5 +30,3 @@ export function getEndOfWeek(now = new Date(), timezone = 'Asia/Tokyo') {
   const startOfWeek = getStartOfWeek(now, timezone)
   return startOfWeek.add(7, 'day').subtract(1, 'second')
 }
-
-export { calculateBusinessHours } from '~/app/libs/business-hours'

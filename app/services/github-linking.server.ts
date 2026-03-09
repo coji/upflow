@@ -1,9 +1,7 @@
 import { nanoid } from 'nanoid'
 import { db } from '~/app/services/db.server'
-import {
-  type OrganizationId,
-  getTenantDb,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 /**
  * GitHub ログイン後の自動処理:

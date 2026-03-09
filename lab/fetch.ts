@@ -13,7 +13,7 @@ import consola from 'consola'
 import 'dotenv/config'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { OrganizationId } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization, listAllOrganizations } from '~/batch/db/queries'
 import { createGitHubClient } from './lib/github'
 

@@ -16,13 +16,13 @@ import {
 } from '~/app/components/ui/dropdown-menu'
 import WeeklyCalendar from '~/app/components/week-calendar'
 import { requireOrgMember } from '~/app/libs/auth.server'
+import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { listTeams } from '../settings/teams._index/queries.server'
 import { columns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
-import { getEndOfWeek, getStartOfWeek, parseDate } from './+functions/utils'
+import { getMergedPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
-import { getMergedPullRequestReport } from './functions.server'
 
 export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>

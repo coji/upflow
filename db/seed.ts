@@ -8,8 +8,8 @@ import {
   createTenantDb,
   getTenantDb,
   getTenantDbPath,
-  type OrganizationId,
 } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 async function seed() {
   // Clear existing shared data (child tables first for FK constraints)

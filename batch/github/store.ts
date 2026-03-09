@@ -1,7 +1,5 @@
-import {
-  type OrganizationId,
-  getTenantDb,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubPullRequest,

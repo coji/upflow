@@ -5,10 +5,8 @@ import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { db, dialect } from '~/app/services/db.server'
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
-import {
-  type OrganizationId,
-  getTenantDb,
-} from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
