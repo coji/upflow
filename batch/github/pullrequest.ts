@@ -135,7 +135,7 @@ function buildPullRequestRow(
     number: pr.number,
     sourceBranch: pr.sourceBranch,
     targetBranch: pr.targetBranch,
-    state: pr.state === 'closed' && !!pr.mergedAt ? 'merged' : pr.state,
+    state: pr.state === 'closed' && pr.mergedAt ? 'merged' : pr.state,
     author: pr.author ?? '',
     title: pr.title,
     url: pr.url,

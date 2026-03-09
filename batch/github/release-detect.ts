@@ -15,16 +15,16 @@ export async function buildBranchReleaseMap(
   const releaseMap = new Map<string, string>()
 
   // リリースブランチにマージされた PR を古い順に取得
+  type MergedPr = ShapedGitHubPullRequest & { mergedAt: string }
   const releasePrs = R.pipe(
     allPullRequests,
     R.filter(
-      (pr) =>
+      (pr): pr is MergedPr =>
         pr.targetBranch === releaseBranch &&
         pr.state === 'closed' &&
         pr.mergedAt !== null,
     ),
-    // biome-ignore lint/style/noNonNullAssertion: mergedAt is guaranteed non-null by filter above
-    R.sortBy((pr) => pr.mergedAt!),
+    R.sortBy((pr) => pr.mergedAt),
   )
 
   for (const releasePr of releasePrs) {
@@ -32,8 +32,7 @@ export async function buildBranchReleaseMap(
     for (const commit of commits) {
       // 最初に見つかったリリース PR が最も早いリリース
       if (!releaseMap.has(commit.sha)) {
-        // biome-ignore lint/style/noNonNullAssertion: mergedAt is guaranteed non-null by filter above
-        releaseMap.set(commit.sha, releasePr.mergedAt!)
+        releaseMap.set(commit.sha, releasePr.mergedAt)
       }
     }
   }
