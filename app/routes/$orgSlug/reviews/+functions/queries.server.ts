@@ -118,7 +118,6 @@ export const getWipCycleRawData = async (
     )
     .where('pullRequests.mergedAt', 'is not', null)
     .where('pullRequests.reviewTime', 'is not', null)
-
     .where('pullRequests.mergedAt', '>=', sinceDate)
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
@@ -163,7 +162,6 @@ export const getPRSizeDistribution = async (
       ),
     )
     .where('pullRequests.mergedAt', 'is not', null)
-
     .where('pullRequests.mergedAt', '>=', sinceDate)
     .where('pullRequests.additions', 'is not', null)
     .where('pullRequests.deletions', 'is not', null)

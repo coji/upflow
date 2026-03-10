@@ -33,7 +33,6 @@ export const getOngoingPullRequestReport = async (
     )
     .where('mergedAt', 'is', null)
     .where('state', '=', 'open')
-
     .orderBy('pullRequestCreatedAt', 'desc')
     .select([
       'pullRequests.author',
