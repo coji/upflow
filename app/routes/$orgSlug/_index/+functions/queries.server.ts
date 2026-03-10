@@ -30,6 +30,12 @@ export const getMergedPullRequestReport = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
+    .where((eb) =>
+      eb.or([
+        eb('companyGithubUsers.type', 'is', null),
+        eb('companyGithubUsers.type', '!=', 'Bot'),
+      ]),
+    )
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
     .select([

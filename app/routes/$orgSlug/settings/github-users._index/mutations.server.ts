@@ -41,6 +41,22 @@ export const updateGithubUser = async (params: {
     .execute()
 }
 
+export const updateGithubUserType = async (params: {
+  login: string
+  organizationId: OrganizationId
+  type: string | null
+}) => {
+  const tenantDb = getTenantDb(params.organizationId)
+  await tenantDb
+    .updateTable('companyGithubUsers')
+    .set({
+      type: params.type,
+      updatedAt: new Date().toISOString(),
+    })
+    .where('login', '=', params.login)
+    .execute()
+}
+
 export const deleteGithubUser = async (
   login: string,
   organizationId: OrganizationId,

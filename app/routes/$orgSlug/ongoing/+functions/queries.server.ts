@@ -33,6 +33,12 @@ export const getOngoingPullRequestReport = async (
     )
     .where('mergedAt', 'is', null)
     .where('state', '=', 'open')
+    .where((eb) =>
+      eb.or([
+        eb('companyGithubUsers.type', 'is', null),
+        eb('companyGithubUsers.type', '!=', 'Bot'),
+      ]),
+    )
     .orderBy('pullRequestCreatedAt', 'desc')
     .select([
       'pullRequests.author',

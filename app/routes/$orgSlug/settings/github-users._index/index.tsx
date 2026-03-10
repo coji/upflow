@@ -18,6 +18,7 @@ import {
   deleteGithubUser,
   toggleGithubUserActive,
   updateGithubUser,
+  updateGithubUserType,
 } from './mutations.server'
 import { listFilteredGithubUsers } from './queries.server'
 
@@ -97,6 +98,14 @@ const deleteSchema = z.object({
   login: z.string().min(1),
 })
 
+const updateTypeSchema = z.object({
+  login: z.string().min(1),
+  type: z.preprocess(
+    (v) => (v === '' ? null : v),
+    z.enum(['User', 'Bot']).nullable(),
+  ),
+})
+
 const toggleActiveSchema = z.object({
   login: z.string().min(1),
   isActive: z.coerce
@@ -136,6 +145,14 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }
+      return data({ ok: true })
+    })
+    .with('update-type', async () => {
+      const parsed = updateTypeSchema.parse({
+        login: formData.get('login'),
+        type: formData.get('type'),
+      })
+      await updateGithubUserType({ ...parsed, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('toggle-active', async () => {
