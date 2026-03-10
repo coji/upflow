@@ -44,7 +44,7 @@ export const updateGithubUser = async (params: {
 export const updateGithubUserType = async (params: {
   login: string
   organizationId: OrganizationId
-  type: string
+  type: string | null
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
   await tenantDb

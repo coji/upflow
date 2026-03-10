@@ -32,20 +32,21 @@ function UserTypeSelect({
 
   return (
     <Select
-      value={type ?? ''}
+      value={type ?? 'unset'}
       onValueChange={(value) => {
         const formData = new FormData()
         formData.set('intent', 'update-type')
         formData.set('login', login)
-        formData.set('type', value)
+        formData.set('type', value === 'unset' ? '' : value)
         fetcher.submit(formData, { method: 'post' })
       }}
       disabled={fetcher.state !== 'idle'}
     >
       <SelectTrigger className="h-8 w-24">
-        <SelectValue placeholder="-" />
+        <SelectValue />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value="unset">-</SelectItem>
         {USER_TYPES.map((t) => (
           <SelectItem key={t.value} value={t.value}>
             {t.label}
