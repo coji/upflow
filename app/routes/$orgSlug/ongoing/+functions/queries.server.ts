@@ -15,10 +15,12 @@ export const getOngoingPullRequestReport = async (
   const pullrequests = await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .leftJoin(
-      'companyGithubUsers',
-      'pullRequests.author',
-      'companyGithubUsers.login',
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequests.author']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
     )
     .$if(fromDateTime !== null, (qb) =>
       qb.where('pullRequestCreatedAt', '>=', fromDateTime),
@@ -31,7 +33,7 @@ export const getOngoingPullRequestReport = async (
     )
     .where('mergedAt', 'is', null)
     .where('state', '=', 'open')
-    .where('author', 'not like', '%[bot]')
+
     .orderBy('pullRequestCreatedAt', 'desc')
     .select([
       'pullRequests.author',

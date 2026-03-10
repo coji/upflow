@@ -16,10 +16,12 @@ export const getMergedPullRequestReport = async (
   const pullrequests = await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .leftJoin(
-      'companyGithubUsers',
-      'pullRequests.author',
-      'companyGithubUsers.login',
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequests.author']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
     )
     .$if(fromDateTime !== null, (qb) =>
       qb.where('mergedAt', '>=', fromDateTime),
@@ -28,7 +30,7 @@ export const getMergedPullRequestReport = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-    .where('author', 'not like', '%[bot]')
+
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
     .select([
