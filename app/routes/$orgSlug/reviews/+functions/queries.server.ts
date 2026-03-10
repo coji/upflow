@@ -109,14 +109,15 @@ export const getWipCycleRawData = async (
   return await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .leftJoin(
-      'companyGithubUsers',
-      'pullRequests.author',
-      'companyGithubUsers.login',
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequests.author']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
     )
     .where('pullRequests.mergedAt', 'is not', null)
     .where('pullRequests.reviewTime', 'is not', null)
-    .where('pullRequests.author', 'not like', '%[bot]')
     .where('pullRequests.mergedAt', '>=', sinceDate)
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
@@ -153,13 +154,14 @@ export const getPRSizeDistribution = async (
   return await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .leftJoin(
-      'companyGithubUsers',
-      'pullRequests.author',
-      'companyGithubUsers.login',
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequests.author']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
     )
     .where('pullRequests.mergedAt', 'is not', null)
-    .where('pullRequests.author', 'not like', '%[bot]')
     .where('pullRequests.mergedAt', '>=', sinceDate)
     .where('pullRequests.additions', 'is not', null)
     .where('pullRequests.deletions', 'is not', null)
