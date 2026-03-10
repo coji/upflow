@@ -30,6 +30,7 @@ export interface CompanyGithubUsers {
   displayName: string
   isActive: 0 | 1
   login: string
+  type: string | null
   updatedAt: string
   userId: string | null
 }

@@ -122,6 +122,12 @@ export const getWipCycleRawData = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
+    .where((eb) =>
+      eb.or([
+        eb('companyGithubUsers.type', 'is', null),
+        eb('companyGithubUsers.type', '!=', 'Bot'),
+      ]),
+    )
     .select([
       'pullRequests.author',
       'pullRequests.number',
@@ -167,6 +173,12 @@ export const getPRSizeDistribution = async (
     .where('pullRequests.deletions', 'is not', null)
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
+    )
+    .where((eb) =>
+      eb.or([
+        eb('companyGithubUsers.type', 'is', null),
+        eb('companyGithubUsers.type', '!=', 'Bot'),
+      ]),
     )
     .select([
       'pullRequests.number',

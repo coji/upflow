@@ -4,10 +4,57 @@ import { Link, useFetcher } from 'react-router'
 import { EditableCell } from '~/app/components/editable-cell'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Badge } from '~/app/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/app/components/ui/select'
 import dayjs from '~/app/libs/dayjs'
 import type { GithubUserRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { GithubUserRowActions } from './github-user-row-actions'
+
+const USER_TYPES = [
+  { value: 'User', label: 'User' },
+  { value: 'Bot', label: 'Bot' },
+] as const
+
+function UserTypeSelect({
+  login,
+  type,
+}: {
+  login: string
+  type: string | null
+}) {
+  const fetcher = useFetcher()
+
+  return (
+    <Select
+      value={type ?? ''}
+      onValueChange={(value) => {
+        const formData = new FormData()
+        formData.set('intent', 'update-type')
+        formData.set('login', login)
+        formData.set('type', value)
+        fetcher.submit(formData, { method: 'post' })
+      }}
+      disabled={fetcher.state !== 'idle'}
+    >
+      <SelectTrigger className="h-8 w-24">
+        <SelectValue placeholder="-" />
+      </SelectTrigger>
+      <SelectContent>
+        {USER_TYPES.map((t) => (
+          <SelectItem key={t.value} value={t.value}>
+            {t.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
 
 function EditableDisplayName({
   login,
@@ -73,6 +120,15 @@ export const columns: ColumnDef<GithubUserRow>[] = [
         login={row.original.login}
         displayName={row.getValue('displayName')}
       />
+    ),
+  },
+  {
+    accessorKey: 'type',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Type" />
+    ),
+    cell: ({ row }) => (
+      <UserTypeSelect login={row.original.login} type={row.original.type} />
     ),
   },
   {

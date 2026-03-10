@@ -29,6 +29,7 @@ export const listFilteredGithubUsers = async ({
     .select([
       'companyGithubUsers.login',
       'companyGithubUsers.displayName',
+      'companyGithubUsers.type',
       'companyGithubUsers.isActive',
       'companyGithubUsers.createdAt',
     ])
@@ -68,6 +69,7 @@ export const listFilteredGithubUsers = async ({
   const sortFieldMap: Record<string, string> = {
     login: 'companyGithubUsers.login',
     displayName: 'companyGithubUsers.displayName',
+    type: 'companyGithubUsers.type',
     isActive: 'companyGithubUsers.isActive',
     createdAt: 'companyGithubUsers.createdAt',
   }
