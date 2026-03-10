@@ -16,6 +16,7 @@ import type { GithubUserRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { GithubUserRowActions } from './github-user-row-actions'
 
+const UNSET_VALUE = '__none__' as const
 const USER_TYPES = [
   { value: 'User', label: 'User' },
   { value: 'Bot', label: 'Bot' },
@@ -32,12 +33,12 @@ function UserTypeSelect({
 
   return (
     <Select
-      value={type ?? 'unset'}
+      value={type ?? UNSET_VALUE}
       onValueChange={(value) => {
         const formData = new FormData()
         formData.set('intent', 'update-type')
         formData.set('login', login)
-        formData.set('type', value === 'unset' ? '' : value)
+        formData.set('type', value === UNSET_VALUE ? '' : value)
         fetcher.submit(formData, { method: 'post' })
       }}
       disabled={fetcher.state !== 'idle'}
@@ -46,7 +47,7 @@ function UserTypeSelect({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="unset">-</SelectItem>
+        <SelectItem value={UNSET_VALUE}>-</SelectItem>
         {USER_TYPES.map((t) => (
           <SelectItem key={t.value} value={t.value}>
             {t.label}

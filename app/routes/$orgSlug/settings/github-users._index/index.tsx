@@ -100,7 +100,10 @@ const deleteSchema = z.object({
 
 const updateTypeSchema = z.object({
   login: z.string().min(1),
-  type: z.enum(['User', 'Bot', '']).transform((v) => (v === '' ? null : v)),
+  type: z.preprocess(
+    (v) => (v === '' ? null : v),
+    z.enum(['User', 'Bot']).nullable(),
+  ),
 })
 
 const toggleActiveSchema = z.object({
