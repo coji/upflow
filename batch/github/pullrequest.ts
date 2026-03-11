@@ -196,6 +196,7 @@ export const buildPullRequests = async (
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
 
   // リリース日ルックアップを事前構築（O(n²) → O(1) or O(log n) per PR）
+  // 注: filterPrNumbers に関係なく全 PR から構築する（リリースPR自体がフィルタ外でも必要）
   let branchReleaseMap: Map<string, string> | null = null
   let tagReleaseList: { committedAt: string }[] | null = null
 

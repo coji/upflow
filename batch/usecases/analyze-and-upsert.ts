@@ -12,6 +12,7 @@ import {
   upsertPullRequestReviewers,
 } from '~/batch/db'
 import { analyzeRepos } from '~/batch/github/analyze-repos'
+import type { UpdatedPrNumbersMap } from '~/batch/github/types'
 import { logger } from '~/batch/helper/logger'
 import { classifyPullRequests } from './classify-pull-requests'
 
@@ -28,8 +29,7 @@ interface OrganizationForAnalyze {
 
 interface AnalyzeAndUpsertParams {
   organization: OrganizationForAnalyze
-  /** リポジトリID → 更新PR番号セット。undefined なら全件処理 */
-  updatedPrNumbers?: Map<string, Set<number>>
+  updatedPrNumbers?: UpdatedPrNumbersMap
 }
 
 /**
@@ -47,8 +47,7 @@ export async function analyzeAndUpsert({
     orgId,
     organization.organizationSetting,
     organization.repositories,
-    undefined,
-    updatedPrNumbers,
+    { updatedPrNumbers },
   )
   logger.info('analyze completed.', orgId)
 

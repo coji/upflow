@@ -12,7 +12,7 @@ export async function fetchRepo(
   repository: Selectable<TenantDB.Repositories>,
   integration: Pick<Selectable<TenantDB.Integrations>, 'privateToken'>,
   options: { refresh?: boolean; halt?: boolean } = {},
-): Promise<{ updatedPrNumbers: number[] }> {
+): Promise<{ updatedPrNumbers: Set<number> }> {
   const { refresh = false, halt = false } = options
   invariant(repository.repo, 'repo not specified')
   invariant(repository.owner, 'owner not specified')
@@ -39,7 +39,7 @@ export async function fetchRepo(
 
   if (halt) {
     logger.fatal('halted')
-    return { updatedPrNumbers: [] }
+    return { updatedPrNumbers: new Set() }
   }
 
   // 全タグ情報をダウンロード
@@ -55,7 +55,7 @@ export async function fetchRepo(
   const allPullRequests = await fetcher.pullrequests()
   logger.info(`fetched ${allPullRequests.length} PRs.`)
 
-  const updatedPrNumbers: number[] = []
+  const updatedPrNumbers = new Set<number>()
   let processed = 0
   for (const pr of allPullRequests) {
     if (halt) {
@@ -93,7 +93,7 @@ export async function fetchRepo(
         discussions,
         timelineItems,
       })
-      updatedPrNumbers.push(pr.number)
+      updatedPrNumbers.add(pr.number)
     } catch (e) {
       logger.warn(
         `${pr.number} failed, skipping:`,

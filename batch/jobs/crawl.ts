@@ -3,6 +3,7 @@ import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { listAllOrganizations } from '~/batch/db'
 import { fetchRepo } from '~/batch/github/fetch-repo'
+import type { UpdatedPrNumbersMap } from '~/batch/github/types'
 import { logger } from '../helper/logger'
 import { analyzeAndUpsert } from '../usecases/analyze-and-upsert'
 
@@ -37,14 +38,12 @@ export const crawlJob = async () => {
       const options = { refresh, halt: false }
 
       // fetch — 更新PR番号を収集
-      const updatedPrNumbers = new Map<string, Set<number>>()
+      const updatedPrNumbers: UpdatedPrNumbersMap = new Map()
       for (const repository of organization.repositories) {
-        logger.info('fetch started...')
         const result = await fetchRepo(orgId, repository, integration, options)
-        if (result.updatedPrNumbers.length > 0) {
-          updatedPrNumbers.set(repository.id, new Set(result.updatedPrNumbers))
+        if (result.updatedPrNumbers.size > 0) {
+          updatedPrNumbers.set(repository.id, result.updatedPrNumbers)
         }
-        logger.info('fetch completed.')
       }
 
       // refresh フラグを消費
