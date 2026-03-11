@@ -42,6 +42,14 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     return data({ error: 'Pull request not found' }, { status: 404 })
   }
 
+  // Resolve display name: prefer GitHub displayName/login over auth user.name
+  const githubUser = await tenantDb
+    .selectFrom('companyGithubUsers')
+    .select(['displayName', 'login'])
+    .where('userId', '=', user.id)
+    .executeTakeFirst()
+  const feedbackBy = githubUser?.displayName || githubUser?.login || user.name
+
   // Upsert feedback
   const now = new Date().toISOString()
   await tenantDb
@@ -52,7 +60,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       originalComplexity: pr.complexity,
       correctedComplexity,
       reason: reason ?? null,
-      feedbackBy: user.name,
+      feedbackBy,
       createdAt: now,
       updatedAt: now,
     })
@@ -60,7 +68,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       oc.columns(['pullRequestNumber', 'repositoryId']).doUpdateSet({
         correctedComplexity,
         reason: reason ?? null,
-        feedbackBy: user.name,
+        feedbackBy,
         updatedAt: now,
       }),
     )
