@@ -23,7 +23,9 @@ import {
   type PRSizeLabel,
 } from '../reviews/+functions/classify'
 
-function parseRiskAreas(raw: string): string[] {
+function parseRiskAreas(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map(String)
+  if (typeof raw !== 'string') return []
   try {
     const parsed = JSON.parse(raw)
     if (Array.isArray(parsed)) return parsed.map(String)
