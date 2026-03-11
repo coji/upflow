@@ -181,6 +181,11 @@ PR を XS〜XL に分類する。Decision procedure（5 ステップ）とレベ
    - 認証ロジック 10 行の変更が S に分類されるリスク
 3. **影響範囲の軸が弱い**
    - Decision procedure の Step 3 は「how many distinct concerns」だが、コンポーネント間の依存や波及範囲への言及がない
+4. **`risk_areas` が未定義で自由記述になっている**
+   - スキーマ定義が `'Risk areas (e.g. "auth", "DB migration", "payment")'` のみ
+   - 実際の出力: `deployment`(249件), `release management`(107件), `CI/CD pipeline`(69件) など本来リスクでないものが大量に付与
+   - `DB migration`(45件) や `external API integration`(18件) など本当に重要なものがノイズに埋もれる
+   - 改善案: リスク領域を閉じたリストに限定（`auth`, `DB schema/migration`, `payment/billing`, `security`, `external API`）し、該当なしは空配列を許可
 
 ### フィードバック理由ドラフトプロンプト (`app/routes/$orgSlug/draft-feedback-reason.ts`)
 
@@ -191,6 +196,7 @@ PR を XS〜XL に分類する。Decision procedure（5 ステップ）とレベ
 ### 改善方針（残課題）
 
 - 分類プロンプトから行数目安を削除し、判断フローにリスク領域ステップを追加
+- `risk_areas` を閉じたリスト（enum）に変更し、Decision procedure に「リスク領域なら最低 L」ステップを追加
 - docs の「PR サイズ定義」を Single Source of Truth とし、分類プロンプトにも反映
 - 将来的には Phase 2 で蓄積されたフィードバックも定義の改善に活用する
 
