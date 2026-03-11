@@ -24,6 +24,7 @@ const wipRow = (
     complexity: string | null
     complexityReason: string | null
     riskAreas: string | null
+    correctedComplexity: string | null
   }>,
 ) => ({
   author: 'alice',
@@ -41,6 +42,7 @@ const wipRow = (
   complexity: null as string | null,
   complexityReason: null as string | null,
   riskAreas: null as string | null,
+  correctedComplexity: null as string | null,
   ...overrides,
 })
 
@@ -58,6 +60,7 @@ const sizeRow = (
     complexity: string | null
     complexityReason: string | null
     riskAreas: string | null
+    correctedComplexity: string | null
   }>,
 ) => ({
   number: 1,
@@ -72,6 +75,7 @@ const sizeRow = (
   complexity: null as string | null,
   complexityReason: null as string | null,
   riskAreas: null as string | null,
+  correctedComplexity: null as string | null,
   ...overrides,
 })
 
