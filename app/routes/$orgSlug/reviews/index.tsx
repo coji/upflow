@@ -26,6 +26,7 @@ import {
   aggregatePRSize,
   aggregateWeeklyQueueTrend,
   aggregateWipCycle,
+  computeWipCounts,
   computeWipLabels,
 } from './+functions/aggregate'
 import {
@@ -100,6 +101,8 @@ export const clientLoader = async ({
     periodMonths,
   } = await serverLoader()
 
+  const wipCounts = computeWipCounts(wipCycleRaw)
+
   return {
     teams,
     queueTrend: aggregateWeeklyQueueTrend(
@@ -108,8 +111,8 @@ export const clientLoader = async ({
       ),
       sinceDate,
     ),
-    wipCycle: aggregateWipCycle(wipCycleRaw),
-    wipCycleLabeled: computeWipLabels(wipCycleRaw),
+    wipCycle: aggregateWipCycle(wipCycleRaw, wipCounts),
+    wipCycleLabeled: computeWipLabels(wipCycleRaw, wipCounts),
     prSizes: aggregatePRSize(prSizesRaw),
     prSizesRaw,
     periodMonths,

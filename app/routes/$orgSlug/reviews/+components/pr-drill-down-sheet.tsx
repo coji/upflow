@@ -8,22 +8,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/app/components/ui/sheet'
+import { parseRiskAreas } from '../+functions/classify'
 import { SizeBadge } from '../../+components/size-badge'
-
-function parseRiskAreas(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw.map(String)
-  if (typeof raw !== 'string') return []
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed.map(String)
-  } catch {
-    // not JSON — split by comma
-  }
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-}
 
 export interface DrillDownPR {
   number: number

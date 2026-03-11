@@ -134,6 +134,93 @@ describe('computeWipLabels', () => {
     expect(result.every((r) => r.wipLabel)).toBe(true)
   })
 
+  test('counts concurrent PRs correctly per author', () => {
+    // alice: PR1 open 01/01-01/10, PR2 open 01/03-01/05, PR3 open 01/04-01/08
+    // PR1 created first → WIP 0 (no other open PRs)
+    // PR2 created 01/03 → WIP 1 (PR1 still open)
+    // PR3 created 01/04 → WIP 2 (PR1 + PR2 still open)
+    const data = [
+      wipRow({
+        number: 1,
+        author: 'alice',
+        pullRequestCreatedAt: '2024-01-01T00:00:00Z',
+        mergedAt: '2024-01-10T00:00:00Z',
+        reviewTime: 1,
+      }),
+      wipRow({
+        number: 2,
+        author: 'alice',
+        pullRequestCreatedAt: '2024-01-03T00:00:00Z',
+        mergedAt: '2024-01-05T00:00:00Z',
+        reviewTime: 1,
+      }),
+      wipRow({
+        number: 3,
+        author: 'alice',
+        pullRequestCreatedAt: '2024-01-04T00:00:00Z',
+        mergedAt: '2024-01-08T00:00:00Z',
+        reviewTime: 1,
+      }),
+    ]
+
+    const result = computeWipLabels(data)
+    const labels = result.map((r) => [r.number, r.wipLabel])
+    expect(labels).toEqual([
+      [1, 'WIP 0-1'],
+      [2, 'WIP 0-1'],
+      [3, 'WIP 2'],
+    ])
+  })
+
+  test('does not count other authors PRs', () => {
+    const data = [
+      wipRow({
+        number: 1,
+        author: 'alice',
+        pullRequestCreatedAt: '2024-01-01T00:00:00Z',
+        mergedAt: '2024-01-10T00:00:00Z',
+        reviewTime: 1,
+      }),
+      wipRow({
+        number: 2,
+        author: 'bob',
+        pullRequestCreatedAt: '2024-01-02T00:00:00Z',
+        mergedAt: '2024-01-05T00:00:00Z',
+        reviewTime: 1,
+      }),
+    ]
+
+    const result = computeWipLabels(data)
+    // Both should be WIP 0-1 since they are different authors
+    expect(result.every((r) => r.wipLabel === 'WIP 0-1')).toBe(true)
+  })
+
+  test('handles unmerged PRs as still open', () => {
+    const data = [
+      wipRow({
+        number: 1,
+        author: 'alice',
+        pullRequestCreatedAt: '2024-01-01T00:00:00Z',
+        mergedAt: null,
+        reviewTime: 1,
+      }),
+      wipRow({
+        number: 2,
+        author: 'alice',
+        pullRequestCreatedAt: '2024-01-05T00:00:00Z',
+        mergedAt: '2024-01-08T00:00:00Z',
+        reviewTime: 1,
+      }),
+    ]
+
+    const result = computeWipLabels(data)
+    const labels = result.map((r) => [r.number, r.wipLabel])
+    expect(labels).toEqual([
+      [1, 'WIP 0-1'],
+      [2, 'WIP 0-1'], // PR1 is unmerged but was created before PR2
+    ])
+  })
+
   test('skips PRs with null reviewTime', () => {
     const data = [wipRow({ reviewTime: null })]
     const result = computeWipLabels(data)

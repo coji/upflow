@@ -19,24 +19,10 @@ import {
   PR_SIZE_LABELS,
   PR_SIZE_STYLE,
   getPRComplexity,
+  parseRiskAreas,
   type PRSize,
   type PRSizeLabel,
 } from '../reviews/+functions/classify'
-
-function parseRiskAreas(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw.map(String)
-  if (typeof raw !== 'string') return []
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed.map(String)
-  } catch {
-    // not JSON — split by comma
-  }
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-}
 
 interface SizeBadgePopoverProps {
   complexity: string | null
