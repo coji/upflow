@@ -130,9 +130,10 @@ export const createStore = ({
   // --- preload 系 (analyze 用の一括ロード) ---
 
   // Lazy parsing: raw strings are stored on preload, parsed on access
-  let preloaded: Map<number, RawRow> | null = null
-  // Cache parsed rows to avoid re-parsing
-  let parsedCache: Map<number, ParsedRow> | null = null
+  let cache: {
+    raw: Map<number, RawRow>
+    parsed: Map<number, ParsedRow>
+  } | null = null
 
   const preloadAll = () => {
     // Use raw better-sqlite3 to bypass ParseJSONResultsPlugin
@@ -146,36 +147,28 @@ export const createStore = ({
       )
       .all(repositoryId) as Array<RawRow & { pull_request_number: number }>
 
-    preloaded = new Map(
-      rows.map((row) => [
-        row.pull_request_number,
-        {
-          pull_request: row.pull_request,
-          commits: row.commits,
-          reviews: row.reviews,
-          discussions: row.discussions,
-          timeline_items: row.timeline_items,
-        },
-      ]),
-    )
-    parsedCache = new Map()
+    cache = {
+      raw: new Map(rows.map((row) => [row.pull_request_number, row])),
+      parsed: new Map(),
+    }
   }
 
   // --- loader 系 ---
 
-  const loadRow = async (number: number) => {
-    if (preloaded) {
-      // Check parsed cache first
-      const cached = parsedCache?.get(number)
-      if (cached) return cached
+  /** Parse and cache a single row from the preloaded data */
+  const getParsedRow = (number: number): ParsedRow | null => {
+    if (!cache) return null
+    const cached = cache.parsed.get(number)
+    if (cached) return cached
+    const raw = cache.raw.get(number)
+    if (!raw) return null
+    const parsed = parseRawRow(raw)
+    cache.parsed.set(number, parsed)
+    return parsed
+  }
 
-      const raw = preloaded.get(number)
-      if (!raw) return null
-
-      const parsed = parseRawRow(raw)
-      parsedCache?.set(number, parsed)
-      return parsed
-    }
+  const loadRow = async (number: number): Promise<ParsedRow | null> => {
+    if (cache) return getParsedRow(number)
     const row = await db
       .selectFrom('githubRawData')
       .select([
@@ -221,11 +214,12 @@ export const createStore = ({
   }
 
   const pullrequests = async (): Promise<ShapedGitHubPullRequest[]> => {
-    if (preloaded) {
-      // Only parse pullRequest field, not commits/reviews/etc.
-      return [...preloaded.values()].map(
-        (raw) => JSON.parse(raw.pull_request) as ShapedGitHubPullRequest,
-      )
+    if (cache) {
+      // Route through parsed cache to avoid double-parsing when loadRow is called later
+      return [...cache.raw.keys()].flatMap((number) => {
+        const row = getParsedRow(number)
+        return row ? [row.pullRequest] : []
+      })
     }
     const rows = await db
       .selectFrom('githubRawData')
