@@ -109,17 +109,30 @@ export const createStore = ({
 
   // --- preload 系 ---
 
-  // Only PR metadata is preloaded (lightweight, ~1KB per PR).
-  // Heavy columns (commits/reviews/etc.) are loaded per-PR via PK lookup.
+  // PR metadata (pull_request JSON) is preloaded upfront.
+  // Heavy columns (commits/reviews/discussions/timeline_items) are loaded
+  // per-PR on demand via PK lookup to avoid parsing all JSON at once.
   let prMetadata: Map<number, ShapedGitHubPullRequest> | null = null
 
   // Cache for full row data loaded on demand
   const rowCache = new Map<number, ParsedRow>()
 
-  // Cached prepared statement for per-PR heavy column lookup
+  // Cached prepared statement for per-PR heavy column lookup (lazily created)
   let loadRowStmt: SQLite.Statement | null = null
 
-  const preloadAll = () => {
+  const getLoadRowStmt = (): SQLite.Statement => {
+    if (!loadRowStmt) {
+      const rawDb = getTenantRawDb(organizationId)
+      loadRowStmt = rawDb.prepare(
+        `SELECT commits, reviews, discussions, timeline_items
+         FROM github_raw_data
+         WHERE repository_id = ? AND pull_request_number = ?`,
+      )
+    }
+    return loadRowStmt
+  }
+
+  const preloadAll = (): void => {
     // Use raw better-sqlite3 to bypass ParseJSONResultsPlugin
     const rawDb = getTenantRawDb(organizationId)
     const rows = rawDb
@@ -139,13 +152,6 @@ export const createStore = ({
         JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
       ]),
     )
-
-    // Pre-create the statement for loadRow lookups
-    loadRowStmt = rawDb.prepare(
-      `SELECT commits, reviews, discussions, timeline_items
-       FROM github_raw_data
-       WHERE repository_id = ? AND pull_request_number = ?`,
-    )
   }
 
   // --- loader 系 ---
@@ -160,15 +166,7 @@ export const createStore = ({
       if (!pr) return null
 
       // Load only heavy columns via raw DB (bypasses ParseJSONResultsPlugin)
-      if (!loadRowStmt) {
-        const rawDb = getTenantRawDb(organizationId)
-        loadRowStmt = rawDb.prepare(
-          `SELECT commits, reviews, discussions, timeline_items
-           FROM github_raw_data
-           WHERE repository_id = ? AND pull_request_number = ?`,
-        )
-      }
-      const row = loadRowStmt.get(repositoryId, number) as
+      const row = getLoadRowStmt().get(repositoryId, number) as
         | {
             commits: string
             reviews: string
@@ -188,7 +186,6 @@ export const createStore = ({
           : [],
       }
       rowCache.set(number, parsed)
-      prMetadata.delete(number) // free duplicate PR data
       return parsed
     }
 
