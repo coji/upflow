@@ -42,6 +42,12 @@ import {
 import { useDataTableState } from './+hooks/use-data-table-state'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: () => ({
+    label: 'Feedbacks',
+  }),
+}
+
 const PERIOD_OPTIONS = [
   { value: '1', label: '1 month' },
   { value: '3', label: '3 months' },
