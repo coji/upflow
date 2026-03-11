@@ -15,9 +15,11 @@ import {
 import { Textarea } from '~/app/components/ui/textarea'
 import { cn } from '~/app/libs/utils'
 import {
+  PR_SIZE_DESCRIPTION,
   PR_SIZE_LABELS,
   PR_SIZE_STYLE,
   getPRComplexity,
+  type PRSize,
   type PRSizeLabel,
 } from '../reviews/+functions/classify'
 
@@ -57,7 +59,7 @@ export function SizeBadgePopover({
   const fetcher = useFetcher()
   const draftFetcher = useFetcher<{ reason?: string; error?: string }>()
   const [open, setOpen] = useState(false)
-  const [selectedSize, setSelectedSize] = useState<PRSizeLabel | null>(null)
+  const [selectedSize, setSelectedSize] = useState<PRSize | null>(null)
   const [reasonText, setReasonText] = useState(reason ?? '')
 
   // When AI draft returns, update reason text
@@ -93,9 +95,9 @@ export function SizeBadgePopover({
     }
   }, [fetcher.state, fetcher.data])
 
-  if (originalLabel === 'Unclassified' && !hasFeedback) return null
+  const isUnclassified = originalLabel === 'Unclassified' && !hasFeedback
 
-  const buildFormData = (size: PRSizeLabel) => {
+  const buildFormData = (size: PRSize) => {
     const fd = new FormData()
     fd.set('pullRequestNumber', String(number))
     fd.set('repositoryId', repositoryId)
@@ -118,13 +120,19 @@ export function SizeBadgePopover({
     >
       <PopoverTrigger asChild>
         <button type="button" className="cursor-pointer">
-          <Badge
-            variant="default"
-            className={cn('text-xs', PR_SIZE_STYLE[displayLabel])}
-          >
-            {displayLabel}
-            {hasFeedback && <PencilIcon className="ml-0.5 inline size-3" />}
-          </Badge>
+          {isUnclassified ? (
+            <Badge variant="outline" className="text-muted-foreground text-xs">
+              -
+            </Badge>
+          ) : (
+            <Badge
+              variant="default"
+              className={cn('text-xs', PR_SIZE_STYLE[displayLabel])}
+            >
+              {displayLabel}
+              {hasFeedback && <PencilIcon className="ml-0.5 inline size-3" />}
+            </Badge>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80 max-w-sm p-2" align="start">
@@ -185,6 +193,11 @@ export function SizeBadgePopover({
             </button>
           ))}
         </div>
+        {selectedSize && (
+          <p className="text-muted-foreground mt-1 text-[10px] leading-snug">
+            {PR_SIZE_DESCRIPTION[selectedSize]}
+          </p>
+        )}
         <div className="mt-2 space-y-2">
           <Textarea
             placeholder={`Why ${selectedSize ?? displayLabel}? (optional)`}

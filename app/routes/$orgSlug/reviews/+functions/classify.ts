@@ -1,7 +1,12 @@
 /**
  * PRサイズ分類ユーティリティ（client/server 共用）
  */
-export type PRSizeLabel = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'Unclassified'
+
+/** 実際の5段階サイズ */
+export type PRSize = 'XS' | 'S' | 'M' | 'L' | 'XL'
+
+/** 表示用（未分類を含む） */
+export type PRSizeLabel = PRSize | 'Unclassified'
 
 export const PR_SIZE_LABELS = ['XS', 'S', 'M', 'L', 'XL'] as const
 
@@ -14,12 +19,31 @@ const PR_SIZE_RANK: Record<string, number> = {
 }
 
 export const PR_SIZE_STYLE: Record<PRSizeLabel, string> = {
-  XS: 'bg-[var(--color-chart-2)]/60 text-white',
-  S: 'bg-[var(--color-chart-2)] text-white',
-  M: 'bg-[var(--color-chart-1)] text-white',
-  L: 'bg-[var(--color-chart-4)] text-white',
+  XS: 'bg-slate-400 text-white',
+  S: 'bg-emerald-500 text-white',
+  M: 'bg-blue-500 text-white',
+  L: 'bg-amber-500 text-white',
   XL: 'bg-destructive text-white',
   Unclassified: '',
+}
+
+/** チャート用カラー（CSS値） */
+export const PR_SIZE_COLORS: Record<PRSizeLabel, string> = {
+  XS: 'oklch(0.65 0.01 264)',
+  S: 'oklch(0.65 0.2 160)',
+  M: 'oklch(0.55 0.2 260)',
+  L: 'oklch(0.75 0.18 80)',
+  XL: 'var(--color-destructive)',
+  Unclassified: 'var(--color-muted-foreground)',
+}
+
+/** サイズ定義の短い説明 */
+export const PR_SIZE_DESCRIPTION: Record<PRSize, string> = {
+  XS: '認知負荷ほぼゼロ。機械的・局所的な変更',
+  S: '低い認知負荷。単一の関心事で確認が容易',
+  M: '中程度の認知負荷。1コンポーネント内で完結',
+  L: '高い認知負荷。複数コンポーネント or リスク領域',
+  XL: '非常に高い認知負荷。システム全体の理解が必要',
 }
 
 /** LLM分類があればそちらを使い、なければ Unclassified */
