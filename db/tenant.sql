@@ -145,6 +145,8 @@ CREATE TABLE `pull_request_feedbacks` (
   `original_complexity` text,
   `corrected_complexity` text NOT NULL,
   `reason` text,
+  `feedback_by` text,
+  `feedback_by_login` text,
   `created_at` text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   `updated_at` text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   PRIMARY KEY (`pull_request_number`, `repository_id`),

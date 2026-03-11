@@ -82,6 +82,8 @@ export interface OrganizationSettings {
 export interface PullRequestFeedbacks {
   correctedComplexity: string
   createdAt: Generated<string>
+  feedbackBy: string | null
+  feedbackByLogin: string | null
   originalComplexity: string | null
   pullRequestNumber: number
   reason: string | null

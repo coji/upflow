@@ -7,12 +7,14 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { useFetcher, useParams } from 'react-router'
 import { Badge, Button } from '~/app/components/ui'
+import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
 import { Textarea } from '~/app/components/ui/textarea'
+import dayjs from '~/app/libs/dayjs'
 import { cn } from '~/app/libs/utils'
 import {
   PR_SIZE_DESCRIPTION,
@@ -30,6 +32,9 @@ interface SizeBadgePopoverProps {
   riskAreas: string | null
   correctedComplexity: string | null
   reason: string | null
+  feedbackBy?: string | null
+  feedbackByLogin?: string | null
+  feedbackAt?: string | null
   repositoryId: string
   number: number
 }
@@ -40,6 +45,9 @@ export function SizeBadgePopover({
   riskAreas,
   correctedComplexity,
   reason,
+  feedbackBy,
+  feedbackByLogin,
+  feedbackAt,
   repositoryId,
   number,
 }: SizeBadgePopoverProps) {
@@ -69,7 +77,9 @@ export function SizeBadgePopover({
 
   const originalLabel = getPRComplexity({ complexity })
   const displayLabel = validCorrected ?? originalLabel
-  const hasFeedback = validCorrected != null && validCorrected !== originalLabel
+  const hasFeedback =
+    validCorrected != null &&
+    (validCorrected !== originalLabel || Boolean(reason?.trim()))
 
   const isSaving = fetcher.state !== 'idle'
   const isDrafting = draftFetcher.state !== 'idle'
@@ -202,7 +212,27 @@ export function SizeBadgePopover({
               {draftFetcher.data.error}
             </p>
           )}
-          <div className="flex justify-end gap-1">
+          <div className="flex items-center gap-1">
+            {hasFeedback &&
+              (() => {
+                const feedbackName = feedbackBy ?? feedbackByLogin ?? 'human'
+                return (
+                  <span className="text-muted-foreground mr-auto flex items-center gap-1 text-[10px]">
+                    {feedbackByLogin && (
+                      <Avatar className="size-4">
+                        <AvatarImage
+                          src={`https://github.com/${feedbackByLogin}.png?size=32`}
+                          alt={feedbackName}
+                        />
+                        <AvatarFallback className="text-[6px]">
+                          {feedbackName.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    {feedbackName} · {dayjs(feedbackAt).fromNow()}
+                  </span>
+                )
+              })()}
             <Button
               type="button"
               variant="ghost"
