@@ -195,9 +195,9 @@ PR を XS〜XL に分類する。Decision procedure（5 ステップ）とレベ
 
 ### 改善方針（残課題）
 
-- 分類プロンプトから行数目安を削除し、判断フローにリスク領域ステップを追加
-- `risk_areas` を閉じたリスト（enum）に変更し、Decision procedure に「リスク領域なら最低 L」ステップを追加
-- docs の「PR サイズ定義」を Single Source of Truth とし、分類プロンプトにも反映
+- [x] 分類プロンプトから行数目安を削除し、判断フローにリスク領域ステップを追加
+- [x] `risk_areas` を閉じたリスト（enum）に変更し、Decision procedure に「リスク領域なら最低 L」ステップを追加
+- [x] docs の「PR サイズ定義」を Single Source of Truth とし、分類プロンプトにも反映
 - 将来的には Phase 2 で蓄積されたフィードバックも定義の改善に活用する
 
 ## 依存
