@@ -129,7 +129,8 @@ export const createStore = ({
 
   // --- preload 系 (analyze 用の一括ロード) ---
 
-  // Lazy parsing: raw strings are stored on preload, parsed on access
+  // Lazy parsing: raw strings are stored on preload, parsed on access.
+  // When a row is parsed, its raw entry is deleted to free string memory.
   let cache: {
     raw: Map<number, RawRow>
     parsed: Map<number, ParsedRow>
@@ -155,7 +156,8 @@ export const createStore = ({
 
   // --- loader 系 ---
 
-  /** Parse and cache a single row from the preloaded data */
+  /** Parse and cache a single row from the preloaded data.
+   *  Removes the raw entry after parsing to free string memory. */
   const getParsedRow = (number: number): ParsedRow | null => {
     if (!cache) return null
     const cached = cache.parsed.get(number)
@@ -164,6 +166,7 @@ export const createStore = ({
     if (!raw) return null
     const parsed = parseRawRow(raw)
     cache.parsed.set(number, parsed)
+    cache.raw.delete(number)
     return parsed
   }
 
@@ -215,11 +218,21 @@ export const createStore = ({
 
   const pullrequests = async (): Promise<ShapedGitHubPullRequest[]> => {
     if (cache) {
-      // Route through parsed cache to avoid double-parsing when loadRow is called later
-      return [...cache.raw.keys()].flatMap((number) => {
-        const row = getParsedRow(number)
-        return row ? [row.pullRequest] : []
-      })
+      // Only parse pullRequest field — avoid eagerly parsing heavy columns
+      // (commits/reviews/etc.) for PRs that may be filtered out later.
+      // Check parsed cache first (for rows already accessed via loadRow).
+      const result: ShapedGitHubPullRequest[] = []
+      for (const [number, raw] of cache.raw) {
+        const parsed = cache.parsed.get(number)
+        result.push(
+          parsed?.pullRequest ??
+            (JSON.parse(raw.pull_request) as ShapedGitHubPullRequest),
+        )
+      }
+      for (const [number, parsed] of cache.parsed) {
+        if (!cache.raw.has(number)) result.push(parsed.pullRequest)
+      }
+      return result
     }
     const rows = await db
       .selectFrom('githubRawData')
