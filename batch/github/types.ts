@@ -6,6 +6,9 @@ import type {
   ShapedTimelineItem,
 } from './model'
 
+/** リポジトリID → 更新PR番号セット。undefined なら全件処理 */
+export type UpdatedPrNumbersMap = Map<string, Set<number>>
+
 /** PR 解析に必要な I/O を抽象化した型 */
 export interface PullRequestLoaders {
   commits: (number: number) => Promise<ShapedGitHubCommit[]>

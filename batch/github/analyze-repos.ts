@@ -8,7 +8,17 @@ import type {
   AnalyzedReview,
   AnalyzedReviewResponse,
   AnalyzedReviewer,
+  UpdatedPrNumbersMap,
 } from './types'
+
+interface AnalyzeReposOptions {
+  onProgress?: (progress: {
+    repo: string
+    current: number
+    total: number
+  }) => void
+  updatedPrNumbers?: UpdatedPrNumbersMap
+}
 
 export async function analyzeRepos(
   organizationId: OrganizationId,
@@ -17,14 +27,10 @@ export async function analyzeRepos(
     'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
   >,
   repositories: Selectable<TenantDB.Repositories>[],
-  onProgress?: (progress: {
-    repo: string
-    current: number
-    total: number
-  }) => void,
-  /** リポジトリID → 更新PR番号セット。undefined なら全件処理 */
-  updatedPrNumbers?: Map<string, Set<number>>,
+  options?: AnalyzeReposOptions,
 ) {
+  const { onProgress, updatedPrNumbers } = options ?? {}
+
   const allPulls: Selectable<TenantDB.PullRequests>[] = []
   const allReviews: AnalyzedReview[] = []
   const allReviewers: AnalyzedReviewer[] = []
