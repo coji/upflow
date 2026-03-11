@@ -1,6 +1,7 @@
 import {
   GitPullRequestIcon,
   LayoutDashboardIcon,
+  NotebookPenIcon,
   SettingsIcon,
   TimerIcon,
 } from 'lucide-react'
@@ -25,6 +26,11 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
           title: 'Reviews',
           url: `/${orgSlug}/reviews`,
           icon: GitPullRequestIcon,
+        },
+        {
+          title: 'Feedbacks',
+          url: `/${orgSlug}/feedbacks`,
+          icon: NotebookPenIcon,
         },
       ],
     },
