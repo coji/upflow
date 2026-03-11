@@ -164,23 +164,6 @@ export function SizeBadgePopover({
             )}
           </div>
         )}
-        {hasFeedback && (
-          <div className="mb-2 flex items-center gap-1.5 text-xs">
-            <Badge
-              variant="default"
-              className={cn(
-                'text-[10px]',
-                PR_SIZE_STYLE[validCorrected ?? originalLabel],
-              )}
-            >
-              {validCorrected ?? originalLabel}
-            </Badge>
-            <span className="text-muted-foreground text-[10px]">
-              by {feedbackBy ?? 'human'}
-              {feedbackAt && ` · ${dayjs(feedbackAt).fromNow()}`}
-            </span>
-          </div>
-        )}
         <div className="flex gap-1">
           {PR_SIZE_LABELS.map((size) => (
             <button
@@ -226,7 +209,12 @@ export function SizeBadgePopover({
               {draftFetcher.data.error}
             </p>
           )}
-          <div className="flex justify-end gap-1">
+          <div className="flex items-center gap-1">
+            {hasFeedback && (
+              <span className="text-muted-foreground mr-auto text-[10px]">
+                by {feedbackBy ?? 'human'} · {dayjs(feedbackAt).fromNow()}
+              </span>
+            )}
             <Button
               type="button"
               variant="ghost"
