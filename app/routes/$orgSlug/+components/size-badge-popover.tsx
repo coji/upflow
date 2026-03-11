@@ -4,7 +4,7 @@ import {
   PencilIcon,
   SparklesIcon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useFetcher, useParams } from 'react-router'
 import { Badge, Button } from '~/app/components/ui'
 import {
@@ -98,6 +98,10 @@ export function SizeBadgePopover({
   }, [fetcher.state, fetcher.data])
 
   const isUnclassified = originalLabel === 'Unclassified' && !hasFeedback
+  const parsedRiskAreas = useMemo(
+    () => [...new Set(parseRiskAreas(riskAreas))],
+    [riskAreas],
+  )
 
   const buildFormData = (size: PRSize) => {
     const fd = new FormData()
@@ -112,11 +116,9 @@ export function SizeBadgePopover({
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen)
+        setSelectedSize(null)
         if (nextOpen) {
           setReasonText(reason ?? '')
-          setSelectedSize(null)
-        } else {
-          setSelectedSize(null)
         }
       }}
     >
@@ -154,9 +156,9 @@ export function SizeBadgePopover({
                 {complexityReason}
               </p>
             )}
-            {riskAreas && (
+            {parsedRiskAreas.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {[...new Set(parseRiskAreas(riskAreas))].map((area) => (
+                {parsedRiskAreas.map((area) => (
                   <Badge
                     key={area}
                     variant="outline"
