@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import { setupTenantSchema } from '~/test/setup-tenant-db'
 
 const testDir = path.join(tmpdir(), `mutations-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -20,23 +21,8 @@ const { upsertCompanyGithubUsers } = await import('./mutations')
 
 const orgId = `test-org-${Date.now()}` as OrganizationId
 
-function setupTenantDb() {
-  const dbPath = path.join(testDir, `tenant_${orgId}.db`)
-  const raw = new SQLite(dbPath)
-  raw.exec(`
-    CREATE TABLE IF NOT EXISTS company_github_users (
-      user_id TEXT NULL,
-      login TEXT NOT NULL PRIMARY KEY,
-      display_name TEXT NOT NULL,
-      is_active INTEGER NOT NULL DEFAULT 0,
-      updated_at DATETIME NOT NULL,
-      created_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP)
-    )
-  `)
-  raw.close()
-}
-
-setupTenantDb()
+const tenantDbPath = path.join(testDir, `tenant_${orgId}.db`)
+setupTenantSchema(tenantDbPath)
 
 afterEach(async () => {
   // Clear rows between tests

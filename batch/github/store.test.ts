@@ -11,6 +11,7 @@ import {
   test,
   vi,
 } from 'vitest'
+import { setupTenantSchema } from '~/test/setup-tenant-db'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubPullRequest,
@@ -42,47 +43,8 @@ const repositoryId = 'repo-1'
 const tenantDbPath = path.join(testDir, `tenant_${orgId}.db`)
 
 function setupTenantDb() {
+  setupTenantSchema(tenantDbPath)
   const db = new SQLite(tenantDbPath)
-  db.exec(`
-    CREATE TABLE integrations (
-      id text NOT NULL PRIMARY KEY,
-      provider text NOT NULL,
-      method text NOT NULL,
-      private_token text NULL
-    );
-    CREATE TABLE repositories (
-      id text NOT NULL PRIMARY KEY,
-      integration_id text NOT NULL,
-      provider text NOT NULL,
-      owner text NOT NULL,
-      repo text NOT NULL,
-      release_detection_method text NOT NULL DEFAULT 'branch',
-      release_detection_key text NOT NULL DEFAULT 'production',
-      updated_at datetime NOT NULL,
-      created_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-      FOREIGN KEY (integration_id) REFERENCES integrations(id)
-    );
-    CREATE TABLE github_raw_data (
-      repository_id text NOT NULL,
-      pull_request_number integer NOT NULL,
-      pull_request text NOT NULL,
-      commits text NOT NULL,
-      reviews text NOT NULL,
-      discussions text NOT NULL,
-      timeline_items text NULL,
-      updated_at text NULL,
-      fetched_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-      PRIMARY KEY (repository_id, pull_request_number),
-      FOREIGN KEY (repository_id) REFERENCES repositories(id)
-    );
-    CREATE TABLE github_raw_tags (
-      repository_id text NOT NULL,
-      tags text NOT NULL,
-      fetched_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-      PRIMARY KEY (repository_id),
-      FOREIGN KEY (repository_id) REFERENCES repositories(id)
-    );
-  `)
   db.prepare(
     'INSERT INTO integrations (id, provider, method, private_token) VALUES (?, ?, ?, ?)',
   ).run('int-1', 'github', 'token', 'test-token')
