@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai'
 import { data } from 'react-router'
 import { z } from 'zod'
 import { requireOrgMember } from '~/app/libs/auth.server'
+import { escapeXml } from '~/app/libs/escape-xml'
 import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { Route } from './+types/draft-feedback-reason'
@@ -11,14 +12,6 @@ const draftSchema = z.object({
   repositoryId: z.string().min(1),
   correctedComplexity: z.enum(PR_SIZE_LABELS),
 })
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 function extractFileList(pullRequestJson: unknown): string {
   try {
@@ -112,33 +105,34 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { pullRequestNumber, repositoryId, correctedComplexity } = parsed.data
   const tenantDb = getTenantDb(organization.id)
 
-  const pr = await tenantDb
-    .selectFrom('pullRequests')
-    .select([
-      'title',
-      'sourceBranch',
-      'targetBranch',
-      'additions',
-      'deletions',
-      'changedFiles',
-      'complexity',
-      'complexityReason',
-      'riskAreas',
-    ])
-    .where('number', '=', pullRequestNumber)
-    .where('repositoryId', '=', repositoryId)
-    .executeTakeFirst()
+  const [pr, rawData] = await Promise.all([
+    tenantDb
+      .selectFrom('pullRequests')
+      .select([
+        'title',
+        'sourceBranch',
+        'targetBranch',
+        'additions',
+        'deletions',
+        'changedFiles',
+        'complexity',
+        'complexityReason',
+        'riskAreas',
+      ])
+      .where('number', '=', pullRequestNumber)
+      .where('repositoryId', '=', repositoryId)
+      .executeTakeFirst(),
+    tenantDb
+      .selectFrom('githubRawData')
+      .select(['pullRequest', 'commits', 'reviews'])
+      .where('pullRequestNumber', '=', pullRequestNumber)
+      .where('repositoryId', '=', repositoryId)
+      .executeTakeFirst(),
+  ])
 
   if (!pr) {
     return data({ error: 'Pull request not found' }, { status: 404 })
   }
-
-  const rawData = await tenantDb
-    .selectFrom('githubRawData')
-    .select(['pullRequest', 'commits', 'reviews'])
-    .where('pullRequestNumber', '=', pullRequestNumber)
-    .where('repositoryId', '=', repositoryId)
-    .executeTakeFirst()
 
   const body =
     (rawData?.pullRequest as { body?: string } | undefined)?.body ?? ''

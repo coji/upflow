@@ -58,24 +58,19 @@ export function SizeBadgePopover({
   const draftFetcher = useFetcher<{ reason?: string; error?: string }>()
   const [open, setOpen] = useState(false)
   const [selectedSize, setSelectedSize] = useState<PRSizeLabel | null>(null)
+  const [reasonText, setReasonText] = useState(reason ?? '')
 
-  // When AI draft returns, insert into textarea
+  // When AI draft returns, update reason text
   useEffect(() => {
     if (draftFetcher.data?.reason) {
-      const textarea = document.getElementById(
-        `reason-${repositoryId}-${number}`,
-      ) as HTMLTextAreaElement | null
-      if (textarea) {
-        textarea.value = draftFetcher.data.reason
-      }
+      setReasonText(draftFetcher.data.reason)
     }
-  }, [draftFetcher.data, repositoryId, number])
+  }, [draftFetcher.data])
 
   // Optimistic UI: fetcher.formData during flight, then server value
   const optimistic =
     fetcher.formData?.get('correctedComplexity')?.toString() ??
     correctedComplexity
-  const optimisticReason = fetcher.formData?.get('reason')?.toString() ?? reason
   const validCorrected =
     optimistic != null &&
     (PR_SIZE_LABELS as readonly string[]).includes(optimistic)
@@ -89,6 +84,14 @@ export function SizeBadgePopover({
   if (originalLabel === 'Unclassified' && !hasFeedback) return null
 
   const isDrafting = draftFetcher.state !== 'idle'
+
+  const buildFormData = (size: PRSizeLabel) => {
+    const fd = new FormData()
+    fd.set('pullRequestNumber', String(number))
+    fd.set('repositoryId', repositoryId)
+    fd.set('correctedComplexity', size)
+    return fd
+  }
 
   return (
     <Popover
@@ -170,11 +173,10 @@ export function SizeBadgePopover({
         <div className="mt-2 space-y-2">
           <Textarea
             placeholder={`Why ${selectedSize ?? displayLabel}? (optional)`}
-            defaultValue={optimisticReason ?? ''}
-            name="reason"
+            value={reasonText}
+            onChange={(e) => setReasonText(e.target.value)}
             rows={2}
             className="max-h-20 text-xs"
-            id={`reason-${repositoryId}-${number}`}
           />
           <div className="flex justify-end gap-1">
             <Button
@@ -185,11 +187,8 @@ export function SizeBadgePopover({
               disabled={isDrafting || selectedSize == null}
               onClick={() => {
                 if (selectedSize == null) return
-                const formData = new FormData()
-                formData.set('pullRequestNumber', String(number))
-                formData.set('repositoryId', repositoryId)
-                formData.set('correctedComplexity', selectedSize)
-                draftFetcher.submit(formData, {
+                const fd = buildFormData(selectedSize)
+                draftFetcher.submit(fd, {
                   method: 'post',
                   action: `/${orgSlug}/draft-feedback-reason`,
                 })
@@ -209,15 +208,9 @@ export function SizeBadgePopover({
               disabled={fetcher.state !== 'idle' || selectedSize == null}
               onClick={() => {
                 if (selectedSize == null) return
-                const textarea = document.getElementById(
-                  `reason-${repositoryId}-${number}`,
-                ) as HTMLTextAreaElement | null
-                const formData = new FormData()
-                formData.set('pullRequestNumber', String(number))
-                formData.set('repositoryId', repositoryId)
-                formData.set('correctedComplexity', selectedSize)
-                formData.set('reason', textarea?.value ?? '')
-                fetcher.submit(formData, {
+                const fd = buildFormData(selectedSize)
+                fd.set('reason', reasonText)
+                fetcher.submit(fd, {
                   method: 'post',
                   action: `/${orgSlug}/pr-size-feedback`,
                 })
