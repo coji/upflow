@@ -717,7 +717,7 @@ export function shapeTagNode(node: {
     __typename: string
     oid: string
     committedDate?: string | null
-    tagger?: { date: string } | null
+    tagger?: { date: string | null } | null
     target?: {
       __typename: string
       oid?: string
