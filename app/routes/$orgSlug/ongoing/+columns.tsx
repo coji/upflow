@@ -2,6 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
+import { SizeBadge } from '../reviews/+components/size-badge'
 import type { PullRequest } from './index'
 
 export const columns: ColumnDef<PullRequest>[] = [
@@ -54,6 +55,12 @@ export const columns: ColumnDef<PullRequest>[] = [
         <span>{row.original.title}</span>
       </a>
     ),
+    enableHiding: false,
+  },
+  {
+    accessorKey: 'complexity',
+    header: ({ column }) => <AppSortableHeader column={column} title="Size" />,
+    cell: ({ row }) => <SizeBadge complexity={row.original.complexity} />,
     enableHiding: false,
   },
   {

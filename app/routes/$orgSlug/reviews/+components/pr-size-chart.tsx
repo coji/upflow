@@ -26,7 +26,7 @@ import { getPRComplexity, type PRSizeLabel } from '../+functions/classify'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 const SIZE_COLORS: Record<PRSizeLabel, string> = {
-  XS: 'var(--color-chart-2)',
+  XS: 'color-mix(in srgb, var(--color-chart-2) 60%, transparent)',
   S: 'var(--color-chart-2)',
   M: 'var(--color-chart-1)',
   L: 'var(--color-chart-4)',

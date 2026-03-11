@@ -44,6 +44,7 @@ export const getOngoingPullRequestReport = async (
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.firstReviewedAt',
       'companyGithubUsers.displayName as authorDisplayName',
+      'pullRequests.complexity',
     ])
     .execute()
 

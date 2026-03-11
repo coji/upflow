@@ -43,6 +43,7 @@ export const getMergedPullRequestReport = async (
       'pullRequests.firstReviewedAt',
       'pullRequests.mergedAt',
       'companyGithubUsers.displayName as authorDisplayName',
+      'pullRequests.complexity',
     ])
     .execute()
 
