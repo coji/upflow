@@ -40,10 +40,32 @@ export const getOngoingPullRequestReport = async (
       ]),
     )
     .orderBy('pullRequestCreatedAt', 'desc')
+    .leftJoin(
+      (eb) =>
+        eb
+          .selectFrom('pullRequestFeedbacks')
+          .select([
+            'pullRequestNumber',
+            'repositoryId',
+            'correctedComplexity',
+            eb.fn.max('updatedAt').as('_maxUpdatedAt'),
+          ])
+          .groupBy(['pullRequestNumber', 'repositoryId'])
+          .as('latestFeedback'),
+      (join) =>
+        join
+          .onRef('latestFeedback.pullRequestNumber', '=', 'pullRequests.number')
+          .onRef(
+            'latestFeedback.repositoryId',
+            '=',
+            'pullRequests.repositoryId',
+          ),
+    )
     .select([
       'pullRequests.author',
       'pullRequests.repo',
       'pullRequests.number',
+      'pullRequests.repositoryId',
       'pullRequests.title',
       'pullRequests.url',
       'pullRequests.firstCommittedAt',
@@ -51,6 +73,9 @@ export const getOngoingPullRequestReport = async (
       'pullRequests.firstReviewedAt',
       'companyGithubUsers.displayName as authorDisplayName',
       'pullRequests.complexity',
+      'pullRequests.complexityReason',
+      'pullRequests.riskAreas',
+      'latestFeedback.correctedComplexity',
     ])
     .execute()
 

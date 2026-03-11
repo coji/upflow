@@ -79,6 +79,17 @@ export interface OrganizationSettings {
   updatedAt: string
 }
 
+export interface PullRequestFeedbacks {
+  correctedComplexity: string
+  createdAt: Generated<string>
+  feedbackBy: string
+  originalComplexity: string | null
+  pullRequestNumber: number
+  reason: string | null
+  repositoryId: string
+  updatedAt: Generated<string>
+}
+
 export interface PullRequestReviewers {
   pullRequestNumber: number
   repositoryId: string
@@ -156,6 +167,7 @@ export interface DB {
   githubRawTags: GithubRawTags
   integrations: Integrations
   organizationSettings: OrganizationSettings
+  pullRequestFeedbacks: PullRequestFeedbacks
   pullRequestReviewers: PullRequestReviewers
   pullRequestReviews: PullRequestReviews
   pullRequests: PullRequests
