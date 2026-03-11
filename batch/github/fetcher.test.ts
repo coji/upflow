@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import type { ShapedTimelineItem } from './model'
 
-// buildRequestedAtMap は純粋関数なので直接 import してテスト
-const { buildRequestedAtMap } = await import('./fetcher')
+// 純粋関数なので直接 import してテスト
+const { buildRequestedAtMap, shapeTagNode } = await import('./fetcher')
 
 describe('buildRequestedAtMap', () => {
   test('returns empty map for empty items', () => {
@@ -104,5 +104,85 @@ describe('buildRequestedAtMap', () => {
     const result = buildRequestedAtMap(items)
     expect(result.get('alice')).toBe('2024-01-03T10:00:00Z')
     expect(result.get('bob')).toBe('2024-01-02T10:00:00Z')
+  })
+})
+
+describe('shapeTagNode', () => {
+  test('annotated tag: tagger.date を UTC に正規化して使う', () => {
+    const result = shapeTagNode({
+      name: 'v1.0.0',
+      target: {
+        __typename: 'Tag',
+        oid: 'tag-oid',
+        tagger: { date: '2024-01-15T10:00:00+09:00' },
+        target: {
+          __typename: 'Commit',
+          oid: 'commit-sha',
+          committedDate: '2024-01-10T00:00:00Z',
+        },
+      },
+    })
+
+    expect(result).toEqual({
+      name: 'v1.0.0',
+      sha: 'commit-sha',
+      committedAt: '2024-01-15T01:00:00.000Z',
+    })
+  })
+
+  test('annotated tag: tagger が null なら committedDate にフォールバック', () => {
+    const result = shapeTagNode({
+      name: 'v1.0.0',
+      target: {
+        __typename: 'Tag',
+        oid: 'tag-oid',
+        tagger: null,
+        target: {
+          __typename: 'Commit',
+          oid: 'commit-sha',
+          committedDate: '2024-01-10T00:00:00Z',
+        },
+      },
+    })
+
+    expect(result).toEqual({
+      name: 'v1.0.0',
+      sha: 'commit-sha',
+      committedAt: '2024-01-10T00:00:00.000Z',
+    })
+  })
+
+  test('lightweight tag: committedDate をそのまま使う', () => {
+    const result = shapeTagNode({
+      name: 'v2.0.0',
+      target: {
+        __typename: 'Commit',
+        oid: 'commit-sha',
+        committedDate: '2024-02-01T00:00:00Z',
+      },
+    })
+
+    expect(result).toEqual({
+      name: 'v2.0.0',
+      sha: 'commit-sha',
+      committedAt: '2024-02-01T00:00:00Z',
+    })
+  })
+
+  test('target が null なら null を返す', () => {
+    expect(shapeTagNode({ name: 'v1.0.0', target: null })).toBeNull()
+  })
+
+  test('annotated tag の inner target が Commit 以外なら null を返す', () => {
+    const result = shapeTagNode({
+      name: 'v1.0.0',
+      target: {
+        __typename: 'Tag',
+        oid: 'tag-oid',
+        target: { __typename: 'Tree' },
+      },
+    })
+
+    expect(result).toBeNull()
   })
 })

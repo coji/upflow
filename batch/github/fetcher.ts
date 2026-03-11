@@ -1,5 +1,6 @@
 import { print } from 'graphql'
 import { Octokit } from 'octokit'
+import dayjs from '~/app/libs/dayjs'
 import { logger } from '~/batch/helper/logger'
 import { graphql, type ResultOf } from './graphql'
 import type {
@@ -566,6 +567,9 @@ const GetTagsQuery = graphql(`
               committedDate
             }
             ... on Tag {
+              tagger {
+                date
+              }
               target {
                 __typename
                 ... on Commit {
@@ -705,6 +709,48 @@ interface createFetcherProps {
   token: string
 }
 const REQUEST_TIMEOUT_MS = 30_000
+
+/** GraphQL のタグ node から ShapedGitHubTag を生成する純粋関数 */
+export function shapeTagNode(node: {
+  name: string
+  target: {
+    __typename: string
+    oid: string
+    committedDate?: string | null
+    tagger?: { date: string | null } | null
+    target?: {
+      __typename: string
+      oid?: string
+      committedDate?: string | null
+    } | null
+  } | null
+}): ShapedGitHubTag | null {
+  const target = node.target
+  if (!target) return null
+
+  let sha: string
+  let committedDate: string | null | undefined
+
+  if (target.__typename === 'Tag') {
+    const innerTarget = target.target
+    if (innerTarget?.__typename === 'Commit' && innerTarget.oid) {
+      sha = innerTarget.oid
+      // tagger.date を優先（annotated tag のタグ作成日時）、UTC に正規化
+      const rawDate = target.tagger?.date ?? innerTarget.committedDate
+      committedDate = rawDate ? dayjs(rawDate).utc().toISOString() : rawDate
+    } else {
+      return null
+    }
+  } else if (target.__typename === 'Commit') {
+    sha = target.oid
+    committedDate = target.committedDate
+  } else {
+    return null
+  }
+
+  if (!committedDate) return null
+  return { name: node.name, sha, committedAt: committedDate }
+}
 
 export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
   const octokit = new Octokit({ auth: token })
@@ -1036,31 +1082,8 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
 
       for (const node of refs.nodes) {
         if (!node) continue
-        const target = node.target
-        if (!target) continue
-
-        // annotated tag の場合は target.target にコミット情報がある
-        let sha: string
-        let committedDate: string | null | undefined
-
-        if (target.__typename === 'Tag') {
-          const innerTarget = target.target
-          if (innerTarget?.__typename === 'Commit') {
-            sha = innerTarget.oid
-            committedDate = innerTarget.committedDate
-          } else {
-            continue
-          }
-        } else if (target.__typename === 'Commit') {
-          sha = target.oid
-          committedDate = target.committedDate
-        } else {
-          continue
-        }
-
-        if (committedDate) {
-          allTags.push({ name: node.name, sha, committedAt: committedDate })
-        }
+        const shaped = shapeTagNode(node)
+        if (shaped) allTags.push(shaped)
       }
 
       hasNextPage = refs.pageInfo.hasNextPage

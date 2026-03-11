@@ -48,7 +48,7 @@ export function reorderRows<T extends { id: string }>(
       unknown.push(row)
     }
   }
-  known.sort((a, b) => idToIndex.get(a.id)! - idToIndex.get(b.id)!)
+  known.sort((a, b) => (idToIndex.get(a.id) ?? 0) - (idToIndex.get(b.id) ?? 0))
   return [...known, ...unknown]
 }
 

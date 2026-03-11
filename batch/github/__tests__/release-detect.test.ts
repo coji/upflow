@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import type { ShapedGitHubPullRequest } from '../model'
-import { buildBranchReleaseLookup } from '../release-detect'
+import {
+  buildBranchReleaseLookup,
+  buildTagReleaseList,
+  findReleaseDateFromTags,
+} from '../release-detect'
 
 const basePr: ShapedGitHubPullRequest = {
   id: 0,
@@ -192,5 +196,93 @@ describe('buildBranchReleaseLookup', () => {
     // ブランチ方式なので SHA に関係なくリリース検出される
     expect(result.get(1)).toBe('2024-01-10T00:00:00Z')
     expect(result.get(2)).toBe('2024-01-12T00:00:00Z')
+  })
+})
+
+describe('buildTagReleaseList', () => {
+  test('正規表現でタグをフィルタし、committedAt 昇順で返す', async () => {
+    const result = await buildTagReleaseList(
+      {
+        tags: async () => [
+          {
+            name: 'v2.0.0',
+            sha: 'sha-2',
+            committedAt: '2024-02-01T00:00:00Z',
+          },
+          {
+            name: 'nightly-2024-01-15',
+            sha: 'sha-nightly',
+            committedAt: '2024-01-15T00:00:00Z',
+          },
+          {
+            name: 'v1.0.0',
+            sha: 'sha-1',
+            committedAt: '2024-01-01T00:00:00Z',
+          },
+        ],
+      },
+      '^v\\d+\\.\\d+\\.\\d+$',
+    )
+
+    expect(result).toEqual([
+      { name: 'v1.0.0', sha: 'sha-1', committedAt: '2024-01-01T00:00:00Z' },
+      { name: 'v2.0.0', sha: 'sha-2', committedAt: '2024-02-01T00:00:00Z' },
+    ])
+  })
+
+  test('無効な正規表現では空配列を返す', async () => {
+    const result = await buildTagReleaseList(
+      {
+        tags: async () => [
+          { name: 'v1.0.0', sha: 'sha-1', committedAt: '2024-01-01T00:00:00Z' },
+        ],
+      },
+      '[',
+    )
+
+    expect(result).toEqual([])
+  })
+
+  test('長すぎるパターンでは空配列を返す', async () => {
+    const result = await buildTagReleaseList(
+      {
+        tags: async () => [
+          { name: 'v1.0.0', sha: 'sha-1', committedAt: '2024-01-01T00:00:00Z' },
+        ],
+      },
+      'a'.repeat(201),
+    )
+
+    expect(result).toEqual([])
+  })
+})
+
+describe('findReleaseDateFromTags', () => {
+  const sortedTags = [
+    { committedAt: '2024-01-10T00:00:00Z' },
+    { committedAt: '2024-01-20T00:00:00Z' },
+    { committedAt: '2024-01-30T00:00:00Z' },
+  ]
+
+  test('mergedAt 以降の最初のタグを返す', () => {
+    expect(findReleaseDateFromTags('2024-01-15T00:00:00Z', sortedTags)).toBe(
+      '2024-01-20T00:00:00Z',
+    )
+  })
+
+  test('mergedAt 以降のタグがない場合は null を返す', () => {
+    expect(
+      findReleaseDateFromTags('2024-02-01T00:00:00Z', sortedTags),
+    ).toBeNull()
+  })
+
+  test('mergedAt と同時刻のタグを返す', () => {
+    expect(findReleaseDateFromTags('2024-01-20T00:00:00Z', sortedTags)).toBe(
+      '2024-01-20T00:00:00Z',
+    )
+  })
+
+  test('空のタグリストでは null を返す', () => {
+    expect(findReleaseDateFromTags('2024-01-01T00:00:00Z', [])).toBeNull()
   })
 })
