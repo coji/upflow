@@ -1,3 +1,4 @@
+import type SQLite from 'better-sqlite3'
 import { getTenantDb, getTenantRawDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import type {
@@ -115,6 +116,9 @@ export const createStore = ({
   // Cache for full row data loaded on demand
   const rowCache = new Map<number, ParsedRow>()
 
+  // Cached prepared statement for per-PR heavy column lookup
+  let loadRowStmt: SQLite.Statement | null = null
+
   const preloadAll = () => {
     // Use raw better-sqlite3 to bypass ParseJSONResultsPlugin
     const rawDb = getTenantRawDb(organizationId)
@@ -135,6 +139,13 @@ export const createStore = ({
         JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
       ]),
     )
+
+    // Pre-create the statement for loadRow lookups
+    loadRowStmt = rawDb.prepare(
+      `SELECT commits, reviews, discussions, timeline_items
+       FROM github_raw_data
+       WHERE repository_id = ? AND pull_request_number = ?`,
+    )
   }
 
   // --- loader 系 ---
@@ -149,14 +160,15 @@ export const createStore = ({
       if (!pr) return null
 
       // Load only heavy columns via raw DB (bypasses ParseJSONResultsPlugin)
-      const rawDb = getTenantRawDb(organizationId)
-      const row = rawDb
-        .prepare(
+      if (!loadRowStmt) {
+        const rawDb = getTenantRawDb(organizationId)
+        loadRowStmt = rawDb.prepare(
           `SELECT commits, reviews, discussions, timeline_items
            FROM github_raw_data
            WHERE repository_id = ? AND pull_request_number = ?`,
         )
-        .get(repositoryId, number) as
+      }
+      const row = loadRowStmt.get(repositoryId, number) as
         | {
             commits: string
             reviews: string
@@ -176,6 +188,7 @@ export const createStore = ({
           : [],
       }
       rowCache.set(number, parsed)
+      prMetadata.delete(number) // free duplicate PR data
       return parsed
     }
 
@@ -193,13 +206,15 @@ export const createStore = ({
       .where('pullRequestNumber', '=', number)
       .executeTakeFirst()
     if (!row) return null
-    return {
+    const parsed: ParsedRow = {
       pullRequest: row.pullRequest as ShapedGitHubPullRequest,
       commits: row.commits as ShapedGitHubCommit[],
       reviews: row.reviews as ShapedGitHubReview[],
       discussions: row.discussions as ShapedGitHubReviewComment[],
       timelineItems: (row.timelineItems as ShapedTimelineItem[] | null) ?? [],
     }
+    rowCache.set(number, parsed)
+    return parsed
   }
 
   const commits = async (number: number) => {
