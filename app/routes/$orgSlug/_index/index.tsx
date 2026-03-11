@@ -165,6 +165,7 @@ export default function OrganizationIndex({
         title={<div>Merged this week: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
+        getRowId={(row) => `${row.repositoryId}:${row.number}`}
         optionsChildren={
           <>
             <DropdownMenuLabel>Duration</DropdownMenuLabel>

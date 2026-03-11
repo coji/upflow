@@ -4,7 +4,7 @@ import {
   PencilIcon,
   SparklesIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useParams } from 'react-router'
 import { Badge, Button } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
@@ -65,9 +65,19 @@ export function SizeBadgePopover({
     }
   }, [draftFetcher.data])
 
-  // Optimistic UI: fetcher.formData during flight, then server value
+  // Optimistic UI: bridge the gap between fetcher completion and revalidation.
+  // React Router may commit fetcher.idle before loaderData updates (startTransition),
+  // so we hold the last-submitted value in a ref until the prop catches up.
+  const lastSubmittedRef = useRef<string | null>(null)
+  if (fetcher.formData) {
+    lastSubmittedRef.current =
+      fetcher.formData.get('correctedComplexity')?.toString() ?? null
+  } else if (lastSubmittedRef.current === correctedComplexity) {
+    lastSubmittedRef.current = null
+  }
   const optimistic =
     fetcher.formData?.get('correctedComplexity')?.toString() ??
+    lastSubmittedRef.current ??
     correctedComplexity
   const validCorrected =
     optimistic != null &&
@@ -135,7 +145,11 @@ export function SizeBadgePopover({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-w-sm p-2" align="start">
+      <PopoverContent
+        className="w-80 max-w-sm p-2"
+        align="start"
+        sticky="always"
+      >
         {originalLabel !== 'Unclassified' && (
           <div className="mb-2 max-w-64 space-y-1 text-xs">
             <div className="flex items-center gap-1.5">
@@ -193,11 +207,11 @@ export function SizeBadgePopover({
             </button>
           ))}
         </div>
-        {selectedSize && (
-          <p className="text-muted-foreground mt-1 text-[10px] leading-snug">
-            {PR_SIZE_DESCRIPTION[selectedSize]}
-          </p>
-        )}
+        <p className="text-muted-foreground mt-1 text-[10px] leading-snug">
+          {(selectedSize
+            ? PR_SIZE_DESCRIPTION[selectedSize]
+            : PR_SIZE_DESCRIPTION[displayLabel as PRSize]) ?? '\u00A0'}
+        </p>
         <div className="mt-2 space-y-2">
           <Textarea
             placeholder={`Why ${selectedSize ?? displayLabel}? (optional)`}
@@ -212,7 +226,7 @@ export function SizeBadgePopover({
               {draftFetcher.data.error}
             </p>
           )}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-end gap-1">
             {hasFeedback &&
               (() => {
                 const feedbackName = feedbackBy ?? feedbackByLogin ?? 'human'
