@@ -84,6 +84,7 @@ export default function OngoingPage({
         title={<div>Ongoing pull requests: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
+        getRowId={(row) => `${row.repositoryId}:${row.number}`}
         optionsChildren={
           <>
             <DropdownMenuLabel>Duration</DropdownMenuLabel>
