@@ -179,19 +179,15 @@ Why did the human correct the classification from ${pr.complexity ?? 'unknown'} 
 
   try {
     const ai = new GoogleGenAI({ apiKey })
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15_000)
-    const response = await ai.models
-      .generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          thinkingConfig: { thinkingBudget: 0 },
-          abortSignal: controller.signal,
-        },
-      })
-      .finally(() => clearTimeout(timeout))
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        thinkingConfig: { thinkingBudget: 0 },
+        httpOptions: { timeout: 15_000 },
+      },
+    })
 
     const reason = response.text?.trim() ?? ''
     return data({ reason })

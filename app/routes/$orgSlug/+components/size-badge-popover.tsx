@@ -203,6 +203,7 @@ export function SizeBadgePopover({
             placeholder={`Why ${selectedSize ?? displayLabel}? (optional)`}
             value={reasonText}
             onChange={(e) => setReasonText(e.target.value)}
+            disabled={isBusy}
             rows={2}
             className="max-h-20 text-xs"
           />
