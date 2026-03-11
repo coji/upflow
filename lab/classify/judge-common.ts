@@ -6,6 +6,7 @@
 import { Type } from '@google/genai'
 import fs from 'node:fs'
 import path from 'node:path'
+import { escapeXml } from '~/app/libs/escape-xml'
 
 // ── paths & constants ──────────────────────────────────────────────
 
@@ -189,14 +190,6 @@ export function prKey(pr: PRRecord): string {
 }
 
 // ── prompt builder ─────────────────────────────────────────────────
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 function formatFileList(
   files: { path: string; additions: number; deletions: number }[] | undefined,

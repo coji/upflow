@@ -36,12 +36,26 @@ export const getMergedPullRequestReport = async (
         eb('companyGithubUsers.type', '!=', 'Bot'),
       ]),
     )
+    .leftJoin('pullRequestFeedbacks', (join) =>
+      join
+        .onRef(
+          'pullRequestFeedbacks.pullRequestNumber',
+          '=',
+          'pullRequests.number',
+        )
+        .onRef(
+          'pullRequestFeedbacks.repositoryId',
+          '=',
+          'pullRequests.repositoryId',
+        ),
+    )
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
     .select([
       'pullRequests.author',
       'pullRequests.repo',
       'pullRequests.number',
+      'pullRequests.repositoryId',
       'pullRequests.title',
       'pullRequests.url',
       'pullRequests.firstCommittedAt',
@@ -50,6 +64,10 @@ export const getMergedPullRequestReport = async (
       'pullRequests.mergedAt',
       'companyGithubUsers.displayName as authorDisplayName',
       'pullRequests.complexity',
+      'pullRequests.complexityReason',
+      'pullRequests.riskAreas',
+      'pullRequestFeedbacks.correctedComplexity',
+      'pullRequestFeedbacks.reason',
     ])
     .execute()
 

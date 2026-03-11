@@ -8,6 +8,7 @@
  */
 
 import { GoogleGenAI, Type } from '@google/genai'
+import { escapeXml } from '~/app/libs/escape-xml'
 import { logger } from '~/batch/helper/logger'
 
 export type ReviewComplexity = 'XS' | 'S' | 'M' | 'L' | 'XL'
@@ -126,14 +127,6 @@ const RESPONSE_SCHEMA = {
   },
   required: ['complexity', 'reason', 'risk_areas'],
 } as const
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 async function classifySinglePR(
   ai: GoogleGenAI,
