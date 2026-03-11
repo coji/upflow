@@ -70,6 +70,7 @@ function setupTenantDb() {
       reviews text NOT NULL,
       discussions text NOT NULL,
       timeline_items text NULL,
+      updated_at text NULL,
       fetched_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
       PRIMARY KEY (repository_id, pull_request_number),
       FOREIGN KEY (repository_id) REFERENCES repositories(id)
@@ -332,5 +333,59 @@ describe('store', () => {
     expect(await store.loader.pullrequests()).toHaveLength(2)
     expect(await store.loader.commits(1)).toEqual(makeCommits(1))
     expect(await store.loader.commits(2)).toEqual(makeCommits(2))
+  })
+
+  test('getLatestUpdatedAt returns MAX(updatedAt) without JSON parsing', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+
+    const pr1 = { ...makePr(1), updatedAt: '2024-01-02T00:00:00Z' }
+    const pr2 = { ...makePr(2), updatedAt: '2024-01-05T00:00:00Z' }
+    const pr3 = { ...makePr(3), updatedAt: '2024-01-03T00:00:00Z' }
+
+    await store.savePrData(pr1, {
+      commits: makeCommits(1),
+      reviews: makeReviews(1),
+      discussions: makeDiscussions(1),
+    })
+    await store.savePrData(pr2, {
+      commits: makeCommits(2),
+      reviews: makeReviews(2),
+      discussions: makeDiscussions(2),
+    })
+    await store.savePrData(pr3, {
+      commits: makeCommits(3),
+      reviews: makeReviews(3),
+      discussions: makeDiscussions(3),
+    })
+
+    expect(await store.getLatestUpdatedAt()).toBe('2024-01-05T00:00:00Z')
+  })
+
+  test('getLatestUpdatedAt returns null when no data', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    expect(await store.getLatestUpdatedAt()).toBeNull()
+  })
+
+  test('preloadAll uses lazy parsing (data accessible after preload)', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+
+    await store.savePrData(makePr(1), {
+      commits: makeCommits(1),
+      reviews: makeReviews(1),
+      discussions: makeDiscussions(1),
+      timelineItems: makeTimelineItems(1),
+    })
+
+    await store.preloadAll()
+
+    // Data should be accessible via loaders after lazy preload
+    const prs = await store.loader.pullrequests()
+    expect(prs).toHaveLength(1)
+    expect(prs[0].number).toBe(1)
+
+    expect(await store.loader.commits(1)).toEqual(makeCommits(1))
+    expect(await store.loader.reviews(1)).toEqual(makeReviews(1))
+    expect(await store.loader.discussions(1)).toEqual(makeDiscussions(1))
+    expect(await store.loader.timelineItems(1)).toEqual(makeTimelineItems(1))
   })
 })

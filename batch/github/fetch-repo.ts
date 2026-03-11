@@ -3,7 +3,6 @@ import invariant from 'tiny-invariant'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { logger } from '~/batch/helper/logger'
-import { latestUpdatedPullRequest } from './aggregator'
 import { createFetcher } from './fetcher'
 import { createStore } from './store'
 
@@ -30,11 +29,10 @@ export async function fetchRepo(
 
   logger.info('fetch started: ', `${repository.owner}/${repository.repo}`)
 
-  // PR の最終更新日時を起点とする
-  const leastMergeRequest = latestUpdatedPullRequest(
-    await store.loader.pullrequests().catch(() => []),
-  )
-  const lastFetchedAt = leastMergeRequest?.updatedAt ?? '2000-01-01T00:00:00Z'
+  // PR の最終更新日時を起点とする（JSON パースなしで取得）
+  const lastFetchedAt =
+    (await store.getLatestUpdatedAt().catch(() => null)) ??
+    '2000-01-01T00:00:00Z'
   logger.info(`last fetched at: ${lastFetchedAt}`)
 
   if (halt) {
