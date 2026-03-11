@@ -69,7 +69,9 @@ export function SizeBadgePopover({
 
   const originalLabel = getPRComplexity({ complexity })
   const displayLabel = validCorrected ?? originalLabel
-  const hasFeedback = validCorrected != null && validCorrected !== originalLabel
+  const hasFeedback =
+    validCorrected != null &&
+    (validCorrected !== originalLabel || reason != null)
 
   const isSaving = fetcher.state !== 'idle'
   const isDrafting = draftFetcher.state !== 'idle'
