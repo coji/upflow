@@ -98,7 +98,12 @@ export function SizeBadgePopover({
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen)
-        if (!nextOpen) setSelectedSize(null)
+        if (nextOpen) {
+          setReasonText(reason ?? '')
+          setSelectedSize(null)
+        } else {
+          setSelectedSize(null)
+        }
       }}
     >
       <PopoverTrigger asChild>
@@ -178,6 +183,11 @@ export function SizeBadgePopover({
             rows={2}
             className="max-h-20 text-xs"
           />
+          {draftFetcher.data?.error && (
+            <p className="text-destructive text-[10px]">
+              {draftFetcher.data.error}
+            </p>
+          )}
           <div className="flex justify-end gap-1">
             <Button
               type="button"
