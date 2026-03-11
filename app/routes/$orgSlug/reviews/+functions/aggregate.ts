@@ -53,22 +53,67 @@ export interface WipAggregation {
   insight: string | null
 }
 
-export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
-  // PR作成時点でのauthorのWIP数を計算
-  const prsWithWip = data
-    .filter((d) => d.reviewTime !== null && d.reviewTime > 0)
-    .map((pr) => {
-      const wipCount = data.filter(
-        (other) =>
-          other.author === pr.author &&
-          other.pullRequestCreatedAt <= pr.pullRequestCreatedAt &&
-          (other.mergedAt === null ||
-            other.mergedAt > pr.pullRequestCreatedAt) &&
-          (other.number !== pr.number ||
-            other.repositoryId !== pr.repositoryId),
-      ).length
-      return { wipCount, reviewTimeHours: (pr.reviewTime as number) * 24 }
+function getWipLabel(wipCount: number): string {
+  if (wipCount <= 1) return 'WIP 0-1'
+  if (wipCount === 2) return 'WIP 2'
+  if (wipCount === 3) return 'WIP 3'
+  return 'WIP 4+'
+}
+
+type PRKey = `${string}:${number}` // repositoryId:number
+
+/**
+ * author ごとに sweep line で WIP 数を計算する。O(n log n)。
+ * 各PRの作成時点で、同じ author の未マージ PR が何件あったかを返す。
+ */
+function computeWipCounts(data: WipRawRow[]): Map<PRKey, number> {
+  const result = new Map<PRKey, number>()
+
+  // author ごとにグループ化
+  const byAuthor = new Map<string, WipRawRow[]>()
+  for (const pr of data) {
+    const group = byAuthor.get(pr.author)
+    if (group) group.push(pr)
+    else byAuthor.set(pr.author, [pr])
+  }
+
+  for (const prs of byAuthor.values()) {
+    // イベント列を作る: [timestamp, +1 or -1, PRKey]
+    // +1 = PR 作成（WIP 開始）、-1 = PR マージ（WIP 終了）
+    const events: { time: string; delta: number; key: PRKey }[] = []
+    for (const pr of prs) {
+      const key: PRKey = `${pr.repositoryId}:${pr.number}`
+      events.push({ time: pr.pullRequestCreatedAt, delta: +1, key })
+      if (pr.mergedAt !== null) {
+        events.push({ time: pr.mergedAt, delta: -1, key })
+      }
+    }
+
+    // 時刻順にソート。同時刻なら +1（開始）を先に処理
+    events.sort((a, b) => {
+      const cmp = a.time < b.time ? -1 : a.time > b.time ? 1 : 0
+      if (cmp !== 0) return cmp
+      return a.delta === b.delta ? 0 : a.delta > b.delta ? -1 : 1
     })
+
+    // sweep: 現在の WIP 数を追跡
+    let currentWip = 0
+    for (const ev of events) {
+      if (ev.delta === +1) {
+        // この PR の作成時点での WIP = 今のカウント（自分を除く）
+        result.set(ev.key, currentWip)
+        currentWip++
+      } else {
+        currentWip--
+      }
+    }
+  }
+
+  return result
+}
+
+export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
+  const wipCounts = computeWipCounts(data)
 
   const reviewTimes: Record<string, number[]> = {
     'WIP 0-1': [],
@@ -77,11 +122,13 @@ export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
     'WIP 4+': [],
   }
 
-  for (const d of prsWithWip) {
-    if (d.wipCount <= 1) reviewTimes['WIP 0-1'].push(d.reviewTimeHours)
-    else if (d.wipCount === 2) reviewTimes['WIP 2'].push(d.reviewTimeHours)
-    else if (d.wipCount === 3) reviewTimes['WIP 3'].push(d.reviewTimeHours)
-    else reviewTimes['WIP 4+'].push(d.reviewTimeHours)
+  for (const pr of data) {
+    if (pr.reviewTime === null || pr.reviewTime <= 0) continue
+    const key: PRKey = `${pr.repositoryId}:${pr.number}`
+    const wipCount = wipCounts.get(key) ?? 0
+    const hours = pr.reviewTime * 24
+    const label = getWipLabel(wipCount)
+    reviewTimes[label].push(hours)
   }
 
   const groups: WipGroup[] = Object.entries(reviewTimes)
@@ -105,31 +152,19 @@ export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
   return { groups, insight }
 }
 
-function getWipLabel(wipCount: number): string {
-  if (wipCount <= 1) return 'WIP 0-1'
-  if (wipCount === 2) return 'WIP 2'
-  if (wipCount === 3) return 'WIP 3'
-  return 'WIP 4+'
-}
-
 /**
  * 各PRにWIPラベルを付与して返す（ドリルダウンフィルタ用）
  */
 export function computeWipLabels(
   data: WipRawRow[],
 ): (WipRawRow & { wipLabel: string })[] {
+  const wipCounts = computeWipCounts(data)
+
   return data
     .filter((d) => d.reviewTime !== null && d.reviewTime > 0)
     .map((pr) => {
-      const wipCount = data.filter(
-        (other) =>
-          other.author === pr.author &&
-          other.pullRequestCreatedAt <= pr.pullRequestCreatedAt &&
-          (other.mergedAt === null ||
-            other.mergedAt > pr.pullRequestCreatedAt) &&
-          (other.number !== pr.number ||
-            other.repositoryId !== pr.repositoryId),
-      ).length
+      const key: PRKey = `${pr.repositoryId}:${pr.number}`
+      const wipCount = wipCounts.get(key) ?? 0
       return { ...pr, wipLabel: getWipLabel(wipCount) }
     })
 }
