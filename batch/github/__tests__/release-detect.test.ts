@@ -174,4 +174,23 @@ describe('buildBranchReleaseLookup', () => {
     const result = buildBranchReleaseLookup(prs, 'main')
     expect(result.get(1)).toBe('2024-01-20T00:00:00Z')
   })
+
+  test('回帰: squash merge で直接ターゲット (Issue #161)', () => {
+    // Issue #161 の再現: feature → main を squash merge した場合
+    // 旧実装 (SHA方式) では mergeCommitSha が commits 一覧に含まれず releasedAt = null になっていた
+    const prs = [
+      {
+        ...pr(1, 'feature/login', 'main', '2024-01-10T00:00:00Z'),
+        mergeCommitSha: 'squash-sha-not-in-commits',
+      },
+      {
+        ...pr(2, 'feature/auth', 'main', '2024-01-12T00:00:00Z'),
+        mergeCommitSha: null, // rebase merge ではnullの場合もある
+      },
+    ]
+    const result = buildBranchReleaseLookup(prs, 'main')
+    // ブランチ方式なので SHA に関係なくリリース検出される
+    expect(result.get(1)).toBe('2024-01-10T00:00:00Z')
+    expect(result.get(2)).toBe('2024-01-12T00:00:00Z')
+  })
 })
