@@ -55,9 +55,10 @@ function findEarliestRelease(
   bestSeen.set(startBranch, afterTime)
 
   let earliestRelease: string | null = null
+  let head = 0
 
-  while (queue.length > 0) {
-    const { branch, minTime } = queue.shift()!
+  while (head < queue.length) {
+    const { branch, minTime } = queue[head++]
 
     const edges = adj.get(branch)
     if (!edges) continue

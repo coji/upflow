@@ -48,6 +48,11 @@ function pr(
 }
 
 describe('buildBranchReleaseLookup', () => {
+  test('空のPRリスト', () => {
+    const result = buildBranchReleaseLookup([], 'main')
+    expect(result.size).toBe(0)
+  })
+
   test('直接ターゲット: feature → main', () => {
     const prs = [pr(1, 'feature/login', 'main', '2024-01-10T00:00:00Z')]
     const result = buildBranchReleaseLookup(prs, 'main')
