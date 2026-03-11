@@ -67,6 +67,7 @@ export const columns: ColumnDef<PullRequest>[] = [
         complexityReason={row.original.complexityReason}
         riskAreas={row.original.riskAreas}
         correctedComplexity={row.original.correctedComplexity}
+        reason={row.original.reason}
         repositoryId={row.original.repositoryId}
         number={row.original.number}
       />

@@ -1,12 +1,18 @@
-import { CheckIcon, PencilIcon } from 'lucide-react'
-import { useState } from 'react'
+import {
+  CheckIcon,
+  LoaderCircleIcon,
+  PencilIcon,
+  SparklesIcon,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useFetcher, useParams } from 'react-router'
-import { Badge } from '~/app/components/ui'
+import { Badge, Button } from '~/app/components/ui'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
+import { Textarea } from '~/app/components/ui/textarea'
 import { cn } from '~/app/libs/utils'
 import {
   PR_SIZE_LABELS,
@@ -33,6 +39,7 @@ interface SizeBadgePopoverProps {
   complexityReason: string | null
   riskAreas: string | null
   correctedComplexity: string | null
+  reason: string | null
   repositoryId: string
   number: number
 }
@@ -42,17 +49,33 @@ export function SizeBadgePopover({
   complexityReason,
   riskAreas,
   correctedComplexity,
+  reason,
   repositoryId,
   number,
 }: SizeBadgePopoverProps) {
   const { orgSlug } = useParams()
   const fetcher = useFetcher()
+  const draftFetcher = useFetcher<{ reason?: string; error?: string }>()
   const [open, setOpen] = useState(false)
+  const [selectedSize, setSelectedSize] = useState<PRSizeLabel | null>(null)
+
+  // When AI draft returns, insert into textarea
+  useEffect(() => {
+    if (draftFetcher.data?.reason) {
+      const textarea = document.getElementById(
+        `reason-${repositoryId}-${number}`,
+      ) as HTMLTextAreaElement | null
+      if (textarea) {
+        textarea.value = draftFetcher.data.reason
+      }
+    }
+  }, [draftFetcher.data, repositoryId, number])
 
   // Optimistic UI: fetcher.formData during flight, then server value
   const optimistic =
     fetcher.formData?.get('correctedComplexity')?.toString() ??
     correctedComplexity
+  const optimisticReason = fetcher.formData?.get('reason')?.toString() ?? reason
   const validCorrected =
     optimistic != null &&
     (PR_SIZE_LABELS as readonly string[]).includes(optimistic)
@@ -65,8 +88,16 @@ export function SizeBadgePopover({
 
   if (originalLabel === 'Unclassified' && !hasFeedback) return null
 
+  const isDrafting = draftFetcher.state !== 'idle'
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (!nextOpen) setSelectedSize(null)
+      }}
+    >
       <PopoverTrigger asChild>
         <button type="button" className="cursor-pointer">
           <Badge
@@ -78,7 +109,7 @@ export function SizeBadgePopover({
           </Badge>
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-2" align="start">
+      <PopoverContent className="w-80 max-w-sm p-2" align="start">
         {originalLabel !== 'Unclassified' && (
           <div className="mb-2 max-w-64 space-y-1 text-xs">
             <div className="flex items-center gap-1.5">
@@ -121,25 +152,82 @@ export function SizeBadgePopover({
                 PR_SIZE_STYLE[size],
                 'cursor-pointer hover:opacity-80',
                 'disabled:cursor-not-allowed disabled:opacity-50',
+                selectedSize === size && 'ring-2 ring-offset-1',
               )}
+              onClick={() =>
+                setSelectedSize(selectedSize === size ? null : size)
+              }
+            >
+              {size}
+              {(selectedSize == null
+                ? displayLabel === size
+                : selectedSize === size) && (
+                <CheckIcon className="ml-0.5 inline size-3" />
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 space-y-2">
+          <Textarea
+            placeholder={`Why ${selectedSize ?? displayLabel}? (optional)`}
+            defaultValue={optimisticReason ?? ''}
+            name="reason"
+            rows={2}
+            className="max-h-20 text-xs"
+            id={`reason-${repositoryId}-${number}`}
+          />
+          <div className="flex justify-end gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs"
+              disabled={isDrafting || selectedSize == null}
               onClick={() => {
+                if (selectedSize == null) return
                 const formData = new FormData()
                 formData.set('pullRequestNumber', String(number))
                 formData.set('repositoryId', repositoryId)
-                formData.set('correctedComplexity', size)
+                formData.set('correctedComplexity', selectedSize)
+                draftFetcher.submit(formData, {
+                  method: 'post',
+                  action: `/${orgSlug}/draft-feedback-reason`,
+                })
+              }}
+            >
+              {isDrafting ? (
+                <LoaderCircleIcon className="size-3 animate-spin" />
+              ) : (
+                <SparklesIcon className="size-3" />
+              )}
+              AI Draft
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-6 text-xs"
+              disabled={fetcher.state !== 'idle' || selectedSize == null}
+              onClick={() => {
+                if (selectedSize == null) return
+                const textarea = document.getElementById(
+                  `reason-${repositoryId}-${number}`,
+                ) as HTMLTextAreaElement | null
+                const formData = new FormData()
+                formData.set('pullRequestNumber', String(number))
+                formData.set('repositoryId', repositoryId)
+                formData.set('correctedComplexity', selectedSize)
+                formData.set('reason', textarea?.value ?? '')
                 fetcher.submit(formData, {
                   method: 'post',
                   action: `/${orgSlug}/pr-size-feedback`,
                 })
                 setOpen(false)
+                setSelectedSize(null)
               }}
             >
-              {size}
-              {displayLabel === size && (
-                <CheckIcon className="ml-0.5 inline size-3" />
-              )}
-            </button>
-          ))}
+              Save
+            </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

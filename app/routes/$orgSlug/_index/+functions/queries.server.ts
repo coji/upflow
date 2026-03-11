@@ -67,6 +67,7 @@ export const getMergedPullRequestReport = async (
       'pullRequests.complexityReason',
       'pullRequests.riskAreas',
       'pullRequestFeedbacks.correctedComplexity',
+      'pullRequestFeedbacks.reason',
     ])
     .execute()
 
