@@ -32,7 +32,7 @@ export function TeamFilter({ teams }: { teams: Team[] }) {
         })
       }}
     >
-      <SelectTrigger className="h-8 w-44">
+      <SelectTrigger className="w-44">
         <SelectValue placeholder="All Teams" />
       </SelectTrigger>
       <SelectContent>
