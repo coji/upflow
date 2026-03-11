@@ -36,10 +36,14 @@ export const crawlJob = async () => {
       }
       const options = { refresh, halt: false }
 
-      // fetch
+      // fetch — 更新PR番号を収集
+      const updatedPrNumbers = new Map<string, Set<number>>()
       for (const repository of organization.repositories) {
         logger.info('fetch started...')
-        await fetchRepo(orgId, repository, integration, options)
+        const result = await fetchRepo(orgId, repository, integration, options)
+        if (result.updatedPrNumbers.length > 0) {
+          updatedPrNumbers.set(repository.id, new Set(result.updatedPrNumbers))
+        }
         logger.info('fetch completed.')
       }
 
@@ -53,6 +57,12 @@ export const crawlJob = async () => {
         logger.info('refresh flag consumed.')
       }
 
+      // 更新PRがなければ analyze をスキップ
+      if (!refresh && updatedPrNumbers.size === 0) {
+        logger.info('no updated PRs, skipping analyze.', orgId)
+        continue
+      }
+
       // analyze + upsert + export
       await analyzeAndUpsert({
         organization: {
@@ -61,6 +71,7 @@ export const crawlJob = async () => {
           repositories: organization.repositories,
           exportSetting: organization.exportSetting,
         },
+        updatedPrNumbers: refresh ? undefined : updatedPrNumbers,
       })
     }
 

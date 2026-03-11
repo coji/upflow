@@ -186,6 +186,7 @@ export const buildPullRequests = async (
   config: BuildConfig,
   pullrequests: ShapedGitHubPullRequest[],
   loaders: PullRequestLoaders,
+  filterPrNumbers?: Set<number>,
 ) => {
   // カンマ区切りの除外ユーザーリストをパース
   const customExcludedUsers = config.excludedUsers
@@ -217,6 +218,11 @@ export const buildPullRequests = async (
   const reviewResponses: AnalyzedReviewResponse[] = []
 
   for (const pr of pullrequests) {
+    // フィルタが指定されていれば、対象外PRをスキップ
+    if (filterPrNumbers && !filterPrNumbers.has(pr.number)) {
+      continue
+    }
+
     try {
       // 1. アーティファクト読み込み（I/O）
       const rawArtifacts = await loadPrArtifacts(pr, loaders)

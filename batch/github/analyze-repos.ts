@@ -1,6 +1,7 @@
 import type { Selectable } from 'kysely'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
+import { logger } from '~/batch/helper/logger'
 import { buildPullRequests } from './pullrequest'
 import { createStore } from './store'
 import type {
@@ -21,6 +22,8 @@ export async function analyzeRepos(
     current: number
     total: number
   }) => void,
+  /** リポジトリID → 更新PR番号セット。undefined なら全件処理 */
+  updatedPrNumbers?: Map<string, Set<number>>,
 ) {
   const allPulls: Selectable<TenantDB.PullRequests>[] = []
   const allReviews: AnalyzedReview[] = []
@@ -33,6 +36,17 @@ export async function analyzeRepos(
   for (const repository of repositories) {
     current++
     onProgress?.({ repo: repository.repo, current, total })
+
+    // フィルタが指定されていて、このリポジトリに更新PRがなければスキップ
+    if (updatedPrNumbers && !updatedPrNumbers.has(repository.id)) {
+      logger.info(
+        `skipping ${repository.repo} (no updated PRs)`,
+        organizationId,
+      )
+      continue
+    }
+
+    const filterPrNumbers = updatedPrNumbers?.get(repository.id)
 
     const store = createStore({
       organizationId,
@@ -56,6 +70,7 @@ export async function analyzeRepos(
         },
         await store.loader.pullrequests(),
         store.loader,
+        filterPrNumbers,
       )
     allPulls.push(...pulls)
     allReviews.push(...reviews)
