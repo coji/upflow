@@ -13,6 +13,7 @@ import {
   PopoverTrigger,
 } from '~/app/components/ui/popover'
 import { Textarea } from '~/app/components/ui/textarea'
+import dayjs from '~/app/libs/dayjs'
 import { cn } from '~/app/libs/utils'
 import {
   PR_SIZE_DESCRIPTION,
@@ -164,26 +165,20 @@ export function SizeBadgePopover({
           </div>
         )}
         {hasFeedback && (
-          <div className="mb-2 max-w-64 space-y-1 text-xs">
-            <div className="flex items-center gap-1.5">
-              <Badge
-                variant="default"
-                className={cn(
-                  'text-[10px]',
-                  PR_SIZE_STYLE[validCorrected ?? originalLabel],
-                )}
-              >
-                {validCorrected ?? originalLabel}
-              </Badge>
-              <span className="text-muted-foreground text-[10px]">
-                by {feedbackBy ?? 'human'}
-                {feedbackAt &&
-                  ` · ${new Date(feedbackAt).toLocaleDateString()}`}
-              </span>
-            </div>
-            {reason && (
-              <p className="text-muted-foreground leading-snug">{reason}</p>
-            )}
+          <div className="mb-2 flex items-center gap-1.5 text-xs">
+            <Badge
+              variant="default"
+              className={cn(
+                'text-[10px]',
+                PR_SIZE_STYLE[validCorrected ?? originalLabel],
+              )}
+            >
+              {validCorrected ?? originalLabel}
+            </Badge>
+            <span className="text-muted-foreground text-[10px]">
+              by {feedbackBy ?? 'human'}
+              {feedbackAt && ` · ${dayjs(feedbackAt).fromNow()}`}
+            </span>
           </div>
         )}
         <div className="flex gap-1">
