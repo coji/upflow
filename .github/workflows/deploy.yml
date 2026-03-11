@@ -125,8 +125,9 @@ jobs:
       - name: 🔎 Check generated types are up to date
         run: |
           pnpm db:generate
+          pnpm prettier --write app/services/type.ts app/services/tenant-type.ts
           git diff --exit-code app/services/type.ts app/services/tenant-type.ts || {
-            echo "::error::Generated DB types are out of date. Run 'pnpm db:generate' and commit the result."
+            echo "::error::Generated DB types are out of date. Run 'pnpm db:generate && pnpm prettier --write app/services/type.ts app/services/tenant-type.ts' and commit the result."
             exit 1
           }
 
