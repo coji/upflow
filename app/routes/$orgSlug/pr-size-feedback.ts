@@ -49,6 +49,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     .where('userId', '=', user.id)
     .executeTakeFirst()
   const feedbackBy = githubUser?.displayName || githubUser?.login || user.name
+  const feedbackByLogin = githubUser?.login ?? null
 
   // Upsert feedback
   const now = new Date().toISOString()
@@ -61,6 +62,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       correctedComplexity,
       reason: reason ?? null,
       feedbackBy,
+      feedbackByLogin,
       createdAt: now,
       updatedAt: now,
     })
@@ -69,6 +71,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         correctedComplexity,
         reason: reason ?? null,
         feedbackBy,
+        feedbackByLogin,
         updatedAt: now,
       }),
     )
