@@ -91,7 +91,7 @@ export function DataTablePagination({
             variant="outline"
             className="h-8 w-8 p-0"
             onClick={() => updatePagination({ page: currentPage + 1 })}
-            disabled={currentPage === totalPages || totalPages === 1}
+            disabled={currentPage >= totalPages || totalPages <= 1}
           >
             <span className="sr-only">Go to next page</span>
             <ChevronRightIcon className="h-4 w-4" />
@@ -101,7 +101,7 @@ export function DataTablePagination({
             variant="outline"
             className="hidden h-8 w-8 p-0 lg:flex"
             onClick={() => updatePagination({ page: totalPages })}
-            disabled={currentPage === totalPages || totalPages === 1}
+            disabled={currentPage >= totalPages || totalPages <= 1}
           >
             <span className="sr-only">Go to last page</span>
             <ChevronsRightIcon className="h-4 w-4" />
