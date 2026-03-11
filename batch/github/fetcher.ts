@@ -1,5 +1,6 @@
 import { print } from 'graphql'
 import { Octokit } from 'octokit'
+import dayjs from '~/app/libs/dayjs'
 import { logger } from '~/batch/helper/logger'
 import { graphql, type ResultOf } from './graphql'
 import type {
@@ -566,6 +567,9 @@ const GetTagsQuery = graphql(`
               committedDate
             }
             ... on Tag {
+              tagger {
+                date
+              }
               target {
                 __typename
                 ... on Commit {
@@ -1047,7 +1051,11 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           const innerTarget = target.target
           if (innerTarget?.__typename === 'Commit') {
             sha = innerTarget.oid
-            committedDate = innerTarget.committedDate
+            // tagger.date を優先（annotated tag のタグ作成日時）、UTC に正規化
+            const rawDate = target.tagger?.date ?? innerTarget.committedDate
+            committedDate = rawDate
+              ? dayjs(rawDate).utc().toISOString()
+              : rawDate
           } else {
             continue
           }
