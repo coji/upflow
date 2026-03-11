@@ -3,6 +3,7 @@ import { data } from 'react-router'
 import { z } from 'zod'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import { escapeXml } from '~/app/libs/escape-xml'
+import { DECISION_PROCEDURE, SIZE_DEFINITIONS } from '~/app/libs/pr-size-prompt'
 import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { Route } from './+types/draft-feedback-reason'
@@ -64,20 +65,9 @@ Explain why a human reviewer corrected an AI's PR size classification. Generate 
 </goal>
 
 <size_definitions>
-Classification is based on reviewer cognitive load and impact scope — NOT diff line count.
+${SIZE_DEFINITIONS}
 
-XS — Near-zero cognitive load. Mechanical, localized. No need to understand intent.
-  Examples: typo fixes, config values, lock files, reverts, release PRs, file moves.
-S — Low cognitive load. Single concern, straightforward to verify.
-  Examples: small bug fixes, test additions, doc updates, feature flag toggles.
-M — Moderate cognitive load. One component's context needed. Clear boundaries.
-  Examples: scoped new feature (1 endpoint, 1 component), module-internal refactor.
-L — High cognitive load. Multiple components OR risky area (DB schema, auth, payment, security).
-  Examples: cross-cutting changes (DB + API + UI), auth/payment logic, new subsystem.
-XL — Very high cognitive load. System-level understanding required.
-  Examples: architecture overhauls, framework migrations, major rewrites.
-
-Decision priority: mechanical? → XS/S. Risky area? → at least L. Then count components: 1 concern → S, 1 component → M, multiple → L, system-wide → XL.
+${DECISION_PROCEDURE}
 </size_definitions>
 
 <input_format>
