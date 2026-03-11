@@ -19,7 +19,7 @@ import type {
   ShapedGitHubReviewComment,
 } from './model'
 import {
-  buildBranchReleaseMap,
+  buildBranchReleaseLookup,
   buildTagReleaseList,
   findReleaseDateFromTags,
 } from './release-detect'
@@ -195,15 +195,14 @@ export const buildPullRequests = async (
     .filter((u) => u.length > 0)
   const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
 
-  // リリース日ルックアップを事前構築（O(n²) → O(1) or O(log n) per PR）
+  // リリース日ルックアップを事前構築
   // 注: filterPrNumbers に関係なく全 PR から構築する（リリースPR自体がフィルタ外でも必要）
-  let branchReleaseMap: Map<string, string> | null = null
+  let branchReleaseLookup: Map<number, string> | null = null
   let tagReleaseList: { committedAt: string }[] | null = null
 
   if (config.releaseDetectionMethod === 'branch') {
-    branchReleaseMap = await buildBranchReleaseMap(
+    branchReleaseLookup = buildBranchReleaseLookup(
       pullrequests,
-      loaders,
       config.releaseDetectionKey,
     )
   } else if (config.releaseDetectionMethod === 'tags') {
@@ -247,9 +246,9 @@ export const buildPullRequests = async (
 
       // 5. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
       let releasedAt: string | null = null
-      if (pr.mergedAt && pr.mergeCommitSha) {
-        if (branchReleaseMap) {
-          releasedAt = branchReleaseMap.get(pr.mergeCommitSha) ?? null
+      if (pr.mergedAt) {
+        if (branchReleaseLookup) {
+          releasedAt = branchReleaseLookup.get(pr.number) ?? null
         } else if (tagReleaseList) {
           releasedAt = findReleaseDateFromTags(pr.mergedAt, tagReleaseList)
         }
