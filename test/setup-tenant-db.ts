@@ -13,6 +13,9 @@ const tenantSchema = readFileSync(
  */
 export function setupTenantSchema(dbPath: string): void {
   const db = new SQLite(dbPath)
-  db.exec(tenantSchema)
-  db.close()
+  try {
+    db.exec(tenantSchema)
+  } finally {
+    db.close()
+  }
 }
