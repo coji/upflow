@@ -14,15 +14,6 @@ interface createStoreProps {
   repositoryId: string
 }
 
-/** Raw row from better-sqlite3 (no JSON parsing, snake_case columns) */
-interface RawRow {
-  pull_request: string
-  commits: string
-  reviews: string
-  discussions: string
-  timeline_items: string | null
-}
-
 /** Parsed row with typed data */
 interface ParsedRow {
   pullRequest: ShapedGitHubPullRequest
@@ -30,18 +21,6 @@ interface ParsedRow {
   reviews: ShapedGitHubReview[]
   discussions: ShapedGitHubReviewComment[]
   timelineItems: ShapedTimelineItem[]
-}
-
-function parseRawRow(raw: RawRow): ParsedRow {
-  return {
-    pullRequest: JSON.parse(raw.pull_request) as ShapedGitHubPullRequest,
-    commits: JSON.parse(raw.commits) as ShapedGitHubCommit[],
-    reviews: JSON.parse(raw.reviews) as ShapedGitHubReview[],
-    discussions: JSON.parse(raw.discussions) as ShapedGitHubReviewComment[],
-    timelineItems: raw.timeline_items
-      ? (JSON.parse(raw.timeline_items) as ShapedTimelineItem[])
-      : [],
-  }
 }
 
 export const createStore = ({
@@ -127,51 +106,80 @@ export const createStore = ({
       .execute()
   }
 
-  // --- preload 系 (analyze 用の一括ロード) ---
+  // --- preload 系 ---
 
-  // Lazy parsing: raw strings are stored on preload, parsed on access.
-  // When a row is parsed, its raw entry is deleted to free string memory.
-  let cache: {
-    raw: Map<number, RawRow>
-    parsed: Map<number, ParsedRow>
-  } | null = null
+  // Only PR metadata is preloaded (lightweight, ~1KB per PR).
+  // Heavy columns (commits/reviews/etc.) are loaded per-PR via PK lookup.
+  let prMetadata: Map<number, ShapedGitHubPullRequest> | null = null
+
+  // Cache for full row data loaded on demand
+  const rowCache = new Map<number, ParsedRow>()
 
   const preloadAll = () => {
     // Use raw better-sqlite3 to bypass ParseJSONResultsPlugin
-    // This avoids synchronous JSON.parse of all rows at once
     const rawDb = getTenantRawDb(organizationId)
     const rows = rawDb
       .prepare(
-        `SELECT pull_request_number, pull_request, commits, reviews, discussions, timeline_items
+        `SELECT pull_request_number, pull_request
          FROM github_raw_data
          WHERE repository_id = ?`,
       )
-      .all(repositoryId) as Array<RawRow & { pull_request_number: number }>
+      .all(repositoryId) as Array<{
+      pull_request_number: number
+      pull_request: string
+    }>
 
-    cache = {
-      raw: new Map(rows.map((row) => [row.pull_request_number, row])),
-      parsed: new Map(),
-    }
+    prMetadata = new Map(
+      rows.map((row) => [
+        row.pull_request_number,
+        JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
+      ]),
+    )
   }
 
   // --- loader 系 ---
 
-  /** Parse and cache a single row from the preloaded data.
-   *  Removes the raw entry after parsing to free string memory. */
-  const getParsedRow = (number: number): ParsedRow | null => {
-    if (!cache) return null
-    const cached = cache.parsed.get(number)
-    if (cached) return cached
-    const raw = cache.raw.get(number)
-    if (!raw) return null
-    const parsed = parseRawRow(raw)
-    cache.parsed.set(number, parsed)
-    cache.raw.delete(number)
-    return parsed
-  }
-
   const loadRow = async (number: number): Promise<ParsedRow | null> => {
-    if (cache) return getParsedRow(number)
+    const cached = rowCache.get(number)
+    if (cached) return cached
+
+    // If preloaded, we have PR metadata but need heavy columns from DB
+    if (prMetadata) {
+      const pr = prMetadata.get(number)
+      if (!pr) return null
+
+      // Load only heavy columns via raw DB (bypasses ParseJSONResultsPlugin)
+      const rawDb = getTenantRawDb(organizationId)
+      const row = rawDb
+        .prepare(
+          `SELECT commits, reviews, discussions, timeline_items
+           FROM github_raw_data
+           WHERE repository_id = ? AND pull_request_number = ?`,
+        )
+        .get(repositoryId, number) as
+        | {
+            commits: string
+            reviews: string
+            discussions: string
+            timeline_items: string | null
+          }
+        | undefined
+      if (!row) return null
+
+      const parsed: ParsedRow = {
+        pullRequest: pr,
+        commits: JSON.parse(row.commits) as ShapedGitHubCommit[],
+        reviews: JSON.parse(row.reviews) as ShapedGitHubReview[],
+        discussions: JSON.parse(row.discussions) as ShapedGitHubReviewComment[],
+        timelineItems: row.timeline_items
+          ? (JSON.parse(row.timeline_items) as ShapedTimelineItem[])
+          : [],
+      }
+      rowCache.set(number, parsed)
+      return parsed
+    }
+
+    // No preload: full query via Kysely
     const row = await db
       .selectFrom('githubRawData')
       .select([
@@ -217,22 +225,8 @@ export const createStore = ({
   }
 
   const pullrequests = async (): Promise<ShapedGitHubPullRequest[]> => {
-    if (cache) {
-      // Only parse pullRequest field — avoid eagerly parsing heavy columns
-      // (commits/reviews/etc.) for PRs that may be filtered out later.
-      // Check parsed cache first (for rows already accessed via loadRow).
-      const result: ShapedGitHubPullRequest[] = []
-      for (const [number, raw] of cache.raw) {
-        const parsed = cache.parsed.get(number)
-        result.push(
-          parsed?.pullRequest ??
-            (JSON.parse(raw.pull_request) as ShapedGitHubPullRequest),
-        )
-      }
-      for (const [number, parsed] of cache.parsed) {
-        if (!cache.raw.has(number)) result.push(parsed.pullRequest)
-      }
-      return result
+    if (prMetadata) {
+      return [...prMetadata.values()]
     }
     const rows = await db
       .selectFrom('githubRawData')
