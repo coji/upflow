@@ -81,9 +81,19 @@ export function SizeBadgePopover({
   const displayLabel = validCorrected ?? originalLabel
   const hasFeedback = validCorrected != null && validCorrected !== originalLabel
 
-  if (originalLabel === 'Unclassified' && !hasFeedback) return null
-
+  const isSaving = fetcher.state !== 'idle'
   const isDrafting = draftFetcher.state !== 'idle'
+  const isBusy = isSaving || isDrafting
+
+  // Close popover after save completes successfully
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data) {
+      setOpen(false)
+      setSelectedSize(null)
+    }
+  }, [fetcher.state, fetcher.data])
+
+  if (originalLabel === 'Unclassified' && !hasFeedback) return null
 
   const buildFormData = (size: PRSizeLabel) => {
     const fd = new FormData()
@@ -154,7 +164,7 @@ export function SizeBadgePopover({
             <button
               key={size}
               type="button"
-              disabled={fetcher.state !== 'idle'}
+              disabled={isBusy}
               className={cn(
                 'relative rounded px-2 py-1 text-xs font-medium transition-opacity',
                 PR_SIZE_STYLE[size],
@@ -215,7 +225,7 @@ export function SizeBadgePopover({
               type="button"
               size="sm"
               className="h-6 text-xs"
-              disabled={fetcher.state !== 'idle' || selectedSize == null}
+              disabled={isBusy || selectedSize == null}
               onClick={() => {
                 if (selectedSize == null) return
                 const fd = buildFormData(selectedSize)
@@ -224,8 +234,6 @@ export function SizeBadgePopover({
                   method: 'post',
                   action: `/${orgSlug}/pr-size-feedback`,
                 })
-                setOpen(false)
-                setSelectedSize(null)
               }}
             >
               Save
