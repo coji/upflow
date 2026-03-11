@@ -12,7 +12,7 @@ export async function fetchRepo(
   repository: Selectable<TenantDB.Repositories>,
   integration: Pick<Selectable<TenantDB.Integrations>, 'privateToken'>,
   options: { refresh?: boolean; halt?: boolean } = {},
-) {
+): Promise<{ updatedPrNumbers: number[] }> {
   const { refresh = false, halt = false } = options
   invariant(repository.repo, 'repo not specified')
   invariant(repository.owner, 'owner not specified')
@@ -39,7 +39,7 @@ export async function fetchRepo(
 
   if (halt) {
     logger.fatal('halted')
-    return
+    return { updatedPrNumbers: [] }
   }
 
   // 全タグ情報をダウンロード
@@ -55,11 +55,12 @@ export async function fetchRepo(
   const allPullRequests = await fetcher.pullrequests()
   logger.info(`fetched ${allPullRequests.length} PRs.`)
 
+  const updatedPrNumbers: number[] = []
   let processed = 0
   for (const pr of allPullRequests) {
     if (halt) {
       logger.fatal('halted')
-      return
+      return { updatedPrNumbers }
     }
 
     // refresh でなければ更新分のみ
@@ -92,6 +93,7 @@ export async function fetchRepo(
         discussions,
         timelineItems,
       })
+      updatedPrNumbers.push(pr.number)
     } catch (e) {
       logger.warn(
         `${pr.number} failed, skipping:`,
@@ -101,4 +103,5 @@ export async function fetchRepo(
   }
 
   logger.info('fetch completed: ', `${repository.owner}/${repository.repo}`)
+  return { updatedPrNumbers }
 }

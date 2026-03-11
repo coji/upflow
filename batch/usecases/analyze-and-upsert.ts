@@ -28,6 +28,8 @@ interface OrganizationForAnalyze {
 
 interface AnalyzeAndUpsertParams {
   organization: OrganizationForAnalyze
+  /** リポジトリID → 更新PR番号セット。undefined なら全件処理 */
+  updatedPrNumbers?: Map<string, Set<number>>
 }
 
 /**
@@ -35,6 +37,7 @@ interface AnalyzeAndUpsertParams {
  */
 export async function analyzeAndUpsert({
   organization,
+  updatedPrNumbers,
 }: AnalyzeAndUpsertParams) {
   const orgId = organization.id
 
@@ -44,6 +47,8 @@ export async function analyzeAndUpsert({
     orgId,
     organization.organizationSetting,
     organization.repositories,
+    undefined,
+    updatedPrNumbers,
   )
   logger.info('analyze completed.', orgId)
 
