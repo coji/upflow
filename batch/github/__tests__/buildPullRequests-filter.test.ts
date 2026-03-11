@@ -38,12 +38,16 @@ const basePr: ShapedGitHubPullRequest = {
   files: [],
 }
 
+// テストデータ: PR#1,#2 は develop にマージ → PR#4 で develop → main にリリース
+// これにより推移的リリース検出（PR#2 → develop → main）がテストされる
 const prs: ShapedGitHubPullRequest[] = [
   {
     ...basePr,
     id: 1,
     number: 1,
-    title: 'PR 1 - merged',
+    title: 'PR 1 - merged to develop',
+    sourceBranch: 'feature/a',
+    targetBranch: 'develop',
     mergeCommitSha: 'sha1',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-03T00:00:00Z',
@@ -55,7 +59,9 @@ const prs: ShapedGitHubPullRequest[] = [
     ...basePr,
     id: 2,
     number: 2,
-    title: 'PR 2 - merged released',
+    title: 'PR 2 - merged to develop (released via PR 4)',
+    sourceBranch: 'feature/b',
+    targetBranch: 'develop',
     mergeCommitSha: 'sha2',
     createdAt: '2024-01-05T00:00:00Z',
     updatedAt: '2024-01-08T00:00:00Z',
@@ -67,6 +73,8 @@ const prs: ShapedGitHubPullRequest[] = [
     id: 3,
     number: 3,
     title: 'PR 3 - open',
+    sourceBranch: 'feature/c',
+    targetBranch: 'develop',
     state: 'open',
     mergeCommitSha: null,
     createdAt: '2024-01-10T00:00:00Z',
@@ -78,8 +86,8 @@ const prs: ShapedGitHubPullRequest[] = [
     ...basePr,
     id: 4,
     number: 4,
-    title: 'PR 4 - release branch PR',
-    sourceBranch: 'release/v1.0',
+    title: 'PR 4 - release (develop → main)',
+    sourceBranch: 'develop',
     targetBranch: 'main',
     mergeCommitSha: 'sha_release',
     createdAt: '2024-01-06T00:00:00Z',
@@ -197,7 +205,7 @@ const config = {
   organizationId: 'org-1' as OrganizationId,
   repositoryId: 'repo-1',
   releaseDetectionMethod: 'branch',
-  releaseDetectionKey: 'release/',
+  releaseDetectionKey: 'main',
   excludedUsers: '',
 }
 
@@ -267,8 +275,8 @@ describe('buildPullRequests filter', () => {
   })
 
   test('リリース検出はフィルタに関係なく全PRから行われる', async () => {
-    // PR 2 は PR 4 (release branch) によってリリース検出される
-    // フィルタで PR 2 だけ指定しても、リリース日が正しく設定されることを確認
+    // PR 2 (feature/b → develop) は PR 4 (develop → main) 経由で推移的にリリース検出される
+    // フィルタで PR 2 だけ指定しても、PR 4 がルックアップ構築に含まれリリース日が正しく設定される
     const filterJustPr2 = new Set([2])
 
     const resultAll = await buildPullRequests(config, prs, mockLoaders)
@@ -282,6 +290,8 @@ describe('buildPullRequests filter', () => {
     const pr2All = resultAll.pulls.find((p) => p.number === 2)
     const pr2Filtered = resultFiltered.pulls.find((p) => p.number === 2)
 
+    // 推移的リリース検出が実際に動作していることを確認
+    expect(pr2All?.releasedAt).toBe('2024-01-08T00:00:00Z')
     expect(pr2Filtered).toEqual(pr2All)
   })
 })
