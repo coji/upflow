@@ -15,6 +15,19 @@ import {
   type PRSizeLabel,
 } from '../reviews/+functions/classify'
 
+function parseRiskAreas(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map(String)
+  } catch {
+    // not JSON — split by comma
+  }
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 interface SizeBadgePopoverProps {
   complexity: string | null
   complexityReason: string | null
@@ -67,13 +80,34 @@ export function SizeBadgePopover({
       </PopoverTrigger>
       <PopoverContent className="w-auto p-2" align="start">
         {originalLabel !== 'Unclassified' && (
-          <div className="text-muted-foreground mb-1.5 max-w-56 space-y-0.5 text-[10px]">
-            <div>
-              AI classified:{' '}
-              <span className="font-medium">{originalLabel}</span>
+          <div className="mb-2 max-w-64 space-y-1 text-xs">
+            <div className="flex items-center gap-1.5">
+              <Badge
+                variant="default"
+                className={cn('text-[10px]', PR_SIZE_STYLE[originalLabel])}
+              >
+                {originalLabel}
+              </Badge>
+              <span className="text-muted-foreground text-[10px]">by AI</span>
             </div>
-            {complexityReason && <div>{complexityReason}</div>}
-            {riskAreas && <div>Risk: {riskAreas}</div>}
+            {complexityReason && (
+              <p className="text-muted-foreground leading-snug">
+                {complexityReason}
+              </p>
+            )}
+            {riskAreas && (
+              <div className="flex flex-wrap gap-1">
+                {[...new Set(parseRiskAreas(riskAreas))].map((area) => (
+                  <Badge
+                    key={area}
+                    variant="outline"
+                    className="text-[10px] font-normal"
+                  >
+                    {area}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         )}
         <div className="flex gap-1">

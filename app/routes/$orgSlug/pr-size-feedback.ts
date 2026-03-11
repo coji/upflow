@@ -13,7 +13,7 @@ const feedbackSchema = z.object({
 })
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization, user } = await requireOrgMember(request, params.orgSlug)
+  const { organization } = await requireOrgMember(request, params.orgSlug)
   const formData = await request.formData()
   const parsed = feedbackSchema.safeParse({
     pullRequestNumber: formData.get('pullRequestNumber'),
@@ -49,7 +49,6 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     .values({
       pullRequestNumber,
       repositoryId,
-      feedbackBy: user.id,
       originalComplexity: pr.complexity,
       correctedComplexity,
       reason: reason ?? null,
@@ -57,13 +56,11 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       updatedAt: now,
     })
     .onConflict((oc) =>
-      oc
-        .columns(['pullRequestNumber', 'repositoryId', 'feedbackBy'])
-        .doUpdateSet({
-          correctedComplexity,
-          reason: reason ?? null,
-          updatedAt: now,
-        }),
+      oc.columns(['pullRequestNumber', 'repositoryId']).doUpdateSet({
+        correctedComplexity,
+        reason: reason ?? null,
+        updatedAt: now,
+      }),
     )
     .execute()
 

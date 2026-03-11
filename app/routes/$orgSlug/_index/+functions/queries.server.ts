@@ -36,29 +36,21 @@ export const getMergedPullRequestReport = async (
         eb('companyGithubUsers.type', '!=', 'Bot'),
       ]),
     )
+    .leftJoin('pullRequestFeedbacks', (join) =>
+      join
+        .onRef(
+          'pullRequestFeedbacks.pullRequestNumber',
+          '=',
+          'pullRequests.number',
+        )
+        .onRef(
+          'pullRequestFeedbacks.repositoryId',
+          '=',
+          'pullRequests.repositoryId',
+        ),
+    )
     .orderBy('mergedAt', 'desc')
     .orderBy('pullRequestCreatedAt', 'desc')
-    .leftJoin(
-      (eb) =>
-        eb
-          .selectFrom('pullRequestFeedbacks')
-          .select([
-            'pullRequestNumber',
-            'repositoryId',
-            'correctedComplexity',
-            eb.fn.max('updatedAt').as('_maxUpdatedAt'),
-          ])
-          .groupBy(['pullRequestNumber', 'repositoryId'])
-          .as('latestFeedback'),
-      (join) =>
-        join
-          .onRef('latestFeedback.pullRequestNumber', '=', 'pullRequests.number')
-          .onRef(
-            'latestFeedback.repositoryId',
-            '=',
-            'pullRequests.repositoryId',
-          ),
-    )
     .select([
       'pullRequests.author',
       'pullRequests.repo',
@@ -74,7 +66,7 @@ export const getMergedPullRequestReport = async (
       'pullRequests.complexity',
       'pullRequests.complexityReason',
       'pullRequests.riskAreas',
-      'latestFeedback.correctedComplexity',
+      'pullRequestFeedbacks.correctedComplexity',
     ])
     .execute()
 
