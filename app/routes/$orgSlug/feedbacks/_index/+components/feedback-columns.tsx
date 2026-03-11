@@ -9,18 +9,11 @@ import {
 import dayjs from '~/app/libs/dayjs'
 import { cn } from '~/app/libs/utils'
 import {
+  PR_SIZE_RANK,
   PR_SIZE_STYLE,
   type PRSizeLabel,
 } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import type { FeedbackRow } from '../+functions/queries.server'
-
-const PR_SIZE_RANK: Record<string, number> = {
-  XS: 0,
-  S: 1,
-  M: 2,
-  L: 3,
-  XL: 4,
-}
 
 function SizeBadgeInline({ size }: { size: string | null }) {
   if (!size) return <span className="text-muted-foreground">—</span>
@@ -104,12 +97,11 @@ export const feedbackColumns: ColumnDef<FeedbackRow, unknown>[] = [
     cell: (info) => {
       const value = info.getValue()
       if (!value) return <span className="text-muted-foreground">—</span>
-      const truncated = value.length > 60 ? `${value.slice(0, 60)}…` : value
       if (value.length <= 60) return <span className="text-sm">{value}</span>
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="cursor-help text-sm">{truncated}</span>
+            <span className="cursor-help text-sm">{value.slice(0, 60)}…</span>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">{value}</TooltipContent>
         </Tooltip>

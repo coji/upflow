@@ -10,7 +10,7 @@ export type PRSizeLabel = PRSize | 'Unclassified'
 
 export const PR_SIZE_LABELS = ['XS', 'S', 'M', 'L', 'XL'] as const
 
-const PR_SIZE_RANK: Record<string, number> = {
+export const PR_SIZE_RANK: Record<string, number> = {
   XS: 0,
   S: 1,
   M: 2,

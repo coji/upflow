@@ -5,17 +5,6 @@ import { z } from 'zod'
 export const PAGINATION_PER_PAGE_DEFAULT = '20'
 export const PAGINATION_PER_PAGE_ITEMS = ['10', '20', '30', '40', '50'] as const
 
-export const QuerySchema = z.object({
-  team: z.preprocess(
-    (val) => (val === null ? undefined : val),
-    z.string().optional().default(''),
-  ),
-  period: z.preprocess(
-    (val) => (val === null ? undefined : val),
-    z.string().optional().default('1'),
-  ),
-})
-
 export const SortSchema = z.object({
   sort_by: z.preprocess(
     (val) => (val === null ? undefined : val),
@@ -45,31 +34,16 @@ export const PaginationSchema = z.object({
   ),
 })
 
-export type Queries = z.infer<typeof QuerySchema>
 export type Sort = z.infer<typeof SortSchema>
 export type Pagination = z.infer<typeof PaginationSchema>
 
 export function useDataTableState() {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const queries: Queries = useMemo(() => {
-    return QuerySchema.parse({
-      team: searchParams.get('team'),
-      period: searchParams.get('period'),
-    })
-  }, [searchParams])
-
   const sort: Sort = useMemo(() => {
     return SortSchema.parse({
       sort_by: searchParams.get('sort_by'),
       sort_order: searchParams.get('sort_order') as 'asc' | 'desc' | null,
-    })
-  }, [searchParams])
-
-  const pagination: Pagination = useMemo(() => {
-    return PaginationSchema.parse({
-      page: searchParams.get('page'),
-      per_page: searchParams.get('per_page'),
     })
   }, [searchParams])
 
@@ -115,9 +89,7 @@ export function useDataTableState() {
   }
 
   return {
-    queries,
     sort,
-    pagination,
     updateSort,
     updatePagination,
   }

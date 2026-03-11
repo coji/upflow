@@ -32,10 +32,7 @@ import {
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
-import {
-  DataTablePagination,
-  type PaginationProps,
-} from './+components/data-table-pagination'
+import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
 import {
@@ -243,7 +240,7 @@ export default function FeedbacksPage({
           </Table>
         </div>
 
-        <DataTablePagination pagination={pagination as PaginationProps} />
+        <DataTablePagination pagination={pagination} />
       </div>
     </Stack>
   )

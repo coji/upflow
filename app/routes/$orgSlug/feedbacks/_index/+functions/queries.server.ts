@@ -1,14 +1,42 @@
+import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 import { calcPagination } from '~/app/libs/db-utils'
+import { PR_SIZE_RANK } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { DB as TenantDB } from '~/app/services/tenant-type'
 import type { OrganizationId } from '~/app/types/organization'
 
-const PR_SIZE_RANK: Record<string, number> = {
-  XS: 0,
-  S: 1,
-  M: 2,
-  L: 3,
-  XL: 4,
+/**
+ * Build the shared base query for feedbacks with standard JOINs and filters.
+ */
+function feedbackBaseQuery(
+  tenantDb: Kysely<TenantDB>,
+  sinceDate: string,
+  teamId?: string,
+) {
+  let query = tenantDb
+    .selectFrom('pullRequestFeedbacks')
+    .innerJoin('pullRequests', (join) =>
+      join
+        .onRef(
+          'pullRequestFeedbacks.pullRequestNumber',
+          '=',
+          'pullRequests.number',
+        )
+        .onRef(
+          'pullRequestFeedbacks.repositoryId',
+          '=',
+          'pullRequests.repositoryId',
+        ),
+    )
+    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .where('pullRequestFeedbacks.updatedAt', '>=', sinceDate)
+
+  if (teamId) {
+    query = query.where('repositories.teamId', '=', teamId)
+  }
+
+  return query
 }
 
 interface ListFilteredFeedbacksArgs {
@@ -31,23 +59,9 @@ export const listFilteredFeedbacks = async ({
   sortOrder,
 }: ListFilteredFeedbacksArgs) => {
   const tenantDb = getTenantDb(organizationId)
+  const base = feedbackBaseQuery(tenantDb, sinceDate, teamId)
 
-  let query = tenantDb
-    .selectFrom('pullRequestFeedbacks')
-    .innerJoin('pullRequests', (join) =>
-      join
-        .onRef(
-          'pullRequestFeedbacks.pullRequestNumber',
-          '=',
-          'pullRequests.number',
-        )
-        .onRef(
-          'pullRequestFeedbacks.repositoryId',
-          '=',
-          'pullRequests.repositoryId',
-        ),
-    )
-    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+  const dataQuery = base
     .leftJoin('teams', 'repositories.teamId', 'teams.id')
     .leftJoin(
       'companyGithubUsers',
@@ -72,36 +86,9 @@ export const listFilteredFeedbacks = async ({
       'companyGithubUsers.displayName as feedbackByDisplayName',
     ])
 
-  query = query.where('pullRequestFeedbacks.updatedAt', '>=', sinceDate)
-
-  if (teamId) {
-    query = query.where('repositories.teamId', '=', teamId)
-  }
-
-  let countQuery = tenantDb
-    .selectFrom('pullRequestFeedbacks')
-    .innerJoin('pullRequests', (join) =>
-      join
-        .onRef(
-          'pullRequestFeedbacks.pullRequestNumber',
-          '=',
-          'pullRequests.number',
-        )
-        .onRef(
-          'pullRequestFeedbacks.repositoryId',
-          '=',
-          'pullRequests.repositoryId',
-        ),
-    )
-    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .select((eb) =>
-      eb.fn.count<string>('pullRequestFeedbacks.pullRequestNumber').as('count'),
-    )
-    .where('pullRequestFeedbacks.updatedAt', '>=', sinceDate)
-
-  if (teamId) {
-    countQuery = countQuery.where('repositories.teamId', '=', teamId)
-  }
+  const countQuery = base.select((eb) =>
+    eb.fn.count<string>('pullRequestFeedbacks.pullRequestNumber').as('count'),
+  )
 
   const sortFieldMap: Record<string, string> = {
     repository: 'repositories.repo',
@@ -110,7 +97,7 @@ export const listFilteredFeedbacks = async ({
   const safeSortBy = sortFieldMap[sortBy ?? ''] ?? sortFieldMap.updatedAt
 
   const [rows, countResult] = await Promise.all([
-    query
+    dataQuery
       .orderBy(sql.ref(safeSortBy), sortOrder)
       .limit(pageSize)
       .offset((currentPage - 1) * pageSize)
@@ -145,35 +132,14 @@ export const getFeedbackSummary = async ({
 }: GetFeedbackSummaryArgs) => {
   const tenantDb = getTenantDb(organizationId)
 
-  let query = tenantDb
-    .selectFrom('pullRequestFeedbacks')
-    .innerJoin('pullRequests', (join) =>
-      join
-        .onRef(
-          'pullRequestFeedbacks.pullRequestNumber',
-          '=',
-          'pullRequests.number',
-        )
-        .onRef(
-          'pullRequestFeedbacks.repositoryId',
-          '=',
-          'pullRequests.repositoryId',
-        ),
-    )
-    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+  const rows = await feedbackBaseQuery(tenantDb, sinceDate, teamId)
     .select([
       'pullRequestFeedbacks.originalComplexity',
       'pullRequestFeedbacks.correctedComplexity',
       'repositories.owner as repoOwner',
       'repositories.repo as repoName',
     ])
-    .where('pullRequestFeedbacks.updatedAt', '>=', sinceDate)
-
-  if (teamId) {
-    query = query.where('repositories.teamId', '=', teamId)
-  }
-
-  const rows = await query.execute()
+    .execute()
 
   const totalCount = rows.length
   let upgrades = 0
