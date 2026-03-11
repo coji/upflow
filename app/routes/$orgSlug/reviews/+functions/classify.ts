@@ -58,6 +58,22 @@ export function getPRComplexity(pr: {
   return 'Unclassified'
 }
 
+/** riskAreas フィールド（JSON配列 or カンマ区切り文字列）をパースする */
+export function parseRiskAreas(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map(String)
+  if (typeof raw !== 'string') return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map(String)
+  } catch {
+    // not JSON — split by comma
+  }
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 /** correctedComplexity ?? complexity でソートする関数 */
 export function complexitySortingFn<
   T extends { correctedComplexity: string | null; complexity: string | null },

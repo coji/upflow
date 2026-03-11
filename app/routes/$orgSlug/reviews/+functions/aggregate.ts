@@ -60,13 +60,13 @@ function getWipLabel(wipCount: number): string {
   return 'WIP 4+'
 }
 
-type PRKey = `${string}:${number}` // repositoryId:number
+export type PRKey = `${string}:${number}` // repositoryId:number
 
 /**
  * author ごとに sweep line で WIP 数を計算する。O(n log n)。
  * 各PRの作成時点で、同じ author の未マージ PR が何件あったかを返す。
  */
-function computeWipCounts(data: WipRawRow[]): Map<PRKey, number> {
+export function computeWipCounts(data: WipRawRow[]): Map<PRKey, number> {
   const result = new Map<PRKey, number>()
 
   // author ごとにグループ化
@@ -112,8 +112,11 @@ function computeWipCounts(data: WipRawRow[]): Map<PRKey, number> {
   return result
 }
 
-export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
-  const wipCounts = computeWipCounts(data)
+export function aggregateWipCycle(
+  data: WipRawRow[],
+  wipCounts?: Map<PRKey, number>,
+): WipAggregation {
+  const counts = wipCounts ?? computeWipCounts(data)
 
   const reviewTimes: Record<string, number[]> = {
     'WIP 0-1': [],
@@ -125,7 +128,7 @@ export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
   for (const pr of data) {
     if (pr.reviewTime === null || pr.reviewTime <= 0) continue
     const key: PRKey = `${pr.repositoryId}:${pr.number}`
-    const wipCount = wipCounts.get(key) ?? 0
+    const wipCount = counts.get(key) ?? 0
     const hours = pr.reviewTime * 24
     const label = getWipLabel(wipCount)
     reviewTimes[label].push(hours)
@@ -157,14 +160,15 @@ export function aggregateWipCycle(data: WipRawRow[]): WipAggregation {
  */
 export function computeWipLabels(
   data: WipRawRow[],
+  wipCounts?: Map<PRKey, number>,
 ): (WipRawRow & { wipLabel: string })[] {
-  const wipCounts = computeWipCounts(data)
+  const counts = wipCounts ?? computeWipCounts(data)
 
   return data
     .filter((d) => d.reviewTime !== null && d.reviewTime > 0)
     .map((pr) => {
       const key: PRKey = `${pr.repositoryId}:${pr.number}`
-      const wipCount = wipCounts.get(key) ?? 0
+      const wipCount = counts.get(key) ?? 0
       return { ...pr, wipLabel: getWipLabel(wipCount) }
     })
 }
