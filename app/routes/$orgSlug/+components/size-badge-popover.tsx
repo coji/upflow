@@ -79,7 +79,7 @@ export function SizeBadgePopover({
   const displayLabel = validCorrected ?? originalLabel
   const hasFeedback =
     validCorrected != null &&
-    (validCorrected !== originalLabel || reason != null)
+    (validCorrected !== originalLabel || Boolean(reason?.trim()))
 
   const isSaving = fetcher.state !== 'idle'
   const isDrafting = draftFetcher.state !== 'idle'
