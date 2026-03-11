@@ -69,6 +69,8 @@ export const getOngoingPullRequestReport = async (
       'pullRequests.riskAreas',
       'pullRequestFeedbacks.correctedComplexity',
       'pullRequestFeedbacks.reason',
+      'pullRequestFeedbacks.feedbackBy',
+      'pullRequestFeedbacks.updatedAt as feedbackAt',
     ])
     .execute()
 

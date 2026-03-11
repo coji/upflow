@@ -30,6 +30,8 @@ interface SizeBadgePopoverProps {
   riskAreas: string | null
   correctedComplexity: string | null
   reason: string | null
+  feedbackBy?: string | null
+  feedbackAt?: string | null
   repositoryId: string
   number: number
 }
@@ -40,6 +42,8 @@ export function SizeBadgePopover({
   riskAreas,
   correctedComplexity,
   reason,
+  feedbackBy,
+  feedbackAt,
   repositoryId,
   number,
 }: SizeBadgePopoverProps) {
@@ -156,6 +160,29 @@ export function SizeBadgePopover({
                   </Badge>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+        {hasFeedback && (
+          <div className="mb-2 max-w-64 space-y-1 text-xs">
+            <div className="flex items-center gap-1.5">
+              <Badge
+                variant="default"
+                className={cn(
+                  'text-[10px]',
+                  PR_SIZE_STYLE[validCorrected ?? originalLabel],
+                )}
+              >
+                {validCorrected ?? originalLabel}
+              </Badge>
+              <span className="text-muted-foreground text-[10px]">
+                by {feedbackBy ?? 'human'}
+                {feedbackAt &&
+                  ` · ${new Date(feedbackAt).toLocaleDateString()}`}
+              </span>
+            </div>
+            {reason && (
+              <p className="text-muted-foreground leading-snug">{reason}</p>
             )}
           </div>
         )}

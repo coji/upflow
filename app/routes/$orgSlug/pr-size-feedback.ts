@@ -13,7 +13,7 @@ const feedbackSchema = z.object({
 })
 
 export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgMember(request, params.orgSlug)
+  const { organization, user } = await requireOrgMember(request, params.orgSlug)
   const formData = await request.formData()
   const parsed = feedbackSchema.safeParse({
     pullRequestNumber: formData.get('pullRequestNumber'),
@@ -52,6 +52,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       originalComplexity: pr.complexity,
       correctedComplexity,
       reason: reason ?? null,
+      feedbackBy: user.name,
       createdAt: now,
       updatedAt: now,
     })
@@ -59,6 +60,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       oc.columns(['pullRequestNumber', 'repositoryId']).doUpdateSet({
         correctedComplexity,
         reason: reason ?? null,
+        feedbackBy: user.name,
         updatedAt: now,
       }),
     )
