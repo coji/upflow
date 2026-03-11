@@ -1,4 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
+import { Badge } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Sheet,
@@ -7,6 +8,22 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/app/components/ui/sheet'
+import { SizeBadge } from '../../+components/size-badge'
+
+function parseRiskAreas(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map(String)
+  if (typeof raw !== 'string') return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map(String)
+  } catch {
+    // not JSON — split by comma
+  }
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
 
 export interface DrillDownPR {
   number: number
@@ -31,7 +48,7 @@ interface PRDrillDownSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
-  description?: string
+  description?: React.ReactNode
   prs: DrillDownPR[]
 }
 
@@ -68,11 +85,7 @@ export function PRDrillDownSheet({
                     {pr.repo}#{pr.number}
                     <ExternalLinkIcon className="ml-0.5 inline-block h-3 w-3" />
                   </a>
-                  {pr.size && (
-                    <span className="bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
-                      {pr.size}
-                    </span>
-                  )}
+                  <SizeBadge complexity={pr.size ?? null} />
                   <span className="text-muted-foreground flex items-center gap-1 text-xs">
                     <Avatar className="size-4">
                       <AvatarImage
@@ -100,9 +113,25 @@ export function PRDrillDownSheet({
                   {pr.title}
                 </a>
                 {(pr.complexityReason || pr.riskAreas) && (
-                  <div className="text-muted-foreground space-y-0.5 text-xs">
-                    {pr.complexityReason && <p>{pr.complexityReason}</p>}
-                    {pr.riskAreas && <p>Risk: {pr.riskAreas}</p>}
+                  <div className="space-y-0.5 text-xs">
+                    {pr.complexityReason && (
+                      <p className="text-muted-foreground">
+                        {pr.complexityReason}
+                      </p>
+                    )}
+                    {pr.riskAreas && (
+                      <div className="flex flex-wrap gap-1">
+                        {parseRiskAreas(pr.riskAreas).map((area) => (
+                          <Badge
+                            key={area}
+                            variant="outline"
+                            className="text-[10px] font-normal"
+                          >
+                            {area}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

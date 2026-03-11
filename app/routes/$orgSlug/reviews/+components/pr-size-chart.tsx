@@ -27,6 +27,7 @@ import {
   getPRComplexity,
   type PRSizeLabel,
 } from '../+functions/classify'
+import { SizeBadge } from '../../+components/size-badge'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 const countConfig = {
@@ -182,7 +183,12 @@ export function PRSizeChart({
           if (!open) setSelectedSize(null)
         }}
         title={`${selectedSize} PRs`}
-        description={`${selectedPRs.length} pull requests classified as ${selectedSize}`}
+        description={
+          <>
+            {selectedPRs.length.toLocaleString()} pull requests classified as{' '}
+            <SizeBadge complexity={selectedSize} />
+          </>
+        }
         prs={selectedPRs}
       />
     </Card>

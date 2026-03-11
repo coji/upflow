@@ -128,6 +128,19 @@ export const getWipCycleRawData = async (
         eb('companyGithubUsers.type', '!=', 'Bot'),
       ]),
     )
+    .leftJoin('pullRequestFeedbacks', (join) =>
+      join
+        .onRef(
+          'pullRequestFeedbacks.pullRequestNumber',
+          '=',
+          'pullRequests.number',
+        )
+        .onRef(
+          'pullRequestFeedbacks.repositoryId',
+          '=',
+          'pullRequests.repositoryId',
+        ),
+    )
     .select([
       'pullRequests.author',
       'pullRequests.number',
@@ -144,6 +157,7 @@ export const getWipCycleRawData = async (
       'pullRequests.complexityReason',
       'pullRequests.riskAreas',
       'companyGithubUsers.displayName as authorDisplayName',
+      'pullRequestFeedbacks.correctedComplexity',
     ])
     .execute()
 }
@@ -180,6 +194,19 @@ export const getPRSizeDistribution = async (
         eb('companyGithubUsers.type', '!=', 'Bot'),
       ]),
     )
+    .leftJoin('pullRequestFeedbacks', (join) =>
+      join
+        .onRef(
+          'pullRequestFeedbacks.pullRequestNumber',
+          '=',
+          'pullRequests.number',
+        )
+        .onRef(
+          'pullRequestFeedbacks.repositoryId',
+          '=',
+          'pullRequests.repositoryId',
+        ),
+    )
     .select([
       'pullRequests.number',
       'pullRequests.title',
@@ -195,6 +222,7 @@ export const getPRSizeDistribution = async (
       'pullRequests.complexityReason',
       'pullRequests.riskAreas',
       'companyGithubUsers.displayName as authorDisplayName',
+      'pullRequestFeedbacks.correctedComplexity',
     ])
     .execute()
 }

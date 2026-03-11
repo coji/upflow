@@ -39,6 +39,7 @@ export interface WipRawRow {
   complexity: string | null
   complexityReason: string | null
   riskAreas: string | null
+  correctedComplexity: string | null
 }
 
 export interface WipGroup {
@@ -245,6 +246,7 @@ export interface PRSizeRawRow {
   complexity: string | null
   complexityReason: string | null
   riskAreas: string | null
+  correctedComplexity: string | null
 }
 
 export interface SizeCountItem {

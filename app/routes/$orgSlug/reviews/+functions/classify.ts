@@ -46,15 +46,14 @@ export const PR_SIZE_DESCRIPTION: Record<PRSize, string> = {
   XL: '非常に高い認知負荷。システム全体の理解が必要',
 }
 
-/** LLM分類があればそちらを使い、なければ Unclassified */
+/** 補正済みサイズ → LLM分類 → Unclassified の優先順で返す */
 export function getPRComplexity(pr: {
   complexity: string | null
+  correctedComplexity?: string | null
 }): PRSizeLabel {
-  if (
-    pr.complexity != null &&
-    (PR_SIZE_LABELS as readonly string[]).includes(pr.complexity)
-  ) {
-    return pr.complexity as PRSizeLabel
+  const value = pr.correctedComplexity ?? pr.complexity
+  if (value != null && (PR_SIZE_LABELS as readonly string[]).includes(value)) {
+    return value as PRSizeLabel
   }
   return 'Unclassified'
 }
