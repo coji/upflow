@@ -87,6 +87,7 @@ export function SizeBadgePopover({
 
   const originalLabel = getPRComplexity({ complexity })
   const displayLabel = validCorrected ?? originalLabel
+  const feedbackName = feedbackBy ?? feedbackByLogin ?? 'human'
   const hasFeedback =
     validCorrected != null &&
     (validCorrected !== originalLabel || Boolean(reason?.trim()))
@@ -227,26 +228,22 @@ export function SizeBadgePopover({
             </p>
           )}
           <div className="flex items-center justify-end gap-1">
-            {hasFeedback &&
-              (() => {
-                const feedbackName = feedbackBy ?? feedbackByLogin ?? 'human'
-                return (
-                  <span className="text-muted-foreground mr-auto flex items-center gap-1 text-[10px]">
-                    {feedbackByLogin && (
-                      <Avatar className="size-4">
-                        <AvatarImage
-                          src={`https://github.com/${feedbackByLogin}.png?size=32`}
-                          alt={feedbackName}
-                        />
-                        <AvatarFallback className="text-[6px]">
-                          {feedbackName.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    {feedbackName} · {dayjs(feedbackAt).fromNow()}
-                  </span>
-                )
-              })()}
+            {hasFeedback && (
+              <span className="text-muted-foreground mr-auto flex items-center gap-1 text-[10px]">
+                {feedbackByLogin && (
+                  <Avatar className="size-4">
+                    <AvatarImage
+                      src={`https://github.com/${feedbackByLogin}.png?size=32`}
+                      alt={feedbackName}
+                    />
+                    <AvatarFallback className="text-[6px]">
+                      {feedbackName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                {feedbackName} · {dayjs(feedbackAt).fromNow()}
+              </span>
+            )}
             <Button
               type="button"
               variant="ghost"

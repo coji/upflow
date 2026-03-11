@@ -103,8 +103,11 @@ export function AppDataTable<TData, TValue>({
     }
   }, [sorting, sortedRows])
 
-  const displayRows =
-    getRowId != null ? reorderRows(sortedRows, orderSnapshot) : sortedRows
+  const displayRows = React.useMemo(
+    () =>
+      getRowId != null ? reorderRows(sortedRows, orderSnapshot) : sortedRows,
+    [getRowId, sortedRows, orderSnapshot],
+  )
 
   return (
     <Stack>
