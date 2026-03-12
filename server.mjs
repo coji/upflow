@@ -33,7 +33,11 @@ app.use((req, res, next) => {
 app.use(compression())
 app.disable('x-powered-by')
 app.use(express.static('public', { maxAge: '1h' }))
-app.use(morgan('tiny'))
+app.use(
+  morgan('tiny', {
+    skip: (req) => req.url === '/healthcheck',
+  }),
+)
 
 // handle asset requests
 if (viteDevServer) {
