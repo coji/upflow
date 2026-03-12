@@ -11,6 +11,7 @@ import {
   test,
   vi,
 } from 'vitest'
+import { setupTenantSchema } from '~/test/setup-tenant-db'
 
 const testDir = path.join(tmpdir(), `github-users-mutations-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -50,25 +51,12 @@ const toOrgId = (s: string) => s as OrganizationId
 const { deleteGithubUser, toggleGithubUserActive } =
   await import('./mutations.server')
 
-const TENANT_SCHEMA = `
-  CREATE TABLE IF NOT EXISTS company_github_users (
-    user_id text NULL,
-    login text NOT NULL PRIMARY KEY,
-    display_name text NOT NULL,
-    is_active integer NOT NULL DEFAULT 0,
-    updated_at datetime NOT NULL,
-    created_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP)
-  );
-`
-
 let testCounter = 0
 function createFreshOrg(): OrganizationId {
   testCounter++
   const orgId = `test-gh-users-${Date.now()}-${testCounter}`
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)
-  const tenantDb = new SQLite(dbPath)
-  tenantDb.exec(TENANT_SCHEMA)
-  tenantDb.close()
+  setupTenantSchema(dbPath)
   return toOrgId(orgId)
 }
 

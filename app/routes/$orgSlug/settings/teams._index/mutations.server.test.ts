@@ -1,4 +1,3 @@
-import SQLite from 'better-sqlite3'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -11,6 +10,7 @@ import {
   test,
   vi,
 } from 'vitest'
+import { setupTenantSchema } from '~/test/setup-tenant-db'
 
 const testDir = path.join(tmpdir(), `teams-mutations-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -27,24 +27,12 @@ const toOrgId = (s: string) => s as OrganizationId
 const { addTeam, updateTeam, deleteTeam } = await import('./mutations.server')
 const { listTeams } = await import('./queries.server')
 
-const TEAMS_SCHEMA = `
-  CREATE TABLE IF NOT EXISTS teams (
-    id text NOT NULL PRIMARY KEY,
-    name text NOT NULL,
-    display_order integer NOT NULL DEFAULT 0,
-    created_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP)
-  );
-  CREATE UNIQUE INDEX IF NOT EXISTS teams_name_key ON teams (name);
-`
-
 let testCounter = 0
 function createFreshOrg(): OrganizationId {
   testCounter++
   const orgId = `test-teams-${Date.now()}-${testCounter}`
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)
-  const db = new SQLite(dbPath)
-  db.exec(TEAMS_SCHEMA)
-  db.close()
+  setupTenantSchema(dbPath)
   return toOrgId(orgId)
 }
 

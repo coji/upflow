@@ -9,17 +9,6 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
-export interface _PrismaMigrations {
-  appliedStepsCount: Generated<string>;
-  checksum: string;
-  finishedAt: string | null;
-  id: string;
-  logs: string | null;
-  migrationName: string;
-  rolledBackAt: string | null;
-  startedAt: Generated<string>;
-}
-
 export interface Accounts {
   accessToken: string | null;
   accessTokenExpiresAt: string | null;
@@ -133,7 +122,6 @@ export interface Verifications {
 }
 
 export interface DB {
-  _PrismaMigrations: _PrismaMigrations;
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
   invitations: Invitations;

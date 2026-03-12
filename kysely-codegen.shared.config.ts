@@ -5,6 +5,7 @@ export default defineConfig({
   dialect: 'sqlite',
   url: './data/data.db',
   outFile: 'app/services/type.ts',
+  excludePattern: '_prisma_migrations',
   overrides: {
     columns: {
       'members.role': '"owner" | "admin" | "member"',

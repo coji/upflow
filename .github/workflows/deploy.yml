@@ -122,6 +122,14 @@ jobs:
       - name: 🛠 Setup Database
         run: pnpm db:setup
 
+      - name: 🔎 Check generated types are up to date
+        run: |
+          pnpm db:generate
+          git diff --exit-code app/services/type.ts app/services/tenant-type.ts || {
+            echo "::error::Generated DB types are out of date. Run 'pnpm db:generate' and commit the result."
+            exit 1
+          }
+
       - name: ⚡ Run vitest
         run: pnpm run test
 

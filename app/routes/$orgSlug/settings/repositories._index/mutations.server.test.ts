@@ -11,6 +11,7 @@ import {
   test,
   vi,
 } from 'vitest'
+import { setupTenantSchema } from '~/test/setup-tenant-db'
 
 const testDir = path.join(tmpdir(), `repo-mutations-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -27,35 +28,6 @@ const toOrgId = (s: string) => s as OrganizationId
 const { updateRepositoryTeam, bulkUpdateRepositoryTeam } =
   await import('./mutations.server')
 
-const SCHEMA = `
-  CREATE TABLE IF NOT EXISTS integrations (
-    id text NOT NULL PRIMARY KEY,
-    provider text NOT NULL,
-    method text NOT NULL,
-    private_token text NULL
-  );
-  CREATE TABLE IF NOT EXISTS teams (
-    id text NOT NULL PRIMARY KEY,
-    name text NOT NULL,
-    display_order integer NOT NULL DEFAULT 0,
-    created_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP)
-  );
-  CREATE TABLE IF NOT EXISTS repositories (
-    id text NOT NULL PRIMARY KEY,
-    integration_id text NOT NULL,
-    provider text NOT NULL,
-    owner text NOT NULL,
-    repo text NOT NULL,
-    release_detection_method text NOT NULL DEFAULT 'branch',
-    release_detection_key text NOT NULL DEFAULT 'production',
-    updated_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    created_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    team_id text NULL,
-    FOREIGN KEY (integration_id) REFERENCES integrations (id),
-    FOREIGN KEY (team_id) REFERENCES teams (id) ON DELETE SET NULL
-  );
-`
-
 let testCounter = 0
 function createFreshOrg(): {
   orgId: OrganizationId
@@ -64,8 +36,8 @@ function createFreshOrg(): {
   testCounter++
   const orgId = `test-repo-${Date.now()}-${testCounter}`
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)
+  setupTenantSchema(dbPath)
   const db = new SQLite(dbPath)
-  db.exec(SCHEMA)
   db.exec(`
     INSERT INTO integrations (id, provider, method) VALUES ('int-1', 'github', 'token');
     INSERT INTO teams (id, name, display_order) VALUES ('team-a', 'Frontend', 0);
@@ -75,9 +47,9 @@ function createFreshOrg(): {
 }
 
 function insertRepo(db: InstanceType<typeof SQLite>, id: string, repo: string) {
-  db.exec(
-    `INSERT INTO repositories (id, integration_id, provider, owner, repo) VALUES ('${id}', 'int-1', 'github', 'org', '${repo}')`,
-  )
+  db.prepare(
+    `INSERT INTO repositories (id, integration_id, provider, owner, repo, updated_at) VALUES (?, 'int-1', 'github', 'org', ?, datetime('now'))`,
+  ).run(id, repo)
 }
 
 describe('repository mutations', () => {

@@ -1,4 +1,5 @@
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import type SQLite from 'better-sqlite3'
+import { getTenantDb, getTenantRawDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import type {
   ShapedGitHubCommit,
@@ -12,6 +13,15 @@ import type {
 interface createStoreProps {
   organizationId: OrganizationId
   repositoryId: string
+}
+
+/** Parsed row with typed data */
+interface ParsedRow {
+  pullRequest: ShapedGitHubPullRequest
+  commits: ShapedGitHubCommit[]
+  reviews: ShapedGitHubReview[]
+  discussions: ShapedGitHubReviewComment[]
+  timelineItems: ShapedTimelineItem[]
 }
 
 export const createStore = ({
@@ -43,6 +53,7 @@ export const createStore = ({
         timelineItems: data.timelineItems
           ? JSON.stringify(data.timelineItems)
           : null,
+        updatedAt: pr.updatedAt ?? null,
       })
       .onConflict((oc) =>
         oc.columns(['repositoryId', 'pullRequestNumber']).doUpdateSet((eb) => ({
@@ -51,6 +62,7 @@ export const createStore = ({
           reviews: eb.ref('excluded.reviews'),
           discussions: eb.ref('excluded.discussions'),
           timelineItems: eb.ref('excluded.timelineItems'),
+          updatedAt: eb.ref('excluded.updatedAt'),
         })),
       )
       .execute()
@@ -66,7 +78,10 @@ export const createStore = ({
     for (const pr of prs) {
       const result = await db
         .updateTable('githubRawData')
-        .set({ pullRequest: JSON.stringify(pr) })
+        .set({
+          pullRequest: JSON.stringify(pr),
+          updatedAt: pr.updatedAt ?? null,
+        })
         .where('repositoryId', '=', repositoryId)
         .where('pullRequestNumber', '=', pr.number)
         .execute()
@@ -92,58 +107,89 @@ export const createStore = ({
       .execute()
   }
 
-  // --- preload 系 (analyze 用の一括ロード) ---
+  // --- preload 系 ---
 
-  let preloaded: Map<
-    number,
-    {
-      pullRequest: ShapedGitHubPullRequest
-      commits: ShapedGitHubCommit[]
-      reviews: ShapedGitHubReview[]
-      discussions: ShapedGitHubReviewComment[]
-      timelineItems: ShapedTimelineItem[]
+  // PR metadata (pull_request JSON) is preloaded upfront.
+  // Heavy columns (commits/reviews/discussions/timeline_items) are loaded
+  // per-PR on demand via PK lookup to avoid parsing all JSON at once.
+  let prMetadata: Map<number, ShapedGitHubPullRequest> | null = null
+
+  // Cache for full row data loaded on demand
+  const rowCache = new Map<number, ParsedRow>()
+
+  // Cached prepared statement for per-PR heavy column lookup (lazily created)
+  let loadRowStmt: SQLite.Statement | null = null
+
+  const getLoadRowStmt = (): SQLite.Statement => {
+    if (!loadRowStmt) {
+      const rawDb = getTenantRawDb(organizationId)
+      loadRowStmt = rawDb.prepare(
+        `SELECT commits, reviews, discussions, timeline_items
+         FROM github_raw_data
+         WHERE repository_id = ? AND pull_request_number = ?`,
+      )
     }
-  > | null = null
+    return loadRowStmt
+  }
 
-  const parseRow = (row: {
-    pullRequest: unknown
-    commits: unknown
-    reviews: unknown
-    discussions: unknown
-    timelineItems?: unknown
-  }) => ({
-    pullRequest: row.pullRequest as ShapedGitHubPullRequest,
-    commits: row.commits as ShapedGitHubCommit[],
-    reviews: row.reviews as ShapedGitHubReview[],
-    discussions: row.discussions as ShapedGitHubReviewComment[],
-    timelineItems: (row.timelineItems as ShapedTimelineItem[] | null) ?? [],
-  })
+  const preloadAll = (): void => {
+    // Use raw better-sqlite3 to bypass ParseJSONResultsPlugin
+    const rawDb = getTenantRawDb(organizationId)
+    const rows = rawDb
+      .prepare(
+        `SELECT pull_request_number, pull_request
+         FROM github_raw_data
+         WHERE repository_id = ?`,
+      )
+      .all(repositoryId) as Array<{
+      pull_request_number: number
+      pull_request: string
+    }>
 
-  const preloadAll = async () => {
-    const rows = await db
-      .selectFrom('githubRawData')
-      .select([
-        'pullRequestNumber',
-        'pullRequest',
-        'commits',
-        'reviews',
-        'discussions',
-        'timelineItems',
-      ])
-      .where('repositoryId', '=', repositoryId)
-      .execute()
-
-    preloaded = new Map(
-      rows.map((row) => [row.pullRequestNumber, parseRow(row)]),
+    prMetadata = new Map(
+      rows.map((row) => [
+        row.pull_request_number,
+        JSON.parse(row.pull_request) as ShapedGitHubPullRequest,
+      ]),
     )
   }
 
   // --- loader 系 ---
 
-  const loadRow = async (number: number) => {
-    if (preloaded) {
-      return preloaded.get(number) ?? null
+  const loadRow = async (number: number): Promise<ParsedRow | null> => {
+    const cached = rowCache.get(number)
+    if (cached) return cached
+
+    // If preloaded, we have PR metadata but need heavy columns from DB
+    if (prMetadata) {
+      const pr = prMetadata.get(number)
+      if (!pr) return null
+
+      // Load only heavy columns via raw DB (bypasses ParseJSONResultsPlugin)
+      const row = getLoadRowStmt().get(repositoryId, number) as
+        | {
+            commits: string
+            reviews: string
+            discussions: string
+            timeline_items: string | null
+          }
+        | undefined
+      if (!row) return null
+
+      const parsed: ParsedRow = {
+        pullRequest: pr,
+        commits: JSON.parse(row.commits) as ShapedGitHubCommit[],
+        reviews: JSON.parse(row.reviews) as ShapedGitHubReview[],
+        discussions: JSON.parse(row.discussions) as ShapedGitHubReviewComment[],
+        timelineItems: row.timeline_items
+          ? (JSON.parse(row.timeline_items) as ShapedTimelineItem[])
+          : [],
+      }
+      rowCache.set(number, parsed)
+      return parsed
     }
+
+    // No preload: full query via Kysely
     const row = await db
       .selectFrom('githubRawData')
       .select([
@@ -157,7 +203,15 @@ export const createStore = ({
       .where('pullRequestNumber', '=', number)
       .executeTakeFirst()
     if (!row) return null
-    return parseRow(row)
+    const parsed: ParsedRow = {
+      pullRequest: row.pullRequest as ShapedGitHubPullRequest,
+      commits: row.commits as ShapedGitHubCommit[],
+      reviews: row.reviews as ShapedGitHubReview[],
+      discussions: row.discussions as ShapedGitHubReviewComment[],
+      timelineItems: (row.timelineItems as ShapedTimelineItem[] | null) ?? [],
+    }
+    rowCache.set(number, parsed)
+    return parsed
   }
 
   const commits = async (number: number) => {
@@ -183,8 +237,8 @@ export const createStore = ({
   }
 
   const pullrequests = async (): Promise<ShapedGitHubPullRequest[]> => {
-    if (preloaded) {
-      return [...preloaded.values()].map((v) => v.pullRequest)
+    if (prMetadata) {
+      return [...prMetadata.values()]
     }
     const rows = await db
       .selectFrom('githubRawData')
@@ -205,11 +259,25 @@ export const createStore = ({
     return row ? (row.tags as ShapedGitHubTag[]) : []
   }
 
+  /**
+   * Get the latest updatedAt timestamp for this repository.
+   * Uses SQL MAX() — no JSON parsing needed.
+   */
+  const getLatestUpdatedAt = async (): Promise<string | null> => {
+    const row = await db
+      .selectFrom('githubRawData')
+      .select((eb) => eb.fn.max('updatedAt').as('maxUpdatedAt'))
+      .where('repositoryId', '=', repositoryId)
+      .executeTakeFirst()
+    return (row?.maxUpdatedAt as string | null) ?? null
+  }
+
   return {
     savePrData,
     updatePrMetadata,
     saveTags,
     preloadAll,
+    getLatestUpdatedAt,
     loader: {
       commits,
       discussions,

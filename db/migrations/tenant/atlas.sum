@@ -1,4 +1,4 @@
-h1:Toa7wMb9/kSmEYigMWVknnntYmYfaJlfczgORgPVz9M=
+h1:gyKCllx4K+qZinR0YqxZb42It+XinIw+3ZtZWM99VBg=
 20260226112249_initial_tenant.sql h1:dIhBg2gzyh+ZjLzPXdHYafd5e62yIEjk1eFlllEyYX0=
 20260226233619_add_teams.sql h1:n8MRMUA4BgeXYEnL9HJPc8mnXh8lqIfrCcdYtFFoWqw=
 20260227163239.sql h1:ENMZUW7zHK8UjG2TdYlBOZSVPPUCXftIw5U5k2C54oo=
@@ -13,3 +13,4 @@ h1:Toa7wMb9/kSmEYigMWVknnntYmYfaJlfczgORgPVz9M=
 20260311023705.sql h1:Ae9vDebKao6TCwCcQa1h80L6/zrKPKcrJzdjm+KrT24=
 20260311080524.sql h1:WQ5eNzics0ZaBl7c8bY1t6whbl/XDNa92vqeg3dTSOg=
 20260311120000.sql h1:MiSqktzwAb/AlG3O1WiqiFIhFI7iP476nt/oOBRf8cQ=
+20260312000000_add_raw_data_updated_at.sql h1:SYyrattn+drHr3XuBpjwrdshgix7wCkMqQJGZKKCEFE=

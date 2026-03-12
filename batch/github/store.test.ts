@@ -11,6 +11,7 @@ import {
   test,
   vi,
 } from 'vitest'
+import { setupTenantSchema } from '~/test/setup-tenant-db'
 import type {
   ShapedGitHubCommit,
   ShapedGitHubPullRequest,
@@ -42,46 +43,8 @@ const repositoryId = 'repo-1'
 const tenantDbPath = path.join(testDir, `tenant_${orgId}.db`)
 
 function setupTenantDb() {
+  setupTenantSchema(tenantDbPath)
   const db = new SQLite(tenantDbPath)
-  db.exec(`
-    CREATE TABLE integrations (
-      id text NOT NULL PRIMARY KEY,
-      provider text NOT NULL,
-      method text NOT NULL,
-      private_token text NULL
-    );
-    CREATE TABLE repositories (
-      id text NOT NULL PRIMARY KEY,
-      integration_id text NOT NULL,
-      provider text NOT NULL,
-      owner text NOT NULL,
-      repo text NOT NULL,
-      release_detection_method text NOT NULL DEFAULT 'branch',
-      release_detection_key text NOT NULL DEFAULT 'production',
-      updated_at datetime NOT NULL,
-      created_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-      FOREIGN KEY (integration_id) REFERENCES integrations(id)
-    );
-    CREATE TABLE github_raw_data (
-      repository_id text NOT NULL,
-      pull_request_number integer NOT NULL,
-      pull_request text NOT NULL,
-      commits text NOT NULL,
-      reviews text NOT NULL,
-      discussions text NOT NULL,
-      timeline_items text NULL,
-      fetched_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-      PRIMARY KEY (repository_id, pull_request_number),
-      FOREIGN KEY (repository_id) REFERENCES repositories(id)
-    );
-    CREATE TABLE github_raw_tags (
-      repository_id text NOT NULL,
-      tags text NOT NULL,
-      fetched_at datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-      PRIMARY KEY (repository_id),
-      FOREIGN KEY (repository_id) REFERENCES repositories(id)
-    );
-  `)
   db.prepare(
     'INSERT INTO integrations (id, provider, method, private_token) VALUES (?, ?, ?, ?)',
   ).run('int-1', 'github', 'token', 'test-token')
@@ -332,5 +295,59 @@ describe('store', () => {
     expect(await store.loader.pullrequests()).toHaveLength(2)
     expect(await store.loader.commits(1)).toEqual(makeCommits(1))
     expect(await store.loader.commits(2)).toEqual(makeCommits(2))
+  })
+
+  test('getLatestUpdatedAt returns MAX(updatedAt) without JSON parsing', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+
+    const pr1 = { ...makePr(1), updatedAt: '2024-01-02T00:00:00Z' }
+    const pr2 = { ...makePr(2), updatedAt: '2024-01-05T00:00:00Z' }
+    const pr3 = { ...makePr(3), updatedAt: '2024-01-03T00:00:00Z' }
+
+    await store.savePrData(pr1, {
+      commits: makeCommits(1),
+      reviews: makeReviews(1),
+      discussions: makeDiscussions(1),
+    })
+    await store.savePrData(pr2, {
+      commits: makeCommits(2),
+      reviews: makeReviews(2),
+      discussions: makeDiscussions(2),
+    })
+    await store.savePrData(pr3, {
+      commits: makeCommits(3),
+      reviews: makeReviews(3),
+      discussions: makeDiscussions(3),
+    })
+
+    expect(await store.getLatestUpdatedAt()).toBe('2024-01-05T00:00:00Z')
+  })
+
+  test('getLatestUpdatedAt returns null when no data', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    expect(await store.getLatestUpdatedAt()).toBeNull()
+  })
+
+  test('preloadAll uses lazy parsing (data accessible after preload)', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+
+    await store.savePrData(makePr(1), {
+      commits: makeCommits(1),
+      reviews: makeReviews(1),
+      discussions: makeDiscussions(1),
+      timelineItems: makeTimelineItems(1),
+    })
+
+    await store.preloadAll()
+
+    // Data should be accessible via loaders after lazy preload
+    const prs = await store.loader.pullrequests()
+    expect(prs).toHaveLength(1)
+    expect(prs[0].number).toBe(1)
+
+    expect(await store.loader.commits(1)).toEqual(makeCommits(1))
+    expect(await store.loader.reviews(1)).toEqual(makeReviews(1))
+    expect(await store.loader.discussions(1)).toEqual(makeDiscussions(1))
+    expect(await store.loader.timelineItems(1)).toEqual(makeTimelineItems(1))
   })
 })

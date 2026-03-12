@@ -122,6 +122,7 @@ CREATE TABLE `github_raw_data` (
   `reviews` text NOT NULL,
   `discussions` text NOT NULL,
   `timeline_items` text NULL,
+  `updated_at` text NULL,
   `fetched_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   PRIMARY KEY (`repository_id`, `pull_request_number`),
   CONSTRAINT `github_raw_data_repository_id_fkey`
