@@ -3,176 +3,175 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely'
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export interface AtlasSchemaRevisions {
-  applied: Generated<number>
-  description: string
-  error: string | null
-  errorStmt: string | null
-  executedAt: string
-  executionTime: number
-  hash: string
-  operatorVersion: string
-  partialHashes: string | null
-  total: Generated<number>
-  type: Generated<number>
-  version: string
+  applied: Generated<number>;
+  description: string;
+  error: string | null;
+  errorStmt: string | null;
+  executedAt: string;
+  executionTime: number;
+  hash: string;
+  operatorVersion: string;
+  partialHashes: string | null;
+  total: Generated<number>;
+  type: Generated<number>;
+  version: string;
 }
 
 export interface CompanyGithubUsers {
-  createdAt: Generated<string>
-  displayName: string
-  isActive: 0 | 1
-  login: string
-  type: string | null
-  updatedAt: string
-  userId: string | null
+  createdAt: Generated<string>;
+  displayName: string;
+  isActive: 0 | 1;
+  login: string;
+  type: string | null;
+  updatedAt: string;
+  userId: string | null;
 }
 
 export interface ExportSettings {
-  clientEmail: string
-  createdAt: Generated<string>
-  id: string
-  privateKey: string
-  sheetId: string
-  updatedAt: string
+  clientEmail: string;
+  createdAt: Generated<string>;
+  id: string;
+  privateKey: string;
+  sheetId: string;
+  updatedAt: string;
 }
 
 export interface GithubRawData {
-  commits: ColumnType<unknown, string, string>
-  discussions: ColumnType<unknown, string, string>
-  fetchedAt: Generated<string>
-  pullRequest: ColumnType<unknown, string, string>
-  pullRequestNumber: number
-  repositoryId: string
-  reviews: ColumnType<unknown, string, string>
-  timelineItems: string | null
-  updatedAt: string | null
+  commits: ColumnType<unknown, string, string>;
+  discussions: ColumnType<unknown, string, string>;
+  fetchedAt: Generated<string>;
+  pullRequest: ColumnType<unknown, string, string>;
+  pullRequestNumber: number;
+  repositoryId: string;
+  reviews: ColumnType<unknown, string, string>;
+  timelineItems: string | null;
+  updatedAt: string | null;
 }
 
 export interface GithubRawTags {
-  fetchedAt: Generated<string>
-  repositoryId: string
-  tags: ColumnType<unknown, string, string>
+  fetchedAt: Generated<string>;
+  repositoryId: string;
+  tags: ColumnType<unknown, string, string>;
 }
 
 export interface Integrations {
-  id: string
-  method: 'token'
-  privateToken: string | null
-  provider: 'github'
+  id: string;
+  method: "token";
+  privateToken: string | null;
+  provider: "github";
 }
 
 export interface OrganizationSettings {
-  createdAt: Generated<string>
-  excludedUsers: Generated<string>
-  id: string
-  isActive: Generated<0 | 1>
-  refreshRequestedAt: string | null
-  releaseDetectionKey: Generated<string>
-  releaseDetectionMethod: Generated<'branch' | 'tags'>
-  updatedAt: string
+  createdAt: Generated<string>;
+  excludedUsers: Generated<string>;
+  id: string;
+  isActive: Generated<0 | 1>;
+  refreshRequestedAt: string | null;
+  releaseDetectionKey: Generated<string>;
+  releaseDetectionMethod: Generated<"branch" | "tags">;
+  updatedAt: string;
 }
 
 export interface PullRequestFeedbacks {
-  correctedComplexity: string
-  createdAt: Generated<string>
-  feedbackBy: string | null
-  feedbackByLogin: string | null
-  originalComplexity: string | null
-  pullRequestNumber: number
-  reason: string | null
-  repositoryId: string
-  updatedAt: Generated<string>
+  correctedComplexity: string;
+  createdAt: Generated<string>;
+  feedbackBy: string | null;
+  feedbackByLogin: string | null;
+  originalComplexity: string | null;
+  pullRequestNumber: number;
+  reason: string | null;
+  repositoryId: string;
+  updatedAt: Generated<string>;
 }
 
 export interface PullRequestReviewers {
-  pullRequestNumber: number
-  repositoryId: string
-  requestedAt: string | null
-  reviewer: string
+  pullRequestNumber: number;
+  repositoryId: string;
+  requestedAt: string | null;
+  reviewer: string;
 }
 
 export interface PullRequestReviews {
-  id: string
-  pullRequestNumber: number
-  repositoryId: string
-  reviewer: string
-  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED'
-  submittedAt: string
-  url: string
+  id: string;
+  pullRequestNumber: number;
+  repositoryId: string;
+  reviewer: string;
+  state: "APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "DISMISSED";
+  submittedAt: string;
+  url: string;
 }
 
 export interface PullRequests {
-  additions: number | null
-  author: string
-  changedFiles: number | null
-  classifiedAt: string | null
-  classifierModel: string | null
-  closedAt: string | null
-  codingTime: number | null
-  complexity: string | null
-  complexityReason: string | null
-  deletions: number | null
-  deployTime: number | null
-  firstCommittedAt: string | null
-  firstReviewedAt: string | null
-  mergedAt: string | null
-  number: number
-  pickupTime: number | null
-  pullRequestCreatedAt: string
-  releasedAt: string | null
-  repo: string
-  repositoryId: string
-  reviewTime: number | null
-  riskAreas: string | null
-  sourceBranch: string
-  state: 'open' | 'closed' | 'merged'
-  targetBranch: string
-  title: string
-  totalTime: number | null
-  updatedAt: string | null
-  url: string
+  additions: number | null;
+  author: string;
+  changedFiles: number | null;
+  classifiedAt: string | null;
+  classifierModel: string | null;
+  closedAt: string | null;
+  codingTime: number | null;
+  complexity: string | null;
+  complexityReason: string | null;
+  deletions: number | null;
+  deployTime: number | null;
+  firstCommittedAt: string | null;
+  firstReviewedAt: string | null;
+  mergedAt: string | null;
+  number: number;
+  pickupTime: number | null;
+  pullRequestCreatedAt: string;
+  releasedAt: string | null;
+  repo: string;
+  repositoryId: string;
+  reviewTime: number | null;
+  riskAreas: string | null;
+  sourceBranch: string;
+  state: "open" | "closed" | "merged";
+  targetBranch: string;
+  title: string;
+  totalTime: number | null;
+  updatedAt: string | null;
+  url: string;
 }
 
 export interface Repositories {
-  createdAt: Generated<string>
-  id: string
-  integrationId: string
-  owner: string
-  provider: 'github'
-  releaseDetectionKey: Generated<string>
-  releaseDetectionMethod: Generated<'branch' | 'tags'>
-  repo: string
-  teamId: string | null
-  updatedAt: string
+  createdAt: Generated<string>;
+  id: string;
+  integrationId: string;
+  owner: string;
+  provider: "github";
+  releaseDetectionKey: Generated<string>;
+  releaseDetectionMethod: Generated<"branch" | "tags">;
+  repo: string;
+  teamId: string | null;
+  updatedAt: string;
 }
 
 export interface Teams {
-  createdAt: Generated<string>
-  displayOrder: Generated<number>
-  id: string
-  name: string
+  createdAt: Generated<string>;
+  displayOrder: Generated<number>;
+  id: string;
+  name: string;
 }
 
 export interface DB {
-  atlasSchemaRevisions: AtlasSchemaRevisions
-  companyGithubUsers: CompanyGithubUsers
-  exportSettings: ExportSettings
-  githubRawData: GithubRawData
-  githubRawTags: GithubRawTags
-  integrations: Integrations
-  organizationSettings: OrganizationSettings
-  pullRequestFeedbacks: PullRequestFeedbacks
-  pullRequestReviewers: PullRequestReviewers
-  pullRequestReviews: PullRequestReviews
-  pullRequests: PullRequests
-  repositories: Repositories
-  teams: Teams
+  atlasSchemaRevisions: AtlasSchemaRevisions;
+  companyGithubUsers: CompanyGithubUsers;
+  exportSettings: ExportSettings;
+  githubRawData: GithubRawData;
+  githubRawTags: GithubRawTags;
+  integrations: Integrations;
+  organizationSettings: OrganizationSettings;
+  pullRequestFeedbacks: PullRequestFeedbacks;
+  pullRequestReviewers: PullRequestReviewers;
+  pullRequestReviews: PullRequestReviews;
+  pullRequests: PullRequests;
+  repositories: Repositories;
+  teams: Teams;
 }
