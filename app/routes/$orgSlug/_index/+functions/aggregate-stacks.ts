@@ -56,17 +56,19 @@ export function aggregateTeamStacks(
   reviewData: PendingReviewRow[],
 ): TeamStacksData {
   // Build PR key → reviewer logins map
-  const prReviewersMap = new Map<string, string[]>()
+  const prReviewerSets = new Map<string, Set<string>>()
   for (const row of reviewData) {
     const key = `${row.repositoryId}:${row.number}`
-    let reviewers = prReviewersMap.get(key)
+    let reviewers = prReviewerSets.get(key)
     if (!reviewers) {
-      reviewers = []
-      prReviewersMap.set(key, reviewers)
+      reviewers = new Set()
+      prReviewerSets.set(key, reviewers)
     }
-    if (!reviewers.includes(row.reviewer)) {
-      reviewers.push(row.reviewer)
-    }
+    reviewers.add(row.reviewer)
+  }
+  const prReviewersMap = new Map<string, string[]>()
+  for (const [key, set] of prReviewerSets) {
+    prReviewersMap.set(key, [...set])
   }
 
   // Author stacks: open PRs grouped by author

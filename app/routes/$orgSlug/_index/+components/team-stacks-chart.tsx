@@ -1,5 +1,7 @@
 import {
   createContext,
+  memo,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -15,6 +17,10 @@ import {
 } from '~/app/components/ui/popover'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import dayjs from '~/app/libs/dayjs'
+import {
+  PR_SIZE_LABELS,
+  PR_SIZE_RANK,
+} from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import type {
   PersonStack,
   StackPR,
@@ -24,14 +30,15 @@ import { SizeBadge } from '../../+components/size-badge'
 
 type ColorMode = 'size' | 'age'
 
+interface BlockColor {
+  bg: string
+  ring: string
+  bgFaint: string
+}
+
 // --- Size mode ---
 
-const SIZE_ORDER = ['XL', 'L', 'M', 'S', 'XS'] as const
-
-const SIZE_BLOCK_COLORS: Record<
-  string,
-  { bg: string; ring: string; bgFaint: string }
-> = {
+const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
   XS: {
     bg: 'bg-slate-400',
     ring: 'ring-slate-400',
@@ -43,34 +50,30 @@ const SIZE_BLOCK_COLORS: Record<
     bgFaint: 'bg-emerald-500/20',
   },
   M: { bg: 'bg-blue-500', ring: 'ring-blue-500', bgFaint: 'bg-blue-500/20' },
-  L: { bg: 'bg-amber-500', ring: 'ring-amber-500', bgFaint: 'bg-amber-500/20' },
+  L: {
+    bg: 'bg-amber-500',
+    ring: 'ring-amber-500',
+    bgFaint: 'bg-amber-500/20',
+  },
   XL: { bg: 'bg-red-500', ring: 'ring-red-500', bgFaint: 'bg-red-500/20' },
 }
 
-const UNKNOWN_COLOR = {
+const UNKNOWN_COLOR: BlockColor = {
   bg: 'bg-gray-300 dark:bg-gray-600',
   ring: 'ring-gray-400',
   bgFaint: 'bg-gray-400/20',
 }
 
-function getSizeColor(complexity: string | null): {
-  bg: string
-  ring: string
-  bgFaint: string
-} {
+function getSizeColor(complexity: string | null): BlockColor {
   if (!complexity) return UNKNOWN_COLOR
   return SIZE_BLOCK_COLORS[complexity] ?? UNKNOWN_COLOR
 }
 
 function sortBySize(prs: StackPR[]): StackPR[] {
   return [...prs].sort((a, b) => {
-    const ai = SIZE_ORDER.indexOf(
-      (a.complexity ?? '') as (typeof SIZE_ORDER)[number],
-    )
-    const bi = SIZE_ORDER.indexOf(
-      (b.complexity ?? '') as (typeof SIZE_ORDER)[number],
-    )
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+    const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
+    const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
+    return bi - ai
   })
 }
 
@@ -111,11 +114,7 @@ function getAgeDays(pr: StackPR): number {
   return dayjs().diff(dayjs(pr.createdAt), 'day', true)
 }
 
-function getAgeColor(pr: StackPR): {
-  bg: string
-  ring: string
-  bgFaint: string
-} {
+function getAgeColor(pr: StackPR): BlockColor {
   const days = getAgeDays(pr)
   for (const t of AGE_THRESHOLDS) {
     if (days < t.maxDays) return { bg: t.bg, ring: t.ring, bgFaint: t.bgFaint }
@@ -128,31 +127,33 @@ function sortByAge(prs: StackPR[]): StackPR[] {
   return [...prs].sort((a, b) => getAgeDays(b) - getAgeDays(a))
 }
 
-// --- Shared context ---
+// --- Contexts ---
+// - HoveredContext: changes on hover (StackRow reads for row highlighting)
+// - SetHoveredContext: stable callback (PRBlock reads, never causes re-render)
+// - ColorModeContext: changes on toggle only
 
 interface HoveredInfo {
   prKey: string
   author: string
 }
 
-const ChartContext = createContext<{
-  hovered: HoveredInfo | null
-  setHovered: (info: HoveredInfo | null) => void
-  colorMode: ColorMode
-}>({ hovered: null, setHovered: () => {}, colorMode: 'size' })
+const HoveredContext = createContext<HoveredInfo | null>(null)
+const SetHoveredContext = createContext<(info: HoveredInfo | null) => void>(
+  () => {},
+)
+const ColorModeContext = createContext<ColorMode>('age')
 
-function getBlockColor(
-  pr: StackPR,
-  mode: ColorMode,
-): { bg: string; ring: string; bgFaint: string } {
+function getBlockColor(pr: StackPR, mode: ColorMode): BlockColor {
   return mode === 'size' ? getSizeColor(pr.complexity) : getAgeColor(pr)
 }
 
 function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
   const baseSorted = mode === 'size' ? sortBySize(prs) : sortByAge(prs)
-  // Push unassigned PRs to the end, preserving sort order within each group
-  const assigned = baseSorted.filter((p) => p.hasReviewer !== false)
-  const unassigned = baseSorted.filter((p) => p.hasReviewer === false)
+  const assigned: StackPR[] = []
+  const unassigned: StackPR[] = []
+  for (const p of baseSorted) {
+    ;(p.hasReviewer === false ? unassigned : assigned).push(p)
+  }
   return [...assigned, ...unassigned]
 }
 
@@ -167,14 +168,16 @@ function StackRow({
   wipLimit: number
   showAuthor?: boolean
 }) {
-  const { colorMode, hovered } = useContext(ChartContext)
+  const colorMode = useContext(ColorModeContext)
+  const hovered = useContext(HoveredContext)
   const isOver = stack.prs.length > wipLimit
-  const sortedPRs = sortPRs(stack.prs, colorMode)
+  const sortedPRs = useMemo(
+    () => sortPRs(stack.prs, colorMode),
+    [stack.prs, colorMode],
+  )
 
   const rowRef = useRef<HTMLDivElement>(null)
 
-  // Highlight this row if the hovered PR belongs to this person (author side)
-  // or this person's queue contains the hovered PR (reviewer side)
   const isRelated =
     hovered !== null &&
     (stack.login === hovered.author ||
@@ -224,7 +227,9 @@ function StackRow({
   )
 }
 
-function PRBlock({
+/** memo'd — reads SetHoveredContext + ColorModeContext (both stable during hover).
+ *  Dimming is handled by DOM class toggling, not React state. */
+const PRBlock = memo(function PRBlock({
   pr,
   showWipLine,
   showAuthor,
@@ -233,10 +238,11 @@ function PRBlock({
   showWipLine: boolean
   showAuthor?: boolean
 }) {
-  const { hovered, setHovered, colorMode } = useContext(ChartContext)
+  const colorMode = useContext(ColorModeContext)
+  const setHovered = useContext(SetHoveredContext)
   const prKey = `${pr.repo}:${pr.number}`
-  const isDimmed = hovered !== null && hovered.prKey !== prKey
   const ageDays = Math.floor(getAgeDays(pr))
+  const { bg, ring, bgFaint } = getBlockColor(pr, colorMode)
 
   return (
     <>
@@ -247,7 +253,8 @@ function PRBlock({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${isDimmed ? 'opacity-15' : ''} ${pr.hasReviewer ? getBlockColor(pr, colorMode).bg : `ring-[2px] ring-inset ${getBlockColor(pr, colorMode).ring} ${getBlockColor(pr, colorMode).bgFaint}`}`}
+            data-pr-key={prKey}
+            className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${pr.hasReviewer ? bg : `ring-[2px] ring-inset ${ring} ${bgFaint}`}`}
             aria-label={`${pr.repo}#${pr.number}`}
             onMouseEnter={() => setHovered({ prKey, author: pr.author })}
             onMouseLeave={() => setHovered(null)}
@@ -284,7 +291,7 @@ function PRBlock({
       </Popover>
     </>
   )
-}
+})
 
 function StackColumn({
   title,
@@ -336,8 +343,8 @@ function StackColumn({
 }
 
 function UnassignedRows({ prs }: { prs: StackPR[] }) {
-  const { colorMode } = useContext(ChartContext)
-  const sortedPRs = sortPRs(prs, colorMode)
+  const colorMode = useContext(ColorModeContext)
+  const sortedPRs = useMemo(() => sortPRs(prs, colorMode), [prs, colorMode])
 
   return (
     <div className="mt-3 border-t-2 border-dashed border-amber-400 pt-2">
@@ -368,7 +375,7 @@ function Legend({ mode }: { mode: ColorMode }) {
     <div className="flex items-center gap-3 text-xs">
       {mode === 'size' ? (
         <>
-          {[...SIZE_ORDER].reverse().map((label) => (
+          {PR_SIZE_LABELS.map((label) => (
             <div key={label} className="flex items-center gap-1">
               <div
                 className={`size-3 rounded-sm ${SIZE_BLOCK_COLORS[label].bg}`}
@@ -414,54 +421,93 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
     })
   }
   const [hovered, setHovered] = useState<HoveredInfo | null>(null)
-  const ctxValue = useMemo(
-    () => ({ hovered, setHovered, colorMode }),
-    [hovered, colorMode],
-  )
+
+  // DOM-based dimming: toggle classes directly to avoid re-rendering ~170 PRBlocks.
+  // Matched PRs (same prKey across columns) stay visible + scale up slightly.
+  const gridRef = useRef<HTMLDivElement>(null)
+  const prevMatches = useRef<Element[]>([])
+
+  const handleHover = useCallback((info: HoveredInfo | null) => {
+    // React state for row highlighting (StackRow reads HoveredContext)
+    setHovered(info)
+
+    // Direct DOM manipulation for PR block dimming (zero re-renders)
+    const grid = gridRef.current
+    if (!grid) return
+
+    // Clean up previous matches
+    for (const el of prevMatches.current) {
+      el.classList.remove('pr-match')
+    }
+    prevMatches.current = []
+
+    if (info) {
+      grid.classList.add('pr-hovering')
+      const matches = grid.querySelectorAll(`[data-pr-key="${info.prKey}"]`)
+      for (const el of matches) {
+        el.classList.add('pr-match')
+      }
+      prevMatches.current = Array.from(matches)
+    } else {
+      grid.classList.remove('pr-hovering')
+    }
+  }, [])
 
   return (
-    <ChartContext value={ctxValue}>
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <p className="text-muted-foreground text-sm">
-              Each block = 1 open PR. The dashed line marks the WIP limit (
-              {wipLimit}). Blocks past the line are excess WIP adding to
-              everyone&apos;s review burden.
-            </p>
-            <Legend mode={colorMode} />
+    <SetHoveredContext value={handleHover}>
+      <HoveredContext value={hovered}>
+        <ColorModeContext value={colorMode}>
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-sm">
+                  Each block = 1 open PR. The dashed line marks the WIP limit (
+                  {wipLimit}). Blocks past the line are excess WIP adding to
+                  everyone&apos;s review burden.
+                </p>
+                <Legend mode={colorMode} />
+              </div>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                value={colorMode}
+                onValueChange={(v) => {
+                  if (v) setColorMode(v as ColorMode)
+                }}
+                size="sm"
+                className="shrink-0"
+              >
+                <ToggleGroupItem value="age">Age</ToggleGroupItem>
+                <ToggleGroupItem value="size">Size</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            {/* Dimming via DOM classes: .pr-hovering dims all buttons,
+                .pr-match + :hover exclude the matched/hovered ones */}
+            <div
+              ref={gridRef}
+              className="grid gap-8 md:grid-cols-2 [&.pr-hovering_.pr-match:not(:hover)]:scale-125 [&.pr-hovering_button:not(.pr-match):not(:hover)]:opacity-15"
+            >
+              <StackColumn
+                title="Authored PRs (open)"
+                stacks={authorStacks}
+                wipLimit={wipLimit}
+              />
+              <StackColumn
+                title="Review Queue (pending)"
+                stacks={reviewerStacks}
+                wipLimit={wipLimit}
+                showAuthor
+                unassignedPRs={unassignedPRs}
+              />
+            </div>
+            {insight && (
+              <p className="text-muted-foreground text-center text-sm">
+                {insight}
+              </p>
+            )}
           </div>
-          <ToggleGroup
-            type="single"
-            value={colorMode}
-            onValueChange={(v) => {
-              if (v) setColorMode(v as ColorMode)
-            }}
-            size="sm"
-            className="shrink-0"
-          >
-            <ToggleGroupItem value="age">Age</ToggleGroupItem>
-            <ToggleGroupItem value="size">Size</ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-        <div className="grid gap-8 md:grid-cols-2">
-          <StackColumn
-            title="Authored PRs (open)"
-            stacks={authorStacks}
-            wipLimit={wipLimit}
-          />
-          <StackColumn
-            title="Review Queue (pending)"
-            stacks={reviewerStacks}
-            wipLimit={wipLimit}
-            showAuthor
-            unassignedPRs={unassignedPRs}
-          />
-        </div>
-        {insight && (
-          <p className="text-muted-foreground text-center text-sm">{insight}</p>
-        )}
-      </div>
-    </ChartContext>
+        </ColorModeContext>
+      </HoveredContext>
+    </SetHoveredContext>
   )
 }
