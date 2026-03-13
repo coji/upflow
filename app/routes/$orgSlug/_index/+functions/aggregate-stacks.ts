@@ -49,7 +49,7 @@ interface PendingReviewRow {
   complexity: string | null
 }
 
-const DEFAULT_PERSONAL_LIMIT = 2
+export const DEFAULT_PERSONAL_LIMIT = 2
 
 export function aggregateTeamStacks(
   openPRs: OpenPRRow[],
@@ -183,7 +183,7 @@ export function aggregateTeamStacks(
     authorStacks,
     reviewerStacks,
     unassignedPRs,
-    personalLimit: personalLimit,
+    personalLimit,
     insight,
   }
 }

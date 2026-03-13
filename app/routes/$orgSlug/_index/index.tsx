@@ -9,7 +9,10 @@ import { Stack } from '~/app/components/ui/stack'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
-import { aggregateTeamStacks } from './+functions/aggregate-stacks'
+import {
+  DEFAULT_PERSONAL_LIMIT,
+  aggregateTeamStacks,
+} from './+functions/aggregate-stacks'
 import {
   getOpenPullRequests,
   getPendingReviewAssignments,
@@ -29,7 +32,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   ])
 
   const selectedTeam = teamParam ? teams.find((t) => t.id === teamParam) : null
-  const personalLimit = selectedTeam?.personalLimit ?? 2
+  const personalLimit = selectedTeam?.personalLimit ?? DEFAULT_PERSONAL_LIMIT
 
   return {
     teams,

@@ -124,7 +124,9 @@ function getAgeColor(pr: StackPR): BlockColor {
 }
 
 function sortByAge(prs: StackPR[]): StackPR[] {
-  return [...prs].sort((a, b) => getAgeDays(b) - getAgeDays(a))
+  const withAge = prs.map((pr) => ({ pr, age: getAgeDays(pr) }))
+  withAge.sort((a, b) => b.age - a.age)
+  return withAge.map(({ pr }) => pr)
 }
 
 // --- Contexts ---

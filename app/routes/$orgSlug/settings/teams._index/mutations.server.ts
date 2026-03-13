@@ -1,3 +1,4 @@
+import { DEFAULT_PERSONAL_LIMIT } from '~/app/routes/$orgSlug/_index/+functions/aggregate-stacks'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -14,7 +15,7 @@ export const addTeam = async (params: {
       id: crypto.randomUUID(),
       name: params.name,
       displayOrder: params.displayOrder,
-      personalLimit: params.personalLimit ?? 2,
+      personalLimit: params.personalLimit ?? DEFAULT_PERSONAL_LIMIT,
     })
     .execute()
 }
