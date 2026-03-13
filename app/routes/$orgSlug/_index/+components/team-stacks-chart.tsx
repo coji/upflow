@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Card,
@@ -19,6 +19,8 @@ import type {
 } from '../+functions/aggregate-stacks'
 import { SizeBadge } from '../../+components/size-badge'
 
+const SIZE_ORDER = ['XL', 'L', 'M', 'S', 'XS'] as const
+
 const SIZE_BLOCK_COLORS: Record<string, string> = {
   XS: 'bg-slate-400',
   S: 'bg-emerald-500',
@@ -27,9 +29,23 @@ const SIZE_BLOCK_COLORS: Record<string, string> = {
   XL: 'bg-red-500',
 }
 
+const UNKNOWN_COLOR = 'bg-gray-300 dark:bg-gray-600'
+
 function getBlockColor(complexity: string | null): string {
-  if (!complexity) return 'bg-gray-300 dark:bg-gray-600'
-  return SIZE_BLOCK_COLORS[complexity] ?? 'bg-gray-300 dark:bg-gray-600'
+  if (!complexity) return UNKNOWN_COLOR
+  return SIZE_BLOCK_COLORS[complexity] ?? UNKNOWN_COLOR
+}
+
+function sortBySize(prs: StackPR[]): StackPR[] {
+  return [...prs].sort((a, b) => {
+    const ai = SIZE_ORDER.indexOf(
+      (a.complexity ?? '') as (typeof SIZE_ORDER)[number],
+    )
+    const bi = SIZE_ORDER.indexOf(
+      (b.complexity ?? '') as (typeof SIZE_ORDER)[number],
+    )
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+  })
 }
 
 const HoverContext = createContext<{
@@ -47,14 +63,7 @@ function StackRow({
   showAuthor?: boolean
 }) {
   const isOver = stack.prs.length > wipLimit
-
-  // Sort PRs by size (XL first) so big ones are visually prominent
-  const sortedPRs = [...stack.prs].sort((a, b) => {
-    const order = ['XL', 'L', 'M', 'S', 'XS']
-    const ai = order.indexOf(a.complexity ?? '')
-    const bi = order.indexOf(b.complexity ?? '')
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-  })
+  const sortedPRs = sortBySize(stack.prs)
 
   return (
     <div className="flex items-center gap-3 py-1.5">
@@ -193,6 +202,8 @@ function StackColumn({
 }
 
 function UnassignedRows({ prs }: { prs: StackPR[] }) {
+  const sortedPRs = sortBySize(prs)
+
   return (
     <div className="mt-3 border-t-2 border-dashed border-amber-400 pt-2">
       <div className="flex items-center gap-3 py-1.5">
@@ -203,21 +214,14 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
           {prs.length}
         </span>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5">
-          {[...prs]
-            .sort((a, b) => {
-              const order = ['XL', 'L', 'M', 'S', 'XS']
-              const ai = order.indexOf(a.complexity ?? '')
-              const bi = order.indexOf(b.complexity ?? '')
-              return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-            })
-            .map((pr) => (
-              <PRBlock
-                key={`${pr.repo}:${pr.number}`}
-                pr={pr}
-                showWipLine={false}
-                showAuthor
-              />
-            ))}
+          {sortedPRs.map((pr) => (
+            <PRBlock
+              key={`${pr.repo}:${pr.number}`}
+              pr={pr}
+              showWipLine={false}
+              showAuthor
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -225,23 +229,18 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
 }
 
 function SizeLegend() {
-  const sizes = [
-    { label: 'XS', color: 'bg-slate-400' },
-    { label: 'S', color: 'bg-emerald-500' },
-    { label: 'M', color: 'bg-blue-500' },
-    { label: 'L', color: 'bg-amber-500' },
-    { label: 'XL', color: 'bg-red-500' },
-    { label: '?', color: 'bg-gray-300 dark:bg-gray-600' },
-  ]
-
   return (
     <div className="flex items-center gap-3 text-xs">
-      {sizes.map((s) => (
-        <div key={s.label} className="flex items-center gap-1">
-          <div className={`size-3 rounded-sm ${s.color}`} />
-          <span className="text-muted-foreground">{s.label}</span>
+      {[...SIZE_ORDER].reverse().map((label) => (
+        <div key={label} className="flex items-center gap-1">
+          <div className={`size-3 rounded-sm ${SIZE_BLOCK_COLORS[label]}`} />
+          <span className="text-muted-foreground">{label}</span>
         </div>
       ))}
+      <div className="flex items-center gap-1">
+        <div className={`size-3 rounded-sm ${UNKNOWN_COLOR}`} />
+        <span className="text-muted-foreground">?</span>
+      </div>
       <div className="flex items-center gap-1">
         <div className="h-4 w-px border-l-2 border-dashed border-red-400" />
         <span className="text-muted-foreground">WIP limit</span>
@@ -254,9 +253,10 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
   const { authorStacks, reviewerStacks, unassignedPRs, wipLimit, insight } =
     data
   const [hoveredPR, setHoveredPR] = useState<string | null>(null)
+  const hoverValue = useMemo(() => ({ hoveredPR, setHoveredPR }), [hoveredPR])
 
   return (
-    <HoverContext value={{ hoveredPR, setHoveredPR }}>
+    <HoverContext value={hoverValue}>
       <Card>
         <CardHeader>
           <CardTitle>Team Review Stacks</CardTitle>

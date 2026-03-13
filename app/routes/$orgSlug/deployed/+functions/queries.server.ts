@@ -50,8 +50,6 @@ export const getDeployedPullRequestReport = async (
           'pullRequests.repositoryId',
         ),
     )
-    .orderBy('releasedAt', 'desc')
-    .orderBy('pullRequestCreatedAt', 'desc')
     .select([
       'pullRequests.author',
       'pullRequests.repo',

@@ -49,8 +49,6 @@ export const getMergedPullRequestReport = async (
           'pullRequests.repositoryId',
         ),
     )
-    .orderBy('mergedAt', 'desc')
-    .orderBy('pullRequestCreatedAt', 'desc')
     .select([
       'pullRequests.author',
       'pullRequests.repo',

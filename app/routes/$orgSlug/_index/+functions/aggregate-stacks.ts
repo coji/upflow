@@ -20,8 +20,6 @@ export interface TeamStacksData {
   reviewerStacks: PersonStack[]
   unassignedPRs: StackPR[]
   wipLimit: number
-  overLimitAuthors: number
-  overLimitReviewers: number
   insight: string | null
 }
 
@@ -171,8 +169,6 @@ export function aggregateTeamStacks(
     reviewerStacks,
     unassignedPRs,
     wipLimit: WIP_LIMIT,
-    overLimitAuthors,
-    overLimitReviewers,
     insight,
   }
 }

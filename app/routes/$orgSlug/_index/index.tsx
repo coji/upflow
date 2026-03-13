@@ -22,9 +22,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')
 
-  const teams = await listTeams(organization.id)
-
-  const [openPRs, pendingReviews] = await Promise.all([
+  const [teams, openPRs, pendingReviews] = await Promise.all([
+    listTeams(organization.id),
     getOpenPullRequests(organization.id, teamParam),
     getPendingReviewAssignments(organization.id, teamParam),
   ])
