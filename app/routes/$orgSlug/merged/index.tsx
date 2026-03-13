@@ -101,6 +101,7 @@ export default function OrganizationIndex({
             type="button"
             variant="outline"
             size="sm"
+            aria-label={`Copy ${pullRequests.length} rows as markdown`}
             onClick={() => {
               navigator.clipboard.writeText(generateMarkdown(pullRequests))
               toast.info(`Copied ${pullRequests.length} rows`)
@@ -162,7 +163,12 @@ export default function OrganizationIndex({
       </div>
 
       <AppDataTable
-        title={<div>Merged this week: {pullRequests.length}</div>}
+        title={
+          <div>
+            Merged {dayjs(from).format('M/D')} - {dayjs(to).format('M/D')}:{' '}
+            {pullRequests.length}
+          </div>
+        }
         columns={columns}
         data={pullRequests}
         getRowId={(row) => `${row.repositoryId}:${row.number}`}
