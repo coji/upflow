@@ -84,6 +84,7 @@ describe('teams mutations', () => {
       id: teamId,
       name: 'New Name',
       displayOrder: 5,
+      personalLimit: 3,
     })
 
     const updated = await listTeams(orgId)

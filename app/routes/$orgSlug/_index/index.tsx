@@ -28,21 +28,25 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     getPendingReviewAssignments(organization.id, teamParam),
   ])
 
+  const selectedTeam = teamParam ? teams.find((t) => t.id === teamParam) : null
+  const personalLimit = selectedTeam?.personalLimit ?? 2
+
   return {
     teams,
     openPRs,
     pendingReviews,
+    personalLimit,
   }
 }
 
 export const clientLoader = async ({
   serverLoader,
 }: Route.ClientLoaderArgs) => {
-  const { teams, openPRs, pendingReviews } = await serverLoader()
+  const { teams, openPRs, pendingReviews, personalLimit } = await serverLoader()
 
   return {
     teams,
-    teamStacks: aggregateTeamStacks(openPRs, pendingReviews),
+    teamStacks: aggregateTeamStacks(openPRs, pendingReviews, personalLimit),
   }
 }
 clientLoader.hydrate = true as const

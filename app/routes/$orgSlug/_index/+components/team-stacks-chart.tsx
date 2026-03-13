@@ -161,16 +161,16 @@ function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
 
 function StackRow({
   stack,
-  wipLimit,
+  personalLimit,
   showAuthor,
 }: {
   stack: PersonStack
-  wipLimit: number
+  personalLimit: number
   showAuthor?: boolean
 }) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
-  const isOver = stack.prs.length > wipLimit
+  const isOver = stack.prs.length > personalLimit
   const sortedPRs = useMemo(
     () => sortPRs(stack.prs, colorMode),
     [stack.prs, colorMode],
@@ -218,7 +218,7 @@ function StackRow({
           <PRBlock
             key={`${pr.repo}:${pr.number}`}
             pr={pr}
-            showWipLine={i === wipLimit && isOver}
+            showLimitLine={i === personalLimit && isOver}
             showAuthor={showAuthor}
           />
         ))}
@@ -231,11 +231,11 @@ function StackRow({
  *  Dimming is handled by DOM class toggling, not React state. */
 const PRBlock = memo(function PRBlock({
   pr,
-  showWipLine,
+  showLimitLine,
   showAuthor,
 }: {
   pr: StackPR
-  showWipLine: boolean
+  showLimitLine: boolean
   showAuthor?: boolean
 }) {
   const colorMode = useContext(ColorModeContext)
@@ -246,7 +246,7 @@ const PRBlock = memo(function PRBlock({
 
   return (
     <>
-      {showWipLine && (
+      {showLimitLine && (
         <div className="mx-0.5 h-5 w-px shrink-0 border-l-2 border-dashed border-red-400" />
       )}
       <Popover>
@@ -296,13 +296,13 @@ const PRBlock = memo(function PRBlock({
 function StackColumn({
   title,
   stacks,
-  wipLimit,
+  personalLimit,
   showAuthor,
   unassignedPRs,
 }: {
   title: string
   stacks: PersonStack[]
-  wipLimit: number
+  personalLimit: number
   showAuthor?: boolean
   unassignedPRs?: StackPR[]
 }) {
@@ -332,7 +332,7 @@ function StackColumn({
           <StackRow
             key={stack.login}
             stack={stack}
-            wipLimit={wipLimit}
+            personalLimit={personalLimit}
             showAuthor={showAuthor}
           />
         ))}
@@ -360,7 +360,7 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
             <PRBlock
               key={`${pr.repo}:${pr.number}`}
               pr={pr}
-              showWipLine={false}
+              showLimitLine={false}
               showAuthor
             />
           ))}
@@ -398,15 +398,20 @@ function Legend({ mode }: { mode: ColorMode }) {
       )}
       <div className="flex items-center gap-1">
         <div className="h-4 w-px border-l-2 border-dashed border-red-400" />
-        <span className="text-muted-foreground">WIP limit</span>
+        <span className="text-muted-foreground">Limit</span>
       </div>
     </div>
   )
 }
 
 export function TeamStacksChart({ data }: { data: TeamStacksData }) {
-  const { authorStacks, reviewerStacks, unassignedPRs, wipLimit, insight } =
-    data
+  const {
+    authorStacks,
+    reviewerStacks,
+    unassignedPRs,
+    personalLimit,
+    insight,
+  } = data
   const [searchParams, setSearchParams] = useSearchParams()
   const colorMode: ColorMode =
     searchParams.get('view') === 'size' ? 'size' : 'age'
@@ -461,9 +466,9 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
                 <p className="text-muted-foreground text-sm">
-                  Each block = 1 open PR. The dashed line marks the WIP limit (
-                  {wipLimit}). Blocks past the line are excess WIP adding to
-                  everyone&apos;s review burden.
+                  Each block = 1 open PR. The dashed line marks the personal
+                  limit ({personalLimit}). Blocks past the line signal
+                  individual overload.
                 </p>
                 <Legend mode={colorMode} />
               </div>
@@ -490,12 +495,12 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
               <StackColumn
                 title="Authored PRs (open)"
                 stacks={authorStacks}
-                wipLimit={wipLimit}
+                personalLimit={personalLimit}
               />
               <StackColumn
                 title="Review Queue (pending)"
                 stacks={reviewerStacks}
-                wipLimit={wipLimit}
+                personalLimit={personalLimit}
                 showAuthor
                 unassignedPRs={unassignedPRs}
               />

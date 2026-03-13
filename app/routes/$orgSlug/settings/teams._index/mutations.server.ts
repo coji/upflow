@@ -5,6 +5,7 @@ export const addTeam = async (params: {
   organizationId: OrganizationId
   name: string
   displayOrder: number
+  personalLimit?: number
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
   await tenantDb
@@ -13,6 +14,7 @@ export const addTeam = async (params: {
       id: crypto.randomUUID(),
       name: params.name,
       displayOrder: params.displayOrder,
+      personalLimit: params.personalLimit ?? 2,
     })
     .execute()
 }
@@ -22,6 +24,7 @@ export const updateTeam = async (params: {
   id: string
   name: string
   displayOrder: number
+  personalLimit: number
 }) => {
   const tenantDb = getTenantDb(params.organizationId)
   await tenantDb
@@ -29,6 +32,7 @@ export const updateTeam = async (params: {
     .set({
       name: params.name,
       displayOrder: params.displayOrder,
+      personalLimit: params.personalLimit,
     })
     .where('id', '=', params.id)
     .execute()

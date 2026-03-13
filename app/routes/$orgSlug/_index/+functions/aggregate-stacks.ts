@@ -20,7 +20,7 @@ export interface TeamStacksData {
   authorStacks: PersonStack[]
   reviewerStacks: PersonStack[]
   unassignedPRs: StackPR[]
-  wipLimit: number
+  personalLimit: number
   insight: string | null
 }
 
@@ -49,11 +49,12 @@ interface PendingReviewRow {
   complexity: string | null
 }
 
-const WIP_LIMIT = 2
+const DEFAULT_PERSONAL_LIMIT = 2
 
 export function aggregateTeamStacks(
   openPRs: OpenPRRow[],
   reviewData: PendingReviewRow[],
+  personalLimit = DEFAULT_PERSONAL_LIMIT,
 ): TeamStacksData {
   // Build PR key → reviewer logins map
   const prReviewerSets = new Map<string, Set<string>>()
@@ -152,17 +153,17 @@ export function aggregateTeamStacks(
     }))
 
   const overLimitAuthors = authorStacks.filter(
-    (s) => s.prs.length > WIP_LIMIT,
+    (s) => s.prs.length > personalLimit,
   ).length
   const overLimitReviewers = reviewerStacks.filter(
-    (s) => s.prs.length > WIP_LIMIT,
+    (s) => s.prs.length > personalLimit,
   ).length
 
   let insight: string | null = null
   if (overLimitAuthors > 0 || overLimitReviewers > 0) {
     const parts: string[] = []
     if (overLimitAuthors > 0) {
-      parts.push(`${overLimitAuthors}人がWIP制限（${WIP_LIMIT}件）を超過中`)
+      parts.push(`${overLimitAuthors}人が目安（${personalLimit}件）を超過中`)
     }
     if (overLimitReviewers > 0) {
       const maxReviewer = reviewerStacks[0]
@@ -182,7 +183,7 @@ export function aggregateTeamStacks(
     authorStacks,
     reviewerStacks,
     unassignedPRs,
-    wipLimit: WIP_LIMIT,
+    personalLimit: personalLimit,
     insight,
   }
 }

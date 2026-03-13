@@ -42,6 +42,7 @@ const updateSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   displayOrder: z.coerce.number().int().default(0),
+  personalLimit: z.coerce.number().int().min(1).default(2),
 })
 
 const deleteSchema = z.object({
@@ -67,6 +68,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         id: formData.get('id'),
         name: formData.get('name'),
         displayOrder: formData.get('displayOrder'),
+        personalLimit: formData.get('personalLimit'),
       })
       await updateTeam({ ...parsed, organizationId: organization.id })
       return data({ ok: true })
@@ -113,14 +115,23 @@ function AddTeamForm() {
 function TeamRow({
   team,
 }: {
-  team: { id: string; name: string; displayOrder: number }
+  team: {
+    id: string
+    name: string
+    displayOrder: number
+    personalLimit: number
+  }
 }) {
   const updateFetcher = useFetcher()
   const deleteFetcher = useFetcher()
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const submitUpdate = (
-    fields: Partial<{ name: string; displayOrder: string }>,
+    fields: Partial<{
+      name: string
+      displayOrder: string
+      personalLimit: string
+    }>,
   ) => {
     const formData = new FormData()
     formData.set('intent', 'update')
@@ -129,6 +140,10 @@ function TeamRow({
     formData.set(
       'displayOrder',
       fields.displayOrder ?? String(team.displayOrder),
+    )
+    formData.set(
+      'personalLimit',
+      fields.personalLimit ?? String(team.personalLimit),
     )
     updateFetcher.submit(formData, { method: 'post' })
   }
@@ -147,6 +162,15 @@ function TeamRow({
           value={String(team.displayOrder)}
           pending={updateFetcher.state !== 'idle'}
           onSave={(newValue) => submitUpdate({ displayOrder: newValue })}
+          type="number"
+          className="w-20"
+        />
+      </TableCell>
+      <TableCell>
+        <EditableCell
+          value={String(team.personalLimit)}
+          pending={updateFetcher.state !== 'idle'}
+          onSave={(newValue) => submitUpdate({ personalLimit: newValue })}
           type="number"
           className="w-20"
         />
@@ -191,6 +215,7 @@ export default function TeamsPage({
               <TableRow>
                 <TableHead>Team Name</TableHead>
                 <TableHead className="w-24">Order</TableHead>
+                <TableHead className="w-24">Limit</TableHead>
                 <TableHead className="w-32" />
               </TableRow>
             </TableHeader>
@@ -199,7 +224,7 @@ export default function TeamsPage({
                 teams.map((team) => <TeamRow key={team.id} team={team} />)
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     No teams registered yet.
                   </TableCell>
                 </TableRow>
