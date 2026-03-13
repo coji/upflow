@@ -52,21 +52,21 @@ export function HydrateFallback() {
     <Stack gap="6">
       <PageHeader>
         <PageHeaderHeading>
-          <PageHeaderTitle>Dashboard</PageHeaderTitle>
+          <PageHeaderTitle>Review Stacks</PageHeaderTitle>
         </PageHeaderHeading>
       </PageHeader>
     </Stack>
   )
 }
 
-export default function DashboardPage({
+export default function ReviewStacksPage({
   loaderData: { teams, teamStacks },
 }: Route.ComponentProps) {
   return (
     <Stack gap="6">
       <PageHeader>
         <PageHeaderHeading>
-          <PageHeaderTitle>Dashboard</PageHeaderTitle>
+          <PageHeaderTitle>Review Stacks</PageHeaderTitle>
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />

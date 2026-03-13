@@ -15,7 +15,7 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
       title: 'Analytics',
       items: [
         {
-          title: 'Dashboard',
+          title: 'Review Stacks',
           url: `/${orgSlug}`,
           icon: LayoutDashboardIcon,
         },

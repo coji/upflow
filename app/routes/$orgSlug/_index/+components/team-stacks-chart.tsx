@@ -1,13 +1,6 @@
 import { createContext, useContext, useMemo, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '~/app/components/ui/card'
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -257,38 +250,33 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
 
   return (
     <HoverContext value={hoverValue}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Review Stacks</CardTitle>
-          <CardDescription>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <p className="text-muted-foreground text-sm">
             Each block = 1 open PR, colored by size. The dashed line marks the
             WIP limit ({wipLimit}). Blocks past the line are excess WIP adding
             to everyone&apos;s review burden.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
           <SizeLegend />
-          <div className="mt-4 grid gap-8 md:grid-cols-2">
-            <StackColumn
-              title="Authored PRs (open)"
-              stacks={authorStacks}
-              wipLimit={wipLimit}
-            />
-            <StackColumn
-              title="Review Queue (pending)"
-              stacks={reviewerStacks}
-              wipLimit={wipLimit}
-              showAuthor
-              unassignedPRs={unassignedPRs}
-            />
-          </div>
-          {insight && (
-            <p className="text-muted-foreground mt-4 text-center text-sm">
-              {insight}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        <div className="grid gap-8 md:grid-cols-2">
+          <StackColumn
+            title="Authored PRs (open)"
+            stacks={authorStacks}
+            wipLimit={wipLimit}
+          />
+          <StackColumn
+            title="Review Queue (pending)"
+            stacks={reviewerStacks}
+            wipLimit={wipLimit}
+            showAuthor
+            unassignedPRs={unassignedPRs}
+          />
+        </div>
+        {insight && (
+          <p className="text-muted-foreground text-center text-sm">{insight}</p>
+        )}
+      </div>
     </HoverContext>
   )
 }
