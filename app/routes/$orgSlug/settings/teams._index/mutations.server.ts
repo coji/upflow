@@ -1,4 +1,4 @@
-import { DEFAULT_PERSONAL_LIMIT } from '~/app/routes/$orgSlug/_index/+functions/aggregate-stacks'
+import { DEFAULT_PERSONAL_LIMIT } from '~/app/routes/$orgSlug/stacks/+functions/aggregate-stacks'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
