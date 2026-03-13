@@ -50,7 +50,7 @@ export const columns: ColumnDef<PullRequest>[] = [
     cell: ({ row }) => (
       <a
         href={row.original.url}
-        className="overflow:underline block w-96 truncate text-blue-500"
+        className="block w-96 truncate text-blue-500 hover:underline"
         target="_blank"
         rel="noreferrer noopener"
       >
