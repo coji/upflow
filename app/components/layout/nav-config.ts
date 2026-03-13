@@ -1,7 +1,9 @@
 import {
+  ClockIcon,
   GitPullRequestIcon,
   LayoutDashboardIcon,
   NotebookPenIcon,
+  RocketIcon,
   SettingsIcon,
   TimerIcon,
 } from 'lucide-react'
@@ -23,9 +25,19 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
           icon: TimerIcon,
         },
         {
+          title: 'Merged',
+          url: `/${orgSlug}/merged`,
+          icon: ClockIcon,
+        },
+        {
           title: 'Reviews',
           url: `/${orgSlug}/reviews`,
           icon: GitPullRequestIcon,
+        },
+        {
+          title: 'Deployed',
+          url: `/${orgSlug}/deployed`,
+          icon: RocketIcon,
         },
         {
           title: 'Feedbacks',
