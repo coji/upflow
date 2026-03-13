@@ -194,7 +194,6 @@ function useScrollIntoColumn(
       }
     })
     return () => cancelAnimationFrame(rafId)
-    // biome-ignore lint/correctness/useExhaustiveDependencies: ref is stable, ref.current is read imperatively
   }, [ref, active, hoverSourceColumn])
 }
 
