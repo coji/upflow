@@ -159,6 +159,42 @@ function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
   return [...assigned, ...unassigned]
 }
 
+// --- Scroll helper ---
+// Scrolls only the column's overflow-y-auto container, never parent/page.
+// Skips scrolling if the hovered element is in the same column (already visible).
+const HoverSourceColumnContext = createContext<HTMLElement | null>(null)
+
+function useScrollIntoColumn(
+  ref: React.RefObject<HTMLDivElement | null>,
+  active: boolean,
+) {
+  const hoverSourceColumn = useContext(HoverSourceColumnContext)
+
+  useEffect(() => {
+    const row = ref.current
+    if (!active || !row) return
+    const container = row.closest('.overflow-y-auto') as HTMLElement | null
+    if (!container) return
+    // Don't scroll if the hover originated from the same column
+    if (hoverSourceColumn === container) return
+    requestAnimationFrame(() => {
+      const cRect = container.getBoundingClientRect()
+      const rRect = row.getBoundingClientRect()
+      if (rRect.top < cRect.top) {
+        container.scrollBy({
+          top: rRect.top - cRect.top - 4,
+          behavior: 'smooth',
+        })
+      } else if (rRect.bottom > cRect.bottom) {
+        container.scrollBy({
+          top: rRect.bottom - cRect.bottom + 4,
+          behavior: 'smooth',
+        })
+      }
+    })
+  }, [ref, active, hoverSourceColumn])
+}
+
 // --- Components ---
 
 function StackRow({
@@ -185,11 +221,7 @@ function StackRow({
     (stack.login === hovered.author ||
       stack.prs.some((p) => `${p.repo}:${p.number}` === hovered.prKey))
 
-  useEffect(() => {
-    if (isRelated && rowRef.current) {
-      rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }
-  }, [isRelated])
+  useScrollIntoColumn(rowRef, isRelated)
 
   return (
     <div
@@ -346,10 +378,21 @@ function StackColumn({
 
 function UnassignedRows({ prs }: { prs: StackPR[] }) {
   const colorMode = useContext(ColorModeContext)
+  const hovered = useContext(HoveredContext)
   const sortedPRs = useMemo(() => sortPRs(prs, colorMode), [prs, colorMode])
+  const rowRef = useRef<HTMLDivElement>(null)
+
+  const isRelated =
+    hovered !== null &&
+    prs.some((p) => `${p.repo}:${p.number}` === hovered.prKey)
+
+  useScrollIntoColumn(rowRef, isRelated)
 
   return (
-    <div className="mt-3 border-t-2 border-dashed border-amber-400 pt-2">
+    <div
+      ref={rowRef}
+      className={`mt-3 border-t-2 border-dashed border-amber-400 pt-2 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
+    >
       <div className="flex items-center gap-3 py-1.5">
         <span className="w-28 shrink-0 text-sm font-medium text-amber-600 dark:text-amber-400">
           No reviewer
@@ -428,6 +471,8 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
     })
   }
   const [hovered, setHovered] = useState<HoveredInfo | null>(null)
+  const [hoverSourceColumn, setHoverSourceColumn] =
+    useState<HTMLElement | null>(null)
 
   // DOM-based dimming: toggle classes directly to avoid re-rendering ~170 PRBlocks.
   // Matched PRs (same prKey across columns) stay visible + scale up slightly.
@@ -455,8 +500,18 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
         el.classList.add('pr-match')
       }
       prevMatches.current = Array.from(matches)
+
+      // Track which column the hover originated from
+      const hoveredButton = grid.querySelector(
+        `[data-pr-key="${info.prKey}"]:hover`,
+      )
+      const sourceCol = hoveredButton?.closest(
+        '.overflow-y-auto',
+      ) as HTMLElement | null
+      setHoverSourceColumn(sourceCol)
     } else {
       grid.classList.remove('pr-hovering')
+      setHoverSourceColumn(null)
     }
   }, [])
 
@@ -464,55 +519,57 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
     <SetHoveredContext value={handleHover}>
       <HoveredContext value={hovered}>
         <ColorModeContext value={colorMode}>
-          <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-sm">
-                  Each block = 1 open PR. The dashed line marks the personal
-                  limit ({personalLimit}). Blocks past the line signal
-                  individual overload.
-                </p>
-                <Legend mode={colorMode} />
+          <HoverSourceColumnContext value={hoverSourceColumn}>
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <p className="text-muted-foreground text-sm">
+                    Each block = 1 open PR. The dashed line marks the personal
+                    limit ({personalLimit}). Blocks past the line signal
+                    individual overload.
+                  </p>
+                  <Legend mode={colorMode} />
+                </div>
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  value={colorMode}
+                  onValueChange={(v) => {
+                    if (v) setColorMode(v as ColorMode)
+                  }}
+                  size="sm"
+                  className="shrink-0"
+                >
+                  <ToggleGroupItem value="age">Age</ToggleGroupItem>
+                  <ToggleGroupItem value="size">Size</ToggleGroupItem>
+                </ToggleGroup>
               </div>
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                value={colorMode}
-                onValueChange={(v) => {
-                  if (v) setColorMode(v as ColorMode)
-                }}
-                size="sm"
-                className="shrink-0"
-              >
-                <ToggleGroupItem value="age">Age</ToggleGroupItem>
-                <ToggleGroupItem value="size">Size</ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-            {/* Dimming via DOM classes: .pr-hovering dims all buttons,
+              {/* Dimming via DOM classes: .pr-hovering dims all buttons,
                 .pr-match + :hover exclude the matched/hovered ones */}
-            <div
-              ref={gridRef}
-              className="grid gap-8 md:grid-cols-2 [&.pr-hovering_.pr-match:not(:hover)]:scale-125 [&.pr-hovering_button:not(.pr-match):not(:hover)]:opacity-15"
-            >
-              <StackColumn
-                title="Authored PRs (open)"
-                stacks={authorStacks}
-                personalLimit={personalLimit}
-              />
-              <StackColumn
-                title="Review Queue (pending)"
-                stacks={reviewerStacks}
-                personalLimit={personalLimit}
-                showAuthor
-                unassignedPRs={unassignedPRs}
-              />
+              <div
+                ref={gridRef}
+                className="grid gap-8 md:grid-cols-2 [&.pr-hovering_.pr-match:not(:hover)]:scale-125 [&.pr-hovering_button:not(.pr-match):not(:hover)]:opacity-15"
+              >
+                <StackColumn
+                  title="Authored PRs (open)"
+                  stacks={authorStacks}
+                  personalLimit={personalLimit}
+                />
+                <StackColumn
+                  title="Review Queue (pending)"
+                  stacks={reviewerStacks}
+                  personalLimit={personalLimit}
+                  showAuthor
+                  unassignedPRs={unassignedPRs}
+                />
+              </div>
+              {insight && (
+                <p className="text-muted-foreground text-center text-sm">
+                  {insight}
+                </p>
+              )}
             </div>
-            {insight && (
-              <p className="text-muted-foreground text-center text-sm">
-                {insight}
-              </p>
-            )}
-          </div>
+          </HoverSourceColumnContext>
         </ColorModeContext>
       </HoveredContext>
     </SetHoveredContext>
