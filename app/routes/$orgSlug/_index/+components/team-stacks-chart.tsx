@@ -1,10 +1,20 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
+import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
+import dayjs from '~/app/libs/dayjs'
 import type {
   PersonStack,
   StackPR,
@@ -12,19 +22,42 @@ import type {
 } from '../+functions/aggregate-stacks'
 import { SizeBadge } from '../../+components/size-badge'
 
+type ColorMode = 'size' | 'age'
+
+// --- Size mode ---
+
 const SIZE_ORDER = ['XL', 'L', 'M', 'S', 'XS'] as const
 
-const SIZE_BLOCK_COLORS: Record<string, string> = {
-  XS: 'bg-slate-400',
-  S: 'bg-emerald-500',
-  M: 'bg-blue-500',
-  L: 'bg-amber-500',
-  XL: 'bg-red-500',
+const SIZE_BLOCK_COLORS: Record<
+  string,
+  { bg: string; ring: string; bgFaint: string }
+> = {
+  XS: {
+    bg: 'bg-slate-400',
+    ring: 'ring-slate-400',
+    bgFaint: 'bg-slate-400/20',
+  },
+  S: {
+    bg: 'bg-emerald-500',
+    ring: 'ring-emerald-500',
+    bgFaint: 'bg-emerald-500/20',
+  },
+  M: { bg: 'bg-blue-500', ring: 'ring-blue-500', bgFaint: 'bg-blue-500/20' },
+  L: { bg: 'bg-amber-500', ring: 'ring-amber-500', bgFaint: 'bg-amber-500/20' },
+  XL: { bg: 'bg-red-500', ring: 'ring-red-500', bgFaint: 'bg-red-500/20' },
 }
 
-const UNKNOWN_COLOR = 'bg-gray-300 dark:bg-gray-600'
+const UNKNOWN_COLOR = {
+  bg: 'bg-gray-300 dark:bg-gray-600',
+  ring: 'ring-gray-400',
+  bgFaint: 'bg-gray-400/20',
+}
 
-function getBlockColor(complexity: string | null): string {
+function getSizeColor(complexity: string | null): {
+  bg: string
+  ring: string
+  bgFaint: string
+} {
   if (!complexity) return UNKNOWN_COLOR
   return SIZE_BLOCK_COLORS[complexity] ?? UNKNOWN_COLOR
 }
@@ -41,10 +74,89 @@ function sortBySize(prs: StackPR[]): StackPR[] {
   })
 }
 
-const HoverContext = createContext<{
-  hoveredPR: string | null
-  setHoveredPR: (key: string | null) => void
-}>({ hoveredPR: null, setHoveredPR: () => {} })
+// --- Age mode ---
+
+const AGE_THRESHOLDS = [
+  {
+    maxDays: 1,
+    bg: 'bg-emerald-500',
+    ring: 'ring-emerald-500',
+    bgFaint: 'bg-emerald-500/20',
+    label: '< 1d',
+  },
+  {
+    maxDays: 3,
+    bg: 'bg-blue-500',
+    ring: 'ring-blue-500',
+    bgFaint: 'bg-blue-500/20',
+    label: '1-3d',
+  },
+  {
+    maxDays: 7,
+    bg: 'bg-amber-500',
+    ring: 'ring-amber-500',
+    bgFaint: 'bg-amber-500/20',
+    label: '3-7d',
+  },
+  {
+    maxDays: Infinity,
+    bg: 'bg-red-500',
+    ring: 'ring-red-500',
+    bgFaint: 'bg-red-500/20',
+    label: '7d+',
+  },
+] as const
+
+function getAgeDays(pr: StackPR): number {
+  return dayjs().diff(dayjs(pr.createdAt), 'day', true)
+}
+
+function getAgeColor(pr: StackPR): {
+  bg: string
+  ring: string
+  bgFaint: string
+} {
+  const days = getAgeDays(pr)
+  for (const t of AGE_THRESHOLDS) {
+    if (days < t.maxDays) return { bg: t.bg, ring: t.ring, bgFaint: t.bgFaint }
+  }
+  const last = AGE_THRESHOLDS[AGE_THRESHOLDS.length - 1]
+  return { bg: last.bg, ring: last.ring, bgFaint: last.bgFaint }
+}
+
+function sortByAge(prs: StackPR[]): StackPR[] {
+  return [...prs].sort((a, b) => getAgeDays(b) - getAgeDays(a))
+}
+
+// --- Shared context ---
+
+interface HoveredInfo {
+  prKey: string
+  author: string
+}
+
+const ChartContext = createContext<{
+  hovered: HoveredInfo | null
+  setHovered: (info: HoveredInfo | null) => void
+  colorMode: ColorMode
+}>({ hovered: null, setHovered: () => {}, colorMode: 'size' })
+
+function getBlockColor(
+  pr: StackPR,
+  mode: ColorMode,
+): { bg: string; ring: string; bgFaint: string } {
+  return mode === 'size' ? getSizeColor(pr.complexity) : getAgeColor(pr)
+}
+
+function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
+  const baseSorted = mode === 'size' ? sortBySize(prs) : sortByAge(prs)
+  // Push unassigned PRs to the end, preserving sort order within each group
+  const assigned = baseSorted.filter((p) => p.hasReviewer !== false)
+  const unassigned = baseSorted.filter((p) => p.hasReviewer === false)
+  return [...assigned, ...unassigned]
+}
+
+// --- Components ---
 
 function StackRow({
   stack,
@@ -55,11 +167,30 @@ function StackRow({
   wipLimit: number
   showAuthor?: boolean
 }) {
+  const { colorMode, hovered } = useContext(ChartContext)
   const isOver = stack.prs.length > wipLimit
-  const sortedPRs = sortBySize(stack.prs)
+  const sortedPRs = sortPRs(stack.prs, colorMode)
+
+  const rowRef = useRef<HTMLDivElement>(null)
+
+  // Highlight this row if the hovered PR belongs to this person (author side)
+  // or this person's queue contains the hovered PR (reviewer side)
+  const isRelated =
+    hovered !== null &&
+    (stack.login === hovered.author ||
+      stack.prs.some((p) => `${p.repo}:${p.number}` === hovered.prKey))
+
+  useEffect(() => {
+    if (isRelated && rowRef.current) {
+      rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [isRelated])
 
   return (
-    <div className="flex items-center gap-3 py-1.5">
+    <div
+      ref={rowRef}
+      className={`flex items-center gap-3 py-1.5 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
+    >
       <div className="flex w-28 shrink-0 items-center gap-2">
         <Avatar className="size-6">
           <AvatarImage
@@ -102,9 +233,10 @@ function PRBlock({
   showWipLine: boolean
   showAuthor?: boolean
 }) {
-  const { hoveredPR, setHoveredPR } = useContext(HoverContext)
+  const { hovered, setHovered, colorMode } = useContext(ChartContext)
   const prKey = `${pr.repo}:${pr.number}`
-  const isDimmed = hoveredPR !== null && hoveredPR !== prKey
+  const isDimmed = hovered !== null && hovered.prKey !== prKey
+  const ageDays = Math.floor(getAgeDays(pr))
 
   return (
     <>
@@ -115,10 +247,10 @@ function PRBlock({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className={`size-4 shrink-0 transition-all hover:scale-150 ${getBlockColor(pr.complexity)} ${isDimmed ? 'opacity-15' : ''} ${pr.hasReviewer ? 'rounded-full' : 'rotate-45 rounded-sm'}`}
+            className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${isDimmed ? 'opacity-15' : ''} ${pr.hasReviewer ? getBlockColor(pr, colorMode).bg : `ring-[2px] ring-inset ${getBlockColor(pr, colorMode).ring} ${getBlockColor(pr, colorMode).bgFaint}`}`}
             aria-label={`${pr.repo}#${pr.number}`}
-            onMouseEnter={() => setHoveredPR(prKey)}
-            onMouseLeave={() => setHoveredPR(null)}
+            onMouseEnter={() => setHovered({ prKey, author: pr.author })}
+            onMouseLeave={() => setHovered(null)}
           />
         </PopoverTrigger>
         <PopoverContent side="top" className="w-72 p-3">
@@ -135,9 +267,18 @@ function PRBlock({
               <SizeBadge complexity={pr.complexity} />
             </div>
             <p className="text-muted-foreground truncate text-xs">{pr.title}</p>
-            {showAuthor && (
-              <p className="text-muted-foreground text-xs">by {pr.author}</p>
-            )}
+            <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
+              {showAuthor && <span>by {pr.author}</span>}
+              <span>{ageDays}d ago</span>
+              {pr.reviewers && pr.reviewers.length > 0 && (
+                <span>→ {pr.reviewers.join(', ')}</span>
+              )}
+              {pr.hasReviewer === false && (
+                <span className="text-amber-600 dark:text-amber-400">
+                  no reviewer
+                </span>
+              )}
+            </div>
           </div>
         </PopoverContent>
       </Popover>
@@ -195,7 +336,8 @@ function StackColumn({
 }
 
 function UnassignedRows({ prs }: { prs: StackPR[] }) {
-  const sortedPRs = sortBySize(prs)
+  const { colorMode } = useContext(ChartContext)
+  const sortedPRs = sortPRs(prs, colorMode)
 
   return (
     <div className="mt-3 border-t-2 border-dashed border-amber-400 pt-2">
@@ -221,19 +363,32 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
   )
 }
 
-function SizeLegend() {
+function Legend({ mode }: { mode: ColorMode }) {
   return (
     <div className="flex items-center gap-3 text-xs">
-      {[...SIZE_ORDER].reverse().map((label) => (
-        <div key={label} className="flex items-center gap-1">
-          <div className={`size-3 rounded-sm ${SIZE_BLOCK_COLORS[label]}`} />
-          <span className="text-muted-foreground">{label}</span>
-        </div>
-      ))}
-      <div className="flex items-center gap-1">
-        <div className={`size-3 rounded-sm ${UNKNOWN_COLOR}`} />
-        <span className="text-muted-foreground">?</span>
-      </div>
+      {mode === 'size' ? (
+        <>
+          {[...SIZE_ORDER].reverse().map((label) => (
+            <div key={label} className="flex items-center gap-1">
+              <div
+                className={`size-3 rounded-sm ${SIZE_BLOCK_COLORS[label].bg}`}
+              />
+              <span className="text-muted-foreground">{label}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1">
+            <div className={`size-3 rounded-sm ${UNKNOWN_COLOR.bg}`} />
+            <span className="text-muted-foreground">?</span>
+          </div>
+        </>
+      ) : (
+        AGE_THRESHOLDS.map((t) => (
+          <div key={t.label} className="flex items-center gap-1">
+            <div className={`size-3 rounded-sm ${t.bg}`} />
+            <span className="text-muted-foreground">{t.label}</span>
+          </div>
+        ))
+      )}
       <div className="flex items-center gap-1">
         <div className="h-4 w-px border-l-2 border-dashed border-red-400" />
         <span className="text-muted-foreground">WIP limit</span>
@@ -245,19 +400,49 @@ function SizeLegend() {
 export function TeamStacksChart({ data }: { data: TeamStacksData }) {
   const { authorStacks, reviewerStacks, unassignedPRs, wipLimit, insight } =
     data
-  const [hoveredPR, setHoveredPR] = useState<string | null>(null)
-  const hoverValue = useMemo(() => ({ hoveredPR, setHoveredPR }), [hoveredPR])
+  const [searchParams, setSearchParams] = useSearchParams()
+  const colorMode: ColorMode =
+    searchParams.get('view') === 'size' ? 'size' : 'age'
+  const setColorMode = (mode: ColorMode) => {
+    setSearchParams((prev) => {
+      if (mode === 'age') {
+        prev.delete('view')
+      } else {
+        prev.set('view', mode)
+      }
+      return prev
+    })
+  }
+  const [hovered, setHovered] = useState<HoveredInfo | null>(null)
+  const ctxValue = useMemo(
+    () => ({ hovered, setHovered, colorMode }),
+    [hovered, colorMode],
+  )
 
   return (
-    <HoverContext value={hoverValue}>
+    <ChartContext value={ctxValue}>
       <div className="space-y-4">
-        <div className="space-y-2">
-          <p className="text-muted-foreground text-sm">
-            Each block = 1 open PR, colored by size. The dashed line marks the
-            WIP limit ({wipLimit}). Blocks past the line are excess WIP adding
-            to everyone&apos;s review burden.
-          </p>
-          <SizeLegend />
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-sm">
+              Each block = 1 open PR. The dashed line marks the WIP limit (
+              {wipLimit}). Blocks past the line are excess WIP adding to
+              everyone&apos;s review burden.
+            </p>
+            <Legend mode={colorMode} />
+          </div>
+          <ToggleGroup
+            type="single"
+            value={colorMode}
+            onValueChange={(v) => {
+              if (v) setColorMode(v as ColorMode)
+            }}
+            size="sm"
+            className="shrink-0"
+          >
+            <ToggleGroupItem value="age">Age</ToggleGroupItem>
+            <ToggleGroupItem value="size">Size</ToggleGroupItem>
+          </ToggleGroup>
         </div>
         <div className="grid gap-8 md:grid-cols-2">
           <StackColumn
@@ -277,6 +462,6 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
           <p className="text-muted-foreground text-center text-sm">{insight}</p>
         )}
       </div>
-    </HoverContext>
+    </ChartContext>
   )
 }

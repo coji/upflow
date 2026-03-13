@@ -7,6 +7,7 @@ export interface StackPR {
   createdAt: string
   complexity: string | null
   hasReviewer?: boolean
+  reviewers?: string[]
 }
 
 export interface PersonStack {
@@ -54,10 +55,18 @@ export function aggregateTeamStacks(
   openPRs: OpenPRRow[],
   reviewData: PendingReviewRow[],
 ): TeamStacksData {
-  // PRs that have at least one reviewer assigned
-  const assignedPRKeys = new Set<string>()
+  // Build PR key → reviewer logins map
+  const prReviewersMap = new Map<string, string[]>()
   for (const row of reviewData) {
-    assignedPRKeys.add(`${row.repositoryId}:${row.number}`)
+    const key = `${row.repositoryId}:${row.number}`
+    let reviewers = prReviewersMap.get(key)
+    if (!reviewers) {
+      reviewers = []
+      prReviewersMap.set(key, reviewers)
+    }
+    if (!reviewers.includes(row.reviewer)) {
+      reviewers.push(row.reviewer)
+    }
   }
 
   // Author stacks: open PRs grouped by author
@@ -72,6 +81,8 @@ export function aggregateTeamStacks(
       }
       authorMap.set(pr.author, stack)
     }
+    const prKey = `${pr.repositoryId}:${pr.number}`
+    const reviewers = prReviewersMap.get(prKey)
     stack.prs.push({
       number: pr.number,
       repo: pr.repo,
@@ -80,7 +91,8 @@ export function aggregateTeamStacks(
       author: pr.author,
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
-      hasReviewer: assignedPRKeys.has(`${pr.repositoryId}:${pr.number}`),
+      hasReviewer: reviewers != null,
+      reviewers,
     })
   }
   const authorStacks = [...authorMap.values()].sort(
@@ -126,7 +138,7 @@ export function aggregateTeamStacks(
 
   // Unassigned PRs: open PRs with no pending reviewer
   const unassignedPRs: StackPR[] = openPRs
-    .filter((pr) => !assignedPRKeys.has(`${pr.repositoryId}:${pr.number}`))
+    .filter((pr) => !prReviewersMap.has(`${pr.repositoryId}:${pr.number}`))
     .map((pr) => ({
       number: pr.number,
       repo: pr.repo,
