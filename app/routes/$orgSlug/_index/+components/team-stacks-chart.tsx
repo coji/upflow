@@ -137,6 +137,7 @@ function sortByAge(prs: StackPR[]): StackPR[] {
 interface HoveredInfo {
   prKey: string
   author: string
+  sourceEl: HTMLElement
 }
 
 const HoveredContext = createContext<HoveredInfo | null>(null)
@@ -177,7 +178,7 @@ function useScrollIntoColumn(
     if (!container) return
     // Don't scroll if the hover originated from the same column
     if (hoverSourceColumn === container) return
-    requestAnimationFrame(() => {
+    const rafId = requestAnimationFrame(() => {
       const cRect = container.getBoundingClientRect()
       const rRect = row.getBoundingClientRect()
       if (rRect.top < cRect.top) {
@@ -192,7 +193,8 @@ function useScrollIntoColumn(
         })
       }
     })
-  }, [ref, active, hoverSourceColumn])
+    return () => cancelAnimationFrame(rafId)
+  }, [ref.current, active, hoverSourceColumn])
 }
 
 // --- Components ---
@@ -290,7 +292,13 @@ const PRBlock = memo(function PRBlock({
             data-pr-key={prKey}
             className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${pr.hasReviewer ? bg : `ring-[2px] ring-inset ${ring} ${bgFaint}`}`}
             aria-label={`${pr.repo}#${pr.number}`}
-            onMouseEnter={() => setHovered({ prKey, author: pr.author })}
+            onMouseEnter={(e) =>
+              setHovered({
+                prKey,
+                author: pr.author,
+                sourceEl: e.currentTarget,
+              })
+            }
             onMouseLeave={() => setHovered(null)}
           />
         </PopoverTrigger>
@@ -502,10 +510,7 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
       prevMatches.current = Array.from(matches)
 
       // Track which column the hover originated from
-      const hoveredButton = grid.querySelector(
-        `[data-pr-key="${info.prKey}"]:hover`,
-      )
-      const sourceCol = hoveredButton?.closest(
+      const sourceCol = info.sourceEl.closest(
         '.overflow-y-auto',
       ) as HTMLElement | null
       setHoverSourceColumn(sourceCol)
