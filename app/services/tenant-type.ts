@@ -158,6 +158,7 @@ export interface Teams {
   displayOrder: Generated<number>;
   id: string;
   name: string;
+  personalLimit: Generated<number>;
 }
 
 export interface DB {

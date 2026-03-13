@@ -4,7 +4,7 @@ import dayjs from '~/app/libs/dayjs'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
-export const getMergedPullRequestReport = async (
+export const getDeployedPullRequestReport = async (
   organizationId: OrganizationId,
   fromDateTime: string | null,
   toDateTime: string | null,
@@ -23,10 +23,11 @@ export const getMergedPullRequestReport = async (
         (eb) => eb.fn('lower', ['companyGithubUsers.login']),
       ),
     )
+    .where('pullRequests.releasedAt', 'is not', null)
     .$if(fromDateTime !== null, (qb) =>
-      qb.where('mergedAt', '>=', fromDateTime),
+      qb.where('releasedAt', '>=', fromDateTime),
     )
-    .$if(toDateTime !== null, (qb) => qb.where('mergedAt', '<=', toDateTime))
+    .$if(toDateTime !== null, (qb) => qb.where('releasedAt', '<=', toDateTime))
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
@@ -49,8 +50,6 @@ export const getMergedPullRequestReport = async (
           'pullRequests.repositoryId',
         ),
     )
-    .orderBy('mergedAt', 'desc')
-    .orderBy('pullRequestCreatedAt', 'desc')
     .select([
       'pullRequests.author',
       'pullRequests.repo',
@@ -62,6 +61,7 @@ export const getMergedPullRequestReport = async (
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.firstReviewedAt',
       'pullRequests.mergedAt',
+      'pullRequests.releasedAt',
       'companyGithubUsers.displayName as authorDisplayName',
       'pullRequests.complexity',
       'pullRequests.complexityReason',
@@ -76,26 +76,34 @@ export const getMergedPullRequestReport = async (
 
   return pipe(
     pullrequests.map((pr) => {
-      const createAndMergeDiff = pr.mergedAt
+      const createAndDeployDiff = pr.releasedAt
         ? (businessDaysOnly
             ? calculateBusinessHours(
                 pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
-                pr.mergedAt,
+                pr.releasedAt,
               )
-            : dayjs(pr.mergedAt).diff(
+            : dayjs(pr.releasedAt).diff(
                 dayjs(pr.firstCommittedAt ?? pr.pullRequestCreatedAt),
                 'hour',
                 true,
               )) / 24
         : null
+      const deployTime =
+        pr.mergedAt && pr.releasedAt
+          ? (businessDaysOnly
+              ? calculateBusinessHours(pr.mergedAt, pr.releasedAt)
+              : dayjs(pr.releasedAt).diff(dayjs(pr.mergedAt), 'hour', true)) /
+            24
+          : null
       const achievement =
-        createAndMergeDiff !== null ? createAndMergeDiff < objective : false
+        createAndDeployDiff !== null ? createAndDeployDiff < objective : false
       return {
         ...pr,
-        createAndMergeDiff,
+        createAndDeployDiff,
+        deployTime,
         achievement,
       }
     }),
-    sortBy((pr) => (pr.createAndMergeDiff ? -pr.createAndMergeDiff : 0)),
+    sortBy((pr) => (pr.createAndDeployDiff ? -pr.createAndDeployDiff : 0)),
   )
 }

@@ -84,11 +84,13 @@ describe('teams mutations', () => {
       id: teamId,
       name: 'New Name',
       displayOrder: 5,
+      personalLimit: 3,
     })
 
     const updated = await listTeams(orgId)
     expect(updated[0].name).toBe('New Name')
     expect(updated[0].displayOrder).toBe(5)
+    expect(updated[0].personalLimit).toBe(3)
   })
 
   test('deleteTeam removes the team', async () => {

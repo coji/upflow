@@ -108,6 +108,7 @@ CREATE TABLE `teams` (
   `id` text NOT NULL,
   `name` text NOT NULL,
   `display_order` integer NOT NULL DEFAULT 0,
+  `personal_limit` integer NOT NULL DEFAULT 2,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   PRIMARY KEY (`id`)
 );

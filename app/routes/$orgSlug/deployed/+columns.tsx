@@ -50,7 +50,7 @@ export const columns: ColumnDef<PullRequest>[] = [
     cell: ({ row }) => (
       <a
         href={row.original.url}
-        className="overflow:underline block w-96 truncate text-blue-500"
+        className="block w-96 truncate text-blue-500 hover:underline"
         target="_blank"
         rel="noreferrer noopener"
       >
@@ -108,20 +108,6 @@ export const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
-    accessorKey: 'firstReviewedAt',
-    header: ({ column }) => (
-      <AppSortableHeader column={column} title="First Review" />
-    ),
-    id: 'First Review',
-    cell: ({ row }) =>
-      row.original.firstReviewedAt
-        ? dayjs
-            .utc(row.original.firstReviewedAt)
-            .tz('Asia/Tokyo')
-            .format('YYYY-MM-DD HH:mm')
-        : '',
-  },
-  {
     accessorKey: 'mergedAt',
     header: ({ column }) => (
       <AppSortableHeader column={column} title="Merged" />
@@ -136,13 +122,37 @@ export const columns: ColumnDef<PullRequest>[] = [
         : '',
   },
   {
-    accessorKey: 'createAndMergeDiff',
+    accessorKey: 'releasedAt',
     header: ({ column }) => (
-      <AppSortableHeader column={column} title="Time to Merge" />
+      <AppSortableHeader column={column} title="Released" />
+    ),
+    id: 'Released',
+    cell: ({ row }) =>
+      row.original.releasedAt
+        ? dayjs
+            .utc(row.original.releasedAt)
+            .tz('Asia/Tokyo')
+            .format('YYYY-MM-DD HH:mm')
+        : '',
+  },
+  {
+    accessorKey: 'deployTime',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="Deploy Time" />
+    ),
+    cell: ({ row }) =>
+      row.original.deployTime != null ? (
+        <div>{row.original.deployTime.toFixed(1)}d</div>
+      ) : null,
+  },
+  {
+    accessorKey: 'createAndDeployDiff',
+    header: ({ column }) => (
+      <AppSortableHeader column={column} title="Time to Deploy" />
     ),
     cell: ({ row }) => (
       <HStack>
-        <div>{row.original.createAndMergeDiff?.toFixed(1)}d</div>
+        <div>{row.original.createAndDeployDiff?.toFixed(1)}d</div>
         {!row.original.achievement && <Badge variant="destructive">Over</Badge>}
       </HStack>
     ),
