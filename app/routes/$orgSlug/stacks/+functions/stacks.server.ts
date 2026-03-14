@@ -1,15 +1,17 @@
+import { sql } from 'kysely'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 /**
  * オープンPRタイムラインデータ（Team Stacks の Author 側用）
+ * hasReviewer: 一度でもレビュアーがアサインされたかどうか
  */
 export const getOpenPullRequests = async (
   organizationId: OrganizationId,
   teamId?: string | null,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  return await tenantDb
+  const rows = await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .leftJoin('companyGithubUsers', (join) =>
@@ -41,7 +43,19 @@ export const getOpenPullRequests = async (
       'pullRequests.complexity',
       'companyGithubUsers.displayName as authorDisplayName',
     ])
+    .select(
+      sql<number>`exists(
+        select 1 from ${sql.ref('pullRequestReviewers')}
+        where ${sql.ref('pullRequestReviewers.pullRequestNumber')} = ${sql.ref('pullRequests.number')}
+        and ${sql.ref('pullRequestReviewers.repositoryId')} = ${sql.ref('pullRequests.repositoryId')}
+      )`.as('hasAnyReviewer'),
+    )
     .execute()
+
+  return rows.map((row) => ({
+    ...row,
+    hasAnyReviewer: row.hasAnyReviewer === 1,
+  }))
 }
 
 /**

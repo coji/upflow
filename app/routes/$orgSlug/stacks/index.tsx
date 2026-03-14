@@ -25,14 +25,17 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')
 
-  const [teams, openPRs, pendingReviews] = await Promise.all([
-    listTeams(organization.id),
-    getOpenPullRequests(organization.id, teamParam),
-    getPendingReviewAssignments(organization.id, teamParam),
-  ])
-
-  const selectedTeam = teamParam ? teams.find((t) => t.id === teamParam) : null
+  const teams = await listTeams(organization.id)
+  const selectedTeam = teamParam
+    ? (teams.find((t) => t.id === teamParam) ?? null)
+    : null
+  const teamId = selectedTeam?.id ?? null
   const personalLimit = selectedTeam?.personalLimit ?? DEFAULT_PERSONAL_LIMIT
+
+  const [openPRs, pendingReviews] = await Promise.all([
+    getOpenPullRequests(organization.id, teamId),
+    getPendingReviewAssignments(organization.id, teamId),
+  ])
 
   return {
     teams,

@@ -12,6 +12,7 @@ function makePR(
     url: string
     pullRequestCreatedAt: string
     complexity: string | null
+    hasAnyReviewer: boolean
   }> = {},
 ) {
   return {
@@ -24,6 +25,7 @@ function makePR(
     url: 'https://github.com/org/repo/pull/1',
     pullRequestCreatedAt: '2026-03-01T00:00:00Z',
     complexity: null,
+    hasAnyReviewer: false,
     ...overrides,
   }
 }
@@ -135,8 +137,8 @@ describe('aggregateTeamStacks', () => {
 
   test('marks PRs with reviewers in author stacks', () => {
     const prs = [
-      makePR({ author: 'alice', number: 1 }),
-      makePR({ author: 'alice', number: 2 }),
+      makePR({ author: 'alice', number: 1, hasAnyReviewer: true }),
+      makePR({ author: 'alice', number: 2, hasAnyReviewer: false }),
     ]
     const reviews = [makeReview({ reviewer: 'bob', number: 1 })]
     const result = aggregateTeamStacks(prs, reviews)
@@ -151,7 +153,7 @@ describe('aggregateTeamStacks', () => {
   })
 
   test('collects multiple reviewers for same PR', () => {
-    const prs = [makePR({ author: 'alice', number: 1 })]
+    const prs = [makePR({ author: 'alice', number: 1, hasAnyReviewer: true })]
     const reviews = [
       makeReview({ reviewer: 'bob', number: 1 }),
       makeReview({ reviewer: 'carol', number: 1 }),
@@ -164,10 +166,10 @@ describe('aggregateTeamStacks', () => {
     expect(pr.reviewers).toContain('carol')
   })
 
-  test('identifies unassigned PRs (no reviewer)', () => {
+  test('identifies unassigned PRs (never had a reviewer)', () => {
     const prs = [
-      makePR({ author: 'alice', number: 1 }),
-      makePR({ author: 'alice', number: 2 }),
+      makePR({ author: 'alice', number: 1, hasAnyReviewer: true }),
+      makePR({ author: 'alice', number: 2, hasAnyReviewer: false }),
     ]
     const reviews = [makeReview({ reviewer: 'bob', number: 1 })]
     const result = aggregateTeamStacks(prs, reviews)
@@ -178,9 +180,9 @@ describe('aggregateTeamStacks', () => {
 
   test('generates insight when authors exceed personal limit', () => {
     const prs = [
-      makePR({ author: 'alice', number: 1 }),
-      makePR({ author: 'alice', number: 2 }),
-      makePR({ author: 'alice', number: 3 }),
+      makePR({ author: 'alice', number: 1, hasAnyReviewer: true }),
+      makePR({ author: 'alice', number: 2, hasAnyReviewer: true }),
+      makePR({ author: 'alice', number: 3, hasAnyReviewer: true }),
     ]
     const reviews = [
       makeReview({ reviewer: 'bob', number: 1 }),
@@ -194,9 +196,9 @@ describe('aggregateTeamStacks', () => {
 
   test('generates insight when reviewer has concentrated reviews', () => {
     const prs = [
-      makePR({ author: 'alice', number: 1 }),
-      makePR({ author: 'alice', number: 2 }),
-      makePR({ author: 'alice', number: 3 }),
+      makePR({ author: 'alice', number: 1, hasAnyReviewer: true }),
+      makePR({ author: 'alice', number: 2, hasAnyReviewer: true }),
+      makePR({ author: 'alice', number: 3, hasAnyReviewer: true }),
     ]
     const reviews = [
       makeReview({ reviewer: 'bob', number: 1 }),
@@ -217,8 +219,8 @@ describe('aggregateTeamStacks', () => {
 
   test('no insight when all within limit and all assigned', () => {
     const prs = [
-      makePR({ author: 'alice', number: 1 }),
-      makePR({ author: 'bob', number: 2 }),
+      makePR({ author: 'alice', number: 1, hasAnyReviewer: true }),
+      makePR({ author: 'bob', number: 2, hasAnyReviewer: true }),
     ]
     const reviews = [
       makeReview({ reviewer: 'carol', number: 1 }),
