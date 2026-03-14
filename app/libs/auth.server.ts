@@ -1,5 +1,7 @@
+import { oauthProvider } from '@better-auth/oauth-provider'
 import { betterAuth } from 'better-auth'
 import { admin } from 'better-auth/plugins/admin'
+import { jwt } from 'better-auth/plugins/jwt'
 import { organization } from 'better-auth/plugins/organization'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
@@ -148,6 +150,7 @@ export const auth = betterAuth({
     },
   },
   session: {
+    storeSessionInDatabase: true,
     modelName: 'sessions',
     fields: {
       createdAt: 'created_at',
@@ -304,6 +307,86 @@ export const auth = betterAuth({
             createdAt: 'created_at',
             inviterId: 'inviter_id',
             teamId: 'team_id',
+          },
+        },
+      },
+    }),
+    jwt({
+      schema: {
+        jwks: {
+          fields: {
+            publicKey: 'public_key',
+            privateKey: 'private_key',
+            createdAt: 'created_at',
+            expiresAt: 'expires_at',
+          },
+        },
+      },
+    }),
+    oauthProvider({
+      loginPage: '/login',
+      consentPage: '/oauth/consent',
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      accessTokenExpiresIn: 3600,
+      refreshTokenExpiresIn: 604800,
+      validAudiences: [process.env.BETTER_AUTH_URL ?? 'http://localhost:5173'],
+      schema: {
+        oauthClient: {
+          modelName: 'oauth_client',
+          fields: {
+            clientId: 'client_id',
+            clientSecret: 'client_secret',
+            redirectUris: 'redirect_uris',
+            tokenEndpointAuthMethod: 'token_endpoint_auth_method',
+            grantTypes: 'grant_types',
+            responseTypes: 'response_types',
+            postLogoutRedirectUris: 'post_logout_redirect_uris',
+            softwareId: 'software_id',
+            softwareVersion: 'software_version',
+            softwareStatement: 'software_statement',
+            skipConsent: 'skip_consent',
+            enableEndSession: 'enable_end_session',
+            subjectType: 'subject_type',
+            requirePKCE: 'require_pkce',
+            referenceId: 'reference_id',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at',
+            userId: 'user_id',
+          },
+        },
+        oauthAccessToken: {
+          modelName: 'oauth_access_token',
+          fields: {
+            clientId: 'client_id',
+            sessionId: 'session_id',
+            userId: 'user_id',
+            referenceId: 'reference_id',
+            refreshId: 'refresh_id',
+            expiresAt: 'expires_at',
+            createdAt: 'created_at',
+          },
+        },
+        oauthRefreshToken: {
+          modelName: 'oauth_refresh_token',
+          fields: {
+            clientId: 'client_id',
+            sessionId: 'session_id',
+            userId: 'user_id',
+            referenceId: 'reference_id',
+            expiresAt: 'expires_at',
+            createdAt: 'created_at',
+            authTime: 'auth_time',
+          },
+        },
+        oauthConsent: {
+          modelName: 'oauth_consent',
+          fields: {
+            clientId: 'client_id',
+            userId: 'user_id',
+            referenceId: 'reference_id',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at',
           },
         },
       },
