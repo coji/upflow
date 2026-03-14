@@ -37,8 +37,9 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const weekParam = url.searchParams.get('week')
 
-  const weekStart = weekParam
-    ? getStartOfWeek(dayjs(weekParam, 'YYYY-MM-DD').toDate())
+  const parsed = weekParam ? dayjs(weekParam, 'YYYY-MM-DD') : null
+  const weekStart = parsed?.isValid()
+    ? getStartOfWeek(parsed.toDate())
     : getStartOfWeek()
   const weekEnd = getEndOfWeek(weekStart.toDate())
   const from = weekStart.utc().toISOString()
@@ -403,7 +404,7 @@ export default function MemberWeeklyPage({
                         title: r.title,
                         url: r.url,
                         author: r.author,
-                        createdAt: r.submittedAt,
+                        createdAt: r.pullRequestCreatedAt,
                         complexity: r.complexity,
                       }}
                       showAuthor
@@ -454,9 +455,7 @@ export default function MemberWeeklyPage({
               url={pr.url}
               complexity={pr.complexity}
               date={dayjs(pr.mergedAt).format('M/D HH:mm')}
-              extra={
-                pr.totalTime ? `${(pr.totalTime / 24).toFixed(1)}d` : undefined
-              }
+              extra={pr.totalTime ? `${pr.totalTime.toFixed(1)}d` : undefined}
             />
           ))}
         </DetailSection>

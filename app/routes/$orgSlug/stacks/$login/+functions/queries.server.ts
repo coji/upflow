@@ -76,6 +76,8 @@ export const getMergedPRs = async (
     .execute()
 }
 
+// Returns all review submissions (including multiple rounds on the same PR).
+// Each round is a distinct action for the "what did they do this week" view.
 export const getReviewsSubmitted = async (
   organizationId: OrganizationId,
   login: string,
@@ -117,6 +119,7 @@ export const getReviewsSubmitted = async (
       'pullRequests.url',
       'pullRequests.author',
       'pullRequests.complexity',
+      'pullRequests.pullRequestCreatedAt',
     ])
     .orderBy('pullRequestReviews.submittedAt', 'asc')
     .execute()

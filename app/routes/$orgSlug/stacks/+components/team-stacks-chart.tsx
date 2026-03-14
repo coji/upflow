@@ -22,6 +22,7 @@ import type {
   TeamStacksData,
 } from '../+functions/aggregate-stacks'
 import {
+  AGE_THRESHOLDS,
   PRBlock as PRBlockBase,
   SIZE_BLOCK_COLORS,
   UNKNOWN_COLOR,
@@ -37,37 +38,6 @@ function sortBySize(prs: StackPR[]): StackPR[] {
 }
 
 // --- Age mode ---
-
-const AGE_THRESHOLDS = [
-  {
-    maxDays: 1,
-    bg: 'bg-emerald-500',
-    ring: 'ring-emerald-500',
-    bgFaint: 'bg-emerald-500/20',
-    label: '< 1d',
-  },
-  {
-    maxDays: 3,
-    bg: 'bg-blue-500',
-    ring: 'ring-blue-500',
-    bgFaint: 'bg-blue-500/20',
-    label: '1-3d',
-  },
-  {
-    maxDays: 7,
-    bg: 'bg-amber-500',
-    ring: 'ring-amber-500',
-    bgFaint: 'bg-amber-500/20',
-    label: '3-7d',
-  },
-  {
-    maxDays: Infinity,
-    bg: 'bg-red-500',
-    ring: 'ring-red-500',
-    bgFaint: 'bg-red-500/20',
-    label: '7d+',
-  },
-] as const
 
 function getAgeDays(pr: StackPR): number {
   return dayjs().diff(dayjs(pr.createdAt), 'day', true)
