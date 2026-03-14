@@ -150,6 +150,7 @@ export function aggregateTeamStacks(
       author: pr.author,
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
+      hasReviewer: false as const,
     }))
 
   const overLimitAuthors = authorStacks.filter(

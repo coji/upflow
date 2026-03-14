@@ -1,15 +1,19 @@
 import holiday_jp from '@holiday-jp/holiday_jp'
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Button } from '~/app/components/ui/button'
 import { HStack, Stack } from '~/app/components/ui/stack'
+import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { PRBlock } from '~/app/routes/$orgSlug/+components/pr-block'
 import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
+import { PR_SIZE_RANK } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import {
-  getBacklogCounts,
+  getBacklogDetails,
   getCreatedPRs,
   getMergedPRs,
   getReviewsSubmitted,
@@ -35,7 +39,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     getCreatedPRs(organization.id, params.login, from, to),
     getMergedPRs(organization.id, params.login, from, to),
     getReviewsSubmitted(organization.id, params.login, from, to),
-    getBacklogCounts(organization.id, params.login),
+    getBacklogDetails(organization.id, params.login),
   ])
 
   // Build holiday map for the week
@@ -69,11 +73,64 @@ export default function MemberWeeklyPage({
   },
   params,
 }: Route.ComponentProps) {
-  const [, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const colorMode = searchParams.get('view') === 'size' ? 'size' : 'age'
+  const setColorMode = (mode: string) => {
+    setSearchParams((prev) => {
+      if (mode === 'age') {
+        prev.delete('view')
+      } else {
+        prev.set('view', mode)
+      }
+      return prev
+    })
+  }
+
+  const viewParam = searchParams.get('view')
+  const backQuery = viewParam ? `?view=${viewParam}` : ''
 
   const prevWeek = dayjs(weekStart).subtract(7, 'day').format('YYYY-MM-DD')
   const nextWeek = dayjs(weekStart).add(7, 'day').format('YYYY-MM-DD')
   const isCurrentWeek = dayjs(weekStart).isSame(getStartOfWeek(), 'day')
+
+  // Sort backlog PRs by color mode (assigned first, then by age or size)
+  const sortBacklog = useMemo(() => {
+    return <
+      T extends {
+        complexity: string | null
+        pullRequestCreatedAt: string
+        hasReviewer?: boolean
+      },
+    >(
+      prs: T[],
+    ): T[] => {
+      const sorted = [...prs].sort((a, b) => {
+        if (colorMode === 'size') {
+          const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
+          const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
+          return bi - ai
+        }
+        return (
+          dayjs().diff(dayjs(b.pullRequestCreatedAt), 'day', true) -
+          dayjs().diff(dayjs(a.pullRequestCreatedAt), 'day', true)
+        )
+      })
+      const assigned = sorted.filter((p) => p.hasReviewer !== false)
+      const unassigned = sorted.filter((p) => p.hasReviewer === false)
+      return [...assigned, ...unassigned]
+    }
+  }, [colorMode])
+
+  const sortedOpenPRs = useMemo(
+    () => sortBacklog(backlog.openPRs),
+    [sortBacklog, backlog.openPRs],
+  )
+
+  const sortedPendingReviews = useMemo(
+    () => sortBacklog(backlog.pendingReviews),
+    [sortBacklog, backlog.pendingReviews],
+  )
 
   // Group activities by day of week (Mon=0 .. Sun=6)
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -99,18 +156,13 @@ export default function MemberWeeklyPage({
 
   const weekLabel = `${dayjs(weekStart).format('YYYY/M/D')} - ${dayjs(weekEnd).format('M/D')}`
 
-  // Estimate weeks to clear backlog based on this week's merge rate
-  const mergeRate = mergedPRs.length
-  const weeksToClear =
-    mergeRate > 0 ? Math.ceil(backlog.openPRs / mergeRate) : null
-
   return (
     <Stack>
       {/* Header */}
       <div className="flex items-center justify-between">
         <HStack>
           <Link
-            to={`/${params.orgSlug}/stacks`}
+            to={`/${params.orgSlug}/stacks${backQuery}`}
             className="text-muted-foreground hover:text-foreground text-sm"
           >
             ← Review Stacks
@@ -118,26 +170,113 @@ export default function MemberWeeklyPage({
         </HStack>
       </div>
 
-      <div className="flex items-center justify-between">
-        <HStack>
-          <Avatar className="size-10">
-            <AvatarImage
-              src={`https://github.com/${user.login}.png`}
-              alt={user.login}
-            />
-            <AvatarFallback>{user.login.slice(0, 2)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-xl font-bold">{user.displayName}</h1>
-            <p className="text-muted-foreground text-sm">{user.login}</p>
-          </div>
-        </HStack>
+      <HStack>
+        <Avatar className="size-10">
+          <AvatarImage
+            src={`https://github.com/${user.login}.png`}
+            alt={user.login}
+          />
+          <AvatarFallback>{user.login.slice(0, 2)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <h1 className="text-xl font-bold">{user.displayName}</h1>
+          <p className="text-muted-foreground text-sm">
+            {user.login}
+            <span className="mx-1.5">·</span>
+            Open PRs {backlog.openPRs.length}
+            <span className="mx-1.5">·</span>
+            Review Queue {backlog.pendingReviews.length}
+          </p>
+        </div>
+      </HStack>
 
-        {/* Week navigation */}
+      {/* Current Load - like Review Stacks drill-down */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-muted-foreground text-sm font-medium">
+            Current Load
+          </h2>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            value={colorMode}
+            onValueChange={(v) => {
+              if (v) setColorMode(v)
+            }}
+            size="sm"
+          >
+            <ToggleGroupItem value="age">Age</ToggleGroupItem>
+            <ToggleGroupItem value="size">Size</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <BlockRow label="Authored" count={sortedOpenPRs.length}>
+            {sortedOpenPRs.map((pr) => (
+              <PRBlock
+                key={`${pr.repositoryId}:${pr.number}`}
+                colorMode={colorMode}
+                pr={{
+                  number: pr.number,
+                  repo: pr.repo,
+                  title: pr.title,
+                  url: pr.url,
+                  createdAt: pr.pullRequestCreatedAt,
+                  complexity: pr.complexity,
+                  hasReviewer: pr.hasReviewer,
+                }}
+              />
+            ))}
+          </BlockRow>
+          <BlockRow label="Review Queue" count={sortedPendingReviews.length}>
+            {sortedPendingReviews.map((pr) => (
+              <PRBlock
+                key={`${pr.repositoryId}:${pr.number}`}
+                colorMode={colorMode}
+                pr={{
+                  number: pr.number,
+                  repo: pr.repo,
+                  title: pr.title,
+                  url: pr.url,
+                  author: pr.author,
+                  createdAt: pr.pullRequestCreatedAt,
+                  complexity: pr.complexity,
+                }}
+                showAuthor
+              />
+            ))}
+          </BlockRow>
+        </div>
+      </div>
+
+      <hr className="border-border" />
+
+      {/* Weekly activity header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="text-muted-foreground text-sm font-medium">
+            This Week
+          </h2>
+          <div className="text-muted-foreground flex gap-3 text-xs">
+            <span>
+              <span className="inline-block size-2 rounded-full bg-blue-500" />{' '}
+              Created {createdPRs.length}
+            </span>
+            <span>
+              <span className="inline-block size-2 rounded-full bg-emerald-500" />{' '}
+              Merged {mergedPRs.length}
+            </span>
+            <span>
+              <span className="inline-block size-2 rounded-full bg-purple-500" />{' '}
+              Reviewed {reviews.length}
+            </span>
+          </div>
+        </div>
+
         <HStack>
           <Button
             variant="outline"
             size="icon"
+            className="size-7"
             onClick={() =>
               setSearchParams((prev) => {
                 prev.set('week', prevWeek)
@@ -153,6 +292,7 @@ export default function MemberWeeklyPage({
           <Button
             variant="outline"
             size="icon"
+            className="size-7"
             disabled={isCurrentWeek}
             onClick={() =>
               setSearchParams((prev) => {
@@ -164,19 +304,6 @@ export default function MemberWeeklyPage({
             <ChevronRightIcon className="size-4" />
           </Button>
         </HStack>
-      </div>
-
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label="Created" value={createdPRs.length} />
-        <StatCard label="Merged" value={mergedPRs.length} />
-        <StatCard label="Reviewed" value={reviews.length} />
-        <StatCard
-          label="Open PRs"
-          value={backlog.openPRs}
-          sub={weeksToClear ? `~${weeksToClear}w to clear` : undefined}
-        />
-        <StatCard label="Review Queue" value={backlog.pendingReviews} />
       </div>
 
       {/* Daily calendar */}
@@ -332,20 +459,24 @@ export default function MemberWeeklyPage({
   )
 }
 
-function StatCard({
+function BlockRow({
   label,
-  value,
-  sub,
+  count,
+  children,
 }: {
   label: string
-  value: number
-  sub?: string
+  count: number
+  children: React.ReactNode
 }) {
   return (
-    <div className="rounded-lg border p-3">
-      <div className="text-muted-foreground text-xs">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
-      {sub && <div className="text-muted-foreground text-xs">{sub}</div>}
+    <div className="flex items-center gap-3 py-1.5">
+      <span className="w-28 shrink-0 truncate text-sm">{label}</span>
+      <span className="text-muted-foreground w-8 shrink-0 text-right font-mono text-sm">
+        {count}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5">
+        {children}
+      </div>
     </div>
   )
 }

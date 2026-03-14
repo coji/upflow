@@ -122,21 +122,67 @@ export const getReviewsSubmitted = async (
     .execute()
 }
 
-export const getBacklogCounts = async (
+export const getBacklogDetails = async (
   organizationId: OrganizationId,
   login: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)
 
-  const openPRs = await tenantDb
+  const openPRsRaw = await tenantDb
     .selectFrom('pullRequests')
     .where((eb) =>
       eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
     )
     .where('mergedAt', 'is', null)
     .where('closedAt', 'is', null)
-    .select((eb) => eb.fn.countAll<number>().as('count'))
-    .executeTakeFirstOrThrow()
+    .select([
+      'number',
+      'repositoryId',
+      'repo',
+      'title',
+      'url',
+      'pullRequestCreatedAt',
+      'complexity',
+    ])
+    .orderBy('pullRequestCreatedAt', 'asc')
+    .execute()
+
+  // Check which open PRs have reviewers assigned
+  const reviewerSet = new Set<string>()
+  const reviewerRows = await tenantDb
+    .selectFrom('pullRequestReviewers')
+    .innerJoin('pullRequests', (join) =>
+      join
+        .onRef(
+          'pullRequestReviewers.pullRequestNumber',
+          '=',
+          'pullRequests.number',
+        )
+        .onRef(
+          'pullRequestReviewers.repositoryId',
+          '=',
+          'pullRequests.repositoryId',
+        ),
+    )
+    .where((eb) =>
+      eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
+    )
+    .where('pullRequests.mergedAt', 'is', null)
+    .where('pullRequests.closedAt', 'is', null)
+    .where('pullRequestReviewers.requestedAt', 'is not', null)
+    .select([
+      'pullRequestReviewers.pullRequestNumber as number',
+      'pullRequestReviewers.repositoryId',
+    ])
+    .execute()
+  for (const r of reviewerRows) {
+    reviewerSet.add(`${r.repositoryId}:${r.number}`)
+  }
+
+  const openPRs = openPRsRaw.map((pr) => ({
+    ...pr,
+    hasReviewer: reviewerSet.has(`${pr.repositoryId}:${pr.number}`),
+  }))
 
   const pendingReviews = await tenantDb
     .selectFrom('pullRequestReviewers')
@@ -163,8 +209,18 @@ export const getBacklogCounts = async (
     .where('pullRequestReviewers.requestedAt', 'is not', null)
     .where('pullRequests.mergedAt', 'is', null)
     .where('pullRequests.closedAt', 'is', null)
-    .select((eb) => eb.fn.countAll<number>().as('count'))
-    .executeTakeFirstOrThrow()
+    .select([
+      'pullRequests.number',
+      'pullRequests.repositoryId',
+      'pullRequests.repo',
+      'pullRequests.title',
+      'pullRequests.url',
+      'pullRequests.pullRequestCreatedAt',
+      'pullRequests.complexity',
+      'pullRequests.author',
+    ])
+    .orderBy('pullRequests.pullRequestCreatedAt', 'asc')
+    .execute()
 
-  return { openPRs: openPRs.count, pendingReviews: pendingReviews.count }
+  return { openPRs, pendingReviews }
 }

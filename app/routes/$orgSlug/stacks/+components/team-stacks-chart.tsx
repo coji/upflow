@@ -10,11 +10,6 @@ import {
 } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/app/components/ui/popover'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import dayjs from '~/app/libs/dayjs'
 import {
@@ -26,7 +21,7 @@ import type {
   StackPR,
   TeamStacksData,
 } from '../+functions/aggregate-stacks'
-import { SizeBadge } from '../../+components/size-badge'
+import { PRBlock as PRBlockBase } from '../../+components/pr-block'
 
 type ColorMode = 'size' | 'age'
 
@@ -62,11 +57,6 @@ const UNKNOWN_COLOR: BlockColor = {
   bg: 'bg-gray-300 dark:bg-gray-600',
   ring: 'ring-gray-400',
   bgFaint: 'bg-gray-400/20',
-}
-
-function getSizeColor(complexity: string | null): BlockColor {
-  if (!complexity) return UNKNOWN_COLOR
-  return SIZE_BLOCK_COLORS[complexity] ?? UNKNOWN_COLOR
 }
 
 function sortBySize(prs: StackPR[]): StackPR[] {
@@ -114,15 +104,6 @@ function getAgeDays(pr: StackPR): number {
   return dayjs().diff(dayjs(pr.createdAt), 'day', true)
 }
 
-function getAgeColor(pr: StackPR): BlockColor {
-  const days = getAgeDays(pr)
-  for (const t of AGE_THRESHOLDS) {
-    if (days < t.maxDays) return { bg: t.bg, ring: t.ring, bgFaint: t.bgFaint }
-  }
-  const last = AGE_THRESHOLDS[AGE_THRESHOLDS.length - 1]
-  return { bg: last.bg, ring: last.ring, bgFaint: last.bgFaint }
-}
-
 function sortByAge(prs: StackPR[]): StackPR[] {
   const withAge = prs.map((pr) => ({ pr, age: getAgeDays(pr) }))
   withAge.sort((a, b) => b.age - a.age)
@@ -145,10 +126,6 @@ const SetHoveredContext = createContext<(info: HoveredInfo | null) => void>(
   () => {},
 )
 const ColorModeContext = createContext<ColorMode>('age')
-
-function getBlockColor(pr: StackPR, mode: ColorMode): BlockColor {
-  return mode === 'size' ? getSizeColor(pr.complexity) : getAgeColor(pr)
-}
 
 function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
   const baseSorted = mode === 'size' ? sortBySize(prs) : sortByAge(prs)
@@ -207,9 +184,14 @@ function MemberLink({
   displayName: string
 }) {
   const { orgSlug } = useParams()
+  const [searchParams] = useSearchParams()
+  const view = searchParams.get('view')
+  const linkTo = view
+    ? `/${orgSlug}/stacks/${login}?view=${view}`
+    : `/${orgSlug}/stacks/${login}`
   return (
     <Link
-      to={`/${orgSlug}/stacks/${login}`}
+      to={linkTo}
       className="flex w-28 shrink-0 items-center gap-2 hover:underline"
     >
       <Avatar className="size-6">
@@ -290,60 +272,36 @@ const PRBlock = memo(function PRBlock({
   const colorMode = useContext(ColorModeContext)
   const setHovered = useContext(SetHoveredContext)
   const prKey = `${pr.repo}:${pr.number}`
-  const ageDays = Math.floor(getAgeDays(pr))
-  const { bg, ring, bgFaint } = getBlockColor(pr, colorMode)
 
   return (
     <>
       {showLimitLine && (
         <div className="mx-0.5 h-5 w-px shrink-0 border-l-2 border-dashed border-red-400" />
       )}
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            data-pr-key={prKey}
-            className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${pr.hasReviewer ? bg : `ring-[2px] ring-inset ${ring} ${bgFaint}`}`}
-            aria-label={`${pr.repo}#${pr.number}`}
-            onMouseEnter={(e) =>
-              setHovered({
-                prKey,
-                author: pr.author,
-                sourceEl: e.currentTarget,
-              })
-            }
-            onMouseLeave={() => setHovered(null)}
-          />
-        </PopoverTrigger>
-        <PopoverContent side="top" className="w-72 p-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <a
-                href={pr.url}
-                className="text-xs font-medium hover:underline"
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                {pr.repo}#{pr.number}
-              </a>
-              <SizeBadge complexity={pr.complexity} />
-            </div>
-            <p className="text-muted-foreground truncate text-xs">{pr.title}</p>
-            <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
-              {showAuthor && <span>by {pr.author}</span>}
-              <span>{ageDays}d ago</span>
-              {pr.reviewers && pr.reviewers.length > 0 && (
-                <span>→ {pr.reviewers.join(', ')}</span>
-              )}
-              {pr.hasReviewer === false && (
-                <span className="text-amber-600 dark:text-amber-400">
-                  no reviewer
-                </span>
-              )}
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+      <PRBlockBase
+        pr={{
+          number: pr.number,
+          repo: pr.repo,
+          title: pr.title,
+          url: pr.url,
+          author: pr.author,
+          createdAt: pr.createdAt,
+          complexity: pr.complexity,
+          hasReviewer: pr.hasReviewer,
+          reviewers: pr.reviewers,
+        }}
+        colorMode={colorMode}
+        showAuthor={showAuthor}
+        dataPrKey={prKey}
+        onMouseEnter={(e) =>
+          setHovered({
+            prKey,
+            author: pr.author,
+            sourceEl: e.currentTarget,
+          })
+        }
+        onMouseLeave={() => setHovered(null)}
+      />
     </>
   )
 })
