@@ -427,22 +427,6 @@ export default function MemberWeeklyPage({
         })}
       </div>
 
-      {/* Legend */}
-      <div className="text-muted-foreground flex gap-4 text-xs">
-        <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-full bg-blue-500" />
-          Created
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-full bg-emerald-500" />
-          Merged
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-full bg-purple-500" />
-          Reviewed
-        </span>
-      </div>
-
       {/* Detail sections */}
       {createdPRs.length > 0 && (
         <DetailSection title={`Created (${createdPRs.length})`}>
