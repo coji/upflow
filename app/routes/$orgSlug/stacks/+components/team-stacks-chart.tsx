@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Popover,
@@ -199,6 +199,30 @@ function useScrollIntoColumn(
 
 // --- Components ---
 
+function MemberLink({
+  login,
+  displayName,
+}: {
+  login: string
+  displayName: string
+}) {
+  const { orgSlug } = useParams()
+  return (
+    <Link
+      to={`/${orgSlug}/stacks/${login}`}
+      className="flex w-28 shrink-0 items-center gap-2 hover:underline"
+    >
+      <Avatar className="size-6">
+        <AvatarImage src={`https://github.com/${login}.png`} alt={login} />
+        <AvatarFallback className="text-[8px]">
+          {login.slice(0, 2)}
+        </AvatarFallback>
+      </Avatar>
+      <span className="truncate text-sm">{displayName}</span>
+    </Link>
+  )
+}
+
 function StackRow({
   stack,
   personalLimit,
@@ -230,18 +254,7 @@ function StackRow({
       ref={rowRef}
       className={`flex items-center gap-3 py-1.5 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
     >
-      <div className="flex w-28 shrink-0 items-center gap-2">
-        <Avatar className="size-6">
-          <AvatarImage
-            src={`https://github.com/${stack.login}.png`}
-            alt={stack.login}
-          />
-          <AvatarFallback className="text-[8px]">
-            {stack.login.slice(0, 2)}
-          </AvatarFallback>
-        </Avatar>
-        <span className="truncate text-sm">{stack.displayName}</span>
-      </div>
+      <MemberLink login={stack.login} displayName={stack.displayName} />
 
       <span
         className={`w-8 shrink-0 text-right font-mono text-sm ${isOver ? 'font-bold text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
