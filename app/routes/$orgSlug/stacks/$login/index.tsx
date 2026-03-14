@@ -4,12 +4,22 @@ import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Button } from '~/app/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '~/app/components/ui/popover'
 import { HStack, Stack } from '~/app/components/ui/stack'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { PRBlock } from '~/app/routes/$orgSlug/+components/pr-block'
+import {
+  PRBlock,
+  PRPopoverContent,
+  REVIEW_STATE_STYLE,
+  type PRBlockData,
+} from '~/app/routes/$orgSlug/+components/pr-block'
 import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
 import { PR_SIZE_RANK } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import {
@@ -345,8 +355,15 @@ export default function MemberWeeklyPage({
                       color="bg-blue-500"
                       label={`#${pr.number}`}
                       title={pr.title}
-                      url={pr.url}
                       complexity={pr.complexity}
+                      prData={{
+                        number: pr.number,
+                        repo: pr.repo,
+                        title: pr.title,
+                        url: pr.url,
+                        createdAt: pr.pullRequestCreatedAt,
+                        complexity: pr.complexity,
+                      }}
                     />
                   ))}
                   {day.merged.map((pr) => (
@@ -355,8 +372,15 @@ export default function MemberWeeklyPage({
                       color="bg-emerald-500"
                       label={`#${pr.number}`}
                       title={pr.title}
-                      url={pr.url}
                       complexity={pr.complexity}
+                      prData={{
+                        number: pr.number,
+                        repo: pr.repo,
+                        title: pr.title,
+                        url: pr.url,
+                        createdAt: pr.pullRequestCreatedAt,
+                        complexity: pr.complexity,
+                      }}
                     />
                   ))}
                   {day.reviewed.map((r) => (
@@ -365,8 +389,18 @@ export default function MemberWeeklyPage({
                       color="bg-purple-500"
                       label={`#${r.number}`}
                       title={r.title}
-                      url={r.url}
                       complexity={r.complexity}
+                      prData={{
+                        number: r.number,
+                        repo: r.repo,
+                        title: r.title,
+                        url: r.url,
+                        author: r.author,
+                        createdAt: r.submittedAt,
+                        complexity: r.complexity,
+                      }}
+                      showAuthor
+                      reviewState={r.state}
                       suffix={
                         r.state === 'APPROVED'
                           ? '✓'
@@ -447,13 +481,7 @@ export default function MemberWeeklyPage({
               complexity={r.complexity}
               author={r.author}
               date={dayjs(r.submittedAt).format('M/D HH:mm')}
-              extra={
-                r.state === 'APPROVED'
-                  ? 'Approved'
-                  : r.state === 'CHANGES_REQUESTED'
-                    ? 'Changes'
-                    : 'Comment'
-              }
+              reviewState={r.state}
             />
           ))}
         </DetailSection>
@@ -496,25 +524,23 @@ function CalendarItem({
   color,
   label,
   title,
-  url,
   suffix,
   complexity,
+  prData,
+  showAuthor,
+  reviewState,
 }: {
   color: string
   label: string
   title: string
-  url: string
   suffix?: string
   complexity?: string | null
+  prData?: PRBlockData
+  showAuthor?: boolean
+  reviewState?: string
 }) {
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="group flex min-w-0 items-start gap-1"
-      title={`${label} ${title}`}
-    >
+  const content = (
+    <span className="group flex min-w-0 cursor-pointer items-start gap-1">
       <span
         className={`mt-1 inline-block size-2 shrink-0 rounded-full ${color}`}
       />
@@ -523,17 +549,36 @@ function CalendarItem({
           {label}
         </span>
         {complexity && (
-          <span
-            className={`ml-0.5 font-medium ${SIZE_LABEL_COLORS[complexity] ?? 'text-muted-foreground'}`}
-          >
-            {complexity}
+          <span className="-mr-2 ml-0.5 inline-flex origin-left scale-[0.6]">
+            <SizeBadge complexity={complexity} />
           </span>
         )}
-        {suffix && <span className="ml-0.5">{suffix}</span>}
+        {suffix && (
+          <span
+            className={`ml-0.5 ${reviewState ? (REVIEW_STATE_STYLE[reviewState]?.className ?? '') : ''}`}
+          >
+            {suffix}
+          </span>
+        )}
         <br />
         <span className="text-muted-foreground/70 line-clamp-1">{title}</span>
       </span>
-    </a>
+    </span>
+  )
+
+  if (!prData) return content
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>{content}</PopoverTrigger>
+      <PopoverContent side="top" className="w-72 p-3">
+        <PRPopoverContent
+          pr={prData}
+          showAuthor={showAuthor}
+          reviewState={reviewState}
+        />
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -561,6 +606,7 @@ function PRRow({
   date,
   extra,
   author,
+  reviewState,
 }: {
   repo: string
   number: number
@@ -570,7 +616,9 @@ function PRRow({
   date: string
   extra?: string
   author?: string
+  reviewState?: string
 }) {
+  const stateStyle = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
   return (
     <div className="flex items-center gap-2 py-1 text-sm">
       <a
@@ -582,6 +630,13 @@ function PRRow({
         {repo}#{number}
       </a>
       <SizeBadge complexity={complexity} />
+      {stateStyle && (
+        <span
+          className={`shrink-0 text-xs font-medium ${stateStyle.className}`}
+        >
+          {stateStyle.icon} {stateStyle.text}
+        </span>
+      )}
       <span className="truncate">{title}</span>
       <span className="text-muted-foreground ml-auto flex shrink-0 items-center gap-1 text-xs">
         {author && (

@@ -99,6 +99,65 @@ export interface PRBlockData {
   reviewers?: string[]
 }
 
+export const REVIEW_STATE_STYLE: Record<
+  string,
+  { icon: string; text: string; className: string }
+> = {
+  APPROVED: { icon: '✓', text: 'Approved', className: 'text-emerald-600' },
+  CHANGES_REQUESTED: { icon: '✗', text: 'Changes', className: 'text-red-500' },
+  COMMENTED: {
+    icon: '💬',
+    text: 'Comment',
+    className: 'text-muted-foreground',
+  },
+}
+
+export function PRPopoverContent({
+  pr,
+  showAuthor,
+  reviewState,
+}: {
+  pr: PRBlockData
+  showAuthor?: boolean
+  reviewState?: string
+}) {
+  const ageDays = Math.floor(dayjs().diff(dayjs(pr.createdAt), 'day', true))
+  const stateInfo = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <a
+          href={pr.url}
+          className="text-xs font-medium hover:underline"
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          {pr.repo}#{pr.number}
+        </a>
+        <SizeBadge complexity={pr.complexity} />
+        {stateInfo && (
+          <span className={`text-xs font-medium ${stateInfo.className}`}>
+            {stateInfo.icon} {stateInfo.text}
+          </span>
+        )}
+      </div>
+      <p className="text-muted-foreground truncate text-xs">{pr.title}</p>
+      <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
+        {showAuthor && pr.author && <span>by {pr.author}</span>}
+        <span>{ageDays}d ago</span>
+        {pr.reviewers && pr.reviewers.length > 0 && (
+          <span>→ {pr.reviewers.join(', ')}</span>
+        )}
+        {pr.hasReviewer === false && (
+          <span className="text-amber-600 dark:text-amber-400">
+            no reviewer
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function PRBlock({
   pr,
   colorMode = 'size',
@@ -115,7 +174,6 @@ export function PRBlock({
   dataPrKey?: string
 }) {
   const { bg, ring, bgFaint } = getBlockColor(pr, colorMode)
-  const ageDays = Math.floor(dayjs().diff(dayjs(pr.createdAt), 'day', true))
 
   return (
     <Popover>
@@ -130,32 +188,7 @@ export function PRBlock({
         />
       </PopoverTrigger>
       <PopoverContent side="top" className="w-72 p-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <a
-              href={pr.url}
-              className="text-xs font-medium hover:underline"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              {pr.repo}#{pr.number}
-            </a>
-            <SizeBadge complexity={pr.complexity} />
-          </div>
-          <p className="text-muted-foreground truncate text-xs">{pr.title}</p>
-          <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
-            {showAuthor && pr.author && <span>by {pr.author}</span>}
-            <span>{ageDays}d ago</span>
-            {pr.reviewers && pr.reviewers.length > 0 && (
-              <span>→ {pr.reviewers.join(', ')}</span>
-            )}
-            {pr.hasReviewer === false && (
-              <span className="text-amber-600 dark:text-amber-400">
-                no reviewer
-              </span>
-            )}
-          </div>
-        </div>
+        <PRPopoverContent pr={pr} showAuthor={showAuthor} />
       </PopoverContent>
     </Popover>
   )
