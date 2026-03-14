@@ -429,7 +429,11 @@ export default function MemberWeeklyPage({
 
       {/* Detail sections */}
       {createdPRs.length > 0 && (
-        <DetailSection title={`Created (${createdPRs.length})`}>
+        <DetailSection
+          label="Created"
+          count={createdPRs.length}
+          color="bg-blue-500"
+        >
           {createdPRs.map((pr) => (
             <PRRow
               key={`${pr.repositoryId}:${pr.number}`}
@@ -445,7 +449,11 @@ export default function MemberWeeklyPage({
       )}
 
       {mergedPRs.length > 0 && (
-        <DetailSection title={`Merged (${mergedPRs.length})`}>
+        <DetailSection
+          label="Merged"
+          count={mergedPRs.length}
+          color="bg-emerald-500"
+        >
           {mergedPRs.map((pr) => (
             <PRRow
               key={`${pr.repositoryId}:${pr.number}`}
@@ -464,7 +472,11 @@ export default function MemberWeeklyPage({
       )}
 
       {reviews.length > 0 && (
-        <DetailSection title={`Reviews (${reviews.length})`}>
+        <DetailSection
+          label="Reviewed"
+          count={reviews.length}
+          color="bg-purple-500"
+        >
           {reviews.map((r) => (
             <PRRow
               key={`${r.repositoryId}:${r.number}:${r.submittedAt}`}
@@ -569,15 +581,22 @@ function CalendarItem({
 }
 
 function DetailSection({
-  title,
+  label,
+  count,
+  color,
   children,
 }: {
-  title: string
+  label: string
+  count: number
+  color: string
   children: React.ReactNode
 }) {
   return (
     <div>
-      <h2 className="mb-2 text-sm font-medium">{title}</h2>
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+        <span className={`inline-block size-2 rounded-full ${color}`} />
+        {label} {count}
+      </h2>
       <div className="divide-y">{children}</div>
     </div>
   )
