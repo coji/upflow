@@ -1,7 +1,7 @@
 import holiday_jp from '@holiday-jp/holiday_jp'
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, href, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Button } from '~/app/components/ui/button'
 import {
@@ -98,7 +98,9 @@ export default function MemberWeeklyPage({
       return prev
     })
   }
-  const backQuery = viewParam ? `?view=${viewParam}` : ''
+  const backParams = new URLSearchParams(searchParams)
+  backParams.delete('week')
+  const backQuery = backParams.size > 0 ? `?${backParams.toString()}` : ''
 
   const prevWeek = dayjs(weekStart).subtract(7, 'day').format('YYYY-MM-DD')
   const nextWeek = dayjs(weekStart).add(7, 'day').format('YYYY-MM-DD')
@@ -170,7 +172,7 @@ export default function MemberWeeklyPage({
       <div className="flex items-center justify-between">
         <HStack>
           <Link
-            to={`/${params.orgSlug}/stacks${backQuery}`}
+            to={`${href('/:orgSlug/stacks', { orgSlug: params.orgSlug })}${backQuery}`}
             className="text-muted-foreground hover:text-foreground text-sm"
           >
             ← Review Stacks
@@ -528,7 +530,10 @@ function CalendarItem({
   reviewState?: string
 }) {
   const content = (
-    <span className="group flex min-w-0 cursor-pointer items-start gap-1">
+    <button
+      type="button"
+      className="group flex min-w-0 items-start gap-1 text-left"
+    >
       <span
         className={`mt-1 inline-block size-2 shrink-0 rounded-full ${color}`}
       />
@@ -551,7 +556,7 @@ function CalendarItem({
         <br />
         <span className="text-muted-foreground/70 line-clamp-1">{title}</span>
       </span>
-    </span>
+    </button>
   )
 
   if (!prData) return content

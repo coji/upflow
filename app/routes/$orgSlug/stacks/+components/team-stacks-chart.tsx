@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router'
+import { Link, href, useParams, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import dayjs from '~/app/libs/dayjs'
@@ -124,10 +124,9 @@ function MemberLink({
 }) {
   const { orgSlug } = useParams()
   const [searchParams] = useSearchParams()
-  const view = searchParams.get('view')
-  const linkTo = view
-    ? `/${orgSlug}/stacks/${login}?view=${view}`
-    : `/${orgSlug}/stacks/${login}`
+  const query = searchParams.toString()
+  const basePath = href('/:orgSlug/stacks/:login', { orgSlug: orgSlug!, login })
+  const linkTo = query ? `${basePath}?${query}` : basePath
   return (
     <Link
       to={linkTo}
