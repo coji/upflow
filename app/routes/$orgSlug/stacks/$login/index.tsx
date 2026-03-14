@@ -512,14 +512,6 @@ function BlockRow({
   )
 }
 
-const SIZE_LABEL_COLORS: Record<string, string> = {
-  XS: 'text-slate-400',
-  S: 'text-emerald-500',
-  M: 'text-blue-500',
-  L: 'text-amber-500',
-  XL: 'text-red-500',
-}
-
 function CalendarItem({
   color,
   label,
