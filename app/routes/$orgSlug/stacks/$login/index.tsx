@@ -85,7 +85,8 @@ export default function MemberWeeklyPage({
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const colorMode = searchParams.get('view') === 'size' ? 'size' : 'age'
+  const viewParam = searchParams.get('view')
+  const colorMode = viewParam === 'size' ? 'size' : 'age'
   const setColorMode = (mode: string) => {
     setSearchParams((prev) => {
       if (mode === 'age') {
@@ -96,8 +97,6 @@ export default function MemberWeeklyPage({
       return prev
     })
   }
-
-  const viewParam = searchParams.get('view')
   const backQuery = viewParam ? `?view=${viewParam}` : ''
 
   const prevWeek = dayjs(weekStart).subtract(7, 'day').format('YYYY-MM-DD')
@@ -121,10 +120,8 @@ export default function MemberWeeklyPage({
           const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
           return bi - ai
         }
-        return (
-          dayjs().diff(dayjs(b.pullRequestCreatedAt), 'day', true) -
-          dayjs().diff(dayjs(a.pullRequestCreatedAt), 'day', true)
-        )
+        // Older first (ascending createdAt = descending age)
+        return a.pullRequestCreatedAt.localeCompare(b.pullRequestCreatedAt)
       })
       const assigned = sorted.filter((p) => p.hasReviewer !== false)
       const unassigned = sorted.filter((p) => p.hasReviewer === false)
@@ -411,13 +408,7 @@ export default function MemberWeeklyPage({
                       }}
                       showAuthor
                       reviewState={r.state}
-                      suffix={
-                        r.state === 'APPROVED'
-                          ? '✓'
-                          : r.state === 'CHANGES_REQUESTED'
-                            ? '✗'
-                            : '💬'
-                      }
+                      suffix={REVIEW_STATE_STYLE[r.state]?.icon}
                     />
                   ))}
                 </div>

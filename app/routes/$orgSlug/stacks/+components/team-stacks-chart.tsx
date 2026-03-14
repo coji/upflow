@@ -21,43 +21,12 @@ import type {
   StackPR,
   TeamStacksData,
 } from '../+functions/aggregate-stacks'
-import { PRBlock as PRBlockBase } from '../../+components/pr-block'
-
-type ColorMode = 'size' | 'age'
-
-interface BlockColor {
-  bg: string
-  ring: string
-  bgFaint: string
-}
-
-// --- Size mode ---
-
-const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
-  XS: {
-    bg: 'bg-slate-400',
-    ring: 'ring-slate-400',
-    bgFaint: 'bg-slate-400/20',
-  },
-  S: {
-    bg: 'bg-emerald-500',
-    ring: 'ring-emerald-500',
-    bgFaint: 'bg-emerald-500/20',
-  },
-  M: { bg: 'bg-blue-500', ring: 'ring-blue-500', bgFaint: 'bg-blue-500/20' },
-  L: {
-    bg: 'bg-amber-500',
-    ring: 'ring-amber-500',
-    bgFaint: 'bg-amber-500/20',
-  },
-  XL: { bg: 'bg-red-500', ring: 'ring-red-500', bgFaint: 'bg-red-500/20' },
-}
-
-const UNKNOWN_COLOR: BlockColor = {
-  bg: 'bg-gray-300 dark:bg-gray-600',
-  ring: 'ring-gray-400',
-  bgFaint: 'bg-gray-400/20',
-}
+import {
+  PRBlock as PRBlockBase,
+  SIZE_BLOCK_COLORS,
+  UNKNOWN_COLOR,
+  type PRBlockColorMode as ColorMode,
+} from '../../+components/pr-block'
 
 function sortBySize(prs: StackPR[]): StackPR[] {
   return [...prs].sort((a, b) => {

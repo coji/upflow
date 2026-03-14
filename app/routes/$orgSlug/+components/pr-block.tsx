@@ -8,13 +8,13 @@ import { SizeBadge } from './size-badge'
 
 export type PRBlockColorMode = 'size' | 'age'
 
-interface BlockColor {
+export interface BlockColor {
   bg: string
   ring: string
   bgFaint: string
 }
 
-const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
+export const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
   XS: {
     bg: 'bg-slate-400',
     ring: 'ring-slate-400',
@@ -34,7 +34,7 @@ const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
   XL: { bg: 'bg-red-500', ring: 'ring-red-500', bgFaint: 'bg-red-500/20' },
 }
 
-const UNKNOWN_COLOR: BlockColor = {
+export const UNKNOWN_COLOR: BlockColor = {
   bg: 'bg-gray-300 dark:bg-gray-600',
   ring: 'ring-gray-400',
   bgFaint: 'bg-gray-400/20',

@@ -128,53 +128,91 @@ export const getBacklogDetails = async (
 ) => {
   const tenantDb = getTenantDb(organizationId)
 
-  const openPRsRaw = await tenantDb
-    .selectFrom('pullRequests')
-    .where((eb) =>
-      eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
-    )
-    .where('mergedAt', 'is', null)
-    .where('closedAt', 'is', null)
-    .select([
-      'number',
-      'repositoryId',
-      'repo',
-      'title',
-      'url',
-      'pullRequestCreatedAt',
-      'complexity',
-    ])
-    .orderBy('pullRequestCreatedAt', 'asc')
-    .execute()
+  const loginLower = login.toLowerCase()
 
-  // Check which open PRs have reviewers assigned
+  const [openPRsRaw, reviewerRows, pendingReviews] = await Promise.all([
+    tenantDb
+      .selectFrom('pullRequests')
+      .where((eb) =>
+        eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),
+      )
+      .where('mergedAt', 'is', null)
+      .where('closedAt', 'is', null)
+      .select([
+        'number',
+        'repositoryId',
+        'repo',
+        'title',
+        'url',
+        'pullRequestCreatedAt',
+        'complexity',
+      ])
+      .orderBy('pullRequestCreatedAt', 'asc')
+      .execute(),
+
+    tenantDb
+      .selectFrom('pullRequestReviewers')
+      .innerJoin('pullRequests', (join) =>
+        join
+          .onRef(
+            'pullRequestReviewers.pullRequestNumber',
+            '=',
+            'pullRequests.number',
+          )
+          .onRef(
+            'pullRequestReviewers.repositoryId',
+            '=',
+            'pullRequests.repositoryId',
+          ),
+      )
+      .where((eb) =>
+        eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),
+      )
+      .where('pullRequests.mergedAt', 'is', null)
+      .where('pullRequests.closedAt', 'is', null)
+      .where('pullRequestReviewers.requestedAt', 'is not', null)
+      .select([
+        'pullRequestReviewers.pullRequestNumber as number',
+        'pullRequestReviewers.repositoryId',
+      ])
+      .execute(),
+
+    tenantDb
+      .selectFrom('pullRequestReviewers')
+      .innerJoin('pullRequests', (join) =>
+        join
+          .onRef(
+            'pullRequestReviewers.pullRequestNumber',
+            '=',
+            'pullRequests.number',
+          )
+          .onRef(
+            'pullRequestReviewers.repositoryId',
+            '=',
+            'pullRequests.repositoryId',
+          ),
+      )
+      .where((eb) =>
+        eb(eb.fn('lower', ['pullRequestReviewers.reviewer']), '=', loginLower),
+      )
+      .where('pullRequestReviewers.requestedAt', 'is not', null)
+      .where('pullRequests.mergedAt', 'is', null)
+      .where('pullRequests.closedAt', 'is', null)
+      .select([
+        'pullRequests.number',
+        'pullRequests.repositoryId',
+        'pullRequests.repo',
+        'pullRequests.title',
+        'pullRequests.url',
+        'pullRequests.pullRequestCreatedAt',
+        'pullRequests.complexity',
+        'pullRequests.author',
+      ])
+      .orderBy('pullRequests.pullRequestCreatedAt', 'asc')
+      .execute(),
+  ])
+
   const reviewerSet = new Set<string>()
-  const reviewerRows = await tenantDb
-    .selectFrom('pullRequestReviewers')
-    .innerJoin('pullRequests', (join) =>
-      join
-        .onRef(
-          'pullRequestReviewers.pullRequestNumber',
-          '=',
-          'pullRequests.number',
-        )
-        .onRef(
-          'pullRequestReviewers.repositoryId',
-          '=',
-          'pullRequests.repositoryId',
-        ),
-    )
-    .where((eb) =>
-      eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
-    )
-    .where('pullRequests.mergedAt', 'is', null)
-    .where('pullRequests.closedAt', 'is', null)
-    .where('pullRequestReviewers.requestedAt', 'is not', null)
-    .select([
-      'pullRequestReviewers.pullRequestNumber as number',
-      'pullRequestReviewers.repositoryId',
-    ])
-    .execute()
   for (const r of reviewerRows) {
     reviewerSet.add(`${r.repositoryId}:${r.number}`)
   }
@@ -183,44 +221,6 @@ export const getBacklogDetails = async (
     ...pr,
     hasReviewer: reviewerSet.has(`${pr.repositoryId}:${pr.number}`),
   }))
-
-  const pendingReviews = await tenantDb
-    .selectFrom('pullRequestReviewers')
-    .innerJoin('pullRequests', (join) =>
-      join
-        .onRef(
-          'pullRequestReviewers.pullRequestNumber',
-          '=',
-          'pullRequests.number',
-        )
-        .onRef(
-          'pullRequestReviewers.repositoryId',
-          '=',
-          'pullRequests.repositoryId',
-        ),
-    )
-    .where((eb) =>
-      eb(
-        eb.fn('lower', ['pullRequestReviewers.reviewer']),
-        '=',
-        login.toLowerCase(),
-      ),
-    )
-    .where('pullRequestReviewers.requestedAt', 'is not', null)
-    .where('pullRequests.mergedAt', 'is', null)
-    .where('pullRequests.closedAt', 'is', null)
-    .select([
-      'pullRequests.number',
-      'pullRequests.repositoryId',
-      'pullRequests.repo',
-      'pullRequests.title',
-      'pullRequests.url',
-      'pullRequests.pullRequestCreatedAt',
-      'pullRequests.complexity',
-      'pullRequests.author',
-    ])
-    .orderBy('pullRequests.pullRequestCreatedAt', 'asc')
-    .execute()
 
   return { openPRs, pendingReviews }
 }
