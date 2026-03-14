@@ -346,6 +346,7 @@ export default function MemberWeeklyPage({
                       label={`#${pr.number}`}
                       title={pr.title}
                       url={pr.url}
+                      complexity={pr.complexity}
                     />
                   ))}
                   {day.merged.map((pr) => (
@@ -355,6 +356,7 @@ export default function MemberWeeklyPage({
                       label={`#${pr.number}`}
                       title={pr.title}
                       url={pr.url}
+                      complexity={pr.complexity}
                     />
                   ))}
                   {day.reviewed.map((r) => (
@@ -364,6 +366,7 @@ export default function MemberWeeklyPage({
                       label={`#${r.number}`}
                       title={r.title}
                       url={r.url}
+                      complexity={r.complexity}
                       suffix={
                         r.state === 'APPROVED'
                           ? '✓'
@@ -481,18 +484,28 @@ function BlockRow({
   )
 }
 
+const SIZE_LABEL_COLORS: Record<string, string> = {
+  XS: 'text-slate-400',
+  S: 'text-emerald-500',
+  M: 'text-blue-500',
+  L: 'text-amber-500',
+  XL: 'text-red-500',
+}
+
 function CalendarItem({
   color,
   label,
   title,
   url,
   suffix,
+  complexity,
 }: {
   color: string
   label: string
   title: string
   url: string
   suffix?: string
+  complexity?: string | null
 }) {
   return (
     <a
@@ -509,6 +522,13 @@ function CalendarItem({
         <span className="text-muted-foreground group-hover:text-foreground">
           {label}
         </span>
+        {complexity && (
+          <span
+            className={`ml-0.5 font-medium ${SIZE_LABEL_COLORS[complexity] ?? 'text-muted-foreground'}`}
+          >
+            {complexity}
+          </span>
+        )}
         {suffix && <span className="ml-0.5">{suffix}</span>}
         <br />
         <span className="text-muted-foreground/70 line-clamp-1">{title}</span>
