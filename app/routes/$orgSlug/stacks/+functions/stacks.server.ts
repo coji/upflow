@@ -4,7 +4,7 @@ import type { OrganizationId } from '~/app/types/organization'
 
 /**
  * オープンPRタイムラインデータ（Team Stacks の Author 側用）
- * hasReviewer: 一度でもレビュアーがアサインされたかどうか
+ * hasAnyReviewer: 一度でもレビュアーがアサインされたかどうか
  */
 export const getOpenPullRequests = async (
   organizationId: OrganizationId,
