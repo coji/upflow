@@ -208,15 +208,25 @@ export default function MemberWeeklyPage({
           </h2>
           <ToggleGroup
             type="single"
-            variant="outline"
             value={colorMode}
             onValueChange={(v) => {
               if (v) setColorMode(v)
             }}
             size="sm"
+            className="bg-muted rounded-lg p-0.5"
           >
-            <ToggleGroupItem value="age">Age</ToggleGroupItem>
-            <ToggleGroupItem value="size">Size</ToggleGroupItem>
+            <ToggleGroupItem
+              value="age"
+              className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+            >
+              Age
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="size"
+              className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+            >
+              Size
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
         <div className="grid gap-3 md:grid-cols-2">

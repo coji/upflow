@@ -508,16 +508,25 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                 </div>
                 <ToggleGroup
                   type="single"
-                  variant="outline"
                   value={colorMode}
                   onValueChange={(v) => {
                     if (v) setColorMode(v as ColorMode)
                   }}
                   size="sm"
-                  className="shrink-0"
+                  className="bg-muted shrink-0 rounded-lg p-0.5"
                 >
-                  <ToggleGroupItem value="age">Age</ToggleGroupItem>
-                  <ToggleGroupItem value="size">Size</ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="age"
+                    className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+                  >
+                    Age
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="size"
+                    className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+                  >
+                    Size
+                  </ToggleGroupItem>
                 </ToggleGroup>
               </div>
               {/* Dimming via DOM classes: .pr-hovering dims all buttons,
