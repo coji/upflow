@@ -34,6 +34,8 @@ interface OpenPRRow {
   url: string
   pullRequestCreatedAt: string
   complexity: string | null
+  /** Whether any reviewer has ever been assigned (not just pending) */
+  hasAnyReviewer: boolean
 }
 
 interface PendingReviewRow {
@@ -94,7 +96,7 @@ export function aggregateTeamStacks(
       author: pr.author,
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
-      hasReviewer: reviewers != null,
+      hasReviewer: pr.hasAnyReviewer,
       reviewers,
     })
   }
@@ -139,9 +141,9 @@ export function aggregateTeamStacks(
     (a, b) => b.prs.length - a.prs.length,
   )
 
-  // Unassigned PRs: open PRs with no pending reviewer
+  // Unassigned PRs: open PRs that have never had a reviewer assigned
   const unassignedPRs: StackPR[] = openPRs
-    .filter((pr) => !prReviewersMap.has(`${pr.repositoryId}:${pr.number}`))
+    .filter((pr) => !pr.hasAnyReviewer)
     .map((pr) => ({
       number: pr.number,
       repo: pr.repo,
@@ -150,6 +152,7 @@ export function aggregateTeamStacks(
       author: pr.author,
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
+      hasReviewer: false as const,
     }))
 
   const overLimitAuthors = authorStacks.filter(
