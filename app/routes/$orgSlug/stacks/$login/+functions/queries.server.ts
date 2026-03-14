@@ -17,7 +17,10 @@ export const getUserProfile = async (
     )
     .select(['login', 'displayName'])
     .executeTakeFirst()
-  return user ?? { login, displayName: login }
+  return {
+    login: user?.login ?? login,
+    displayName: user?.displayName ?? user?.login ?? login,
+  }
 }
 
 export const getCreatedPRs = async (
