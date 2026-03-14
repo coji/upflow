@@ -122,10 +122,10 @@ function MemberLink({
   login: string
   displayName: string
 }) {
-  const { orgSlug } = useParams()
+  const { orgSlug = '' } = useParams()
   const [searchParams] = useSearchParams()
   const query = searchParams.toString()
-  const basePath = href('/:orgSlug/stacks/:login', { orgSlug: orgSlug!, login })
+  const basePath = href('/:orgSlug/stacks/:login', { orgSlug, login })
   const linkTo = query ? `${basePath}?${query}` : basePath
   return (
     <Link
