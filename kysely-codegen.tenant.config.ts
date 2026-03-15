@@ -15,6 +15,7 @@ export default defineConfig({
       'integrations.provider': '"github"',
       'integrations.method': '"token"',
       'repositories.provider': '"github"',
+      'organization_settings.language': 'Generated<"en" | "ja">',
       'organization_settings.release_detection_method':
         'Generated<"branch" | "tags">',
       'repositories.release_detection_method': 'Generated<"branch" | "tags">',

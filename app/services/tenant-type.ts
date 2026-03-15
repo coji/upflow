@@ -73,6 +73,7 @@ export interface OrganizationSettings {
   excludedUsers: Generated<string>;
   id: string;
   isActive: Generated<0 | 1>;
+  language: Generated<"en" | "ja">;
   refreshRequestedAt: string | null;
   releaseDetectionKey: Generated<string>;
   releaseDetectionMethod: Generated<"branch" | "tags">;

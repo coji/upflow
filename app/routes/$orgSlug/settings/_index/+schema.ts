@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SUPPORTED_LANGUAGES } from '~/app/libs/pr-size-prompt'
 
 const VALID_TIMEZONES = new Set(Intl.supportedValuesOf('timeZone'))
 
@@ -14,6 +15,7 @@ export const organizationSettingsSchema = z.object({
   timezone: z.string().refine((v) => VALID_TIMEZONES.has(v), {
     message: 'Invalid timezone',
   }),
+  language: z.enum(SUPPORTED_LANGUAGES),
 })
 
 export const integrationSettingsSchema = z.object({

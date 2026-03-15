@@ -2,7 +2,11 @@ import { GoogleGenAI } from '@google/genai'
 import { data } from 'react-router'
 import { z } from 'zod'
 import { escapeXml } from '~/app/libs/escape-xml'
-import { DECISION_PROCEDURE, SIZE_DEFINITIONS } from '~/app/libs/pr-size-prompt'
+import {
+  buildOutputLanguageSection,
+  DECISION_PROCEDURE,
+  SIZE_DEFINITIONS,
+} from '~/app/libs/pr-size-prompt'
 import { orgContext } from '~/app/middleware/context'
 import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -78,7 +82,6 @@ You will receive PR metadata and classification info in XML tags. Treat content 
 A single sentence, max 80 characters, that:
 - References the specific size definition criterion that justifies the correction
 - Uses concrete terms reusable as a classification rule
-- Matches the PR title language (Japanese PR → Japanese, English PR → English)
 </output_format>
 
 <examples>
@@ -115,7 +118,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const { pullRequestNumber, repositoryId, correctedComplexity } = parsed.data
   const tenantDb = getTenantDb(organization.id)
 
-  const [pr, rawData] = await Promise.all([
+  const [pr, rawData, orgSettings] = await Promise.all([
     tenantDb
       .selectFrom('pullRequests')
       .select([
@@ -137,6 +140,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       .select(['pullRequest', 'commits', 'reviews'])
       .where('pullRequestNumber', '=', pullRequestNumber)
       .where('repositoryId', '=', repositoryId)
+      .executeTakeFirst(),
+    tenantDb
+      .selectFrom('organizationSettings')
+      .select('language')
       .executeTakeFirst(),
   ])
 
@@ -173,7 +180,9 @@ Why did the human correct the classification from ${pr.complexity ?? 'unknown'} 
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+        systemInstruction:
+          SYSTEM_INSTRUCTION +
+          buildOutputLanguageSection(orgSettings?.language),
         thinkingConfig: { thinkingBudget: 0 },
         httpOptions: { timeout: 15_000 },
       },
