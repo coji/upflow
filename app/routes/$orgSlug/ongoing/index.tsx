@@ -6,6 +6,7 @@ import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
   PageHeaderActions,
+  PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
@@ -65,6 +66,9 @@ export default function OngoingPage({
       <PageHeader>
         <PageHeaderHeading>
           <PageHeaderTitle>Ongoing</PageHeaderTitle>
+          <PageHeaderDescription>
+            Pull requests currently in progress.
+          </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />

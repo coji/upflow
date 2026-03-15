@@ -6,6 +6,7 @@ import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
   PageHeaderActions,
+  PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
@@ -99,6 +100,9 @@ export default function OrganizationIndex({
       <PageHeader>
         <PageHeaderHeading>
           <PageHeaderTitle>Merged</PageHeaderTitle>
+          <PageHeaderDescription>
+            Pull requests merged this week with cycle time metrics.
+          </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />

@@ -1,6 +1,7 @@
 import {
   PageHeader,
   PageHeaderActions,
+  PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
@@ -59,10 +60,13 @@ clientLoader.hydrate = true as const
 
 export function HydrateFallback() {
   return (
-    <Stack gap="6">
+    <Stack>
       <PageHeader>
         <PageHeaderHeading>
           <PageHeaderTitle>Review Stacks</PageHeaderTitle>
+          <PageHeaderDescription>
+            Monitor review workload balance across team members.
+          </PageHeaderDescription>
         </PageHeaderHeading>
       </PageHeader>
     </Stack>
@@ -73,10 +77,13 @@ export default function ReviewStacksPage({
   loaderData: { teams, teamStacks },
 }: Route.ComponentProps) {
   return (
-    <Stack gap="6">
+    <Stack>
       <PageHeader>
         <PageHeaderHeading>
           <PageHeaderTitle>Review Stacks</PageHeaderTitle>
+          <PageHeaderDescription>
+            Monitor review workload balance across team members.
+          </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />

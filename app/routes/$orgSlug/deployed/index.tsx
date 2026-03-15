@@ -6,6 +6,7 @@ import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
   PageHeaderActions,
+  PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
@@ -99,6 +100,9 @@ export default function DeployedPage({
       <PageHeader>
         <PageHeaderHeading>
           <PageHeaderTitle>Deployed</PageHeaderTitle>
+          <PageHeaderDescription>
+            Pull requests deployed this week with cycle time metrics.
+          </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />
