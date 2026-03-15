@@ -362,10 +362,14 @@ export const isReservedSlug = (slug: string): boolean => {
   return RESERVED_SLUGS.has(slug.toLowerCase())
 }
 
+import type { MemberRole } from './member-role'
+export { isOrgAdmin } from './member-role'
+export type { MemberRole } from './member-role'
+
 export interface OrgContext {
   user: NonNullable<Awaited<ReturnType<typeof getSession>>>['user']
   organization: { id: OrganizationId; name: string; slug: string }
-  membership: { id: string; role: string }
+  membership: { id: string; role: MemberRole }
 }
 
 export const requireOrgMember = async (
@@ -408,20 +412,6 @@ export const requireOrgMember = async (
       role: result.role,
     },
   }
-}
-
-export const requireOrgAdmin = async (
-  request: Request,
-  orgSlug: string,
-): Promise<OrgContext> => {
-  const context = await requireOrgMember(request, orgSlug)
-  if (
-    context.membership.role !== 'owner' &&
-    context.membership.role !== 'admin'
-  ) {
-    throw redirect(`/${orgSlug}`)
-  }
-  return context
 }
 
 export const getUserOrganizations = async (userId: string) => {

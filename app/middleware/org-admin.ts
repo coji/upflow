@@ -1,4 +1,5 @@
 import { redirect } from 'react-router'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import type { Route } from '../routes/$orgSlug/settings/+types/_layout'
 import { orgContext } from './context'
 
@@ -7,7 +8,7 @@ export const orgAdminMiddleware: Route.MiddlewareFunction = (
   next,
 ) => {
   const { membership } = context.get(orgContext)
-  if (membership.role !== 'owner' && membership.role !== 'admin') {
+  if (!isOrgAdmin(membership.role)) {
     throw redirect(`/${params.orgSlug}`)
   }
   return next()

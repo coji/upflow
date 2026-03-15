@@ -6,6 +6,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '~/app/components/ui/sidebar'
+import { type MemberRole, isOrgAdmin } from '~/app/libs/member-role'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { OrgSwitcher } from './org-switcher'
@@ -28,7 +29,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     name: string
     slug: string | null
   }>
-  memberRole: string
+  memberRole: MemberRole
 }
 
 export function AppSidebar({
@@ -39,7 +40,7 @@ export function AppSidebar({
   ...props
 }: AppSidebarProps) {
   const orgSlug = organization.slug ?? organization.id
-  const isAdmin = memberRole === 'owner' || memberRole === 'admin'
+  const isAdmin = isOrgAdmin(memberRole)
   const navGroups = getNavConfig(orgSlug).filter(
     (group) => !group.adminOnly || isAdmin,
   )
