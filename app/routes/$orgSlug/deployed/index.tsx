@@ -27,6 +27,10 @@ import { generateMarkdown } from './+functions/generate-markdown'
 import { getDeployedPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: () => ({ label: 'Deployed' }),
+}
+
 export type PullRequest = Awaited<
   ReturnType<typeof getDeployedPullRequestReport>
 >[0]
