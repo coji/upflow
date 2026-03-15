@@ -35,8 +35,7 @@ Edit `.env` with your values:
 | Variable                    | Description                                        |
 | --------------------------- | -------------------------------------------------- |
 | `DATABASE_URL`              | SQLite database path (e.g. `file:../data/data.db`) |
-| `SESSION_SECRET`            | Secret for session encryption                      |
-| `BETTER_AUTH_SECRET`        | Secret for better-auth                             |
+| `BETTER_AUTH_SECRET`        | Secret for better-auth (min 32 chars)              |
 | `BETTER_AUTH_URL`           | App URL (e.g. `http://localhost:5173`)             |
 | `GITHUB_CLIENT_ID`          | GitHub App client ID                               |
 | `GITHUB_CLIENT_SECRET`      | GitHub App client secret                           |
