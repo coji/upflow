@@ -1,11 +1,11 @@
 import {
-  ClockIcon,
+  CircleDotIcon,
+  GitMergeIcon,
   GitPullRequestIcon,
   LayoutDashboardIcon,
   NotebookPenIcon,
   RocketIcon,
   SettingsIcon,
-  TimerIcon,
 } from 'lucide-react'
 import type { NavGroupProps } from './types'
 
@@ -27,12 +27,12 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
         {
           title: 'Ongoing',
           url: `/${orgSlug}/throughput/ongoing`,
-          icon: TimerIcon,
+          icon: CircleDotIcon,
         },
         {
           title: 'Merged',
           url: `/${orgSlug}/throughput/merged`,
-          icon: ClockIcon,
+          icon: GitMergeIcon,
         },
         {
           title: 'Deployed',
