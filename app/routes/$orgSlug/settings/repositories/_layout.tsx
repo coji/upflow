@@ -1,9 +1,9 @@
-import { Outlet } from 'react-router'
+import { Outlet, href } from 'react-router'
 
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Repositories',
-    to: `/${params.orgSlug}/settings/repositories`,
+    to: href('/:orgSlug/settings/repositories', { orgSlug: params.orgSlug }),
   }),
 }
 

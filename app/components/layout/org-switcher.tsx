@@ -1,5 +1,5 @@
 import { ChevronsUpDown } from 'lucide-react'
-import { useNavigate } from 'react-router'
+import { href, useNavigate } from 'react-router'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +72,9 @@ export function OrgSwitcher({
             {organizations.map((org) => (
               <DropdownMenuItem
                 key={org.id}
-                onClick={() => navigate(`/${org.slug ?? org.id}`)}
+                onClick={() =>
+                  navigate(href('/:orgSlug', { orgSlug: org.slug ?? org.id }))
+                }
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border text-xs font-bold">

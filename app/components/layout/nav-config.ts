@@ -7,6 +7,7 @@ import {
   RocketIcon,
   SettingsIcon,
 } from 'lucide-react'
+import { href } from 'react-router'
 import type { NavGroupProps } from './types'
 
 export function getNavConfig(orgSlug: string): NavGroupProps[] {
@@ -16,7 +17,7 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
       items: [
         {
           title: 'Review Stacks',
-          url: `/${orgSlug}/workload`,
+          url: href('/:orgSlug/workload', { orgSlug }),
           icon: LayersIcon,
         },
       ],
@@ -26,17 +27,17 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
       items: [
         {
           title: 'Ongoing',
-          url: `/${orgSlug}/throughput/ongoing`,
+          url: href('/:orgSlug/throughput/ongoing', { orgSlug }),
           icon: CircleDotIcon,
         },
         {
           title: 'Merged',
-          url: `/${orgSlug}/throughput/merged`,
+          url: href('/:orgSlug/throughput/merged', { orgSlug }),
           icon: GitMergeIcon,
         },
         {
           title: 'Deployed',
-          url: `/${orgSlug}/throughput/deployed`,
+          url: href('/:orgSlug/throughput/deployed', { orgSlug }),
           icon: RocketIcon,
         },
       ],
@@ -46,12 +47,12 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
       items: [
         {
           title: 'Review Bottleneck',
-          url: `/${orgSlug}/analysis/reviews`,
+          url: href('/:orgSlug/analysis/reviews', { orgSlug }),
           icon: FunnelIcon,
         },
         {
           title: 'Feedbacks',
-          url: `/${orgSlug}/analysis/feedbacks`,
+          url: href('/:orgSlug/analysis/feedbacks', { orgSlug }),
           icon: NotebookPenIcon,
         },
       ],
@@ -62,7 +63,7 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
       items: [
         {
           title: 'Settings',
-          url: `/${orgSlug}/settings`,
+          url: href('/:orgSlug/settings', { orgSlug }),
           icon: SettingsIcon,
         },
       ],

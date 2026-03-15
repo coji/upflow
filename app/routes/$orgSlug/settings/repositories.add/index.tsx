@@ -3,6 +3,7 @@ import { parseWithZod } from '@conform-to/zod/v4'
 import { ChevronRightIcon, ChevronsLeftIcon, RefreshCwIcon } from 'lucide-react'
 import {
   Form,
+  href,
   isRouteErrorResponse,
   redirect,
   useRouteError,
@@ -57,7 +58,7 @@ export const loader = async ({
     searchParams.delete('refresh')
     clearAllCache()
     throw redirect(
-      `/${params.orgSlug}/settings/repositories/add?${searchParams.toString()}`,
+      `${href('/:orgSlug/settings/repositories/add', { orgSlug: params.orgSlug })}?${searchParams.toString()}`,
     )
   }
 

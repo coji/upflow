@@ -1,4 +1,4 @@
-import { Outlet, useMatches } from 'react-router'
+import { Outlet, href, useMatches } from 'react-router'
 import { AppSidebar } from '~/app/components/layout/app-sidebar'
 import { Header } from '~/app/components/layout/header'
 import { Main } from '~/app/components/layout/main'
@@ -29,7 +29,7 @@ export const handle = {
     params: { orgSlug: string },
   ) => ({
     label: data.organization.name,
-    to: `/${params.orgSlug}`,
+    to: href('/:orgSlug', { orgSlug: params.orgSlug }),
   }),
 }
 

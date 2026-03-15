@@ -5,7 +5,7 @@ import {
   SparklesIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useFetcher, useParams } from 'react-router'
+import { href, useFetcher, useParams } from 'react-router'
 import { Badge, Button } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
@@ -255,7 +255,9 @@ export function SizeBadgePopover({
                 const fd = buildFormData(selectedSize)
                 draftFetcher.submit(fd, {
                   method: 'post',
-                  action: `/${orgSlug}/draft-feedback-reason`,
+                  action: href('/:orgSlug/draft-feedback-reason', {
+                    orgSlug: orgSlug!,
+                  }),
                 })
               }}
             >
@@ -277,7 +279,9 @@ export function SizeBadgePopover({
                 fd.set('reason', reasonText)
                 fetcher.submit(fd, {
                   method: 'post',
-                  action: `/${orgSlug}/pr-size-feedback`,
+                  action: href('/:orgSlug/pr-size-feedback', {
+                    orgSlug: orgSlug!,
+                  }),
                 })
               }}
             >

@@ -1,5 +1,5 @@
 import { zx } from '@coji/zodix/v4'
-import { Outlet } from 'react-router'
+import { Outlet, href } from 'react-router'
 import { z } from 'zod'
 import { orgContext } from '~/app/middleware/context'
 import type { Route } from './+types/_layout'
@@ -11,7 +11,10 @@ export const handle = {
     params: { orgSlug: string; repository: string },
   ) => ({
     label: `${data.repository.owner}/${data.repository.repo}`,
-    to: `/${params.orgSlug}/settings/repositories/${params.repository}`,
+    to: href('/:orgSlug/settings/repositories/:repository', {
+      orgSlug: params.orgSlug,
+      repository: params.repository,
+    }),
   }),
 }
 

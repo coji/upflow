@@ -27,7 +27,7 @@ import type { Route } from './+types/index'
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Data Management',
-    to: `/${params.orgSlug}/settings/data-management`,
+    to: href('/:orgSlug/settings/data-management', { orgSlug: params.orgSlug }),
   }),
 }
 

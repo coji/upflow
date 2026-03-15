@@ -1,7 +1,7 @@
 import { zx } from '@coji/zodix/v4'
 import { createPatch } from 'diff'
 import { useEffect, useMemo, useRef } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { href, useFetcher, useRevalidator } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
@@ -32,7 +32,11 @@ export const handle = {
     params: { orgSlug: string; repository: string; pull: string },
   ) => ({
     label: `#${data.pull?.number}`,
-    to: `/${params.orgSlug}/settings/repositories/${params.repository}/${params.pull}`,
+    to: href('/:orgSlug/settings/repositories/:repository/:pull', {
+      orgSlug: params.orgSlug,
+      repository: params.repository,
+      pull: params.pull,
+    }),
   }),
 }
 

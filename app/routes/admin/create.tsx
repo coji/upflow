@@ -46,7 +46,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
       ...submission.value,
       creatorUserId: user.id,
     })
-    return redirect(`/${organization.slug}`)
+    return redirect(href('/:orgSlug', { orgSlug: organization.slug }))
   } catch (e) {
     return {
       lastResult: submission.reply({

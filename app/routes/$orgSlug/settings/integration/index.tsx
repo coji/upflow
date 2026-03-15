@@ -1,4 +1,5 @@
 import { parseWithZod } from '@conform-to/zod/v4'
+import { href } from 'react-router'
 import { dataWithSuccess } from 'remix-toast'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
@@ -11,7 +12,7 @@ import type { Route } from './+types/index'
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Integration',
-    to: `/${params.orgSlug}/settings/integration`,
+    to: href('/:orgSlug/settings/integration', { orgSlug: params.orgSlug }),
   }),
 }
 
