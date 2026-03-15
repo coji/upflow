@@ -1,3 +1,4 @@
+import holiday_jp from '@holiday-jp/holiday_jp'
 import { ja } from 'date-fns/locale'
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import * as React from 'react'
@@ -59,6 +60,11 @@ function WeekDayButton({
   const isWeekStart = targetDate.isSame(weekInterval.start, 'day')
   const isWeekEnd = targetDate.isSame(weekInterval.end, 'day')
 
+  const dayOfWeek = day.date.getDay()
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+  const isHoliday = holiday_jp.isHoliday(day.date)
+  const isOff = isWeekend || isHoliday
+
   const ref = React.useRef<HTMLButtonElement>(null)
   React.useEffect(() => {
     if (modifiers.focused) ref.current?.focus()
@@ -73,6 +79,7 @@ function WeekDayButton({
       data-selected={isSelected}
       className={cn(
         className,
+        !isSelected && isOff && 'text-red-400',
         isSelected &&
           'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
         isWeekStart && 'rounded-l-lg',
