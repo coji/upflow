@@ -31,6 +31,12 @@ import {
 } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: (data: Awaited<ReturnType<typeof loader>>) => ({
+    label: data.user.displayName ?? data.user.login,
+  }),
+}
+
 export const loader = async ({
   request,
   params,
