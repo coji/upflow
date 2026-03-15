@@ -126,13 +126,13 @@ export default function OrganizationIndex({
                 <Badge variant="outline">From</Badge>
               </div>
               <div className="text-sm">
-                {dayjs(from).format('YYYY-MM-DD HH:mm')}
+                {dayjs(from).tz(timezone).format('YYYY-MM-DD HH:mm')}
               </div>
               <div className="text-right">
                 <Badge variant="outline">To</Badge>
               </div>
               <div className="text-sm">
-                {dayjs(to).format('YYYY-MM-DD HH:mm')}
+                {dayjs(to).tz(timezone).format('YYYY-MM-DD HH:mm')}
               </div>
             </div>
           </div>
@@ -171,8 +171,8 @@ export default function OrganizationIndex({
       <AppDataTable
         title={
           <div>
-            Merged {dayjs(from).format('M/D')} - {dayjs(to).format('M/D')}:{' '}
-            {pullRequests.length}
+            Merged {dayjs(from).tz(timezone).format('M/D')} -{' '}
+            {dayjs(to).tz(timezone).format('M/D')}: {pullRequests.length}
           </div>
         }
         columns={columns}
