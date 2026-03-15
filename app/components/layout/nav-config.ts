@@ -1,8 +1,8 @@
 import {
   CircleDotIcon,
+  FunnelIcon,
   GitMergeIcon,
-  GitPullRequestIcon,
-  LayoutDashboardIcon,
+  LayersIcon,
   NotebookPenIcon,
   RocketIcon,
   SettingsIcon,
@@ -17,7 +17,7 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
         {
           title: 'Review Stacks',
           url: `/${orgSlug}/workload`,
-          icon: LayoutDashboardIcon,
+          icon: LayersIcon,
         },
       ],
     },
@@ -47,7 +47,7 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
         {
           title: 'Review Bottleneck',
           url: `/${orgSlug}/analysis/reviews`,
-          icon: GitPullRequestIcon,
+          icon: FunnelIcon,
         },
         {
           title: 'Feedbacks',
