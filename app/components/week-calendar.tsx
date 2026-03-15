@@ -1,6 +1,7 @@
 import { ja } from 'date-fns/locale'
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import * as React from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { DayButton } from 'react-day-picker'
 import {
   Button,
@@ -12,12 +13,14 @@ import {
 import dayjs from '~/app/libs/dayjs'
 import { cn } from '../libs/utils'
 
-// 指定された開始曜日に基づく週間間隔を取得
+/**
+ * Calculate the week interval (start Monday – end Sunday) containing
+ * the given date, based on the specified week-start day.
+ */
 const getWeekInterval = (date: Date, startOfWeekDay: number) => {
   const normalizedDate = dayjs(date).startOf('day')
   const dayOfWeek = normalizedDate.day()
 
-  // 選択された開始曜日に合わせて調整
   let diff = dayOfWeek - startOfWeekDay
   if (diff < 0) diff += 7
 
@@ -30,38 +33,63 @@ const getWeekInterval = (date: Date, startOfWeekDay: number) => {
 interface WeeklyCalendarProps {
   onWeekChange?: (start: Date, end: Date) => void
   initialDate?: Date
-  startDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6 // 初期の週開始曜日 (0: Sunday - 6: Saturday)
+  startDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6
 }
 
 const WeeklyCalendar = ({
   onWeekChange,
   initialDate = new Date(),
-  startDay = 1, // デフォルトは月曜日
+  startDay = 1,
 }: WeeklyCalendarProps) => {
   const [open, setOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date>(initialDate)
-  const [weekInterval, setWeekInterval] = useState(
+  const [weekInterval, setWeekInterval] = useState(() =>
     getWeekInterval(initialDate, startDay),
   )
 
-  useEffect(() => {
-    const interval = getWeekInterval(selectedDate, startDay)
-    if (!dayjs(interval.start).isSame(weekInterval.start, 'day')) {
-      setWeekInterval(interval)
-      if (onWeekChange) {
-        onWeekChange(interval.start, interval.end)
-      }
-    }
-  }, [selectedDate, startDay, weekInterval.start, onWeekChange])
+  const changeWeek = (newDate: Date) => {
+    const interval = getWeekInterval(newDate, startDay)
+    setWeekInterval(interval)
+    onWeekChange?.(interval.start, interval.end)
+  }
+
+  const handlePrevWeek = () => {
+    changeWeek(dayjs(weekInterval.start).subtract(7, 'day').toDate())
+  }
+
+  const handleNextWeek = () => {
+    changeWeek(dayjs(weekInterval.start).add(7, 'day').toDate())
+  }
+
+  const handleToday = () => {
+    changeWeek(new Date())
+  }
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      setSelectedDate(date)
+      changeWeek(date)
     }
     setOpen(false)
   }
 
-  // カレンダーのカスタム日付レンダリング
+  const isCurrentWeek = dayjs().isBetween(
+    weekInterval.start,
+    weekInterval.end,
+    'day',
+    '[]',
+  )
+
+  const formatWeekLabel = () => {
+    const start = dayjs(weekInterval.start)
+    const end = dayjs(weekInterval.end)
+    if (start.year() !== end.year()) {
+      return `${start.format('YYYY/M/D')} – ${end.format('YYYY/M/D')}`
+    }
+    if (start.month() !== end.month()) {
+      return `${start.format('M/D')} – ${end.format('M/D')}`
+    }
+    return `${start.format('M/D')} – ${end.format('M/D')}`
+  }
+
   function WeekDayButton({
     className,
     day,
@@ -103,17 +131,35 @@ const WeeklyCalendar = ({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="sm">
-          Select Week
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <div>
+    <div className="flex items-center gap-1">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={handlePrevWeek}
+        aria-label="Previous week"
+      >
+        <ChevronLeftIcon className="h-4 w-4" />
+      </Button>
+
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-w-[140px] justify-center gap-1.5"
+          >
+            <CalendarIcon className="h-3.5 w-3.5" />
+            {formatWeekLabel()}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
           <Calendar
             mode="single"
-            selected={selectedDate}
+            selected={dayjs(weekInterval.start).toDate()}
+            defaultMonth={weekInterval.start}
             onSelect={handleDateSelect}
             weekStartsOn={startDay}
             locale={ja}
@@ -122,9 +168,32 @@ const WeeklyCalendar = ({
             }}
             className="rounded-lg border p-3"
           />
-        </div>
-      </PopoverContent>
-    </Popover>
+        </PopoverContent>
+      </Popover>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={handleNextWeek}
+        aria-label="Next week"
+      >
+        <ChevronRightIcon className="h-4 w-4" />
+      </Button>
+
+      {!isCurrentWeek && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleToday}
+          className="text-muted-foreground text-xs"
+        >
+          Today
+        </Button>
+      )}
+    </div>
   )
 }
 
