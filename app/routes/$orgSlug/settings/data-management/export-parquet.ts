@@ -1,3 +1,4 @@
+import { createReadableStreamFromReadable } from '@react-router/node'
 import JSZip from 'jszip'
 import { randomUUID } from 'node:crypto'
 import { createReadStream } from 'node:fs'
@@ -20,8 +21,13 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const tmpPath = join(tmpdir(), `upflow-export-${randomUUID()}.parquet`)
 
   // Stream rows from SQLite → Parquet temp file
-  const rows = iterateExportRows(organization.id, { includeRaw })
-  await writeParquetFile(rows, tmpPath, { includeRaw })
+  try {
+    const rows = iterateExportRows(organization.id, { includeRaw })
+    await writeParquetFile(rows, tmpPath, { includeRaw })
+  } catch (e) {
+    await unlink(tmpPath).catch(() => {})
+    throw e
+  }
 
   // Stream Parquet file into ZIP (no full-file read into memory)
   const zip = new JSZip()
@@ -33,25 +39,27 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     streamFiles: true,
   })
 
-  // Clean up temp file once the ZIP stream finishes reading it
+  // Clean up temp file when stream terminates (end, error, or destroy)
+  let cleaned = false
   const cleanup = () => {
+    if (cleaned) return
+    cleaned = true
     unlink(tmpPath).catch((e) =>
       console.warn('Failed to clean up temp file', tmpPath, e),
     )
   }
-  zipStream.on('end', cleanup)
-  zipStream.on('error', cleanup)
-
-  // Convert Node stream to Web ReadableStream for Response
-  const webStream = Readable.toWeb(Readable.from(zipStream))
+  zipStream.on('close', cleanup)
 
   const today = new Date().toISOString().slice(0, 10)
   const filename = `upflow-export-${organization.slug}-${today}.zip`
 
-  return new Response(webStream as ReadableStream, {
-    headers: {
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+  return new Response(
+    createReadableStreamFromReadable(Readable.from(zipStream)),
+    {
+      headers: {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
     },
-  })
+  )
 }

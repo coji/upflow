@@ -215,37 +215,12 @@ function RecalculateSection() {
 function ExportDataSection() {
   const { orgSlug } = useParams()
   const [includeRaw, setIncludeRaw] = useState(false)
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const handleDownload = async () => {
-    setIsDownloading(true)
-    setError(null)
-    try {
-      const params = includeRaw ? '?includeRaw=true' : ''
-      const response = await fetch(
-        `/${orgSlug}/settings/data-management/export-parquet${params}`,
-      )
-      if (!response.ok) {
-        throw new Error(`Export failed: ${response.statusText}`)
-      }
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download =
-        response.headers
-          .get('Content-Disposition')
-          ?.match(/filename="(.+)"/)?.[1] ?? 'upflow-export.zip'
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Download failed')
-    } finally {
-      setIsDownloading(false)
-    }
+  const handleDownload = () => {
+    const params = includeRaw ? '?includeRaw=true' : ''
+    window.location.assign(
+      `/${orgSlug}/settings/data-management/export-parquet${params}`,
+    )
   }
 
   return (
@@ -258,12 +233,7 @@ function ExportDataSection() {
             dictionary. Analyze locally with DuckDB or Claude Code.
           </p>
         </div>
-        <Button
-          type="button"
-          loading={isDownloading}
-          onClick={handleDownload}
-          className="shrink-0"
-        >
+        <Button type="button" onClick={handleDownload} className="shrink-0">
           Download
         </Button>
       </div>
@@ -277,11 +247,6 @@ function ExportDataSection() {
           Include raw GitHub API data (larger file)
         </Label>
       </div>
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
     </Stack>
   )
 }
