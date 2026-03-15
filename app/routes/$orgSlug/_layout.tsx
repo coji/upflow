@@ -4,9 +4,10 @@ import { Header } from '~/app/components/layout/header'
 import { Main } from '~/app/components/layout/main'
 import { SidebarProvider } from '~/app/components/ui/sidebar'
 import { useBreadcrumbs } from '~/app/hooks/use-breadcrumbs'
-import { getUserOrganizations, requireOrgMember } from '~/app/libs/auth.server'
-import { getOrganizationTimezone } from '~/app/libs/timezone.server'
+import { getUserOrganizations } from '~/app/libs/auth.server'
 import { cn } from '~/app/libs/utils'
+import { orgContext, timezoneContext } from '~/app/middleware/context'
+import { orgMemberMiddleware } from '~/app/middleware/org-member'
 import type { Route } from './+types/_layout'
 
 export interface RouteHandle {
@@ -32,16 +33,12 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { orgSlug } = params
-  const { user, organization, membership } = await requireOrgMember(
-    request,
-    orgSlug,
-  )
-  const [organizations, timezone] = await Promise.all([
-    getUserOrganizations(user.id),
-    getOrganizationTimezone(organization.id),
-  ])
+export const middleware = [orgMemberMiddleware]
+
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { user, organization, membership } = context.get(orgContext)
+  const timezone = context.get(timezoneContext)
+  const organizations = await getUserOrganizations(user.id)
 
   const cookieHeader = request.headers.get('Cookie') ?? ''
   const sidebarState = cookieHeader

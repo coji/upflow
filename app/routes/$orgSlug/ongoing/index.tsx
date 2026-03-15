@@ -16,8 +16,8 @@ import {
   DropdownMenuLabel,
 } from '~/app/components/ui/dropdown-menu'
 import { useTimezone } from '~/app/hooks/use-timezone'
-import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
+import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '../settings/teams._index/queries.server'
 import { createColumns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
@@ -34,8 +34,8 @@ export type PullRequest = Awaited<
   ReturnType<typeof getOngoingPullRequestReport>
 >[0]
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgMember(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')

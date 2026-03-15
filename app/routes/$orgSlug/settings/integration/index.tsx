@@ -1,6 +1,6 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { dataWithSuccess } from 'remix-toast'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { IntegrationSettings } from '../_index/+forms/integration-settings'
 import { upsertIntegration } from '../_index/+functions/mutations.server'
@@ -15,8 +15,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const integration = await getIntegration(organization.id)
   // Never send privateToken to the client
   const safeIntegration = integration
@@ -29,8 +29,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return { integration: safeIntegration }
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
 
   const submission = await parseWithZod(await request.formData(), { schema })
   if (submission.status !== 'success') {

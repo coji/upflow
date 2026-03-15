@@ -17,7 +17,7 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { Separator } from '~/app/components/ui/separator'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgAdminMiddleware } from '~/app/middleware/org-admin'
 import type { RouteHandle } from '~/app/routes/$orgSlug/_layout'
 import SidebarNav from './+components/sidebar-nav'
 import type { Route } from './+types/_layout'
@@ -29,8 +29,9 @@ export const handle: RouteHandle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  await requireOrgAdmin(request, params.orgSlug)
+export const middleware = [orgAdminMiddleware]
+
+export const loader = ({ params }: Route.LoaderArgs) => {
   return { orgSlug: params.orgSlug }
 }
 

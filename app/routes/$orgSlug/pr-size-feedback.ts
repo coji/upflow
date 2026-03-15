@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 import { z } from 'zod'
-import { requireOrgMember } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { Route } from './+types/pr-size-feedback'
@@ -12,8 +12,8 @@ const feedbackSchema = z.object({
   reason: z.string().nullish(),
 })
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization, user } = await requireOrgMember(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization, user } = context.get(orgContext)
   const formData = await request.formData()
   const parsed = feedbackSchema.safeParse({
     pullRequestNumber: formData.get('pullRequestNumber'),

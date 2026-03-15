@@ -1,6 +1,6 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { redirect } from 'react-router'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { DeleteOrganization } from '../_index/+forms/delete-organization'
 import { deleteOrganization } from '../_index/+functions/mutations.server'
@@ -15,23 +15,17 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization: orgContext } = await requireOrgAdmin(
-    request,
-    params.orgSlug,
-  )
-  const organization = await getOrganization(orgContext.id)
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const { organization: org } = context.get(orgContext)
+  const organization = await getOrganization(org.id)
   if (!organization) {
     throw new Response('Organization not found', { status: 404 })
   }
   return { organization }
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization, membership } = await requireOrgAdmin(
-    request,
-    params.orgSlug,
-  )
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization, membership } = context.get(orgContext)
   if (membership.role !== 'owner') {
     throw new Response('Only the organization owner can delete it', {
       status: 403,

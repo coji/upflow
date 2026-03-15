@@ -12,10 +12,9 @@ import {
 import { HStack, Stack } from '~/app/components/ui/stack'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import { useTimezone } from '~/app/hooks/use-timezone'
-import { requireOrgMember } from '~/app/libs/auth.server'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { getOrganizationTimezone } from '~/app/libs/timezone.server'
+import { orgContext, timezoneContext } from '~/app/middleware/context'
 import {
   PRBlock,
   PRPopoverContent,
@@ -33,9 +32,13 @@ import {
 } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgMember(request, params.orgSlug)
-  const timezone = await getOrganizationTimezone(organization.id)
+export const loader = async ({
+  request,
+  params,
+  context,
+}: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
+  const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
   const weekParam = url.searchParams.get('week')

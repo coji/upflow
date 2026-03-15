@@ -29,8 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
-import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
+import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
@@ -58,8 +58,8 @@ const PERIOD_OPTIONS = [
 
 const VALID_PERIODS = [1, 3, 6, 12]
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgMember(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team') || undefined

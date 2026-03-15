@@ -3,7 +3,7 @@ import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
 import { createColumns } from './+components/github-users-columns'
@@ -31,8 +31,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization, user } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization, user } = context.get(orgContext)
   const searchParams = new URL(request.url).searchParams
 
   // GitHub user search for combobox candidates
@@ -118,53 +118,76 @@ const toggleActiveSchema = z.object({
     .pipe(z.union([z.literal(0), z.literal(1)])),
 })
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization, user } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization, user } = context.get(orgContext)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 
   return match(intent)
     .with('add', async () => {
-      const parsed = addSchema.parse({
+      const parsed = addSchema.safeParse({
         login: formData.get('login'),
         displayName: formData.get('displayName'),
       })
-      await addGithubUser({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await addGithubUser({ ...parsed.data, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('update', async () => {
-      const parsed = updateSchema.parse({
+      const parsed = updateSchema.safeParse({
         login: formData.get('login'),
         displayName: formData.get('displayName'),
       })
-      await updateGithubUser({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await updateGithubUser({
+        ...parsed.data,
+        organizationId: organization.id,
+      })
       return data({ ok: true })
     })
     .with('delete', async () => {
-      const { login } = deleteSchema.parse({ login: formData.get('login') })
+      const parsed = deleteSchema.safeParse({
+        login: formData.get('login'),
+      })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
-        await deleteGithubUser(login, organization.id, user.id)
+        await deleteGithubUser(parsed.data.login, organization.id, user.id)
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }
       return data({ ok: true })
     })
     .with('update-type', async () => {
-      const parsed = updateTypeSchema.parse({
+      const parsed = updateTypeSchema.safeParse({
         login: formData.get('login'),
         type: formData.get('type'),
       })
-      await updateGithubUserType({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await updateGithubUserType({
+        ...parsed.data,
+        organizationId: organization.id,
+      })
       return data({ ok: true })
     })
     .with('toggle-active', async () => {
-      const parsed = toggleActiveSchema.parse({
+      const parsed = toggleActiveSchema.safeParse({
         login: formData.get('login'),
         isActive: formData.get('isActive'),
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
         await toggleGithubUserActive({
-          ...parsed,
+          ...parsed.data,
           organizationId: organization.id,
           currentUserId: user.id,
         })

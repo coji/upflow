@@ -9,13 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../../../+components/content-section'
 import type { Route } from './+types/index'
 import { listPullRequests } from './queries.server'
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })

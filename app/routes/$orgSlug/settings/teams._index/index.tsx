@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 import { addTeam, deleteTeam, updateTeam } from './mutations.server'
@@ -27,8 +27,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const teams = await listTeams(organization.id)
   return { teams }
 }
@@ -49,33 +49,42 @@ const deleteSchema = z.object({
   id: z.string().min(1),
 })
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 
   return match(intent)
     .with('add', async () => {
-      const parsed = addSchema.parse({
+      const parsed = addSchema.safeParse({
         name: formData.get('name'),
         displayOrder: formData.get('displayOrder'),
       })
-      await addTeam({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await addTeam({ ...parsed.data, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('update', async () => {
-      const parsed = updateSchema.parse({
+      const parsed = updateSchema.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
         displayOrder: formData.get('displayOrder'),
         personalLimit: formData.get('personalLimit'),
       })
-      await updateTeam({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await updateTeam({ ...parsed.data, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('delete', async () => {
-      const { id } = deleteSchema.parse({ id: formData.get('id') })
-      await deleteTeam(organization.id, id)
+      const parsed = deleteSchema.safeParse({ id: formData.get('id') })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await deleteTeam(organization.id, parsed.data.id)
       return data({ ok: true })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))

@@ -3,7 +3,7 @@ import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { createColumns } from './+components/members-columns'
 import { MembersTable } from './+components/members-table'
@@ -24,11 +24,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization, membership } = await requireOrgAdmin(
-    request,
-    params.orgSlug,
-  )
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization, membership } = context.get(orgContext)
   const searchParams = new URL(request.url).searchParams
 
   const { name } = QuerySchema.parse({
@@ -71,33 +68,41 @@ const removeMemberSchema = z.object({
   memberId: z.string().min(1),
 })
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization, membership } = await requireOrgAdmin(
-    request,
-    params.orgSlug,
-  )
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization, membership } = context.get(orgContext)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 
   return match(intent)
     .with('changeRole', async () => {
-      const { memberId, role } = changeRoleSchema.parse({
+      const parsed = changeRoleSchema.safeParse({
         memberId: formData.get('memberId'),
         role: formData.get('role'),
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
-        await changeMemberRole(memberId, organization.id, role, membership.id)
+        await changeMemberRole(
+          parsed.data.memberId,
+          organization.id,
+          parsed.data.role,
+          membership.id,
+        )
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }
       return data({ ok: true })
     })
     .with('removeMember', async () => {
-      const { memberId } = removeMemberSchema.parse({
+      const parsed = removeMemberSchema.safeParse({
         memberId: formData.get('memberId'),
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
-        await removeMember(memberId, organization.id, membership.id)
+        await removeMember(parsed.data.memberId, organization.id, membership.id)
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }
