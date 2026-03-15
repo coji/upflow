@@ -53,3 +53,21 @@ export const RISK_AREA_VALUES = [
 ] as const
 
 export type RiskArea = (typeof RISK_AREA_VALUES)[number]
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  ja: 'Japanese',
+  en: 'English',
+}
+
+/**
+ * LLM 出力言語を指定する `<output_language>` セクションを返す。
+ * language が未指定の場合は空文字を返す。
+ */
+export function buildOutputLanguageSection(
+  language?: string,
+  subject = 'the output',
+): string {
+  if (!language) return ''
+  const name = LANGUAGE_NAMES[language] ?? 'English'
+  return `\n\n<output_language>\nWrite ${subject} in ${name}.\n</output_language>`
+}

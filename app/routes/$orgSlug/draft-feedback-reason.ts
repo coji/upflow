@@ -2,7 +2,11 @@ import { GoogleGenAI } from '@google/genai'
 import { data } from 'react-router'
 import { z } from 'zod'
 import { escapeXml } from '~/app/libs/escape-xml'
-import { DECISION_PROCEDURE, SIZE_DEFINITIONS } from '~/app/libs/pr-size-prompt'
+import {
+  buildOutputLanguageSection,
+  DECISION_PROCEDURE,
+  SIZE_DEFINITIONS,
+} from '~/app/libs/pr-size-prompt'
 import { orgContext } from '~/app/middleware/context'
 import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -60,15 +64,7 @@ function extractReviewComments(reviewsJson: unknown): string {
 // 2. 入力と制約を分離
 // 3. 複数入力 + 厳密な形式 → 構造化タグ
 // 4. 広範囲な否定を避け、具体的な挙動を書く
-function buildSystemInstruction(language?: string): string {
-  const langSection = language
-    ? `\n\n<output_language>\nWrite the output in ${language === 'ja' ? 'Japanese' : 'English'}.\n</output_language>`
-    : ''
-
-  return SYSTEM_INSTRUCTION_BASE + langSection
-}
-
-const SYSTEM_INSTRUCTION_BASE = `<goal>
+const SYSTEM_INSTRUCTION = `<goal>
 Explain why a human reviewer corrected an AI's PR size classification. Generate a single short sentence (max 80 characters) grounded in the size definitions below.
 </goal>
 
@@ -122,12 +118,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const { pullRequestNumber, repositoryId, correctedComplexity } = parsed.data
   const tenantDb = getTenantDb(organization.id)
 
-  const orgSettings = await tenantDb
-    .selectFrom('organizationSettings')
-    .select('language')
-    .executeTakeFirst()
-
-  const [pr, rawData] = await Promise.all([
+  const [pr, rawData, orgSettings] = await Promise.all([
     tenantDb
       .selectFrom('pullRequests')
       .select([
@@ -149,6 +140,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       .select(['pullRequest', 'commits', 'reviews'])
       .where('pullRequestNumber', '=', pullRequestNumber)
       .where('repositoryId', '=', repositoryId)
+      .executeTakeFirst(),
+    tenantDb
+      .selectFrom('organizationSettings')
+      .select('language')
       .executeTakeFirst(),
   ])
 
@@ -185,7 +180,9 @@ Why did the human correct the classification from ${pr.complexity ?? 'unknown'} 
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        systemInstruction: buildSystemInstruction(orgSettings?.language),
+        systemInstruction:
+          SYSTEM_INSTRUCTION +
+          buildOutputLanguageSection(orgSettings?.language),
         thinkingConfig: { thinkingBudget: 0 },
         httpOptions: { timeout: 15_000 },
       },
