@@ -1,10 +1,13 @@
-import { data, useFetcher } from 'react-router'
+import { useState } from 'react'
+import { data, href, useFetcher, useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import {
   Alert,
   AlertDescription,
   Badge,
   Button,
+  Checkbox,
+  Label,
   Stack,
 } from '~/app/components/ui'
 import { useTimezone } from '~/app/hooks/use-timezone'
@@ -207,6 +210,50 @@ function RecalculateSection() {
   )
 }
 
+// --- Export Data Section ---
+
+function ExportDataSection() {
+  const { orgSlug } = useParams()
+  const [includeRaw, setIncludeRaw] = useState(false)
+
+  const handleDownload = () => {
+    if (!orgSlug) return
+    const params = includeRaw ? '?includeRaw=true' : ''
+    window.location.assign(
+      href('/:orgSlug/settings/data-management/export-parquet', {
+        orgSlug,
+      }) + params,
+    )
+  }
+
+  return (
+    <Stack>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Export PR Data</p>
+          <p className="text-muted-foreground text-xs">
+            Download all PR data as a Parquet file bundled with a data
+            dictionary. Analyze locally with DuckDB or Claude Code.
+          </p>
+        </div>
+        <Button type="button" onClick={handleDownload} className="shrink-0">
+          Download
+        </Button>
+      </div>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="include-raw"
+          checked={includeRaw}
+          onCheckedChange={(checked) => setIncludeRaw(checked === true)}
+        />
+        <Label htmlFor="include-raw" className="text-xs">
+          Include raw GitHub API data (larger file)
+        </Label>
+      </div>
+    </Stack>
+  )
+}
+
 // --- Page ---
 
 export default function DataManagementPage({
@@ -220,6 +267,7 @@ export default function DataManagementPage({
       <Stack gap="6">
         <RefreshSection refreshRequestedAt={refreshRequestedAt} />
         <RecalculateSection />
+        <ExportDataSection />
       </Stack>
     </ContentSection>
   )
