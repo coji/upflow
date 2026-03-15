@@ -1,47 +1,57 @@
 import {
-  ClockIcon,
-  GitPullRequestIcon,
-  LayoutDashboardIcon,
+  CircleDotIcon,
+  FunnelIcon,
+  GitMergeIcon,
+  LayersIcon,
   NotebookPenIcon,
   RocketIcon,
   SettingsIcon,
-  TimerIcon,
 } from 'lucide-react'
 import type { NavGroupProps } from './types'
 
 export function getNavConfig(orgSlug: string): NavGroupProps[] {
   return [
     {
-      title: 'Analytics',
+      title: 'Workload',
       items: [
         {
           title: 'Review Stacks',
-          url: `/${orgSlug}/stacks`,
-          icon: LayoutDashboardIcon,
+          url: `/${orgSlug}/workload`,
+          icon: LayersIcon,
         },
+      ],
+    },
+    {
+      title: 'Throughput',
+      items: [
         {
           title: 'Ongoing',
-          url: `/${orgSlug}/ongoing`,
-          icon: TimerIcon,
+          url: `/${orgSlug}/throughput/ongoing`,
+          icon: CircleDotIcon,
         },
         {
           title: 'Merged',
-          url: `/${orgSlug}/merged`,
-          icon: ClockIcon,
-        },
-        {
-          title: 'Reviews',
-          url: `/${orgSlug}/reviews`,
-          icon: GitPullRequestIcon,
+          url: `/${orgSlug}/throughput/merged`,
+          icon: GitMergeIcon,
         },
         {
           title: 'Deployed',
-          url: `/${orgSlug}/deployed`,
+          url: `/${orgSlug}/throughput/deployed`,
           icon: RocketIcon,
+        },
+      ],
+    },
+    {
+      title: 'Analysis',
+      items: [
+        {
+          title: 'Review Bottleneck',
+          url: `/${orgSlug}/analysis/reviews`,
+          icon: FunnelIcon,
         },
         {
           title: 'Feedbacks',
-          url: `/${orgSlug}/feedbacks`,
+          url: `/${orgSlug}/analysis/feedbacks`,
           icon: NotebookPenIcon,
         },
       ],

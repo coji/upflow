@@ -3,11 +3,11 @@ import type { RouteHandle } from '~/app/routes/$orgSlug/_layout'
 
 export const handle: RouteHandle = {
   breadcrumb: (_data: unknown, params?: Record<string, string>) => ({
-    label: 'Review Stacks',
-    to: `/${params?.orgSlug}/stacks`,
+    label: 'Analysis',
+    to: `/${params?.orgSlug}/analysis/reviews`,
   }),
 }
 
-export default function StacksLayout() {
+export default function AnalysisLayout() {
   return <Outlet />
 }

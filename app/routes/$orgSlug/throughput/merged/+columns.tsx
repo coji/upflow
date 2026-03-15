@@ -3,8 +3,8 @@ import { AppSortableHeader } from '~/app/components'
 import { Badge, HStack } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
-import { SizeBadgePopover } from '../+components/size-badge-popover'
-import { complexitySortingFn } from '../reviews/+functions/classify'
+import { SizeBadgePopover } from '~/app/routes/$orgSlug/+components/size-badge-popover'
+import { complexitySortingFn } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import type { PullRequest } from './index'
 
 export function createColumns(timezone: string): ColumnDef<PullRequest>[] {

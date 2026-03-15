@@ -21,7 +21,7 @@ import {
   type PRBlockData,
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
-import { PR_SIZE_RANK } from '~/app/routes/$orgSlug/reviews/+functions/classify'
+import { PR_SIZE_RANK } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import {
   getBacklogDetails,
   getCreatedPRs,
@@ -188,7 +188,7 @@ export default function MemberWeeklyPage({
       <div className="flex items-center justify-between">
         <HStack>
           <Link
-            to={`${href('/:orgSlug/stacks', { orgSlug: params.orgSlug })}${backQuery}`}
+            to={`${href('/:orgSlug/workload', { orgSlug: params.orgSlug })}${backQuery}`}
             className="text-muted-foreground hover:text-foreground text-sm"
           >
             ← Review Stacks

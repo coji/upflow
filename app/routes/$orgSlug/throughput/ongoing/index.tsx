@@ -19,7 +19,7 @@ import {
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
-import { listTeams } from '../settings/teams._index/queries.server'
+import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { createColumns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
 import { getOngoingPullRequestReport } from './+functions/queries.server'

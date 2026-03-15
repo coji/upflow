@@ -15,7 +15,7 @@ import dayjs from '~/app/libs/dayjs'
 import {
   PR_SIZE_LABELS,
   PR_SIZE_RANK,
-} from '~/app/routes/$orgSlug/reviews/+functions/classify'
+} from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import type {
   PersonStack,
   StackPR,
@@ -125,7 +125,7 @@ function MemberLink({
   const { orgSlug = '' } = useParams()
   const [searchParams] = useSearchParams()
   const query = searchParams.toString()
-  const basePath = href('/:orgSlug/stacks/:login', { orgSlug, login })
+  const basePath = href('/:orgSlug/workload/:login', { orgSlug, login })
   const linkTo = query ? `${basePath}?${query}` : basePath
   return (
     <Link

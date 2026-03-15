@@ -12,7 +12,7 @@ import {
   PR_SIZE_RANK,
   PR_SIZE_STYLE,
   type PRSizeLabel,
-} from '~/app/routes/$orgSlug/reviews/+functions/classify'
+} from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import type { FeedbackRow } from '../+functions/queries.server'
 
 function SizeBadgeInline({ size }: { size: string | null }) {

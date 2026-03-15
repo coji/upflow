@@ -8,8 +8,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/app/components/ui/sheet'
+import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
 import { parseRiskAreas } from '../+functions/classify'
-import { SizeBadge } from '../../+components/size-badge'
 
 export interface DrillDownPR {
   number: number
