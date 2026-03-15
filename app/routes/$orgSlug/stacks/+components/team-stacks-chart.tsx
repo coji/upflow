@@ -435,38 +435,6 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
         <ColorModeContext value={colorMode}>
           <HoverSourceColumnContext value={hoverSourceColumn}>
             <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-sm">
-                    Each block = 1 open PR. The dashed line marks the personal
-                    limit ({personalLimit}). Blocks past the line signal
-                    individual overload.
-                  </p>
-                  <Legend mode={colorMode} />
-                </div>
-                <ToggleGroup
-                  type="single"
-                  value={colorMode}
-                  onValueChange={(v) => {
-                    if (v) setColorMode(v as ColorMode)
-                  }}
-                  size="sm"
-                  className="bg-muted shrink-0 rounded-lg p-0.5"
-                >
-                  <ToggleGroupItem
-                    value="age"
-                    className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
-                  >
-                    Age
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="size"
-                    className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
-                  >
-                    Size
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
               {/* Dimming via DOM classes: .pr-hovering dims all buttons,
                 .pr-match + :hover exclude the matched/hovered ones */}
               <div
@@ -485,6 +453,37 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                   showAuthor
                   unassignedPRs={unassignedPRs}
                 />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <div className="flex items-center gap-3">
+                  <ToggleGroup
+                    type="single"
+                    value={colorMode}
+                    onValueChange={(v) => {
+                      if (v) setColorMode(v as ColorMode)
+                    }}
+                    size="sm"
+                    className="bg-muted shrink-0 rounded-lg p-0.5"
+                  >
+                    <ToggleGroupItem
+                      value="age"
+                      className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+                    >
+                      Age
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="size"
+                      className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+                    >
+                      Size
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <Legend mode={colorMode} />
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  1 block = 1 PR. Dashed line = personal limit ({personalLimit}
+                  ).
+                </p>
               </div>
               {insight && (
                 <p className="text-muted-foreground text-center text-sm">
