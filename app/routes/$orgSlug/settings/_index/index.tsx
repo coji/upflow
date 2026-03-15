@@ -48,6 +48,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     releaseDetectionKey,
     isActive,
     excludedUsers,
+    timezone,
   } = submission.value
 
   try {
@@ -57,6 +58,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       releaseDetectionKey,
       isActive,
       excludedUsers,
+      timezone,
     })
   } catch (_e) {
     return {

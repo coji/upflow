@@ -1,4 +1,5 @@
 import { CopyIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
@@ -15,11 +16,13 @@ import {
   DropdownMenuLabel,
 } from '~/app/components/ui/dropdown-menu'
 import WeeklyCalendar from '~/app/components/week-calendar'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { getOrganizationTimezone } from '~/app/libs/timezone.server'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
-import { columns } from './+columns'
+import { createColumns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
 import { getMergedPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
@@ -31,6 +34,7 @@ export type PullRequest = Awaited<
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgMember(request, params.orgSlug)
   const objective = 2.0
+  const timezone = await getOrganizationTimezone(organization.id)
 
   const url = new URL(request.url)
   const fromParam = url.searchParams.get('from')
@@ -41,11 +45,11 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   let from: dayjs.Dayjs
   let to: dayjs.Dayjs
   if (fromParam && toParam) {
-    from = parseDate(fromParam)
-    to = parseDate(toParam).add(1, 'day').subtract(1, 'second')
+    from = parseDate(fromParam, timezone)
+    to = parseDate(toParam, timezone).add(1, 'day').subtract(1, 'second')
   } else {
-    from = getStartOfWeek()
-    to = getEndOfWeek()
+    from = getStartOfWeek(undefined, timezone)
+    to = getEndOfWeek(undefined, timezone)
   }
 
   const teams = await listTeams(organization.id)
@@ -88,6 +92,8 @@ export default function OrganizationIndex({
   },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
+  const timezone = useTimezone()
+  const columns = useMemo(() => createColumns(timezone), [timezone])
 
   return (
     <Stack>

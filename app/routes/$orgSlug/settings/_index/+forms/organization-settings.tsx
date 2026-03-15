@@ -26,6 +26,8 @@ import {
 import { INTENTS, organizationSettingsSchema as schema } from '../+schema'
 import type { action } from '../../_index/index'
 
+const timezones = Intl.supportedValuesOf('timeZone')
+
 export const OrganizationSettings = ({
   organization,
   organizationSetting,
@@ -38,6 +40,7 @@ export const OrganizationSettings = ({
     releaseDetectionKey: string
     isActive: number
     excludedUsers: string
+    timezone: string
   }
 }) => {
   const actionData = useActionData<typeof action>()
@@ -56,6 +59,7 @@ export const OrganizationSettings = ({
       releaseDetectionKey: organizationSetting?.releaseDetectionKey,
       isActive: organizationSetting?.isActive ? '1' : undefined,
       excludedUsers: organizationSetting?.excludedUsers,
+      timezone: organizationSetting?.timezone ?? 'Asia/Tokyo',
     },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
@@ -104,6 +108,31 @@ export const OrganizationSettings = ({
           <div className="text-destructive">
             {fields.releaseDetectionKey.errors}
           </div>
+        </fieldset>
+
+        <fieldset className="space-y-1">
+          <Label htmlFor={fields.timezone.id}>Timezone</Label>
+          <Select
+            name={fields.timezone.name}
+            defaultValue={fields.timezone.initialValue}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a timezone" />
+            </SelectTrigger>
+            <SelectContent {...getSelectProps(fields.timezone)}>
+              <SelectGroup>
+                {timezones.map((tz) => (
+                  <SelectItem key={tz} value={tz}>
+                    {tz}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <p className="text-muted-foreground text-sm">
+            Timezone used for displaying dates throughout the dashboard.
+          </p>
+          <div className="text-destructive">{fields.timezone.errors}</div>
         </fieldset>
 
         <fieldset className="space-y-1">

@@ -11,9 +11,11 @@ import {
 } from '~/app/components/ui/popover'
 import { HStack, Stack } from '~/app/components/ui/stack'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { getOrganizationTimezone } from '~/app/libs/timezone.server'
 import {
   PRBlock,
   PRPopoverContent,
@@ -33,15 +35,16 @@ import type { Route } from './+types/index'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { organization } = await requireOrgMember(request, params.orgSlug)
+  const timezone = await getOrganizationTimezone(organization.id)
 
   const url = new URL(request.url)
   const weekParam = url.searchParams.get('week')
 
   const parsed = weekParam ? dayjs(weekParam, 'YYYY-MM-DD') : null
   const weekStart = parsed?.isValid()
-    ? getStartOfWeek(parsed.toDate())
-    : getStartOfWeek()
-  const weekEnd = getEndOfWeek(weekStart.toDate())
+    ? getStartOfWeek(parsed.toDate(), timezone)
+    : getStartOfWeek(undefined, timezone)
+  const weekEnd = getEndOfWeek(weekStart.toDate(), timezone)
   const from = weekStart.utc().toISOString()
   const to = weekEnd.utc().toISOString()
 
@@ -104,7 +107,11 @@ export default function MemberWeeklyPage({
 
   const prevWeek = dayjs(weekStart).subtract(7, 'day').format('YYYY-MM-DD')
   const nextWeek = dayjs(weekStart).add(7, 'day').format('YYYY-MM-DD')
-  const isCurrentWeek = dayjs(weekStart).isSame(getStartOfWeek(), 'day')
+  const timezone = useTimezone()
+  const isCurrentWeek = dayjs(weekStart).isSame(
+    getStartOfWeek(undefined, timezone),
+    'day',
+  )
 
   // Sort backlog PRs by color mode (assigned first, then by age or size)
   const sortBacklog = useMemo(() => {
@@ -153,13 +160,17 @@ export default function MemberWeeklyPage({
       dayNum: date.format('M/D'),
       holiday: holidays[dateStr] ?? null,
       created: createdPRs.filter(
-        (pr) => dayjs(pr.pullRequestCreatedAt).format('YYYY-MM-DD') === dateStr,
+        (pr) =>
+          dayjs(pr.pullRequestCreatedAt).tz(timezone).format('YYYY-MM-DD') ===
+          dateStr,
       ),
       merged: mergedPRs.filter(
-        (pr) => dayjs(pr.mergedAt).format('YYYY-MM-DD') === dateStr,
+        (pr) =>
+          dayjs(pr.mergedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
       ),
       reviewed: reviews.filter(
-        (r) => dayjs(r.submittedAt).format('YYYY-MM-DD') === dateStr,
+        (r) =>
+          dayjs(r.submittedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
       ),
     }
   })
@@ -436,7 +447,9 @@ export default function MemberWeeklyPage({
               title={pr.title}
               url={pr.url}
               complexity={pr.complexity}
-              date={dayjs(pr.pullRequestCreatedAt).format('M/D HH:mm')}
+              date={dayjs(pr.pullRequestCreatedAt)
+                .tz(timezone)
+                .format('M/D HH:mm')}
             />
           ))}
         </DetailSection>
@@ -456,7 +469,7 @@ export default function MemberWeeklyPage({
               title={pr.title}
               url={pr.url}
               complexity={pr.complexity}
-              date={dayjs(pr.mergedAt).format('M/D HH:mm')}
+              date={dayjs(pr.mergedAt).tz(timezone).format('M/D HH:mm')}
               extra={pr.totalTime ? `${pr.totalTime.toFixed(1)}d` : undefined}
             />
           ))}
@@ -478,7 +491,7 @@ export default function MemberWeeklyPage({
               url={r.url}
               complexity={r.complexity}
               author={r.author}
-              date={dayjs(r.submittedAt).format('M/D HH:mm')}
+              date={dayjs(r.submittedAt).tz(timezone).format('M/D HH:mm')}
               reviewState={r.state}
             />
           ))}

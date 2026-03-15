@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import ContentSection from '../+components/content-section'
-import { columns } from './+components/members-columns'
+import { createColumns } from './+components/members-columns'
 import { MembersTable } from './+components/members-table'
 import {
   FilterSchema,
@@ -107,6 +109,9 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 export default function OrganizationMembersPage({
   loaderData: { members, pagination, currentMembershipId },
 }: Route.ComponentProps) {
+  const timezone = useTimezone()
+  const columns = useMemo(() => createColumns(timezone), [timezone])
+
   return (
     <ContentSection
       title="Members"

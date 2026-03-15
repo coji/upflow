@@ -2,6 +2,7 @@ import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, Link, useActionData, useNavigation } from 'react-router'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { INTENTS, deleteOrganizationSchema as schema } from '../+schema'
 import type { action } from '../../danger/index'
@@ -17,6 +18,7 @@ interface DeleteOrganizationProps {
 export const DeleteOrganization = ({
   organization,
 }: DeleteOrganizationProps) => {
+  const timezone = useTimezone()
   const actionData = useActionData<typeof action>()
   const navigation = useNavigation()
   const isSubmitting =
@@ -45,7 +47,7 @@ export const DeleteOrganization = ({
           {' '}
           {dayjs
             .utc(organization.createdAt)
-            .tz('asia/tokyo')
+            .tz(timezone)
             .format('YYYY-MM-DD HH:mm:ss')}
         </div>
       </div>

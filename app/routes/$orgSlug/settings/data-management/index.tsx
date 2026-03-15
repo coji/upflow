@@ -7,6 +7,7 @@ import {
   Button,
   Stack,
 } from '~/app/components/ui'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
 import { clearAllCache } from '~/app/services/cache.server'
@@ -123,8 +124,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
 function RefreshSection({
   refreshRequestedAt,
+  timezone,
 }: {
   refreshRequestedAt: string | null
+  timezone: string
 }) {
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
@@ -155,8 +158,10 @@ function RefreshSection({
         <Alert>
           <AlertDescription>
             Scheduled at{' '}
-            {dayjs(refreshRequestedAt).format('YYYY-MM-DD HH:mm:ss')}. It will
-            run on the next crawl job.
+            {dayjs(refreshRequestedAt)
+              .tz(timezone)
+              .format('YYYY-MM-DD HH:mm:ss')}
+            . It will run on the next crawl job.
           </AlertDescription>
         </Alert>
       )}
@@ -211,13 +216,18 @@ function RecalculateSection() {
 export default function DataManagementPage({
   loaderData: { refreshRequestedAt },
 }: Route.ComponentProps) {
+  const timezone = useTimezone()
+
   return (
     <ContentSection
       title="Data Management"
       desc="Manage data refresh and recalculation for this organization."
     >
       <Stack gap="6">
-        <RefreshSection refreshRequestedAt={refreshRequestedAt} />
+        <RefreshSection
+          refreshRequestedAt={refreshRequestedAt}
+          timezone={timezone}
+        />
         <RecalculateSection />
       </Stack>
     </ContentSection>

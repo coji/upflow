@@ -82,86 +82,94 @@ function EditableDisplayName({
   )
 }
 
-export const columns: ColumnDef<GithubUserRow>[] = [
-  {
-    accessorKey: 'login',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Login" />
-    ),
-    cell: ({ row }) => {
-      const login = row.getValue<string>('login')
-      return (
-        <div className="flex items-center gap-2">
-          <Avatar className="size-7">
-            <AvatarImage src={`https://github.com/${login}.png`} alt={login} />
-            <AvatarFallback className="text-xs">
-              {login.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <Link
-            to={`https://github.com/${login}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-medium hover:underline"
-          >
-            {login}
-            <ExternalLinkIcon className="h-3 w-3" />
-          </Link>
-        </div>
-      )
+export function createColumns(timezone: string): ColumnDef<GithubUserRow>[] {
+  return [
+    {
+      accessorKey: 'login',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Login" />
+      ),
+      cell: ({ row }) => {
+        const login = row.getValue<string>('login')
+        return (
+          <div className="flex items-center gap-2">
+            <Avatar className="size-7">
+              <AvatarImage
+                src={`https://github.com/${login}.png`}
+                alt={login}
+              />
+              <AvatarFallback className="text-xs">
+                {login.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <Link
+              to={`https://github.com/${login}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-medium hover:underline"
+            >
+              {login}
+              <ExternalLinkIcon className="h-3 w-3" />
+            </Link>
+          </div>
+        )
+      },
+      enableHiding: false,
     },
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'displayName',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Display Name" />
-    ),
-    cell: ({ row }) => (
-      <EditableDisplayName
-        login={row.original.login}
-        displayName={row.getValue('displayName')}
-      />
-    ),
-  },
-  {
-    accessorKey: 'type',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Type" />
-    ),
-    cell: ({ row }) => (
-      <UserTypeSelect login={row.original.login} type={row.original.type} />
-    ),
-  },
-  {
-    accessorKey: 'isActive',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Login Status" />
-    ),
-    cell: ({ row }) => (
-      <Badge variant={row.original.isActive ? 'default' : 'outline'}>
-        {row.original.isActive ? 'Allowed' : 'Denied'}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created" />
-    ),
-    cell: ({ row }) => (
-      <div className="text-muted-foreground text-nowrap">
-        {dayjs.utc(row.getValue('createdAt')).format('YYYY-MM-DD')}
-      </div>
-    ),
-  },
-  {
-    id: 'actions',
-    cell: ({ row, table }) => (
-      <GithubUserRowActions
-        row={row}
-        isSelf={row.original.login === table.options.meta?.currentGithubLogin}
-      />
-    ),
-  },
-]
+    {
+      accessorKey: 'displayName',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Display Name" />
+      ),
+      cell: ({ row }) => (
+        <EditableDisplayName
+          login={row.original.login}
+          displayName={row.getValue('displayName')}
+        />
+      ),
+    },
+    {
+      accessorKey: 'type',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Type" />
+      ),
+      cell: ({ row }) => (
+        <UserTypeSelect login={row.original.login} type={row.original.type} />
+      ),
+    },
+    {
+      accessorKey: 'isActive',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Login Status" />
+      ),
+      cell: ({ row }) => (
+        <Badge variant={row.original.isActive ? 'default' : 'outline'}>
+          {row.original.isActive ? 'Allowed' : 'Denied'}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'createdAt',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Created" />
+      ),
+      cell: ({ row }) => (
+        <div className="text-muted-foreground text-nowrap">
+          {dayjs
+            .utc(row.getValue('createdAt'))
+            .tz(timezone)
+            .format('YYYY-MM-DD')}
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row, table }) => (
+        <GithubUserRowActions
+          row={row}
+          isSelf={row.original.login === table.options.meta?.currentGithubLogin}
+        />
+      ),
+    },
+  ]
+}

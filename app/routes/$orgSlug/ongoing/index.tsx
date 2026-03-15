@@ -1,4 +1,5 @@
 import { CopyIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
@@ -14,10 +15,11 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
 } from '~/app/components/ui/dropdown-menu'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
 import { listTeams } from '../settings/teams._index/queries.server'
-import { columns } from './+columns'
+import { createColumns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
 import { getOngoingPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
@@ -55,6 +57,8 @@ export default function OngoingPage({
   loaderData: { pullRequests, teams, businessDaysOnly },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
+  const timezone = useTimezone()
+  const columns = useMemo(() => createColumns(timezone), [timezone])
 
   return (
     <Stack>

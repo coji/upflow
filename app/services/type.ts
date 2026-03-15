@@ -52,11 +52,89 @@ export interface Invitations {
   teamId: string | null;
 }
 
+export interface Jwks {
+  createdAt: Generated<string>;
+  expiresAt: string | null;
+  id: string;
+  privateKey: string;
+  publicKey: string;
+}
+
 export interface Members {
   createdAt: string;
   id: string;
   organizationId: string;
   role: "owner" | "admin" | "member";
+  userId: string;
+}
+
+export interface OauthAccessToken {
+  clientId: string;
+  createdAt: Generated<string>;
+  expiresAt: string;
+  id: string;
+  referenceId: string | null;
+  refreshId: string | null;
+  scopes: string;
+  sessionId: string | null;
+  token: string;
+  userId: string | null;
+}
+
+export interface OauthClient {
+  clientId: string;
+  clientSecret: string | null;
+  contacts: string | null;
+  createdAt: Generated<string | null>;
+  disabled: Generated<number | null>;
+  enableEndSession: number | null;
+  grantTypes: string | null;
+  icon: string | null;
+  id: string;
+  metadata: string | null;
+  name: string | null;
+  policy: string | null;
+  postLogoutRedirectUris: string | null;
+  public: number | null;
+  redirectUris: string;
+  referenceId: string | null;
+  requirePkce: number | null;
+  responseTypes: string | null;
+  scopes: string | null;
+  skipConsent: number | null;
+  softwareId: string | null;
+  softwareStatement: string | null;
+  softwareVersion: string | null;
+  subjectType: string | null;
+  tokenEndpointAuthMethod: string | null;
+  tos: string | null;
+  type: string | null;
+  updatedAt: string | null;
+  uri: string | null;
+  userId: string | null;
+}
+
+export interface OauthConsent {
+  clientId: string;
+  createdAt: Generated<string>;
+  id: string;
+  referenceId: string | null;
+  scopes: string;
+  updatedAt: string | null;
+  userId: string | null;
+}
+
+export interface OauthRefreshToken {
+  authTime: string | null;
+  clientId: string;
+  createdAt: Generated<string>;
+  expiresAt: string;
+  id: string;
+  referenceId: string | null;
+  revoked: string | null;
+  scopes: string;
+  sessionId: string | null;
+  token: string;
   userId: string;
 }
 
@@ -125,7 +203,12 @@ export interface DB {
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
   invitations: Invitations;
+  jwks: Jwks;
   members: Members;
+  oauthAccessToken: OauthAccessToken;
+  oauthClient: OauthClient;
+  oauthConsent: OauthConsent;
+  oauthRefreshToken: OauthRefreshToken;
   organizations: Organizations;
   sessions: Sessions;
   teamMembers: TeamMembers;
