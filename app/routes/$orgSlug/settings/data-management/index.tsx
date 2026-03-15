@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { data, useFetcher, useParams } from 'react-router'
+import { data, href, useFetcher, useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import {
   Alert,
@@ -220,7 +220,9 @@ function ExportDataSection() {
     if (!orgSlug) return
     const params = includeRaw ? '?includeRaw=true' : ''
     window.location.assign(
-      `/${encodeURIComponent(orgSlug)}/settings/data-management/export-parquet${params}`,
+      href('/:orgSlug/settings/data-management/export-parquet', {
+        orgSlug,
+      }) + params,
     )
   }
 
