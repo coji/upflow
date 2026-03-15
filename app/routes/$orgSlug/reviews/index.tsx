@@ -36,6 +36,10 @@ import {
 } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: () => ({ label: 'Review Bottleneck' }),
+}
+
 const PERIOD_OPTIONS = [
   { value: '1', label: '1 month' },
   { value: '3', label: '3 months' },
@@ -122,7 +126,7 @@ clientLoader.hydrate = true as const
 
 export function HydrateFallback() {
   return (
-    <Stack gap="6">
+    <Stack>
       <PageHeader>
         <PageHeaderHeading>
           <PageHeaderTitle>Review Bottleneck</PageHeaderTitle>
@@ -147,7 +151,7 @@ export default function ReviewsPage({
   const [, setSearchParams] = useSearchParams()
 
   return (
-    <Stack gap="6">
+    <Stack>
       <PageHeader>
         <PageHeaderHeading>
           <PageHeaderTitle>Review Bottleneck</PageHeaderTitle>
@@ -180,9 +184,11 @@ export default function ReviewsPage({
         </PageHeaderActions>
       </PageHeader>
 
-      <QueueTrendChart data={queueTrend} />
-      <WipCycleChart data={wipCycle} rawData={wipCycleLabeled} />
-      <PRSizeChart data={prSizes} rawData={prSizesRaw} />
+      <div className="space-y-6">
+        <QueueTrendChart data={queueTrend} />
+        <WipCycleChart data={wipCycle} rawData={wipCycleLabeled} />
+        <PRSizeChart data={prSizes} rawData={prSizesRaw} />
+      </div>
     </Stack>
   )
 }

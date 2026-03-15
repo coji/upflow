@@ -27,6 +27,10 @@ import { generateMarkdown } from './+functions/generate-markdown'
 import { getMergedPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
+export const handle = {
+  breadcrumb: () => ({ label: 'Merged' }),
+}
+
 export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>
 >[0]
