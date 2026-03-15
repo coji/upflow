@@ -1,12 +1,22 @@
 import JSZip from 'jszip'
 import { randomUUID } from 'node:crypto'
-import { readFileSync, unlinkSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
+import { readFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { orgContext } from '~/app/middleware/context'
 import type { Route } from './+types/export-parquet'
 import { iterateExportRows } from './settings/data-management/+functions/build-export-data.server'
 import { writeParquetFile } from './settings/data-management/+functions/write-parquet.server'
+
+/** Read once at module load — this file only changes on deploy. */
+const dataDictionary = readFileSync(
+  resolve(
+    import.meta.dirname,
+    'settings/data-management/+data/DATA_DICTIONARY.md',
+  ),
+  'utf-8',
+)
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
@@ -20,15 +30,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     const rows = iterateExportRows(organization.id, { includeRaw })
     await writeParquetFile(rows, tmpPath, { includeRaw })
 
-    // Read compressed Parquet file + data dictionary
-    const parquetData = readFileSync(tmpPath)
-    const dataDictionary = readFileSync(
-      resolve(
-        import.meta.dirname,
-        'settings/data-management/+data/DATA_DICTIONARY.md',
-      ),
-      'utf-8',
-    )
+    // Read compressed Parquet file (async to avoid blocking event loop)
+    const parquetData = await readFile(tmpPath)
 
     // Bundle into ZIP
     const zip = new JSZip()
@@ -46,10 +49,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       },
     })
   } finally {
-    try {
-      unlinkSync(tmpPath)
-    } catch {
-      // temp file may not exist if writeParquetFile failed early
-    }
+    await unlink(tmpPath).catch((e) =>
+      console.warn('Failed to clean up temp file', tmpPath, e),
+    )
   }
 }

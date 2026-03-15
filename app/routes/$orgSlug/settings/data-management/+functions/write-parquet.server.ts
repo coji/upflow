@@ -11,47 +11,47 @@ const ROW_GROUP_SIZE = 1000
 /**
  * Helper to define a Parquet field with default compression.
  */
-function f(type: ParquetType, optional = false) {
+function field(type: ParquetType, optional = false) {
   return { type, optional, compression: COMPRESSION }
 }
 
 const BASE_FIELDS = {
-  repo: f('UTF8'),
-  number: f('INT32'),
-  title: f('UTF8'),
-  url: f('UTF8'),
-  state: f('UTF8'),
-  author: f('UTF8'),
-  source_branch: f('UTF8'),
-  target_branch: f('UTF8'),
-  first_committed_at: f('UTF8', true),
-  pull_request_created_at: f('UTF8'),
-  first_reviewed_at: f('UTF8', true),
-  merged_at: f('UTF8', true),
-  released_at: f('UTF8', true),
-  coding_time: f('DOUBLE', true),
-  pickup_time: f('DOUBLE', true),
-  review_time: f('DOUBLE', true),
-  deploy_time: f('DOUBLE', true),
-  total_time: f('DOUBLE', true),
-  additions: f('INT32', true),
-  deletions: f('INT32', true),
-  changed_files: f('INT32', true),
-  complexity: f('UTF8', true),
-  complexity_reason: f('UTF8', true),
-  corrected_complexity: f('UTF8', true),
-  author_display_name: f('UTF8', true),
-  author_is_active: f('BOOLEAN', true),
-  team_name: f('UTF8', true),
-  reviewers: f('UTF8'),
+  repo: field('UTF8'),
+  number: field('INT32'),
+  title: field('UTF8'),
+  url: field('UTF8'),
+  state: field('UTF8'),
+  author: field('UTF8'),
+  source_branch: field('UTF8'),
+  target_branch: field('UTF8'),
+  first_committed_at: field('UTF8', true),
+  pull_request_created_at: field('UTF8'),
+  first_reviewed_at: field('UTF8', true),
+  merged_at: field('UTF8', true),
+  released_at: field('UTF8', true),
+  coding_time: field('DOUBLE', true),
+  pickup_time: field('DOUBLE', true),
+  review_time: field('DOUBLE', true),
+  deploy_time: field('DOUBLE', true),
+  total_time: field('DOUBLE', true),
+  additions: field('INT32', true),
+  deletions: field('INT32', true),
+  changed_files: field('INT32', true),
+  complexity: field('UTF8', true),
+  complexity_reason: field('UTF8', true),
+  corrected_complexity: field('UTF8', true),
+  author_display_name: field('UTF8', true),
+  author_is_active: field('BOOLEAN', true),
+  team_name: field('UTF8', true),
+  reviewers: field('UTF8'),
 }
 
 const RAW_FIELDS = {
-  raw_pull_request: f('UTF8', true),
-  raw_commits: f('UTF8', true),
-  raw_reviews: f('UTF8', true),
-  raw_discussions: f('UTF8', true),
-  raw_timeline_items: f('UTF8', true),
+  raw_pull_request: field('UTF8', true),
+  raw_commits: field('UTF8', true),
+  raw_reviews: field('UTF8', true),
+  raw_discussions: field('UTF8', true),
+  raw_timeline_items: field('UTF8', true),
 }
 
 /**
