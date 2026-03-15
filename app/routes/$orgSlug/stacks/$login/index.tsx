@@ -85,7 +85,6 @@ export default function MemberWeeklyPage({
     backlog,
     holidays,
     weekStart,
-    weekEnd,
   },
   params,
 }: Route.ComponentProps) {
