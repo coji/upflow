@@ -15,8 +15,8 @@ import type { Route } from './+types/export-parquet'
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
 
-  const url = new URL(request.url)
-  const includeRaw = url.searchParams.get('includeRaw') === 'true'
+  const includeRaw =
+    new URL(request.url).searchParams.get('includeRaw') === 'true'
 
   const tmpPath = join(tmpdir(), `upflow-export-${randomUUID()}.parquet`)
 
@@ -34,10 +34,9 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   zip.file('data.parquet', createReadStream(tmpPath))
   zip.file('DATA_DICTIONARY.md', dataDictionary)
 
-  const zipStream = zip.generateNodeStream({
-    type: 'nodebuffer',
-    streamFiles: true,
-  })
+  const readable = Readable.from(
+    zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true }),
+  )
 
   // Clean up temp file when stream terminates (end, error, or destroy)
   let cleaned = false
@@ -48,18 +47,20 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       console.warn('Failed to clean up temp file', tmpPath, e),
     )
   }
-  zipStream.on('close', cleanup)
+  readable.on('close', cleanup)
+
+  // Abort the stream if the client disconnects
+  request.signal.addEventListener('abort', () => readable.destroy(), {
+    once: true,
+  })
 
   const today = new Date().toISOString().slice(0, 10)
   const filename = `upflow-export-${organization.slug}-${today}.zip`
 
-  return new Response(
-    createReadableStreamFromReadable(Readable.from(zipStream)),
-    {
-      headers: {
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
+  return new Response(createReadableStreamFromReadable(readable), {
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${filename}"`,
     },
-  )
+  })
 }
