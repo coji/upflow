@@ -119,11 +119,11 @@ export default function DeployedPage({
 
       <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
         <WeeklyCalendar
-          value={dayjs(from).toDate()}
-          onWeekChange={(start, end) => {
+          value={from}
+          onWeekChange={(start) => {
             setSearchParams((prev) => {
               prev.set('from', dayjs(start).format('YYYY-MM-DD'))
-              prev.set('to', dayjs(end).format('YYYY-MM-DD'))
+              prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
               return prev
             })
           }}

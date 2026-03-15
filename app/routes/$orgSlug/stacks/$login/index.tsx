@@ -302,10 +302,7 @@ export default function MemberWeeklyPage({
           </div>
         </div>
 
-        <WeeklyCalendar
-          value={dayjs(weekStart).toDate()}
-          onWeekChange={(start) => handleWeekChange(start)}
-        />
+        <WeeklyCalendar value={weekStart} onWeekChange={handleWeekChange} />
       </div>
 
       {/* Daily calendar */}

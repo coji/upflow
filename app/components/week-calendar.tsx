@@ -90,10 +90,10 @@ function WeekDayButton({
 }
 
 interface WeeklyCalendarProps {
-  /** Any date within the week to display. The component derives the full week from this. */
-  value: Date
-  /** Called with (weekStart, weekEnd) when the user navigates to a different week. */
-  onWeekChange: (start: Date, end: Date) => void
+  /** Any date within the week to display (Date or ISO string). The component derives the full week from this. */
+  value: Date | string
+  /** Called with the new week-start date when the user navigates to a different week. */
+  onWeekChange: (start: Date) => void
   /** Week start day: 0=Sunday … 6=Saturday. Defaults to 1 (Monday). */
   startDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6
 }
@@ -112,14 +112,18 @@ const WeeklyCalendar = ({
 }: WeeklyCalendarProps) => {
   const [open, setOpen] = React.useState(false)
 
+  // Convert to Date once, then derive a stable primitive key so useMemo
+  // doesn't re-run when the parent passes a new Date with the same timestamp.
+  const valueDate = value instanceof Date ? value : new Date(value)
+  const valueMs = valueDate.getTime()
   const weekInterval = useMemo(
-    () => getWeekInterval(value, startDay),
-    [value, startDay],
+    () => getWeekInterval(new Date(valueMs), startDay),
+    [valueMs, startDay],
   )
 
   const navigateTo = (date: Date) => {
-    const interval = getWeekInterval(date, startDay)
-    onWeekChange(interval.start, interval.end)
+    const { start } = getWeekInterval(date, startDay)
+    onWeekChange(start)
   }
 
   const handlePrevWeek = () => {
