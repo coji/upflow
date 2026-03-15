@@ -1,10 +1,13 @@
-import { data, useFetcher } from 'react-router'
+import { useState } from 'react'
+import { data, useFetcher, useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import {
   Alert,
   AlertDescription,
   Badge,
   Button,
+  Checkbox,
+  Label,
   Stack,
 } from '~/app/components/ui'
 import { useTimezone } from '~/app/hooks/use-timezone'
@@ -207,6 +210,80 @@ function RecalculateSection() {
   )
 }
 
+// --- Export Data Section ---
+
+function ExportDataSection() {
+  const { orgSlug } = useParams()
+  const [includeRaw, setIncludeRaw] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleDownload = async () => {
+    setIsDownloading(true)
+    setError(null)
+    try {
+      const params = includeRaw ? '?includeRaw=true' : ''
+      const response = await fetch(`/${orgSlug}/export-parquet${params}`)
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`)
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download =
+        response.headers
+          .get('Content-Disposition')
+          ?.match(/filename="(.+)"/)?.[1] ?? 'upflow-export.zip'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Download failed')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  return (
+    <Stack>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Export PR Data</p>
+          <p className="text-muted-foreground text-xs">
+            Download all PR data as a Parquet file bundled with a data
+            dictionary. Analyze locally with DuckDB or Claude Code.
+          </p>
+        </div>
+        <Button
+          type="button"
+          loading={isDownloading}
+          onClick={handleDownload}
+          className="shrink-0"
+        >
+          Download
+        </Button>
+      </div>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="include-raw"
+          checked={includeRaw}
+          onCheckedChange={(checked) => setIncludeRaw(checked === true)}
+        />
+        <Label htmlFor="include-raw" className="text-xs">
+          Include raw GitHub API data (larger file)
+        </Label>
+      </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+    </Stack>
+  )
+}
+
 // --- Page ---
 
 export default function DataManagementPage({
@@ -220,6 +297,7 @@ export default function DataManagementPage({
       <Stack gap="6">
         <RefreshSection refreshRequestedAt={refreshRequestedAt} />
         <RecalculateSection />
+        <ExportDataSection />
       </Stack>
     </ContentSection>
   )
