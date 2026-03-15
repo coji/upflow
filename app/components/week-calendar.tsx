@@ -1,7 +1,7 @@
 import { ja } from 'date-fns/locale'
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import * as React from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { DayButton } from 'react-day-picker'
 import {
   Button,
@@ -19,10 +19,13 @@ interface WeekInterval {
 }
 
 /**
- * Calculate the week interval (start Monday – end Sunday) containing
- * the given date, based on the specified week-start day.
+ * Calculate the week interval (start – end) containing the given date,
+ * based on the specified week-start day (0=Sun … 6=Sat, default 1=Mon).
  */
-const getWeekInterval = (date: Date, startOfWeekDay: number): WeekInterval => {
+export const getWeekInterval = (
+  date: Date,
+  startOfWeekDay: number,
+): WeekInterval => {
   const normalizedDate = dayjs(date).startOf('day')
   const dayOfWeek = normalizedDate.day()
 
@@ -81,42 +84,53 @@ function WeekDayButton({
 }
 
 interface WeeklyCalendarProps {
-  onWeekChange?: (start: Date, end: Date) => void
-  initialDate?: Date
+  /** Any date within the week to display. The component derives the full week from this. */
+  value: Date
+  /** Called with (weekStart, weekEnd) when the user navigates to a different week. */
+  onWeekChange: (start: Date, end: Date) => void
+  /** Week start day: 0=Sunday … 6=Saturday. Defaults to 1 (Monday). */
   startDay?: 0 | 1 | 2 | 3 | 4 | 5 | 6
 }
 
+/**
+ * Controlled week picker with prev/next navigation and calendar popover.
+ *
+ * The parent owns the week state (typically via URL search params).
+ * This component is stateless regarding the selected week — it derives
+ * the display from `value` and notifies changes via `onWeekChange`.
+ */
 const WeeklyCalendar = ({
+  value,
   onWeekChange,
-  initialDate = new Date(),
   startDay = 1,
 }: WeeklyCalendarProps) => {
-  const [open, setOpen] = useState(false)
-  const [weekInterval, setWeekInterval] = useState(() =>
-    getWeekInterval(initialDate, startDay),
+  const [open, setOpen] = React.useState(false)
+
+  const weekInterval = useMemo(
+    () => getWeekInterval(value, startDay),
+    [value, startDay],
   )
 
-  const changeWeek = (newDate: Date) => {
-    const interval = getWeekInterval(newDate, startDay)
-    setWeekInterval(interval)
-    onWeekChange?.(interval.start, interval.end)
+  const navigateTo = (date: Date) => {
+    const interval = getWeekInterval(date, startDay)
+    onWeekChange(interval.start, interval.end)
   }
 
   const handlePrevWeek = () => {
-    changeWeek(dayjs(weekInterval.start).subtract(7, 'day').toDate())
+    navigateTo(dayjs(weekInterval.start).subtract(7, 'day').toDate())
   }
 
   const handleNextWeek = () => {
-    changeWeek(dayjs(weekInterval.start).add(7, 'day').toDate())
+    navigateTo(dayjs(weekInterval.start).add(7, 'day').toDate())
   }
 
   const handleToday = () => {
-    changeWeek(new Date())
+    navigateTo(new Date())
   }
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      changeWeek(date)
+      navigateTo(date)
     }
     setOpen(false)
   }
@@ -180,7 +194,7 @@ const WeeklyCalendar = ({
         <PopoverContent className="w-auto p-0">
           <Calendar
             mode="single"
-            selected={dayjs(weekInterval.start).toDate()}
+            selected={weekInterval.start}
             defaultMonth={weekInterval.start}
             onSelect={handleDateSelect}
             weekStartsOn={startDay}

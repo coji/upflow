@@ -1,9 +1,7 @@
 import holiday_jp from '@holiday-jp/holiday_jp'
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link, href, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
-import { Button } from '~/app/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -11,6 +9,7 @@ import {
 } from '~/app/components/ui/popover'
 import { HStack, Stack } from '~/app/components/ui/stack'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
+import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
@@ -109,12 +108,12 @@ export default function MemberWeeklyPage({
   backParams.delete('week')
   const backQuery = backParams.size > 0 ? `?${backParams.toString()}` : ''
 
-  const prevWeek = dayjs(weekStart).subtract(7, 'day').format('YYYY-MM-DD')
-  const nextWeek = dayjs(weekStart).add(7, 'day').format('YYYY-MM-DD')
-  const isCurrentWeek = dayjs(weekStart).isSame(
-    getStartOfWeek(undefined, timezone),
-    'day',
-  )
+  const handleWeekChange = (start: Date) => {
+    setSearchParams((prev) => {
+      prev.set('week', dayjs(start).format('YYYY-MM-DD'))
+      return prev
+    })
+  }
 
   // Sort backlog PRs by color mode (assigned first, then by age or size)
   const sortBacklog = useMemo(() => {
@@ -177,8 +176,6 @@ export default function MemberWeeklyPage({
       ),
     }
   })
-
-  const weekLabel = `${dayjs(weekStart).format('YYYY/M/D')} - ${dayjs(weekEnd).format('M/D')}`
 
   return (
     <Stack>
@@ -306,38 +303,10 @@ export default function MemberWeeklyPage({
           </div>
         </div>
 
-        <HStack>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-7"
-            onClick={() =>
-              setSearchParams((prev) => {
-                prev.set('week', prevWeek)
-                return prev
-              })
-            }
-          >
-            <ChevronLeftIcon className="size-4" />
-          </Button>
-          <span className="min-w-32 text-center text-sm font-medium">
-            {weekLabel}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-7"
-            disabled={isCurrentWeek}
-            onClick={() =>
-              setSearchParams((prev) => {
-                prev.set('week', nextWeek)
-                return prev
-              })
-            }
-          >
-            <ChevronRightIcon className="size-4" />
-          </Button>
-        </HStack>
+        <WeeklyCalendar
+          value={dayjs(weekStart).toDate()}
+          onWeekChange={(start) => handleWeekChange(start)}
+        />
       </div>
 
       {/* Daily calendar */}

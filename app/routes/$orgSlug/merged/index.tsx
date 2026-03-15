@@ -119,7 +119,7 @@ export default function OrganizationIndex({
 
       <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
         <WeeklyCalendar
-          initialDate={dayjs(from).toDate()}
+          value={dayjs(from).toDate()}
           onWeekChange={(start, end) => {
             setSearchParams((prev) => {
               prev.set('from', dayjs(start).format('YYYY-MM-DD'))
