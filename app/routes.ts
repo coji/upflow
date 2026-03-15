@@ -8,8 +8,18 @@ export default [
     'well-known-routes/oauth-protected-resource.ts',
   ),
   route(
+    '.well-known/oauth-protected-resource/*',
+    'well-known-routes/oauth-protected-resource.ts',
+    { id: 'well-known-oauth-pr-splat' },
+  ),
+  route(
     '.well-known/oauth-authorization-server',
     'well-known-routes/oauth-authorization-server.ts',
+  ),
+  route(
+    '.well-known/oauth-authorization-server/*',
+    'well-known-routes/oauth-authorization-server.ts',
+    { id: 'well-known-oauth-as-splat' },
   ),
 
   // File-based routes
