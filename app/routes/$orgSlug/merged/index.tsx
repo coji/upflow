@@ -10,7 +10,7 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
-import { Badge, Button, HStack, Label, Stack } from '~/app/components/ui'
+import { Button, Label, Stack } from '~/app/components/ui'
 import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
@@ -118,34 +118,16 @@ export default function OrganizationIndex({
       </PageHeader>
 
       <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
-        <HStack>
-          <div>
-            <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
-              <div className="text-right">
-                <Badge variant="outline">From</Badge>
-              </div>
-              <div className="text-sm">
-                {dayjs(from).tz(timezone).format('YYYY-MM-DD HH:mm')}
-              </div>
-              <div className="text-right">
-                <Badge variant="outline">To</Badge>
-              </div>
-              <div className="text-sm">
-                {dayjs(to).tz(timezone).format('YYYY-MM-DD HH:mm')}
-              </div>
-            </div>
-          </div>
-          <WeeklyCalendar
-            initialDate={dayjs(from).toDate()}
-            onWeekChange={(start, end) => {
-              setSearchParams((prev) => {
-                prev.set('from', dayjs(start).format('YYYY-MM-DD'))
-                prev.set('to', dayjs(end).format('YYYY-MM-DD'))
-                return prev
-              })
-            }}
-          />
-        </HStack>
+        <WeeklyCalendar
+          value={from}
+          onWeekChange={(start) => {
+            setSearchParams((prev) => {
+              prev.set('from', dayjs(start).format('YYYY-MM-DD'))
+              prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
+              return prev
+            })
+          }}
+        />
 
         <div className="flex-1" />
 
