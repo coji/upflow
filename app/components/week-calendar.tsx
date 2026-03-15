@@ -79,7 +79,8 @@ function WeekDayButton({
       data-selected={isSelected}
       className={cn(
         className,
-        !isSelected && isOff && 'text-red-400',
+        !isSelected && isHoliday && 'text-red-500',
+        !isSelected && isWeekend && !isHoliday && 'text-muted-foreground/50',
         isSelected &&
           'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
         isWeekStart && 'rounded-l-lg',
