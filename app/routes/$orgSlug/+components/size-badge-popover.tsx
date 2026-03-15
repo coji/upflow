@@ -24,7 +24,7 @@ import {
   parseRiskAreas,
   type PRSize,
   type PRSizeLabel,
-} from '../analysis/reviews/+functions/classify'
+} from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 
 interface SizeBadgePopoverProps {
   complexity: string | null

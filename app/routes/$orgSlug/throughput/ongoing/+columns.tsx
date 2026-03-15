@@ -2,8 +2,8 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
-import { SizeBadgePopover } from '../../+components/size-badge-popover'
-import { complexitySortingFn } from '../../analysis/reviews/+functions/classify'
+import { SizeBadgePopover } from '~/app/routes/$orgSlug/+components/size-badge-popover'
+import { complexitySortingFn } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import type { PullRequest } from './index'
 
 export function createColumns(timezone: string): ColumnDef<PullRequest>[] {

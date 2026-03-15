@@ -21,13 +21,13 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '~/app/components/ui/chart'
+import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
 import type { PRSizeAggregation, PRSizeRawRow } from '../+functions/aggregate'
 import {
   PR_SIZE_COLORS,
   getPRComplexity,
   type PRSizeLabel,
 } from '../+functions/classify'
-import { SizeBadge } from '../../../+components/size-badge'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 const countConfig = {
