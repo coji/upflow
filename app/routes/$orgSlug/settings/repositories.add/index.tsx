@@ -22,7 +22,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import { clearAllCache, getCachedData } from '~/app/services/cache.server'
 import ContentSection from '../+components/content-section'
 import { RepositoryItem, RepositoryList } from './+components'
@@ -39,8 +39,12 @@ const AddRepoSchema = z.object({
   name: z.string(),
 })
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({
+  request,
+  params,
+  context,
+}: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const { owner, cursor, query, refresh } = zx.parseQuery(request, {
     owner: z.string().optional(),
     cursor: z.string().optional(),
@@ -103,8 +107,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
   const integration = await getIntegration(organization.id)
   if (!integration) {
     throw new Error('integration not created')

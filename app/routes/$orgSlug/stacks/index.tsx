@@ -6,7 +6,7 @@ import {
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
 import { Stack } from '~/app/components/ui/stack'
-import { requireOrgMember } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
 import {
@@ -19,8 +19,8 @@ import {
 } from './+functions/stacks.server'
 import type { Route } from './+types/index'
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgMember(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { listTeams } from '../teams._index/queries.server'
 import { createColumns } from './+components/repo-columns'
@@ -19,8 +19,8 @@ import {
 } from './mutations.server'
 import { listFilteredRepositories } from './queries.server'
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const searchParams = new URL(request.url).searchParams
 
   const { repo, team } = QuerySchema.parse({
@@ -63,8 +63,8 @@ const bulkUpdateTeamSchema = z.object({
   teamId: z.string().nullable(),
 })
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 

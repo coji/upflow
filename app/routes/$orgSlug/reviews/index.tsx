@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from '~/app/components/ui/select'
 import { Stack } from '~/app/components/ui/stack'
-import { requireOrgMember } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
+import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { getCachedData } from '~/app/services/cache.server'
 import { PRSizeChart } from './+components/pr-size-chart'
@@ -44,8 +44,8 @@ const PERIOD_OPTIONS = [
   { value: 'all', label: 'All time' },
 ] as const
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgMember(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')

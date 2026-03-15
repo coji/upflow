@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 import { addTeam, deleteTeam, updateTeam } from './mutations.server'
@@ -27,8 +27,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const teams = await listTeams(organization.id)
   return { teams }
 }
@@ -49,8 +49,8 @@ const deleteSchema = z.object({
   id: z.string().min(1),
 })
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 

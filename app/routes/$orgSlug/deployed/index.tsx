@@ -17,10 +17,9 @@ import {
 } from '~/app/components/ui/dropdown-menu'
 import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
-import { requireOrgMember } from '~/app/libs/auth.server'
 import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { getOrganizationTimezone } from '~/app/libs/timezone.server'
+import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { createColumns } from './+columns'
 import { generateMarkdown } from './+functions/generate-markdown'
@@ -31,10 +30,10 @@ export type PullRequest = Awaited<
   ReturnType<typeof getDeployedPullRequestReport>
 >[0]
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgMember(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const objective = 3.0
-  const timezone = await getOrganizationTimezone(organization.id)
+  const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
   const fromParam = url.searchParams.get('from')

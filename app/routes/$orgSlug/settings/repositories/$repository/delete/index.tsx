@@ -3,7 +3,7 @@ import { getFormProps, useForm } from '@conform-to/react'
 import { Form, Link, redirect, useNavigation } from 'react-router'
 import { z } from 'zod'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../../../+components/content-section'
 import { getRepository } from '../queries.server'
 import { deleteRepository } from './+functions/mutations.server'
@@ -11,8 +11,8 @@ import type { Route } from './+types/index'
 
 export const handle = { breadcrumb: () => ({ label: 'Delete' }) }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
@@ -23,8 +23,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   return { organization, repositoryId, repository }
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ params, context }: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })

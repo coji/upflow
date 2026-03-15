@@ -8,8 +8,8 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { useTimezone } from '~/app/hooks/use-timezone'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
+import { orgContext } from '~/app/middleware/context'
 import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import {
@@ -28,8 +28,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
 
   const tenantDb = getTenantDb(organization.id)
   const organizationSetting = await tenantDb
@@ -42,17 +42,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization: orgContext } = await requireOrgAdmin(
-    request,
-    params.orgSlug,
-  )
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization: org } = context.get(orgContext)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 
   return match(intent)
     .with('refresh', async () => {
-      const tenantDb = getTenantDb(orgContext.id)
+      const tenantDb = getTenantDb(org.id)
       await tenantDb
         .updateTable('organizationSettings')
         .set({ refreshRequestedAt: new Date().toISOString() })
@@ -61,7 +58,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       return data({ intent: 'refresh' as const, ok: true })
     })
     .with('recalculate', async () => {
-      const organization = await getOrganization(orgContext.id)
+      const organization = await getOrganization(org.id)
       if (!organization.integration) {
         return data(
           {
@@ -80,13 +77,13 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
       try {
         const { pulls, reviewResponses } = await analyzeRepos(
-          orgContext.id,
+          org.id,
           organization.organizationSetting,
           organization.repositories,
         )
 
         for (const pr of pulls) {
-          await upsertPullRequest(orgContext.id, pr)
+          await upsertPullRequest(org.id, pr)
         }
 
         if (organization.exportSetting) {

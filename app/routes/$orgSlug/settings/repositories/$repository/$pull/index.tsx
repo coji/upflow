@@ -5,7 +5,7 @@ import { useFetcher, useRevalidator } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import {
   upsertPullRequest,
   upsertPullRequestReview,
@@ -36,8 +36,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId, pull: pullId } = zx.parseParams(params, {
     repository: z.string(),
     pull: zx.NumAsString,
@@ -71,8 +71,12 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
 const intentSchema = z.enum(['compare', 'refresh'])
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({
+  request,
+  params,
+  context,
+}: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId, pull: pullId } = zx.parseParams(params, {
     repository: z.string(),
     pull: zx.NumAsString,

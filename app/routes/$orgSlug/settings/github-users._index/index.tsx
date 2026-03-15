@@ -3,7 +3,7 @@ import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
 import { createColumns } from './+components/github-users-columns'
@@ -31,8 +31,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization, user } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const { organization, user } = context.get(orgContext)
   const searchParams = new URL(request.url).searchParams
 
   // GitHub user search for combobox candidates
@@ -118,8 +118,8 @@ const toggleActiveSchema = z.object({
     .pipe(z.union([z.literal(0), z.literal(1)])),
 })
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization, user } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization, user } = context.get(orgContext)
   const formData = await request.formData()
   const intent = String(formData.get('intent'))
 

@@ -1,7 +1,7 @@
 import { zx } from '@coji/zodix/v4'
 import { Outlet } from 'react-router'
 import { z } from 'zod'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import type { Route } from './+types/_layout'
 import { getRepository } from './queries.server'
 
@@ -15,8 +15,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })

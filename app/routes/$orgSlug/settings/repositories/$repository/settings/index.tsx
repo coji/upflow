@@ -22,7 +22,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import { requireOrgAdmin } from '~/app/libs/auth.server'
+import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../../../+components/content-section'
 import { getRepository } from '../queries.server'
 import { updateRepository } from './+functions/mutations.server'
@@ -39,8 +39,8 @@ const githubSchema = z.object({
   releaseDetectionKey: z.string().min(1),
 })
 
-export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
@@ -61,8 +61,12 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 }
 
-export const action = async ({ request, params }: Route.ActionArgs) => {
-  const { organization } = await requireOrgAdmin(request, params.orgSlug)
+export const action = async ({
+  request,
+  params,
+  context,
+}: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
