@@ -1,8 +1,10 @@
 import JSZip from 'jszip'
 import { randomUUID } from 'node:crypto'
-import { readFile, unlink } from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
+import { unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { Readable } from 'node:stream'
 import { orgContext } from '~/app/middleware/context'
 import dataDictionary from './+data/DATA_DICTIONARY.md?raw'
 import { iterateExportRows } from './+functions/build-export-data.server'
@@ -16,32 +18,40 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const includeRaw = url.searchParams.get('includeRaw') === 'true'
 
   const tmpPath = join(tmpdir(), `upflow-export-${randomUUID()}.parquet`)
-  try {
-    // Stream rows from SQLite → Parquet temp file
-    const rows = iterateExportRows(organization.id, { includeRaw })
-    await writeParquetFile(rows, tmpPath, { includeRaw })
 
-    // Read compressed Parquet file (async to avoid blocking event loop)
-    const parquetData = await readFile(tmpPath)
+  // Stream rows from SQLite → Parquet temp file
+  const rows = iterateExportRows(organization.id, { includeRaw })
+  await writeParquetFile(rows, tmpPath, { includeRaw })
 
-    // Bundle into ZIP
-    const zip = new JSZip()
-    zip.file('data.parquet', parquetData)
-    zip.file('DATA_DICTIONARY.md', dataDictionary)
-    const zipBuffer = await zip.generateAsync({ type: 'uint8array' })
+  // Stream Parquet file into ZIP (no full-file read into memory)
+  const zip = new JSZip()
+  zip.file('data.parquet', createReadStream(tmpPath))
+  zip.file('DATA_DICTIONARY.md', dataDictionary)
 
-    const today = new Date().toISOString().slice(0, 10)
-    const filename = `upflow-export-${organization.slug}-${today}.zip`
+  const zipStream = zip.generateNodeStream({
+    type: 'nodebuffer',
+    streamFiles: true,
+  })
 
-    return new Response(Buffer.from(zipBuffer), {
-      headers: {
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-    })
-  } finally {
-    await unlink(tmpPath).catch((e) =>
+  // Clean up temp file once the ZIP stream finishes reading it
+  const cleanup = () => {
+    unlink(tmpPath).catch((e) =>
       console.warn('Failed to clean up temp file', tmpPath, e),
     )
   }
+  zipStream.on('end', cleanup)
+  zipStream.on('error', cleanup)
+
+  // Convert Node stream to Web ReadableStream for Response
+  const webStream = Readable.toWeb(Readable.from(zipStream))
+
+  const today = new Date().toISOString().slice(0, 10)
+  const filename = `upflow-export-${organization.slug}-${today}.zip`
+
+  return new Response(webStream as ReadableStream, {
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    },
+  })
 }
