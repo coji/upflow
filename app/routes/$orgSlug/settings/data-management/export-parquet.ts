@@ -34,7 +34,10 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   zip.file('data.parquet', createReadStream(tmpPath))
   zip.file('DATA_DICTIONARY.md', dataDictionary)
 
-  const readable = Readable.from(
+  // JSZip's generateNodeStream returns a legacy NodeJS.ReadableStream (not
+  // a stream.Readable). Readable.wrap() bridges the legacy interface so we
+  // can use it with createReadableStreamFromReadable.
+  const readable = new Readable().wrap(
     zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true }),
   )
 
