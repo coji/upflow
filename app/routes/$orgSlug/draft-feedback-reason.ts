@@ -8,7 +8,7 @@ import {
   SIZE_DEFINITIONS,
 } from '~/app/libs/pr-size-prompt'
 import { orgContext } from '~/app/middleware/context'
-import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/reviews/+functions/classify'
+import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { Route } from './+types/draft-feedback-reason'
 

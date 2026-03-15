@@ -1,6 +1,9 @@
 import { Badge } from '~/app/components/ui'
 import { cn } from '~/app/libs/utils'
-import { PR_SIZE_STYLE, getPRComplexity } from '../reviews/+functions/classify'
+import {
+  PR_SIZE_STYLE,
+  getPRComplexity,
+} from '../analysis/reviews/+functions/classify'
 
 export function SizeBadge({ complexity }: { complexity: string | null }) {
   const label = getPRComplexity({ complexity })

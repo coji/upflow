@@ -1,7 +1,7 @@
 import { data } from 'react-router'
 import { z } from 'zod'
 import { orgContext } from '~/app/middleware/context'
-import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/reviews/+functions/classify'
+import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { Route } from './+types/pr-size-feedback'
 

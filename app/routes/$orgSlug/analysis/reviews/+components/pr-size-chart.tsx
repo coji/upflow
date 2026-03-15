@@ -27,7 +27,7 @@ import {
   getPRComplexity,
   type PRSizeLabel,
 } from '../+functions/classify'
-import { SizeBadge } from '../../+components/size-badge'
+import { SizeBadge } from '../../../+components/size-badge'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 const countConfig = {

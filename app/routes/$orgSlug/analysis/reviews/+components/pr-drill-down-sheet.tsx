@@ -9,7 +9,7 @@ import {
   SheetTitle,
 } from '~/app/components/ui/sheet'
 import { parseRiskAreas } from '../+functions/classify'
-import { SizeBadge } from '../../+components/size-badge'
+import { SizeBadge } from '../../../+components/size-badge'
 
 export interface DrillDownPR {
   number: number

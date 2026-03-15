@@ -12,36 +12,46 @@ import type { NavGroupProps } from './types'
 export function getNavConfig(orgSlug: string): NavGroupProps[] {
   return [
     {
-      title: 'Analytics',
+      title: 'Workload',
       items: [
         {
           title: 'Review Stacks',
-          url: `/${orgSlug}/stacks`,
+          url: `/${orgSlug}/workload`,
           icon: LayoutDashboardIcon,
         },
+      ],
+    },
+    {
+      title: 'Throughput',
+      items: [
         {
           title: 'Ongoing',
-          url: `/${orgSlug}/ongoing`,
+          url: `/${orgSlug}/throughput/ongoing`,
           icon: TimerIcon,
         },
         {
           title: 'Merged',
-          url: `/${orgSlug}/merged`,
+          url: `/${orgSlug}/throughput/merged`,
           icon: ClockIcon,
         },
         {
-          title: 'Reviews',
-          url: `/${orgSlug}/reviews`,
+          title: 'Deployed',
+          url: `/${orgSlug}/throughput/deployed`,
+          icon: RocketIcon,
+        },
+      ],
+    },
+    {
+      title: 'Analysis',
+      items: [
+        {
+          title: 'Review Bottleneck',
+          url: `/${orgSlug}/analysis/reviews`,
           icon: GitPullRequestIcon,
         },
         {
-          title: 'Deployed',
-          url: `/${orgSlug}/deployed`,
-          icon: RocketIcon,
-        },
-        {
           title: 'Feedbacks',
-          url: `/${orgSlug}/feedbacks`,
+          url: `/${orgSlug}/analysis/feedbacks`,
           icon: NotebookPenIcon,
         },
       ],
