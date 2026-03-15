@@ -7,6 +7,8 @@ import { db, dialect } from '~/app/services/db.server'
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
+import type { MemberRole } from './member-role'
+import { RESERVED_SLUGS } from './reserved-slugs'
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -356,13 +358,10 @@ export const requireSuperAdmin = async (request: Request) => {
 
 // ── Organization membership helpers ──────────────────────────────
 
-import { RESERVED_SLUGS } from './reserved-slugs'
-
 export const isReservedSlug = (slug: string): boolean => {
   return RESERVED_SLUGS.has(slug.toLowerCase())
 }
 
-import type { MemberRole } from './member-role'
 export { isOrgAdmin } from './member-role'
 export type { MemberRole } from './member-role'
 
