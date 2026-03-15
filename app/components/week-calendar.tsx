@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from '~/app/components/ui'
 import dayjs from '~/app/libs/dayjs'
-import { cn } from '../libs/utils'
+import { cn } from '~/app/libs/utils'
 
 interface WeekInterval {
   start: Date
