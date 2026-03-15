@@ -63,8 +63,6 @@ function WeekDayButton({
   const dayOfWeek = day.date.getDay()
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
   const isHoliday = holiday_jp.isHoliday(day.date)
-  const isOff = isWeekend || isHoliday
-
   const ref = React.useRef<HTMLButtonElement>(null)
   React.useEffect(() => {
     if (modifiers.focused) ref.current?.focus()
