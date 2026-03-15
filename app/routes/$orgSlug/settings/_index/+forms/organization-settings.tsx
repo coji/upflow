@@ -62,7 +62,7 @@ export const OrganizationSettings = ({
       isActive: organizationSetting?.isActive ? '1' : undefined,
       excludedUsers: organizationSetting?.excludedUsers,
       timezone: organizationSetting?.timezone ?? DEFAULT_TIMEZONE,
-      language: organizationSetting?.language ?? 'en',
+      language: organizationSetting?.language,
     },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
