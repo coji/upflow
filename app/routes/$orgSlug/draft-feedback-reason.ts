@@ -2,13 +2,13 @@ import { GoogleGenAI } from '@google/genai'
 import { data } from 'react-router'
 import { z } from 'zod'
 import { escapeXml } from '~/app/libs/escape-xml'
+import { PR_SIZE_LABELS } from '~/app/libs/pr-classify'
 import {
   buildOutputLanguageSection,
   DECISION_PROCEDURE,
   SIZE_DEFINITIONS,
 } from '~/app/libs/pr-size-prompt'
 import { orgContext } from '~/app/middleware/context'
-import { PR_SIZE_LABELS } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { Route } from './+types/draft-feedback-reason'
 

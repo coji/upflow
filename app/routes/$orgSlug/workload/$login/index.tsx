@@ -1,6 +1,7 @@
 import holiday_jp from '@holiday-jp/holiday_jp'
 import { useMemo } from 'react'
 import { Link, href, useSearchParams } from 'react-router'
+import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Popover,
@@ -13,6 +14,7 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import {
   PRBlock,
@@ -20,8 +22,6 @@ import {
   REVIEW_STATE_STYLE,
   type PRBlockData,
 } from '~/app/routes/$orgSlug/+components/pr-block'
-import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
-import { PR_SIZE_RANK } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
 import {
   getBacklogDetails,
   getCreatedPRs,

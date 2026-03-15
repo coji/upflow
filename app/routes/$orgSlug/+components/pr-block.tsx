@@ -1,10 +1,10 @@
+import { SizeBadge } from '~/app/components/size-badge'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
 import dayjs from '~/app/libs/dayjs'
-import { SizeBadge } from './size-badge'
 
 export type PRBlockColorMode = 'size' | 'age'
 

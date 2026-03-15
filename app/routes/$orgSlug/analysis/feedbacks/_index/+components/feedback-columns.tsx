@@ -7,12 +7,12 @@ import {
   TooltipTrigger,
 } from '~/app/components/ui/tooltip'
 import dayjs from '~/app/libs/dayjs'
-import { cn } from '~/app/libs/utils'
 import {
   PR_SIZE_RANK,
   PR_SIZE_STYLE,
   type PRSizeLabel,
-} from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
+} from '~/app/libs/pr-classify'
+import { cn } from '~/app/libs/utils'
 import type { FeedbackRow } from '../+functions/queries.server'
 
 function SizeBadgeInline({ size }: { size: string | null }) {
