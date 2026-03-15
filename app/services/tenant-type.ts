@@ -76,6 +76,7 @@ export interface OrganizationSettings {
   refreshRequestedAt: string | null;
   releaseDetectionKey: Generated<string>;
   releaseDetectionMethod: Generated<"branch" | "tags">;
+  timezone: Generated<string>;
   updatedAt: string;
 }
 

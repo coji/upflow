@@ -7,6 +7,7 @@ import {
   Button,
   Stack,
 } from '~/app/components/ui'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import dayjs from '~/app/libs/dayjs'
 import { clearAllCache } from '~/app/services/cache.server'
@@ -126,6 +127,7 @@ function RefreshSection({
 }: {
   refreshRequestedAt: string | null
 }) {
+  const timezone = useTimezone()
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
   const isScheduled =
@@ -155,8 +157,10 @@ function RefreshSection({
         <Alert>
           <AlertDescription>
             Scheduled at{' '}
-            {dayjs(refreshRequestedAt).format('YYYY-MM-DD HH:mm:ss')}. It will
-            run on the next crawl job.
+            {dayjs(refreshRequestedAt)
+              .tz(timezone)
+              .format('YYYY-MM-DD HH:mm:ss')}
+            . It will run on the next crawl job.
           </AlertDescription>
         </Alert>
       )}

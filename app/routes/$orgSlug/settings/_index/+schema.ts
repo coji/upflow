@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const VALID_TIMEZONES = new Set(Intl.supportedValuesOf('timeZone'))
+
 export const organizationSettingsSchema = z.object({
   name: z.string().min(1, { message: 'name is required' }).max(100),
   releaseDetectionMethod: z.enum(['branch', 'tags']),
@@ -9,6 +11,9 @@ export const organizationSettingsSchema = z.object({
     .optional()
     .transform((val) => (val === 'on' ? 1 : 0)),
   excludedUsers: z.string().max(2000).default(''),
+  timezone: z.string().refine((v) => VALID_TIMEZONES.has(v), {
+    message: 'Invalid timezone',
+  }),
 })
 
 export const integrationSettingsSchema = z.object({

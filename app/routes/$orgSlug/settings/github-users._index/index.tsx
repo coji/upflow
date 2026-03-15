@@ -1,10 +1,12 @@
+import { useMemo } from 'react'
 import { data } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
-import { columns } from './+components/github-users-columns'
+import { createColumns } from './+components/github-users-columns'
 import { GithubUsersTable } from './+components/github-users-table'
 import { searchGithubUsers } from './+functions/search-github-users.server'
 import {
@@ -177,6 +179,9 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 export default function GithubUsersPage({
   loaderData: { githubUsers, pagination, currentGithubLogin },
 }: Route.ComponentProps) {
+  const timezone = useTimezone()
+  const columns = useMemo(() => createColumns(timezone), [timezone])
+
   return (
     <ContentSection
       title="GitHub Users"

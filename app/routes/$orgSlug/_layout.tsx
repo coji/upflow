@@ -5,6 +5,7 @@ import { Main } from '~/app/components/layout/main'
 import { SidebarProvider } from '~/app/components/ui/sidebar'
 import { useBreadcrumbs } from '~/app/hooks/use-breadcrumbs'
 import { getUserOrganizations, requireOrgMember } from '~/app/libs/auth.server'
+import { getOrganizationTimezone } from '~/app/libs/timezone.server'
 import { cn } from '~/app/libs/utils'
 import type { Route } from './+types/_layout'
 
@@ -37,7 +38,10 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     request,
     orgSlug,
   )
-  const organizations = await getUserOrganizations(user.id)
+  const [organizations, timezone] = await Promise.all([
+    getUserOrganizations(user.id),
+    getOrganizationTimezone(organization.id),
+  ])
 
   const cookieHeader = request.headers.get('Cookie') ?? ''
   const sidebarState = cookieHeader
@@ -46,7 +50,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     ?.split('=')[1]
   const defaultOpen = sidebarState !== 'false'
 
-  return { user, organization, membership, organizations, defaultOpen }
+  return {
+    user,
+    organization,
+    membership,
+    organizations,
+    defaultOpen,
+    timezone,
+  }
 }
 
 export default function OrgLayout({

@@ -1,11 +1,11 @@
 import dayjs from '~/app/libs/dayjs'
 
-export const parseDate = (date: string | null, timeZone = 'Asia/Tokyo') => {
+export const parseDate = (date: string | null, timeZone: string) => {
   const dt = date ? dayjs(date, 'YYYY-MM-DD') : dayjs()
   return dt.tz(timeZone).startOf('day')
 }
 
-export function getStartOfWeek(now = new Date(), timezone = 'Asia/Tokyo') {
+export function getStartOfWeek(now = new Date(), timezone: string) {
   const tzNow = dayjs(now).tz(timezone)
 
   // 今日の日付 (00:00:00)
@@ -26,7 +26,7 @@ export function getStartOfWeek(now = new Date(), timezone = 'Asia/Tokyo') {
   return today.subtract(dayOfWeek - 1, 'day')
 }
 
-export function getEndOfWeek(now = new Date(), timezone = 'Asia/Tokyo') {
+export function getEndOfWeek(now = new Date(), timezone: string) {
   const startOfWeek = getStartOfWeek(now, timezone)
   return startOfWeek.add(7, 'day').subtract(1, 'second')
 }
