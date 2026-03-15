@@ -42,6 +42,7 @@ export const OrganizationSettings = ({
     isActive: number
     excludedUsers: string
     timezone: string
+    language: string
   }
 }) => {
   const actionData = useActionData<typeof action>()
@@ -61,6 +62,7 @@ export const OrganizationSettings = ({
       isActive: organizationSetting?.isActive ? '1' : undefined,
       excludedUsers: organizationSetting?.excludedUsers,
       timezone: organizationSetting?.timezone ?? DEFAULT_TIMEZONE,
+      language: organizationSetting?.language ?? 'en',
     },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
@@ -134,6 +136,29 @@ export const OrganizationSettings = ({
             Timezone used for displaying dates throughout the dashboard.
           </p>
           <div className="text-destructive">{fields.timezone.errors}</div>
+        </fieldset>
+
+        <fieldset className="space-y-1">
+          <Label htmlFor={fields.language.id}>Language</Label>
+          <Select
+            name={fields.language.name}
+            defaultValue={fields.language.initialValue}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a language" />
+            </SelectTrigger>
+            <SelectContent {...getSelectProps(fields.language)}>
+              <SelectGroup>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="ja">Japanese</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <p className="text-muted-foreground text-sm">
+            Language used for AI-generated content such as PR classification
+            reasons.
+          </p>
+          <div className="text-destructive">{fields.language.errors}</div>
         </fieldset>
 
         <fieldset className="space-y-1">

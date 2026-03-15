@@ -28,6 +28,7 @@ export const updateOrganizationSetting = async (
     | 'isActive'
     | 'excludedUsers'
     | 'timezone'
+    | 'language'
   >,
 ) => {
   const tenantDb = getTenantDb(organizationId)

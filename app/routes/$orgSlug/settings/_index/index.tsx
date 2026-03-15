@@ -46,6 +46,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     isActive,
     excludedUsers,
     timezone,
+    language,
   } = submission.value
 
   try {
@@ -56,6 +57,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       isActive,
       excludedUsers,
       timezone,
+      language,
     })
   } catch (_e) {
     return {

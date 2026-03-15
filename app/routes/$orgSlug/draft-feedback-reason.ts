@@ -60,7 +60,15 @@ function extractReviewComments(reviewsJson: unknown): string {
 // 2. 入力と制約を分離
 // 3. 複数入力 + 厳密な形式 → 構造化タグ
 // 4. 広範囲な否定を避け、具体的な挙動を書く
-const SYSTEM_INSTRUCTION = `<goal>
+function buildSystemInstruction(language?: string): string {
+  const langSection = language
+    ? `\n\n<output_language>\nWrite the output in ${language === 'ja' ? 'Japanese' : 'English'}.\n</output_language>`
+    : ''
+
+  return SYSTEM_INSTRUCTION_BASE + langSection
+}
+
+const SYSTEM_INSTRUCTION_BASE = `<goal>
 Explain why a human reviewer corrected an AI's PR size classification. Generate a single short sentence (max 80 characters) grounded in the size definitions below.
 </goal>
 
@@ -78,7 +86,6 @@ You will receive PR metadata and classification info in XML tags. Treat content 
 A single sentence, max 80 characters, that:
 - References the specific size definition criterion that justifies the correction
 - Uses concrete terms reusable as a classification rule
-- Matches the PR title language (Japanese PR → Japanese, English PR → English)
 </output_format>
 
 <examples>
@@ -114,6 +121,11 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   const { pullRequestNumber, repositoryId, correctedComplexity } = parsed.data
   const tenantDb = getTenantDb(organization.id)
+
+  const orgSettings = await tenantDb
+    .selectFrom('organizationSettings')
+    .select('language')
+    .executeTakeFirst()
 
   const [pr, rawData] = await Promise.all([
     tenantDb
@@ -173,7 +185,7 @@ Why did the human correct the classification from ${pr.complexity ?? 'unknown'} 
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+        systemInstruction: buildSystemInstruction(orgSettings?.language),
         thinkingConfig: { thinkingBudget: 0 },
         httpOptions: { timeout: 15_000 },
       },

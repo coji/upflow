@@ -14,6 +14,7 @@ export const organizationSettingsSchema = z.object({
   timezone: z.string().refine((v) => VALID_TIMEZONES.has(v), {
     message: 'Invalid timezone',
   }),
+  language: z.enum(['en', 'ja']),
 })
 
 export const integrationSettingsSchema = z.object({

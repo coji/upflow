@@ -117,10 +117,18 @@ const RESPONSE_SCHEMA = {
   required: ['complexity', 'reason', 'risk_areas'],
 } as const
 
+function buildSystemInstruction(language?: string): string {
+  const langSection = language
+    ? `\n\n<output_language>\nWrite the "reason" field in ${language === 'ja' ? 'Japanese' : 'English'}.\n</output_language>`
+    : ''
+  return SYSTEM_INSTRUCTION + langSection
+}
+
 async function classifySinglePR(
   ai: GoogleGenAI,
   model: string,
   pr: PRInput,
+  language?: string,
 ): Promise<ClassifyResult> {
   const fileList =
     pr.files.length > 0
@@ -156,7 +164,7 @@ Classify this PR's review complexity.`
     model,
     contents: prompt,
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: buildSystemInstruction(language),
       responseMimeType: 'application/json',
       responseSchema: RESPONSE_SCHEMA,
       thinkingConfig: { thinkingBudget: 0 },
@@ -211,6 +219,7 @@ export async function batchClassifyPRs(
     model?: string
     concurrency?: number
     delayMs?: number
+    language?: string
   },
 ): Promise<BatchClassifyResult> {
   const apiKey = options?.apiKey ?? process.env.GEMINI_API_KEY
@@ -224,6 +233,7 @@ export async function batchClassifyPRs(
   const model = options?.model ?? DEFAULT_MODEL
   const concurrency = Math.max(1, options?.concurrency ?? 5)
   const delayMs = options?.delayMs ?? 200
+  const language = options?.language
 
   const results = new Map<string, LLMClassification>()
   const totalUsage: TokenUsage = {
@@ -241,7 +251,7 @@ export async function batchClassifyPRs(
       const maxRetries = 3
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-          const result = await classifySinglePR(ai, model, pr)
+          const result = await classifySinglePR(ai, model, pr, language)
           results.set(key, result.classification)
           totalUsage.promptTokens += result.usage.promptTokens
           totalUsage.candidatesTokens += result.usage.candidatesTokens

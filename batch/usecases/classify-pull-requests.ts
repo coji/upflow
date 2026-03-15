@@ -59,6 +59,11 @@ export async function classifyPullRequests(
     return
   }
 
+  const orgSettings = await tenantDb
+    .selectFrom('organizationSettings')
+    .select('language')
+    .executeTakeFirst()
+
   logger.info(`Classifying ${unclassifiedPRs.length} PRs...`, organizationId)
 
   // 2. rawPullRequest から files を抽出して分類用の入力を作成
@@ -94,7 +99,10 @@ export async function classifyPullRequests(
   })
 
   // 3. LLM で分類
-  const result = await batchClassifyPRs(prInputs, { apiKey })
+  const result = await batchClassifyPRs(prInputs, {
+    apiKey,
+    language: orgSettings?.language,
+  })
 
   // 4. 結果を DB に保存
   const now = new Date().toISOString()
