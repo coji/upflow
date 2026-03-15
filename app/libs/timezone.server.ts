@@ -1,7 +1,6 @@
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
-
-const DEFAULT_TIMEZONE = 'Asia/Tokyo'
+import { DEFAULT_TIMEZONE } from './constants'
 
 export async function getOrganizationTimezone(
   organizationId: OrganizationId,
@@ -13,5 +12,3 @@ export async function getOrganizationTimezone(
     .executeTakeFirst()
   return row?.timezone ?? DEFAULT_TIMEZONE
 }
-
-export { DEFAULT_TIMEZONE }

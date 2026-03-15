@@ -23,6 +23,7 @@ import {
   Stack,
   Switch,
 } from '~/app/components/ui'
+import { DEFAULT_TIMEZONE } from '~/app/libs/constants'
 import { INTENTS, organizationSettingsSchema as schema } from '../+schema'
 import type { action } from '../../_index/index'
 
@@ -59,7 +60,7 @@ export const OrganizationSettings = ({
       releaseDetectionKey: organizationSetting?.releaseDetectionKey,
       isActive: organizationSetting?.isActive ? '1' : undefined,
       excludedUsers: organizationSetting?.excludedUsers,
-      timezone: organizationSetting?.timezone ?? 'Asia/Tokyo',
+      timezone: organizationSetting?.timezone ?? DEFAULT_TIMEZONE,
     },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })

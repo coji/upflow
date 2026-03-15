@@ -9,7 +9,11 @@ export const organizationSettingsSchema = z.object({
     .optional()
     .transform((val) => (val === 'on' ? 1 : 0)),
   excludedUsers: z.string().max(2000).default(''),
-  timezone: z.string().min(1).max(100),
+  timezone: z
+    .string()
+    .refine((v) => Intl.supportedValuesOf('timeZone').includes(v), {
+      message: 'Invalid timezone',
+    }),
 })
 
 export const integrationSettingsSchema = z.object({

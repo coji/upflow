@@ -124,11 +124,10 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
 function RefreshSection({
   refreshRequestedAt,
-  timezone,
 }: {
   refreshRequestedAt: string | null
-  timezone: string
 }) {
+  const timezone = useTimezone()
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
   const isScheduled =
@@ -216,18 +215,13 @@ function RecalculateSection() {
 export default function DataManagementPage({
   loaderData: { refreshRequestedAt },
 }: Route.ComponentProps) {
-  const timezone = useTimezone()
-
   return (
     <ContentSection
       title="Data Management"
       desc="Manage data refresh and recalculation for this organization."
     >
       <Stack gap="6">
-        <RefreshSection
-          refreshRequestedAt={refreshRequestedAt}
-          timezone={timezone}
-        />
+        <RefreshSection refreshRequestedAt={refreshRequestedAt} />
         <RecalculateSection />
       </Stack>
     </ContentSection>

@@ -88,6 +88,7 @@ export default function MemberWeeklyPage({
   params,
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
+  const timezone = useTimezone()
 
   const viewParam = searchParams.get('view')
   const colorMode = viewParam === 'size' ? 'size' : 'age'
@@ -107,7 +108,6 @@ export default function MemberWeeklyPage({
 
   const prevWeek = dayjs(weekStart).subtract(7, 'day').format('YYYY-MM-DD')
   const nextWeek = dayjs(weekStart).add(7, 'day').format('YYYY-MM-DD')
-  const timezone = useTimezone()
   const isCurrentWeek = dayjs(weekStart).isSame(
     getStartOfWeek(undefined, timezone),
     'day',
