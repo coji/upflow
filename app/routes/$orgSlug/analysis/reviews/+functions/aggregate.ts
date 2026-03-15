@@ -2,7 +2,7 @@
  * チャート用の集計ロジック（client/server 共用）
  * clientLoader で呼び出し、集計済みデータをチャートコンポーネントに渡す。
  */
-import { getPRComplexity, type PRSizeLabel } from './classify'
+import { getPRComplexity, type PRSizeLabel } from '~/app/libs/pr-classify'
 
 // --- 共通ユーティリティ ---
 

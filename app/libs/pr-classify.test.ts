@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { complexitySortingFn, getPRComplexity } from './classify'
+import { complexitySortingFn, getPRComplexity } from './pr-classify'
 
 describe('getPRComplexity', () => {
   test('uses LLM complexity when available', () => {

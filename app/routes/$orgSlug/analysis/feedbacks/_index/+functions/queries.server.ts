@@ -1,7 +1,7 @@
 import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 import { calcPagination } from '~/app/libs/db-utils'
-import { PR_SIZE_RANK } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
+import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { DB as TenantDB } from '~/app/services/tenant-type'
 import type { OrganizationId } from '~/app/types/organization'

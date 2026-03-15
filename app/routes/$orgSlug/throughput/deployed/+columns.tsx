@@ -1,10 +1,10 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
+import { SizeBadgePopover } from '~/app/components/size-badge-popover'
 import { Badge, HStack } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
-import { SizeBadgePopover } from '~/app/routes/$orgSlug/+components/size-badge-popover'
-import { complexitySortingFn } from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
+import { complexitySortingFn } from '~/app/libs/pr-classify'
 import type { PullRequest } from './index'
 
 export function createColumns(timezone: string): ColumnDef<PullRequest>[] {

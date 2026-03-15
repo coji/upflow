@@ -15,7 +15,6 @@ import {
 } from '~/app/components/ui/popover'
 import { Textarea } from '~/app/components/ui/textarea'
 import dayjs from '~/app/libs/dayjs'
-import { cn } from '~/app/libs/utils'
 import {
   PR_SIZE_DESCRIPTION,
   PR_SIZE_LABELS,
@@ -24,7 +23,8 @@ import {
   parseRiskAreas,
   type PRSize,
   type PRSizeLabel,
-} from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
+} from '~/app/libs/pr-classify'
+import { cn } from '~/app/libs/utils'
 
 interface SizeBadgePopoverProps {
   complexity: string | null

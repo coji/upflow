@@ -12,10 +12,7 @@ import { Link, href, useParams, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import dayjs from '~/app/libs/dayjs'
-import {
-  PR_SIZE_LABELS,
-  PR_SIZE_RANK,
-} from '~/app/routes/$orgSlug/analysis/reviews/+functions/classify'
+import { PR_SIZE_LABELS, PR_SIZE_RANK } from '~/app/libs/pr-classify'
 import type {
   PersonStack,
   StackPR,

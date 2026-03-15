@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { SizeBadge } from '~/app/components/size-badge'
 import {
   Card,
   CardContent,
@@ -21,13 +22,12 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '~/app/components/ui/chart'
-import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
-import type { PRSizeAggregation, PRSizeRawRow } from '../+functions/aggregate'
 import {
   PR_SIZE_COLORS,
   getPRComplexity,
   type PRSizeLabel,
-} from '../+functions/classify'
+} from '~/app/libs/pr-classify'
+import type { PRSizeAggregation, PRSizeRawRow } from '../+functions/aggregate'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 const countConfig = {

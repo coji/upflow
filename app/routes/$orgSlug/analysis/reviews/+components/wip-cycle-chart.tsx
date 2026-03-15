@@ -21,8 +21,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '~/app/components/ui/chart'
+import { getPRComplexity } from '~/app/libs/pr-classify'
 import type { WipAggregation, WipRawRow } from '../+functions/aggregate'
-import { getPRComplexity } from '../+functions/classify'
 import { PRDrillDownSheet } from './pr-drill-down-sheet'
 
 type WipLabeledRow = WipRawRow & { wipLabel: string }

@@ -1,4 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
+import { SizeBadge } from '~/app/components/size-badge'
 import { Badge } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
@@ -8,8 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/app/components/ui/sheet'
-import { SizeBadge } from '~/app/routes/$orgSlug/+components/size-badge'
-import { parseRiskAreas } from '../+functions/classify'
+import { parseRiskAreas } from '~/app/libs/pr-classify'
 
 export interface DrillDownPR {
   number: number
