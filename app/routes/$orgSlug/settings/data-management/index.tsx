@@ -217,9 +217,10 @@ function ExportDataSection() {
   const [includeRaw, setIncludeRaw] = useState(false)
 
   const handleDownload = () => {
+    if (!orgSlug) return
     const params = includeRaw ? '?includeRaw=true' : ''
     window.location.assign(
-      `/${orgSlug}/settings/data-management/export-parquet${params}`,
+      `/${encodeURIComponent(orgSlug)}/settings/data-management/export-parquet${params}`,
     )
   }
 

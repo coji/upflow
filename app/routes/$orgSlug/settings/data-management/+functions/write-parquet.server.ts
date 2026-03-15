@@ -87,9 +87,11 @@ export async function writeParquetFile(
     rowGroupSize: ROW_GROUP_SIZE,
   })
 
-  for (const row of rows) {
-    await writer.appendRow(toParquetRow(row))
+  try {
+    for (const row of rows) {
+      await writer.appendRow(toParquetRow(row))
+    }
+  } finally {
+    await writer.close()
   }
-
-  await writer.close()
 }

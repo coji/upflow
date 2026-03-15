@@ -66,7 +66,7 @@ Each element in the `reviewers` JSON array:
 
 ## Cycle Time Calculation
 
-```
+```text
 |-- coding_time --|-- pickup_time --|-- review_time --|-- deploy_time --|
 first_committed_at  pr_created_at    first_reviewed_at  merged_at        released_at
 ```
