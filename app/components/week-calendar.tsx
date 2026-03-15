@@ -1,7 +1,7 @@
 import { ja } from 'date-fns/locale'
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import * as React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { DayButton } from 'react-day-picker'
 import {
   Button,
@@ -13,11 +13,16 @@ import {
 import dayjs from '~/app/libs/dayjs'
 import { cn } from '../libs/utils'
 
+interface WeekInterval {
+  start: Date
+  end: Date
+}
+
 /**
  * Calculate the week interval (start Monday – end Sunday) containing
  * the given date, based on the specified week-start day.
  */
-const getWeekInterval = (date: Date, startOfWeekDay: number) => {
+const getWeekInterval = (date: Date, startOfWeekDay: number): WeekInterval => {
   const normalizedDate = dayjs(date).startOf('day')
   const dayOfWeek = normalizedDate.day()
 
@@ -28,6 +33,51 @@ const getWeekInterval = (date: Date, startOfWeekDay: number) => {
   const end = start.add(6, 'day')
 
   return { start: start.toDate(), end: end.toDate() }
+}
+
+/**
+ * Custom day button that highlights the entire selected week.
+ * Extracted to module scope to maintain a stable component identity.
+ */
+function WeekDayButton({
+  className,
+  day,
+  modifiers,
+  weekInterval,
+  ...props
+}: React.ComponentProps<typeof DayButton> & { weekInterval: WeekInterval }) {
+  const targetDate = dayjs(day.date)
+  const isSelected = targetDate.isBetween(
+    weekInterval.start,
+    weekInterval.end,
+    'day',
+    '[]',
+  )
+  const isWeekStart = targetDate.isSame(weekInterval.start, 'day')
+  const isWeekEnd = targetDate.isSame(weekInterval.end, 'day')
+
+  const ref = React.useRef<HTMLButtonElement>(null)
+  React.useEffect(() => {
+    if (modifiers.focused) ref.current?.focus()
+  }, [modifiers.focused])
+
+  return (
+    <Button
+      ref={ref}
+      variant="ghost"
+      size="icon"
+      data-day={day.date.toLocaleDateString()}
+      data-selected={isSelected}
+      className={cn(
+        className,
+        isSelected &&
+          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
+        isWeekStart && 'rounded-l-lg',
+        isWeekEnd && 'rounded-r-lg',
+      )}
+      {...props}
+    />
+  )
 }
 
 interface WeeklyCalendarProps {
@@ -84,51 +134,23 @@ const WeeklyCalendar = ({
     if (start.year() !== end.year()) {
       return `${start.format('YYYY/M/D')} – ${end.format('YYYY/M/D')}`
     }
-    if (start.month() !== end.month()) {
-      return `${start.format('M/D')} – ${end.format('M/D')}`
-    }
     return `${start.format('M/D')} – ${end.format('M/D')}`
   }
 
-  function WeekDayButton({
-    className,
-    day,
-    modifiers,
-    ...props
-  }: React.ComponentProps<typeof DayButton>) {
-    const targetDate = dayjs(day.date)
-    const isSelected = targetDate.isBetween(
-      weekInterval.start,
-      weekInterval.end,
-      'day',
-      '[]',
-    )
-    const isWeekStart = targetDate.isSame(weekInterval.start, 'day')
-    const isWeekEnd = targetDate.isSame(weekInterval.end, 'day')
+  // Bind weekInterval to the module-scope WeekDayButton via a stable wrapper.
+  // Re-creates only when weekInterval changes (user navigates weeks).
+  const BoundWeekDayButton = useMemo(() => {
+    return function BoundWeekDayButton(
+      props: React.ComponentProps<typeof DayButton>,
+    ) {
+      return <WeekDayButton {...props} weekInterval={weekInterval} />
+    }
+  }, [weekInterval])
 
-    const ref = React.useRef<HTMLButtonElement>(null)
-    React.useEffect(() => {
-      if (modifiers.focused) ref.current?.focus()
-    }, [modifiers.focused])
-
-    return (
-      <Button
-        ref={ref}
-        variant="ghost"
-        size="icon"
-        data-day={day.date.toLocaleDateString()}
-        data-selected={isSelected}
-        className={cn(
-          className,
-          isSelected &&
-            'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
-          isWeekStart && 'rounded-l-lg',
-          isWeekEnd && 'rounded-r-lg',
-        )}
-        {...props}
-      />
-    )
-  }
+  const calendarComponents = useMemo(
+    () => ({ DayButton: BoundWeekDayButton }),
+    [BoundWeekDayButton],
+  )
 
   return (
     <div className="flex items-center gap-1">
@@ -163,9 +185,7 @@ const WeeklyCalendar = ({
             onSelect={handleDateSelect}
             weekStartsOn={startDay}
             locale={ja}
-            components={{
-              DayButton: WeekDayButton,
-            }}
+            components={calendarComponents}
             className="rounded-lg border p-3"
           />
         </PopoverContent>
