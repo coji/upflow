@@ -40,10 +40,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       privateKey,
     })
   } catch (e) {
+    console.error(
+      'Export settings save failed:',
+      e instanceof Error ? e.message : 'Unknown error',
+    )
     return {
       intent: 'export-settings' as const,
       lastResult: submission.reply({
-        formErrors: [`Error saving export settings: ${String(e)}`],
+        formErrors: ['Failed to save export settings'],
       }),
     }
   }
