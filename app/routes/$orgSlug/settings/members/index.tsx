@@ -75,23 +75,34 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(intent)
     .with('changeRole', async () => {
-      const { memberId, role } = changeRoleSchema.parse({
+      const parsed = changeRoleSchema.safeParse({
         memberId: formData.get('memberId'),
         role: formData.get('role'),
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
-        await changeMemberRole(memberId, organization.id, role, membership.id)
+        await changeMemberRole(
+          parsed.data.memberId,
+          organization.id,
+          parsed.data.role,
+          membership.id,
+        )
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }
       return data({ ok: true })
     })
     .with('removeMember', async () => {
-      const { memberId } = removeMemberSchema.parse({
+      const parsed = removeMemberSchema.safeParse({
         memberId: formData.get('memberId'),
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
-        await removeMember(memberId, organization.id, membership.id)
+        await removeMember(parsed.data.memberId, organization.id, membership.id)
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }

@@ -56,26 +56,35 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(intent)
     .with('add', async () => {
-      const parsed = addSchema.parse({
+      const parsed = addSchema.safeParse({
         name: formData.get('name'),
         displayOrder: formData.get('displayOrder'),
       })
-      await addTeam({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await addTeam({ ...parsed.data, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('update', async () => {
-      const parsed = updateSchema.parse({
+      const parsed = updateSchema.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
         displayOrder: formData.get('displayOrder'),
         personalLimit: formData.get('personalLimit'),
       })
-      await updateTeam({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await updateTeam({ ...parsed.data, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('delete', async () => {
-      const { id } = deleteSchema.parse({ id: formData.get('id') })
-      await deleteTeam(organization.id, id)
+      const parsed = deleteSchema.safeParse({ id: formData.get('id') })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await deleteTeam(organization.id, parsed.data.id)
       return data({ ok: true })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))

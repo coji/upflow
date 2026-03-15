@@ -125,46 +125,69 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(intent)
     .with('add', async () => {
-      const parsed = addSchema.parse({
+      const parsed = addSchema.safeParse({
         login: formData.get('login'),
         displayName: formData.get('displayName'),
       })
-      await addGithubUser({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await addGithubUser({ ...parsed.data, organizationId: organization.id })
       return data({ ok: true })
     })
     .with('update', async () => {
-      const parsed = updateSchema.parse({
+      const parsed = updateSchema.safeParse({
         login: formData.get('login'),
         displayName: formData.get('displayName'),
       })
-      await updateGithubUser({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await updateGithubUser({
+        ...parsed.data,
+        organizationId: organization.id,
+      })
       return data({ ok: true })
     })
     .with('delete', async () => {
-      const { login } = deleteSchema.parse({ login: formData.get('login') })
+      const parsed = deleteSchema.safeParse({
+        login: formData.get('login'),
+      })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
-        await deleteGithubUser(login, organization.id, user.id)
+        await deleteGithubUser(parsed.data.login, organization.id, user.id)
       } catch (e) {
         return data({ error: String(e) }, { status: 400 })
       }
       return data({ ok: true })
     })
     .with('update-type', async () => {
-      const parsed = updateTypeSchema.parse({
+      const parsed = updateTypeSchema.safeParse({
         login: formData.get('login'),
         type: formData.get('type'),
       })
-      await updateGithubUserType({ ...parsed, organizationId: organization.id })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      await updateGithubUserType({
+        ...parsed.data,
+        organizationId: organization.id,
+      })
       return data({ ok: true })
     })
     .with('toggle-active', async () => {
-      const parsed = toggleActiveSchema.parse({
+      const parsed = toggleActiveSchema.safeParse({
         login: formData.get('login'),
         isActive: formData.get('isActive'),
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       try {
         await toggleGithubUserActive({
-          ...parsed,
+          ...parsed.data,
           organizationId: organization.id,
           currentUserId: user.id,
         })

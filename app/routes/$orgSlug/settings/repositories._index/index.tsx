@@ -70,26 +70,32 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(intent)
     .with('updateTeam', async () => {
-      const parsed = updateTeamSchema.parse({
+      const parsed = updateTeamSchema.safeParse({
         repositoryId: formData.get('repositoryId'),
         teamId: formData.get('teamId') || null,
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       await updateRepositoryTeam(
         organization.id,
-        parsed.repositoryId,
-        parsed.teamId,
+        parsed.data.repositoryId,
+        parsed.data.teamId,
       )
       return data({ ok: true })
     })
     .with('bulkUpdateTeam', async () => {
-      const parsed = bulkUpdateTeamSchema.parse({
+      const parsed = bulkUpdateTeamSchema.safeParse({
         repositoryIds: formData.getAll('repositoryIds'),
         teamId: formData.get('teamId') || null,
       })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
       await bulkUpdateRepositoryTeam(
         organization.id,
-        parsed.repositoryIds,
-        parsed.teamId,
+        parsed.data.repositoryIds,
+        parsed.data.teamId,
       )
       return data({ ok: true })
     })
