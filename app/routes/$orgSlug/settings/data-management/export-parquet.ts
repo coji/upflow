@@ -1,22 +1,13 @@
 import JSZip from 'jszip'
 import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { readFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { orgContext } from '~/app/middleware/context'
+import dataDictionary from './+data/DATA_DICTIONARY.md?raw'
+import { iterateExportRows } from './+functions/build-export-data.server'
+import { writeParquetFile } from './+functions/write-parquet.server'
 import type { Route } from './+types/export-parquet'
-import { iterateExportRows } from './settings/data-management/+functions/build-export-data.server'
-import { writeParquetFile } from './settings/data-management/+functions/write-parquet.server'
-
-/** Read once at module load — this file only changes on deploy. */
-const dataDictionary = readFileSync(
-  resolve(
-    import.meta.dirname,
-    'settings/data-management/+data/DATA_DICTIONARY.md',
-  ),
-  'utf-8',
-)
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)

@@ -1,8 +1,9 @@
-import { ParquetSchema, ParquetWriter } from '@dsnp/parquetjs'
 import type {
   ParquetCompression,
   ParquetType,
 } from '@dsnp/parquetjs/dist/lib/declare'
+import { ParquetSchema } from '@dsnp/parquetjs/dist/lib/schema'
+import { ParquetWriter } from '@dsnp/parquetjs/dist/lib/writer'
 import type { ExportRow } from './build-export-data.server'
 
 const COMPRESSION: ParquetCompression = 'GZIP'

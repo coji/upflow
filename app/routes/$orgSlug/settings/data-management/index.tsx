@@ -223,7 +223,9 @@ function ExportDataSection() {
     setError(null)
     try {
       const params = includeRaw ? '?includeRaw=true' : ''
-      const response = await fetch(`/${orgSlug}/export-parquet${params}`)
+      const response = await fetch(
+        `/${orgSlug}/settings/data-management/export-parquet${params}`,
+      )
       if (!response.ok) {
         throw new Error(`Export failed: ${response.statusText}`)
       }
