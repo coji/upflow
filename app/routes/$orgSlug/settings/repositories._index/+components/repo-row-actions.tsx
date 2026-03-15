@@ -6,7 +6,7 @@ import {
   TrashIcon,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { Link, href, useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { Button } from '~/app/components/ui/button'
 import {
@@ -43,13 +43,23 @@ export function RepoRowActions({
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link to={`/${orgSlug}/settings/repositories/${repo.id}`}>
+            <Link
+              to={href('/:orgSlug/settings/repositories/:repository', {
+                orgSlug,
+                repository: repo.id,
+              })}
+            >
               <EyeIcon className="mr-2 h-4 w-4" />
               Pull Requests
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to={`/${orgSlug}/settings/repositories/${repo.id}/settings`}>
+            <Link
+              to={href('/:orgSlug/settings/repositories/:repository/settings', {
+                orgSlug,
+                repository: repo.id,
+              })}
+            >
               <SettingsIcon className="mr-2 h-4 w-4" />
               Settings
             </Link>
@@ -73,7 +83,10 @@ export function RepoRowActions({
         confirmText="Delete"
         destructive
         fetcher={deleteFetcher}
-        action={`/${orgSlug}/settings/repositories/${repo.id}/delete`}
+        action={href('/:orgSlug/settings/repositories/:repository/delete', {
+          orgSlug,
+          repository: repo.id,
+        })}
       />
     </>
   )

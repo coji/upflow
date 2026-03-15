@@ -9,7 +9,7 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-react'
-import { Outlet } from 'react-router'
+import { Outlet, href } from 'react-router'
 import {
   PageHeader,
   PageHeaderDescription,
@@ -25,7 +25,7 @@ import type { Route } from './+types/_layout'
 export const handle: RouteHandle = {
   breadcrumb: (_data: unknown, params?: Record<string, string>) => ({
     label: 'Settings',
-    to: `/${params?.orgSlug}/settings`,
+    to: href('/:orgSlug/settings', { orgSlug: params?.orgSlug ?? '' }),
   }),
 }
 
@@ -42,47 +42,47 @@ export default function SettingsLayout({
     {
       title: 'General',
       icon: <SettingsIcon size={18} />,
-      href: `/${orgSlug}/settings`,
+      href: href('/:orgSlug/settings', { orgSlug }),
     },
     {
       title: 'Integration',
       icon: <PlugIcon size={18} />,
-      href: `/${orgSlug}/settings/integration`,
+      href: href('/:orgSlug/settings/integration', { orgSlug }),
     },
     {
       title: 'Members',
       icon: <UsersIcon size={18} />,
-      href: `/${orgSlug}/settings/members`,
+      href: href('/:orgSlug/settings/members', { orgSlug }),
     },
     {
       title: 'Repositories',
       icon: <GitPullRequestIcon size={18} />,
-      href: `/${orgSlug}/settings/repositories`,
+      href: href('/:orgSlug/settings/repositories', { orgSlug }),
     },
     {
       title: 'Teams',
       icon: <GroupIcon size={18} />,
-      href: `/${orgSlug}/settings/teams`,
+      href: href('/:orgSlug/settings/teams', { orgSlug }),
     },
     {
       title: 'GitHub Users',
       icon: <GithubIcon size={18} />,
-      href: `/${orgSlug}/settings/github-users`,
+      href: href('/:orgSlug/settings/github-users', { orgSlug }),
     },
     {
       title: 'Export',
       icon: <FileSpreadsheetIcon size={18} />,
-      href: `/${orgSlug}/settings/export`,
+      href: href('/:orgSlug/settings/export', { orgSlug }),
     },
     {
       title: 'Data Management',
       icon: <DatabaseIcon size={18} />,
-      href: `/${orgSlug}/settings/data-management`,
+      href: href('/:orgSlug/settings/data-management', { orgSlug }),
     },
     {
       title: 'Danger Zone',
       icon: <AlertTriangleIcon size={18} />,
-      href: `/${orgSlug}/settings/danger`,
+      href: href('/:orgSlug/settings/danger', { orgSlug }),
     },
   ]
 

@@ -46,7 +46,11 @@ const AdminOrganizationIndex = ({
                   <TableCell>{organization.slug}</TableCell>
                   <TableCell>
                     <Button asChild size="sm" variant="link">
-                      <Link to={`/${organization.slug}/settings`}>
+                      <Link
+                        to={href('/:orgSlug/settings', {
+                          orgSlug: organization.slug!,
+                        })}
+                      >
                         Settings
                       </Link>
                     </Button>

@@ -1,5 +1,5 @@
 import { parseWithZod } from '@conform-to/zod/v4'
-import { redirect } from 'react-router'
+import { href, redirect } from 'react-router'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { DeleteOrganization } from '../_index/+forms/delete-organization'
@@ -11,7 +11,7 @@ import type { Route } from './+types/index'
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Danger Zone',
-    to: `/${params.orgSlug}/settings/danger`,
+    to: href('/:orgSlug/settings/danger', { orgSlug: params.orgSlug }),
   }),
 }
 

@@ -6,7 +6,7 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, Link, data, redirect, useNavigation } from 'react-router'
+import { Form, Link, data, href, redirect, useNavigation } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { AppProviderBadge } from '~/app/components'
@@ -82,7 +82,9 @@ export const action = async ({
 
   await updateRepository(organization.id, repositoryId, submission.value)
 
-  return redirect(`/${organization.slug}/settings/repositories`)
+  return redirect(
+    href('/:orgSlug/settings/repositories', { orgSlug: organization.slug! }),
+  )
 }
 
 const GithubRepositoryForm = ({
@@ -156,7 +158,11 @@ const GithubRepositoryForm = ({
             Update
           </Button>
           <Button asChild variant="ghost">
-            <Link to={`/${organization.slug}/settings/repositories`}>
+            <Link
+              to={href('/:orgSlug/settings/repositories', {
+                orgSlug: organization.slug!,
+              })}
+            >
               Cancel
             </Link>
           </Button>

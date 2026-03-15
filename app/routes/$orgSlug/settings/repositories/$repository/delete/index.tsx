@@ -1,6 +1,6 @@
 import { zx } from '@coji/zodix/v4'
 import { getFormProps, useForm } from '@conform-to/react'
-import { Form, Link, redirect, useNavigation } from 'react-router'
+import { Form, Link, href, redirect, useNavigation } from 'react-router'
 import { z } from 'zod'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
 import { orgContext } from '~/app/middleware/context'
@@ -35,7 +35,9 @@ export const action = async ({ params, context }: Route.ActionArgs) => {
 
   await deleteRepository(organization.id, repositoryId)
 
-  return redirect(`/${organization.slug}/settings/repositories`)
+  return redirect(
+    href('/:orgSlug/settings/repositories', { orgSlug: organization.slug! }),
+  )
 }
 
 export default function DeleteRepositoryPage({
@@ -72,7 +74,11 @@ export default function DeleteRepositoryPage({
             Delete
           </Button>
           <Button asChild variant="ghost">
-            <Link to={`/${organization.slug}/settings/repositories`}>
+            <Link
+              to={href('/:orgSlug/settings/repositories', {
+                orgSlug: organization.slug!,
+              })}
+            >
               Cancel
             </Link>
           </Button>

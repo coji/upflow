@@ -1,6 +1,6 @@
 import { PlusIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
-import { data, useFetcher } from 'react-router'
+import { data, href, useFetcher } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
@@ -23,7 +23,7 @@ import { listTeams } from './queries.server'
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Teams',
-    to: `/${params.orgSlug}/settings/teams`,
+    to: href('/:orgSlug/settings/teams', { orgSlug: params.orgSlug }),
   }),
 }
 

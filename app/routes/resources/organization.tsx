@@ -63,7 +63,9 @@ export const OrganizationSwitcher = ({
         {fetcher.data?.organizations.map((organization) => (
           <DropdownMenuGroup key={organization.id}>
             <DropdownMenuItem asChild>
-              <Link to={`/${organization.slug}`}>{organization.name}</Link>
+              <Link to={href('/:orgSlug', { orgSlug: organization.slug! })}>
+                {organization.name}
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         ))}

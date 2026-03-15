@@ -1,5 +1,5 @@
 import { zx } from '@coji/zodix/v4'
-import { Link } from 'react-router'
+import { Link, href } from 'react-router'
 import { z } from 'zod'
 import {
   Table,
@@ -61,7 +61,14 @@ export default function RepositoryPullsIndexPage({
                   >
                     <Link
                       className="underline"
-                      to={`/${params.orgSlug}/settings/repositories/${repositoryId}/${pull.number}`}
+                      to={href(
+                        '/:orgSlug/settings/repositories/:repository/:pull',
+                        {
+                          orgSlug: params.orgSlug,
+                          repository: repositoryId,
+                          pull: String(pull.number),
+                        },
+                      )}
                     >
                       {pull.title}
                     </Link>

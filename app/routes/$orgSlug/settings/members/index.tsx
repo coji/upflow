@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { data } from 'react-router'
+import { data, href } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
@@ -20,7 +20,7 @@ import { listFilteredMembers } from './queries.server'
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
     label: 'Members',
-    to: `/${params.orgSlug}/settings/members`,
+    to: href('/:orgSlug/settings/members', { orgSlug: params.orgSlug }),
   }),
 }
 

@@ -1,4 +1,4 @@
-import { redirect } from 'react-router'
+import { href, redirect } from 'react-router'
 import { getFirstOrganization, getSession } from '~/app/libs/auth.server'
 import type { Route } from './+types/_index'
 
@@ -10,7 +10,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   const firstOrg = await getFirstOrganization(session.user.id)
   if (firstOrg) {
-    throw redirect(`/${firstOrg.slug}`)
+    throw redirect(href('/:orgSlug', { orgSlug: firstOrg.slug! }))
   }
 
   throw redirect('/no-org')
