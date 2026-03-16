@@ -53,7 +53,11 @@ const restoreDb = command(
   },
 )
 
-cli({
+const argv = cli({
   name: 'ops',
   commands: [pullDb, restoreDb],
 })
+
+if (!argv.command) {
+  argv.showHelp()
+}
