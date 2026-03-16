@@ -16,8 +16,10 @@ import {
 } from '~/app/components/ui/dropdown-menu'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
+import { median as calcMedian } from '~/app/libs/stats'
 import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
 import { getOngoingPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
@@ -52,13 +54,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const ages = pullRequests
     .map((pr) => pr.createAndNowDiff)
     .filter((v): v is number => v !== null)
-    .sort((a, b) => a - b)
-  const median =
-    ages.length > 0
-      ? ages.length % 2 === 1
-        ? ages[Math.floor(ages.length / 2)]
-        : (ages[ages.length / 2 - 1] + ages[ages.length / 2]) / 2
-      : null
+  const median = calcMedian(ages)
 
   return { pullRequests, median, teams, businessDaysOnly }
 }
@@ -110,16 +106,11 @@ export default function OngoingPage({
         }
       >
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg border p-4 text-center">
-            <div className="text-3xl font-bold">{pullRequests.length}</div>
-            <div className="text-muted-foreground text-sm">Ongoing</div>
-          </div>
-          <div className="rounded-lg border p-4 text-center">
-            <div className="text-3xl font-bold">
-              {median !== null ? `${median.toFixed(1)}d` : '–'}
-            </div>
-            <div className="text-muted-foreground text-sm">Median Age</div>
-          </div>
+          <StatCard value={pullRequests.length} label="Ongoing" />
+          <StatCard
+            value={median !== null ? `${median.toFixed(1)}d` : '–'}
+            label="Median Age"
+          />
         </div>
       </AppDataTable>
     </Stack>

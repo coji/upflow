@@ -20,6 +20,9 @@ import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import { DiffBadge } from '../+components/diff-badge'
+import { StatCard } from '../+components/stat-card'
+import { calcStats } from '../+functions/calc-stats'
 import { createColumns } from './+columns'
 import { getDeployedPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
@@ -76,59 +79,18 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     ),
   ])
 
-  const calcStats = (prs: typeof pullRequests) => {
-    const achievementCount = prs.filter((pr) => pr.achievement).length
-    const achievementRate =
-      prs.length > 0 ? (achievementCount / prs.length) * 100 : 0
-    const times = prs
-      .map((pr) => pr.createAndDeployDiff)
-      .filter((v): v is number => v !== null)
-      .sort((a, b) => a - b)
-    const median =
-      times.length > 0
-        ? times.length % 2 === 1
-          ? times[Math.floor(times.length / 2)]
-          : (times[times.length / 2 - 1] + times[times.length / 2]) / 2
-        : null
-    return { count: prs.length, achievementRate, median }
-  }
-
-  const stats = calcStats(pullRequests)
-  const prevStats = calcStats(prevPullRequests)
+  const stats = calcStats(pullRequests, (pr) => pr.createAndDeployDiff)
+  const prev = calcStats(prevPullRequests, (pr) => pr.createAndDeployDiff)
 
   return {
     pullRequests,
     from: from.toISOString(),
     objective,
     ...stats,
-    prev: prevStats,
+    prev,
     teams,
     businessDaysOnly,
   }
-}
-
-function DiffBadge({
-  value,
-  prevValue,
-  format = (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
-  invertColor = false,
-}: {
-  value: number
-  prevValue: number | null
-  format?: (diff: number) => string
-  invertColor?: boolean
-}) {
-  if (prevValue === null) return null
-  const diff = value - prevValue
-  if (diff === 0) return null
-  const isPositive = invertColor ? diff < 0 : diff > 0
-  return (
-    <span
-      className={`text-xs font-medium ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}
-    >
-      {format(diff)}
-    </span>
-  )
 }
 
 export default function DeployedPage({
@@ -200,22 +162,17 @@ export default function DeployedPage({
         }
       >
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-lg border p-4 text-center">
-            <div className="text-3xl font-bold">{count}</div>
-            <div className="text-muted-foreground text-sm">Deployed</div>
+          <StatCard value={count} label="Deployed">
             <DiffBadge
               value={count}
               prevValue={prev.count}
               format={(d) => `${d >= 0 ? '+' : ''}${d}`}
             />
-          </div>
-          <div className="rounded-lg border p-4 text-center">
-            <div className="text-3xl font-bold">
-              {median !== null ? `${median.toFixed(1)}d` : '–'}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              Median Time to Deploy
-            </div>
+          </StatCard>
+          <StatCard
+            value={median !== null ? `${median.toFixed(1)}d` : '–'}
+            label="Median Time to Deploy"
+          >
             {median !== null && (
               <DiffBadge
                 value={median}
@@ -224,12 +181,11 @@ export default function DeployedPage({
                 invertColor
               />
             )}
-          </div>
-          <div className="rounded-lg border p-4 text-center">
-            <div className="text-3xl font-bold">
-              {achievementRate.toFixed(1)}%
-            </div>
-            <div className="text-muted-foreground text-sm">Achievement</div>
+          </StatCard>
+          <StatCard
+            value={`${achievementRate.toFixed(1)}%`}
+            label="Achievement"
+          >
             <DiffBadge
               value={achievementRate}
               prevValue={prev.achievementRate}
@@ -239,7 +195,7 @@ export default function DeployedPage({
               Goal {'< '}
               {objective.toFixed(1)}d
             </div>
-          </div>
+          </StatCard>
         </div>
       </AppDataTable>
     </Stack>
