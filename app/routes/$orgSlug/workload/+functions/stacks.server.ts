@@ -1,4 +1,5 @@
 import { sql } from 'kysely'
+import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -26,12 +27,7 @@ export const getOpenPullRequests = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-    .where((eb) =>
-      eb.or([
-        eb('companyGithubUsers.type', 'is', null),
-        eb('companyGithubUsers.type', '!=', 'Bot'),
-      ]),
-    )
+    .where(excludeBots)
     .select([
       'pullRequests.author',
       'pullRequests.number',
@@ -96,12 +92,7 @@ export const getPendingReviewAssignments = async (
     .where('pullRequests.mergedAt', 'is', null)
     .where('pullRequests.closedAt', 'is', null)
     .where('pullRequestReviewers.requestedAt', 'is not', null)
-    .where((eb) =>
-      eb.or([
-        eb('companyGithubUsers.type', 'is', null),
-        eb('companyGithubUsers.type', '!=', 'Bot'),
-      ]),
-    )
+    .where(excludeBots)
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
