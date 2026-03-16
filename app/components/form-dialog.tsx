@@ -40,7 +40,10 @@ export function FormDialog<T>(props: FormDialogProps<T>) {
     ...dialogProps
   } = props
 
-  const onClose = useCallback(() => dialogProps.onOpenChange(false), [])
+  const onClose = useCallback(
+    () => dialogProps.onOpenChange(false),
+    [dialogProps.onOpenChange],
+  )
   const { isSubmitting, FormComponent } = useFormDialogState({
     fetcher,
     onClose,
