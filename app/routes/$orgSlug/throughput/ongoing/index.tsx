@@ -1,7 +1,5 @@
-import { CopyIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
@@ -11,7 +9,7 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
-import { Button, Stack } from '~/app/components/ui'
+import { Stack } from '~/app/components/ui'
 import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
@@ -21,7 +19,6 @@ import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { createColumns } from './+columns'
-import { generateMarkdown } from './+functions/generate-markdown'
 import { getOngoingPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
@@ -84,19 +81,6 @@ export default function OngoingPage({
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              navigator.clipboard
-                .writeText(generateMarkdown(pullRequests))
-                .then(() => toast.info(`Copied ${pullRequests.length} rows`))
-                .catch(() => toast.error('Failed to copy to clipboard'))
-            }}
-          >
-            <CopyIcon size="16" />
-          </Button>
         </PageHeaderActions>
       </PageHeader>
 
