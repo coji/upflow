@@ -135,10 +135,6 @@ const WeeklyCalendar = ({
     navigateTo(dayjs(weekInterval.start).add(7, 'day').toDate())
   }
 
-  const handleToday = () => {
-    navigateTo(new Date())
-  }
-
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       navigateTo(date)
@@ -156,9 +152,6 @@ const WeeklyCalendar = ({
   const formatWeekLabel = () => {
     const start = dayjs(weekInterval.start)
     const end = dayjs(weekInterval.end)
-    if (start.year() !== end.year()) {
-      return `${start.format('YYYY/M/D')} – ${end.format('YYYY/M/D')}`
-    }
     return `${start.format('M/D')} – ${end.format('M/D')}`
   }
 
@@ -181,7 +174,7 @@ const WeeklyCalendar = ({
     <div className="flex items-center gap-1">
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         size="icon"
         className="h-8 w-8"
         onClick={handlePrevWeek}
@@ -211,14 +204,30 @@ const WeeklyCalendar = ({
             weekStartsOn={startDay}
             locale={ja}
             components={calendarComponents}
-            className="rounded-lg border p-3"
+            className="p-1"
           />
+          {!isCurrentWeek && (
+            <div className="border-t p-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  navigateTo(new Date())
+                  setOpen(false)
+                }}
+              >
+                今週に戻る
+              </Button>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
 
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         size="icon"
         className="h-8 w-8"
         onClick={handleNextWeek}
@@ -226,18 +235,6 @@ const WeeklyCalendar = ({
       >
         <ChevronRightIcon className="h-4 w-4" />
       </Button>
-
-      {!isCurrentWeek && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleToday}
-          className="text-muted-foreground text-xs"
-        >
-          Today
-        </Button>
-      )}
     </div>
   )
 }

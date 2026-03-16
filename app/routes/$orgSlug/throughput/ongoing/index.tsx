@@ -1,7 +1,5 @@
-import { CopyIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
@@ -11,17 +9,18 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
-import { Button, Stack } from '~/app/components/ui'
+import { Stack } from '~/app/components/ui'
 import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
 } from '~/app/components/ui/dropdown-menu'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
+import { median as calcMedian } from '~/app/libs/stats'
 import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
-import { generateMarkdown } from './+functions/generate-markdown'
 import { getOngoingPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
@@ -51,11 +50,17 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     teamParam || undefined,
     businessDaysOnly,
   )
-  return { pullRequests, teams, businessDaysOnly }
+
+  const ages = pullRequests
+    .map((pr) => pr.createAndNowDiff)
+    .filter((v): v is number => v !== null)
+  const median = calcMedian(ages)
+
+  return { pullRequests, median, teams, businessDaysOnly }
 }
 
 export default function OngoingPage({
-  loaderData: { pullRequests, teams, businessDaysOnly },
+  loaderData: { pullRequests, median, teams, businessDaysOnly },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
   const timezone = useTimezone()
@@ -72,24 +77,10 @@ export default function OngoingPage({
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              navigator.clipboard
-                .writeText(generateMarkdown(pullRequests))
-                .then(() => toast.info(`Copied ${pullRequests.length} rows`))
-                .catch(() => toast.error('Failed to copy to clipboard'))
-            }}
-          >
-            <CopyIcon size="16" />
-          </Button>
         </PageHeaderActions>
       </PageHeader>
 
       <AppDataTable
-        title={<div>Ongoing pull requests: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
         getRowId={(row) => `${row.repositoryId}:${row.number}`}
@@ -113,7 +104,15 @@ export default function OngoingPage({
             </DropdownMenuCheckboxItem>
           </>
         }
-      />
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard value={pullRequests.length} label="Ongoing" />
+          <StatCard
+            value={median !== null ? `${median.toFixed(1)}d` : '–'}
+            label="Median Age"
+          />
+        </div>
+      </AppDataTable>
     </Stack>
   )
 }

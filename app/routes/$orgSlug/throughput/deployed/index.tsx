@@ -1,7 +1,5 @@
-import { CopyIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
@@ -11,7 +9,7 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
-import { Button, Label, Stack } from '~/app/components/ui'
+import { Stack } from '~/app/components/ui'
 import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
@@ -22,8 +20,10 @@ import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import { DiffBadge } from '../+components/diff-badge'
+import { StatCard } from '../+components/stat-card'
+import { calcStats } from '../+functions/calc-stats'
 import { createColumns } from './+columns'
-import { generateMarkdown } from './+functions/generate-markdown'
 import { getDeployedPullRequestReport } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
@@ -56,28 +56,38 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     to = getEndOfWeek(undefined, timezone)
   }
 
-  const teams = await listTeams(organization.id)
+  const prevFrom = from.subtract(7, 'day')
+  const prevTo = to.subtract(7, 'day')
 
-  const pullRequests = await getDeployedPullRequestReport(
-    organization.id,
-    from.utc().toISOString(),
-    to.utc().toISOString(),
-    objective,
-    teamParam || undefined,
-    businessDaysOnly,
-  )
+  const [teams, pullRequests, prevPullRequests] = await Promise.all([
+    listTeams(organization.id),
+    getDeployedPullRequestReport(
+      organization.id,
+      from.utc().toISOString(),
+      to.utc().toISOString(),
+      objective,
+      teamParam || undefined,
+      businessDaysOnly,
+    ),
+    getDeployedPullRequestReport(
+      organization.id,
+      prevFrom.utc().toISOString(),
+      prevTo.utc().toISOString(),
+      objective,
+      teamParam || undefined,
+      businessDaysOnly,
+    ),
+  ])
 
-  const achievementCount = pullRequests.filter((pr) => pr.achievement).length
-  const achievementRate =
-    pullRequests.length > 0 ? (achievementCount / pullRequests.length) * 100 : 0
+  const stats = calcStats(pullRequests, (pr) => pr.createAndDeployDiff)
+  const prev = calcStats(prevPullRequests, (pr) => pr.createAndDeployDiff)
 
   return {
     pullRequests,
     from: from.toISOString(),
-    to: to.toISOString(),
     objective,
-    achievementCount,
-    achievementRate,
+    ...stats,
+    prev,
     teams,
     businessDaysOnly,
   }
@@ -87,10 +97,11 @@ export default function DeployedPage({
   loaderData: {
     pullRequests,
     from,
-    to,
     objective,
-    achievementCount,
+    count,
     achievementRate,
+    median,
+    prev,
     teams,
     businessDaysOnly,
   },
@@ -110,59 +121,21 @@ export default function DeployedPage({
         </PageHeaderHeading>
         <PageHeaderActions>
           <TeamFilter teams={teams} />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-label={`Copy ${pullRequests.length} rows as markdown`}
-            onClick={() => {
-              navigator.clipboard.writeText(generateMarkdown(pullRequests))
-              toast.info(`Copied ${pullRequests.length} rows`)
-            }}
-          >
-            <CopyIcon size="16" />
-          </Button>
         </PageHeaderActions>
       </PageHeader>
 
-      <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
-        <WeeklyCalendar
-          value={from}
-          onWeekChange={(start) => {
-            setSearchParams((prev) => {
-              prev.set('from', dayjs(start).format('YYYY-MM-DD'))
-              prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
-              return prev
-            })
-          }}
-        />
-
-        <div className="flex-1" />
-
-        <div>
-          <Label>Objective</Label>
-          <div className="grid grid-cols-2 gap-x-4">
-            <div>Time to Deploy</div>
-            <div>
-              {'< '}
-              {objective.toFixed(1)}
-              <small>d</small>
-            </div>
-            <div>Achievement</div>
-            <div>
-              {achievementRate.toFixed(1)}
-              <small>% ({achievementCount.toLocaleString()})</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <AppDataTable
         title={
-          <div>
-            Deployed {dayjs(from).tz(timezone).format('M/D')} -{' '}
-            {dayjs(to).tz(timezone).format('M/D')}: {pullRequests.length}
-          </div>
+          <WeeklyCalendar
+            value={from}
+            onWeekChange={(start) => {
+              setSearchParams((prev) => {
+                prev.set('from', dayjs(start).format('YYYY-MM-DD'))
+                prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
+                return prev
+              })
+            }}
+          />
         }
         columns={columns}
         data={pullRequests}
@@ -187,7 +160,44 @@ export default function DeployedPage({
             </DropdownMenuCheckboxItem>
           </>
         }
-      />
+      >
+        <div className="grid grid-cols-3 gap-4">
+          <StatCard value={count} label="Deployed">
+            <DiffBadge
+              value={count}
+              prevValue={prev.count}
+              format={(d) => `${d >= 0 ? '+' : ''}${d}`}
+            />
+          </StatCard>
+          <StatCard
+            value={median !== null ? `${median.toFixed(1)}d` : '–'}
+            label="Median Time to Deploy"
+          >
+            {median !== null && (
+              <DiffBadge
+                value={median}
+                prevValue={prev.median}
+                format={(d) => `${d >= 0 ? '+' : ''}${d.toFixed(1)}d`}
+                invertColor
+              />
+            )}
+          </StatCard>
+          <StatCard
+            value={`${achievementRate.toFixed(1)}%`}
+            label="Achievement"
+          >
+            <DiffBadge
+              value={achievementRate}
+              prevValue={prev.achievementRate}
+              format={(d) => `${d >= 0 ? '+' : ''}${d.toFixed(1)}%`}
+            />
+            <div className="text-muted-foreground/70 text-xs">
+              Goal {'< '}
+              {objective.toFixed(1)}d
+            </div>
+          </StatCard>
+        </div>
+      </AppDataTable>
     </Stack>
   )
 }

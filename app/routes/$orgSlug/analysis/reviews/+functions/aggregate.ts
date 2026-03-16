@@ -3,17 +3,7 @@
  * clientLoader で呼び出し、集計済みデータをチャートコンポーネントに渡す。
  */
 import { getPRComplexity, type PRSizeLabel } from '~/app/libs/pr-classify'
-
-// --- 共通ユーティリティ ---
-
-function median(values: number[]): number | null {
-  if (values.length === 0) return null
-  const sorted = [...values].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 !== 0
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2
-}
+import { median } from '~/app/libs/stats'
 
 function formatHours(h: number): string {
   if (h < 1) return `${(h * 60).toFixed(0)}m`
