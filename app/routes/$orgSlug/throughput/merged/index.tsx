@@ -87,9 +87,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   return {
     pullRequests,
     from: from.toISOString(),
-    to: to.toISOString(),
     objective,
-    achievementCount,
     achievementRate,
     median,
     teams,
@@ -101,7 +99,6 @@ export default function OrganizationIndex({
   loaderData: {
     pullRequests,
     from,
-    to,
     objective,
     achievementRate,
     median,

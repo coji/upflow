@@ -87,7 +87,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   return {
     pullRequests,
     from: from.toISOString(),
-    to: to.toISOString(),
     objective,
     achievementRate,
     median,
