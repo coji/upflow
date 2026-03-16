@@ -10,7 +10,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   const firstOrg = await getFirstOrganization(session.user.id)
   if (firstOrg) {
-    throw redirect(href('/:orgSlug', { orgSlug: firstOrg.slug! }))
+    throw redirect(href('/:orgSlug', { orgSlug: firstOrg.slug }))
   }
 
   throw redirect('/no-org')

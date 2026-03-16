@@ -48,7 +48,7 @@ const AdminOrganizationIndex = ({
                     <Button asChild size="sm" variant="link">
                       <Link
                         to={href('/:orgSlug/settings', {
-                          orgSlug: organization.slug!,
+                          orgSlug: organization.slug,
                         })}
                       >
                         Settings

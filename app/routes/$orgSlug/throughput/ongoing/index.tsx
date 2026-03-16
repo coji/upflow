@@ -61,10 +61,14 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
 export default function OngoingPage({
   loaderData: { pullRequests, median, teams, businessDaysOnly },
+  params: { orgSlug },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
   const timezone = useTimezone()
-  const columns = useMemo(() => createColumns(timezone), [timezone])
+  const columns = useMemo(
+    () => createColumns(timezone, orgSlug),
+    [timezone, orgSlug],
+  )
 
   return (
     <Stack>

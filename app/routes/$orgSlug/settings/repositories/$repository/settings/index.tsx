@@ -83,7 +83,7 @@ export const action = async ({
   await updateRepository(organization.id, repositoryId, submission.value)
 
   return redirect(
-    href('/:orgSlug/settings/repositories', { orgSlug: organization.slug! }),
+    href('/:orgSlug/settings/repositories', { orgSlug: organization.slug }),
   )
 }
 
@@ -160,7 +160,7 @@ const GithubRepositoryForm = ({
           <Button asChild variant="ghost">
             <Link
               to={href('/:orgSlug/settings/repositories', {
-                orgSlug: organization.slug!,
+                orgSlug: organization.slug,
               })}
             >
               Cancel
