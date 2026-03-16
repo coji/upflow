@@ -169,7 +169,7 @@ jobs:
             COMMIT_SHA=${{ github.sha }}
           provenance: false
           cache-from: type=gha
-          cache-to: type=gha,mode=min
+          cache-to: type=gha,mode=max
 
   deploy:
     name: 🚀 Deploy

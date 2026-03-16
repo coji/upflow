@@ -8,3 +8,6 @@ build
 dist
 data
 test
+opensrc
+.git
+.github

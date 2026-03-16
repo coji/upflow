@@ -1,19 +1,29 @@
 ARG NODE_VERSION=24.12.0
 ARG PNPM_VERSION=10.26.2
 
-# base node image
-FROM node:${NODE_VERSION}-slim AS base
+# --- Build base: includes native build tools for better-sqlite3 ---
+FROM node:${NODE_VERSION}-slim AS build-base
 
-# Install dependencies and Atlas
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip vim build-essential python3 \
+  && apt-get install --no-install-recommends -y openssl curl ca-certificates build-essential python3 \
+  && apt-get clean \
+  && npm i -g pnpm@${PNPM_VERSION} \
+  && rm -rf /var/lib/apt/lists/*
+
+
+# --- Runtime base: minimal packages for production ---
+FROM node:${NODE_VERSION}-slim AS runtime-base
+
+RUN apt-get update \
+  && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip vim \
   && apt-get clean \
   && npm i -g pnpm@${PNPM_VERSION} \
   && curl -sSf https://atlasgo.sh | sh \
-  && rm -rf /var/lib/apt/lists/* 
+  && rm -rf /var/lib/apt/lists/*
 
-# Install all node_modules, including dev dependencies
-FROM base AS deps
+
+# --- Install all node_modules (dev + prod) ---
+FROM build-base AS deps
 
 WORKDIR /upflow
 
@@ -21,10 +31,10 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm fetch
 
 
-# Setup production node_modules
-FROM base AS production-deps
+# --- Production node_modules only ---
+FROM build-base AS production-deps
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
@@ -32,8 +42,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --offline --frozen-lockfile
 
 
-# Build the app
-FROM base AS build
+# --- Build the app ---
+FROM build-base AS build
 
 WORKDIR /upflow
 
@@ -45,13 +55,13 @@ COPY . .
 RUN pnpm run build
 
 
-# Finally, build the production image with minimal footprint
-FROM base
+# --- Production image ---
+FROM runtime-base
 
-ENV DATABASE_URL "file:/upflow/data/data.db?connection_limit=1"
-ENV UPFLOW_DATA_DIR "/upflow/data"
-ENV PORT "8080"
-ENV NODE_ENV "production"
+ENV DATABASE_URL="file:/upflow/data/data.db?connection_limit=1"
+ENV UPFLOW_DATA_DIR="/upflow/data"
+ENV PORT="8080"
+ENV NODE_ENV="production"
 
 # add shortcut for connecting to database CLI
 RUN printf '#!/bin/sh\nset -x\nsqlite3 file:/upflow/data/data.db\n' > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
