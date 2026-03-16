@@ -80,7 +80,7 @@
     "octokit": "5.0.5",
     "radix-ui": "latest",
     "react": "19.2.4",
-    "react-day-picker": "9.13.0",
+    "react-day-picker": "9.14.0",
     "react-dom": "19.2.4",
     "react-resizable-panels": "3.0.2",
     "react-router": "7.13.1",
