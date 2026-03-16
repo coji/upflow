@@ -38,7 +38,10 @@ export function ConfirmDialog<T>(props: ConfirmDialogProps<T>) {
     ...actions
   } = props
 
-  const onClose = useCallback(() => actions.onOpenChange(false), [])
+  const onClose = useCallback(
+    () => actions.onOpenChange(false),
+    [actions.onOpenChange],
+  )
   const { isSubmitting, FormComponent } = useFormDialogState({
     fetcher,
     onClose,
