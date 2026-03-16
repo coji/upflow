@@ -100,19 +100,6 @@ export default function OngoingPage({
         </PageHeaderActions>
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-lg border p-4 text-center">
-          <div className="text-3xl font-bold">{pullRequests.length}</div>
-          <div className="text-muted-foreground text-sm">Ongoing</div>
-        </div>
-        <div className="rounded-lg border p-4 text-center">
-          <div className="text-3xl font-bold">
-            {median !== null ? `${median.toFixed(1)}d` : '–'}
-          </div>
-          <div className="text-muted-foreground text-sm">Median Age</div>
-        </div>
-      </div>
-
       <AppDataTable
         columns={columns}
         data={pullRequests}
@@ -137,7 +124,20 @@ export default function OngoingPage({
             </DropdownMenuCheckboxItem>
           </>
         }
-      />
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-lg border p-4 text-center">
+            <div className="text-3xl font-bold">{pullRequests.length}</div>
+            <div className="text-muted-foreground text-sm">Ongoing</div>
+          </div>
+          <div className="rounded-lg border p-4 text-center">
+            <div className="text-3xl font-bold">
+              {median !== null ? `${median.toFixed(1)}d` : '–'}
+            </div>
+            <div className="text-muted-foreground text-sm">Median Age</div>
+          </div>
+        </div>
+      </AppDataTable>
     </Stack>
   )
 }
