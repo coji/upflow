@@ -30,7 +30,7 @@ export function AppDataTableViewOptions<TData>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="ghost" size="sm">
           <Settings2Icon className="h-4 w-4" />
           Options
         </Button>

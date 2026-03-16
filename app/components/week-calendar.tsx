@@ -174,7 +174,7 @@ const WeeklyCalendar = ({
     <div className="flex items-center gap-1">
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         size="icon"
         className="h-8 w-8"
         onClick={handlePrevWeek}
@@ -227,7 +227,7 @@ const WeeklyCalendar = ({
 
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         size="icon"
         className="h-8 w-8"
         onClick={handleNextWeek}
