@@ -46,8 +46,11 @@ export const getOpenPullRequests = async (
     .select(
       sql<number>`exists(
         select 1 from ${sql.ref('pullRequestReviewers')}
+        left join ${sql.ref('companyGithubUsers')} as ${sql.ref('reviewer_user')}
+          on lower(${sql.ref('pullRequestReviewers.reviewer')}) = lower(${sql.ref('reviewer_user.login')})
         where ${sql.ref('pullRequestReviewers.pullRequestNumber')} = ${sql.ref('pullRequests.number')}
         and ${sql.ref('pullRequestReviewers.repositoryId')} = ${sql.ref('pullRequests.repositoryId')}
+        and (${sql.ref('reviewer_user.type')} is null or ${sql.ref('reviewer_user.type')} != 'Bot')
       )`.as('hasAnyReviewer'),
     )
     .execute()
@@ -92,6 +95,12 @@ export const getPendingReviewAssignments = async (
     .where('pullRequests.mergedAt', 'is', null)
     .where('pullRequests.closedAt', 'is', null)
     .where('pullRequestReviewers.requestedAt', 'is not', null)
+    .where((eb) =>
+      eb.or([
+        eb('companyGithubUsers.type', 'is', null),
+        eb('companyGithubUsers.type', '!=', 'Bot'),
+      ]),
+    )
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
