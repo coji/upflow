@@ -14,9 +14,17 @@ mkdir -p "$STAGING_DIR"
 cd "$DATA_DIR"
 
 # sqlite3 .backup でアトミックにコピー（WAL書き込み中でも一貫性が保証される）
+db_count=0
 for f in *.db; do
+  [ -e "$f" ] || continue
   sqlite3 "$f" ".backup $STAGING_DIR/$f"
+  db_count=$((db_count + 1))
 done
+
+if [ "$db_count" -eq 0 ]; then
+  echo "No database files found in $DATA_DIR" >&2
+  exit 1
+fi
 
 # Create archive from staging
 tar czf "$OUTPUT" -C "$STAGING_DIR" .

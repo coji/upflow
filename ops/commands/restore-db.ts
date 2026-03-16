@@ -17,7 +17,7 @@ function listBackups(): string[] {
     .reverse()
 }
 
-export function restoreDbCommand(options: RestoreDbOptions) {
+export async function restoreDbCommand(options: RestoreDbOptions) {
   const backups = listBackups()
   if (backups.length === 0) {
     consola.error('No backups found in data/')
@@ -53,6 +53,21 @@ export function restoreDbCommand(options: RestoreDbOptions) {
     process.exit(1)
   }
 
+  const dbCount = filesToRestore.filter((f) => f.endsWith('.db')).length
+  consola.warn(
+    `This will replace all current database files with ${dbCount} database(s) from ${target}.`,
+  )
+  consola.warn(
+    'Ensure no batch jobs or dev server are accessing the databases.',
+  )
+  const confirmed = await consola.prompt('Continue with restore?', {
+    type: 'confirm',
+  })
+  if (!confirmed) {
+    consola.info('Restore cancelled')
+    return
+  }
+
   // Remove current db files
   const currentDbFiles = fs.readdirSync(DATA_DIR).filter(isDbFile)
   for (const f of currentDbFiles) {
@@ -64,6 +79,5 @@ export function restoreDbCommand(options: RestoreDbOptions) {
     fs.copyFileSync(path.join(backupDir, f), path.join(DATA_DIR, f))
   }
 
-  const dbCount = filesToRestore.filter((f) => f.endsWith('.db')).length
   consola.success(`Restored ${dbCount} database(s) from ${target}`)
 }
