@@ -1,8 +1,7 @@
 import consola from 'consola'
 import fs from 'node:fs'
 import path from 'node:path'
-
-const DATA_DIR = 'data'
+import { BACKUP_PREFIX, DATA_DIR, isDbFile } from '../lib/data-dir'
 
 interface RestoreDbOptions {
   name?: string
@@ -11,12 +10,9 @@ interface RestoreDbOptions {
 function listBackups(): string[] {
   if (!fs.existsSync(DATA_DIR)) return []
   return fs
-    .readdirSync(DATA_DIR)
-    .filter(
-      (f) =>
-        f.startsWith('backup_') &&
-        fs.statSync(path.join(DATA_DIR, f)).isDirectory(),
-    )
+    .readdirSync(DATA_DIR, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name.startsWith(BACKUP_PREFIX))
+    .map((d) => d.name)
     .sort()
     .reverse()
 }
@@ -43,18 +39,14 @@ export function restoreDbCommand(options: RestoreDbOptions) {
   }
 
   const backupDir = path.join(DATA_DIR, target)
-  if (!fs.existsSync(backupDir) || !fs.statSync(backupDir).isDirectory()) {
+  const stat = fs.statSync(backupDir, { throwIfNoEntry: false })
+  if (!stat?.isDirectory()) {
     consola.error(`Backup not found: ${target}`)
     consola.info('Run without --name to list available backups')
     process.exit(1)
   }
 
-  const filesToRestore = fs
-    .readdirSync(backupDir)
-    .filter(
-      (f) =>
-        f.endsWith('.db') || f.endsWith('.db-wal') || f.endsWith('.db-shm'),
-    )
+  const filesToRestore = fs.readdirSync(backupDir).filter(isDbFile)
 
   if (filesToRestore.length === 0) {
     consola.error(`No database files in backup: ${target}`)
@@ -62,13 +54,7 @@ export function restoreDbCommand(options: RestoreDbOptions) {
   }
 
   // Remove current db files
-  const currentDbFiles = fs
-    .readdirSync(DATA_DIR)
-    .filter(
-      (f) =>
-        (f.endsWith('.db') || f.endsWith('.db-wal') || f.endsWith('.db-shm')) &&
-        !f.startsWith('backup_'),
-    )
+  const currentDbFiles = fs.readdirSync(DATA_DIR).filter(isDbFile)
   for (const f of currentDbFiles) {
     fs.unlinkSync(path.join(DATA_DIR, f))
   }

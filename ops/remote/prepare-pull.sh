@@ -7,7 +7,8 @@ DATA_DIR="/upflow/data"
 STAGING_DIR="/tmp/upflow-pull"
 OUTPUT="/tmp/upflow-data.tar.gz"
 
-rm -rf "$STAGING_DIR"
+# 前回の残りがあれば削除
+rm -rf "$STAGING_DIR" "$OUTPUT"
 mkdir -p "$STAGING_DIR"
 
 cd "$DATA_DIR"

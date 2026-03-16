@@ -3,8 +3,8 @@ import consola from 'consola'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { BACKUP_PREFIX, DATA_DIR, isDbFile } from '../lib/data-dir'
 
-const DATA_DIR = 'data'
 const VALID_APP_NAME = /^[a-z0-9-]+$/
 
 interface PullDbOptions {
@@ -26,19 +26,14 @@ function backupExistingData() {
     return
   }
 
-  const dbFiles = fs
-    .readdirSync(DATA_DIR)
-    .filter(
-      (f) =>
-        f.endsWith('.db') || f.endsWith('.db-wal') || f.endsWith('.db-shm'),
-    )
+  const dbFiles = fs.readdirSync(DATA_DIR).filter(isDbFile)
   if (dbFiles.length === 0) {
     consola.info('No database files to back up')
     return
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const backupDir = path.join(DATA_DIR, `backup_${timestamp}`)
+  const backupDir = path.join(DATA_DIR, `${BACKUP_PREFIX}${timestamp}`)
   fs.mkdirSync(backupDir, { recursive: true })
 
   for (const file of dbFiles) {
@@ -55,8 +50,8 @@ function pullAllDbs(app: string) {
   const remoteTar = '/tmp/upflow-data.tar.gz'
   const localTar = path.join(DATA_DIR, '_pull.tar.gz')
 
-  // Step 1: リモートで checkpoint + tar.gz 作成
-  consola.start('Remote: checkpointing databases and creating archive...')
+  // Step 1: リモートで .backup + tar.gz 作成
+  consola.start('Remote: creating atomic backups and archive...')
   const output = execFileSync(
     'fly',
     [
@@ -89,8 +84,10 @@ function pullAllDbs(app: string) {
 
   // Step 2: 1回の SFTP で tar.gz を取得
   consola.start('Pulling archive...')
-  if (fs.existsSync(localTar)) {
+  try {
     fs.unlinkSync(localTar)
+  } catch {
+    // file may not exist
   }
   execFileSync('fly', ['ssh', 'sftp', 'get', '-a', app, remoteTar, localTar], {
     stdio: 'inherit',
@@ -103,17 +100,6 @@ function pullAllDbs(app: string) {
     stdio: 'inherit',
   })
   fs.unlinkSync(localTar)
-
-  // Step 4: リモートの一時ファイルを削除
-  try {
-    execFileSync(
-      'fly',
-      ['ssh', 'console', '-a', app, '-C', `rm -f ${remoteTar}`],
-      { stdio: ['pipe', 'pipe', 'pipe'] },
-    )
-  } catch {
-    // non-critical
-  }
 
   consola.success(`Pulled ${dbFiles.length} database(s)`)
   return dbFiles
@@ -159,17 +145,14 @@ export function pullDbCommand(options: PullDbOptions) {
   // Ensure data directory exists
   fs.mkdirSync(DATA_DIR, { recursive: true })
 
-  // Step 2: Remote checkpoint + tar + pull + extract
+  // Step 2: Remote backup + tar + pull + extract
   const dbFiles = pullAllDbs(app)
 
   // Step 3: Sanitize export settings
   if (!noSanitize) {
     consola.start('Sanitizing export settings...')
     for (const file of dbFiles) {
-      const dbPath = path.join(DATA_DIR, file)
-      if (fs.existsSync(dbPath)) {
-        sanitizeExportSettings(dbPath)
-      }
+      sanitizeExportSettings(path.join(DATA_DIR, file))
     }
     consola.success('Sanitization complete')
   }
