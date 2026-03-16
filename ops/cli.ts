@@ -1,5 +1,6 @@
 import { cli, command } from 'cleye'
 import { pullDbCommand } from './commands/pull-db'
+import { restoreDbCommand } from './commands/restore-db'
 
 const pullDb = command(
   {
@@ -32,7 +33,27 @@ const pullDb = command(
   },
 )
 
+const restoreDb = command(
+  {
+    name: 'restore-db',
+    flags: {
+      name: {
+        type: String,
+        description:
+          'Backup name to restore (e.g. backup_2026-03-15T14-18-50-365Z). Omit to list available backups.',
+      },
+    },
+    help: {
+      description: 'Restore database files from a previous backup.',
+    },
+  },
+  (argv) => {
+    const { help, ...flags } = argv.flags
+    restoreDbCommand(flags)
+  },
+)
+
 cli({
   name: 'ops',
-  commands: [pullDb],
+  commands: [pullDb, restoreDb],
 })
