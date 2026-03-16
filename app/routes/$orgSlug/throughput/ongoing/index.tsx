@@ -51,11 +51,23 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     teamParam || undefined,
     businessDaysOnly,
   )
-  return { pullRequests, teams, businessDaysOnly }
+
+  const ages = pullRequests
+    .map((pr) => pr.createAndNowDiff)
+    .filter((v): v is number => v !== null)
+    .sort((a, b) => a - b)
+  const median =
+    ages.length > 0
+      ? ages.length % 2 === 1
+        ? ages[Math.floor(ages.length / 2)]
+        : (ages[ages.length / 2 - 1] + ages[ages.length / 2]) / 2
+      : null
+
+  return { pullRequests, median, teams, businessDaysOnly }
 }
 
 export default function OngoingPage({
-  loaderData: { pullRequests, teams, businessDaysOnly },
+  loaderData: { pullRequests, median, teams, businessDaysOnly },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
   const timezone = useTimezone()
@@ -88,8 +100,20 @@ export default function OngoingPage({
         </PageHeaderActions>
       </PageHeader>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-lg border p-4 text-center">
+          <div className="text-3xl font-bold">{pullRequests.length}</div>
+          <div className="text-muted-foreground text-sm">Ongoing</div>
+        </div>
+        <div className="rounded-lg border p-4 text-center">
+          <div className="text-3xl font-bold">
+            {median !== null ? `${median.toFixed(1)}d` : '–'}
+          </div>
+          <div className="text-muted-foreground text-sm">Median Age</div>
+        </div>
+      </div>
+
       <AppDataTable
-        title={<div>Ongoing pull requests: {pullRequests.length}</div>}
         columns={columns}
         data={pullRequests}
         getRowId={(row) => `${row.repositoryId}:${row.number}`}

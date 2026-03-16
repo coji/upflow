@@ -11,7 +11,7 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { TeamFilter } from '~/app/components/team-filter'
-import { Button, Label, Stack } from '~/app/components/ui'
+import { Button, Stack } from '~/app/components/ui'
 import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
@@ -71,13 +71,26 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const achievementRate =
     pullRequests.length > 0 ? (achievementCount / pullRequests.length) * 100 : 0
 
+  const deployTimes = pullRequests
+    .map((pr) => pr.createAndDeployDiff)
+    .filter((v): v is number => v !== null)
+    .sort((a, b) => a - b)
+  const median =
+    deployTimes.length > 0
+      ? deployTimes.length % 2 === 1
+        ? deployTimes[Math.floor(deployTimes.length / 2)]
+        : (deployTimes[deployTimes.length / 2 - 1] +
+            deployTimes[deployTimes.length / 2]) /
+          2
+      : null
+
   return {
     pullRequests,
     from: from.toISOString(),
     to: to.toISOString(),
     objective,
-    achievementCount,
     achievementRate,
+    median,
     teams,
     businessDaysOnly,
   }
@@ -87,10 +100,9 @@ export default function DeployedPage({
   loaderData: {
     pullRequests,
     from,
-    to,
     objective,
-    achievementCount,
     achievementRate,
+    median,
     teams,
     businessDaysOnly,
   },
@@ -125,45 +137,43 @@ export default function DeployedPage({
         </PageHeaderActions>
       </PageHeader>
 
-      <div className="flex flex-col items-start gap-x-4 gap-y-2 md:flex-row">
-        <WeeklyCalendar
-          value={from}
-          onWeekChange={(start) => {
-            setSearchParams((prev) => {
-              prev.set('from', dayjs(start).format('YYYY-MM-DD'))
-              prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
-              return prev
-            })
-          }}
-        />
+      <WeeklyCalendar
+        value={from}
+        onWeekChange={(start) => {
+          setSearchParams((prev) => {
+            prev.set('from', dayjs(start).format('YYYY-MM-DD'))
+            prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
+            return prev
+          })
+        }}
+      />
 
-        <div className="flex-1" />
-
-        <div>
-          <Label>Objective</Label>
-          <div className="grid grid-cols-2 gap-x-4">
-            <div>Time to Deploy</div>
-            <div>
-              {'< '}
-              {objective.toFixed(1)}
-              <small>d</small>
-            </div>
-            <div>Achievement</div>
-            <div>
-              {achievementRate.toFixed(1)}
-              <small>% ({achievementCount.toLocaleString()})</small>
-            </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-lg border p-4 text-center">
+          <div className="text-3xl font-bold">{pullRequests.length}</div>
+          <div className="text-muted-foreground text-sm">Deployed</div>
+        </div>
+        <div className="rounded-lg border p-4 text-center">
+          <div className="text-3xl font-bold">
+            {median !== null ? `${median.toFixed(1)}d` : '–'}
+          </div>
+          <div className="text-muted-foreground text-sm">
+            Median Time to Deploy
+          </div>
+        </div>
+        <div className="rounded-lg border p-4 text-center">
+          <div className="text-3xl font-bold">
+            {achievementRate.toFixed(1)}%
+          </div>
+          <div className="text-muted-foreground text-sm">Achievement</div>
+          <div className="text-muted-foreground/70 text-xs">
+            Goal {'< '}
+            {objective.toFixed(1)}d
           </div>
         </div>
       </div>
 
       <AppDataTable
-        title={
-          <div>
-            Deployed {dayjs(from).tz(timezone).format('M/D')} -{' '}
-            {dayjs(to).tz(timezone).format('M/D')}: {pullRequests.length}
-          </div>
-        }
         columns={columns}
         data={pullRequests}
         getRowId={(row) => `${row.repositoryId}:${row.number}`}
