@@ -1,6 +1,7 @@
 import { pipe, sortBy } from 'remeda'
 import { calculateBusinessHours } from '~/app/libs/business-hours'
 import dayjs from '~/app/libs/dayjs'
+import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -30,12 +31,7 @@ export const getMergedPullRequestReport = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-    .where((eb) =>
-      eb.or([
-        eb('companyGithubUsers.type', 'is', null),
-        eb('companyGithubUsers.type', '!=', 'Bot'),
-      ]),
-    )
+    .where(excludeBots)
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(

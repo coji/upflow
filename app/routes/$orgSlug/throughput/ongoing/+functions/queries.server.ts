@@ -1,6 +1,7 @@
 import { pipe, sortBy } from 'remeda'
 import { calculateBusinessHours } from '~/app/libs/business-hours'
 import dayjs from '~/app/libs/dayjs'
+import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -33,12 +34,7 @@ export const getOngoingPullRequestReport = async (
     )
     .where('mergedAt', 'is', null)
     .where('state', '=', 'open')
-    .where((eb) =>
-      eb.or([
-        eb('companyGithubUsers.type', 'is', null),
-        eb('companyGithubUsers.type', '!=', 'Bot'),
-      ]),
-    )
+    .where(excludeBots)
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(

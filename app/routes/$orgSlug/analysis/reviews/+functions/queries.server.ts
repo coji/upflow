@@ -1,4 +1,5 @@
 import { sql } from 'kysely'
+import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -122,12 +123,7 @@ export const getWipCycleRawData = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-    .where((eb) =>
-      eb.or([
-        eb('companyGithubUsers.type', 'is', null),
-        eb('companyGithubUsers.type', '!=', 'Bot'),
-      ]),
-    )
+    .where(excludeBots)
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(
@@ -188,12 +184,7 @@ export const getPRSizeDistribution = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-    .where((eb) =>
-      eb.or([
-        eb('companyGithubUsers.type', 'is', null),
-        eb('companyGithubUsers.type', '!=', 'Bot'),
-      ]),
-    )
+    .where(excludeBots)
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(

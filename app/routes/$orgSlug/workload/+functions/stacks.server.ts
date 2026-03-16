@@ -1,4 +1,5 @@
 import { sql } from 'kysely'
+import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -26,12 +27,7 @@ export const getOpenPullRequests = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-    .where((eb) =>
-      eb.or([
-        eb('companyGithubUsers.type', 'is', null),
-        eb('companyGithubUsers.type', '!=', 'Bot'),
-      ]),
-    )
+    .where(excludeBots)
     .select([
       'pullRequests.author',
       'pullRequests.number',
@@ -48,6 +44,10 @@ export const getOpenPullRequests = async (
         select 1 from ${sql.ref('pullRequestReviewers')}
         where ${sql.ref('pullRequestReviewers.pullRequestNumber')} = ${sql.ref('pullRequests.number')}
         and ${sql.ref('pullRequestReviewers.repositoryId')} = ${sql.ref('pullRequests.repositoryId')}
+        and lower(${sql.ref('pullRequestReviewers.reviewer')}) not in (
+          select lower(${sql.ref('companyGithubUsers.login')}) from ${sql.ref('companyGithubUsers')}
+          where ${sql.ref('companyGithubUsers.type')} = 'Bot'
+        )
       )`.as('hasAnyReviewer'),
     )
     .execute()
@@ -92,6 +92,7 @@ export const getPendingReviewAssignments = async (
     .where('pullRequests.mergedAt', 'is', null)
     .where('pullRequests.closedAt', 'is', null)
     .where('pullRequestReviewers.requestedAt', 'is not', null)
+    .where(excludeBots)
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
