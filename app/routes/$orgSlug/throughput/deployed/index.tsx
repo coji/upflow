@@ -56,43 +56,82 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     to = getEndOfWeek(undefined, timezone)
   }
 
-  const teams = await listTeams(organization.id)
+  const prevFrom = from.subtract(7, 'day')
+  const prevTo = to.subtract(7, 'day')
 
-  const pullRequests = await getDeployedPullRequestReport(
-    organization.id,
-    from.utc().toISOString(),
-    to.utc().toISOString(),
-    objective,
-    teamParam || undefined,
-    businessDaysOnly,
-  )
+  const [teams, pullRequests, prevPullRequests] = await Promise.all([
+    listTeams(organization.id),
+    getDeployedPullRequestReport(
+      organization.id,
+      from.utc().toISOString(),
+      to.utc().toISOString(),
+      objective,
+      teamParam || undefined,
+      businessDaysOnly,
+    ),
+    getDeployedPullRequestReport(
+      organization.id,
+      prevFrom.utc().toISOString(),
+      prevTo.utc().toISOString(),
+      objective,
+      teamParam || undefined,
+      businessDaysOnly,
+    ),
+  ])
 
-  const achievementCount = pullRequests.filter((pr) => pr.achievement).length
-  const achievementRate =
-    pullRequests.length > 0 ? (achievementCount / pullRequests.length) * 100 : 0
+  const calcStats = (prs: typeof pullRequests) => {
+    const achievementCount = prs.filter((pr) => pr.achievement).length
+    const achievementRate =
+      prs.length > 0 ? (achievementCount / prs.length) * 100 : 0
+    const times = prs
+      .map((pr) => pr.createAndDeployDiff)
+      .filter((v): v is number => v !== null)
+      .sort((a, b) => a - b)
+    const median =
+      times.length > 0
+        ? times.length % 2 === 1
+          ? times[Math.floor(times.length / 2)]
+          : (times[times.length / 2 - 1] + times[times.length / 2]) / 2
+        : null
+    return { count: prs.length, achievementRate, median }
+  }
 
-  const deployTimes = pullRequests
-    .map((pr) => pr.createAndDeployDiff)
-    .filter((v): v is number => v !== null)
-    .sort((a, b) => a - b)
-  const median =
-    deployTimes.length > 0
-      ? deployTimes.length % 2 === 1
-        ? deployTimes[Math.floor(deployTimes.length / 2)]
-        : (deployTimes[deployTimes.length / 2 - 1] +
-            deployTimes[deployTimes.length / 2]) /
-          2
-      : null
+  const stats = calcStats(pullRequests)
+  const prevStats = calcStats(prevPullRequests)
 
   return {
     pullRequests,
     from: from.toISOString(),
     objective,
-    achievementRate,
-    median,
+    ...stats,
+    prev: prevStats,
     teams,
     businessDaysOnly,
   }
+}
+
+function DiffBadge({
+  value,
+  prevValue,
+  format = (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
+  invertColor = false,
+}: {
+  value: number
+  prevValue: number | null
+  format?: (diff: number) => string
+  invertColor?: boolean
+}) {
+  if (prevValue === null) return null
+  const diff = value - prevValue
+  if (diff === 0) return null
+  const isPositive = invertColor ? diff < 0 : diff > 0
+  return (
+    <span
+      className={`text-xs font-medium ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}
+    >
+      {format(diff)}
+    </span>
+  )
 }
 
 export default function DeployedPage({
@@ -100,8 +139,10 @@ export default function DeployedPage({
     pullRequests,
     from,
     objective,
+    count,
     achievementRate,
     median,
+    prev,
     teams,
     businessDaysOnly,
   },
@@ -175,8 +216,13 @@ export default function DeployedPage({
       >
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-lg border p-4 text-center">
-            <div className="text-3xl font-bold">{pullRequests.length}</div>
+            <div className="text-3xl font-bold">{count}</div>
             <div className="text-muted-foreground text-sm">Deployed</div>
+            <DiffBadge
+              value={count}
+              prevValue={prev.count}
+              format={(d) => `${d >= 0 ? '+' : ''}${d}`}
+            />
           </div>
           <div className="rounded-lg border p-4 text-center">
             <div className="text-3xl font-bold">
@@ -185,12 +231,25 @@ export default function DeployedPage({
             <div className="text-muted-foreground text-sm">
               Median Time to Deploy
             </div>
+            {median !== null && (
+              <DiffBadge
+                value={median}
+                prevValue={prev.median}
+                format={(d) => `${d >= 0 ? '+' : ''}${d.toFixed(1)}d`}
+                invertColor
+              />
+            )}
           </div>
           <div className="rounded-lg border p-4 text-center">
             <div className="text-3xl font-bold">
               {achievementRate.toFixed(1)}%
             </div>
             <div className="text-muted-foreground text-sm">Achievement</div>
+            <DiffBadge
+              value={achievementRate}
+              prevValue={prev.achievementRate}
+              format={(d) => `${d >= 0 ? '+' : ''}${d.toFixed(1)}%`}
+            />
             <div className="text-muted-foreground/70 text-xs">
               Goal {'< '}
               {objective.toFixed(1)}d
