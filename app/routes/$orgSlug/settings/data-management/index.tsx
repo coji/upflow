@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { data, href, useFetcher, useParams } from 'react-router'
+import { data, href, useFetcher } from 'react-router'
 import { match } from 'ts-pattern'
 import {
   Alert,
@@ -212,12 +212,10 @@ function RecalculateSection() {
 
 // --- Export Data Section ---
 
-function ExportDataSection() {
-  const { orgSlug } = useParams()
+function ExportDataSection({ orgSlug }: { orgSlug: string }) {
   const [includeRaw, setIncludeRaw] = useState(false)
 
   const handleDownload = () => {
-    if (!orgSlug) return
     const params = includeRaw ? '?includeRaw=true' : ''
     window.location.assign(
       href('/:orgSlug/settings/data-management/export-parquet', {
@@ -258,6 +256,7 @@ function ExportDataSection() {
 
 export default function DataManagementPage({
   loaderData: { refreshRequestedAt },
+  params: { orgSlug },
 }: Route.ComponentProps) {
   return (
     <ContentSection
@@ -267,7 +266,7 @@ export default function DataManagementPage({
       <Stack gap="6">
         <RefreshSection refreshRequestedAt={refreshRequestedAt} />
         <RecalculateSection />
-        <ExportDataSection />
+        <ExportDataSection orgSlug={orgSlug} />
       </Stack>
     </ContentSection>
   )

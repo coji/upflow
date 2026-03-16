@@ -119,8 +119,9 @@ function MemberLink({
   login: string
   displayName: string
 }) {
-  const { orgSlug = '' } = useParams()
+  const { orgSlug } = useParams()
   const [searchParams] = useSearchParams()
+  if (!orgSlug) throw new Error('MemberLink requires orgSlug param')
   const query = searchParams.toString()
   const basePath = href('/:orgSlug/workload/:login', { orgSlug, login })
   const linkTo = query ? `${basePath}?${query}` : basePath
