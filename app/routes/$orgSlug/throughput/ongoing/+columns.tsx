@@ -6,7 +6,10 @@ import dayjs from '~/app/libs/dayjs'
 import { complexitySortingFn } from '~/app/libs/pr-classify'
 import type { PullRequest } from './index'
 
-export function createColumns(timezone: string): ColumnDef<PullRequest>[] {
+export function createColumns(
+  timezone: string,
+  orgSlug: string,
+): ColumnDef<PullRequest>[] {
   return [
     {
       accessorKey: 'author',
@@ -70,6 +73,7 @@ export function createColumns(timezone: string): ColumnDef<PullRequest>[] {
       ),
       cell: ({ row }) => (
         <SizeBadgePopover
+          orgSlug={orgSlug}
           complexity={row.original.complexity}
           complexityReason={row.original.complexityReason}
           riskAreas={row.original.riskAreas}

@@ -105,10 +105,14 @@ export default function OrganizationIndex({
     teams,
     businessDaysOnly,
   },
+  params: { orgSlug },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
   const timezone = useTimezone()
-  const columns = useMemo(() => createColumns(timezone), [timezone])
+  const columns = useMemo(
+    () => createColumns(timezone, orgSlug),
+    [timezone, orgSlug],
+  )
 
   return (
     <Stack>

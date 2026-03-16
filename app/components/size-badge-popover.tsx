@@ -5,7 +5,7 @@ import {
   SparklesIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { href, useFetcher, useParams } from 'react-router'
+import { href, useFetcher } from 'react-router'
 import { Badge, Button } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
@@ -27,6 +27,7 @@ import {
 import { cn } from '~/app/libs/utils'
 
 interface SizeBadgePopoverProps {
+  orgSlug: string
   complexity: string | null
   complexityReason: string | null
   riskAreas: string | null
@@ -40,6 +41,7 @@ interface SizeBadgePopoverProps {
 }
 
 export function SizeBadgePopover({
+  orgSlug,
   complexity,
   complexityReason,
   riskAreas,
@@ -51,7 +53,6 @@ export function SizeBadgePopover({
   repositoryId,
   number,
 }: SizeBadgePopoverProps) {
-  const { orgSlug } = useParams()
   const fetcher = useFetcher()
   const draftFetcher = useFetcher<{ reason?: string; error?: string }>()
   const [open, setOpen] = useState(false)
@@ -256,7 +257,7 @@ export function SizeBadgePopover({
                 draftFetcher.submit(fd, {
                   method: 'post',
                   action: href('/:orgSlug/draft-feedback-reason', {
-                    orgSlug: orgSlug ?? '',
+                    orgSlug,
                   }),
                 })
               }}
@@ -280,7 +281,7 @@ export function SizeBadgePopover({
                 fetcher.submit(fd, {
                   method: 'post',
                   action: href('/:orgSlug/pr-size-feedback', {
-                    orgSlug: orgSlug ?? '',
+                    orgSlug,
                   }),
                 })
               }}
