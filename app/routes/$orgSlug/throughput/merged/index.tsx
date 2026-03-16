@@ -136,43 +136,19 @@ export default function OrganizationIndex({
         </PageHeaderActions>
       </PageHeader>
 
-      <WeeklyCalendar
-        value={from}
-        onWeekChange={(start) => {
-          setSearchParams((prev) => {
-            prev.set('from', dayjs(start).format('YYYY-MM-DD'))
-            prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
-            return prev
-          })
-        }}
-      />
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-lg border p-4 text-center">
-          <div className="text-3xl font-bold">{pullRequests.length}</div>
-          <div className="text-muted-foreground text-sm">Merged</div>
-        </div>
-        <div className="rounded-lg border p-4 text-center">
-          <div className="text-3xl font-bold">
-            {median !== null ? `${median.toFixed(1)}d` : '–'}
-          </div>
-          <div className="text-muted-foreground text-sm">
-            Median Time to Merge
-          </div>
-        </div>
-        <div className="rounded-lg border p-4 text-center">
-          <div className="text-3xl font-bold">
-            {achievementRate.toFixed(1)}%
-          </div>
-          <div className="text-muted-foreground text-sm">Achievement</div>
-          <div className="text-muted-foreground/70 text-xs">
-            Goal {'< '}
-            {objective.toFixed(1)}d
-          </div>
-        </div>
-      </div>
-
       <AppDataTable
+        title={
+          <WeeklyCalendar
+            value={from}
+            onWeekChange={(start) => {
+              setSearchParams((prev) => {
+                prev.set('from', dayjs(start).format('YYYY-MM-DD'))
+                prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
+                return prev
+              })
+            }}
+          />
+        }
         columns={columns}
         data={pullRequests}
         getRowId={(row) => `${row.repositoryId}:${row.number}`}
@@ -196,7 +172,32 @@ export default function OrganizationIndex({
             </DropdownMenuCheckboxItem>
           </>
         }
-      />
+      >
+        <div className="grid grid-cols-3 gap-4">
+          <div className="rounded-lg border p-4 text-center">
+            <div className="text-3xl font-bold">{pullRequests.length}</div>
+            <div className="text-muted-foreground text-sm">Merged</div>
+          </div>
+          <div className="rounded-lg border p-4 text-center">
+            <div className="text-3xl font-bold">
+              {median !== null ? `${median.toFixed(1)}d` : '–'}
+            </div>
+            <div className="text-muted-foreground text-sm">
+              Median Time to Merge
+            </div>
+          </div>
+          <div className="rounded-lg border p-4 text-center">
+            <div className="text-3xl font-bold">
+              {achievementRate.toFixed(1)}%
+            </div>
+            <div className="text-muted-foreground text-sm">Achievement</div>
+            <div className="text-muted-foreground/70 text-xs">
+              Goal {'< '}
+              {objective.toFixed(1)}d
+            </div>
+          </div>
+        </div>
+      </AppDataTable>
     </Stack>
   )
 }

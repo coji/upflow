@@ -26,6 +26,8 @@ interface AppDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   optionsChildren?: React.ReactNode
+  /** Content rendered between the toolbar and the table. */
+  children?: React.ReactNode
   /** Stable key for each row. When provided, row order is frozen until the user re-sorts via column header click. */
   getRowId?: (row: TData) => string
 }
@@ -57,6 +59,7 @@ export function AppDataTable<TData, TValue>({
   columns,
   data,
   optionsChildren,
+  children,
   getRowId,
 }: AppDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -118,6 +121,7 @@ export function AppDataTable<TData, TValue>({
           {optionsChildren}
         </AppDataTableViewOptions>
       </HStack>
+      {children}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
