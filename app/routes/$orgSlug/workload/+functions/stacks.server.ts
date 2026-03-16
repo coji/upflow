@@ -46,11 +46,12 @@ export const getOpenPullRequests = async (
     .select(
       sql<number>`exists(
         select 1 from ${sql.ref('pullRequestReviewers')}
-        left join ${sql.ref('companyGithubUsers')} as ${sql.ref('reviewer_user')}
-          on lower(${sql.ref('pullRequestReviewers.reviewer')}) = lower(${sql.ref('reviewer_user.login')})
         where ${sql.ref('pullRequestReviewers.pullRequestNumber')} = ${sql.ref('pullRequests.number')}
         and ${sql.ref('pullRequestReviewers.repositoryId')} = ${sql.ref('pullRequests.repositoryId')}
-        and (${sql.ref('reviewer_user.type')} is null or ${sql.ref('reviewer_user.type')} != 'Bot')
+        and lower(${sql.ref('pullRequestReviewers.reviewer')}) not in (
+          select lower(${sql.ref('companyGithubUsers.login')}) from ${sql.ref('companyGithubUsers')}
+          where ${sql.ref('companyGithubUsers.type')} = 'Bot'
+        )
       )`.as('hasAnyReviewer'),
     )
     .execute()
