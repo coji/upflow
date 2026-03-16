@@ -22,14 +22,10 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
-        with:
-          version: 10
-          run_install: false
 
       - name: ⎔ Setup node
         uses: actions/setup-node@v6
         with:
-          node-version: 24
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -47,14 +43,10 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
-        with:
-          version: 10
-          run_install: false
 
       - name: ⎔ Setup node
         uses: actions/setup-node@v6
         with:
-          node-version: 24
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -72,14 +64,10 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
-        with:
-          version: 10
-          run_install: false
 
       - name: ⎔ Setup node
         uses: actions/setup-node@v6
         with:
-          node-version: 24
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -103,14 +91,10 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
-        with:
-          version: 10
-          run_install: false
 
       - name: ⎔ Setup node
         uses: actions/setup-node@v6
         with:
-          node-version: 24
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -169,7 +153,7 @@ jobs:
             COMMIT_SHA=${{ github.sha }}
           provenance: false
           cache-from: type=gha
-          cache-to: type=gha,mode=min
+          cache-to: type=gha,mode=max
 
   deploy:
     name: 🚀 Deploy
