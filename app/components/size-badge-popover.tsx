@@ -256,7 +256,7 @@ export function SizeBadgePopover({
                 draftFetcher.submit(fd, {
                   method: 'post',
                   action: href('/:orgSlug/draft-feedback-reason', {
-                    orgSlug: orgSlug!,
+                    orgSlug: orgSlug ?? '',
                   }),
                 })
               }}
@@ -280,7 +280,7 @@ export function SizeBadgePopover({
                 fetcher.submit(fd, {
                   method: 'post',
                   action: href('/:orgSlug/pr-size-feedback', {
-                    orgSlug: orgSlug!,
+                    orgSlug: orgSlug ?? '',
                   }),
                 })
               }}

@@ -36,7 +36,7 @@ export const action = async ({ params, context }: Route.ActionArgs) => {
   await deleteRepository(organization.id, repositoryId)
 
   return redirect(
-    href('/:orgSlug/settings/repositories', { orgSlug: organization.slug! }),
+    href('/:orgSlug/settings/repositories', { orgSlug: organization.slug }),
   )
 }
 
@@ -76,7 +76,7 @@ export default function DeleteRepositoryPage({
           <Button asChild variant="ghost">
             <Link
               to={href('/:orgSlug/settings/repositories', {
-                orgSlug: organization.slug!,
+                orgSlug: organization.slug,
               })}
             >
               Cancel
