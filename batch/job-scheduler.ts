@@ -26,14 +26,18 @@ export const createJobScheduler = () => {
           const orgId = org.id as OrganizationId
           const refresh = org.organizationSetting.refreshRequestedAt != null
 
-          await durably.jobs.crawl.trigger(
-            { organizationId: orgId, refresh },
-            {
-              concurrencyKey: `crawl:${orgId}`,
-              labels: { organizationId: orgId },
-            },
-          )
-          logger.info(`crawl job triggered for ${org.name}`)
+          try {
+            await durably.jobs.crawl.trigger(
+              { organizationId: orgId, refresh },
+              {
+                concurrencyKey: `crawl:${orgId}`,
+                labels: { organizationId: orgId },
+              },
+            )
+            logger.info(`crawl job triggered for ${org.name}`)
+          } catch (e) {
+            logger.error(`failed to trigger crawl for ${org.name}:`, orgId, e)
+          }
         }
 
         logger.info('crawl cycle completed.')
