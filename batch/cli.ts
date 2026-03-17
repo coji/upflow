@@ -1,6 +1,11 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
 
+// コマンドは全て dynamic import で遅延ロードする。
+// トップレベル import にすると durably.server.ts が読み込まれて
+// worker ポーリングが起動し、durably 不要なコマンド（classify 等）でも
+// プロセスが終了しなくなる。
+
 const crawl = command(
   {
     name: 'crawl',
