@@ -11,7 +11,7 @@ export const codingTime = ({
 }: codingTimeProps) => {
   if (firstCommittedAt && pullRequestCreatedAt) {
     return Math.abs(
-      dayjs(pullRequestCreatedAt).diff(firstCommittedAt, 'days', true),
+      dayjs.utc(pullRequestCreatedAt).diff(firstCommittedAt, 'days', true),
     )
   }
   return null
@@ -29,11 +29,13 @@ export const pickupTime = ({
 }: pickupTimeProps) => {
   if (firstReviewedAt) {
     return Math.abs(
-      dayjs(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true),
+      dayjs.utc(firstReviewedAt).diff(pullRequestCreatedAt, 'days', true),
     )
   }
   if (mergedAt) {
-    return Math.abs(dayjs(mergedAt).diff(pullRequestCreatedAt, 'days', true))
+    return Math.abs(
+      dayjs.utc(mergedAt).diff(pullRequestCreatedAt, 'days', true),
+    )
   }
   return null
 }
@@ -44,7 +46,7 @@ interface reviewTimeProps {
 }
 export const reviewTime = ({ firstReviewedAt, mergedAt }: reviewTimeProps) => {
   if (firstReviewedAt && mergedAt) {
-    return Math.abs(dayjs(mergedAt).diff(firstReviewedAt, 'days', true))
+    return Math.abs(dayjs.utc(mergedAt).diff(firstReviewedAt, 'days', true))
   }
   return null
 }
@@ -55,7 +57,7 @@ interface deployTimeProps {
 }
 export const deployTime = ({ mergedAt, releasedAt }: deployTimeProps) => {
   if (mergedAt && releasedAt) {
-    return Math.abs(dayjs(releasedAt).diff(mergedAt, 'days', true))
+    return Math.abs(dayjs.utc(releasedAt).diff(mergedAt, 'days', true))
   }
   return null
 }
@@ -83,12 +85,12 @@ export const totalTime = ({
       releasedAt,
     ],
     filter((x) => !!x),
-    sortBy((x) => dayjs(x).unix()),
+    sortBy((x) => dayjs.utc(x).unix()),
   )
   const firstTime = first(times)
   const lastTime = last(times)
   if (firstTime && lastTime) {
-    return dayjs(lastTime).diff(firstTime, 'days', true)
+    return dayjs.utc(lastTime).diff(firstTime, 'days', true)
   }
   return null
 }

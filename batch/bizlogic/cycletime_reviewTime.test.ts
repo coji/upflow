@@ -5,25 +5,25 @@ describe('reviewTime', () => {
   test('null', () => {
     expect(reviewTime({ firstReviewedAt: null, mergedAt: null })).toBeNull()
     expect(
-      reviewTime({ firstReviewedAt: '2022-08-01 10:00', mergedAt: null }),
+      reviewTime({ firstReviewedAt: '2022-08-01T10:00:00Z', mergedAt: null }),
     ).toBeNull()
     expect(
-      reviewTime({ firstReviewedAt: null, mergedAt: '2022-08-01 10:00' }),
+      reviewTime({ firstReviewedAt: null, mergedAt: '2022-08-01T10:00:00Z' }),
     ).toBeNull()
   })
 
   test('reviews 24 hours', () => {
     expect(
       reviewTime({
-        firstReviewedAt: '2022-08-01 10:00',
-        mergedAt: '2022-08-02 10:00',
+        firstReviewedAt: '2022-08-01T10:00:00Z',
+        mergedAt: '2022-08-02T10:00:00Z',
       }),
     ).toStrictEqual(1)
 
     expect(
       reviewTime({
-        firstReviewedAt: '2022-08-02 10:00',
-        mergedAt: '2022-08-01 10:00',
+        firstReviewedAt: '2022-08-02T10:00:00Z',
+        mergedAt: '2022-08-01T10:00:00Z',
       }),
     ).toStrictEqual(1)
   })

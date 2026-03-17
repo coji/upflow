@@ -157,7 +157,8 @@ function RefreshSection({
         <Alert>
           <AlertDescription>
             Scheduled at{' '}
-            {dayjs(refreshRequestedAt)
+            {dayjs
+              .utc(refreshRequestedAt)
               .tz(timezone)
               .format('YYYY-MM-DD HH:mm:ss')}
             . It will run on the next crawl job.

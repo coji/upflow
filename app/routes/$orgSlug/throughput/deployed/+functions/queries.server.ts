@@ -78,18 +78,21 @@ export const getDeployedPullRequestReport = async (
                 pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
                 pr.releasedAt,
               )
-            : dayjs(pr.releasedAt).diff(
-                dayjs(pr.firstCommittedAt ?? pr.pullRequestCreatedAt),
-                'hour',
-                true,
-              )) / 24
+            : dayjs
+                .utc(pr.releasedAt)
+                .diff(
+                  dayjs.utc(pr.firstCommittedAt ?? pr.pullRequestCreatedAt),
+                  'hour',
+                  true,
+                )) / 24
         : null
       const deployTime =
         pr.mergedAt && pr.releasedAt
           ? (businessDaysOnly
               ? calculateBusinessHours(pr.mergedAt, pr.releasedAt)
-              : dayjs(pr.releasedAt).diff(dayjs(pr.mergedAt), 'hour', true)) /
-            24
+              : dayjs
+                  .utc(pr.releasedAt)
+                  .diff(dayjs.utc(pr.mergedAt), 'hour', true)) / 24
           : null
       const achievement =
         createAndDeployDiff !== null ? createAndDeployDiff < objective : false

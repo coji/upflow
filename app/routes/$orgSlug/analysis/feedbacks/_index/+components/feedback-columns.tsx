@@ -132,7 +132,7 @@ export const feedbackColumns: ColumnDef<FeedbackRow, unknown>[] = [
     header: 'Updated',
     cell: (info) => (
       <span className="text-muted-foreground text-sm text-nowrap">
-        {dayjs(info.getValue()).fromNow()}
+        {dayjs.utc(info.getValue()).fromNow()}
       </span>
     ),
     enableSorting: true,

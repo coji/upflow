@@ -30,7 +30,7 @@ export const RepositoryItem = ({
       )}
       <div className="text-muted-foreground">·</div>
       <div className="text-muted-foreground text-xs">
-        {dayjs(repo.pushedAt).fromNow()}
+        {dayjs.utc(repo.pushedAt).fromNow()}
       </div>
 
       <div className="flex-1" />

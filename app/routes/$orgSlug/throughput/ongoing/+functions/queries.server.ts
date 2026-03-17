@@ -78,7 +78,7 @@ export const getOngoingPullRequestReport = async (
       const startDate = pr.firstCommittedAt ?? pr.pullRequestCreatedAt
       const diffHours = businessDaysOnly
         ? calculateBusinessHours(startDate, now)
-        : dayjs(now).diff(dayjs(startDate), 'hour', true)
+        : dayjs.utc(now).diff(dayjs.utc(startDate), 'hour', true)
       return {
         ...pr,
         createAndNowDiff: diffHours / 24,

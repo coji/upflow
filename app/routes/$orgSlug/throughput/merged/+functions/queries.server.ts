@@ -76,11 +76,13 @@ export const getMergedPullRequestReport = async (
                 pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
                 pr.mergedAt,
               )
-            : dayjs(pr.mergedAt).diff(
-                dayjs(pr.firstCommittedAt ?? pr.pullRequestCreatedAt),
-                'hour',
-                true,
-              )) / 24
+            : dayjs
+                .utc(pr.mergedAt)
+                .diff(
+                  dayjs.utc(pr.firstCommittedAt ?? pr.pullRequestCreatedAt),
+                  'hour',
+                  true,
+                )) / 24
         : null
       const achievement =
         createAndMergeDiff !== null ? createAndMergeDiff < objective : false
