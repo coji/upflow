@@ -16,7 +16,10 @@ import { orgContext } from '~/app/middleware/context'
 import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import { getOrganization } from '~/batch/db'
-import { analyzeAndUpsert } from '~/batch/usecases/analyze-and-upsert'
+import {
+  analyzeAndUpsert,
+  type AnalyzeAndUpsertSteps,
+} from '~/batch/usecases/analyze-and-upsert'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
@@ -62,6 +65,16 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         upsert: selectedSteps.includes('upsert'),
         classify: selectedSteps.includes('classify'),
         export: selectedSteps.includes('export'),
+      } satisfies AnalyzeAndUpsertSteps
+
+      if (!steps.upsert && !steps.classify && !steps.export) {
+        return data(
+          {
+            intent: 'recalculate' as const,
+            error: 'At least one step must be selected',
+          },
+          { status: 400 },
+        )
       }
 
       const organization = await getOrganization(org.id)
@@ -74,7 +87,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           { status: 400 },
         )
       }
-      if (!organization.organizationSetting) {
+      const { organizationSetting } = organization
+      if (!organizationSetting) {
         return data(
           { intent: 'recalculate' as const, error: 'No organization setting' },
           { status: 400 },
@@ -86,7 +100,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           organization: {
             ...organization,
             id: org.id,
-            organizationSetting: organization.organizationSetting!,
+            organizationSetting,
           },
           steps,
         })
