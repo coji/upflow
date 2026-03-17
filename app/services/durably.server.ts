@@ -14,6 +14,8 @@ function createDurablyInstance() {
   return createDurably({
     dialect,
     retainRuns: '7d',
+    leaseMs: 300_000, // 5 minutes (default 30s is too short for large orgs)
+    leaseRenewIntervalMs: 30_000,
     jobs: {
       crawl: crawlJob,
       recalculate: recalculateJob,
