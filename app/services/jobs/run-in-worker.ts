@@ -34,22 +34,7 @@ export function runAnalyzeInWorker<T>(
 ): Promise<T> {
   return runWorker<T>('analyze-worker', input, options)
 }
-
-interface UpsertWorkerInput<TPull, TReview, TReviewer> {
-  organizationId: string
-  pulls: TPull[]
-  reviews: TReview[]
-  reviewers: TReviewer[]
-}
-
-export function runUpsertInWorker<TPull, TReview, TReviewer>(
-  input: UpsertWorkerInput<TPull, TReview, TReviewer>,
-  options?: RunWorkerOptions,
-): Promise<{ ok: true }> {
-  return runWorker<{ ok: true }>('upsert-worker', input, options)
-}
-
-type WorkerEntrypoint = 'analyze-worker' | 'upsert-worker'
+type WorkerEntrypoint = 'analyze-worker'
 const SQLITE_BUSY_RETRY_LIMIT = 3
 const SQLITE_BUSY_RETRY_DELAYS_MS = [150, 400, 1000]
 

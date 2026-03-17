@@ -1,6 +1,5 @@
 import consola from 'consola'
-import invariant from 'tiny-invariant'
-import { backfillRepo } from '~/batch/github/backfill-repo'
+import { durably } from '~/app/services/durably.server'
 import { requireOrganization } from './helpers'
 import { shutdown } from './shutdown'
 
@@ -13,18 +12,34 @@ export async function backfillCommand(props: BackfillCommandProps) {
   const result = await requireOrganization(props.organizationId)
   if (!result) return
 
-  const { orgId, organization } = result
-  invariant(organization.integration, 'integration should related')
+  const { orgId } = result
 
   try {
-    for (const repository of organization.repositories) {
-      await backfillRepo(orgId, repository, organization.integration, {
-        files: props.files,
-      })
-    }
+    consola.info(
+      `Starting backfill for ${orgId}${props.files ? ' (files only)' : ''}...`,
+    )
 
-    consola.success('backfill completed. Run `recalculate` to apply changes.')
+    const { output } = await durably.jobs.backfill.triggerAndWait(
+      { organizationId: orgId, files: props.files ?? false },
+      {
+        concurrencyKey: `backfill:${orgId}`,
+        labels: { organizationId: orgId },
+        onProgress: (p) => {
+          if (p.message) consola.info(p.message)
+        },
+        onLog: (l) => {
+          if (l.level === 'error') consola.error(l.message)
+          else if (l.level === 'warn') consola.warn(l.message)
+          else consola.info(l.message)
+        },
+      },
+    )
+
+    consola.success(
+      `Backfill completed for ${output.repositoryCount} repositories. Run \`recalculate\` to apply changes.`,
+    )
   } finally {
+    await durably.stop()
     await shutdown()
   }
 }

@@ -2,21 +2,23 @@
  * crawl と recalculate ジョブで共有する analyze → upsert → classify → export → finalize ステップ群
  */
 import type { StepContext } from '@coji/durably'
-import { sql, type Selectable } from 'kysely'
+import type { Selectable } from 'kysely'
 import { clearOrgCache } from '~/app/services/cache.server'
-import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import {
   exportPulls,
   exportReviewResponses,
 } from '~/batch/bizlogic/export-spreadsheet'
+import { upsertAnalyzedData } from '~/batch/db'
 import type {
   AnalyzedReview,
   AnalyzedReviewResponse,
   AnalyzedReviewer,
 } from '~/batch/github/types'
 import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
-import { runAnalyzeInWorker, runUpsertInWorker } from './run-in-worker'
+import type { SqliteBusyEvent } from './run-in-worker'
+import { runAnalyzeInWorker } from './run-in-worker'
 
 interface AnalyzeResult {
   pulls: Selectable<TenantDB.PullRequests>[]
@@ -52,6 +54,23 @@ interface AnalyzeAndFinalizeOptions {
 function formatDurationMs(durationMs: number) {
   if (durationMs < 1000) return `${durationMs}ms`
   return `${(durationMs / 1000).toFixed(1)}s`
+}
+
+function summarizeBusyEvents(events: SqliteBusyEvent[]) {
+  if (events.length === 0) return null
+
+  const retries = events.filter((event) => !event.gaveUp)
+  const gaveUp = events.filter((event) => event.gaveUp)
+  const totalWaitMs = retries.reduce((sum, event) => sum + event.delayMs, 0)
+  const counts = new Map<string, number>()
+  for (const event of events) {
+    counts.set(event.entrypoint, (counts.get(event.entrypoint) ?? 0) + 1)
+  }
+  const byEntrypoint = [...counts.entries()]
+    .map(([entrypoint, count]) => `${entrypoint}:${count}`)
+    .join(', ')
+
+  return `sqlite busy events=${events.length} retries=${retries.length} gaveUp=${gaveUp.length} totalWait=${formatDurationMs(totalWaitMs)} byWorker=[${byEntrypoint}]`
 }
 
 async function runTimedStep<T>(
@@ -90,6 +109,7 @@ export async function analyzeAndFinalizeSteps(
   const allReviews: AnalyzedReview[] = []
   const allReviewers: AnalyzedReviewer[] = []
   const allReviewResponses: AnalyzedReviewResponse[] = []
+  const sqliteBusyEvents: SqliteBusyEvent[] = []
 
   for (let i = 0; i < organization.repositories.length; i++) {
     const repo = organization.repositories[i]
@@ -101,16 +121,21 @@ export async function analyzeAndFinalizeSteps(
 
         const orgSetting = organization.organizationSetting
         const prNumbers = filterPrNumbers?.get(repo.id)
-        return await runAnalyzeInWorker<AnalyzeResult>({
-          organizationId: orgId,
-          repositoryId: repo.id,
-          releaseDetectionMethod:
-            repo.releaseDetectionMethod ?? orgSetting.releaseDetectionMethod,
-          releaseDetectionKey:
-            repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
-          excludedUsers: orgSetting.excludedUsers,
-          filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
-        })
+        return await runAnalyzeInWorker<AnalyzeResult>(
+          {
+            organizationId: orgId,
+            repositoryId: repo.id,
+            releaseDetectionMethod:
+              repo.releaseDetectionMethod ?? orgSetting.releaseDetectionMethod,
+            releaseDetectionKey:
+              repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
+            excludedUsers: orgSetting.excludedUsers,
+            filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
+          },
+          {
+            onSqliteBusy: (event) => sqliteBusyEvents.push(event),
+          },
+        )
       })
     })
     allPulls.push(...result.pulls)
@@ -124,8 +149,7 @@ export async function analyzeAndFinalizeSteps(
     await step.run('upsert', async () => {
       await runTimedStep(step, 'upsert', async () => {
         step.progress(0, 0, 'Upserting to database...')
-        await runUpsertInWorker({
-          organizationId: orgId,
+        await upsertAnalyzedData(orgId, {
           pulls: allPulls,
           reviews: allReviews,
           reviewers: allReviewers,
@@ -164,11 +188,15 @@ export async function analyzeAndFinalizeSteps(
   await step.run('finalize', async () => {
     await runTimedStep(step, 'finalize', async () => {
       step.progress(0, 0, 'Finalizing...')
-      const tenantDb = getTenantDb(orgId)
-      await sql`PRAGMA wal_checkpoint(PASSIVE)`.execute(tenantDb)
       clearOrgCache(orgId)
+      await Promise.resolve()
     })
   })
+
+  const busySummary = summarizeBusyEvents(sqliteBusyEvents)
+  if (busySummary) {
+    step.log.warn(busySummary)
+  }
 
   return { pullCount: allPulls.length }
 }

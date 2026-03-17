@@ -1,4 +1,5 @@
 import type { Insertable, Selectable } from 'kysely'
+import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import type { AnalyzedReview, AnalyzedReviewer } from '../github/types'
@@ -63,7 +64,7 @@ export function upsertPullRequestReview(
 export async function batchUpsertPullRequests(
   organizationId: OrganizationId,
   rows: Insertable<TenantDB.PullRequests>[],
-  chunkSize = 50,
+  chunkSize = 20,
 ) {
   if (rows.length === 0) return
   const tenantDb = getTenantDb(organizationId)
@@ -101,13 +102,15 @@ export async function batchUpsertPullRequests(
         })),
       )
       .execute()
+
+    await yieldToEventLoop()
   }
 }
 
 export async function batchUpsertPullRequestReviews(
   organizationId: OrganizationId,
   rows: Insertable<TenantDB.PullRequestReviews>[],
-  chunkSize = 100,
+  chunkSize = 50,
 ) {
   if (rows.length === 0) return
   const tenantDb = getTenantDb(organizationId)
@@ -126,6 +129,8 @@ export async function batchUpsertPullRequestReviews(
         })),
       )
       .execute()
+
+    await yieldToEventLoop()
   }
 }
 
@@ -170,16 +175,15 @@ export async function upsertPullRequestReviewers(
 export async function batchReplacePullRequestReviewers(
   organizationId: OrganizationId,
   rows: AnalyzedReviewer[],
-  chunkSize = 100,
+  chunkSize = 25,
 ) {
   if (rows.length === 0) return
 
   const tenantDb = getTenantDb(organizationId)
 
-  await tenantDb.transaction().execute(async (trx) => {
-    for (let i = 0; i < rows.length; i += chunkSize) {
-      const chunk = rows.slice(i, i + chunkSize)
-
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize)
+    await tenantDb.transaction().execute(async (trx) => {
       for (const row of chunk) {
         await trx
           .deleteFrom('pullRequestReviewers')
@@ -208,8 +212,10 @@ export async function batchReplacePullRequestReviewers(
       if (values.length > 0) {
         await trx.insertInto('pullRequestReviewers').values(values).execute()
       }
-    }
-  })
+    })
+
+    await yieldToEventLoop()
+  }
 }
 
 /**
