@@ -10,16 +10,14 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
+import { Progress } from '~/app/components/ui/progress'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
-import { clearAllCache } from '~/app/services/cache.server'
+import { durably } from '~/app/services/durably'
+import { durably as serverDurably } from '~/app/services/durably.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
-import { getOrganization } from '~/batch/db'
-import {
-  analyzeAndUpsert,
-  type AnalyzeAndUpsertSteps,
-} from '~/batch/usecases/analyze-and-upsert'
+import type { AnalyzeAndUpsertSteps } from '~/batch/usecases/analyze-and-upsert'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
@@ -77,52 +75,19 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         )
       }
 
-      const organization = await getOrganization(org.id)
-      if (!organization.integration) {
-        return data(
-          {
-            intent: 'recalculate' as const,
-            error: 'No integration configured',
-          },
-          { status: 400 },
-        )
-      }
-      const { organizationSetting } = organization
-      if (!organizationSetting) {
-        return data(
-          { intent: 'recalculate' as const, error: 'No organization setting' },
-          { status: 400 },
-        )
-      }
+      const run = await serverDurably.jobs.recalculate.trigger(
+        { organizationId: org.id, steps },
+        {
+          concurrencyKey: `recalculate:${org.id}`,
+          labels: { organizationId: org.id },
+        },
+      )
 
-      try {
-        const { pulls } = await analyzeAndUpsert({
-          organization: {
-            ...organization,
-            id: org.id,
-            organizationSetting,
-          },
-          steps,
-        })
-        clearAllCache()
-        return data({
-          intent: 'recalculate' as const,
-          ok: true,
-          message: `Recalculation completed. ${pulls.length} PRs updated.`,
-        })
-      } catch (e) {
-        console.error(
-          'Recalculation failed:',
-          e instanceof Error ? e.message : 'Unknown error',
-        )
-        return data(
-          {
-            intent: 'recalculate' as const,
-            error: 'Recalculation failed. Please try again later.',
-          },
-          { status: 500 },
-        )
-      }
+      return data({
+        intent: 'recalculate' as const,
+        ok: true,
+        runId: run.id,
+      })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
@@ -185,11 +150,28 @@ function RefreshSection({
 
 function RecalculateSection() {
   const fetcher = useFetcher()
-  const isSubmitting = fetcher.state !== 'idle'
   const [upsert, setUpsert] = useState(true)
   const [classify, setClassify] = useState(false)
   const [exportData, setExportData] = useState(false)
   const noneSelected = !upsert && !classify && !exportData
+
+  // After form submission, track the durably run via SSE
+  const runId =
+    fetcher.data?.intent === 'recalculate' && fetcher.data?.ok
+      ? fetcher.data.runId
+      : null
+  const {
+    progress,
+    output,
+    error: runError,
+    isPending,
+    isLeased,
+    isCompleted,
+    isFailed,
+  } = durably.recalculate.useRun(runId)
+
+  const isRunning = isPending || isLeased
+  const isSubmitting = fetcher.state !== 'idle'
 
   return (
     <Stack>
@@ -210,6 +192,7 @@ function RecalculateSection() {
                 value="upsert"
                 checked={upsert}
                 onCheckedChange={(c) => setUpsert(c === true)}
+                disabled={isRunning}
               />
               <Label htmlFor="step-upsert" className="text-xs">
                 Analyze & Upsert — Re-analyze and update PR data in DB
@@ -222,6 +205,7 @@ function RecalculateSection() {
                 value="classify"
                 checked={classify}
                 onCheckedChange={(c) => setClassify(c === true)}
+                disabled={isRunning}
               />
               <Label htmlFor="step-classify" className="text-xs">
                 LLM Classify — Classify PR size/risk with Gemini
@@ -234,6 +218,7 @@ function RecalculateSection() {
                 value="export"
                 checked={exportData}
                 onCheckedChange={(c) => setExportData(c === true)}
+                disabled={isRunning}
               />
               <Label htmlFor="step-export" className="text-xs">
                 Export to Spreadsheet
@@ -244,18 +229,54 @@ function RecalculateSection() {
             <Button
               type="submit"
               loading={isSubmitting}
-              disabled={noneSelected}
+              disabled={noneSelected || isRunning}
             >
               Recalculate
             </Button>
           </div>
         </Stack>
       </fetcher.Form>
-      {fetcher.data?.intent === 'recalculate' && fetcher.data?.ok === true && (
+
+      {/* Progress */}
+      {isRunning && progress && (
         <Alert>
-          <AlertDescription>{fetcher.data.message}</AlertDescription>
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="text-sm">{progress.message ?? 'Processing...'}</p>
+              {progress.total != null && progress.total > 0 && (
+                <Progress
+                  value={(progress.current / progress.total) * 100}
+                  className="h-2"
+                />
+              )}
+            </div>
+          </AlertDescription>
         </Alert>
       )}
+
+      {isRunning && !progress && (
+        <Alert>
+          <AlertDescription>Starting recalculation...</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success */}
+      {isCompleted && (
+        <Alert>
+          <AlertDescription>
+            Recalculation completed.{' '}
+            {output?.pullCount != null && `${output.pullCount} PRs updated.`}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Error */}
+      {isFailed && (
+        <Alert variant="destructive">
+          <AlertDescription>Recalculation failed. {runError}</AlertDescription>
+        </Alert>
+      )}
+
       {fetcher.data?.intent === 'recalculate' && fetcher.data?.error && (
         <Alert variant="destructive">
           <AlertDescription>{fetcher.data.error}</AlertDescription>
