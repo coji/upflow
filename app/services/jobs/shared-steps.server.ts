@@ -120,18 +120,21 @@ export async function analyzeAndFinalizeSteps(
 
         const orgSetting = organization.organizationSetting
         const prNumbers = filterPrNumbers?.get(repo.id)
-        return await runAnalyzeInWorker<AnalyzeResult>({
-          organizationId: orgId,
-          repositoryId: repo.id,
-          releaseDetectionMethod:
-            repo.releaseDetectionMethod ?? orgSetting.releaseDetectionMethod,
-          releaseDetectionKey:
-            repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
-          excludedUsers: orgSetting.excludedUsers,
-          filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
-        }, {
-          onSqliteBusy: (event) => sqliteBusyEvents.push(event),
-        })
+        return await runAnalyzeInWorker<AnalyzeResult>(
+          {
+            organizationId: orgId,
+            repositoryId: repo.id,
+            releaseDetectionMethod:
+              repo.releaseDetectionMethod ?? orgSetting.releaseDetectionMethod,
+            releaseDetectionKey:
+              repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
+            excludedUsers: orgSetting.excludedUsers,
+            filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
+          },
+          {
+            onSqliteBusy: (event) => sqliteBusyEvents.push(event),
+          },
+        )
       })
     })
     allPulls.push(...result.pulls)
@@ -145,14 +148,17 @@ export async function analyzeAndFinalizeSteps(
     await step.run('upsert', async () => {
       await runTimedStep(step, 'upsert', async () => {
         step.progress(0, 0, 'Upserting to database...')
-        await runUpsertInWorker({
-          organizationId: orgId,
-          pulls: allPulls,
-          reviews: allReviews,
-          reviewers: allReviewers,
-        }, {
-          onSqliteBusy: (event) => sqliteBusyEvents.push(event),
-        })
+        await runUpsertInWorker(
+          {
+            organizationId: orgId,
+            pulls: allPulls,
+            reviews: allReviews,
+            reviewers: allReviewers,
+          },
+          {
+            onSqliteBusy: (event) => sqliteBusyEvents.push(event),
+          },
+        )
       })
     })
   }
@@ -188,7 +194,7 @@ export async function analyzeAndFinalizeSteps(
     await runTimedStep(step, 'finalize', async () => {
       step.progress(0, 0, 'Finalizing...')
       const tenantDb = getTenantDb(orgId)
-      await sql`PRAGMA wal_checkpoint(PASSIVE)`.execute(tenantDb)
+      await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
       clearOrgCache(orgId)
     })
   })
