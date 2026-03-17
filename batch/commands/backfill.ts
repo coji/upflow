@@ -16,12 +16,15 @@ export async function backfillCommand(props: BackfillCommandProps) {
   const { orgId, organization } = result
   invariant(organization.integration, 'integration should related')
 
-  for (const repository of organization.repositories) {
-    await backfillRepo(orgId, repository, organization.integration, {
-      files: props.files,
-    })
-  }
+  try {
+    for (const repository of organization.repositories) {
+      await backfillRepo(orgId, repository, organization.integration, {
+        files: props.files,
+      })
+    }
 
-  consola.success('backfill completed. Run `recalculate` to apply changes.')
-  await shutdown()
+    consola.success('backfill completed. Run `recalculate` to apply changes.')
+  } finally {
+    await shutdown()
+  }
 }

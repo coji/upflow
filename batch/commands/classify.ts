@@ -18,14 +18,18 @@ export async function classifyCommand({
   if (!result) return
 
   const { orgId } = result
-  const flags = [
-    force ? 'force' : null,
-    limit ? `limit=${limit}` : null,
-  ].filter(Boolean)
-  consola.info(
-    `Classifying PRs for ${orgId}${flags.length ? ` (${flags.join(', ')})` : ''}`,
-  )
 
-  await classifyPullRequests(orgId, { force, limit })
-  await shutdown()
+  try {
+    const flags = [
+      force ? 'force' : null,
+      limit ? `limit=${limit}` : null,
+    ].filter(Boolean)
+    consola.info(
+      `Classifying PRs for ${orgId}${flags.length ? ` (${flags.join(', ')})` : ''}`,
+    )
+
+    await classifyPullRequests(orgId, { force, limit })
+  } finally {
+    await shutdown()
+  }
 }

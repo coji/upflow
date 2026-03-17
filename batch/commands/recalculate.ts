@@ -19,33 +19,36 @@ export async function recalculateCommand({
 
   const { orgId } = result
 
-  const steps = { upsert: true, classify, export: exportFlag }
-  const flags = [
-    classify ? 'classify' : null,
-    exportFlag ? 'export' : null,
-  ].filter(Boolean)
+  try {
+    const steps = { upsert: true, classify, export: exportFlag }
+    const flags = [
+      classify ? 'classify' : null,
+      exportFlag ? 'export' : null,
+    ].filter(Boolean)
 
-  consola.info(
-    `Starting recalculate for ${orgId}${flags.length ? ` (+${flags.join(', ')})` : ''}...`,
-  )
+    consola.info(
+      `Starting recalculate for ${orgId}${flags.length ? ` (+${flags.join(', ')})` : ''}...`,
+    )
 
-  const { output } = await durably.jobs.recalculate.triggerAndWait(
-    { organizationId: orgId, steps },
-    {
-      concurrencyKey: `recalculate:${orgId}`,
-      labels: { organizationId: orgId },
-      onProgress: (p) => {
-        if (p.message) consola.info(p.message)
+    const { output } = await durably.jobs.recalculate.triggerAndWait(
+      { organizationId: orgId, steps },
+      {
+        concurrencyKey: `recalculate:${orgId}`,
+        labels: { organizationId: orgId },
+        onProgress: (p) => {
+          if (p.message) consola.info(p.message)
+        },
+        onLog: (l) => {
+          if (l.level === 'error') consola.error(l.message)
+          else if (l.level === 'warn') consola.warn(l.message)
+          else consola.info(l.message)
+        },
       },
-      onLog: (l) => {
-        if (l.level === 'error') consola.error(l.message)
-        else if (l.level === 'warn') consola.warn(l.message)
-        else consola.info(l.message)
-      },
-    },
-  )
+    )
 
-  consola.success(`Recalculate completed. ${output.pullCount} PRs updated.`)
-  await durably.stop()
-  await shutdown()
+    consola.success(`Recalculate completed. ${output.pullCount} PRs updated.`)
+  } finally {
+    await durably.stop()
+    await shutdown()
+  }
 }
