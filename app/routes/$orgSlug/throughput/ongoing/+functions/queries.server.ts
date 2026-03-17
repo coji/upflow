@@ -1,5 +1,5 @@
 import { pipe, sortBy } from 'remeda'
-import { calculateBusinessHours } from '~/app/libs/business-hours'
+import { diffInDays } from '~/app/libs/business-hours'
 import dayjs from '~/app/libs/dayjs'
 import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -71,17 +71,14 @@ export const getOngoingPullRequestReport = async (
     ])
     .execute()
 
-  const now = new Date().toISOString()
+  const now = dayjs.utc().toISOString()
 
   return pipe(
     pullrequests.map((pr) => {
       const startDate = pr.firstCommittedAt ?? pr.pullRequestCreatedAt
-      const diffHours = businessDaysOnly
-        ? calculateBusinessHours(startDate, now)
-        : dayjs.utc(now).diff(dayjs.utc(startDate), 'hour', true)
       return {
         ...pr,
-        createAndNowDiff: diffHours / 24,
+        createAndNowDiff: diffInDays(startDate, now, businessDaysOnly),
       }
     }),
     sortBy((pr) => (pr.createAndNowDiff ? -pr.createAndNowDiff : 0)),
