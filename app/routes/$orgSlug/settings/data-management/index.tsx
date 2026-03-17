@@ -243,12 +243,14 @@ function RecalculateSection() {
           <AlertDescription>
             <div className="space-y-2">
               <p className="text-sm">{progress.message ?? 'Processing...'}</p>
-              {progress.total != null && progress.total > 0 && (
-                <Progress
-                  value={(progress.current / progress.total) * 100}
-                  className="h-2"
-                />
-              )}
+              {progress.current != null &&
+                progress.total != null &&
+                progress.total > 0 && (
+                  <Progress
+                    value={(progress.current / progress.total) * 100}
+                    className="h-2"
+                  />
+                )}
             </div>
           </AlertDescription>
         </Alert>
