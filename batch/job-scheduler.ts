@@ -24,11 +24,10 @@ export const createJobScheduler = () => {
           if (!org.integration) continue
 
           const orgId = org.id as OrganizationId
-          const refresh = org.organizationSetting.refreshRequestedAt != null
 
           try {
             await durably.jobs.crawl.trigger(
-              { organizationId: orgId, refresh },
+              { organizationId: orgId, refresh: false },
               {
                 concurrencyKey: `crawl:${orgId}`,
                 labels: { organizationId: orgId },

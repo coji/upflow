@@ -11,13 +11,10 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { Progress } from '~/app/components/ui/progress'
-import { useTimezone } from '~/app/hooks/use-timezone'
-import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
 import { durably } from '~/app/services/durably'
 import { durably as serverDurably } from '~/app/services/durably.server'
 import type { JobSteps } from '~/app/services/jobs/shared-steps.server'
-import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
@@ -28,18 +25,8 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
-
-  const tenantDb = getTenantDb(organization.id)
-  const organizationSetting = await tenantDb
-    .selectFrom('organizationSettings')
-    .select(['refreshRequestedAt'])
-    .executeTakeFirst()
-
-  return {
-    refreshRequestedAt: organizationSetting?.refreshRequestedAt ?? null,
-  }
+export const loader = (_args: Route.LoaderArgs) => {
+  return {}
 }
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
@@ -49,13 +36,15 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(intent)
     .with('refresh', async () => {
-      const tenantDb = getTenantDb(org.id)
-      await tenantDb
-        .updateTable('organizationSettings')
-        .set({ refreshRequestedAt: new Date().toISOString() })
-        .execute()
+      const run = await serverDurably.jobs.crawl.trigger(
+        { organizationId: org.id, refresh: true },
+        {
+          concurrencyKey: `crawl:${org.id}`,
+          labels: { organizationId: org.id },
+        },
+      )
 
-      return data({ intent: 'refresh' as const, ok: true })
+      return data({ intent: 'refresh' as const, ok: true, runId: run.id })
     })
     .with('recalculate', async () => {
       const selectedSteps = formData.getAll('steps').map(String)
@@ -94,50 +83,90 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
 // --- Refresh Section ---
 
-function RefreshSection({
-  refreshRequestedAt,
-}: {
-  refreshRequestedAt: string | null
-}) {
-  const timezone = useTimezone()
+function RefreshSection() {
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
-  const isScheduled =
-    refreshRequestedAt != null ||
-    (fetcher.data?.intent === 'refresh' && fetcher.data?.ok === true)
+
+  // After form submission, track the durably run via SSE
+  const runId =
+    fetcher.data?.intent === 'refresh' && fetcher.data?.ok
+      ? fetcher.data.runId
+      : null
+  const {
+    progress,
+    output,
+    error: runError,
+    isPending,
+    isLeased,
+    isCompleted,
+    isFailed,
+  } = durably.crawl.useRun(runId)
+
+  const isRunning = isPending || isLeased
 
   return (
     <Stack>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="flex items-center gap-2 text-sm font-medium">
-            Schedule Full Refresh
-            {isScheduled && <Badge variant="secondary">Scheduled</Badge>}
+            Full Refresh
+            {isRunning && <Badge variant="secondary">Running</Badge>}
           </p>
           <p className="text-muted-foreground text-xs">
-            Re-fetch all PR data from GitHub on the next hourly crawl.
+            Re-fetch all PR data from GitHub immediately.
           </p>
         </div>
         <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="refresh" />
-          <Button type="submit" loading={isSubmitting} disabled={isScheduled}>
-            {isScheduled ? 'Scheduled' : 'Schedule'}
+          <Button type="submit" loading={isSubmitting} disabled={isRunning}>
+            {isRunning ? 'Running' : 'Refresh'}
           </Button>
         </fetcher.Form>
       </div>
-      {isScheduled && refreshRequestedAt && (
+
+      {/* Progress */}
+      {isRunning && progress && (
         <Alert>
           <AlertDescription>
-            Scheduled at{' '}
-            {dayjs
-              .utc(refreshRequestedAt)
-              .tz(timezone)
-              .format('YYYY-MM-DD HH:mm:ss')}
-            . It will run on the next crawl job.
+            <div className="space-y-2">
+              <p className="text-sm">{progress.message ?? 'Processing...'}</p>
+              {progress.current != null &&
+                progress.total != null &&
+                progress.total > 0 && (
+                  <Progress
+                    value={(progress.current / progress.total) * 100}
+                    className="h-2"
+                  />
+                )}
+            </div>
           </AlertDescription>
         </Alert>
       )}
-      {fetcher.data?.error && (
+
+      {isRunning && !progress && (
+        <Alert>
+          <AlertDescription>Starting full refresh...</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success */}
+      {isCompleted && (
+        <Alert>
+          <AlertDescription>
+            Full refresh completed.{' '}
+            {output?.pullCount != null && `${output.pullCount} PRs updated.`}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Error */}
+      {isFailed && (
+        <Alert variant="destructive">
+          <AlertDescription>Full refresh failed. {runError}</AlertDescription>
+        </Alert>
+      )}
+
+      {fetcher.data?.intent === 'refresh' && fetcher.data?.error && (
         <Alert variant="destructive">
           <AlertDescription>{fetcher.data.error}</AlertDescription>
         </Alert>
@@ -333,7 +362,6 @@ function ExportDataSection({ orgSlug }: { orgSlug: string }) {
 // --- Page ---
 
 export default function DataManagementPage({
-  loaderData: { refreshRequestedAt },
   params: { orgSlug },
 }: Route.ComponentProps) {
   return (
@@ -342,7 +370,7 @@ export default function DataManagementPage({
       desc="Manage data refresh and recalculation for this organization."
     >
       <Stack gap="6">
-        <RefreshSection refreshRequestedAt={refreshRequestedAt} />
+        <RefreshSection />
         <RecalculateSection />
         <ExportDataSection orgSlug={orgSlug} />
       </Stack>
