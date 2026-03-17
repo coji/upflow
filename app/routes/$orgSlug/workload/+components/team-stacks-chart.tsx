@@ -37,7 +37,7 @@ function sortBySize(prs: StackPR[]): StackPR[] {
 // --- Age mode ---
 
 function getAgeDays(pr: StackPR): number {
-  return dayjs().diff(dayjs(pr.createdAt), 'day', true)
+  return dayjs().diff(dayjs.utc(pr.createdAt), 'day', true)
 }
 
 function sortByAge(prs: StackPR[]): StackPR[] {

@@ -15,7 +15,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: null,
-        pullRequestCreatedAt: '2022-08-01 10:00',
+        pullRequestCreatedAt: '2022-08-01T10:00:00Z',
       }),
     ).toBeNull()
   })
@@ -23,7 +23,7 @@ describe('codingTime', () => {
   test('null if pullRequestCreatedAt is null', () => {
     expect(
       codingTime({
-        firstCommittedAt: '2022-08-01 10:00',
+        firstCommittedAt: '2022-08-01T10:00:00Z',
         pullRequestCreatedAt: null,
       }),
     ).toBeNull()
@@ -32,8 +32,8 @@ describe('codingTime', () => {
   test('zero if same timestamp', () => {
     expect(
       codingTime({
-        firstCommittedAt: '2022-08-10 10:00',
-        pullRequestCreatedAt: '2022-08-10 10:00',
+        firstCommittedAt: '2022-08-10T10:00:00Z',
+        pullRequestCreatedAt: '2022-08-10T10:00:00Z',
       }),
     ).toStrictEqual(0)
   })
@@ -41,8 +41,8 @@ describe('codingTime', () => {
   test('diff when first committed at before than pull request created at', () => {
     expect(
       codingTime({
-        firstCommittedAt: '2022-08-01 10:00',
-        pullRequestCreatedAt: '2022-08-02 11:00',
+        firstCommittedAt: '2022-08-01T10:00:00Z',
+        pullRequestCreatedAt: '2022-08-02T11:00:00Z',
       }),
     ).toStrictEqual(1 + 1 / 24)
   })
@@ -50,8 +50,8 @@ describe('codingTime', () => {
   test('diff when first committed at after than pull request created at', () => {
     expect(
       codingTime({
-        firstCommittedAt: '2022-08-02 11:00',
-        pullRequestCreatedAt: '2022-08-01 10:00',
+        firstCommittedAt: '2022-08-02T11:00:00Z',
+        pullRequestCreatedAt: '2022-08-01T10:00:00Z',
       }),
     ).toStrictEqual(1 + 1 / 24)
   })
@@ -59,8 +59,8 @@ describe('codingTime', () => {
   test('diff one year', () => {
     expect(
       codingTime({
-        firstCommittedAt: '2022-08-01 10:00',
-        pullRequestCreatedAt: '2023-08-01 10:00',
+        firstCommittedAt: '2022-08-01T10:00:00Z',
+        pullRequestCreatedAt: '2023-08-01T10:00:00Z',
       }),
     ).toStrictEqual(365)
   })
@@ -68,8 +68,8 @@ describe('codingTime', () => {
   test('diff when after the unix time end', () => {
     expect(
       codingTime({
-        firstCommittedAt: '2022-08-01 10:00',
-        pullRequestCreatedAt: '2062-08-01 10:00',
+        firstCommittedAt: '2022-08-01T10:00:00Z',
+        pullRequestCreatedAt: '2062-08-01T10:00:00Z',
       }),
     ).toStrictEqual(40 * 365 + 10) // うるう年が10年 = +10日分ある
   })

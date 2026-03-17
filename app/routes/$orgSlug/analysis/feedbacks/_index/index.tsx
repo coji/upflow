@@ -74,7 +74,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sinceDate =
     periodMonths === 'all'
       ? '2000-01-01T00:00:00.000Z'
-      : dayjs().subtract(periodMonths, 'month').startOf('day').toISOString()
+      : dayjs.utc().subtract(periodMonths, 'month').startOf('day').toISOString()
 
   const page = Number(url.searchParams.get('page') || '1')
   const perPage = Number(url.searchParams.get('per_page') || '20')

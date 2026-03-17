@@ -65,7 +65,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sinceDate =
     periodMonths === 'all'
       ? '2000-01-01T00:00:00.000Z'
-      : dayjs().subtract(periodMonths, 'month').startOf('day').toISOString()
+      : dayjs.utc().subtract(periodMonths, 'month').startOf('day').toISOString()
 
   const teams = await listTeams(organization.id)
 

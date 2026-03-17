@@ -242,7 +242,7 @@ export function SizeBadgePopover({
                     </AvatarFallback>
                   </Avatar>
                 )}
-                {feedbackName} · {dayjs(feedbackAt).fromNow()}
+                {feedbackName} · {dayjs.utc(feedbackAt).fromNow()}
               </span>
             )}
             <Button

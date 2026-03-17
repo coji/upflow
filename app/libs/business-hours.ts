@@ -72,8 +72,8 @@ export const calculateBusinessHours = (
   end: string,
   timezone = 'Asia/Tokyo',
 ): number => {
-  const startDate = dayjs(start).tz(timezone)
-  const endDate = dayjs(end).tz(timezone)
+  const startDate = dayjs.utc(start).tz(timezone)
+  const endDate = dayjs.utc(end).tz(timezone)
 
   if (!startDate.isBefore(endDate)) return 0
 
@@ -126,4 +126,19 @@ export const calculateBusinessHours = (
   }
 
   return totalHours
+}
+
+/**
+ * 2つの日時間の差を日数で返す（営業時間 or カレンダー時間）
+ */
+export const diffInDays = (
+  start: string,
+  end: string,
+  businessDaysOnly: boolean,
+  timezone = 'Asia/Tokyo',
+): number => {
+  const hours = businessDaysOnly
+    ? calculateBusinessHours(start, end, timezone)
+    : dayjs.utc(end).diff(dayjs.utc(start), 'hour', true)
+  return hours / 24
 }

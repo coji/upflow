@@ -1,6 +1,5 @@
 import { pipe, sortBy } from 'remeda'
-import { calculateBusinessHours } from '~/app/libs/business-hours'
-import dayjs from '~/app/libs/dayjs'
+import { diffInDays } from '~/app/libs/business-hours'
 import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -71,16 +70,11 @@ export const getMergedPullRequestReport = async (
   return pipe(
     pullrequests.map((pr) => {
       const createAndMergeDiff = pr.mergedAt
-        ? (businessDaysOnly
-            ? calculateBusinessHours(
-                pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
-                pr.mergedAt,
-              )
-            : dayjs(pr.mergedAt).diff(
-                dayjs(pr.firstCommittedAt ?? pr.pullRequestCreatedAt),
-                'hour',
-                true,
-              )) / 24
+        ? diffInDays(
+            pr.firstCommittedAt ?? pr.pullRequestCreatedAt,
+            pr.mergedAt,
+            businessDaysOnly,
+          )
         : null
       const achievement =
         createAndMergeDiff !== null ? createAndMergeDiff < objective : false
