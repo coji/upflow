@@ -57,6 +57,13 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       return data({ intent: 'refresh' as const, ok: true })
     })
     .with('recalculate', async () => {
+      const selectedSteps = formData.getAll('steps').map(String)
+      const steps = {
+        upsert: selectedSteps.includes('upsert'),
+        classify: selectedSteps.includes('classify'),
+        export: selectedSteps.includes('export'),
+      }
+
       const organization = await getOrganization(org.id)
       if (!organization.integration) {
         return data(
@@ -81,6 +88,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
             id: org.id,
             organizationSetting: organization.organizationSetting!,
           },
+          steps,
         })
         clearAllCache()
         return data({
@@ -164,24 +172,71 @@ function RefreshSection({
 function RecalculateSection() {
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
+  const [upsert, setUpsert] = useState(true)
+  const [classify, setClassify] = useState(false)
+  const [exportData, setExportData] = useState(false)
+  const noneSelected = !upsert && !classify && !exportData
 
   return (
     <Stack>
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Recalculate Cycle Times</p>
-          <p className="text-muted-foreground text-xs">
-            Recalculate pickup/review/deploy times based on current excluded
-            users settings.
-          </p>
-        </div>
-        <fetcher.Form method="post" className="shrink-0">
-          <input type="hidden" name="intent" value="recalculate" />
-          <Button type="submit" loading={isSubmitting}>
-            Recalculate
-          </Button>
-        </fetcher.Form>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">Recalculate Cycle Times</p>
+        <p className="text-muted-foreground text-xs">
+          Re-analyze PR data from stored raw data. Select which steps to run.
+        </p>
       </div>
+      <fetcher.Form method="post">
+        <Stack gap="4">
+          <input type="hidden" name="intent" value="recalculate" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="step-upsert"
+                name="steps"
+                value="upsert"
+                checked={upsert}
+                onCheckedChange={(c) => setUpsert(c === true)}
+              />
+              <Label htmlFor="step-upsert" className="text-xs">
+                Analyze & Upsert — Re-analyze and update PR data in DB
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="step-classify"
+                name="steps"
+                value="classify"
+                checked={classify}
+                onCheckedChange={(c) => setClassify(c === true)}
+              />
+              <Label htmlFor="step-classify" className="text-xs">
+                LLM Classify — Classify PR size/risk with Gemini
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="step-export"
+                name="steps"
+                value="export"
+                checked={exportData}
+                onCheckedChange={(c) => setExportData(c === true)}
+              />
+              <Label htmlFor="step-export" className="text-xs">
+                Export to Spreadsheet
+              </Label>
+            </div>
+          </div>
+          <div>
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              disabled={noneSelected}
+            >
+              Recalculate
+            </Button>
+          </div>
+        </Stack>
+      </fetcher.Form>
       {fetcher.data?.intent === 'recalculate' && fetcher.data?.ok === true && (
         <Alert>
           <AlertDescription>{fetcher.data.message}</AlertDescription>

@@ -27,9 +27,16 @@ interface OrganizationForAnalyze {
   exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
 
+export interface AnalyzeAndUpsertSteps {
+  upsert?: boolean // default: true — upsert PRs/reviews/reviewers/users to DB
+  classify?: boolean // default: true — LLM classify PRs
+  export?: boolean // default: true — export to spreadsheet
+}
+
 interface AnalyzeAndUpsertParams {
   organization: OrganizationForAnalyze
   updatedPrNumbers?: UpdatedPrNumbersMap
+  steps?: AnalyzeAndUpsertSteps
 }
 
 /**
@@ -38,8 +45,12 @@ interface AnalyzeAndUpsertParams {
 export async function analyzeAndUpsert({
   organization,
   updatedPrNumbers,
+  steps,
 }: AnalyzeAndUpsertParams) {
   const orgId = organization.id
+  const runUpsert = steps?.upsert ?? true
+  const runClassify = steps?.classify ?? true
+  const runExport = steps?.export ?? true
 
   // 1. analyze
   logger.info('analyze started...', orgId)
@@ -51,60 +62,61 @@ export async function analyzeAndUpsert({
   )
   logger.info('analyze completed.', orgId)
 
-  // 2. auto-register discovered GitHub users (inactive)
-  const discoveredLogins = new Set<string>()
-  for (const pr of pulls) {
-    if (pr.author) discoveredLogins.add(pr.author)
-  }
-  for (const review of reviews) {
-    if (review.reviewer) discoveredLogins.add(review.reviewer)
-  }
-  for (const reviewer of reviewers) {
-    for (const r of reviewer.reviewers) {
-      if (r.login) discoveredLogins.add(r.login)
+  // 2-5. upsert to DB
+  if (runUpsert) {
+    const discoveredLogins = new Set<string>()
+    for (const pr of pulls) {
+      if (pr.author) discoveredLogins.add(pr.author)
     }
-  }
-  await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
-  logger.info('auto-register github users completed.', orgId)
+    for (const review of reviews) {
+      if (review.reviewer) discoveredLogins.add(review.reviewer)
+    }
+    for (const reviewer of reviewers) {
+      for (const r of reviewer.reviewers) {
+        if (r.login) discoveredLogins.add(r.login)
+      }
+    }
+    await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
+    logger.info('auto-register github users completed.', orgId)
 
-  // 3. upsert pull requests
-  logger.info('upsert started...', orgId)
-  await batchUpsertPullRequests(orgId, pulls)
-  logger.info('upsert pull requests completed.', orgId)
+    logger.info('upsert started...', orgId)
+    await batchUpsertPullRequests(orgId, pulls)
+    logger.info('upsert pull requests completed.', orgId)
 
-  // 4. upsert reviews
-  logger.info('upsert reviews started...', orgId)
-  await batchUpsertPullRequestReviews(
-    orgId,
-    reviews.map((r) => ({
-      id: r.id,
-      pullRequestNumber: r.pullRequestNumber,
-      repositoryId: r.repositoryId,
-      reviewer: r.reviewer,
-      state: r.state,
-      submittedAt: r.submittedAt,
-      url: r.url,
-    })),
-  )
-  logger.info('upsert reviews completed.', orgId)
-
-  // 5. upsert reviewers
-  logger.info('upsert reviewers started...', orgId)
-  for (const reviewer of reviewers) {
-    await upsertPullRequestReviewers(
+    logger.info('upsert reviews started...', orgId)
+    await batchUpsertPullRequestReviews(
       orgId,
-      reviewer.repositoryId,
-      reviewer.pullRequestNumber,
-      reviewer.reviewers,
+      reviews.map((r) => ({
+        id: r.id,
+        pullRequestNumber: r.pullRequestNumber,
+        repositoryId: r.repositoryId,
+        reviewer: r.reviewer,
+        state: r.state,
+        submittedAt: r.submittedAt,
+        url: r.url,
+      })),
     )
+    logger.info('upsert reviews completed.', orgId)
+
+    logger.info('upsert reviewers started...', orgId)
+    for (const reviewer of reviewers) {
+      await upsertPullRequestReviewers(
+        orgId,
+        reviewer.repositoryId,
+        reviewer.pullRequestNumber,
+        reviewer.reviewers,
+      )
+    }
+    logger.info('upsert reviewers completed.', orgId)
   }
-  logger.info('upsert reviewers completed.', orgId)
 
   // 6. classify PRs with LLM (optional, requires GEMINI_API_KEY)
-  await classifyPullRequests(orgId)
+  if (runClassify) {
+    await classifyPullRequests(orgId)
+  }
 
   // 7. export (optional)
-  if (organization.exportSetting) {
+  if (runExport && organization.exportSetting) {
     try {
       logger.info('exporting to spreadsheet...', orgId)
       await exportPulls(organization.exportSetting, pulls)
