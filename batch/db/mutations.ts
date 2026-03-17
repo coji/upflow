@@ -167,6 +167,51 @@ export async function upsertPullRequestReviewers(
   })
 }
 
+export async function batchReplacePullRequestReviewers(
+  organizationId: OrganizationId,
+  rows: AnalyzedReviewer[],
+  chunkSize = 100,
+) {
+  if (rows.length === 0) return
+
+  const tenantDb = getTenantDb(organizationId)
+
+  await tenantDb.transaction().execute(async (trx) => {
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      const chunk = rows.slice(i, i + chunkSize)
+
+      for (const row of chunk) {
+        await trx
+          .deleteFrom('pullRequestReviewers')
+          .where('repositoryId', '=', row.repositoryId)
+          .where('pullRequestNumber', '=', row.pullRequestNumber)
+          .execute()
+      }
+
+      const values = chunk.flatMap((row) => {
+        const seen = new Set<string>()
+        return row.reviewers.flatMap((reviewer) => {
+          if (!reviewer.login) return []
+          if (seen.has(reviewer.login)) return []
+          seen.add(reviewer.login)
+          return [
+            {
+              pullRequestNumber: row.pullRequestNumber,
+              repositoryId: row.repositoryId,
+              reviewer: reviewer.login,
+              requestedAt: reviewer.requestedAt,
+            },
+          ]
+        })
+      })
+
+      if (values.length > 0) {
+        await trx.insertInto('pullRequestReviewers').values(values).execute()
+      }
+    }
+  })
+}
+
 /**
  * batch で発見した GitHub ユーザーを companyGithubUsers に自動登録する。
  * isActive: 0（無効）で挿入し、既存レコードは一切上書きしない。
@@ -251,13 +296,6 @@ export async function upsertAnalyzedData(
 
   // Upsert reviewers
   logger.info('upsert reviewers started...', organizationId)
-  for (const reviewer of data.reviewers) {
-    await upsertPullRequestReviewers(
-      organizationId,
-      reviewer.repositoryId,
-      reviewer.pullRequestNumber,
-      reviewer.reviewers,
-    )
-  }
+  await batchReplacePullRequestReviewers(organizationId, data.reviewers)
   logger.info('upsert reviewers completed.', organizationId)
 }

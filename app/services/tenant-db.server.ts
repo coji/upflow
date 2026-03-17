@@ -17,6 +17,7 @@ export type { TenantDB }
 export type { OrganizationId } from '~/app/types/organization'
 
 const debug = createDebug('app:tenant-db')
+const SQLITE_BUSY_TIMEOUT_MS = 5000
 
 const tenantDbCache = new Map<
   string,
@@ -39,6 +40,7 @@ function ensureTenantDb(organizationId: OrganizationId) {
   const filename = getTenantDbPath(organizationId)
   const database = new SQLite(filename, { fileMustExist: true })
   database.pragma('journal_mode = WAL')
+  database.pragma(`busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`)
   database.pragma('wal_autocheckpoint = 1000')
 
   const kysely = new Kysely<TenantDB.DB>({

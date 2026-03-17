@@ -4,8 +4,9 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "run-s build:react-router build:job build:db-scripts",
+    "build": "run-s build:react-router build:job build:workers build:db-scripts",
     "build:job": "esbuild --platform=node --format=esm ./batch/job-scheduler.ts --outdir=build --bundle --packages=external",
+    "build:workers": "esbuild --platform=node --format=esm ./app/services/jobs/analyze-worker.ts ./app/services/jobs/upsert-worker.ts --outdir=build/workers --bundle --packages=external",
     "build:db-scripts": "esbuild --platform=node --format=esm ./db/apply-tenant-migrations.ts --outdir=build/db --bundle --packages=external",
     "build:react-router": "react-router build",
     "dev": "react-router dev",
