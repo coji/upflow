@@ -25,10 +25,6 @@ export const handle = {
   }),
 }
 
-export const loader = (_args: Route.LoaderArgs) => {
-  return {}
-}
-
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization: org } = context.get(orgContext)
   const formData = await request.formData()
@@ -81,13 +77,83 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
 
+// --- Shared Run Status Alerts ---
+
+function RunStatusAlerts({
+  label,
+  progress,
+  output,
+  runError,
+  isRunning,
+  isCompleted,
+  isFailed,
+}: {
+  label: string
+  progress: { message?: string; current?: number; total?: number } | null
+  output: { pullCount?: number } | null
+  runError: string | null
+  isRunning: boolean
+  isCompleted: boolean
+  isFailed: boolean
+}) {
+  if (isRunning && progress) {
+    return (
+      <Alert>
+        <AlertDescription>
+          <div className="space-y-2">
+            <p className="text-sm">{progress.message ?? 'Processing...'}</p>
+            {progress.current != null &&
+              progress.total != null &&
+              progress.total > 0 && (
+                <Progress
+                  value={(progress.current / progress.total) * 100}
+                  className="h-2"
+                />
+              )}
+          </div>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (isRunning) {
+    return (
+      <Alert>
+        <AlertDescription>Starting {label}...</AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (isCompleted) {
+    return (
+      <Alert>
+        <AlertDescription>
+          {label} completed.{' '}
+          {output?.pullCount != null && `${output.pullCount} PRs updated.`}
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (isFailed) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>
+          {label} failed. {runError}
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  return null
+}
+
 // --- Refresh Section ---
 
 function RefreshSection() {
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
 
-  // After form submission, track the durably run via SSE
   const runId =
     fetcher.data?.intent === 'refresh' && fetcher.data?.ok
       ? fetcher.data.runId
@@ -103,6 +169,7 @@ function RefreshSection() {
   } = durably.crawl.useRun(runId)
 
   const isRunning = isPending || isLeased
+  const isBusy = isSubmitting || isRunning || runId != null
 
   return (
     <Stack>
@@ -118,59 +185,21 @@ function RefreshSection() {
         </div>
         <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="refresh" />
-          <Button type="submit" loading={isSubmitting} disabled={isRunning}>
+          <Button type="submit" loading={isSubmitting} disabled={isBusy}>
             {isRunning ? 'Running' : 'Refresh'}
           </Button>
         </fetcher.Form>
       </div>
 
-      {/* Progress */}
-      {isRunning && progress && (
-        <Alert>
-          <AlertDescription>
-            <div className="space-y-2">
-              <p className="text-sm">{progress.message ?? 'Processing...'}</p>
-              {progress.current != null &&
-                progress.total != null &&
-                progress.total > 0 && (
-                  <Progress
-                    value={(progress.current / progress.total) * 100}
-                    className="h-2"
-                  />
-                )}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {isRunning && !progress && (
-        <Alert>
-          <AlertDescription>Starting full refresh...</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Success */}
-      {isCompleted && (
-        <Alert>
-          <AlertDescription>
-            Full refresh completed.{' '}
-            {output?.pullCount != null && `${output.pullCount} PRs updated.`}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Error */}
-      {isFailed && (
-        <Alert variant="destructive">
-          <AlertDescription>Full refresh failed. {runError}</AlertDescription>
-        </Alert>
-      )}
-
-      {fetcher.data?.intent === 'refresh' && fetcher.data?.error && (
-        <Alert variant="destructive">
-          <AlertDescription>{fetcher.data.error}</AlertDescription>
-        </Alert>
-      )}
+      <RunStatusAlerts
+        label="full refresh"
+        progress={progress}
+        output={output}
+        runError={runError}
+        isRunning={isRunning}
+        isCompleted={isCompleted}
+        isFailed={isFailed}
+      />
     </Stack>
   )
 }
@@ -184,7 +213,6 @@ function RecalculateSection() {
   const [exportData, setExportData] = useState(false)
   const noneSelected = !upsert && !classify && !exportData
 
-  // After form submission, track the durably run via SSE
   const runId =
     fetcher.data?.intent === 'recalculate' && fetcher.data?.ok
       ? fetcher.data.runId
@@ -266,47 +294,15 @@ function RecalculateSection() {
         </Stack>
       </fetcher.Form>
 
-      {/* Progress */}
-      {isRunning && progress && (
-        <Alert>
-          <AlertDescription>
-            <div className="space-y-2">
-              <p className="text-sm">{progress.message ?? 'Processing...'}</p>
-              {progress.current != null &&
-                progress.total != null &&
-                progress.total > 0 && (
-                  <Progress
-                    value={(progress.current / progress.total) * 100}
-                    className="h-2"
-                  />
-                )}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {isRunning && !progress && (
-        <Alert>
-          <AlertDescription>Starting recalculation...</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Success */}
-      {isCompleted && (
-        <Alert>
-          <AlertDescription>
-            Recalculation completed.{' '}
-            {output?.pullCount != null && `${output.pullCount} PRs updated.`}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Error */}
-      {isFailed && (
-        <Alert variant="destructive">
-          <AlertDescription>Recalculation failed. {runError}</AlertDescription>
-        </Alert>
-      )}
+      <RunStatusAlerts
+        label="recalculation"
+        progress={progress}
+        output={output}
+        runError={runError}
+        isRunning={isRunning}
+        isCompleted={isCompleted}
+        isFailed={isFailed}
+      />
 
       {fetcher.data?.intent === 'recalculate' && fetcher.data?.error && (
         <Alert variant="destructive">
