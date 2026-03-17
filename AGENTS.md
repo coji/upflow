@@ -11,6 +11,7 @@ Instructions for AI coding agents working with this codebase.
 - Use polite Japanese (`です`/`ます`) when responding in Japanese.
 - Do not use unnatural validation, praise, or evaluative filler such as telling the user their reaction is valid or that an idea is highly effective unless that judgment is necessary.
 - Do not end responses by hinting at additional useful context without giving it. If adjacent context matters, include it briefly in the same response.
+- Do not present a conclusion as if it were obvious only after the user suggests it. If you have a concrete conclusion, state it first and directly.
 - When blocked by environment limits, state the limit plainly and move to the best available workaround.
 
 For all other project-specific guidance, conventions, and workflow details, see `CLAUDE.md`.
