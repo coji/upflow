@@ -66,19 +66,28 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         )
       }
 
-      const run = await serverDurably.jobs.recalculate.trigger(
-        { organizationId: org.id, steps },
-        {
-          concurrencyKey: `recalculate:${org.id}`,
-          labels: { organizationId: org.id },
-        },
-      )
-
-      return data({
-        intent: 'recalculate' as const,
-        ok: true,
-        runId: run.id,
-      })
+      try {
+        const run = await serverDurably.jobs.recalculate.trigger(
+          { organizationId: org.id, steps },
+          {
+            concurrencyKey: `recalculate:${org.id}`,
+            labels: { organizationId: org.id },
+          },
+        )
+        return data({
+          intent: 'recalculate' as const,
+          ok: true,
+          runId: run.id,
+        })
+      } catch {
+        return data(
+          {
+            intent: 'recalculate' as const,
+            error: 'Failed to start recalculation',
+          },
+          { status: 500 },
+        )
+      }
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
