@@ -10,7 +10,9 @@ export const analyzeReviewResponse = (
 
   // 古い順に並べて、レビュアーが変わったらその時間差を反応時間として記録
   for (const res of sortBy(
-    comments.filter((d) => dayjs.utc(d.createdAt) > dayjs().add(-90, 'days')),
+    comments.filter(
+      (d) => dayjs.utc(d.createdAt) > dayjs.utc().add(-90, 'days'),
+    ),
     [(x) => x.createdAt, 'asc'],
   )) {
     if (lastRes && lastRes.user !== res.user) {
