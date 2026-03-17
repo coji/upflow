@@ -32,15 +32,21 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(intent)
     .with('refresh', async () => {
-      const run = await serverDurably.jobs.crawl.trigger(
-        { organizationId: org.id, refresh: true },
-        {
-          concurrencyKey: `crawl:${org.id}`,
-          labels: { organizationId: org.id },
-        },
-      )
-
-      return data({ intent: 'refresh' as const, ok: true, runId: run.id })
+      try {
+        const run = await serverDurably.jobs.crawl.trigger(
+          { organizationId: org.id, refresh: true },
+          {
+            concurrencyKey: `crawl:${org.id}`,
+            labels: { organizationId: org.id },
+          },
+        )
+        return data({ intent: 'refresh' as const, ok: true, runId: run.id })
+      } catch {
+        return data(
+          { intent: 'refresh' as const, error: 'Failed to start refresh' },
+          { status: 500 },
+        )
+      }
     })
     .with('recalculate', async () => {
       const selectedSteps = formData.getAll('steps').map(String)
@@ -201,6 +207,12 @@ function RefreshSection() {
         isCompleted={isCompleted}
         isFailed={isFailed}
       />
+
+      {fetcher.data?.intent === 'refresh' && fetcher.data?.error && (
+        <Alert variant="destructive">
+          <AlertDescription>{fetcher.data.error}</AlertDescription>
+        </Alert>
+      )}
     </Stack>
   )
 }
