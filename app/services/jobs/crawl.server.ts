@@ -1,24 +1,13 @@
 import { defineJob } from '@coji/durably'
-import { sql, type Selectable } from 'kysely'
+import { sql } from 'kysely'
 import { z } from 'zod'
 import { clearOrgCache } from '~/app/services/cache.server'
-import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
-import {
-  exportPulls,
-  exportReviewResponses,
-} from '~/batch/bizlogic/export-spreadsheet'
-import { upsertAnalyzedData } from '~/batch/db'
 import { getOrganization } from '~/batch/db/queries'
 import { createFetcher } from '~/batch/github/fetcher'
-import { buildPullRequests } from '~/batch/github/pullrequest'
 import { createStore } from '~/batch/github/store'
-import type {
-  AnalyzedReview,
-  AnalyzedReviewResponse,
-  AnalyzedReviewer,
-} from '~/batch/github/types'
-import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
+import { analyzeAndFinalizeSteps } from './shared-steps.server'
 
 export const crawlJob = defineJob({
   name: 'crawl',
@@ -87,11 +76,17 @@ export const crawlJob = defineJob({
         },
       )
 
-      // Determine which PRs need detail fetching
-      const lastFetchedAt = input.refresh
-        ? '2000-01-01T00:00:00Z'
-        : ((await store.getLatestUpdatedAt().catch(() => null)) ??
-          '2000-01-01T00:00:00Z')
+      // Determine which PRs need detail fetching (cached for deterministic resume)
+      const lastFetchedAt = await step.run(
+        `last-fetched-at:${repoLabel}`,
+        async () => {
+          if (input.refresh) return '2000-01-01T00:00:00Z'
+          return (
+            (await store.getLatestUpdatedAt().catch(() => null)) ??
+            '2000-01-01T00:00:00Z'
+          )
+        },
+      )
 
       const prsToFetch = input.refresh
         ? allPullRequests
@@ -147,7 +142,6 @@ export const crawlJob = defineJob({
     // Skip analyze if no updates (and not a refresh)
     if (!input.refresh && updatedPrNumbers.size === 0) {
       step.log.info('No updated PRs, skipping analyze.')
-      // Still finalize
       await step.run('finalize', async () => {
         const tenantDb = getTenantDb(orgId)
         await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
@@ -167,86 +161,19 @@ export const crawlJob = defineJob({
       })
     }
 
-    // Step 3: Analyze repos (per-repository)
-    const allPulls: Selectable<TenantDB.PullRequests>[] = []
-    const allReviews: AnalyzedReview[] = []
-    const allReviewers: AnalyzedReviewer[] = []
-    const allReviewResponses: AnalyzedReviewResponse[] = []
+    // Steps 3-7: Analyze → Upsert → Classify → Export → Finalize
+    const { pullCount } = await analyzeAndFinalizeSteps(
+      step,
+      orgId,
+      organization,
+      {
+        filterPrNumbers: input.refresh ? undefined : updatedPrNumbers,
+        skipRepo: input.refresh
+          ? undefined
+          : (repoId) => !updatedPrNumbers.has(repoId),
+      },
+    )
 
-    for (let i = 0; i < organization.repositories.length; i++) {
-      const repo = organization.repositories[i]
-      // Skip repos with no updates (unless refresh)
-      if (!input.refresh && !updatedPrNumbers.has(repo.id)) continue
-
-      const result = await step.run(`analyze:${repo.repo}`, async () => {
-        step.progress(i + 1, repoCount, `Analyzing ${repo.repo}...`)
-        const store = createStore({
-          organizationId: orgId,
-          repositoryId: repo.id,
-        })
-        await store.preloadAll()
-
-        const orgSetting = organization.organizationSetting
-        const filterPrNumbers = updatedPrNumbers.get(repo.id)
-        return await buildPullRequests(
-          {
-            organizationId: orgId,
-            repositoryId: repo.id,
-            releaseDetectionMethod:
-              repo.releaseDetectionMethod ?? orgSetting.releaseDetectionMethod,
-            releaseDetectionKey:
-              repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
-            excludedUsers: orgSetting.excludedUsers,
-          },
-          await store.loader.pullrequests(),
-          store.loader,
-          input.refresh ? undefined : filterPrNumbers,
-        )
-      })
-      allPulls.push(...result.pulls)
-      allReviews.push(...result.reviews)
-      allReviewers.push(...result.reviewers)
-      allReviewResponses.push(...result.reviewResponses)
-    }
-
-    // Step 4: Upsert
-    await step.run('upsert', async () => {
-      step.progress(0, 0, 'Upserting to database...')
-      await upsertAnalyzedData(orgId, {
-        pulls: allPulls,
-        reviews: allReviews,
-        reviewers: allReviewers,
-      })
-    })
-
-    // Step 5: Classify
-    await step.run('classify', async () => {
-      step.progress(0, 0, 'Classifying PRs...')
-      await classifyPullRequests(orgId)
-    })
-
-    // Step 6: Export
-    const { exportSetting } = organization
-    if (exportSetting) {
-      await step.run('export', async () => {
-        step.progress(0, 0, 'Exporting to spreadsheet...')
-        try {
-          await exportPulls(exportSetting, allPulls)
-          await exportReviewResponses(exportSetting, allReviewResponses)
-        } catch (e) {
-          step.log.warn(`Export failed: ${e instanceof Error ? e.message : e}`)
-        }
-      })
-    }
-
-    // Step 7: Finalize
-    await step.run('finalize', async () => {
-      step.progress(0, 0, 'Finalizing...')
-      const tenantDb = getTenantDb(orgId)
-      await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
-      clearOrgCache(orgId)
-    })
-
-    return { fetchedRepos: repoCount, pullCount: allPulls.length }
+    return { fetchedRepos: repoCount, pullCount }
   },
 })
