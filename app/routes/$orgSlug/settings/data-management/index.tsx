@@ -124,11 +124,13 @@ function RunStatusAlerts({
     )
   }
 
+  const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1)
+
   if (isCompleted) {
     return (
       <Alert>
         <AlertDescription>
-          {label} completed.{' '}
+          {capitalizedLabel} completed.{' '}
           {output?.pullCount != null && `${output.pullCount} PRs updated.`}
         </AlertDescription>
       </Alert>
@@ -139,7 +141,7 @@ function RunStatusAlerts({
     return (
       <Alert variant="destructive">
         <AlertDescription>
-          {label} failed. {runError}
+          {capitalizedLabel} failed. {runError}
         </AlertDescription>
       </Alert>
     )
