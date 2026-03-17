@@ -15,12 +15,11 @@ import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
 import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
+import { getOrganization } from '~/batch/db'
 import {
-  exportPulls,
-  exportReviewResponses,
-} from '~/batch/bizlogic/export-spreadsheet'
-import { getOrganization, upsertPullRequest } from '~/batch/db'
-import { analyzeRepos } from '~/batch/github/analyze-repos'
+  analyzeAndUpsert,
+  type AnalyzeAndUpsertSteps,
+} from '~/batch/usecases/analyze-and-upsert'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
@@ -61,6 +60,23 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       return data({ intent: 'refresh' as const, ok: true })
     })
     .with('recalculate', async () => {
+      const selectedSteps = formData.getAll('steps').map(String)
+      const steps = {
+        upsert: selectedSteps.includes('upsert'),
+        classify: selectedSteps.includes('classify'),
+        export: selectedSteps.includes('export'),
+      } satisfies AnalyzeAndUpsertSteps
+
+      if (!steps.upsert && !steps.classify && !steps.export) {
+        return data(
+          {
+            intent: 'recalculate' as const,
+            error: 'At least one step must be selected',
+          },
+          { status: 400 },
+        )
+      }
+
       const organization = await getOrganization(org.id)
       if (!organization.integration) {
         return data(
@@ -71,7 +87,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           { status: 400 },
         )
       }
-      if (!organization.organizationSetting) {
+      const { organizationSetting } = organization
+      if (!organizationSetting) {
         return data(
           { intent: 'recalculate' as const, error: 'No organization setting' },
           { status: 400 },
@@ -79,24 +96,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
 
       try {
-        const { pulls, reviewResponses } = await analyzeRepos(
-          org.id,
-          organization.organizationSetting,
-          organization.repositories,
-        )
-
-        for (const pr of pulls) {
-          await upsertPullRequest(org.id, pr)
-        }
-
-        if (organization.exportSetting) {
-          await exportPulls(organization.exportSetting, pulls)
-          await exportReviewResponses(
-            organization.exportSetting,
-            reviewResponses,
-          )
-        }
-
+        const { pulls } = await analyzeAndUpsert({
+          organization: {
+            ...organization,
+            id: org.id,
+            organizationSetting,
+          },
+          steps,
+        })
         clearAllCache()
         return data({
           intent: 'recalculate' as const,
@@ -179,24 +186,71 @@ function RefreshSection({
 function RecalculateSection() {
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
+  const [upsert, setUpsert] = useState(true)
+  const [classify, setClassify] = useState(false)
+  const [exportData, setExportData] = useState(false)
+  const noneSelected = !upsert && !classify && !exportData
 
   return (
     <Stack>
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Recalculate Cycle Times</p>
-          <p className="text-muted-foreground text-xs">
-            Recalculate pickup/review/deploy times based on current excluded
-            users settings.
-          </p>
-        </div>
-        <fetcher.Form method="post" className="shrink-0">
-          <input type="hidden" name="intent" value="recalculate" />
-          <Button type="submit" loading={isSubmitting}>
-            Recalculate
-          </Button>
-        </fetcher.Form>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">Recalculate Cycle Times</p>
+        <p className="text-muted-foreground text-xs">
+          Re-analyze PR data from stored raw data. Select which steps to run.
+        </p>
       </div>
+      <fetcher.Form method="post">
+        <Stack gap="4">
+          <input type="hidden" name="intent" value="recalculate" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="step-upsert"
+                name="steps"
+                value="upsert"
+                checked={upsert}
+                onCheckedChange={(c) => setUpsert(c === true)}
+              />
+              <Label htmlFor="step-upsert" className="text-xs">
+                Analyze & Upsert — Re-analyze and update PR data in DB
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="step-classify"
+                name="steps"
+                value="classify"
+                checked={classify}
+                onCheckedChange={(c) => setClassify(c === true)}
+              />
+              <Label htmlFor="step-classify" className="text-xs">
+                LLM Classify — Classify PR size/risk with Gemini
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="step-export"
+                name="steps"
+                value="export"
+                checked={exportData}
+                onCheckedChange={(c) => setExportData(c === true)}
+              />
+              <Label htmlFor="step-export" className="text-xs">
+                Export to Spreadsheet
+              </Label>
+            </div>
+          </div>
+          <div>
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              disabled={noneSelected}
+            >
+              Recalculate
+            </Button>
+          </div>
+        </Stack>
+      </fetcher.Form>
       {fetcher.data?.intent === 'recalculate' && fetcher.data?.ok === true && (
         <Alert>
           <AlertDescription>{fetcher.data.message}</AlertDescription>
