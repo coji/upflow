@@ -34,6 +34,31 @@ jobs:
       - name: 🔬 Lint
         run: pnpm run lint
 
+      - name: 🕐 Check dayjs UTC usage
+        run: |
+          # Detect dayjs(variable) that should be dayjs.utc(variable)
+          # Allowed: dayjs() (no args), dayjs.utc(...), dayjs(Date), dayjs(value, format)
+          VIOLATIONS=$(grep -rn 'dayjs([a-zA-Z]' app/ batch/ --include='*.ts' --include='*.tsx' \
+            | grep -v 'dayjs\.utc' \
+            | grep -v 'dayjs(date,' \
+            | grep -v 'dayjs(weekParam,' \
+            | grep -v 'dayjs(start)' \
+            | grep -v 'dayjs(weekStart)' \
+            | grep -v 'dayjs(h\.date)' \
+            | grep -v 'dayjs(dateStr)' \
+            | grep -v 'dayjs(day\.date)' \
+            | grep -v 'dayjs(now)' \
+            | grep -v 'dayjs(rawDate)' \
+            | grep -v 'dayjs(date)' \
+            | grep -v 'dayjs(weekInterval' \
+            | grep -v '\.test\.' \
+            || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::Found dayjs(variable) that should use dayjs.utc(). See CLAUDE.md datetime conventions."
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+
   format:
     name: 💅 Prettier
     runs-on: ubuntu-latest
