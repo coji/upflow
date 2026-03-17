@@ -15,12 +15,8 @@ import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
 import { clearAllCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
-import {
-  exportPulls,
-  exportReviewResponses,
-} from '~/batch/bizlogic/export-spreadsheet'
-import { getOrganization, upsertPullRequest } from '~/batch/db'
-import { analyzeRepos } from '~/batch/github/analyze-repos'
+import { getOrganization } from '~/batch/db'
+import { analyzeAndUpsert } from '~/batch/usecases/analyze-and-upsert'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
@@ -79,24 +75,13 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
 
       try {
-        const { pulls, reviewResponses } = await analyzeRepos(
-          org.id,
-          organization.organizationSetting,
-          organization.repositories,
-        )
-
-        for (const pr of pulls) {
-          await upsertPullRequest(org.id, pr)
-        }
-
-        if (organization.exportSetting) {
-          await exportPulls(organization.exportSetting, pulls)
-          await exportReviewResponses(
-            organization.exportSetting,
-            reviewResponses,
-          )
-        }
-
+        const { pulls } = await analyzeAndUpsert({
+          organization: {
+            ...organization,
+            id: org.id,
+            organizationSetting: organization.organizationSetting!,
+          },
+        })
         clearAllCache()
         return data({
           intent: 'recalculate' as const,
