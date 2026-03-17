@@ -29,17 +29,19 @@ interface OrganizationData {
   exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
 
+export interface JobSteps {
+  upsert?: boolean
+  classify?: boolean
+  export?: boolean
+}
+
 interface AnalyzeAndFinalizeOptions {
   /** PR 番号フィルタ（undefined なら全件解析） */
   filterPrNumbers?: Map<string, Set<number>>
   /** リポジトリ単位のスキップ判定 */
   skipRepo?: (repoId: string) => boolean
   /** 各フェーズを実行するか（デフォルト全て true） */
-  steps?: {
-    upsert?: boolean
-    classify?: boolean
-    export?: boolean
-  }
+  steps?: JobSteps
 }
 
 /**

@@ -203,7 +203,7 @@ export async function upsertCompanyGithubUsers(
 
 /**
  * analyze 結果を一括で DB に書き込む共通関数。
- * analyzeAndUpsert と durably recalculate ジョブの両方から使う。
+ * durably ジョブ（crawl, recalculate）の共通 upsert 処理。
  */
 export async function upsertAnalyzedData(
   organizationId: OrganizationId,
