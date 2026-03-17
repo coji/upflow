@@ -99,6 +99,7 @@ function RunStatusAlerts({
   progress,
   output,
   runError,
+  triggerError,
   isRunning,
   isCompleted,
   isFailed,
@@ -107,6 +108,7 @@ function RunStatusAlerts({
   progress: { message?: string; current?: number; total?: number } | null
   output: { pullCount?: number } | null
   runError: string | null
+  triggerError: string | null
   isRunning: boolean
   isCompleted: boolean
   isFailed: boolean
@@ -162,6 +164,14 @@ function RunStatusAlerts({
     )
   }
 
+  if (triggerError) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{triggerError}</AlertDescription>
+      </Alert>
+    )
+  }
+
   return null
 }
 
@@ -212,16 +222,13 @@ function RefreshSection() {
         progress={progress}
         output={output}
         runError={runError}
+        triggerError={
+          fetcher.data?.intent === 'refresh' ? fetcher.data?.error : null
+        }
         isRunning={isRunning}
         isCompleted={isCompleted}
         isFailed={isFailed}
       />
-
-      {fetcher.data?.intent === 'refresh' && fetcher.data?.error && (
-        <Alert variant="destructive">
-          <AlertDescription>{fetcher.data.error}</AlertDescription>
-        </Alert>
-      )}
     </Stack>
   )
 }
@@ -321,16 +328,13 @@ function RecalculateSection() {
         progress={progress}
         output={output}
         runError={runError}
+        triggerError={
+          fetcher.data?.intent === 'recalculate' ? fetcher.data?.error : null
+        }
         isRunning={isRunning}
         isCompleted={isCompleted}
         isFailed={isFailed}
       />
-
-      {fetcher.data?.intent === 'recalculate' && fetcher.data?.error && (
-        <Alert variant="destructive">
-          <AlertDescription>{fetcher.data.error}</AlertDescription>
-        </Alert>
-      )}
     </Stack>
   )
 }
