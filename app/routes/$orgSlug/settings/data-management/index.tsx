@@ -16,8 +16,8 @@ import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
 import { durably } from '~/app/services/durably'
 import { durably as serverDurably } from '~/app/services/durably.server'
+import type { JobSteps } from '~/app/services/jobs/shared-steps.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
-import type { AnalyzeAndUpsertSteps } from '~/batch/usecases/analyze-and-upsert'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
 
@@ -63,7 +63,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         upsert: selectedSteps.includes('upsert'),
         classify: selectedSteps.includes('classify'),
         export: selectedSteps.includes('export'),
-      } satisfies AnalyzeAndUpsertSteps
+      } satisfies JobSteps
 
       if (!steps.upsert && !steps.classify && !steps.export) {
         return data(

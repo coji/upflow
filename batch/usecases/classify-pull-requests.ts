@@ -5,7 +5,7 @@ import { logger } from '~/batch/helper/logger'
 
 /**
  * 未分類の PR を LLM で分類し、結果を DB に保存する。
- * analyzeAndUpsert の後に呼び出す。
+ * durably ジョブの classify ステップから呼び出す。
  *
  * GEMINI_API_KEY が未設定の場合はスキップする。
  */
