@@ -21,11 +21,10 @@ import type {
 import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
 
 interface OrganizationData {
-  organizationSetting: {
-    releaseDetectionMethod: string
-    releaseDetectionKey: string
-    excludedUsers: string
-  }
+  organizationSetting: Pick<
+    Selectable<TenantDB.OrganizationSettings>,
+    'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
+  >
   repositories: Selectable<TenantDB.Repositories>[]
   exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
