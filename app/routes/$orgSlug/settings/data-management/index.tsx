@@ -171,7 +171,6 @@ function RefreshSection() {
   } = durably.crawl.useRun(runId)
 
   const isRunning = isPending || isLeased
-  const isBusy = isSubmitting || isRunning || runId != null
 
   return (
     <Stack>
@@ -187,7 +186,7 @@ function RefreshSection() {
         </div>
         <fetcher.Form method="post" className="shrink-0">
           <input type="hidden" name="intent" value="refresh" />
-          <Button type="submit" loading={isSubmitting} disabled={isBusy}>
+          <Button type="submit" loading={isSubmitting} disabled={isRunning}>
             {isRunning ? 'Running' : 'Refresh'}
           </Button>
         </fetcher.Form>
