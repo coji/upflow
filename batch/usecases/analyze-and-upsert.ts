@@ -52,6 +52,10 @@ export async function analyzeAndUpsert({
   const runClassify = steps?.classify ?? true
   const runExport = steps?.export ?? true
 
+  if (!runUpsert && !runClassify && !runExport) {
+    throw new Error('At least one step must be enabled')
+  }
+
   // 1. analyze
   logger.info('analyze started...', orgId)
   const { pulls, reviews, reviewers, reviewResponses } = await analyzeRepos(
