@@ -13,6 +13,7 @@ Instructions for AI coding agents working with this codebase.
 - Do not end responses by hinting at additional useful context without giving it. If adjacent context matters, include it briefly in the same response.
 - Do not present a conclusion as if it were obvious only after the user suggests it. If you have a concrete conclusion, state it first and directly.
 - If the user questions a factual claim, do not double down from memory. Check the code, docs, or other primary evidence before answering.
+- Do not use vague hedge words to leave yourself escape hatches. State what is confirmed, state what is unconfirmed, and make the condition explicit when an answer depends on one.
 - When blocked by environment limits, state the limit plainly and move to the best available workaround.
 
 For all other project-specific guidance, conventions, and workflow details, see `CLAUDE.md`.
