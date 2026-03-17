@@ -217,10 +217,16 @@ export const buildPullRequests = async (
   const reviewers: AnalyzedReviewer[] = []
   const reviewResponses: AnalyzedReviewResponse[] = []
 
+  let processed = 0
   for (const pr of pullrequests) {
     // フィルタが指定されていれば、対象外PRをスキップ
     if (filterPrNumbers && !filterPrNumbers.has(pr.number)) {
       continue
+    }
+
+    // Yield to event loop periodically to prevent blocking healthchecks
+    if (++processed % 50 === 0) {
+      await new Promise<void>((r) => setTimeout(r, 0))
     }
 
     try {
