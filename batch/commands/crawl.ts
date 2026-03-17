@@ -1,6 +1,7 @@
 import consola from 'consola'
 import { durably } from '~/app/services/durably.server'
 import { requireOrganization } from './helpers'
+import { shutdown } from './shutdown'
 
 interface CrawlCommandProps {
   organizationId?: string
@@ -40,4 +41,5 @@ export async function crawlCommand({
     `Crawl completed. ${output.fetchedRepos} repos, ${output.pullCount} PRs.`,
   )
   await durably.stop()
+  await shutdown()
 }

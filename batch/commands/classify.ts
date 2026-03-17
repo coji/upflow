@@ -1,6 +1,7 @@
 import consola from 'consola'
 import { classifyPullRequests } from '../usecases/classify-pull-requests'
 import { requireOrganization } from './helpers'
+import { shutdown } from './shutdown'
 
 interface ClassifyCommandProps {
   organizationId?: string
@@ -26,4 +27,5 @@ export async function classifyCommand({
   )
 
   await classifyPullRequests(orgId, { force, limit })
+  await shutdown()
 }

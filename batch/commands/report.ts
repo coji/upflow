@@ -2,6 +2,7 @@ import invariant from 'tiny-invariant'
 import { getPullRequestReport } from '~/batch/db'
 import { timeFormatTz } from '../helper/timeformat'
 import { requireOrganization } from './helpers'
+import { shutdown } from './shutdown'
 
 interface reportCommandProps {
   organizationId?: string
@@ -63,4 +64,5 @@ export async function reportCommand({ organizationId }: reportCommandProps) {
       ].join('\t'),
     )
   }
+  await shutdown()
 }

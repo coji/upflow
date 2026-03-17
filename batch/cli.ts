@@ -1,10 +1,5 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
-import { backfillCommand } from './commands/backfill'
-import { classifyCommand } from './commands/classify'
-import { crawlCommand } from './commands/crawl'
-import { recalculateCommand } from './commands/recalculate'
-import { reportCommand } from './commands/report'
 
 const crawl = command(
   {
@@ -23,6 +18,7 @@ const crawl = command(
     },
   },
   async (argv) => {
+    const { crawlCommand } = await import('./commands/crawl')
     await crawlCommand({
       organizationId: argv._.organizationId,
       refresh: argv.flags.refresh,
@@ -52,6 +48,7 @@ const recalculate = command(
     },
   },
   async (argv) => {
+    const { recalculateCommand } = await import('./commands/recalculate')
     await recalculateCommand({
       organizationId: argv._.organizationId,
       classify: argv.flags.classify,
@@ -80,6 +77,7 @@ const classify = command(
     },
   },
   async (argv) => {
+    const { classifyCommand } = await import('./commands/classify')
     await classifyCommand({
       organizationId: argv._.organizationId,
       force: argv.flags.force,
@@ -105,6 +103,7 @@ const backfill = command(
     },
   },
   async (argv) => {
+    const { backfillCommand } = await import('./commands/backfill')
     await backfillCommand({
       organizationId: argv._.organizationId,
       files: argv.flags.files,
@@ -119,6 +118,7 @@ const report = command(
     help: { description: 'Report cycletime from fetched resources.' },
   },
   async (argv) => {
+    const { reportCommand } = await import('./commands/report')
     const { help, ...rest } = argv.flags
     await reportCommand({ organizationId: argv._.organizationId, ...rest })
   },

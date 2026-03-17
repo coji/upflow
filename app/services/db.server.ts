@@ -30,3 +30,8 @@ export const db = new Kysely<DB.DB>({
   log: (event) => debug(event.query.sql, event.query.parameters),
   plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
 })
+
+export async function closeDb(): Promise<void> {
+  await db.destroy()
+  database.close()
+}

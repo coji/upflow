@@ -1,6 +1,7 @@
 import consola from 'consola'
 import { durably } from '~/app/services/durably.server'
 import { requireOrganization } from './helpers'
+import { shutdown } from './shutdown'
 
 interface RecalculateCommandProps {
   organizationId?: string
@@ -46,4 +47,5 @@ export async function recalculateCommand({
 
   consola.success(`Recalculate completed. ${output.pullCount} PRs updated.`)
   await durably.stop()
+  await shutdown()
 }
