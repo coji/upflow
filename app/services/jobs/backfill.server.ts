@@ -23,10 +23,15 @@ export const backfillJob = defineJob({
         throw new Error('No integration or token configured')
       }
       return {
-        integration: org.integration,
         repositories: org.repositories,
       }
     })
+
+    const org = await getOrganization(orgId)
+    const token = org.integration?.privateToken
+    if (!token) {
+      throw new Error('No integration token')
+    }
 
     const repoCount = organization.repositories.length
 
@@ -36,9 +41,14 @@ export const backfillJob = defineJob({
 
       await step.run(`backfill:${repoLabel}`, async () => {
         step.progress(i + 1, repoCount, `Backfilling ${repoLabel}...`)
-        await backfillRepo(orgId, repository, organization.integration, {
-          files: input.files,
-        })
+        await backfillRepo(
+          orgId,
+          repository,
+          { privateToken: token },
+          {
+            files: input.files,
+          },
+        )
       })
     }
 
