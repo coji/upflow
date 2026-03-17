@@ -1,5 +1,4 @@
 import { defineJob } from '@coji/durably'
-import { sql } from 'kysely'
 import { z } from 'zod'
 import { clearOrgCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -146,9 +145,7 @@ export const crawlJob = defineJob({
     // Skip analyze if no updates (and not a refresh)
     if (!input.refresh && updatedPrNumbers.size === 0) {
       step.log.info('No updated PRs, skipping analyze.')
-      await step.run('finalize', async () => {
-        const tenantDb = getTenantDb(orgId)
-        await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
+      await step.run('finalize', () => {
         clearOrgCache(orgId)
       })
       return { fetchedRepos: repoCount, pullCount: 0 }

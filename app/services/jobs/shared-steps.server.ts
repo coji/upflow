@@ -2,14 +2,15 @@
  * crawl と recalculate ジョブで共有する analyze → upsert → classify → export → finalize ステップ群
  */
 import type { StepContext } from '@coji/durably'
-import { sql, type Selectable } from 'kysely'
+import type { Selectable } from 'kysely'
 import { clearOrgCache } from '~/app/services/cache.server'
-import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
+import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import {
   exportPulls,
   exportReviewResponses,
 } from '~/batch/bizlogic/export-spreadsheet'
+import { upsertAnalyzedData } from '~/batch/db'
 import type {
   AnalyzedReview,
   AnalyzedReviewResponse,
@@ -17,7 +18,7 @@ import type {
 } from '~/batch/github/types'
 import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
 import type { SqliteBusyEvent } from './run-in-worker'
-import { runAnalyzeInWorker, runUpsertInWorker } from './run-in-worker'
+import { runAnalyzeInWorker } from './run-in-worker'
 
 interface AnalyzeResult {
   pulls: Selectable<TenantDB.PullRequests>[]
@@ -148,17 +149,11 @@ export async function analyzeAndFinalizeSteps(
     await step.run('upsert', async () => {
       await runTimedStep(step, 'upsert', async () => {
         step.progress(0, 0, 'Upserting to database...')
-        await runUpsertInWorker(
-          {
-            organizationId: orgId,
-            pulls: allPulls,
-            reviews: allReviews,
-            reviewers: allReviewers,
-          },
-          {
-            onSqliteBusy: (event) => sqliteBusyEvents.push(event),
-          },
-        )
+        await upsertAnalyzedData(orgId, {
+          pulls: allPulls,
+          reviews: allReviews,
+          reviewers: allReviewers,
+        })
       })
     })
   }
@@ -193,9 +188,8 @@ export async function analyzeAndFinalizeSteps(
   await step.run('finalize', async () => {
     await runTimedStep(step, 'finalize', async () => {
       step.progress(0, 0, 'Finalizing...')
-      const tenantDb = getTenantDb(orgId)
-      await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
       clearOrgCache(orgId)
+      await Promise.resolve()
     })
   })
 

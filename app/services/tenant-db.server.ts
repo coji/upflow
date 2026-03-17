@@ -18,6 +18,7 @@ export type { OrganizationId } from '~/app/types/organization'
 
 const debug = createDebug('app:tenant-db')
 const SQLITE_BUSY_TIMEOUT_MS = 5000
+const SQLITE_WAL_JOURNAL_SIZE_LIMIT_BYTES = 64 * 1024 * 1024
 
 const tenantDbCache = new Map<
   string,
@@ -42,6 +43,7 @@ function ensureTenantDb(organizationId: OrganizationId) {
   database.pragma('journal_mode = WAL')
   database.pragma(`busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`)
   database.pragma('wal_autocheckpoint = 1000')
+  database.pragma(`journal_size_limit = ${SQLITE_WAL_JOURNAL_SIZE_LIMIT_BYTES}`)
 
   const kysely = new Kysely<TenantDB.DB>({
     dialect: new SqliteDialect({ database }),

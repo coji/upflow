@@ -13,10 +13,10 @@ describe('getWorkerRuntime', () => {
   })
 
   test('uses ts worker files in development', () => {
-    const runtime = getWorkerRuntime('upsert-worker', 'development')
+    const runtime = getWorkerRuntime('analyze-worker', 'development')
 
     expect(runtime.workerPath).toBe(
-      path.resolve(process.cwd(), 'app/services/jobs/upsert-worker.ts'),
+      path.resolve(process.cwd(), 'app/services/jobs/analyze-worker.ts'),
     )
     expect(runtime.workerOptions.execArgv).toEqual(['--import', 'tsx'])
   })
