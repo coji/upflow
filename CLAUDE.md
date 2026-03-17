@@ -86,8 +86,11 @@ batch/                # CLI batch jobs for data processing
 └── provider/         # GitHub API integration
 
 db/
-├── schema.sql        # Declarative schema (Atlas source)
-├── migrations/       # Atlas versioned migrations
+├── shared.sql        # Shared DB declarative schema (Atlas source)
+├── tenant.sql        # Per-org tenant DB declarative schema (Atlas source)
+├── migrations/
+│   ├── shared/       # Shared DB versioned migrations
+│   └── tenant/       # Tenant DB versioned migrations
 └── seed.ts           # Seed data
 ```
 
@@ -109,7 +112,7 @@ Atlas + Kysely setup:
 - **Kysely**: Runtime queries and type generation via kysely-codegen
 
 ```bash
-# Generate new migration from schema.sql changes
+# Generate new migration from shared.sql / tenant.sql changes
 pnpm db:migrate
 
 # Apply migrations to local database
