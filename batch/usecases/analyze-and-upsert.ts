@@ -5,12 +5,7 @@ import {
   exportPulls,
   exportReviewResponses,
 } from '~/batch/bizlogic/export-spreadsheet'
-import {
-  batchUpsertPullRequestReviews,
-  batchUpsertPullRequests,
-  upsertCompanyGithubUsers,
-  upsertPullRequestReviewers,
-} from '~/batch/db'
+import { upsertAnalyzedData } from '~/batch/db'
 import { analyzeRepos } from '~/batch/github/analyze-repos'
 import type { UpdatedPrNumbersMap } from '~/batch/github/types'
 import { logger } from '~/batch/helper/logger'
@@ -68,50 +63,7 @@ export async function analyzeAndUpsert({
 
   // 2-5. upsert to DB
   if (runUpsert) {
-    const discoveredLogins = new Set<string>()
-    for (const pr of pulls) {
-      if (pr.author) discoveredLogins.add(pr.author)
-    }
-    for (const review of reviews) {
-      if (review.reviewer) discoveredLogins.add(review.reviewer)
-    }
-    for (const reviewer of reviewers) {
-      for (const r of reviewer.reviewers) {
-        if (r.login) discoveredLogins.add(r.login)
-      }
-    }
-    await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
-    logger.info('auto-register github users completed.', orgId)
-
-    logger.info('upsert started...', orgId)
-    await batchUpsertPullRequests(orgId, pulls)
-    logger.info('upsert pull requests completed.', orgId)
-
-    logger.info('upsert reviews started...', orgId)
-    await batchUpsertPullRequestReviews(
-      orgId,
-      reviews.map((r) => ({
-        id: r.id,
-        pullRequestNumber: r.pullRequestNumber,
-        repositoryId: r.repositoryId,
-        reviewer: r.reviewer,
-        state: r.state,
-        submittedAt: r.submittedAt,
-        url: r.url,
-      })),
-    )
-    logger.info('upsert reviews completed.', orgId)
-
-    logger.info('upsert reviewers started...', orgId)
-    for (const reviewer of reviewers) {
-      await upsertPullRequestReviewers(
-        orgId,
-        reviewer.repositoryId,
-        reviewer.pullRequestNumber,
-        reviewer.reviewers,
-      )
-    }
-    logger.info('upsert reviewers completed.', orgId)
+    await upsertAnalyzedData(orgId, { pulls, reviews, reviewers })
   }
 
   // 6. classify PRs with LLM (optional, requires GEMINI_API_KEY)

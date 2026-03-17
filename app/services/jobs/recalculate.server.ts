@@ -1,19 +1,14 @@
 import { defineJob } from '@coji/durably'
-import { sql } from 'kysely'
+import { sql, type Selectable } from 'kysely'
 import { z } from 'zod'
 import { clearAllCache } from '~/app/services/cache.server'
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import {
   exportPulls,
   exportReviewResponses,
 } from '~/batch/bizlogic/export-spreadsheet'
-import {
-  batchUpsertPullRequestReviews,
-  batchUpsertPullRequests,
-  upsertCompanyGithubUsers,
-  upsertPullRequestReviewers,
-} from '~/batch/db'
+import { upsertAnalyzedData } from '~/batch/db'
 import { getOrganization } from '~/batch/db/queries'
 import { buildPullRequests } from '~/batch/github/pullrequest'
 import { createStore } from '~/batch/github/store'
@@ -52,7 +47,6 @@ export const recalculateJob = defineJob({
       if (!org.integration) {
         throw new Error('No integration configured')
       }
-      // Return serializable subset
       return {
         organizationSetting: org.organizationSetting,
         repositories: org.repositories,
@@ -60,9 +54,9 @@ export const recalculateJob = defineJob({
       }
     })
 
-    // Step 2: Analyze repos (per-repository steps)
+    // Step 2: Analyze repos (per-repository steps for resumability)
     const repoCount = organization.repositories.length
-    const allPulls: unknown[] = []
+    const allPulls: Selectable<TenantDB.PullRequests>[] = []
     const allReviews: AnalyzedReview[] = []
     const allReviewers: AnalyzedReviewer[] = []
     const allReviewResponses: AnalyzedReviewResponse[] = []
@@ -103,48 +97,11 @@ export const recalculateJob = defineJob({
     if (input.steps.upsert) {
       await step.run('upsert', async () => {
         step.progress(0, 0, 'Upserting to database...')
-
-        // Auto-register discovered GitHub users
-        const discoveredLogins = new Set<string>()
-        for (const pr of allPulls as { author?: string }[]) {
-          if (pr.author) discoveredLogins.add(pr.author)
-        }
-        for (const review of allReviews) {
-          if (review.reviewer) discoveredLogins.add(review.reviewer)
-        }
-        for (const reviewer of allReviewers) {
-          for (const r of reviewer.reviewers) {
-            if (r.login) discoveredLogins.add(r.login)
-          }
-        }
-        await upsertCompanyGithubUsers(orgId, [...discoveredLogins])
-
-        // Upsert pull requests
-        await batchUpsertPullRequests(orgId, allPulls as never[])
-
-        // Upsert reviews
-        await batchUpsertPullRequestReviews(
-          orgId,
-          allReviews.map((r) => ({
-            id: r.id,
-            pullRequestNumber: r.pullRequestNumber,
-            repositoryId: r.repositoryId,
-            reviewer: r.reviewer,
-            state: r.state,
-            submittedAt: r.submittedAt,
-            url: r.url,
-          })),
-        )
-
-        // Upsert reviewers
-        for (const reviewer of allReviewers) {
-          await upsertPullRequestReviewers(
-            orgId,
-            reviewer.repositoryId,
-            reviewer.pullRequestNumber,
-            reviewer.reviewers,
-          )
-        }
+        await upsertAnalyzedData(orgId, {
+          pulls: allPulls,
+          reviews: allReviews,
+          reviewers: allReviewers,
+        })
       })
     }
 
@@ -161,7 +118,7 @@ export const recalculateJob = defineJob({
     if (input.steps.export && exportSetting) {
       await step.run('export', async () => {
         step.progress(0, 0, 'Exporting to spreadsheet...')
-        await exportPulls(exportSetting, allPulls as never[])
+        await exportPulls(exportSetting, allPulls)
         await exportReviewResponses(exportSetting, allReviewResponses)
       })
     }
