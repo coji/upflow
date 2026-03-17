@@ -1,6 +1,7 @@
-import type { Insertable } from 'kysely'
+import type { Insertable, Selectable } from 'kysely'
 import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
+import type { AnalyzedReview, AnalyzedReviewer } from '../github/types'
 import { logger } from '../helper/logger'
 
 export function upsertPullRequest(
@@ -198,4 +199,65 @@ export async function upsertCompanyGithubUsers(
     `upserted ${uniqueLogins.length} company github users.`,
     organizationId,
   )
+}
+
+/**
+ * analyze 結果を一括で DB に書き込む共通関数。
+ * analyzeAndUpsert と durably recalculate ジョブの両方から使う。
+ */
+export async function upsertAnalyzedData(
+  organizationId: OrganizationId,
+  data: {
+    pulls: Selectable<TenantDB.PullRequests>[]
+    reviews: AnalyzedReview[]
+    reviewers: AnalyzedReviewer[]
+  },
+) {
+  // Auto-register discovered GitHub users
+  const discoveredLogins = new Set<string>()
+  for (const pr of data.pulls) {
+    if (pr.author) discoveredLogins.add(pr.author)
+  }
+  for (const review of data.reviews) {
+    if (review.reviewer) discoveredLogins.add(review.reviewer)
+  }
+  for (const reviewer of data.reviewers) {
+    for (const r of reviewer.reviewers) {
+      if (r.login) discoveredLogins.add(r.login)
+    }
+  }
+  await upsertCompanyGithubUsers(organizationId, [...discoveredLogins])
+
+  // Upsert pull requests
+  logger.info('upsert started...', organizationId)
+  await batchUpsertPullRequests(organizationId, data.pulls)
+  logger.info('upsert pull requests completed.', organizationId)
+
+  // Upsert reviews
+  logger.info('upsert reviews started...', organizationId)
+  await batchUpsertPullRequestReviews(
+    organizationId,
+    data.reviews.map((r) => ({
+      id: r.id,
+      pullRequestNumber: r.pullRequestNumber,
+      repositoryId: r.repositoryId,
+      reviewer: r.reviewer,
+      state: r.state,
+      submittedAt: r.submittedAt,
+      url: r.url,
+    })),
+  )
+  logger.info('upsert reviews completed.', organizationId)
+
+  // Upsert reviewers
+  logger.info('upsert reviewers started...', organizationId)
+  for (const reviewer of data.reviewers) {
+    await upsertPullRequestReviewers(
+      organizationId,
+      reviewer.repositoryId,
+      reviewer.pullRequestNumber,
+      reviewer.reviewers,
+    )
+  }
+  logger.info('upsert reviewers completed.', organizationId)
 }

@@ -18,7 +18,7 @@ import { Stack } from '~/app/components/ui/stack'
 import dayjs from '~/app/libs/dayjs'
 import { orgContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
-import { getCachedData } from '~/app/services/cache.server'
+import { getOrgCachedData } from '~/app/services/cache.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { QueueTrendChart } from './+components/queue-trend-chart'
 import { WipCycleChart } from './+components/wip-cycle-chart'
@@ -69,10 +69,11 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const teams = await listTeams(organization.id)
 
-  const cacheKey = `reviews:${organization.id}:${teamParam ?? 'all'}:${periodMonths}`
+  const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const [queueHistoryRaw, wipCycleRaw, prSizesRaw] = await getCachedData(
+  const [queueHistoryRaw, wipCycleRaw, prSizesRaw] = await getOrgCachedData(
+    organization.id,
     cacheKey,
     () =>
       Promise.all([

@@ -24,7 +24,7 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { orgContext } from '~/app/middleware/context'
-import { clearAllCache, getCachedData } from '~/app/services/cache.server'
+import { clearOrgCache, getOrgCachedData } from '~/app/services/cache.server'
 import ContentSection from '../+components/content-section'
 import { RepositoryItem, RepositoryList } from './+components'
 import { getRepositoriesByOwnerAndKeyword } from './+functions/get-repositories-by-owner-and-keyword'
@@ -56,7 +56,7 @@ export const loader = async ({
   if (refresh) {
     const searchParams = new URL(request.url).searchParams
     searchParams.delete('refresh')
-    clearAllCache()
+    clearOrgCache(organization.id)
     throw redirect(
       `${href('/:orgSlug/settings/repositories/add', { orgSlug: params.orgSlug })}?${searchParams.toString()}`,
     )
@@ -73,8 +73,9 @@ export const loader = async ({
   const registeredOwners = [
     ...new Set(integration.repositories.map((r) => r.owner)),
   ]
-  const apiOwners = await getCachedData(
-    `owners-${organization.id}`,
+  const apiOwners = await getOrgCachedData(
+    organization.id,
+    'owners',
     () => getUniqueOwners(token),
     300000, // 5 minutes
   )
@@ -86,8 +87,9 @@ export const loader = async ({
     throw new Error('invalid owner')
   }
 
-  const { pageInfo, repos } = await getCachedData(
-    `repos-${organization.id}-${owner}-${cursor}-${query}`,
+  const { pageInfo, repos } = await getOrgCachedData(
+    organization.id,
+    `repos-${owner}-${cursor}-${query}`,
     () =>
       getRepositoriesByOwnerAndKeyword({
         token,
