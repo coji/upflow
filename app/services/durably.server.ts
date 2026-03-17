@@ -2,6 +2,7 @@ import { createDurably, createDurablyHandler } from '@coji/durably'
 import SQLite from 'better-sqlite3'
 import { SqliteDialect } from 'kysely'
 import { getSession, getUserOrganizations } from '~/app/libs/auth.server'
+import { backfillJob } from '~/app/services/jobs/backfill.server'
 import { crawlJob } from '~/app/services/jobs/crawl.server'
 import { recalculateJob } from '~/app/services/jobs/recalculate.server'
 
@@ -17,6 +18,7 @@ function createDurablyInstance() {
     leaseMs: 300_000, // 5 minutes (default 30s is too short for large orgs)
     leaseRenewIntervalMs: 30_000,
     jobs: {
+      backfill: backfillJob,
       crawl: crawlJob,
       recalculate: recalculateJob,
     },

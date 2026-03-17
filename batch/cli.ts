@@ -104,7 +104,7 @@ const backfill = command(
     },
     help: {
       description:
-        'Re-fetch PR metadata to fill missing fields in raw data. Run recalculate after this.',
+        'Re-fetch PR metadata to fill missing fields in raw data. Runs as a durable job. Run recalculate after this.',
     },
   },
   async (argv) => {

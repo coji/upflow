@@ -16,6 +16,7 @@ import type {
   AnalyzedReviewer,
 } from '~/batch/github/types'
 import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
+import type { SqliteBusyEvent } from './run-in-worker'
 import { runAnalyzeInWorker, runUpsertInWorker } from './run-in-worker'
 
 interface AnalyzeResult {
@@ -54,6 +55,23 @@ function formatDurationMs(durationMs: number) {
   return `${(durationMs / 1000).toFixed(1)}s`
 }
 
+function summarizeBusyEvents(events: SqliteBusyEvent[]) {
+  if (events.length === 0) return null
+
+  const retries = events.filter((event) => !event.gaveUp)
+  const gaveUp = events.filter((event) => event.gaveUp)
+  const totalWaitMs = retries.reduce((sum, event) => sum + event.delayMs, 0)
+  const counts = new Map<string, number>()
+  for (const event of events) {
+    counts.set(event.entrypoint, (counts.get(event.entrypoint) ?? 0) + 1)
+  }
+  const byEntrypoint = [...counts.entries()]
+    .map(([entrypoint, count]) => `${entrypoint}:${count}`)
+    .join(', ')
+
+  return `sqlite busy events=${events.length} retries=${retries.length} gaveUp=${gaveUp.length} totalWait=${formatDurationMs(totalWaitMs)} byWorker=[${byEntrypoint}]`
+}
+
 async function runTimedStep<T>(
   step: StepContext,
   name: string,
@@ -90,6 +108,7 @@ export async function analyzeAndFinalizeSteps(
   const allReviews: AnalyzedReview[] = []
   const allReviewers: AnalyzedReviewer[] = []
   const allReviewResponses: AnalyzedReviewResponse[] = []
+  const sqliteBusyEvents: SqliteBusyEvent[] = []
 
   for (let i = 0; i < organization.repositories.length; i++) {
     const repo = organization.repositories[i]
@@ -110,6 +129,8 @@ export async function analyzeAndFinalizeSteps(
             repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
           excludedUsers: orgSetting.excludedUsers,
           filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
+        }, {
+          onSqliteBusy: (event) => sqliteBusyEvents.push(event),
         })
       })
     })
@@ -129,6 +150,8 @@ export async function analyzeAndFinalizeSteps(
           pulls: allPulls,
           reviews: allReviews,
           reviewers: allReviewers,
+        }, {
+          onSqliteBusy: (event) => sqliteBusyEvents.push(event),
         })
       })
     })
@@ -169,6 +192,11 @@ export async function analyzeAndFinalizeSteps(
       clearOrgCache(orgId)
     })
   })
+
+  const busySummary = summarizeBusyEvents(sqliteBusyEvents)
+  if (busySummary) {
+    step.log.warn(busySummary)
+  }
 
   return { pullCount: allPulls.length }
 }
