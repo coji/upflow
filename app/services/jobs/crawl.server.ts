@@ -1,7 +1,6 @@
 import { defineJob } from '@coji/durably'
 import { z } from 'zod'
 import { clearOrgCache } from '~/app/services/cache.server'
-import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
 import { createFetcher } from '~/batch/github/fetcher'
@@ -149,17 +148,6 @@ export const crawlJob = defineJob({
         clearOrgCache(orgId)
       })
       return { fetchedRepos: repoCount, pullCount: 0 }
-    }
-
-    // Consume refresh flag
-    if (input.refresh) {
-      await step.run('consume-refresh-flag', async () => {
-        const tenantDb = getTenantDb(orgId)
-        await tenantDb
-          .updateTable('organizationSettings')
-          .set({ refreshRequestedAt: null })
-          .execute()
-      })
     }
 
     // Steps 3-7: Analyze → Upsert → Classify → Export → Finalize

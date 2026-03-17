@@ -23,7 +23,6 @@ async function getTenantData(organizationId: OrganizationId) {
           'releaseDetectionKey',
           'isActive',
           'excludedUsers',
-          'refreshRequestedAt',
         ])
         .executeTakeFirst(),
       tenantDb
