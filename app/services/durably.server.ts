@@ -2,7 +2,7 @@ import { createDurably, createDurablyHandler } from '@coji/durably'
 import SQLite from 'better-sqlite3'
 import { SqliteDialect } from 'kysely'
 import { getSession, getUserOrganizations } from '~/app/libs/auth.server'
-import { recalculateJob } from './jobs/recalculate.server'
+import { recalculateJob } from '~/app/services/jobs/recalculate.server'
 
 function createDurablyInstance() {
   const database = new SQLite('./data/durably.db')
@@ -58,23 +58,16 @@ export const durablyHandler = createDurablyHandler(durably, {
 
     // Scope run queries to user's organizations
     scopeRuns: (ctx, filter) => {
-      // If a specific org is requested via label, verify access
       const requestedOrgId = filter.labels?.organizationId
-      if (requestedOrgId) {
-        if (!ctx.orgIds.has(requestedOrgId)) {
-          throw new Response('Forbidden', { status: 403 })
-        }
-        return filter
+      if (!requestedOrgId) {
+        throw new Response('Bad Request: organizationId label is required', {
+          status: 400,
+        })
       }
-      // Otherwise, only show runs from user's orgs (pick first org for simplicity)
-      const firstOrgId = ctx.orgIds.values().next().value
-      if (!firstOrgId) {
+      if (!ctx.orgIds.has(requestedOrgId)) {
         throw new Response('Forbidden', { status: 403 })
       }
-      return {
-        ...filter,
-        labels: { ...filter.labels, organizationId: firstOrgId },
-      }
+      return filter
     },
   },
 })
