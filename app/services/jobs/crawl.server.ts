@@ -22,7 +22,7 @@ export const crawlJob = defineJob({
   run: async (step, input) => {
     const orgId = input.organizationId as OrganizationId
 
-    // Step 1: Load organization data
+    // Step 1: Load organization data (token excluded from step output to avoid persisting secrets)
     const organization = await step.run('load-organization', async () => {
       const org = await getOrganization(orgId)
       if (!org.organizationSetting) {
@@ -35,9 +35,13 @@ export const crawlJob = defineJob({
         organizationSetting: org.organizationSetting,
         repositories: org.repositories,
         exportSetting: org.exportSetting,
-        token: org.integration.privateToken,
       }
     })
+
+    // Load token separately (not persisted in step output)
+    const org = await getOrganization(orgId)
+    const token = org.integration?.privateToken
+    if (!token) throw new Error('No integration token')
 
     const repoCount = organization.repositories.length
     const updatedPrNumbers = new Map<string, Set<number>>()
@@ -54,7 +58,7 @@ export const crawlJob = defineJob({
       const fetcher = createFetcher({
         owner: repo.owner,
         repo: repo.repo,
-        token: organization.token,
+        token,
       })
 
       // Step 2a: Fetch tags (if tag-based release detection)
