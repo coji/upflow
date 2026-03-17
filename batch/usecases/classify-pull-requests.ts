@@ -12,14 +12,14 @@ import { logger } from '~/batch/helper/logger'
 export async function classifyPullRequests(
   organizationId: OrganizationId,
   options?: { force?: boolean; limit?: number },
-) {
+): Promise<{ classifiedCount: number }> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     logger.info(
       'GEMINI_API_KEY not set, skipping LLM classification',
       organizationId,
     )
-    return
+    return { classifiedCount: 0 }
   }
 
   const tenantDb = getTenantDb(organizationId)
@@ -55,7 +55,7 @@ export async function classifyPullRequests(
 
   if (unclassifiedPRs.length === 0) {
     logger.info('No PRs to classify', organizationId)
-    return
+    return { classifiedCount: 0 }
   }
 
   const orgSettings = await tenantDb
@@ -128,4 +128,6 @@ export async function classifyPullRequests(
     `Classification complete: ${result.successCount} success, ${result.errorCount} errors, cost $${result.estimatedCost.toFixed(4)}`,
     organizationId,
   )
+
+  return { classifiedCount: result.successCount }
 }

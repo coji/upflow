@@ -1,5 +1,5 @@
 import consola from 'consola'
-import { classifyPullRequests } from '../usecases/classify-pull-requests'
+import { durably } from '~/app/services/durably.server'
 import { requireOrganization } from './helpers'
 import { shutdown } from './shutdown'
 
@@ -28,8 +28,27 @@ export async function classifyCommand({
       `Classifying PRs for ${orgId}${flags.length ? ` (${flags.join(', ')})` : ''}`,
     )
 
-    await classifyPullRequests(orgId, { force, limit })
+    const { output } = await durably.jobs.classify.triggerAndWait(
+      { organizationId: orgId, force: force ?? false, limit },
+      {
+        concurrencyKey: `classify:${orgId}`,
+        labels: { organizationId: orgId },
+        onProgress: (p) => {
+          if (p.message) consola.info(p.message)
+        },
+        onLog: (l) => {
+          if (l.level === 'error') consola.error(l.message)
+          else if (l.level === 'warn') consola.warn(l.message)
+          else consola.info(l.message)
+        },
+      },
+    )
+
+    consola.success(
+      `Classification completed: ${output.classifiedCount} PRs classified.`,
+    )
   } finally {
+    await durably.stop()
     await shutdown()
   }
 }
