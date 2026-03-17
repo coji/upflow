@@ -10,15 +10,20 @@ import {
   exportPulls,
   exportReviewResponses,
 } from '~/batch/bizlogic/export-spreadsheet'
-import { upsertAnalyzedData } from '~/batch/db'
-import { buildPullRequests } from '~/batch/github/pullrequest'
-import { createStore } from '~/batch/github/store'
 import type {
   AnalyzedReview,
   AnalyzedReviewResponse,
   AnalyzedReviewer,
 } from '~/batch/github/types'
 import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
+import { runAnalyzeInWorker, runUpsertInWorker } from './run-in-worker'
+
+interface AnalyzeResult {
+  pulls: Selectable<TenantDB.PullRequests>[]
+  reviews: AnalyzedReview[]
+  reviewers: AnalyzedReviewer[]
+  reviewResponses: AnalyzedReviewResponse[]
+}
 
 interface OrganizationData {
   organizationSetting: Pick<
@@ -42,6 +47,26 @@ interface AnalyzeAndFinalizeOptions {
   skipRepo?: (repoId: string) => boolean
   /** 各フェーズを実行するか（デフォルト全て true） */
   steps?: JobSteps
+}
+
+function formatDurationMs(durationMs: number) {
+  if (durationMs < 1000) return `${durationMs}ms`
+  return `${(durationMs / 1000).toFixed(1)}s`
+}
+
+async function runTimedStep<T>(
+  step: StepContext,
+  name: string,
+  action: () => Promise<T>,
+) {
+  const startedAt = Date.now()
+  try {
+    return await action()
+  } finally {
+    step.log.info(
+      `${name} completed in ${formatDurationMs(Date.now() - startedAt)}`,
+    )
+  }
 }
 
 /**
@@ -71,17 +96,12 @@ export async function analyzeAndFinalizeSteps(
     if (skipRepo?.(repo.id)) continue
 
     const result = await step.run(`analyze:${repo.repo}`, async () => {
-      step.progress(i + 1, repoCount, `Analyzing ${repo.repo}...`)
+      return await runTimedStep(step, `analyze:${repo.repo}`, async () => {
+        step.progress(i + 1, repoCount, `Analyzing ${repo.repo}...`)
 
-      const store = createStore({
-        organizationId: orgId,
-        repositoryId: repo.id,
-      })
-      await store.preloadAll()
-
-      const orgSetting = organization.organizationSetting
-      return await buildPullRequests(
-        {
+        const orgSetting = organization.organizationSetting
+        const prNumbers = filterPrNumbers?.get(repo.id)
+        return await runAnalyzeInWorker<AnalyzeResult>({
           organizationId: orgId,
           repositoryId: repo.id,
           releaseDetectionMethod:
@@ -89,11 +109,9 @@ export async function analyzeAndFinalizeSteps(
           releaseDetectionKey:
             repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
           excludedUsers: orgSetting.excludedUsers,
-        },
-        await store.loader.pullrequests(),
-        store.loader,
-        filterPrNumbers?.get(repo.id),
-      )
+          filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
+        })
+      })
     })
     allPulls.push(...result.pulls)
     allReviews.push(...result.reviews)
@@ -104,11 +122,14 @@ export async function analyzeAndFinalizeSteps(
   // Upsert
   if (runUpsert) {
     await step.run('upsert', async () => {
-      step.progress(0, 0, 'Upserting to database...')
-      await upsertAnalyzedData(orgId, {
-        pulls: allPulls,
-        reviews: allReviews,
-        reviewers: allReviewers,
+      await runTimedStep(step, 'upsert', async () => {
+        step.progress(0, 0, 'Upserting to database...')
+        await runUpsertInWorker({
+          organizationId: orgId,
+          pulls: allPulls,
+          reviews: allReviews,
+          reviewers: allReviewers,
+        })
       })
     })
   }
@@ -116,8 +137,10 @@ export async function analyzeAndFinalizeSteps(
   // Classify
   if (runClassify) {
     await step.run('classify', async () => {
-      step.progress(0, 0, 'Classifying PRs...')
-      await classifyPullRequests(orgId)
+      await runTimedStep(step, 'classify', async () => {
+        step.progress(0, 0, 'Classifying PRs...')
+        await classifyPullRequests(orgId)
+      })
     })
   }
 
@@ -125,22 +148,26 @@ export async function analyzeAndFinalizeSteps(
   const { exportSetting } = organization
   if (runExport && exportSetting) {
     await step.run('export', async () => {
-      step.progress(0, 0, 'Exporting to spreadsheet...')
-      try {
-        await exportPulls(exportSetting, allPulls)
-        await exportReviewResponses(exportSetting, allReviewResponses)
-      } catch (e) {
-        step.log.warn(`Export failed: ${e instanceof Error ? e.message : e}`)
-      }
+      await runTimedStep(step, 'export', async () => {
+        step.progress(0, 0, 'Exporting to spreadsheet...')
+        try {
+          await exportPulls(exportSetting, allPulls)
+          await exportReviewResponses(exportSetting, allReviewResponses)
+        } catch (e) {
+          step.log.warn(`Export failed: ${e instanceof Error ? e.message : e}`)
+        }
+      })
     })
   }
 
   // Finalize
   await step.run('finalize', async () => {
-    step.progress(0, 0, 'Finalizing...')
-    const tenantDb = getTenantDb(orgId)
-    await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
-    clearOrgCache(orgId)
+    await runTimedStep(step, 'finalize', async () => {
+      step.progress(0, 0, 'Finalizing...')
+      const tenantDb = getTenantDb(orgId)
+      await sql`PRAGMA wal_checkpoint(PASSIVE)`.execute(tenantDb)
+      clearOrgCache(orgId)
+    })
   })
 
   return { pullCount: allPulls.length }

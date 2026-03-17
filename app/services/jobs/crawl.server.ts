@@ -148,7 +148,7 @@ export const crawlJob = defineJob({
       step.log.info('No updated PRs, skipping analyze.')
       await step.run('finalize', async () => {
         const tenantDb = getTenantDb(orgId)
-        await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
+        await sql`PRAGMA wal_checkpoint(PASSIVE)`.execute(tenantDb)
         clearOrgCache(orgId)
       })
       return { fetchedRepos: repoCount, pullCount: 0 }
