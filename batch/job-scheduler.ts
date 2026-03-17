@@ -1,27 +1,48 @@
 import consola from 'consola'
 import schedule from 'node-schedule'
+import type { OrganizationId } from '~/app/types/organization'
+import { listAllOrganizations } from './db'
 import { logger } from './helper/logger'
-import { crawlJob } from './jobs/crawl'
 
 export const createJobScheduler = () => {
-  const startScheduler = () => {
+  let durably: typeof import('~/app/services/durably.server').durably
+
+  const startScheduler = async () => {
+    // Lazy import to avoid circular dependency and ensure durably is initialized
+    const mod = await import('~/app/services/durably.server')
+    durably = mod.durably
+
     consola.info('job scheduler started.')
-    let isRunning = false
 
     schedule.scheduleJob('30 * * * *', async () => {
-      if (isRunning) {
-        logger.warn('crawl job already running, skipping.')
-        return
-      }
-      isRunning = true
       try {
-        logger.info('crawl job started.')
-        await crawlJob()
-        logger.info('crawl job completed.')
+        logger.info('crawl cycle started.')
+        const organizations = await listAllOrganizations()
+
+        for (const org of organizations) {
+          if (!org.organizationSetting?.isActive) continue
+          if (!org.integration) continue
+
+          const orgId = org.id as OrganizationId
+          const refresh = org.organizationSetting.refreshRequestedAt != null
+
+          try {
+            await durably.jobs.crawl.trigger(
+              { organizationId: orgId, refresh },
+              {
+                concurrencyKey: `crawl:${orgId}`,
+                labels: { organizationId: orgId },
+              },
+            )
+            logger.info(`crawl job triggered for ${org.name}`)
+          } catch (e) {
+            logger.error(`failed to trigger crawl for ${org.name}:`, orgId, e)
+          }
+        }
+
+        logger.info('crawl cycle completed.')
       } catch (e) {
         logger.error(e)
-      } finally {
-        isRunning = false
       }
     })
   }

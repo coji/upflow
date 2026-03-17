@@ -1,10 +1,66 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
-import { backfillCommand } from './commands/backfill'
-import { classifyCommand } from './commands/classify'
-import { fetchCommand } from './commands/fetch'
-import { reportCommand } from './commands/report'
-import { upsertCommand } from './commands/upsert'
+
+// コマンドは全て dynamic import で遅延ロードする。
+// トップレベル import にすると durably.server.ts が読み込まれて
+// worker ポーリングが起動し、durably 不要なコマンド（classify 等）でも
+// プロセスが終了しなくなる。
+
+const crawl = command(
+  {
+    name: 'crawl',
+    parameters: ['[organization id]'],
+    flags: {
+      refresh: {
+        type: Boolean,
+        description: 'Full refresh (re-fetch all PRs from GitHub)',
+        default: false,
+      },
+    },
+    help: {
+      description:
+        'Fetch from GitHub → analyze → upsert → classify → export. Runs as a durable job.',
+    },
+  },
+  async (argv) => {
+    const { crawlCommand } = await import('./commands/crawl')
+    await crawlCommand({
+      organizationId: argv._.organizationId,
+      refresh: argv.flags.refresh,
+    })
+  },
+)
+
+const recalculate = command(
+  {
+    name: 'recalculate',
+    parameters: ['[organization id]'],
+    flags: {
+      classify: {
+        type: Boolean,
+        description: 'Also run LLM classification',
+        default: false,
+      },
+      export: {
+        type: Boolean,
+        description: 'Also export to spreadsheet',
+        default: false,
+      },
+    },
+    help: {
+      description:
+        'Re-analyze raw data → upsert to DB. No GitHub API calls. Runs as a durable job.',
+    },
+  },
+  async (argv) => {
+    const { recalculateCommand } = await import('./commands/recalculate')
+    await recalculateCommand({
+      organizationId: argv._.organizationId,
+      classify: argv.flags.classify,
+      export: argv.flags.export,
+    })
+  },
+)
 
 const classify = command(
   {
@@ -26,6 +82,7 @@ const classify = command(
     },
   },
   async (argv) => {
+    const { classifyCommand } = await import('./commands/classify')
     await classifyCommand({
       organizationId: argv._.organizationId,
       force: argv.flags.force,
@@ -47,40 +104,14 @@ const backfill = command(
     },
     help: {
       description:
-        'Re-fetch PR metadata to fill missing fields in raw data. Run upsert after this.',
+        'Re-fetch PR metadata to fill missing fields in raw data. Run recalculate after this.',
     },
   },
   async (argv) => {
+    const { backfillCommand } = await import('./commands/backfill')
     await backfillCommand({
       organizationId: argv._.organizationId,
       files: argv.flags.files,
-    })
-  },
-)
-
-const fetch = command(
-  {
-    name: 'fetch',
-    parameters: ['[organization id]', '[repository id]'],
-    flags: {
-      refresh: {
-        type: Boolean,
-        description: 'refresh all mergerequest resources.',
-        default: false,
-      },
-      exclude: {
-        type: String,
-        description: 'exclude repository id',
-      },
-    },
-    help: { description: 'Fetch all resources from provider api.' },
-  },
-  async (argv) => {
-    const { help, ...rest } = argv.flags
-    await fetchCommand({
-      organizationId: argv._.organizationId,
-      repositoryId: argv._.repositoryId,
-      ...rest,
     })
   },
 )
@@ -92,23 +123,12 @@ const report = command(
     help: { description: 'Report cycletime from fetched resources.' },
   },
   async (argv) => {
+    const { reportCommand } = await import('./commands/report')
     const { help, ...rest } = argv.flags
     await reportCommand({ organizationId: argv._.organizationId, ...rest })
   },
 )
 
-const upsert = command(
-  {
-    name: 'upsert',
-    parameters: ['[organization id]'],
-    help: { description: 'upsert report data to frontend database.' },
-  },
-  async (argv) => {
-    const { help, ...rest } = argv.flags
-    await upsertCommand({ organizationId: argv._.organizationId, ...rest })
-  },
-)
-
 cli({
-  commands: [backfill, classify, fetch, report, upsert],
+  commands: [crawl, recalculate, classify, backfill, report],
 })

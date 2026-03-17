@@ -2,7 +2,6 @@ import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import type { ShapedGitHubPullRequest } from '~/batch/github/model'
 import { logger } from '~/batch/helper/logger'
-import { batchClassifyPRs } from '~/batch/lib/llm-classify'
 
 /**
  * 未分類の PR を LLM で分類し、結果を DB に保存する。
@@ -98,7 +97,8 @@ export async function classifyPullRequests(
     }
   })
 
-  // 3. LLM で分類
+  // 3. LLM で分類（lazy import to avoid loading Gemini SDK until needed）
+  const { batchClassifyPRs } = await import('~/batch/lib/llm-classify')
   const result = await batchClassifyPRs(prInputs, {
     apiKey,
     language: orgSettings?.language,

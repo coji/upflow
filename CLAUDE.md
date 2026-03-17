@@ -180,14 +180,15 @@ Consistent spacing patterns used throughout the app:
 
 ### Batch Processing
 
-CLI for data synchronization (`batch/cli.ts`):
+CLI for data synchronization (`batch/cli.ts`). `crawl` と `recalculate` は @coji/durably ジョブとして実行され、中断・再開が可能:
 
-- `fetch` - Fetches PR data from GitHub API → raw データ保存
+- `crawl` - GitHub fetch → analyze → upsert → classify → export（durably ジョブ）
+- `recalculate` - raw データから再解析 → upsert（durably ジョブ、API call なし）
+- `classify` - LLM で PR 分類（GEMINI_API_KEY 必要）
 - `backfill` - PR メタデータだけ再取得して raw データを更新（軽量）
-- `upsert` - raw データ → DB 変換（API call なし）
 - `report` - Generates cycle time reports
 
-In production, `fetch` → `upsert` が定期実行される（`job-scheduler.ts`）。
+In production, `crawl` が毎時定期実行される（`job-scheduler.ts` → durably trigger）。
 
 #### 開発時のデータ管理
 
@@ -200,16 +201,16 @@ pnpm db:apply
 
 # 新カラムを埋める（ほとんどのケースはこれで十分）
 pnpm tsx batch/cli.ts backfill <org-id>
-pnpm tsx batch/cli.ts upsert <org-id>
+pnpm tsx batch/cli.ts recalculate <org-id>
 ```
 
-| ケース                                | コマンド              | API call   | 所要時間    |
-| ------------------------------------- | --------------------- | ---------- | ----------- |
-| raw にあるデータの新カラム            | `upsert` のみ         | なし       | 数分        |
-| PR メタデータの新フィールド           | `backfill` → `upsert` | PR一覧のみ | 数十秒+数分 |
-| 詳細データ（commits等）の新フィールド | `fetch --refresh`     | 全PR×5 API | 30分〜      |
+| ケース                                | コマンド                   | API call   | 所要時間    |
+| ------------------------------------- | -------------------------- | ---------- | ----------- |
+| raw にあるデータの新カラム            | `recalculate` のみ         | なし       | 数分        |
+| PR メタデータの新フィールド           | `backfill` → `recalculate` | PR一覧のみ | 数十秒+数分 |
+| 詳細データ（commits等）の新フィールド | `crawl --refresh`          | 全PR×5 API | 30分〜      |
 
-`fetch --refresh` はほぼ不要。`backfill` + `upsert` で済むケースがほとんど。
+`crawl --refresh` はほぼ不要。`backfill` + `recalculate` で済むケースがほとんど。
 
 ### Multi-Tenant Security
 

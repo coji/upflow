@@ -2,6 +2,7 @@ import { createDurably, createDurablyHandler } from '@coji/durably'
 import SQLite from 'better-sqlite3'
 import { SqliteDialect } from 'kysely'
 import { getSession, getUserOrganizations } from '~/app/libs/auth.server'
+import { crawlJob } from '~/app/services/jobs/crawl.server'
 import { recalculateJob } from '~/app/services/jobs/recalculate.server'
 
 function createDurablyInstance() {
@@ -14,6 +15,7 @@ function createDurablyInstance() {
     dialect,
     retainRuns: '7d',
     jobs: {
+      crawl: crawlJob,
       recalculate: recalculateJob,
     },
   })

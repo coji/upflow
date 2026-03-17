@@ -1,6 +1,7 @@
 import consola from 'consola'
 import { classifyPullRequests } from '../usecases/classify-pull-requests'
 import { requireOrganization } from './helpers'
+import { shutdown } from './shutdown'
 
 interface ClassifyCommandProps {
   organizationId?: string
@@ -17,13 +18,18 @@ export async function classifyCommand({
   if (!result) return
 
   const { orgId } = result
-  const flags = [
-    force ? 'force' : null,
-    limit ? `limit=${limit}` : null,
-  ].filter(Boolean)
-  consola.info(
-    `Classifying PRs for ${orgId}${flags.length ? ` (${flags.join(', ')})` : ''}`,
-  )
 
-  await classifyPullRequests(orgId, { force, limit })
+  try {
+    const flags = [
+      force ? 'force' : null,
+      limit ? `limit=${limit}` : null,
+    ].filter(Boolean)
+    consola.info(
+      `Classifying PRs for ${orgId}${flags.length ? ` (${flags.join(', ')})` : ''}`,
+    )
+
+    await classifyPullRequests(orgId, { force, limit })
+  } finally {
+    await shutdown()
+  }
 }
