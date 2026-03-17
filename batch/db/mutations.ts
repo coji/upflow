@@ -69,11 +69,10 @@ export async function batchUpsertPullRequests(
 
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize)
-    const values = chunk
 
     await tenantDb
       .insertInto('pullRequests')
-      .values(values)
+      .values(chunk)
       .onConflict((oc) =>
         oc.columns(['repositoryId', 'number']).doUpdateSet((eb) => ({
           repo: eb.ref('excluded.repo'),
