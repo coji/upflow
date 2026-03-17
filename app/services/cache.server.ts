@@ -23,6 +23,14 @@ export const clearAllCache = () => {
   }
 }
 
+export const clearCacheByOrg = (orgId: string) => {
+  for (const key in cacheStore) {
+    if (key.includes(orgId)) {
+      delete cacheStore[key]
+    }
+  }
+}
+
 export const clearCache = (key: string) => {
   delete cacheStore[key]
 }
