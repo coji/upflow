@@ -1,7 +1,7 @@
 import { defineJob } from '@coji/durably'
 import { sql, type Selectable } from 'kysely'
 import { z } from 'zod'
-import { clearCacheByOrg } from '~/app/services/cache.server'
+import { clearOrgCache } from '~/app/services/cache.server'
 import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import {
@@ -128,7 +128,7 @@ export const recalculateJob = defineJob({
       step.progress(0, 0, 'Finalizing...')
       const tenantDb = getTenantDb(orgId)
       await sql`PRAGMA wal_checkpoint(TRUNCATE)`.execute(tenantDb)
-      clearCacheByOrg(orgId)
+      clearOrgCache(orgId)
     })
 
     return { pullCount: allPulls.length }
