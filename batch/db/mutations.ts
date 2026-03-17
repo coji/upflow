@@ -2,33 +2,15 @@ import type { Insertable } from 'kysely'
 import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { logger } from '../helper/logger'
-import { timeFormatUTC } from '../helper/timeformat'
 
 export function upsertPullRequest(
   organizationId: OrganizationId,
   data: Insertable<TenantDB.PullRequests>,
 ) {
-  const firstCommittedAt = timeFormatUTC(data.firstCommittedAt)
-  const pullRequestCreatedAt = timeFormatUTC(data.pullRequestCreatedAt)
-  const firstReviewedAt = timeFormatUTC(data.firstReviewedAt)
-  const mergedAt = timeFormatUTC(data.mergedAt)
-  const closedAt = timeFormatUTC(data.closedAt)
-  const releasedAt = timeFormatUTC(data.releasedAt)
-  const updatedAt = timeFormatUTC(data.updatedAt)
-
   const tenantDb = getTenantDb(organizationId)
   return tenantDb
     .insertInto('pullRequests')
-    .values({
-      ...data,
-      firstCommittedAt,
-      pullRequestCreatedAt,
-      firstReviewedAt,
-      mergedAt,
-      closedAt,
-      releasedAt,
-      updatedAt,
-    })
+    .values(data)
     .onConflict((oc) =>
       oc.columns(['repositoryId', 'number']).doUpdateSet((eb) => ({
         repo: eb.ref('excluded.repo'),
@@ -87,16 +69,7 @@ export async function batchUpsertPullRequests(
 
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize)
-    const values = chunk.map((data) => ({
-      ...data,
-      firstCommittedAt: timeFormatUTC(data.firstCommittedAt),
-      pullRequestCreatedAt: timeFormatUTC(data.pullRequestCreatedAt),
-      firstReviewedAt: timeFormatUTC(data.firstReviewedAt),
-      mergedAt: timeFormatUTC(data.mergedAt),
-      closedAt: timeFormatUTC(data.closedAt),
-      releasedAt: timeFormatUTC(data.releasedAt),
-      updatedAt: timeFormatUTC(data.updatedAt),
-    }))
+    const values = chunk
 
     await tenantDb
       .insertInto('pullRequests')

@@ -77,7 +77,7 @@ function getSizeColor(complexity: string | null): BlockColor {
 }
 
 function getAgeColor(createdAt: string): BlockColor {
-  const days = dayjs().diff(dayjs(createdAt), 'day', true)
+  const days = dayjs().diff(dayjs.utc(createdAt), 'day', true)
   for (const t of AGE_THRESHOLDS) {
     if (days < t.maxDays) return { bg: t.bg, ring: t.ring, bgFaint: t.bgFaint }
   }
@@ -126,7 +126,7 @@ export function PRPopoverContent({
   showAuthor?: boolean
   reviewState?: string
 }) {
-  const ageDays = Math.floor(dayjs().diff(dayjs(pr.createdAt), 'day', true))
+  const ageDays = Math.floor(dayjs().diff(dayjs.utc(pr.createdAt), 'day', true))
   const stateInfo = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
   return (
     <div className="space-y-1">

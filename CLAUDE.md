@@ -125,6 +125,14 @@ Types are generated to `app/services/type.ts` from the database.
 
 **CamelCasePlugin と `sql` テンプレート**: `sql` テンプレートリテラル内の識別子は CamelCasePlugin で変換されない。`sql` 内でカラムを参照するときは `sql.ref('tableName.columnName')` を使うこと。
 
+### 日時・タイムゾーンの原則
+
+- **DB 保存形式**: ISO 8601（`2026-03-16T02:56:35Z`）。Z付きで保存し、ローカルタイム形式（`2026-03-16 02:56:35`）は使わない
+- **DB から読んだ日時のパース**: 必ず `dayjs.utc(value)` を使う。`dayjs(value)` はローカルタイムとして解釈されるため、タイムゾーン変換が正しく動かない
+- **表示層でのタイムゾーン変換**: `dayjs.utc(value).tz(timezone)` のパターンを使う
+- **batch での書き込み**: GitHub API から取得した ISO 8601 文字列をそのまま DB に保存する。独自のフォーマット変換をかけない
+- **`timeFormatTz`**（`batch/helper/timeformat.ts`）: レポートやスプレッドシート出力用。内部で `dayjs.utc()` を使用済み
+
 ### Path Aliases
 
 Use `~/` prefix for imports from `app/` directory:

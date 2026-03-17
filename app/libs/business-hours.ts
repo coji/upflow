@@ -72,8 +72,8 @@ export const calculateBusinessHours = (
   end: string,
   timezone = 'Asia/Tokyo',
 ): number => {
-  const startDate = dayjs(start).tz(timezone)
-  const endDate = dayjs(end).tz(timezone)
+  const startDate = dayjs.utc(start).tz(timezone)
+  const endDate = dayjs.utc(end).tz(timezone)
 
   if (!startDate.isBefore(endDate)) return 0
 

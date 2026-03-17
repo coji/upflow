@@ -168,16 +168,19 @@ export default function MemberWeeklyPage({
       holiday: holidays[dateStr] ?? null,
       created: createdPRs.filter(
         (pr) =>
-          dayjs(pr.pullRequestCreatedAt).tz(timezone).format('YYYY-MM-DD') ===
-          dateStr,
+          dayjs
+            .utc(pr.pullRequestCreatedAt)
+            .tz(timezone)
+            .format('YYYY-MM-DD') === dateStr,
       ),
       merged: mergedPRs.filter(
         (pr) =>
-          dayjs(pr.mergedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
+          dayjs.utc(pr.mergedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
       ),
       reviewed: reviews.filter(
         (r) =>
-          dayjs(r.submittedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
+          dayjs.utc(r.submittedAt).tz(timezone).format('YYYY-MM-DD') ===
+          dateStr,
       ),
     }
   })
@@ -421,7 +424,8 @@ export default function MemberWeeklyPage({
               title={pr.title}
               url={pr.url}
               complexity={pr.complexity}
-              date={dayjs(pr.pullRequestCreatedAt)
+              date={dayjs
+                .utc(pr.pullRequestCreatedAt)
                 .tz(timezone)
                 .format('M/D HH:mm')}
             />
@@ -443,7 +447,7 @@ export default function MemberWeeklyPage({
               title={pr.title}
               url={pr.url}
               complexity={pr.complexity}
-              date={dayjs(pr.mergedAt).tz(timezone).format('M/D HH:mm')}
+              date={dayjs.utc(pr.mergedAt).tz(timezone).format('M/D HH:mm')}
               extra={pr.totalTime ? `${pr.totalTime.toFixed(1)}d` : undefined}
             />
           ))}
@@ -465,7 +469,7 @@ export default function MemberWeeklyPage({
               url={r.url}
               complexity={r.complexity}
               author={r.author}
-              date={dayjs(r.submittedAt).tz(timezone).format('M/D HH:mm')}
+              date={dayjs.utc(r.submittedAt).tz(timezone).format('M/D HH:mm')}
               reviewState={r.state}
             />
           ))}
