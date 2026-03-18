@@ -1,6 +1,5 @@
 import { defineJob } from '@coji/durably'
 import { z } from 'zod'
-import { clearOrgCache } from '~/app/services/cache.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
 
@@ -25,8 +24,7 @@ export const classifyJob = defineJob({
       })
     })
 
-    clearOrgCache(orgId)
-
+    // キャッシュは TTL(5分)で自然失効するため、明示的なクリアは不要
     return { classifiedCount: result.classifiedCount }
   },
 })
