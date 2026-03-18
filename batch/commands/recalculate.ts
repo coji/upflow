@@ -5,13 +5,11 @@ import { shutdown } from './shutdown'
 
 interface RecalculateCommandProps {
   organizationId?: string
-  classify: boolean
   export: boolean
 }
 
 export async function recalculateCommand({
   organizationId,
-  classify,
   export: exportFlag,
 }: RecalculateCommandProps) {
   const result = await requireOrganization(organizationId)
@@ -20,11 +18,8 @@ export async function recalculateCommand({
   const { orgId } = result
 
   try {
-    const steps = { upsert: true, classify, export: exportFlag }
-    const flags = [
-      classify ? 'classify' : null,
-      exportFlag ? 'export' : null,
-    ].filter(Boolean)
+    const steps = { upsert: true, export: exportFlag }
+    const flags = [exportFlag ? 'export' : null].filter(Boolean)
 
     consola.info(
       `Starting recalculate for ${orgId}${flags.length ? ` (+${flags.join(', ')})` : ''}...`,

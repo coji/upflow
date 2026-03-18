@@ -185,9 +185,9 @@ Consistent spacing patterns used throughout the app:
 
 CLI for data synchronization (`batch/cli.ts`). `crawl` と `recalculate` は @coji/durably ジョブとして実行され、中断・再開が可能:
 
-- `crawl` - GitHub fetch → analyze → upsert → classify → export（durably ジョブ）
+- `crawl` - GitHub fetch → analyze → upsert → export → trigger classify（durably ジョブ）
 - `recalculate` - raw データから再解析 → upsert（durably ジョブ、API call なし）
-- `classify` - LLM で PR 分類（GEMINI_API_KEY 必要）
+- `classify` - LLM で PR 分類（standalone durably ジョブ、GEMINI_API_KEY 必要。crawl 完了時に自動 trigger）
 - `backfill` - PR メタデータだけ再取得して raw データを更新（軽量）
 - `report` - Generates cycle time reports
 

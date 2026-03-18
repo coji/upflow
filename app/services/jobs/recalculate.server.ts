@@ -10,7 +10,6 @@ export const recalculateJob = defineJob({
     organizationId: z.string(),
     steps: z.object({
       upsert: z.boolean(),
-      classify: z.boolean(),
       export: z.boolean(),
     }),
   }),
@@ -37,7 +36,7 @@ export const recalculateJob = defineJob({
       }
     })
 
-    // Steps 2-6: Analyze → Upsert → Classify → Export → Finalize
+    // Steps 2-5: Analyze → Upsert → Export → Finalize
     return await analyzeAndFinalizeSteps(step, orgId, organization, {
       steps: input.steps,
     })

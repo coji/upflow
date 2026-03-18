@@ -3,6 +3,7 @@ import SQLite from 'better-sqlite3'
 import { SqliteDialect } from 'kysely'
 import { getSession, getUserOrganizations } from '~/app/libs/auth.server'
 import { backfillJob } from '~/app/services/jobs/backfill.server'
+import { classifyJob } from '~/app/services/jobs/classify.server'
 import { crawlJob } from '~/app/services/jobs/crawl.server'
 import { recalculateJob } from '~/app/services/jobs/recalculate.server'
 
@@ -19,6 +20,7 @@ function createDurablyInstance() {
     leaseRenewIntervalMs: 30_000,
     jobs: {
       backfill: backfillJob,
+      classify: classifyJob,
       crawl: crawlJob,
       recalculate: recalculateJob,
     },

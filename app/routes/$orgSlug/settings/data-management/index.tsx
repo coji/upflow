@@ -52,11 +52,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       const selectedSteps = formData.getAll('steps').map(String)
       const steps = {
         upsert: selectedSteps.includes('upsert'),
-        classify: selectedSteps.includes('classify'),
         export: selectedSteps.includes('export'),
       } satisfies JobSteps
 
-      if (!steps.upsert && !steps.classify && !steps.export) {
+      if (!steps.upsert && !steps.export) {
         return data(
           {
             intent: 'recalculate' as const,
@@ -238,9 +237,8 @@ function RefreshSection() {
 function RecalculateSection() {
   const fetcher = useFetcher()
   const [upsert, setUpsert] = useState(true)
-  const [classify, setClassify] = useState(false)
   const [exportData, setExportData] = useState(false)
-  const noneSelected = !upsert && !classify && !exportData
+  const noneSelected = !upsert && !exportData
 
   const runId =
     fetcher.data?.intent === 'recalculate' && fetcher.data?.ok
@@ -282,19 +280,6 @@ function RecalculateSection() {
               />
               <Label htmlFor="step-upsert" className="text-xs">
                 Analyze & Upsert — Re-analyze and update PR data in DB
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="step-classify"
-                name="steps"
-                value="classify"
-                checked={classify}
-                onCheckedChange={(c) => setClassify(c === true)}
-                disabled={isRunning}
-              />
-              <Label htmlFor="step-classify" className="text-xs">
-                LLM Classify — Classify PR size/risk with Gemini
               </Label>
             </div>
             <div className="flex items-center gap-2">

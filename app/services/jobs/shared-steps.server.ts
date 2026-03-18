@@ -1,5 +1,5 @@
 /**
- * crawl と recalculate ジョブで共有する analyze → upsert → classify → export → finalize ステップ群
+ * crawl と recalculate ジョブで共有する analyze → upsert → export → finalize ステップ群
  */
 import type { StepContext } from '@coji/durably'
 import type { Selectable } from 'kysely'
@@ -16,7 +16,7 @@ import type {
   AnalyzedReviewResponse,
   AnalyzedReviewer,
 } from '~/batch/github/types'
-import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
+
 import type { SqliteBusyEvent } from './run-in-worker'
 import { runAnalyzeInWorker } from './run-in-worker'
 
@@ -38,7 +38,6 @@ interface OrganizationData {
 
 export interface JobSteps {
   upsert?: boolean
-  classify?: boolean
   export?: boolean
 }
 
@@ -89,7 +88,7 @@ async function runTimedStep<T>(
 }
 
 /**
- * analyze → upsert → classify → export → finalize の共通パイプライン。
+ * analyze → upsert → export → finalize の共通パイプライン。
  * durably の step context を受け取り、ステップ名付きで実行する。
  */
 export async function analyzeAndFinalizeSteps(
@@ -100,7 +99,6 @@ export async function analyzeAndFinalizeSteps(
 ) {
   const { filterPrNumbers, skipRepo, steps: stepFlags } = options
   const runUpsert = stepFlags?.upsert ?? true
-  const runClassify = stepFlags?.classify ?? true
   const runExport = stepFlags?.export ?? true
 
   // Analyze repos (per-repository steps)
@@ -158,16 +156,6 @@ export async function analyzeAndFinalizeSteps(
     })
   }
 
-  // Classify
-  if (runClassify) {
-    await step.run('classify', async () => {
-      await runTimedStep(step, 'classify', async () => {
-        step.progress(0, 0, 'Classifying PRs...')
-        await classifyPullRequests(orgId)
-      })
-    })
-  }
-
   // Export
   const { exportSetting } = organization
   if (runExport && exportSetting) {
@@ -199,4 +187,30 @@ export async function analyzeAndFinalizeSteps(
   }
 
   return { pullCount: allPulls.length }
+}
+
+/**
+ * classify job を fire-and-forget で trigger する。
+ * concurrencyKey により同一 org で並行実行されない。
+ */
+export async function triggerClassifyStep(
+  step: StepContext,
+  orgId: OrganizationId,
+) {
+  await step.run('trigger-classify', async () => {
+    try {
+      const { durably } = await import('~/app/services/durably.server')
+      await durably.jobs.classify.trigger(
+        { organizationId: orgId, force: false },
+        {
+          concurrencyKey: `classify:${orgId}`,
+          labels: { organizationId: orgId },
+        },
+      )
+    } catch (e) {
+      step.log.warn(
+        `Failed to trigger classify: ${e instanceof Error ? e.message : e}`,
+      )
+    }
+  })
 }

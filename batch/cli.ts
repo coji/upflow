@@ -19,7 +19,7 @@ const crawl = command(
     },
     help: {
       description:
-        'Fetch from GitHub → analyze → upsert → classify → export. Runs as a durable job.',
+        'Fetch from GitHub → analyze → upsert → export → trigger classify. Runs as a durable job.',
     },
   },
   async (argv) => {
@@ -36,11 +36,6 @@ const recalculate = command(
     name: 'recalculate',
     parameters: ['[organization id]'],
     flags: {
-      classify: {
-        type: Boolean,
-        description: 'Also run LLM classification',
-        default: false,
-      },
       export: {
         type: Boolean,
         description: 'Also export to spreadsheet',
@@ -56,7 +51,6 @@ const recalculate = command(
     const { recalculateCommand } = await import('./commands/recalculate')
     await recalculateCommand({
       organizationId: argv._.organizationId,
-      classify: argv.flags.classify,
       export: argv.flags.export,
     })
   },
