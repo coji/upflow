@@ -3,7 +3,12 @@ import consola from 'consola'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { BACKUP_PREFIX, DATA_DIR, isDbFile } from '../lib/data-dir'
+import {
+  BACKUP_PREFIX,
+  DATA_DIR,
+  isDbFile,
+  removeAllDbFiles,
+} from '../lib/data-dir'
 
 const VALID_APP_NAME = /^[a-z0-9-]+$/
 
@@ -145,10 +150,17 @@ export function pullDbCommand(options: PullDbOptions) {
   // Ensure data directory exists
   fs.mkdirSync(DATA_DIR, { recursive: true })
 
-  // Step 2: Remote backup + tar + pull + extract
+  // Step 2: Remove old DB files (including -wal/-shm) to prevent
+  // stale WAL journals from corrupting newly pulled databases
+  const removed = removeAllDbFiles()
+  if (removed > 0) {
+    consola.success(`Removed ${removed} old database file(s)`)
+  }
+
+  // Step 3: Remote backup + tar + pull + extract
   const dbFiles = pullAllDbs(app)
 
-  // Step 3: Sanitize export settings
+  // Step 4: Sanitize export settings
   if (!noSanitize) {
     consola.start('Sanitizing export settings...')
     for (const file of dbFiles) {
