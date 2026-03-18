@@ -160,6 +160,7 @@ CREATE TABLE `company_github_users` (
   `display_name` text NOT NULL,
   `type` text NULL,
   `is_active` integer NOT NULL DEFAULT 0,
+  `last_activity_at` text NULL,
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   PRIMARY KEY (`login`)

@@ -255,6 +255,32 @@ export async function upsertCompanyGithubUsers(
 }
 
 /**
+ * ユーザーごとの最終活動日時を更新する。
+ * 既存値より新しい場合のみ上書き。
+ */
+async function updateLastActivityAt(
+  organizationId: OrganizationId,
+  lastActivity: Map<string, string>,
+) {
+  if (lastActivity.size === 0) return
+  const tenantDb = getTenantDb(organizationId)
+
+  for (const [login, ts] of lastActivity) {
+    await tenantDb
+      .updateTable('companyGithubUsers')
+      .set({ lastActivityAt: ts })
+      .where('login', '=', login)
+      .where((eb) =>
+        eb.or([
+          eb('lastActivityAt', 'is', null),
+          eb('lastActivityAt', '<', ts),
+        ]),
+      )
+      .execute()
+  }
+}
+
+/**
  * analyze 結果を一括で DB に書き込む共通関数。
  * durably ジョブ（crawl, recalculate）の共通 upsert 処理。
  */
@@ -285,6 +311,26 @@ export async function upsertAnalyzedData(
     [...discoveredLogins],
     data.botUsers,
   )
+
+  // Update last activity timestamps
+  const lastActivity = new Map<string, string>()
+  for (const pr of data.pulls) {
+    if (!pr.author) continue
+    const login = pr.author.toLowerCase()
+    const ts = pr.pullRequestCreatedAt
+    if (ts && (!lastActivity.has(login) || ts > lastActivity.get(login)!)) {
+      lastActivity.set(login, ts)
+    }
+  }
+  for (const review of data.reviews) {
+    if (!review.reviewer) continue
+    const login = review.reviewer.toLowerCase()
+    const ts = review.submittedAt
+    if (ts && (!lastActivity.has(login) || ts > lastActivity.get(login)!)) {
+      lastActivity.set(login, ts)
+    }
+  }
+  await updateLastActivityAt(organizationId, lastActivity)
 
   // Upsert pull requests
   logger.info('upsert started...', organizationId)

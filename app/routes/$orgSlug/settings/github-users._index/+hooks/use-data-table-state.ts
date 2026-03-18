@@ -27,7 +27,7 @@ export const SortSchema = z.object({
     z
       .union([z.literal('asc'), z.literal('desc')])
       .optional()
-      .default('asc'),
+      .default('desc'),
   ),
 })
 

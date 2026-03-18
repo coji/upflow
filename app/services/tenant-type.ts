@@ -28,6 +28,7 @@ export interface CompanyGithubUsers {
   createdAt: Generated<string>;
   displayName: string;
   isActive: 0 | 1;
+  lastActivityAt: string | null;
   login: string;
   type: string | null;
   updatedAt: string;
