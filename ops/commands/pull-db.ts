@@ -152,8 +152,10 @@ export function pullDbCommand(options: PullDbOptions) {
 
   // Step 2: Remove old DB files (including -wal/-shm) to prevent
   // stale WAL journals from corrupting newly pulled databases
-  consola.start('Removing old database files...')
-  removeAllDbFiles()
+  const removed = removeAllDbFiles()
+  if (removed > 0) {
+    consola.success(`Removed ${removed} old database file(s)`)
+  }
 
   // Step 3: Remote backup + tar + pull + extract
   const dbFiles = pullAllDbs(app)
