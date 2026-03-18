@@ -1,21 +1,20 @@
 import { useState } from 'react'
-import { data, href, useFetcher } from 'react-router'
+import { data, href, useFetcher, useLoaderData } from 'react-router'
 import { match } from 'ts-pattern'
 import {
   Alert,
   AlertDescription,
-  Badge,
   Button,
   Checkbox,
   Label,
   Stack,
 } from '~/app/components/ui'
-import { Progress } from '~/app/components/ui/progress'
 import { orgContext } from '~/app/middleware/context'
 import { durably } from '~/app/services/durably'
 import { durably as serverDurably } from '~/app/services/durably.server'
 import type { JobSteps } from '~/app/services/jobs/shared-steps.server'
 import ContentSection from '../+components/content-section'
+import { JobHistory, isRunActive } from './+components/job-history'
 import type { Route } from './+types/index'
 
 export const handle = {
@@ -23,6 +22,11 @@ export const handle = {
     label: 'Data Management',
     to: href('/:orgSlug/settings/data-management', { orgSlug: params.orgSlug }),
   }),
+}
+
+export const loader = ({ context }: Route.LoaderArgs) => {
+  const { organization } = context.get(orgContext)
+  return data({ organizationId: organization.id })
 }
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
@@ -33,14 +37,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   return match(intent)
     .with('refresh', async () => {
       try {
-        const run = await serverDurably.jobs.crawl.trigger(
+        await serverDurably.jobs.crawl.trigger(
           { organizationId: org.id, refresh: true },
           {
             concurrencyKey: `crawl:${org.id}`,
             labels: { organizationId: org.id },
           },
         )
-        return data({ intent: 'refresh' as const, ok: true, runId: run.id })
+        return data({ intent: 'refresh' as const, ok: true })
       } catch {
         return data(
           { intent: 'refresh' as const, error: 'Failed to start refresh' },
@@ -66,18 +70,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
 
       try {
-        const run = await serverDurably.jobs.recalculate.trigger(
+        await serverDurably.jobs.recalculate.trigger(
           { organizationId: org.id, steps },
           {
             concurrencyKey: `recalculate:${org.id}`,
             labels: { organizationId: org.id },
           },
         )
-        return data({
-          intent: 'recalculate' as const,
-          ok: true,
-          runId: run.id,
-        })
+        return data({ intent: 'recalculate' as const, ok: true })
       } catch {
         return data(
           {
@@ -91,119 +91,19 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
 
-// --- Shared Run Status Alerts ---
-
-function RunStatusAlerts({
-  label,
-  progress,
-  output,
-  runError,
-  triggerError,
-  isRunning,
-  isCompleted,
-  isFailed,
-}: {
-  label: string
-  progress: { message?: string; current?: number; total?: number } | null
-  output: { pullCount?: number } | null
-  runError: string | null
-  triggerError: string | null
-  isRunning: boolean
-  isCompleted: boolean
-  isFailed: boolean
-}) {
-  if (isRunning && progress) {
-    return (
-      <Alert>
-        <AlertDescription>
-          <div className="space-y-2">
-            <p className="text-sm">{progress.message ?? 'Processing...'}</p>
-            {progress.current != null &&
-              progress.total != null &&
-              progress.total > 0 && (
-                <Progress
-                  value={(progress.current / progress.total) * 100}
-                  className="h-2"
-                />
-              )}
-          </div>
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  if (isRunning) {
-    return (
-      <Alert>
-        <AlertDescription>Starting {label}...</AlertDescription>
-      </Alert>
-    )
-  }
-
-  const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1)
-
-  if (isCompleted) {
-    return (
-      <Alert>
-        <AlertDescription>
-          {capitalizedLabel} completed.{' '}
-          {output?.pullCount != null && `${output.pullCount} PRs updated.`}
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  if (isFailed) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          {capitalizedLabel} failed. {runError}
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  if (triggerError) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{triggerError}</AlertDescription>
-      </Alert>
-    )
-  }
-
-  return null
-}
-
 // --- Refresh Section ---
 
-function RefreshSection() {
+function RefreshSection({ isRunning }: { isRunning: boolean }) {
   const fetcher = useFetcher()
   const isSubmitting = fetcher.state !== 'idle'
-
-  const runId =
-    fetcher.data?.intent === 'refresh' && fetcher.data?.ok
-      ? fetcher.data.runId
-      : null
-  const {
-    progress,
-    output,
-    error: runError,
-    isPending,
-    isLeased,
-    isCompleted,
-    isFailed,
-  } = durably.crawl.useRun(runId)
-
-  const isRunning = isPending || isLeased
+  const triggerError =
+    fetcher.data?.intent === 'refresh' ? fetcher.data?.error : null
 
   return (
     <Stack>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <p className="flex items-center gap-2 text-sm font-medium">
-            Full Refresh
-            {isRunning && <Badge variant="secondary">Running</Badge>}
-          </p>
+          <p className="text-sm font-medium">Full Refresh</p>
           <p className="text-muted-foreground text-xs">
             Re-fetch all PR data from GitHub immediately.
           </p>
@@ -216,46 +116,25 @@ function RefreshSection() {
         </fetcher.Form>
       </div>
 
-      <RunStatusAlerts
-        label="full refresh"
-        progress={progress}
-        output={output}
-        runError={runError}
-        triggerError={
-          fetcher.data?.intent === 'refresh' ? fetcher.data?.error : null
-        }
-        isRunning={isRunning}
-        isCompleted={isCompleted}
-        isFailed={isFailed}
-      />
+      {triggerError && (
+        <Alert variant="destructive">
+          <AlertDescription>{triggerError}</AlertDescription>
+        </Alert>
+      )}
     </Stack>
   )
 }
 
 // --- Recalculate Section ---
 
-function RecalculateSection() {
+function RecalculateSection({ isRunning }: { isRunning: boolean }) {
   const fetcher = useFetcher()
   const [upsert, setUpsert] = useState(true)
   const [exportData, setExportData] = useState(false)
   const noneSelected = !upsert && !exportData
-
-  const runId =
-    fetcher.data?.intent === 'recalculate' && fetcher.data?.ok
-      ? fetcher.data.runId
-      : null
-  const {
-    progress,
-    output,
-    error: runError,
-    isPending,
-    isLeased,
-    isCompleted,
-    isFailed,
-  } = durably.recalculate.useRun(runId)
-
-  const isRunning = isPending || isLeased
   const isSubmitting = fetcher.state !== 'idle'
+  const triggerError =
+    fetcher.data?.intent === 'recalculate' ? fetcher.data?.error : null
 
   return (
     <Stack>
@@ -308,18 +187,11 @@ function RecalculateSection() {
         </Stack>
       </fetcher.Form>
 
-      <RunStatusAlerts
-        label="recalculation"
-        progress={progress}
-        output={output}
-        runError={runError}
-        triggerError={
-          fetcher.data?.intent === 'recalculate' ? fetcher.data?.error : null
-        }
-        isRunning={isRunning}
-        isCompleted={isCompleted}
-        isFailed={isFailed}
-      />
+      {triggerError && (
+        <Alert variant="destructive">
+          <AlertDescription>{triggerError}</AlertDescription>
+        </Alert>
+      )}
     </Stack>
   )
 }
@@ -371,15 +243,49 @@ function ExportDataSection({ orgSlug }: { orgSlug: string }) {
 export default function DataManagementPage({
   params: { orgSlug },
 }: Route.ComponentProps) {
+  const { organizationId } = useLoaderData<typeof loader>()
+
+  const { runs, page, hasMore, isLoading, nextPage, prevPage } =
+    durably.useRuns({
+      labels: { organizationId },
+      pageSize: 10,
+    })
+
+  const {
+    cancel,
+    retrigger,
+    isLoading: isActing,
+    error: actionError,
+  } = durably.useRunActions()
+
+  const isCrawlRunning = runs.some(
+    (r) => r.jobName === 'crawl' && isRunActive(r.status),
+  )
+  const isRecalculateRunning = runs.some(
+    (r) => r.jobName === 'recalculate' && isRunActive(r.status),
+  )
+
   return (
     <ContentSection
       title="Data Management"
       desc="Manage data refresh and recalculation for this organization."
     >
       <Stack gap="6">
-        <RefreshSection />
-        <RecalculateSection />
+        <RefreshSection isRunning={isCrawlRunning} />
+        <RecalculateSection isRunning={isRecalculateRunning} />
         <ExportDataSection orgSlug={orgSlug} />
+        <JobHistory
+          runs={runs}
+          page={page}
+          hasMore={hasMore}
+          isLoading={isLoading}
+          onNextPage={nextPage}
+          onPrevPage={prevPage}
+          onCancel={cancel}
+          onRetrigger={retrigger}
+          isActing={isActing}
+          actionError={actionError}
+        />
       </Stack>
     </ContentSection>
   )
