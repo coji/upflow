@@ -7,8 +7,9 @@ SELECT
   'Bot' AS type,
   0 AS is_active,
   CURRENT_TIMESTAMP AS updated_at
-FROM organization_settings, json_each('["' || REPLACE(excluded_users, ',', '","') || '"]')
-WHERE TRIM(value) != ''
+FROM organization_settings, json_each('["' || REPLACE(COALESCE(excluded_users, ''), ',', '","') || '"]')
+WHERE COALESCE(excluded_users, '') != ''
+  AND TRIM(value) != ''
 ON CONFLICT (login) DO UPDATE SET type = 'Bot';
 
 -- 2. Ensure 'copilot' is registered as Bot (case-insensitive - stored lowercase)

@@ -15,8 +15,6 @@ const KNOWN_BOTS = new Set([
   'renovate',
   'coderabbitai',
   'devin-ai-integration',
-  'chatgpt-codex-connector',
-  'claude',
 ])
 
 export function upsertPullRequest(
