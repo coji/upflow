@@ -318,7 +318,10 @@ export async function upsertAnalyzedData(
     if (!pr.author) continue
     const login = pr.author.toLowerCase()
     const ts = pr.pullRequestCreatedAt
-    if (ts && (!lastActivity.has(login) || ts > lastActivity.get(login)!)) {
+    if (
+      ts &&
+      (!lastActivity.has(login) || ts > (lastActivity.get(login) ?? ''))
+    ) {
       lastActivity.set(login, ts)
     }
   }
@@ -326,7 +329,10 @@ export async function upsertAnalyzedData(
     if (!review.reviewer) continue
     const login = review.reviewer.toLowerCase()
     const ts = review.submittedAt
-    if (ts && (!lastActivity.has(login) || ts > lastActivity.get(login)!)) {
+    if (
+      ts &&
+      (!lastActivity.has(login) || ts > (lastActivity.get(login) ?? ''))
+    ) {
       lastActivity.set(login, ts)
     }
   }
