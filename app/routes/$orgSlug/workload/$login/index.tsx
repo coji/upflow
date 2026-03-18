@@ -24,8 +24,10 @@ import {
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import {
   getBacklogDetails,
+  getClosedPRs,
   getCreatedPRs,
   getMergedPRs,
+  getReleasedPRs,
   getReviewsSubmitted,
   getUserProfile,
 } from './+functions/queries.server'
@@ -56,10 +58,20 @@ export const loader = async ({
   const from = weekStart.utc().toISOString()
   const to = weekEnd.utc().toISOString()
 
-  const [user, createdPRs, mergedPRs, reviews, backlog] = await Promise.all([
+  const [
+    user,
+    createdPRs,
+    mergedPRs,
+    closedPRs,
+    releasedPRs,
+    reviews,
+    backlog,
+  ] = await Promise.all([
     getUserProfile(organization.id, params.login),
     getCreatedPRs(organization.id, params.login, from, to),
     getMergedPRs(organization.id, params.login, from, to),
+    getClosedPRs(organization.id, params.login, from, to),
+    getReleasedPRs(organization.id, params.login, from, to),
     getReviewsSubmitted(organization.id, params.login, from, to),
     getBacklogDetails(organization.id, params.login),
   ])
@@ -74,6 +86,8 @@ export const loader = async ({
     user,
     createdPRs,
     mergedPRs,
+    closedPRs,
+    releasedPRs,
     reviews,
     backlog,
     holidays,
@@ -87,6 +101,8 @@ export default function MemberWeeklyPage({
     user,
     createdPRs,
     mergedPRs,
+    closedPRs,
+    releasedPRs,
     reviews,
     backlog,
     holidays,
@@ -176,6 +192,15 @@ export default function MemberWeeklyPage({
       merged: mergedPRs.filter(
         (pr) =>
           dayjs.utc(pr.mergedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
+      ),
+      closed: closedPRs.filter(
+        (pr) =>
+          dayjs.utc(pr.closedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
+      ),
+      released: releasedPRs.filter(
+        (pr) =>
+          dayjs.utc(pr.releasedAt).tz(timezone).format('YYYY-MM-DD') ===
+          dateStr,
       ),
       reviewed: reviews.filter(
         (r) =>
@@ -290,12 +315,12 @@ export default function MemberWeeklyPage({
       <hr className="border-border" />
 
       {/* Weekly activity header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           <h2 className="text-muted-foreground text-sm font-medium">
             This Week
           </h2>
-          <div className="text-muted-foreground flex gap-3 text-xs">
+          <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-xs">
             <span>
               <span className="inline-block size-2 rounded-full bg-blue-500" />{' '}
               Created {createdPRs.length}
@@ -308,105 +333,157 @@ export default function MemberWeeklyPage({
               <span className="inline-block size-2 rounded-full bg-purple-500" />{' '}
               Reviewed {reviews.length}
             </span>
+            <span>
+              <span className="inline-block size-2 rounded-full bg-gray-500" />{' '}
+              Closed {closedPRs.length}
+            </span>
+            <span>
+              <span className="inline-block size-2 rounded-full bg-amber-500" />{' '}
+              Released {releasedPRs.length}
+            </span>
           </div>
         </div>
 
-        <WeeklyCalendar value={weekStart} onWeekChange={handleWeekChange} />
+        <div className="self-start sm:self-auto">
+          <WeeklyCalendar value={weekStart} onWeekChange={handleWeekChange} />
+        </div>
       </div>
 
       {/* Daily calendar */}
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day) => {
-          const isOff =
-            day.date.day() === 0 || day.date.day() === 6 || day.holiday !== null
-          const total =
-            day.created.length + day.merged.length + day.reviewed.length
-          return (
-            <div
-              key={day.dateStr}
-              className={`flex flex-col overflow-hidden rounded-lg border p-2 ${isOff ? 'bg-muted/50' : ''}`}
-            >
-              <div className="mb-2 text-center">
-                <div
-                  className={`text-xs ${day.holiday ? 'text-red-500' : 'text-muted-foreground'}`}
-                >
-                  {day.label}
+      <div className="-mx-1 overflow-x-auto px-1">
+        <div className="grid min-w-[42rem] grid-cols-7 gap-1">
+          {days.map((day) => {
+            const isOff =
+              day.date.day() === 0 ||
+              day.date.day() === 6 ||
+              day.holiday !== null
+            const total =
+              day.created.length +
+              day.merged.length +
+              day.closed.length +
+              day.released.length +
+              day.reviewed.length
+            return (
+              <div
+                key={day.dateStr}
+                className={`flex flex-col overflow-hidden rounded-lg border p-2 ${isOff ? 'bg-muted/50' : ''}`}
+              >
+                <div className="mb-2 text-center">
+                  <div
+                    className={`text-xs ${day.holiday ? 'text-red-500' : 'text-muted-foreground'}`}
+                  >
+                    {day.label}
+                  </div>
+                  <div
+                    className={`text-sm font-medium ${day.holiday ? 'text-red-500' : ''}`}
+                  >
+                    {day.dayNum}
+                  </div>
+                  {day.holiday && (
+                    <div className="text-[9px] text-red-400">{day.holiday}</div>
+                  )}
                 </div>
-                <div
-                  className={`text-sm font-medium ${day.holiday ? 'text-red-500' : ''}`}
-                >
-                  {day.dayNum}
-                </div>
-                {day.holiday && (
-                  <div className="text-[9px] text-red-400">{day.holiday}</div>
+                {total === 0 ? (
+                  <div className="text-muted-foreground flex-1 py-2 text-center text-xs">
+                    -
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {day.created.map((pr) => (
+                      <CalendarItem
+                        key={`c-${pr.repositoryId}:${pr.number}`}
+                        color="bg-blue-500"
+                        label={`#${pr.number}`}
+                        title={pr.title}
+                        complexity={pr.complexity}
+                        prData={{
+                          number: pr.number,
+                          repo: pr.repo,
+                          title: pr.title,
+                          url: pr.url,
+                          createdAt: pr.pullRequestCreatedAt,
+                          complexity: pr.complexity,
+                        }}
+                      />
+                    ))}
+                    {day.merged.map((pr) => (
+                      <CalendarItem
+                        key={`m-${pr.repositoryId}:${pr.number}`}
+                        color="bg-emerald-500"
+                        label={`#${pr.number}`}
+                        title={pr.title}
+                        complexity={pr.complexity}
+                        prData={{
+                          number: pr.number,
+                          repo: pr.repo,
+                          title: pr.title,
+                          url: pr.url,
+                          createdAt: pr.pullRequestCreatedAt,
+                          complexity: pr.complexity,
+                        }}
+                      />
+                    ))}
+                    {day.reviewed.map((r) => (
+                      <CalendarItem
+                        key={`r-${r.repositoryId}:${r.number}:${r.submittedAt}`}
+                        color="bg-purple-500"
+                        label={`#${r.number}`}
+                        title={r.title}
+                        complexity={r.complexity}
+                        prData={{
+                          number: r.number,
+                          repo: r.repo,
+                          title: r.title,
+                          url: r.url,
+                          author: r.author,
+                          createdAt: r.pullRequestCreatedAt,
+                          complexity: r.complexity,
+                        }}
+                        showAuthor
+                        reviewState={r.state}
+                        suffix={REVIEW_STATE_STYLE[r.state]?.icon}
+                      />
+                    ))}
+                    {day.closed.map((pr) => (
+                      <CalendarItem
+                        key={`x-${pr.repositoryId}:${pr.number}`}
+                        color="bg-gray-500"
+                        label={`#${pr.number}`}
+                        title={pr.title}
+                        complexity={pr.complexity}
+                        prData={{
+                          number: pr.number,
+                          repo: pr.repo,
+                          title: pr.title,
+                          url: pr.url,
+                          createdAt: pr.pullRequestCreatedAt,
+                          complexity: pr.complexity,
+                        }}
+                      />
+                    ))}
+                    {day.released.map((pr) => (
+                      <CalendarItem
+                        key={`d-${pr.repositoryId}:${pr.number}`}
+                        color="bg-amber-500"
+                        label={`#${pr.number}`}
+                        title={pr.title}
+                        complexity={pr.complexity}
+                        prData={{
+                          number: pr.number,
+                          repo: pr.repo,
+                          title: pr.title,
+                          url: pr.url,
+                          createdAt: pr.pullRequestCreatedAt,
+                          complexity: pr.complexity,
+                        }}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
-              {total === 0 ? (
-                <div className="text-muted-foreground flex-1 py-2 text-center text-xs">
-                  -
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {day.created.map((pr) => (
-                    <CalendarItem
-                      key={`c-${pr.repositoryId}:${pr.number}`}
-                      color="bg-blue-500"
-                      label={`#${pr.number}`}
-                      title={pr.title}
-                      complexity={pr.complexity}
-                      prData={{
-                        number: pr.number,
-                        repo: pr.repo,
-                        title: pr.title,
-                        url: pr.url,
-                        createdAt: pr.pullRequestCreatedAt,
-                        complexity: pr.complexity,
-                      }}
-                    />
-                  ))}
-                  {day.merged.map((pr) => (
-                    <CalendarItem
-                      key={`m-${pr.repositoryId}:${pr.number}`}
-                      color="bg-emerald-500"
-                      label={`#${pr.number}`}
-                      title={pr.title}
-                      complexity={pr.complexity}
-                      prData={{
-                        number: pr.number,
-                        repo: pr.repo,
-                        title: pr.title,
-                        url: pr.url,
-                        createdAt: pr.pullRequestCreatedAt,
-                        complexity: pr.complexity,
-                      }}
-                    />
-                  ))}
-                  {day.reviewed.map((r) => (
-                    <CalendarItem
-                      key={`r-${r.repositoryId}:${r.number}:${r.submittedAt}`}
-                      color="bg-purple-500"
-                      label={`#${r.number}`}
-                      title={r.title}
-                      complexity={r.complexity}
-                      prData={{
-                        number: r.number,
-                        repo: r.repo,
-                        title: r.title,
-                        url: r.url,
-                        author: r.author,
-                        createdAt: r.pullRequestCreatedAt,
-                        complexity: r.complexity,
-                      }}
-                      showAuthor
-                      reviewState={r.state}
-                      suffix={REVIEW_STATE_STYLE[r.state]?.icon}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
       {/* Detail sections */}
@@ -471,6 +548,46 @@ export default function MemberWeeklyPage({
               author={r.author}
               date={dayjs.utc(r.submittedAt).tz(timezone).format('M/D HH:mm')}
               reviewState={r.state}
+            />
+          ))}
+        </DetailSection>
+      )}
+
+      {closedPRs.length > 0 && (
+        <DetailSection
+          label="Closed"
+          count={closedPRs.length}
+          color="bg-gray-500"
+        >
+          {closedPRs.map((pr) => (
+            <PRRow
+              key={`${pr.repositoryId}:${pr.number}`}
+              repo={pr.repo}
+              number={pr.number}
+              title={pr.title}
+              url={pr.url}
+              complexity={pr.complexity}
+              date={dayjs.utc(pr.closedAt).tz(timezone).format('M/D HH:mm')}
+            />
+          ))}
+        </DetailSection>
+      )}
+
+      {releasedPRs.length > 0 && (
+        <DetailSection
+          label="Released"
+          count={releasedPRs.length}
+          color="bg-amber-500"
+        >
+          {releasedPRs.map((pr) => (
+            <PRRow
+              key={`${pr.repositoryId}:${pr.number}`}
+              repo={pr.repo}
+              number={pr.number}
+              title={pr.title}
+              url={pr.url}
+              complexity={pr.complexity}
+              date={dayjs.utc(pr.releasedAt).tz(timezone).format('M/D HH:mm')}
             />
           ))}
         </DetailSection>
@@ -611,25 +728,31 @@ function PRRow({
 }) {
   const stateStyle = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
   return (
-    <div className="flex items-center gap-2 py-1 text-sm">
-      <a
-        href={url}
-        className="shrink-0 text-blue-500 hover:underline"
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        {repo}#{number}
-      </a>
-      <SizeBadge complexity={complexity} />
-      {stateStyle && (
-        <span
-          className={`shrink-0 text-xs font-medium ${stateStyle.className}`}
+    <div className="flex flex-col gap-1 py-1 text-sm sm:flex-row sm:items-center sm:gap-2">
+      <div className="flex min-w-0 items-start justify-between gap-2 sm:flex-1 sm:items-center sm:justify-start">
+        <a
+          href={url}
+          className="min-w-0 truncate text-blue-500 hover:underline sm:shrink-0"
+          target="_blank"
+          rel="noreferrer noopener"
         >
-          {stateStyle.icon} {stateStyle.text}
-        </span>
-      )}
-      <span className="truncate">{title}</span>
-      <span className="text-muted-foreground ml-auto flex shrink-0 items-center gap-1 text-xs">
+          {repo}#{number}
+        </a>
+        <div className="flex shrink-0 items-center gap-2 sm:ml-2">
+          <SizeBadge complexity={complexity} />
+          {stateStyle && (
+            <span
+              className={`shrink-0 text-xs font-medium ${stateStyle.className}`}
+            >
+              {stateStyle.icon} {stateStyle.text}
+            </span>
+          )}
+        </div>
+      </div>
+      <span className="line-clamp-2 break-words sm:line-clamp-1 sm:min-w-0 sm:flex-1">
+        {title}
+      </span>
+      <span className="text-muted-foreground flex flex-wrap items-center gap-1 text-xs sm:ml-auto sm:shrink-0">
         {author && (
           <>
             <Avatar className="size-4">
