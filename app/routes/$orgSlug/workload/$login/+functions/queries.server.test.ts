@@ -147,8 +147,18 @@ describe('workload member queries', () => {
       number: 2,
       author: 'alice',
       closedAt: '2026-03-13T03:00:00Z',
+      mergedAt: null,
+      url: 'https://github.com/acme/widget/pull/2',
+      title: 'Second in-range PR',
+    })
+    await insertPullRequest(orgId, {
+      number: 5,
+      author: 'alice',
+      closedAt: '2026-03-13T04:00:00Z',
       mergedAt: '2026-03-13T02:00:00Z',
       releasedAt: '2026-03-14T02:00:00Z',
+      url: 'https://github.com/acme/widget/pull/5',
+      title: 'Merged PR should be excluded',
     })
     await insertPullRequest(orgId, {
       number: 3,
@@ -174,8 +184,12 @@ describe('workload member queries', () => {
       '2026-03-16T23:59:59Z',
     )
 
-    expect(prs).toHaveLength(1)
+    expect(prs).toHaveLength(2)
+    expect(prs[0].number).toBe(1)
+    expect(prs[1].number).toBe(2)
+    expect(prs[0].closedAt < prs[1].closedAt).toBe(true)
     expect(prs[0].number).toBe(1)
     expect(prs[0].closedAt).toBe('2026-03-12T03:00:00Z')
+    expect(prs[1].closedAt).toBe('2026-03-13T03:00:00Z')
   })
 })
