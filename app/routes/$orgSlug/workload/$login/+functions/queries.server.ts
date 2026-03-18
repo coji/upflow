@@ -79,6 +79,35 @@ export const getMergedPRs = async (
     .execute()
 }
 
+export const getClosedPRs = async (
+  organizationId: OrganizationId,
+  login: string,
+  from: string,
+  to: string,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
+    .selectFrom('pullRequests')
+    .where((eb) =>
+      eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
+    )
+    .where('closedAt', '>=', from)
+    .where('closedAt', '<=', to)
+    .where('mergedAt', 'is', null)
+    .select([
+      'number',
+      'repositoryId',
+      'repo',
+      'title',
+      'url',
+      'closedAt',
+      'pullRequestCreatedAt',
+      'complexity',
+    ])
+    .orderBy('closedAt', 'asc')
+    .execute()
+}
+
 // Returns all review submissions (including multiple rounds on the same PR).
 // Each round is a distinct action for the "what did they do this week" view.
 export const getReviewsSubmitted = async (

@@ -24,6 +24,7 @@ import {
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import {
   getBacklogDetails,
+  getClosedPRs,
   getCreatedPRs,
   getMergedPRs,
   getReviewsSubmitted,
@@ -56,13 +57,15 @@ export const loader = async ({
   const from = weekStart.utc().toISOString()
   const to = weekEnd.utc().toISOString()
 
-  const [user, createdPRs, mergedPRs, reviews, backlog] = await Promise.all([
-    getUserProfile(organization.id, params.login),
-    getCreatedPRs(organization.id, params.login, from, to),
-    getMergedPRs(organization.id, params.login, from, to),
-    getReviewsSubmitted(organization.id, params.login, from, to),
-    getBacklogDetails(organization.id, params.login),
-  ])
+  const [user, createdPRs, mergedPRs, closedPRs, reviews, backlog] =
+    await Promise.all([
+      getUserProfile(organization.id, params.login),
+      getCreatedPRs(organization.id, params.login, from, to),
+      getMergedPRs(organization.id, params.login, from, to),
+      getClosedPRs(organization.id, params.login, from, to),
+      getReviewsSubmitted(organization.id, params.login, from, to),
+      getBacklogDetails(organization.id, params.login),
+    ])
 
   // Build holiday map for the week
   const holidays: Record<string, string> = {}
@@ -74,6 +77,7 @@ export const loader = async ({
     user,
     createdPRs,
     mergedPRs,
+    closedPRs,
     reviews,
     backlog,
     holidays,
@@ -87,6 +91,7 @@ export default function MemberWeeklyPage({
     user,
     createdPRs,
     mergedPRs,
+    closedPRs,
     reviews,
     backlog,
     holidays,
@@ -156,6 +161,66 @@ export default function MemberWeeklyPage({
     [sortBacklog, backlog.pendingReviews],
   )
 
+  const groupedReviews = useMemo(() => {
+    const groups = new Map<
+      string,
+      (typeof reviews)[number] & {
+        reviewCount: number
+        dayKey: string
+        firstSubmittedAt: string
+        lastSubmittedAt: string
+      }
+    >()
+
+    for (const review of reviews) {
+      const dayKey = dayjs
+        .utc(review.submittedAt)
+        .tz(timezone)
+        .format('YYYY-MM-DD')
+      const key = `${review.repositoryId}:${review.number}:${review.state}:${dayKey}`
+      const existing = groups.get(key)
+
+      if (!existing) {
+        groups.set(key, {
+          ...review,
+          reviewCount: 1,
+          dayKey,
+          firstSubmittedAt: review.submittedAt,
+          lastSubmittedAt: review.submittedAt,
+        })
+        continue
+      }
+
+      const next =
+        review.submittedAt >= existing.submittedAt
+          ? { ...review, dayKey }
+          : { ...existing }
+      groups.set(key, {
+        ...next,
+        reviewCount: existing.reviewCount + 1,
+        dayKey,
+        firstSubmittedAt:
+          review.submittedAt < existing.firstSubmittedAt
+            ? review.submittedAt
+            : existing.firstSubmittedAt,
+        lastSubmittedAt:
+          review.submittedAt > existing.lastSubmittedAt
+            ? review.submittedAt
+            : existing.lastSubmittedAt,
+      })
+    }
+
+    return [...groups.values()].sort((a, b) =>
+      a.submittedAt.localeCompare(b.submittedAt),
+    )
+  }, [reviews, timezone])
+
+  const reviewedPRCount = useMemo(() => {
+    return new Set(
+      reviews.map((review) => `${review.repositoryId}:${review.number}`),
+    ).size
+  }, [reviews])
+
   // Group activities by day of week (Mon=0 .. Sun=6)
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = dayjs(weekStart).add(i, 'day')
@@ -177,11 +242,11 @@ export default function MemberWeeklyPage({
         (pr) =>
           dayjs.utc(pr.mergedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
       ),
-      reviewed: reviews.filter(
-        (r) =>
-          dayjs.utc(r.submittedAt).tz(timezone).format('YYYY-MM-DD') ===
-          dateStr,
+      closed: closedPRs.filter(
+        (pr) =>
+          dayjs.utc(pr.closedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
       ),
+      reviewed: groupedReviews.filter((r) => r.dayKey === dateStr),
     }
   })
 
@@ -290,12 +355,12 @@ export default function MemberWeeklyPage({
       <hr className="border-border" />
 
       {/* Weekly activity header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           <h2 className="text-muted-foreground text-sm font-medium">
             This Week
           </h2>
-          <div className="text-muted-foreground flex gap-3 text-xs">
+          <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-xs">
             <span>
               <span className="inline-block size-2 rounded-full bg-blue-500" />{' '}
               Created {createdPRs.length}
@@ -306,107 +371,138 @@ export default function MemberWeeklyPage({
             </span>
             <span>
               <span className="inline-block size-2 rounded-full bg-purple-500" />{' '}
-              Reviewed {reviews.length}
+              Reviewed (unique) {reviewedPRCount}
+            </span>
+            <span>
+              <span className="inline-block size-2 rounded-full bg-gray-500" />{' '}
+              Closed {closedPRs.length}
             </span>
           </div>
         </div>
 
-        <WeeklyCalendar value={weekStart} onWeekChange={handleWeekChange} />
+        <div className="self-start sm:self-auto">
+          <WeeklyCalendar value={weekStart} onWeekChange={handleWeekChange} />
+        </div>
       </div>
 
       {/* Daily calendar */}
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day) => {
-          const isOff =
-            day.date.day() === 0 || day.date.day() === 6 || day.holiday !== null
-          const total =
-            day.created.length + day.merged.length + day.reviewed.length
-          return (
-            <div
-              key={day.dateStr}
-              className={`flex flex-col overflow-hidden rounded-lg border p-2 ${isOff ? 'bg-muted/50' : ''}`}
-            >
-              <div className="mb-2 text-center">
-                <div
-                  className={`text-xs ${day.holiday ? 'text-red-500' : 'text-muted-foreground'}`}
-                >
-                  {day.label}
+      <div className="-mx-1 overflow-x-auto px-1">
+        <div className="grid min-w-[42rem] grid-cols-7 gap-1">
+          {days.map((day) => {
+            const isOff =
+              day.date.day() === 0 ||
+              day.date.day() === 6 ||
+              day.holiday !== null
+            const total =
+              day.created.length +
+              day.merged.length +
+              day.closed.length +
+              day.reviewed.length
+            return (
+              <div
+                key={day.dateStr}
+                className={`flex flex-col overflow-hidden rounded-lg border p-2 ${isOff ? 'bg-muted/50' : ''}`}
+              >
+                <div className="mb-2 text-center">
+                  <div
+                    className={`text-xs ${day.holiday ? 'text-red-500' : 'text-muted-foreground'}`}
+                  >
+                    {day.label}
+                  </div>
+                  <div
+                    className={`text-sm font-medium ${day.holiday ? 'text-red-500' : ''}`}
+                  >
+                    {day.dayNum}
+                  </div>
+                  {day.holiday && (
+                    <div className="text-[9px] text-red-400">{day.holiday}</div>
+                  )}
                 </div>
-                <div
-                  className={`text-sm font-medium ${day.holiday ? 'text-red-500' : ''}`}
-                >
-                  {day.dayNum}
-                </div>
-                {day.holiday && (
-                  <div className="text-[9px] text-red-400">{day.holiday}</div>
+                {total === 0 ? (
+                  <div className="text-muted-foreground flex-1 py-2 text-center text-xs">
+                    -
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {day.created.map((pr) => (
+                      <CalendarItem
+                        key={`c-${pr.repositoryId}:${pr.number}`}
+                        color="bg-blue-500"
+                        label={`#${pr.number}`}
+                        title={pr.title}
+                        complexity={pr.complexity}
+                        prData={{
+                          number: pr.number,
+                          repo: pr.repo,
+                          title: pr.title,
+                          url: pr.url,
+                          createdAt: pr.pullRequestCreatedAt,
+                          complexity: pr.complexity,
+                        }}
+                      />
+                    ))}
+                    {day.merged.map((pr) => (
+                      <CalendarItem
+                        key={`m-${pr.repositoryId}:${pr.number}`}
+                        color="bg-emerald-500"
+                        label={`#${pr.number}`}
+                        title={pr.title}
+                        complexity={pr.complexity}
+                        prData={{
+                          number: pr.number,
+                          repo: pr.repo,
+                          title: pr.title,
+                          url: pr.url,
+                          createdAt: pr.pullRequestCreatedAt,
+                          complexity: pr.complexity,
+                        }}
+                      />
+                    ))}
+                    {day.reviewed.map((r) => (
+                      <CalendarItem
+                        key={`r-${r.repositoryId}:${r.number}:${r.state}:${r.dayKey}`}
+                        color="bg-purple-500"
+                        label={`#${r.number}`}
+                        title={r.title}
+                        complexity={r.complexity}
+                        prData={{
+                          number: r.number,
+                          repo: r.repo,
+                          title: r.title,
+                          url: r.url,
+                          author: r.author,
+                          createdAt: r.pullRequestCreatedAt,
+                          complexity: r.complexity,
+                        }}
+                        showAuthor
+                        reviewState={r.state}
+                        reviewCount={r.reviewCount}
+                        suffix={REVIEW_STATE_STYLE[r.state]?.icon}
+                      />
+                    ))}
+                    {day.closed.map((pr) => (
+                      <CalendarItem
+                        key={`x-${pr.repositoryId}:${pr.number}`}
+                        color="bg-gray-500"
+                        label={`#${pr.number}`}
+                        title={pr.title}
+                        complexity={pr.complexity}
+                        prData={{
+                          number: pr.number,
+                          repo: pr.repo,
+                          title: pr.title,
+                          url: pr.url,
+                          createdAt: pr.pullRequestCreatedAt,
+                          complexity: pr.complexity,
+                        }}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
-              {total === 0 ? (
-                <div className="text-muted-foreground flex-1 py-2 text-center text-xs">
-                  -
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {day.created.map((pr) => (
-                    <CalendarItem
-                      key={`c-${pr.repositoryId}:${pr.number}`}
-                      color="bg-blue-500"
-                      label={`#${pr.number}`}
-                      title={pr.title}
-                      complexity={pr.complexity}
-                      prData={{
-                        number: pr.number,
-                        repo: pr.repo,
-                        title: pr.title,
-                        url: pr.url,
-                        createdAt: pr.pullRequestCreatedAt,
-                        complexity: pr.complexity,
-                      }}
-                    />
-                  ))}
-                  {day.merged.map((pr) => (
-                    <CalendarItem
-                      key={`m-${pr.repositoryId}:${pr.number}`}
-                      color="bg-emerald-500"
-                      label={`#${pr.number}`}
-                      title={pr.title}
-                      complexity={pr.complexity}
-                      prData={{
-                        number: pr.number,
-                        repo: pr.repo,
-                        title: pr.title,
-                        url: pr.url,
-                        createdAt: pr.pullRequestCreatedAt,
-                        complexity: pr.complexity,
-                      }}
-                    />
-                  ))}
-                  {day.reviewed.map((r) => (
-                    <CalendarItem
-                      key={`r-${r.repositoryId}:${r.number}:${r.submittedAt}`}
-                      color="bg-purple-500"
-                      label={`#${r.number}`}
-                      title={r.title}
-                      complexity={r.complexity}
-                      prData={{
-                        number: r.number,
-                        repo: r.repo,
-                        title: r.title,
-                        url: r.url,
-                        author: r.author,
-                        createdAt: r.pullRequestCreatedAt,
-                        complexity: r.complexity,
-                      }}
-                      showAuthor
-                      reviewState={r.state}
-                      suffix={REVIEW_STATE_STYLE[r.state]?.icon}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
       {/* Detail sections */}
@@ -460,17 +556,43 @@ export default function MemberWeeklyPage({
           count={reviews.length}
           color="bg-purple-500"
         >
-          {reviews.map((r) => (
+          {groupedReviews.map((r) => (
             <PRRow
-              key={`${r.repositoryId}:${r.number}:${r.submittedAt}`}
+              key={`${r.repositoryId}:${r.number}:${r.state}:${r.dayKey}`}
               repo={r.repo}
               number={r.number}
               title={r.title}
               url={r.url}
               complexity={r.complexity}
               author={r.author}
-              date={dayjs.utc(r.submittedAt).tz(timezone).format('M/D HH:mm')}
+              date={
+                r.reviewCount > 1
+                  ? `${dayjs.utc(r.firstSubmittedAt).tz(timezone).format('M/D HH:mm')}-${dayjs.utc(r.lastSubmittedAt).tz(timezone).format('HH:mm')}`
+                  : dayjs.utc(r.submittedAt).tz(timezone).format('M/D HH:mm')
+              }
+              extra={undefined}
+              reviewCount={r.reviewCount}
               reviewState={r.state}
+            />
+          ))}
+        </DetailSection>
+      )}
+
+      {closedPRs.length > 0 && (
+        <DetailSection
+          label="Closed"
+          count={closedPRs.length}
+          color="bg-gray-500"
+        >
+          {closedPRs.map((pr) => (
+            <PRRow
+              key={`${pr.repositoryId}:${pr.number}`}
+              repo={pr.repo}
+              number={pr.number}
+              title={pr.title}
+              url={pr.url}
+              complexity={pr.complexity}
+              date={dayjs.utc(pr.closedAt).tz(timezone).format('M/D HH:mm')}
             />
           ))}
         </DetailSection>
@@ -510,6 +632,7 @@ function CalendarItem({
   prData,
   showAuthor,
   reviewState,
+  reviewCount,
 }: {
   color: string
   label: string
@@ -519,7 +642,14 @@ function CalendarItem({
   prData?: PRBlockData
   showAuthor?: boolean
   reviewState?: string
+  reviewCount?: number
 }) {
+  const suffixText = [
+    suffix,
+    reviewCount && reviewCount > 1 ? `×${reviewCount}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
   const content = (
     <button
       type="button"
@@ -537,11 +667,11 @@ function CalendarItem({
             <SizeBadge complexity={complexity} />
           </span>
         )}
-        {suffix && (
+        {suffixText && (
           <span
             className={`ml-0.5 ${reviewState ? (REVIEW_STATE_STYLE[reviewState]?.className ?? '') : ''}`}
           >
-            {suffix}
+            {suffixText}
           </span>
         )}
         <br />
@@ -598,6 +728,7 @@ function PRRow({
   extra,
   author,
   reviewState,
+  reviewCount,
 }: {
   repo: string
   number: number
@@ -608,28 +739,36 @@ function PRRow({
   extra?: string
   author?: string
   reviewState?: string
+  reviewCount?: number
 }) {
   const stateStyle = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
   return (
-    <div className="flex items-center gap-2 py-1 text-sm">
-      <a
-        href={url}
-        className="shrink-0 text-blue-500 hover:underline"
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        {repo}#{number}
-      </a>
-      <SizeBadge complexity={complexity} />
-      {stateStyle && (
-        <span
-          className={`shrink-0 text-xs font-medium ${stateStyle.className}`}
+    <div className="flex flex-col gap-1 py-1 text-sm lg:grid lg:grid-cols-[max-content_max-content_minmax(0,1fr)_auto] lg:items-center lg:gap-x-4 lg:gap-y-0">
+      <div className="flex min-w-0 items-start justify-between gap-2 lg:contents">
+        <a
+          href={url}
+          className="min-w-0 truncate text-blue-500 hover:underline lg:block"
+          target="_blank"
+          rel="noreferrer noopener"
         >
-          {stateStyle.icon} {stateStyle.text}
-        </span>
-      )}
-      <span className="truncate">{title}</span>
-      <span className="text-muted-foreground ml-auto flex shrink-0 items-center gap-1 text-xs">
+          {repo}#{number}
+        </a>
+        <div className="flex shrink-0 items-center gap-2 lg:min-w-0">
+          <SizeBadge complexity={complexity} />
+          {stateStyle && (
+            <span
+              className={`shrink-0 text-xs font-medium ${stateStyle.className}`}
+            >
+              {stateStyle.icon} {stateStyle.text}
+              {reviewCount && reviewCount > 1 ? ` ×${reviewCount}` : ''}
+            </span>
+          )}
+        </div>
+      </div>
+      <span className="line-clamp-2 break-words lg:line-clamp-1 lg:min-w-0">
+        {title}
+      </span>
+      <span className="text-muted-foreground flex flex-wrap items-center gap-1 text-xs lg:justify-self-end lg:text-right">
         {author && (
           <>
             <Avatar className="size-4">
@@ -645,8 +784,13 @@ function PRRow({
             <span>·</span>
           </>
         )}
-        {date}
-        {extra && ` · ${extra}`}
+        {extra && (
+          <>
+            <span>{extra}</span>
+            <span>·</span>
+          </>
+        )}
+        <span>{date}</span>
       </span>
     </div>
   )
