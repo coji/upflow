@@ -206,6 +206,7 @@ export const buildPullRequests = async (
   const reviews: AnalyzedReview[] = []
   const reviewers: AnalyzedReviewer[] = []
   const reviewResponses: AnalyzedReviewResponse[] = []
+  const botUsers = new Set<string>()
 
   let processed = 0
   for (const pr of pullrequests) {
@@ -223,7 +224,15 @@ export const buildPullRequests = async (
       // 1. アーティファクト読み込み（I/O）
       const rawArtifacts = await loadPrArtifacts(pr, loaders)
 
-      // 2. アクター除外フィルタ（純粋関数）
+      // 2. bot ユーザーを収集（GitHub API の __typename === 'Bot'）
+      for (const r of rawArtifacts.reviews) {
+        if (r.isBot && r.user) botUsers.add(r.user.toLowerCase())
+      }
+      for (const d of rawArtifacts.discussions) {
+        if (d.isBot && d.user) botUsers.add(d.user.toLowerCase())
+      }
+
+      // 3. アクター除外フィルタ（純粋関数）
       const artifacts = filterActors(rawArtifacts, pr, config.botLogins)
 
       // 3. レビューレスポンス解析
@@ -297,5 +306,5 @@ export const buildPullRequests = async (
     }
   }
 
-  return { pulls, reviews, reviewers, reviewResponses }
+  return { pulls, reviews, reviewers, reviewResponses, botUsers }
 }

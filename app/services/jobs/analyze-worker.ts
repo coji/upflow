@@ -54,4 +54,7 @@ const result: Awaited<ReturnType<typeof buildPullRequests>> =
     input.filterPrNumbers ? new Set(input.filterPrNumbers) : undefined,
   )
 
-parentPort?.postMessage(result)
+parentPort?.postMessage({
+  ...result,
+  botUsers: [...result.botUsers],
+})
