@@ -1,7 +1,12 @@
 import consola from 'consola'
 import fs from 'node:fs'
 import path from 'node:path'
-import { BACKUP_PREFIX, DATA_DIR, isDbFile } from '../lib/data-dir'
+import {
+  BACKUP_PREFIX,
+  DATA_DIR,
+  isDbFile,
+  removeAllDbFiles,
+} from '../lib/data-dir'
 
 interface RestoreDbOptions {
   name?: string
@@ -69,10 +74,7 @@ export async function restoreDbCommand(options: RestoreDbOptions) {
   }
 
   // Remove current db files
-  const currentDbFiles = fs.readdirSync(DATA_DIR).filter(isDbFile)
-  for (const f of currentDbFiles) {
-    fs.unlinkSync(path.join(DATA_DIR, f))
-  }
+  removeAllDbFiles()
 
   // Copy backup files to data/
   for (const f of filesToRestore) {
