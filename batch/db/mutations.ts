@@ -254,6 +254,13 @@ export async function upsertCompanyGithubUsers(
   )
 }
 
+function trackLatest(map: Map<string, string>, login: string, ts: string) {
+  const key = login.toLowerCase()
+  if (!map.has(key) || ts > (map.get(key) ?? '')) {
+    map.set(key, ts)
+  }
+}
+
 /**
  * ユーザーごとの最終活動日時を更新する。
  * 既存値より新しい場合のみ上書き。
@@ -315,26 +322,11 @@ export async function upsertAnalyzedData(
   // Update last activity timestamps
   const lastActivity = new Map<string, string>()
   for (const pr of data.pulls) {
-    if (!pr.author) continue
-    const login = pr.author.toLowerCase()
-    const ts = pr.pullRequestCreatedAt
-    if (
-      ts &&
-      (!lastActivity.has(login) || ts > (lastActivity.get(login) ?? ''))
-    ) {
-      lastActivity.set(login, ts)
-    }
+    if (pr.author) trackLatest(lastActivity, pr.author, pr.pullRequestCreatedAt)
   }
   for (const review of data.reviews) {
-    if (!review.reviewer) continue
-    const login = review.reviewer.toLowerCase()
-    const ts = review.submittedAt
-    if (
-      ts &&
-      (!lastActivity.has(login) || ts > (lastActivity.get(login) ?? ''))
-    ) {
-      lastActivity.set(login, ts)
-    }
+    if (review.reviewer)
+      trackLatest(lastActivity, review.reviewer, review.submittedAt)
   }
   await updateLastActivityAt(organizationId, lastActivity)
 

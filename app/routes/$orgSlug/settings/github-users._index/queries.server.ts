@@ -77,12 +77,17 @@ export const listFilteredGithubUsers = async ({
   }
   const safeSortBy = sortFieldMap[sortBy ?? ''] ?? sortFieldMap.lastActivityAt
 
+  // NULL を末尾に配置（lastActivityAt など nullable カラムのソート用）
+  let sortedQuery = query
+  if (safeSortBy === sortFieldMap.lastActivityAt) {
+    sortedQuery = sortedQuery.orderBy(
+      sql`${sql.ref(safeSortBy)} IS NULL`,
+      sortOrder === 'desc' ? 'asc' : 'desc',
+    )
+  }
+
   const [rows, countResult] = await Promise.all([
-    query
-      .orderBy(
-        sql`${sql.ref(safeSortBy)} IS NULL`,
-        sortOrder === 'desc' ? 'asc' : 'desc',
-      )
+    sortedQuery
       .orderBy(sql.ref(safeSortBy), sortOrder)
       .limit(pageSize)
       .offset((currentPage - 1) * pageSize)
