@@ -14,72 +14,61 @@ export const getPullRequestReport = async (organizationId: OrganizationId) => {
 
 async function getTenantData(organizationId: OrganizationId) {
   const tenantDb = getTenantDb(organizationId)
-  const [
-    organizationSetting,
-    integration,
-    repositories,
-    exportSetting,
-    botLoginRows,
-  ] = await Promise.all([
-    tenantDb
-      .selectFrom('organizationSettings')
-      .select(['releaseDetectionMethod', 'releaseDetectionKey', 'isActive'])
-      .executeTakeFirst(),
-    tenantDb
-      .selectFrom('integrations')
-      .select(['id', 'method', 'provider', 'privateToken'])
-      .executeTakeFirst(),
-    tenantDb
-      .selectFrom('repositories')
-      .select([
-        'id',
-        'repo',
-        'owner',
-        'integrationId',
-        'provider',
-        'releaseDetectionKey',
-        'releaseDetectionMethod',
-        'teamId',
-        'updatedAt',
-        'createdAt',
-      ])
-      .execute(),
-    tenantDb
-      .selectFrom('exportSettings')
-      .select([
-        'id',
-        'sheetId',
-        'clientEmail',
-        'privateKey',
-        'updatedAt',
-        'createdAt',
-      ])
-      .executeTakeFirst(),
-    tenantDb
-      .selectFrom('companyGithubUsers')
-      .select('login')
-      .where('type', '=', 'Bot')
-      .execute(),
-  ])
+  const [organizationSetting, integration, repositories, exportSetting] =
+    await Promise.all([
+      tenantDb
+        .selectFrom('organizationSettings')
+        .select(['releaseDetectionMethod', 'releaseDetectionKey', 'isActive'])
+        .executeTakeFirst(),
+      tenantDb
+        .selectFrom('integrations')
+        .select(['id', 'method', 'provider', 'privateToken'])
+        .executeTakeFirst(),
+      tenantDb
+        .selectFrom('repositories')
+        .select([
+          'id',
+          'repo',
+          'owner',
+          'integrationId',
+          'provider',
+          'releaseDetectionKey',
+          'releaseDetectionMethod',
+          'teamId',
+          'updatedAt',
+          'createdAt',
+        ])
+        .execute(),
+      tenantDb
+        .selectFrom('exportSettings')
+        .select([
+          'id',
+          'sheetId',
+          'clientEmail',
+          'privateKey',
+          'updatedAt',
+          'createdAt',
+        ])
+        .executeTakeFirst(),
+    ])
   return {
     organizationSetting: organizationSetting ?? null,
     integration: integration ?? null,
     repositories,
     exportSetting: exportSetting ?? null,
-    botLogins: botLoginRows.map((r) => r.login),
   }
 }
 
 export async function getBotLogins(
   organizationId: OrganizationId,
-): Promise<Set<string>> {
+): Promise<string[]> {
   const tenantDb = getTenantDb(organizationId)
   const rows = await tenantDb
     .selectFrom('companyGithubUsers')
     .select('login')
     .where('type', '=', 'Bot')
     .execute()
-  return new Set(rows.map((r) => r.login))
+  return rows.map((r) => r.login)
 }
 
 export const listAllOrganizations = async () => {
@@ -103,6 +92,9 @@ export const getOrganization = async (organizationId: OrganizationId) => {
     .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  const tenantData = await getTenantData(org.id as OrganizationId)
-  return { ...org, ...tenantData }
+  const [tenantData, botLogins] = await Promise.all([
+    getTenantData(org.id as OrganizationId),
+    getBotLogins(org.id as OrganizationId),
+  ])
+  return { ...org, ...tenantData, botLogins }
 }

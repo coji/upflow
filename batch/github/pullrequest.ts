@@ -235,7 +235,7 @@ export const buildPullRequests = async (
       // 3. アクター除外フィルタ（純粋関数）
       const artifacts = filterActors(rawArtifacts, pr, config.botLogins)
 
-      // 3. レビューレスポンス解析
+      // 4. レビューレスポンス解析
       reviewResponses.push(
         ...analyzeReviewResponse(artifacts.discussions).map((res) => ({
           repo: String(pr.repo),
@@ -246,10 +246,10 @@ export const buildPullRequests = async (
         })),
       )
 
-      // 4. 日時計算（純粋関数）
+      // 5. 日時計算（純粋関数）
       const dates = computeDates(pr, artifacts)
 
-      // 5. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
+      // 6. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
       let releasedAt: string | null = null
       if (pr.mergedAt) {
         if (branchReleaseLookup) {
@@ -259,12 +259,12 @@ export const buildPullRequests = async (
         }
       }
 
-      // 6. PR 行データ生成（純粋関数）
+      // 7. PR 行データ生成（純粋関数）
       pulls.push(
         buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
       )
 
-      // 7. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）
+      // 8. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）
       for (const review of rawArtifacts.reviews) {
         if (!review.user || !review.submittedAt || review.state === 'PENDING')
           continue
@@ -279,7 +279,7 @@ export const buildPullRequests = async (
         })
       }
 
-      // 8. レビュアー（レビュー依頼先）情報を収集
+      // 9. レビュアー（レビュー依頼先）情報を収集
       //    timeline_items から requestedAt を補完する
       //    reviewer が 0 人でも push して、removed された reviewer の DB レコードを削除させる
       const prReviewers = pr.reviewers ?? []

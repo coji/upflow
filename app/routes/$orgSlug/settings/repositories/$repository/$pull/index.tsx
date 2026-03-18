@@ -163,7 +163,7 @@ export const action = async ({
       })
 
       // 4. Get organization settings and bot logins for build config
-      const [settings, botLogins] = await Promise.all([
+      const [settings, botLoginsList] = await Promise.all([
         getOrganizationSettings(organization.id),
         getBotLogins(organization.id),
       ])
@@ -173,7 +173,7 @@ export const action = async ({
         {
           organizationId: organization.id,
           repositoryId,
-          botLogins,
+          botLogins: new Set(botLoginsList),
           releaseDetectionMethod: settings?.releaseDetectionMethod ?? 'branch',
           releaseDetectionKey: settings?.releaseDetectionKey ?? '',
         },
