@@ -145,6 +145,13 @@ export function pullDbCommand(options: PullDbOptions) {
   // Ensure data directory exists
   fs.mkdirSync(DATA_DIR, { recursive: true })
 
+  // Step 1.5: Remove old DB files (including -wal/-shm) to prevent
+  // stale WAL journals from corrupting newly pulled databases
+  const oldDbFiles = fs.readdirSync(DATA_DIR).filter(isDbFile)
+  for (const file of oldDbFiles) {
+    fs.unlinkSync(path.join(DATA_DIR, file))
+  }
+
   // Step 2: Remote backup + tar + pull + extract
   const dbFiles = pullAllDbs(app)
 
