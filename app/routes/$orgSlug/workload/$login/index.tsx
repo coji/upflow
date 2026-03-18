@@ -371,7 +371,7 @@ export default function MemberWeeklyPage({
             </span>
             <span>
               <span className="inline-block size-2 rounded-full bg-purple-500" />{' '}
-              Reviewed {reviewedPRCount}
+              Reviewed (unique) {reviewedPRCount}
             </span>
             <span>
               <span className="inline-block size-2 rounded-full bg-gray-500" />{' '}
@@ -460,7 +460,7 @@ export default function MemberWeeklyPage({
                     ))}
                     {day.reviewed.map((r) => (
                       <CalendarItem
-                        key={`r-${r.repositoryId}:${r.number}:${r.dayKey}`}
+                        key={`r-${r.repositoryId}:${r.number}:${r.state}:${r.dayKey}`}
                         color="bg-purple-500"
                         label={`#${r.number}`}
                         title={r.title}
@@ -558,7 +558,7 @@ export default function MemberWeeklyPage({
         >
           {groupedReviews.map((r) => (
             <PRRow
-              key={`${r.repositoryId}:${r.number}:${r.dayKey}`}
+              key={`${r.repositoryId}:${r.number}:${r.state}:${r.dayKey}`}
               repo={r.repo}
               number={r.number}
               title={r.title}
