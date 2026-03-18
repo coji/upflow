@@ -44,7 +44,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     releaseDetectionMethod,
     releaseDetectionKey,
     isActive,
-    excludedUsers,
     timezone,
     language,
   } = submission.value
@@ -55,7 +54,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       releaseDetectionMethod,
       releaseDetectionKey,
       isActive,
-      excludedUsers,
       timezone,
       language,
     })

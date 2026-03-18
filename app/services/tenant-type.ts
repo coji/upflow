@@ -70,7 +70,6 @@ export interface Integrations {
 
 export interface OrganizationSettings {
   createdAt: Generated<string>;
-  excludedUsers: Generated<string>;
   id: string;
   isActive: Generated<0 | 1>;
   language: Generated<"en" | "ja">;

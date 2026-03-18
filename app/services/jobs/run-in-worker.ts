@@ -7,7 +7,7 @@ interface AnalyzeWorkerInput {
   repositoryId: string
   releaseDetectionMethod: string
   releaseDetectionKey: string
-  excludedUsers: string
+  botLogins: string[]
   filterPrNumbers?: number[]
 }
 

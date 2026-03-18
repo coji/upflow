@@ -59,7 +59,7 @@ export const getOrganizationSettings = async (
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
     .selectFrom('organizationSettings')
-    .select(['releaseDetectionMethod', 'releaseDetectionKey', 'excludedUsers'])
+    .select(['releaseDetectionMethod', 'releaseDetectionKey'])
     .executeTakeFirst()
 }
 

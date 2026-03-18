@@ -206,7 +206,7 @@ const config = {
   repositoryId: 'repo-1',
   releaseDetectionMethod: 'branch',
   releaseDetectionKey: 'main',
-  excludedUsers: '',
+  botLogins: new Set<string>(),
 }
 
 // --- テスト ---

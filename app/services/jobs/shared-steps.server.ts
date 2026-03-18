@@ -30,8 +30,9 @@ interface AnalyzeResult {
 interface OrganizationData {
   organizationSetting: Pick<
     Selectable<TenantDB.OrganizationSettings>,
-    'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
+    'releaseDetectionMethod' | 'releaseDetectionKey'
   >
+  botLogins: string[]
   repositories: Selectable<TenantDB.Repositories>[]
   exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
@@ -127,7 +128,7 @@ export async function analyzeAndFinalizeSteps(
               repo.releaseDetectionMethod ?? orgSetting.releaseDetectionMethod,
             releaseDetectionKey:
               repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
-            excludedUsers: orgSetting.excludedUsers,
+            botLogins: organization.botLogins,
             filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
           },
           {

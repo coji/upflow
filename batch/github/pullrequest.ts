@@ -31,9 +31,6 @@ import type {
   PullRequestLoaders,
 } from './types'
 
-// デフォルトで除外するユーザー (GitHub API で [bot] 接尾辞なしで記録されるbot)
-const DEFAULT_EXCLUDED_USERS = ['Copilot']
-
 /** PR に関連するアーティファクトの型 */
 interface PrArtifacts {
   commits: ShapedGitHubCommit[]
@@ -55,7 +52,7 @@ interface BuildConfig {
   repositoryId: string
   releaseDetectionMethod: string
   releaseDetectionKey: string
-  excludedUsers: string
+  botLogins: Set<string>
 }
 
 const nullOrDate = (dateStr?: Date | string | null) => {
@@ -82,7 +79,7 @@ async function loadPrArtifacts(
 function filterActors(
   artifacts: PrArtifacts,
   pr: ShapedGitHubPullRequest,
-  excludedUsers: string[],
+  botLogins: Set<string>,
 ): PrArtifacts {
   return {
     commits: artifacts.commits,
@@ -90,13 +87,13 @@ function filterActors(
       (r) =>
         !r.isBot &&
         r.user !== pr.author &&
-        !excludedUsers.includes(r.user ?? ''),
+        !botLogins.has((r.user ?? '').toLowerCase()),
     ),
     discussions: artifacts.discussions.filter(
       (d) =>
         !d.isBot &&
         d.user !== pr.author &&
-        !excludedUsers.includes(d.user ?? ''),
+        !botLogins.has((d.user ?? '').toLowerCase()),
     ),
   }
 }
@@ -188,13 +185,6 @@ export const buildPullRequests = async (
   loaders: PullRequestLoaders,
   filterPrNumbers?: Set<number>,
 ) => {
-  // カンマ区切りの除外ユーザーリストをパース
-  const customExcludedUsers = config.excludedUsers
-    .split(',')
-    .map((u) => u.trim())
-    .filter((u) => u.length > 0)
-  const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
-
   // リリース日ルックアップを事前構築
   // 注: filterPrNumbers に関係なく全 PR から構築する（リリースPR自体がフィルタ外でも必要）
   let branchReleaseLookup: Map<number, string> | null = null
@@ -234,7 +224,7 @@ export const buildPullRequests = async (
       const rawArtifacts = await loadPrArtifacts(pr, loaders)
 
       // 2. アクター除外フィルタ（純粋関数）
-      const artifacts = filterActors(rawArtifacts, pr, excludedUsers)
+      const artifacts = filterActors(rawArtifacts, pr, config.botLogins)
 
       // 3. レビューレスポンス解析
       reviewResponses.push(

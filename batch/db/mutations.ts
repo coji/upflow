@@ -5,6 +5,20 @@ import type { OrganizationId } from '~/app/types/organization'
 import type { AnalyzedReview, AnalyzedReviewer } from '../github/types'
 import { logger } from '../helper/logger'
 
+/** GitHub API で [bot] 接尾辞なしで記録される well-known bot (lowercase) */
+const KNOWN_BOTS = new Set([
+  'copilot',
+  'copilot-pull-request-reviewer',
+  'copilot-swe-agent',
+  'github-actions',
+  'dependabot',
+  'renovate',
+  'coderabbitai',
+  'devin-ai-integration',
+  'chatgpt-codex-connector',
+  'claude',
+])
+
 export function upsertPullRequest(
   organizationId: OrganizationId,
   data: Insertable<TenantDB.PullRequests>,
@@ -240,6 +254,7 @@ export async function upsertCompanyGithubUsers(
       uniqueLogins.map((login) => ({
         login,
         displayName: login,
+        type: KNOWN_BOTS.has(login) ? 'Bot' : null,
         isActive: 0,
         updatedAt: now,
       })),

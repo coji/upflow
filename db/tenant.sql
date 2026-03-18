@@ -4,7 +4,6 @@ CREATE TABLE `organization_settings` (
   `release_detection_method` text NOT NULL DEFAULT 'branch',
   `release_detection_key` text NOT NULL DEFAULT 'production',
   `is_active` boolean NOT NULL DEFAULT true,
-  `excluded_users` text NOT NULL DEFAULT '',
   `timezone` text NOT NULL DEFAULT 'Asia/Tokyo',
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),

@@ -31,6 +31,7 @@ export const recalculateJob = defineJob({
       }
       return {
         organizationSetting: org.organizationSetting,
+        botLogins: org.botLogins,
         repositories: org.repositories,
         exportSetting: org.exportSetting,
       }

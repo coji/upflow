@@ -26,7 +26,6 @@ export const updateOrganizationSetting = async (
     | 'releaseDetectionMethod'
     | 'releaseDetectionKey'
     | 'isActive'
-    | 'excludedUsers'
     | 'timezone'
     | 'language'
   >,
