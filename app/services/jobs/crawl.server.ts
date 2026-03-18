@@ -5,7 +5,10 @@ import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
 import { createFetcher } from '~/batch/github/fetcher'
 import { createStore } from '~/batch/github/store'
-import { analyzeAndFinalizeSteps } from './shared-steps.server'
+import {
+  analyzeAndFinalizeSteps,
+  triggerClassifyStep,
+} from './shared-steps.server'
 
 export const crawlJob = defineJob({
   name: 'crawl',
@@ -150,7 +153,7 @@ export const crawlJob = defineJob({
       return { fetchedRepos: repoCount, pullCount: 0 }
     }
 
-    // Steps 3-7: Analyze → Upsert → Classify → Export → Finalize
+    // Steps 3-6: Analyze → Upsert → Export → Finalize
     const { pullCount } = await analyzeAndFinalizeSteps(
       step,
       orgId,
@@ -162,6 +165,9 @@ export const crawlJob = defineJob({
           : (repoId) => !updatedPrNumbers.has(repoId),
       },
     )
+
+    // Trigger classify job (fire-and-forget)
+    await triggerClassifyStep(step, orgId)
 
     return { fetchedRepos: repoCount, pullCount }
   },
