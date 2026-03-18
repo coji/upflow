@@ -27,7 +27,6 @@ import {
   getClosedPRs,
   getCreatedPRs,
   getMergedPRs,
-  getReleasedPRs,
   getReviewsSubmitted,
   getUserProfile,
 } from './+functions/queries.server'
@@ -58,23 +57,15 @@ export const loader = async ({
   const from = weekStart.utc().toISOString()
   const to = weekEnd.utc().toISOString()
 
-  const [
-    user,
-    createdPRs,
-    mergedPRs,
-    closedPRs,
-    releasedPRs,
-    reviews,
-    backlog,
-  ] = await Promise.all([
-    getUserProfile(organization.id, params.login),
-    getCreatedPRs(organization.id, params.login, from, to),
-    getMergedPRs(organization.id, params.login, from, to),
-    getClosedPRs(organization.id, params.login, from, to),
-    getReleasedPRs(organization.id, params.login, from, to),
-    getReviewsSubmitted(organization.id, params.login, from, to),
-    getBacklogDetails(organization.id, params.login),
-  ])
+  const [user, createdPRs, mergedPRs, closedPRs, reviews, backlog] =
+    await Promise.all([
+      getUserProfile(organization.id, params.login),
+      getCreatedPRs(organization.id, params.login, from, to),
+      getMergedPRs(organization.id, params.login, from, to),
+      getClosedPRs(organization.id, params.login, from, to),
+      getReviewsSubmitted(organization.id, params.login, from, to),
+      getBacklogDetails(organization.id, params.login),
+    ])
 
   // Build holiday map for the week
   const holidays: Record<string, string> = {}
@@ -87,7 +78,6 @@ export const loader = async ({
     createdPRs,
     mergedPRs,
     closedPRs,
-    releasedPRs,
     reviews,
     backlog,
     holidays,
@@ -102,7 +92,6 @@ export default function MemberWeeklyPage({
     createdPRs,
     mergedPRs,
     closedPRs,
-    releasedPRs,
     reviews,
     backlog,
     holidays,
@@ -172,6 +161,47 @@ export default function MemberWeeklyPage({
     [sortBacklog, backlog.pendingReviews],
   )
 
+  const groupedReviews = useMemo(() => {
+    const groups = new Map<
+      string,
+      (typeof reviews)[number] & { reviewCount: number; dayKey: string }
+    >()
+
+    for (const review of reviews) {
+      const dayKey = dayjs
+        .utc(review.submittedAt)
+        .tz(timezone)
+        .format('YYYY-MM-DD')
+      const key = `${review.repositoryId}:${review.number}:${dayKey}`
+      const existing = groups.get(key)
+
+      if (!existing) {
+        groups.set(key, { ...review, reviewCount: 1, dayKey })
+        continue
+      }
+
+      const next =
+        review.submittedAt >= existing.submittedAt
+          ? { ...review, dayKey }
+          : { ...existing }
+      groups.set(key, {
+        ...next,
+        reviewCount: existing.reviewCount + 1,
+        dayKey,
+      })
+    }
+
+    return [...groups.values()].sort((a, b) =>
+      a.submittedAt.localeCompare(b.submittedAt),
+    )
+  }, [reviews, timezone])
+
+  const reviewedPRCount = useMemo(() => {
+    return new Set(
+      reviews.map((review) => `${review.repositoryId}:${review.number}`),
+    ).size
+  }, [reviews])
+
   // Group activities by day of week (Mon=0 .. Sun=6)
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = dayjs(weekStart).add(i, 'day')
@@ -197,16 +227,7 @@ export default function MemberWeeklyPage({
         (pr) =>
           dayjs.utc(pr.closedAt).tz(timezone).format('YYYY-MM-DD') === dateStr,
       ),
-      released: releasedPRs.filter(
-        (pr) =>
-          dayjs.utc(pr.releasedAt).tz(timezone).format('YYYY-MM-DD') ===
-          dateStr,
-      ),
-      reviewed: reviews.filter(
-        (r) =>
-          dayjs.utc(r.submittedAt).tz(timezone).format('YYYY-MM-DD') ===
-          dateStr,
-      ),
+      reviewed: groupedReviews.filter((r) => r.dayKey === dateStr),
     }
   })
 
@@ -331,15 +352,11 @@ export default function MemberWeeklyPage({
             </span>
             <span>
               <span className="inline-block size-2 rounded-full bg-purple-500" />{' '}
-              Reviewed {reviews.length}
+              Reviewed {reviewedPRCount}
             </span>
             <span>
               <span className="inline-block size-2 rounded-full bg-gray-500" />{' '}
               Closed {closedPRs.length}
-            </span>
-            <span>
-              <span className="inline-block size-2 rounded-full bg-amber-500" />{' '}
-              Released {releasedPRs.length}
             </span>
           </div>
         </div>
@@ -361,7 +378,6 @@ export default function MemberWeeklyPage({
               day.created.length +
               day.merged.length +
               day.closed.length +
-              day.released.length +
               day.reviewed.length
             return (
               <div
@@ -425,7 +441,7 @@ export default function MemberWeeklyPage({
                     ))}
                     {day.reviewed.map((r) => (
                       <CalendarItem
-                        key={`r-${r.repositoryId}:${r.number}:${r.submittedAt}`}
+                        key={`r-${r.repositoryId}:${r.number}:${r.dayKey}`}
                         color="bg-purple-500"
                         label={`#${r.number}`}
                         title={r.title}
@@ -441,6 +457,7 @@ export default function MemberWeeklyPage({
                         }}
                         showAuthor
                         reviewState={r.state}
+                        reviewCount={r.reviewCount}
                         suffix={REVIEW_STATE_STYLE[r.state]?.icon}
                       />
                     ))}
@@ -448,23 +465,6 @@ export default function MemberWeeklyPage({
                       <CalendarItem
                         key={`x-${pr.repositoryId}:${pr.number}`}
                         color="bg-gray-500"
-                        label={`#${pr.number}`}
-                        title={pr.title}
-                        complexity={pr.complexity}
-                        prData={{
-                          number: pr.number,
-                          repo: pr.repo,
-                          title: pr.title,
-                          url: pr.url,
-                          createdAt: pr.pullRequestCreatedAt,
-                          complexity: pr.complexity,
-                        }}
-                      />
-                    ))}
-                    {day.released.map((pr) => (
-                      <CalendarItem
-                        key={`d-${pr.repositoryId}:${pr.number}`}
-                        color="bg-amber-500"
                         label={`#${pr.number}`}
                         title={pr.title}
                         complexity={pr.complexity}
@@ -537,9 +537,9 @@ export default function MemberWeeklyPage({
           count={reviews.length}
           color="bg-purple-500"
         >
-          {reviews.map((r) => (
+          {groupedReviews.map((r) => (
             <PRRow
-              key={`${r.repositoryId}:${r.number}:${r.submittedAt}`}
+              key={`${r.repositoryId}:${r.number}:${r.dayKey}`}
               repo={r.repo}
               number={r.number}
               title={r.title}
@@ -547,6 +547,7 @@ export default function MemberWeeklyPage({
               complexity={r.complexity}
               author={r.author}
               date={dayjs.utc(r.submittedAt).tz(timezone).format('M/D HH:mm')}
+              extra={r.reviewCount > 1 ? `${r.reviewCount} reviews` : undefined}
               reviewState={r.state}
             />
           ))}
@@ -568,26 +569,6 @@ export default function MemberWeeklyPage({
               url={pr.url}
               complexity={pr.complexity}
               date={dayjs.utc(pr.closedAt).tz(timezone).format('M/D HH:mm')}
-            />
-          ))}
-        </DetailSection>
-      )}
-
-      {releasedPRs.length > 0 && (
-        <DetailSection
-          label="Released"
-          count={releasedPRs.length}
-          color="bg-amber-500"
-        >
-          {releasedPRs.map((pr) => (
-            <PRRow
-              key={`${pr.repositoryId}:${pr.number}`}
-              repo={pr.repo}
-              number={pr.number}
-              title={pr.title}
-              url={pr.url}
-              complexity={pr.complexity}
-              date={dayjs.utc(pr.releasedAt).tz(timezone).format('M/D HH:mm')}
             />
           ))}
         </DetailSection>
@@ -627,6 +608,7 @@ function CalendarItem({
   prData,
   showAuthor,
   reviewState,
+  reviewCount,
 }: {
   color: string
   label: string
@@ -636,7 +618,14 @@ function CalendarItem({
   prData?: PRBlockData
   showAuthor?: boolean
   reviewState?: string
+  reviewCount?: number
 }) {
+  const suffixText = [
+    suffix,
+    reviewCount && reviewCount > 1 ? `×${reviewCount}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
   const content = (
     <button
       type="button"
@@ -654,11 +643,11 @@ function CalendarItem({
             <SizeBadge complexity={complexity} />
           </span>
         )}
-        {suffix && (
+        {suffixText && (
           <span
             className={`ml-0.5 ${reviewState ? (REVIEW_STATE_STYLE[reviewState]?.className ?? '') : ''}`}
           >
-            {suffix}
+            {suffixText}
           </span>
         )}
         <br />
@@ -728,17 +717,17 @@ function PRRow({
 }) {
   const stateStyle = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
   return (
-    <div className="flex flex-col gap-1 py-1 text-sm sm:flex-row sm:items-center sm:gap-2">
-      <div className="flex min-w-0 items-start justify-between gap-2 sm:flex-1 sm:items-center sm:justify-start">
+    <div className="flex flex-col gap-1 py-1 text-sm lg:grid lg:grid-cols-[max-content_max-content_minmax(0,1fr)_auto] lg:items-center lg:gap-x-4 lg:gap-y-0">
+      <div className="flex min-w-0 items-start justify-between gap-2 lg:contents">
         <a
           href={url}
-          className="min-w-0 truncate text-blue-500 hover:underline sm:shrink-0"
+          className="min-w-0 truncate text-blue-500 hover:underline lg:block"
           target="_blank"
           rel="noreferrer noopener"
         >
           {repo}#{number}
         </a>
-        <div className="flex shrink-0 items-center gap-2 sm:ml-2">
+        <div className="flex shrink-0 items-center gap-2 lg:min-w-0">
           <SizeBadge complexity={complexity} />
           {stateStyle && (
             <span
@@ -749,10 +738,10 @@ function PRRow({
           )}
         </div>
       </div>
-      <span className="line-clamp-2 break-words sm:line-clamp-1 sm:min-w-0 sm:flex-1">
+      <span className="line-clamp-2 break-words lg:line-clamp-1 lg:min-w-0">
         {title}
       </span>
-      <span className="text-muted-foreground flex flex-wrap items-center gap-1 text-xs sm:ml-auto sm:shrink-0">
+      <span className="text-muted-foreground flex flex-wrap items-center gap-1 text-xs lg:justify-self-end lg:text-right">
         {author && (
           <>
             <Avatar className="size-4">
@@ -768,8 +757,13 @@ function PRRow({
             <span>·</span>
           </>
         )}
-        {date}
-        {extra && ` · ${extra}`}
+        {extra && (
+          <>
+            <span>{extra}</span>
+            <span>·</span>
+          </>
+        )}
+        <span>{date}</span>
       </span>
     </div>
   )

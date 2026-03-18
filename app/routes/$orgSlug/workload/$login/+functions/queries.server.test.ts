@@ -22,7 +22,7 @@ vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 
 const { closeTenantDb, getTenantDb } =
   await import('~/app/services/tenant-db.server')
-const { getClosedPRs, getReleasedPRs } = await import('./queries.server')
+const { getClosedPRs } = await import('./queries.server')
 type OrganizationId = import('~/app/types/organization').OrganizationId
 const toOrgId = (s: string) => s as OrganizationId
 
@@ -177,50 +177,5 @@ describe('workload member queries', () => {
     expect(prs).toHaveLength(1)
     expect(prs[0].number).toBe(1)
     expect(prs[0].closedAt).toBe('2026-03-12T03:00:00Z')
-  })
-
-  test('getReleasedPRs returns released PRs in range for the author', async () => {
-    await insertPullRequest(orgId, {
-      number: 10,
-      author: 'alice',
-      state: 'merged',
-      mergedAt: '2026-03-11T02:00:00Z',
-      closedAt: '2026-03-11T02:00:00Z',
-      releasedAt: '2026-03-14T05:00:00Z',
-      url: 'https://github.com/acme/widget/pull/10',
-      title: 'Released PR',
-    })
-    await insertPullRequest(orgId, {
-      number: 11,
-      author: 'alice',
-      state: 'merged',
-      mergedAt: '2026-03-09T02:00:00Z',
-      closedAt: '2026-03-09T02:00:00Z',
-      releasedAt: '2026-03-09T05:00:00Z',
-      url: 'https://github.com/acme/widget/pull/11',
-      title: 'Released before range',
-    })
-    await insertPullRequest(orgId, {
-      number: 12,
-      author: 'bob',
-      state: 'merged',
-      mergedAt: '2026-03-12T02:00:00Z',
-      closedAt: '2026-03-12T02:00:00Z',
-      releasedAt: '2026-03-14T06:00:00Z',
-      url: 'https://github.com/acme/widget/pull/12',
-      title: 'Other author release',
-    })
-
-    const prs = await getReleasedPRs(
-      orgId,
-      'alice',
-      '2026-03-10T00:00:00Z',
-      '2026-03-16T23:59:59Z',
-    )
-
-    expect(prs).toHaveLength(1)
-    expect(prs[0].number).toBe(10)
-    expect(prs[0].releasedAt).toBe('2026-03-14T05:00:00Z')
-    expect(prs[0].mergedAt).toBe('2026-03-11T02:00:00Z')
   })
 })
