@@ -2,10 +2,7 @@ import { defineJob } from '@coji/durably'
 import { z } from 'zod'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
-import {
-  analyzeAndFinalizeSteps,
-  triggerClassifyStep,
-} from './shared-steps.server'
+import { analyzeAndFinalizeSteps } from './shared-steps.server'
 
 export const recalculateJob = defineJob({
   name: 'recalculate',
@@ -13,9 +10,6 @@ export const recalculateJob = defineJob({
     organizationId: z.string(),
     steps: z.object({
       upsert: z.boolean(),
-      // classify is accepted for backward compatibility with in-flight jobs
-      // but is handled as a separate classify job trigger
-      classify: z.boolean().default(false),
       export: z.boolean(),
     }),
   }),
@@ -43,15 +37,8 @@ export const recalculateJob = defineJob({
     })
 
     // Steps 2-5: Analyze → Upsert → Export → Finalize
-    const result = await analyzeAndFinalizeSteps(step, orgId, organization, {
-      steps: { upsert: input.steps.upsert, export: input.steps.export },
+    return await analyzeAndFinalizeSteps(step, orgId, organization, {
+      steps: input.steps,
     })
-
-    // Trigger classify job if requested (fire-and-forget)
-    if (input.steps.classify) {
-      await triggerClassifyStep(step, orgId)
-    }
-
-    return result
   },
 })

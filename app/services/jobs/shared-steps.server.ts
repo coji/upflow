@@ -198,13 +198,19 @@ export async function triggerClassifyStep(
   orgId: OrganizationId,
 ) {
   await step.run('trigger-classify', async () => {
-    const { durably } = await import('~/app/services/durably.server')
-    await durably.jobs.classify.trigger(
-      { organizationId: orgId, force: false },
-      {
-        concurrencyKey: `classify:${orgId}`,
-        labels: { organizationId: orgId },
-      },
-    )
+    try {
+      const { durably } = await import('~/app/services/durably.server')
+      await durably.jobs.classify.trigger(
+        { organizationId: orgId, force: false },
+        {
+          concurrencyKey: `classify:${orgId}`,
+          labels: { organizationId: orgId },
+        },
+      )
+    } catch (e) {
+      step.log.warn(
+        `Failed to trigger classify: ${e instanceof Error ? e.message : e}`,
+      )
+    }
   })
 }

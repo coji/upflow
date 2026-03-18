@@ -67,7 +67,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
       try {
         const run = await serverDurably.jobs.recalculate.trigger(
-          { organizationId: org.id, steps: { ...steps, classify: false } },
+          { organizationId: org.id, steps },
           {
             concurrencyKey: `recalculate:${org.id}`,
             labels: { organizationId: org.id },
