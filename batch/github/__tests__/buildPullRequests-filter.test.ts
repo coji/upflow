@@ -294,4 +294,15 @@ describe('buildPullRequests filter', () => {
     expect(pr2All?.releasedAt).toBe('2024-01-08T00:00:00Z')
     expect(pr2Filtered).toEqual(pr2All)
   })
+
+  test('reviewer が 0 人の PR でも reviewers エントリが生成される', async () => {
+    // PR#3 は reviewers: [] (basePr デフォルト)
+    const result = await buildPullRequests(config, prs, mockLoaders)
+
+    // reviewer が 0 人でも reviewers 配列に PR のエントリがある
+    // → batchReplacePullRequestReviewers で古い reviewer レコードが DELETE される
+    const pr3Reviewers = result.reviewers.find((r) => r.pullRequestNumber === 3)
+    expect(pr3Reviewers).toBeDefined()
+    expect(pr3Reviewers?.reviewers).toEqual([])
+  })
 })

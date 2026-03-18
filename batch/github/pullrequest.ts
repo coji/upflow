@@ -282,19 +282,20 @@ export const buildPullRequests = async (
 
       // 8. レビュアー（レビュー依頼先）情報を収集
       //    timeline_items から requestedAt を補完する
+      //    reviewer が 0 人でも push して、removed された reviewer の DB レコードを削除させる
       const prReviewers = pr.reviewers ?? []
-      if (prReviewers.length > 0) {
-        const timelineItems = await loaders.timelineItems(pr.number)
-        const requestedAtMap = buildRequestedAtMap(timelineItems)
-        reviewers.push({
-          pullRequestNumber: pr.number,
-          repositoryId: config.repositoryId,
-          reviewers: prReviewers.map((r) => ({
-            ...r,
-            requestedAt: requestedAtMap.get(r.login) ?? r.requestedAt,
-          })),
-        })
-      }
+      const requestedAtMap =
+        prReviewers.length > 0
+          ? buildRequestedAtMap(await loaders.timelineItems(pr.number))
+          : new Map<string, string>()
+      reviewers.push({
+        pullRequestNumber: pr.number,
+        repositoryId: config.repositoryId,
+        reviewers: prReviewers.map((r) => ({
+          ...r,
+          requestedAt: requestedAtMap.get(r.login) ?? r.requestedAt,
+        })),
+      })
     } catch (e) {
       logger.error(
         'analyze failure:',
