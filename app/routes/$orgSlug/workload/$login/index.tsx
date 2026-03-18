@@ -164,7 +164,12 @@ export default function MemberWeeklyPage({
   const groupedReviews = useMemo(() => {
     const groups = new Map<
       string,
-      (typeof reviews)[number] & { reviewCount: number; dayKey: string }
+      (typeof reviews)[number] & {
+        reviewCount: number
+        dayKey: string
+        firstSubmittedAt: string
+        lastSubmittedAt: string
+      }
     >()
 
     for (const review of reviews) {
@@ -172,11 +177,17 @@ export default function MemberWeeklyPage({
         .utc(review.submittedAt)
         .tz(timezone)
         .format('YYYY-MM-DD')
-      const key = `${review.repositoryId}:${review.number}:${dayKey}`
+      const key = `${review.repositoryId}:${review.number}:${review.state}:${dayKey}`
       const existing = groups.get(key)
 
       if (!existing) {
-        groups.set(key, { ...review, reviewCount: 1, dayKey })
+        groups.set(key, {
+          ...review,
+          reviewCount: 1,
+          dayKey,
+          firstSubmittedAt: review.submittedAt,
+          lastSubmittedAt: review.submittedAt,
+        })
         continue
       }
 
@@ -188,6 +199,14 @@ export default function MemberWeeklyPage({
         ...next,
         reviewCount: existing.reviewCount + 1,
         dayKey,
+        firstSubmittedAt:
+          review.submittedAt < existing.firstSubmittedAt
+            ? review.submittedAt
+            : existing.firstSubmittedAt,
+        lastSubmittedAt:
+          review.submittedAt > existing.lastSubmittedAt
+            ? review.submittedAt
+            : existing.lastSubmittedAt,
       })
     }
 
@@ -546,8 +565,13 @@ export default function MemberWeeklyPage({
               url={r.url}
               complexity={r.complexity}
               author={r.author}
-              date={dayjs.utc(r.submittedAt).tz(timezone).format('M/D HH:mm')}
-              extra={r.reviewCount > 1 ? `${r.reviewCount} reviews` : undefined}
+              date={
+                r.reviewCount > 1
+                  ? `${dayjs.utc(r.firstSubmittedAt).tz(timezone).format('M/D HH:mm')}-${dayjs.utc(r.lastSubmittedAt).tz(timezone).format('HH:mm')}`
+                  : dayjs.utc(r.submittedAt).tz(timezone).format('M/D HH:mm')
+              }
+              extra={undefined}
+              reviewCount={r.reviewCount}
               reviewState={r.state}
             />
           ))}
@@ -704,6 +728,7 @@ function PRRow({
   extra,
   author,
   reviewState,
+  reviewCount,
 }: {
   repo: string
   number: number
@@ -714,6 +739,7 @@ function PRRow({
   extra?: string
   author?: string
   reviewState?: string
+  reviewCount?: number
 }) {
   const stateStyle = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
   return (
@@ -734,6 +760,7 @@ function PRRow({
               className={`shrink-0 text-xs font-medium ${stateStyle.className}`}
             >
               {stateStyle.icon} {stateStyle.text}
+              {reviewCount && reviewCount > 1 ? ` ×${reviewCount}` : ''}
             </span>
           )}
         </div>
