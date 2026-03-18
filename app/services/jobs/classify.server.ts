@@ -1,5 +1,6 @@
 import { defineJob } from '@coji/durably'
 import { z } from 'zod'
+import { clearOrgCache } from '~/app/services/cache.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { classifyPullRequests } from '~/batch/usecases/classify-pull-requests'
 
@@ -23,6 +24,8 @@ export const classifyJob = defineJob({
         limit: input.limit,
       })
     })
+
+    clearOrgCache(orgId)
 
     return { classifiedCount: result.classifiedCount }
   },
