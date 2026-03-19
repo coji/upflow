@@ -22,6 +22,7 @@ const basePr: ShapedGitHubPullRequest = {
   body: null,
   url: 'https://github.com/test-org/test-repo/pull/0',
   author: 'author1',
+  authorIsBot: false,
   assignees: [],
   reviewers: [],
   draft: false,

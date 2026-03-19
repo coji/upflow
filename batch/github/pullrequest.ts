@@ -225,6 +225,7 @@ export const buildPullRequests = async (
       const rawArtifacts = await loadPrArtifacts(pr, loaders)
 
       // 2. bot ユーザーを収集（GitHub API の __typename === 'Bot'）
+      if (pr.authorIsBot && pr.author) botUsers.add(pr.author.toLowerCase())
       for (const r of rawArtifacts.reviews) {
         if (r.isBot && r.user) botUsers.add(r.user.toLowerCase())
       }

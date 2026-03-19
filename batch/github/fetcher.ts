@@ -52,6 +52,7 @@ const GetPullRequestsQuery = graphql(`
             oid
           }
           author {
+            __typename
             login
           }
           assignees(first: 100) {
@@ -350,6 +351,7 @@ const GetPullRequestsWithDetailsQuery = graphql(`
             oid
           }
           author {
+            __typename
             login
           }
           assignees(first: 10) {
@@ -869,6 +871,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           body: node.body ?? null,
           url: node.url,
           author: node.author?.login ?? null,
+          authorIsBot: node.author?.__typename === 'Bot',
           assignees:
             node.assignees.nodes
               ?.filter((n) => n != null)
@@ -1190,6 +1193,7 @@ export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
           body: node.body ?? null,
           url: node.url,
           author: node.author?.login ?? null,
+          authorIsBot: node.author?.__typename === 'Bot',
           assignees:
             node.assignees.nodes
               ?.filter((n) => n != null)

@@ -68,7 +68,7 @@ export async function getBotLogins(
     .select('login')
     .where('type', '=', 'Bot')
     .execute()
-  return rows.map((r) => r.login)
+  return rows.map((r) => r.login.toLowerCase())
 }
 
 export const listAllOrganizations = async () => {
