@@ -22,6 +22,7 @@ const basePr: ShapedGitHubPullRequest = {
   body: null,
   url: 'https://github.com/test-org/test-repo/pull/0',
   author: 'author1',
+  authorIsBot: false,
   assignees: [],
   reviewers: [],
   draft: false,
@@ -206,7 +207,7 @@ const config = {
   repositoryId: 'repo-1',
   releaseDetectionMethod: 'branch',
   releaseDetectionKey: 'main',
-  excludedUsers: '',
+  botLogins: new Set<string>(),
 }
 
 // --- テスト ---

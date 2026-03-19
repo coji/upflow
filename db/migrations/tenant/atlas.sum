@@ -1,4 +1,4 @@
-h1:57BFTZmY6MHNsyxYn2I1qlUPbtDkdrAtNqeUx2hu+Sg=
+h1:WXEFgffupsvOjsoZyUVrgYzOVvKHu7gpaFCM4HJS/Lk=
 20260226112249_initial_tenant.sql h1:dIhBg2gzyh+ZjLzPXdHYafd5e62yIEjk1eFlllEyYX0=
 20260226233619_add_teams.sql h1:n8MRMUA4BgeXYEnL9HJPc8mnXh8lqIfrCcdYtFFoWqw=
 20260227163239.sql h1:ENMZUW7zHK8UjG2TdYlBOZSVPPUCXftIw5U5k2C54oo=
@@ -18,3 +18,5 @@ h1:57BFTZmY6MHNsyxYn2I1qlUPbtDkdrAtNqeUx2hu+Sg=
 20260315050936.sql h1:/o/ku2qrlT14mxxhETs26eHguobD5wPYES2khLSN2wA=
 20260315120000_add_language.sql h1:O1oFQ+aUAI9+uGdIuhjEV9bM8ImXKMMwRQAw3vYhcVM=
 20260317120000_drop_refresh_requested_at.sql h1:R4jHtMkCpdY09orFA4RPvtLeUJ2Z7S4WPMmg/bDJuGg=
+20260318120000_migrate_excluded_users_to_bot_type.sql h1:QhLNJld3iqMSd/Zi8/jHadFB+0u4ocStzpprBqCaG+M=
+20260319120000_add_last_activity_at.sql h1:2evW+gCdRyH1OvTH2NDh5cV2xaxOHIldHYrkwS2ThE4=

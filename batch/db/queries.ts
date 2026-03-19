@@ -18,12 +18,7 @@ async function getTenantData(organizationId: OrganizationId) {
     await Promise.all([
       tenantDb
         .selectFrom('organizationSettings')
-        .select([
-          'releaseDetectionMethod',
-          'releaseDetectionKey',
-          'isActive',
-          'excludedUsers',
-        ])
+        .select(['releaseDetectionMethod', 'releaseDetectionKey', 'isActive'])
         .executeTakeFirst(),
       tenantDb
         .selectFrom('integrations')
@@ -64,6 +59,18 @@ async function getTenantData(organizationId: OrganizationId) {
   }
 }
 
+export async function getBotLogins(
+  organizationId: OrganizationId,
+): Promise<string[]> {
+  const tenantDb = getTenantDb(organizationId)
+  const rows = await tenantDb
+    .selectFrom('companyGithubUsers')
+    .select('login')
+    .where('type', '=', 'Bot')
+    .execute()
+  return rows.map((r) => r.login.toLowerCase())
+}
+
 export const listAllOrganizations = async () => {
   const orgs = await db
     .selectFrom('organizations')
@@ -85,6 +92,9 @@ export const getOrganization = async (organizationId: OrganizationId) => {
     .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  const tenantData = await getTenantData(org.id as OrganizationId)
-  return { ...org, ...tenantData }
+  const [tenantData, botLogins] = await Promise.all([
+    getTenantData(org.id as OrganizationId),
+    getBotLogins(org.id as OrganizationId),
+  ])
+  return { ...org, ...tenantData, botLogins }
 }

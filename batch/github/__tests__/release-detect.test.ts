@@ -16,6 +16,7 @@ const basePr: ShapedGitHubPullRequest = {
   body: null,
   url: '',
   author: 'author1',
+  authorIsBot: false,
   assignees: [],
   reviewers: [],
   draft: false,

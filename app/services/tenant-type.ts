@@ -28,6 +28,7 @@ export interface CompanyGithubUsers {
   createdAt: Generated<string>;
   displayName: string;
   isActive: 0 | 1;
+  lastActivityAt: string | null;
   login: string;
   type: string | null;
   updatedAt: string;
@@ -70,7 +71,6 @@ export interface Integrations {
 
 export interface OrganizationSettings {
   createdAt: Generated<string>;
-  excludedUsers: Generated<string>;
   id: string;
   isActive: Generated<0 | 1>;
   language: Generated<"en" | "ja">;

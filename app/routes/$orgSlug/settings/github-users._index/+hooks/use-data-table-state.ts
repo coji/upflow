@@ -27,7 +27,7 @@ export const SortSchema = z.object({
     z
       .union([z.literal('asc'), z.literal('desc')])
       .optional()
-      .default('asc'),
+      .default('desc'),
   ),
 })
 
@@ -99,7 +99,7 @@ export function useDataTableState() {
       (prev) => {
         if (newSort.sort_by) {
           prev.set('sort_by', newSort.sort_by)
-          prev.set('sort_order', newSort.sort_order || 'asc')
+          prev.set('sort_order', newSort.sort_order || 'desc')
         } else {
           prev.delete('sort_by')
           prev.delete('sort_order')

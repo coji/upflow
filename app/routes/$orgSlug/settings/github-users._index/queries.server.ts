@@ -31,6 +31,7 @@ export const listFilteredGithubUsers = async ({
       'companyGithubUsers.displayName',
       'companyGithubUsers.type',
       'companyGithubUsers.isActive',
+      'companyGithubUsers.lastActivityAt',
       'companyGithubUsers.createdAt',
     ])
 
@@ -71,12 +72,22 @@ export const listFilteredGithubUsers = async ({
     displayName: 'companyGithubUsers.displayName',
     type: 'companyGithubUsers.type',
     isActive: 'companyGithubUsers.isActive',
+    lastActivityAt: 'companyGithubUsers.lastActivityAt',
     createdAt: 'companyGithubUsers.createdAt',
   }
-  const safeSortBy = sortFieldMap[sortBy ?? ''] ?? sortFieldMap.login
+  const safeSortBy = sortFieldMap[sortBy ?? ''] ?? sortFieldMap.lastActivityAt
+
+  // NULL を末尾に配置（lastActivityAt など nullable カラムのソート用）
+  let sortedQuery = query
+  if (safeSortBy === sortFieldMap.lastActivityAt) {
+    sortedQuery = sortedQuery.orderBy(
+      sql`${sql.ref(safeSortBy)} IS NULL`,
+      sortOrder === 'desc' ? 'asc' : 'desc',
+    )
+  }
 
   const [rows, countResult] = await Promise.all([
-    query
+    sortedQuery
       .orderBy(sql.ref(safeSortBy), sortOrder)
       .limit(pageSize)
       .offset((currentPage - 1) * pageSize)

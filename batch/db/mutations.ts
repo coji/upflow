@@ -225,6 +225,7 @@ export async function batchReplacePullRequestReviewers(
 export async function upsertCompanyGithubUsers(
   organizationId: OrganizationId,
   logins: string[],
+  botUsers?: Set<string>,
 ) {
   if (logins.length === 0) return
 
@@ -240,16 +241,59 @@ export async function upsertCompanyGithubUsers(
       uniqueLogins.map((login) => ({
         login,
         displayName: login,
+        type: botUsers?.has(login) ? 'Bot' : null,
         isActive: 0,
         updatedAt: now,
       })),
     )
-    .onConflict((oc) => oc.column('login').doNothing())
+    .onConflict((oc) =>
+      oc.column('login').doUpdateSet((eb) => ({
+        // API で bot と判定されたユーザーの type を自動設定（未設定の場合のみ）
+        type: eb.fn.coalesce(
+          eb.ref('companyGithubUsers.type'),
+          eb.ref('excluded.type'),
+        ),
+      })),
+    )
     .execute()
   logger.info(
     `upserted ${uniqueLogins.length} company github users.`,
     organizationId,
   )
+}
+
+function trackLatest(map: Map<string, string>, login: string, ts: string) {
+  const key = login.toLowerCase()
+  const current = map.get(key)
+  if (!current || ts > current) {
+    map.set(key, ts)
+  }
+}
+
+/**
+ * ユーザーごとの最終活動日時を更新する。
+ * 既存値より新しい場合のみ上書き。
+ */
+async function updateLastActivityAt(
+  organizationId: OrganizationId,
+  lastActivity: Map<string, string>,
+) {
+  if (lastActivity.size === 0) return
+  const tenantDb = getTenantDb(organizationId)
+
+  for (const [login, ts] of lastActivity) {
+    await tenantDb
+      .updateTable('companyGithubUsers')
+      .set({ lastActivityAt: ts })
+      .where('login', '=', login)
+      .where((eb) =>
+        eb.or([
+          eb('lastActivityAt', 'is', null),
+          eb('lastActivityAt', '<', ts),
+        ]),
+      )
+      .execute()
+  }
 }
 
 /**
@@ -262,6 +306,7 @@ export async function upsertAnalyzedData(
     pulls: Selectable<TenantDB.PullRequests>[]
     reviews: AnalyzedReview[]
     reviewers: AnalyzedReviewer[]
+    botUsers?: Set<string>
   },
 ) {
   // Auto-register discovered GitHub users
@@ -277,7 +322,22 @@ export async function upsertAnalyzedData(
       if (r.login) discoveredLogins.add(r.login)
     }
   }
-  await upsertCompanyGithubUsers(organizationId, [...discoveredLogins])
+  await upsertCompanyGithubUsers(
+    organizationId,
+    [...discoveredLogins],
+    data.botUsers,
+  )
+
+  // Update last activity timestamps
+  const lastActivity = new Map<string, string>()
+  for (const pr of data.pulls) {
+    if (pr.author) trackLatest(lastActivity, pr.author, pr.pullRequestCreatedAt)
+  }
+  for (const review of data.reviews) {
+    if (review.reviewer)
+      trackLatest(lastActivity, review.reviewer, review.submittedAt)
+  }
+  await updateLastActivityAt(organizationId, lastActivity)
 
   // Upsert pull requests
   logger.info('upsert started...', organizationId)

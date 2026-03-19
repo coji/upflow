@@ -25,13 +25,15 @@ interface AnalyzeResult {
   reviews: AnalyzedReview[]
   reviewers: AnalyzedReviewer[]
   reviewResponses: AnalyzedReviewResponse[]
+  botUsers: string[]
 }
 
 interface OrganizationData {
   organizationSetting: Pick<
     Selectable<TenantDB.OrganizationSettings>,
-    'releaseDetectionMethod' | 'releaseDetectionKey' | 'excludedUsers'
+    'releaseDetectionMethod' | 'releaseDetectionKey'
   >
+  botLogins: string[]
   repositories: Selectable<TenantDB.Repositories>[]
   exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
@@ -107,6 +109,7 @@ export async function analyzeAndFinalizeSteps(
   const allReviews: AnalyzedReview[] = []
   const allReviewers: AnalyzedReviewer[] = []
   const allReviewResponses: AnalyzedReviewResponse[] = []
+  const allBotUsers = new Set<string>()
   const sqliteBusyEvents: SqliteBusyEvent[] = []
 
   for (let i = 0; i < organization.repositories.length; i++) {
@@ -127,7 +130,7 @@ export async function analyzeAndFinalizeSteps(
               repo.releaseDetectionMethod ?? orgSetting.releaseDetectionMethod,
             releaseDetectionKey:
               repo.releaseDetectionKey ?? orgSetting.releaseDetectionKey,
-            excludedUsers: orgSetting.excludedUsers,
+            botLogins: organization.botLogins,
             filterPrNumbers: prNumbers ? [...prNumbers] : undefined,
           },
           {
@@ -140,6 +143,7 @@ export async function analyzeAndFinalizeSteps(
     allReviews.push(...result.reviews)
     allReviewers.push(...result.reviewers)
     allReviewResponses.push(...result.reviewResponses)
+    for (const login of result.botUsers) allBotUsers.add(login)
   }
 
   // Upsert
@@ -151,6 +155,7 @@ export async function analyzeAndFinalizeSteps(
           pulls: allPulls,
           reviews: allReviews,
           reviewers: allReviewers,
+          botUsers: allBotUsers,
         })
       })
     })

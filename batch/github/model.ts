@@ -20,6 +20,7 @@ export type ShapedGitHubPullRequest = {
   body: string | null
   url: GitHubPullRequest['html_url']
   author: NonNullable<GitHubPullRequest['user']>['login'] | null
+  authorIsBot: boolean
   assignees: string[]
   reviewers: { login: string; requestedAt: string | null }[]
   draft: boolean

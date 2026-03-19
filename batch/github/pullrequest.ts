@@ -31,9 +31,6 @@ import type {
   PullRequestLoaders,
 } from './types'
 
-// デフォルトで除外するユーザー (GitHub API で [bot] 接尾辞なしで記録されるbot)
-const DEFAULT_EXCLUDED_USERS = ['Copilot']
-
 /** PR に関連するアーティファクトの型 */
 interface PrArtifacts {
   commits: ShapedGitHubCommit[]
@@ -55,7 +52,7 @@ interface BuildConfig {
   repositoryId: string
   releaseDetectionMethod: string
   releaseDetectionKey: string
-  excludedUsers: string
+  botLogins: Set<string>
 }
 
 const nullOrDate = (dateStr?: Date | string | null) => {
@@ -82,7 +79,7 @@ async function loadPrArtifacts(
 function filterActors(
   artifacts: PrArtifacts,
   pr: ShapedGitHubPullRequest,
-  excludedUsers: string[],
+  botLogins: Set<string>,
 ): PrArtifacts {
   return {
     commits: artifacts.commits,
@@ -90,13 +87,13 @@ function filterActors(
       (r) =>
         !r.isBot &&
         r.user !== pr.author &&
-        !excludedUsers.includes(r.user ?? ''),
+        !botLogins.has((r.user ?? '').toLowerCase()),
     ),
     discussions: artifacts.discussions.filter(
       (d) =>
         !d.isBot &&
         d.user !== pr.author &&
-        !excludedUsers.includes(d.user ?? ''),
+        !botLogins.has((d.user ?? '').toLowerCase()),
     ),
   }
 }
@@ -188,13 +185,6 @@ export const buildPullRequests = async (
   loaders: PullRequestLoaders,
   filterPrNumbers?: Set<number>,
 ) => {
-  // カンマ区切りの除外ユーザーリストをパース
-  const customExcludedUsers = config.excludedUsers
-    .split(',')
-    .map((u) => u.trim())
-    .filter((u) => u.length > 0)
-  const excludedUsers = [...DEFAULT_EXCLUDED_USERS, ...customExcludedUsers]
-
   // リリース日ルックアップを事前構築
   // 注: filterPrNumbers に関係なく全 PR から構築する（リリースPR自体がフィルタ外でも必要）
   let branchReleaseLookup: Map<number, string> | null = null
@@ -216,6 +206,7 @@ export const buildPullRequests = async (
   const reviews: AnalyzedReview[] = []
   const reviewers: AnalyzedReviewer[] = []
   const reviewResponses: AnalyzedReviewResponse[] = []
+  const botUsers = new Set<string>()
 
   let processed = 0
   for (const pr of pullrequests) {
@@ -233,10 +224,19 @@ export const buildPullRequests = async (
       // 1. アーティファクト読み込み（I/O）
       const rawArtifacts = await loadPrArtifacts(pr, loaders)
 
-      // 2. アクター除外フィルタ（純粋関数）
-      const artifacts = filterActors(rawArtifacts, pr, excludedUsers)
+      // 2. bot ユーザーを収集（GitHub API の __typename === 'Bot'）
+      if (pr.authorIsBot && pr.author) botUsers.add(pr.author.toLowerCase())
+      for (const r of rawArtifacts.reviews) {
+        if (r.isBot && r.user) botUsers.add(r.user.toLowerCase())
+      }
+      for (const d of rawArtifacts.discussions) {
+        if (d.isBot && d.user) botUsers.add(d.user.toLowerCase())
+      }
 
-      // 3. レビューレスポンス解析
+      // 3. アクター除外フィルタ（純粋関数）
+      const artifacts = filterActors(rawArtifacts, pr, config.botLogins)
+
+      // 4. レビューレスポンス解析
       reviewResponses.push(
         ...analyzeReviewResponse(artifacts.discussions).map((res) => ({
           repo: String(pr.repo),
@@ -247,10 +247,10 @@ export const buildPullRequests = async (
         })),
       )
 
-      // 4. 日時計算（純粋関数）
+      // 5. 日時計算（純粋関数）
       const dates = computeDates(pr, artifacts)
 
-      // 5. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
+      // 6. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
       let releasedAt: string | null = null
       if (pr.mergedAt) {
         if (branchReleaseLookup) {
@@ -260,12 +260,12 @@ export const buildPullRequests = async (
         }
       }
 
-      // 6. PR 行データ生成（純粋関数）
+      // 7. PR 行データ生成（純粋関数）
       pulls.push(
         buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
       )
 
-      // 7. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）
+      // 8. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）
       for (const review of rawArtifacts.reviews) {
         if (!review.user || !review.submittedAt || review.state === 'PENDING')
           continue
@@ -280,7 +280,7 @@ export const buildPullRequests = async (
         })
       }
 
-      // 8. レビュアー（レビュー依頼先）情報を収集
+      // 9. レビュアー（レビュー依頼先）情報を収集
       //    timeline_items から requestedAt を補完する
       //    reviewer が 0 人でも push して、removed された reviewer の DB レコードを削除させる
       const prReviewers = pr.reviewers ?? []
@@ -307,5 +307,5 @@ export const buildPullRequests = async (
     }
   }
 
-  return { pulls, reviews, reviewers, reviewResponses }
+  return { pulls, reviews, reviewers, reviewResponses, botUsers }
 }

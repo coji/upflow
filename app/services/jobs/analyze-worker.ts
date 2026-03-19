@@ -17,7 +17,7 @@ interface WorkerInput {
   repositoryId: string
   releaseDetectionMethod: string
   releaseDetectionKey: string
-  excludedUsers: string
+  botLogins: string[]
   filterPrNumbers?: number[]
 }
 
@@ -47,11 +47,14 @@ const result: Awaited<ReturnType<typeof buildPullRequests>> =
       repositoryId: input.repositoryId,
       releaseDetectionMethod: input.releaseDetectionMethod,
       releaseDetectionKey: input.releaseDetectionKey,
-      excludedUsers: input.excludedUsers,
+      botLogins: new Set(input.botLogins),
     },
     await store.loader.pullrequests(),
     store.loader,
     input.filterPrNumbers ? new Set(input.filterPrNumbers) : undefined,
   )
 
-parentPort?.postMessage(result)
+parentPort?.postMessage({
+  ...result,
+  botUsers: [...result.botUsers],
+})

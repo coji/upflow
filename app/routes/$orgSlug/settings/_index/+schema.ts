@@ -11,7 +11,6 @@ export const organizationSettingsSchema = z.object({
     .literal('on')
     .optional()
     .transform((val) => (val === 'on' ? 1 : 0)),
-  excludedUsers: z.string().max(2000).default(''),
   timezone: z.string().refine((v) => VALID_TIMEZONES.has(v), {
     message: 'Invalid timezone',
   }),

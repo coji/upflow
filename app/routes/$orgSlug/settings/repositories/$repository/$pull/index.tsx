@@ -11,6 +11,7 @@ import {
   upsertPullRequestReview,
   upsertPullRequestReviewers,
 } from '~/batch/db/mutations'
+import { getBotLogins } from '~/batch/db/queries'
 import { createFetcher } from '~/batch/github/fetcher'
 import type { ShapedGitHubPullRequest } from '~/batch/github/model'
 import { buildPullRequests } from '~/batch/github/pullrequest'
@@ -161,15 +162,18 @@ export const action = async ({
         timelineItems,
       })
 
-      // 4. Get organization settings for build config
-      const settings = await getOrganizationSettings(organization.id)
+      // 4. Get organization settings and bot logins for build config
+      const [settings, botLoginsList] = await Promise.all([
+        getOrganizationSettings(organization.id),
+        getBotLogins(organization.id),
+      ])
 
       // 5. Build pull request data (analyze)
       const result = await buildPullRequests(
         {
           organizationId: organization.id,
           repositoryId,
-          excludedUsers: settings?.excludedUsers ?? '',
+          botLogins: new Set(botLoginsList),
           releaseDetectionMethod: settings?.releaseDetectionMethod ?? 'branch',
           releaseDetectionKey: settings?.releaseDetectionKey ?? '',
         },

@@ -149,18 +149,18 @@ export function createColumns(timezone: string): ColumnDef<GithubUserRow>[] {
       ),
     },
     {
-      accessorKey: 'createdAt',
+      accessorKey: 'lastActivityAt',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Created" />
+        <DataTableColumnHeader column={column} title="Last Activity" />
       ),
-      cell: ({ row }) => (
-        <div className="text-muted-foreground text-nowrap">
-          {dayjs
-            .utc(row.getValue('createdAt'))
-            .tz(timezone)
-            .format('YYYY-MM-DD')}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const value = row.getValue<string | null>('lastActivityAt')
+        return (
+          <div className="text-muted-foreground text-nowrap">
+            {value ? dayjs.utc(value).tz(timezone).fromNow() : '-'}
+          </div>
+        )
+      },
     },
     {
       id: 'actions',

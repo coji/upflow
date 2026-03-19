@@ -40,7 +40,6 @@ export const OrganizationSettings = ({
     releaseDetectionMethod: string
     releaseDetectionKey: string
     isActive: number
-    excludedUsers: string
     timezone: string
     language: string
   }
@@ -60,7 +59,6 @@ export const OrganizationSettings = ({
       releaseDetectionMethod: organizationSetting?.releaseDetectionMethod,
       releaseDetectionKey: organizationSetting?.releaseDetectionKey,
       isActive: organizationSetting?.isActive ? '1' : undefined,
-      excludedUsers: organizationSetting?.excludedUsers,
       timezone: organizationSetting?.timezone ?? DEFAULT_TIMEZONE,
       language: organizationSetting?.language,
     },
@@ -171,21 +169,6 @@ export const OrganizationSettings = ({
             />
           </HStack>
           <div className="text-destructive">{fields.isActive.errors}</div>
-        </fieldset>
-
-        <fieldset className="space-y-1">
-          <Label htmlFor={fields.excludedUsers.id}>
-            Excluded Users (comma separated)
-          </Label>
-          <Input
-            {...getInputProps(fields.excludedUsers, { type: 'text' })}
-            placeholder="e.g. my-org-bot, some-other-bot"
-          />
-          <p className="text-muted-foreground text-sm">
-            Copilot is excluded by default. Add additional usernames to exclude
-            from cycle time calculations.
-          </p>
-          <div className="text-destructive">{fields.excludedUsers.errors}</div>
         </fieldset>
 
         {form.errors && (

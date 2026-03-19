@@ -87,6 +87,7 @@ const makePr = (number: number): ShapedGitHubPullRequest => ({
   body: null,
   url: `https://github.com/test-owner/test-repo/pull/${number}`,
   author: 'user1',
+  authorIsBot: false,
   assignees: [],
   reviewers: [{ login: 'reviewer1', requestedAt: '2024-01-01T06:00:00Z' }],
   draft: false,
