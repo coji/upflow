@@ -264,7 +264,8 @@ export async function upsertCompanyGithubUsers(
 
 function trackLatest(map: Map<string, string>, login: string, ts: string) {
   const key = login.toLowerCase()
-  if (!map.has(key) || ts > (map.get(key) ?? '')) {
+  const current = map.get(key)
+  if (!current || ts > current) {
     map.set(key, ts)
   }
 }
