@@ -246,7 +246,15 @@ export async function upsertCompanyGithubUsers(
         updatedAt: now,
       })),
     )
-    .onConflict((oc) => oc.column('login').doNothing())
+    .onConflict((oc) =>
+      oc.column('login').doUpdateSet((eb) => ({
+        // API で bot と判定されたユーザーの type を自動設定（未設定の場合のみ）
+        type: eb.fn.coalesce(
+          eb.ref('companyGithubUsers.type'),
+          eb.ref('excluded.type'),
+        ),
+      })),
+    )
     .execute()
   logger.info(
     `upserted ${uniqueLogins.length} company github users.`,
