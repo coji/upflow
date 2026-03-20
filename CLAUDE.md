@@ -221,12 +221,14 @@ All org-scoped routes live under `app/routes/$orgSlug/`. Key rules:
 
 - **Auth guard first**: Call `requireOrgMember` or `requireOrgAdmin` BEFORE `parseWithZod(request.formData())` — unauthenticated users must not receive validation errors
 - **No user-controlled IDs in conflict keys**: `onConflict` must use server-derived keys (e.g. `organizationId`), never IDs from form hidden inputs
-- **Mutation functions must scope to org**: Every UPDATE/DELETE on org-scoped tables must include `WHERE organizationId = ?` with a server-derived value
+- **Mutation functions must scope to org**: Every UPDATE/DELETE on shared DB org-scoped tables must include `WHERE organizationId = ?` with a server-derived value
 - **Route-layer ownership check for child resources**: When operating on a resource by ID (repository, member), verify `resource.organizationId === organization.id` before any mutation
 
-Org-scoped tables (have `organizationId` column): `companyGithubUsers`, `exportSettings`, `integrations`, `invitations`, `members`, `organizationSettings`, `repositories`, `teams`
+Shared DB org-scoped tables (have `organizationId` column): `members`, `invitations`
 
-**Org scoping in queries**: There is no automatic plugin for org scoping. Every UPDATE/DELETE on org-scoped tables must manually include `WHERE organizationId = ?` with a server-derived value. Tenant-specific data lives in per-org SQLite databases accessed via `getTenantDb(organizationId)`.
+Tenant DB tables (per-org SQLite, scoped by DB file): `companyGithubUsers`, `exportSettings`, `integrations`, `organizationSettings`, `repositories`, `teams`
+
+**Org scoping in queries**: Shared DB の org-scoped tables は `WHERE organizationId = ?` を手動で含めること。Tenant DB のテーブルは `getTenantDb(organizationId)` で取得した DB 自体が org スコープなので、クエリに `organizationId` 条件は不要。
 
 ### Source Code Reference
 

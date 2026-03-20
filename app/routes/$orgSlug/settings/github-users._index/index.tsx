@@ -177,10 +177,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       if (matched === 'confirm-update-type') {
         return data({ shouldConfirm: true })
       }
-      await updateGithubUserType({
-        ...parsed.data,
-        organizationId: organization.id,
-      })
+      try {
+        await updateGithubUserType({
+          ...parsed.data,
+          organizationId: organization.id,
+        })
+      } catch (e) {
+        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+      }
       return data({ ok: true })
     })
     .with('confirm-toggle-active', 'toggle-active', async (matched) => {
