@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
@@ -75,19 +76,39 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(submission.value)
     .with({ intent: 'add' }, async ({ name, displayOrder }) => {
-      await addTeam({ name, displayOrder, organizationId: organization.id })
+      try {
+        await addTeam({ name, displayOrder, organizationId: organization.id })
+      } catch (e) {
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+          },
+          { status: 400 },
+        )
+      }
       return data({ ok: true })
     })
     .with(
       { intent: 'update' },
       async ({ id, name, displayOrder, personalLimit }) => {
-        await updateTeam({
-          id,
-          name,
-          displayOrder,
-          personalLimit,
-          organizationId: organization.id,
-        })
+        try {
+          await updateTeam({
+            id,
+            name,
+            displayOrder,
+            personalLimit,
+            organizationId: organization.id,
+          })
+        } catch (e) {
+          return data(
+            {
+              lastResult: submission.reply({
+                formErrors: [getErrorMessage(e)],
+              }),
+            },
+            { status: 400 },
+          )
+        }
         return data({ ok: true })
       },
     )
@@ -100,7 +121,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
-            lastResult: submission.reply({ formErrors: [String(e)] }),
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },

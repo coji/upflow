@@ -5,6 +5,7 @@ import { dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
@@ -171,19 +172,37 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(submission.value)
     .with({ intent: 'add' }, async ({ login, displayName }) => {
-      await addGithubUser({
-        login,
-        displayName,
-        organizationId: organization.id,
-      })
+      try {
+        await addGithubUser({
+          login,
+          displayName,
+          organizationId: organization.id,
+        })
+      } catch (e) {
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+          },
+          { status: 400 },
+        )
+      }
       return data({ ok: true })
     })
     .with({ intent: 'update' }, async ({ login, displayName }) => {
-      await updateGithubUser({
-        login,
-        displayName,
-        organizationId: organization.id,
-      })
+      try {
+        await updateGithubUser({
+          login,
+          displayName,
+          organizationId: organization.id,
+        })
+      } catch (e) {
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+          },
+          { status: 400 },
+        )
+      }
       return data({ ok: true })
     })
     .with({ intent: 'confirm-delete' }, () => {
@@ -195,7 +214,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
-            lastResult: submission.reply({ formErrors: [String(e)] }),
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },
@@ -216,7 +235,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
-            lastResult: submission.reply({ formErrors: [String(e)] }),
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },
@@ -243,7 +262,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
-            lastResult: submission.reply({ formErrors: [String(e)] }),
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },

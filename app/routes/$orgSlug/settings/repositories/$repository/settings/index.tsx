@@ -31,6 +31,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../../../+components/content-section'
 import { getRepository } from '../queries.server'
@@ -128,7 +129,7 @@ export const action = async ({
       } catch (e) {
         return data(
           {
-            lastResult: submission.reply({ formErrors: [String(e)] }),
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },

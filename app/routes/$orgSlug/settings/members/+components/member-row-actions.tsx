@@ -130,10 +130,13 @@ function ChangeRoleDialog({
     }
   }, [fetcher.state, fetcher.data, onOpenChange])
 
-  // Reset form when dialog opens
+  // Reset form and fetcher when dialog opens
   useEffect(() => {
-    if (open) form.reset()
-  }, [open, form])
+    if (open) {
+      form.reset()
+      fetcher.reset()
+    }
+  }, [open, form, fetcher])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,8 +152,8 @@ function ChangeRoleDialog({
               <div>{`Change the role of ${member.name}.`}</div>
             </DialogDescription>
           </DialogHeader>
-          {form.errors && (
-            <p className="text-destructive text-sm">{form.errors}</p>
+          {form.errors && form.errors.length > 0 && (
+            <p className="text-destructive text-sm">{form.errors.join(', ')}</p>
           )}
           <input
             {...getInputProps(fields.intent, { type: 'hidden' })}

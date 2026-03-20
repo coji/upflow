@@ -18,6 +18,7 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { requireSuperAdmin } from '~/app/libs/auth.server'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { createOrganization } from './+create/mutations.server'
 import type { Route } from './+types/create'
 
@@ -50,7 +51,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   } catch (e) {
     return {
       lastResult: submission.reply({
-        formErrors: [`Failed to create organization: ${String(e)}`],
+        formErrors: [`Failed to create organization: ${getErrorMessage(e)}`],
       }),
     }
   }

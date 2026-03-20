@@ -4,6 +4,7 @@ import { data, href } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { createColumns } from './+components/members-columns'
@@ -96,7 +97,9 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         await changeMemberRole(memberId, organization.id, role, membership.id)
       } catch (e) {
         return data(
-          { lastResult: submission.reply({ formErrors: [String(e)] }) },
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+          },
           { status: 400 },
         )
       }
@@ -111,7 +114,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
-            lastResult: submission.reply({ formErrors: [String(e)] }),
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },

@@ -195,19 +195,23 @@ export const action = async ({ request }: Route.ActionArgs) => {
 ConfirmDialog 連携（サーバー駆動型 confirm → execute フロー）:
 
 ```typescript
+import { getErrorMessage } from '~/app/libs/error-message'
+
 // confirm-* intent: ダイアログを開く
 .with({ intent: 'confirm-delete' }, () => data({ shouldConfirm: true }))
 // delete intent: 実行し、エラー時は submission.reply() で返す
 .with({ intent: 'delete' }, async ({ id }) => {
   try { await deleteItem(id) } catch (e) {
     return data(
-      { lastResult: submission.reply({ formErrors: [String(e)] }), shouldConfirm: true },
+      { lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }), shouldConfirm: true },
       { status: 400 },
     )
   }
   return data({ ok: true })
 })
 ```
+
+エラーメッセージの抽出には `getErrorMessage()` (`app/libs/error-message.ts`) を使う。`String(e)` は `Error` インスタンスで `[object Error]` になるため使わない。
 
 ### UI Spacing Rules
 

@@ -47,6 +47,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
 
   const open = fetcher.data?.shouldConfirm === true
   const isSubmitting = fetcher.state !== 'idle'
+  const formErrors = fetcher.data?.lastResult?.error?.['']
 
   return (
     <AlertDialog
@@ -62,10 +63,8 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
             <div>{desc}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {fetcher.data?.lastResult?.error?.[''] && (
-          <p className="text-destructive text-sm">
-            {fetcher.data.lastResult.error[''].join(', ')}
-          </p>
+        {formErrors && formErrors.length > 0 && (
+          <p className="text-destructive text-sm">{formErrors.join(', ')}</p>
         )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isSubmitting}>
