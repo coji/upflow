@@ -5,7 +5,7 @@ interface ContentSectionProps {
   title: string
   desc: string
   fullWidth?: boolean
-  children: React.JSX.Element
+  children: React.ReactNode
 }
 
 export default function ContentSection({

@@ -6,10 +6,19 @@ import {
   useForm,
 } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Form, Link, data, href, redirect, useNavigation } from 'react-router'
+import {
+  Form,
+  Link,
+  data,
+  href,
+  redirect,
+  useFetcher,
+  useNavigation,
+} from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { AppProviderBadge } from '~/app/components'
+import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import {
   Button,
   Input,
@@ -25,7 +34,10 @@ import {
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../../../+components/content-section'
 import { getRepository } from '../queries.server'
-import { updateRepository } from './+functions/mutations.server'
+import {
+  deleteRepository,
+  updateRepository,
+} from './+functions/mutations.server'
 import { getIntegration } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
@@ -75,16 +87,37 @@ export const action = async ({
     throw new Response('repository not found', { status: 404 })
   }
   const formData = await request.formData()
-  const submission = parseWithZod(formData, { schema: githubSchema })
-  if (submission.status !== 'success') {
-    return data(submission.reply(), { status: 400 })
-  }
+  const intent = String(formData.get('intent'))
 
-  await updateRepository(organization.id, repositoryId, submission.value)
-
-  return redirect(
-    href('/:orgSlug/settings/repositories', { orgSlug: organization.slug }),
-  )
+  return match(intent)
+    .with('update', async () => {
+      const submission = parseWithZod(formData, { schema: githubSchema })
+      if (submission.status !== 'success') {
+        return data(submission.reply(), { status: 400 })
+      }
+      await updateRepository(organization.id, repositoryId, submission.value)
+      return redirect(
+        href('/:orgSlug/settings/repositories', {
+          orgSlug: organization.slug,
+        }),
+      )
+    })
+    .with('confirm-delete', () => {
+      return data({ shouldConfirm: true })
+    })
+    .with('delete', async () => {
+      try {
+        await deleteRepository(organization.id, repositoryId)
+      } catch (e) {
+        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+      }
+      return redirect(
+        href('/:orgSlug/settings/repositories', {
+          orgSlug: organization.slug,
+        }),
+      )
+    })
+    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
 }
 
 const GithubRepositoryForm = ({
@@ -110,6 +143,7 @@ const GithubRepositoryForm = ({
         <fieldset className="space-y-1">
           <AppProviderBadge provider="github" />
           <input type="hidden" name="provider" value="github" />
+          <input type="hidden" name="intent" value="update" />
         </fieldset>
 
         <fieldset className="space-y-1">
@@ -172,6 +206,39 @@ const GithubRepositoryForm = ({
   )
 }
 
+function DangerZone({
+  repository,
+}: {
+  repository: { owner: string; repo: string }
+}) {
+  const deleteFetcher = useFetcher()
+
+  return (
+    <ContentSection
+      title="Danger Zone"
+      desc="Irreversible actions for this repository."
+    >
+      <Button
+        variant="destructive"
+        onClick={() => {
+          deleteFetcher.submit({ intent: 'confirm-delete' }, { method: 'post' })
+        }}
+      >
+        Delete Repository
+      </Button>
+      <ConfirmDialog
+        title="Delete Repository"
+        desc={`Are you sure you want to delete ${repository.owner}/${repository.repo}? This action cannot be undone.`}
+        confirmText="Delete"
+        destructive
+        fetcher={deleteFetcher}
+      >
+        <input type="hidden" name="intent" value="delete" />
+      </ConfirmDialog>
+    </ContentSection>
+  )
+}
+
 export default function EditRepositoryPage({
   loaderData: { organization, repository, provider },
 }: Route.ComponentProps) {
@@ -185,8 +252,15 @@ export default function EditRepositoryPage({
     .otherwise(() => <></>)
 
   return (
-    <ContentSection title="Edit Repository" desc="Update repository settings.">
-      {form}
-    </ContentSection>
+    <Stack gap="6">
+      <ContentSection
+        title="Edit Repository"
+        desc="Update repository settings."
+      >
+        {form}
+      </ContentSection>
+
+      <DangerZone repository={repository} />
+    </Stack>
   )
 }

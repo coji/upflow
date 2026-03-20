@@ -94,17 +94,20 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return data({ ok: true })
     })
-    .with('removeMember', async () => {
+    .with('confirm-removeMember', 'removeMember', async (matched) => {
       const parsed = removeMemberSchema.safeParse({
         memberId: formData.get('memberId'),
       })
       if (!parsed.success) {
         return data({ error: 'Invalid input' }, { status: 400 })
       }
+      if (matched === 'confirm-removeMember') {
+        return data({ shouldConfirm: true })
+      }
       try {
         await removeMember(parsed.data.memberId, organization.id, membership.id)
       } catch (e) {
-        return data({ error: String(e) }, { status: 400 })
+        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
       }
       return data({ ok: true })
     })

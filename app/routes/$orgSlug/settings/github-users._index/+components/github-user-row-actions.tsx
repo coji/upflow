@@ -5,7 +5,6 @@ import {
   MoreHorizontalIcon,
   TrashIcon,
 } from 'lucide-react'
-import { useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { Button } from '~/app/components/ui/button'
@@ -27,8 +26,6 @@ export function GithubUserRowActions({
   isSelf: boolean
 }) {
   const user = row.original
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [revokeOpen, setRevokeOpen] = useState(false)
   const deleteFetcher = useFetcher()
   const toggleFetcher = useFetcher()
 
@@ -54,7 +51,16 @@ export function GithubUserRowActions({
           <DropdownMenuSeparator />
           {user.isActive ? (
             <DropdownMenuItem
-              onClick={() => setRevokeOpen(true)}
+              onClick={() => {
+                toggleFetcher.submit(
+                  {
+                    intent: 'confirm-toggle-active',
+                    login: user.login,
+                    isActive: '0',
+                  },
+                  { method: 'post' },
+                )
+              }}
               disabled={isSelf}
             >
               <LogOutIcon className="mr-2 h-4 w-4" />
@@ -68,7 +74,12 @@ export function GithubUserRowActions({
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => setDeleteOpen(true)}
+            onClick={() => {
+              deleteFetcher.submit(
+                { intent: 'confirm-delete', login: user.login },
+                { method: 'post' },
+              )
+            }}
             className="text-destructive"
             disabled={isSelf}
           >
@@ -79,8 +90,6 @@ export function GithubUserRowActions({
       </DropdownMenu>
 
       <ConfirmDialog
-        open={revokeOpen}
-        onOpenChange={setRevokeOpen}
         title="Revoke Login"
         desc={`Are you sure you want to revoke login for ${user.login}? They will be logged out immediately and won't be able to log in again until re-allowed.`}
         confirmText="Revoke"
@@ -93,8 +102,6 @@ export function GithubUserRowActions({
       </ConfirmDialog>
 
       <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
         title="Delete GitHub User"
         desc={`Are you sure you want to delete ${user.login}?`}
         confirmText="Delete"
