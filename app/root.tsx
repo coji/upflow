@@ -13,6 +13,7 @@ import { getToast } from 'remix-toast'
 import { toast } from 'sonner'
 import { match } from 'ts-pattern'
 import { Toaster } from '~/app/components/ui'
+import { TooltipProvider } from '~/app/components/ui/tooltip'
 import type { Route } from './+types/root'
 import { AppLoadingProgress } from './components'
 import './styles/globals.css'
@@ -37,9 +38,11 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <Links />
       </head>
       <body>
-        <Toaster />
-        <AppLoadingProgress />
-        {children}
+        <TooltipProvider>
+          <Toaster />
+          <AppLoadingProgress />
+          {children}
+        </TooltipProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

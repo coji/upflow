@@ -189,6 +189,5 @@ describe('workload member queries', () => {
     expect(prs[1].number).toBe(2)
     expect(prs[0].closedAt).toBe('2026-03-12T03:00:00Z')
     expect(prs[1].closedAt).toBe('2026-03-13T03:00:00Z')
-    expect(prs[0].closedAt! < prs[1].closedAt!).toBe(true)
   })
 })

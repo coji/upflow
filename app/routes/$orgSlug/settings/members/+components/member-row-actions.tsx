@@ -119,7 +119,7 @@ function ChangeRoleDialog({
       <input type="hidden" name="memberId" value={member.id} />
       <input type="hidden" name="role" value={role} />
       <Select value={role} onValueChange={setRole}>
-        <SelectTrigger>
+        <SelectTrigger className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
