@@ -29,6 +29,7 @@ const BASE_FIELDS = {
   pull_request_created_at: field('UTF8'),
   first_reviewed_at: field('UTF8', true),
   merged_at: field('UTF8', true),
+  closed_at: field('UTF8', true),
   released_at: field('UTF8', true),
   coding_time: field('DOUBLE', true),
   pickup_time: field('DOUBLE', true),
