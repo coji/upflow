@@ -29,6 +29,7 @@ const BASE_FIELDS = {
   pull_request_created_at: field('UTF8'),
   first_reviewed_at: field('UTF8', true),
   merged_at: field('UTF8', true),
+  closed_at: field('UTF8', true),
   released_at: field('UTF8', true),
   coding_time: field('DOUBLE', true),
   pickup_time: field('DOUBLE', true),
@@ -43,6 +44,7 @@ const BASE_FIELDS = {
   corrected_complexity: field('UTF8', true),
   author_display_name: field('UTF8', true),
   author_is_active: field('BOOLEAN', true),
+  author_is_bot: field('BOOLEAN', true),
   team_name: field('UTF8', true),
   reviewers: field('UTF8'),
 }
@@ -64,6 +66,7 @@ function toParquetRow(row: ExportRow): Record<string, unknown> {
     ...row,
     author_is_active:
       row.author_is_active == null ? null : row.author_is_active === 1,
+    author_is_bot: row.author_is_bot == null ? null : row.author_is_bot === 1,
   }
 }
 

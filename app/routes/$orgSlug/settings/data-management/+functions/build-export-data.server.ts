@@ -14,6 +14,7 @@ export interface ExportRow {
   pull_request_created_at: string
   first_reviewed_at: string | null
   merged_at: string | null
+  closed_at: string | null
   released_at: string | null
   coding_time: number | null
   pickup_time: number | null
@@ -28,6 +29,7 @@ export interface ExportRow {
   corrected_complexity: string | null
   author_display_name: string | null
   author_is_active: number | null
+  author_is_bot: number | null
   team_name: string | null
   reviewers: string
   raw_pull_request?: string | null
@@ -43,7 +45,7 @@ SELECT
   pr.number, pr.title, pr.url, pr.state, pr.author,
   pr.source_branch, pr.target_branch,
   pr.first_committed_at, pr.pull_request_created_at,
-  pr.first_reviewed_at, pr.merged_at, pr.released_at,
+  pr.first_reviewed_at, pr.merged_at, pr.closed_at, pr.released_at,
   pr.coding_time, pr.pickup_time, pr.review_time,
   pr.deploy_time, pr.total_time,
   pr.additions, pr.deletions, pr.changed_files,
@@ -51,10 +53,12 @@ SELECT
   pf.corrected_complexity,
   gu.display_name AS author_display_name,
   gu.is_active AS author_is_active,
+  (CASE WHEN gu.type = 'Bot' THEN 1 ELSE 0 END) AS author_is_bot,
   t.name AS team_name,
   (SELECT json_group_array(json_object(
     'login', rv.reviewer,
     'display_name', COALESCE(rgu.display_name, rv.reviewer),
+    'is_bot', (CASE WHEN rgu.type = 'Bot' THEN 1 ELSE 0 END),
     'requested_at', prr.requested_at,
     'reviewed_at', rv.submitted_at,
     'state', rv.state

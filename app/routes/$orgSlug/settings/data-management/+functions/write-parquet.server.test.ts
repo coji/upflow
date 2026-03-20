@@ -19,6 +19,7 @@ function makeRow(overrides: Partial<ExportRow> = {}): ExportRow {
     pull_request_created_at: '2024-01-11T00:00:00Z',
     first_reviewed_at: '2024-01-12T00:00:00Z',
     merged_at: '2024-01-13T00:00:00Z',
+    closed_at: '2024-01-13T00:00:00Z',
     released_at: null,
     coding_time: 1.0,
     pickup_time: 1.0,
@@ -33,6 +34,7 @@ function makeRow(overrides: Partial<ExportRow> = {}): ExportRow {
     corrected_complexity: null,
     author_display_name: 'Alice',
     author_is_active: 1,
+    author_is_bot: 0,
     team_name: 'Backend',
     reviewers: JSON.stringify([
       {
@@ -128,6 +130,8 @@ describe('writeParquetFile', () => {
         complexity: null,
         author_display_name: null,
         author_is_active: null,
+        author_is_bot: null,
+        closed_at: null,
         team_name: null,
       }),
     ]
