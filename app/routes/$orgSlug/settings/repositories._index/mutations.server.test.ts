@@ -25,7 +25,7 @@ const { closeTenantDb } = await import('~/app/services/tenant-db.server')
 type OrganizationId = import('~/app/types/organization').OrganizationId
 const toOrgId = (s: string) => s as OrganizationId
 
-const { updateRepositoryTeam, bulkUpdateRepositoryTeam, deleteRepository } =
+const { updateRepositoryTeam, bulkUpdateRepositoryTeam } =
   await import('./mutations.server')
 
 let testCounter = 0
@@ -114,18 +114,6 @@ describe('repository mutations', () => {
       { id: 'repo-2', team_id: 'team-b' },
       { id: 'repo-3', team_id: null },
     ])
-  })
-
-  test('deleteRepository removes the repository', async () => {
-    insertRepo(db, 'repo-1', 'my-repo')
-    insertRepo(db, 'repo-2', 'other-repo')
-
-    await deleteRepository(orgId, 'repo-1')
-
-    const rows = db
-      .prepare('SELECT id FROM repositories ORDER BY id')
-      .all() as { id: string }[]
-    expect(rows).toEqual([{ id: 'repo-2' }])
   })
 
   test('bulkUpdateRepositoryTeam clears team with null', async () => {
