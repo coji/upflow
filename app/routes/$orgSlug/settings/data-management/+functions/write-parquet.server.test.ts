@@ -130,6 +130,8 @@ describe('writeParquetFile', () => {
         complexity: null,
         author_display_name: null,
         author_is_active: null,
+        author_is_bot: null,
+        closed_at: null,
         team_name: null,
       }),
     ]
