@@ -1,8 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLinkIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useFetcher } from 'react-router'
-import { toast as showToast } from 'sonner'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { EditableCell } from '~/app/components/editable-cell'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
@@ -45,25 +44,6 @@ function UserTypeSelect({
 }) {
   const fetcher = useFetcher()
   const [pendingType, setPendingType] = useState<string>(UNSET_VALUE)
-
-  // Show toast only when new fetcher data arrives with ok
-  const lastToastedData = useRef(fetcher.data)
-  useEffect(() => {
-    if (
-      fetcher.state === 'idle' &&
-      fetcher.data?.ok === true &&
-      fetcher.data !== lastToastedData.current
-    ) {
-      lastToastedData.current = fetcher.data
-      const typeLabel =
-        pendingType === 'Bot'
-          ? 'Bot'
-          : pendingType === 'User'
-            ? 'User'
-            : '未設定'
-      showToast.success(`${login} のタイプを ${typeLabel} に変更しました`)
-    }
-  }, [fetcher.state, fetcher.data, login, pendingType])
 
   return (
     <>

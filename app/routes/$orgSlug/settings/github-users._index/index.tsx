@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { data, href } from 'react-router'
+import { dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
@@ -185,7 +186,16 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data({ error: String(e), shouldConfirm: true }, { status: 400 })
       }
-      return data({ ok: true })
+      const typeLabel =
+        parsed.data.type === 'Bot'
+          ? 'Bot'
+          : parsed.data.type === 'User'
+            ? 'User'
+            : '未設定'
+      return dataWithSuccess(
+        { ok: true },
+        `${parsed.data.login} のタイプを ${typeLabel} に変更しました`,
+      )
     })
     .with('confirm-toggle-active', 'toggle-active', async (matched) => {
       const parsed = toggleActiveSchema.safeParse({
