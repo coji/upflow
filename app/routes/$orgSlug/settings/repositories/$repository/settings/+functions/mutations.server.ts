@@ -7,10 +7,14 @@ export const deleteRepository = async (
   repositoryId: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  await tenantDb
+  const result = await tenantDb
     .deleteFrom('repositories')
     .where('id', '=', repositoryId)
-    .execute()
+    .executeTakeFirst()
+
+  if (Number(result.numDeletedRows ?? 0) !== 1) {
+    throw new Error('Repository not found')
+  }
 }
 
 export const updateRepository = (

@@ -87,7 +87,11 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       if (matched === 'confirm-delete') {
         return data({ shouldConfirm: true })
       }
-      await deleteTeam(organization.id, parsed.data.id)
+      try {
+        await deleteTeam(organization.id, parsed.data.id)
+      } catch (e) {
+        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+      }
       return data({ ok: true })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
