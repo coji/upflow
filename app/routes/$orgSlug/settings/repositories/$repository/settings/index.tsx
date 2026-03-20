@@ -87,7 +87,7 @@ export const action = async ({
     throw new Response('repository not found', { status: 404 })
   }
   const formData = await request.formData()
-  const intent = String(formData.get('intent') ?? 'update')
+  const intent = String(formData.get('intent'))
 
   return match(intent)
     .with('update', async () => {
