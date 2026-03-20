@@ -173,7 +173,7 @@ const GithubRepositoryForm = ({
 }
 
 export default function EditRepositoryPage({
-  loaderData: { organization, repository, provider },
+  loaderData: { organization, repositoryId, repository, provider },
 }: Route.ComponentProps) {
   const form = match(provider)
     .with('github', () => (
@@ -185,8 +185,29 @@ export default function EditRepositoryPage({
     .otherwise(() => <></>)
 
   return (
-    <ContentSection title="Edit Repository" desc="Update repository settings.">
-      {form}
-    </ContentSection>
+    <Stack gap="6">
+      <ContentSection
+        title="Edit Repository"
+        desc="Update repository settings."
+      >
+        {form}
+      </ContentSection>
+
+      <ContentSection
+        title="Danger Zone"
+        desc="Irreversible actions for this repository."
+      >
+        <Button asChild variant="destructive">
+          <Link
+            to={href('/:orgSlug/settings/repositories/:repository/delete', {
+              orgSlug: organization.slug,
+              repository: repositoryId,
+            })}
+          >
+            Delete Repository
+          </Link>
+        </Button>
+      </ContentSection>
+    </Stack>
   )
 }
