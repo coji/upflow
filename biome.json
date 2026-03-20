@@ -4,6 +4,7 @@
   "files": {
     "includes": [
       "**",
+      "!app/components/ui",
       "!app/styles/globals.css",
       "!lab",
       "!batch/github/graphql-env.d.ts",

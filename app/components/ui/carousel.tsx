@@ -1,5 +1,3 @@
-'use client'
-
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from 'embla-carousel-react'
@@ -118,7 +116,6 @@ function Carousel({
         canScrollNext,
       }}
     >
-      {/** biome-ignore lint/a11y/useSemanticElements: shadcn-ui issue */}
       <div
         onKeyDownCapture={handleKeyDown}
         className={cn('relative', className)}
@@ -158,7 +155,6 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   const { orientation } = useCarousel()
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: shadcn-ui issue
     <div
       role="group"
       aria-roledescription="slide"
