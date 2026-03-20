@@ -1,10 +1,17 @@
 import type { Row } from '@tanstack/react-table'
 import { MoreHorizontalIcon, TrashIcon, UserCogIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
-import { FormDialog } from '~/app/components/form-dialog'
 import { Button } from '~/app/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/app/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +38,6 @@ export function MemberRowActions({
 }) {
   const member = row.original
   const isSelf = member.id === currentMembershipId
-  const [deleteOpen, setDeleteOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const deleteFetcher = useFetcher()
   const roleFetcher = useFetcher()
@@ -53,7 +59,12 @@ export function MemberRowActions({
             Change Role {isSelf && '(You)'}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => setDeleteOpen(true)}
+            onClick={() => {
+              deleteFetcher.submit(
+                { intent: 'confirm-removeMember', memberId: member.id },
+                { method: 'post' },
+              )
+            }}
             className="text-destructive"
             disabled={isSelf}
           >
@@ -64,8 +75,6 @@ export function MemberRowActions({
       </DropdownMenu>
 
       <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
         title="Remove Member"
         desc={`Are you sure you want to remove ${member.name} from this organization?`}
         confirmText="Remove"
@@ -98,6 +107,7 @@ function ChangeRoleDialog({
   fetcher: ReturnType<typeof useFetcher>
 }) {
   const [role, setRole] = useState<string>(member.role)
+  const isSubmitting = fetcher.state !== 'idle'
 
   // Reset form state when dialog opens
   useEffect(() => {
@@ -106,28 +116,60 @@ function ChangeRoleDialog({
     }
   }, [open, member])
 
+  // Close on successful submission
+  const prevData = useRef(fetcher.data)
+  useEffect(() => {
+    if (
+      fetcher.state === 'idle' &&
+      fetcher.data != null &&
+      fetcher.data !== prevData.current
+    ) {
+      prevData.current = fetcher.data
+      const res = fetcher.data as Record<string, unknown>
+      if (!('error' in res)) {
+        onOpenChange(false)
+      }
+    }
+  }, [fetcher.state, fetcher.data, onOpenChange])
+
   return (
-    <FormDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Change Role"
-      desc={`Change the role of ${member.name}.`}
-      confirmText="Save"
-      fetcher={fetcher}
-    >
-      <input type="hidden" name="intent" value="changeRole" />
-      <input type="hidden" name="memberId" value={member.id} />
-      <input type="hidden" name="role" value={role} />
-      <Select value={role} onValueChange={setRole}>
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="owner">Owner</SelectItem>
-          <SelectItem value="admin">Admin</SelectItem>
-          <SelectItem value="member">Member</SelectItem>
-        </SelectContent>
-      </Select>
-    </FormDialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <fetcher.Form method="POST" className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>Change Role</DialogTitle>
+            <DialogDescription asChild>
+              <div>{`Change the role of ${member.name}.`}</div>
+            </DialogDescription>
+          </DialogHeader>
+          <input type="hidden" name="intent" value="changeRole" />
+          <input type="hidden" name="memberId" value={member.id} />
+          <input type="hidden" name="role" value={role} />
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="member">Member</SelectItem>
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={isSubmitting}>
+              Save
+            </Button>
+          </DialogFooter>
+        </fetcher.Form>
+      </DialogContent>
+    </Dialog>
   )
 }

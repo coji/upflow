@@ -15,6 +15,7 @@ import {
 import type { Route } from './+types/index'
 import {
   bulkUpdateRepositoryTeam,
+  deleteRepository,
   updateRepositoryTeam,
 } from './mutations.server'
 import { listFilteredRepositories } from './queries.server'
@@ -58,6 +59,10 @@ const updateTeamSchema = z.object({
   teamId: z.string().nullable(),
 })
 
+const deleteSchema = z.object({
+  repositoryId: z.string().min(1),
+})
+
 const bulkUpdateTeamSchema = z.object({
   repositoryIds: z.array(z.string().min(1)).min(1),
   teamId: z.string().nullable(),
@@ -97,6 +102,23 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         parsed.data.repositoryIds,
         parsed.data.teamId,
       )
+      return data({ ok: true })
+    })
+    .with('confirm-delete', 'delete', async (matched) => {
+      const parsed = deleteSchema.safeParse({
+        repositoryId: formData.get('repositoryId'),
+      })
+      if (!parsed.success) {
+        return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      if (matched === 'confirm-delete') {
+        return data({ shouldConfirm: true })
+      }
+      try {
+        await deleteRepository(organization.id, parsed.data.repositoryId)
+      } catch (e) {
+        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+      }
       return data({ ok: true })
     })
     .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))

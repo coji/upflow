@@ -1,6 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLinkIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
+import { toast as showToast } from 'sonner'
+import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { EditableCell } from '~/app/components/editable-cell'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Badge } from '~/app/components/ui/badge'
@@ -22,6 +25,17 @@ const USER_TYPES = [
   { value: 'Bot', label: 'Bot' },
 ] as const
 
+function getConfirmDesc(login: string, pendingType: string): string {
+  switch (pendingType) {
+    case 'Bot':
+      return `${login} を Bot に変更しますか？Bot はメトリクス集計から除外されます。`
+    case 'User':
+      return `${login} を User に変更しますか？`
+    default:
+      return `${login} のタイプ設定を解除しますか？`
+  }
+}
+
 function UserTypeSelect({
   login,
   type,
@@ -30,31 +44,75 @@ function UserTypeSelect({
   type: string | null
 }) {
   const fetcher = useFetcher()
+  const [pendingType, setPendingType] = useState<string>(UNSET_VALUE)
+
+  // Show toast only when new fetcher data arrives with ok
+  const lastToastedData = useRef(fetcher.data)
+  useEffect(() => {
+    if (
+      fetcher.state === 'idle' &&
+      fetcher.data?.ok === true &&
+      fetcher.data !== lastToastedData.current
+    ) {
+      lastToastedData.current = fetcher.data
+      const typeLabel =
+        pendingType === 'Bot'
+          ? 'Bot'
+          : pendingType === 'User'
+            ? 'User'
+            : '未設定'
+      showToast.success(`${login} のタイプを ${typeLabel} に変更しました`)
+    }
+  }, [fetcher.state, fetcher.data, login, pendingType])
 
   return (
-    <Select
-      value={type ?? UNSET_VALUE}
-      onValueChange={(value) => {
-        const formData = new FormData()
-        formData.set('intent', 'update-type')
-        formData.set('login', login)
-        formData.set('type', value === UNSET_VALUE ? '' : value)
-        fetcher.submit(formData, { method: 'post' })
-      }}
-      disabled={fetcher.state !== 'idle'}
-    >
-      <SelectTrigger className="h-8 w-24">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={UNSET_VALUE}>-</SelectItem>
-        {USER_TYPES.map((t) => (
-          <SelectItem key={t.value} value={t.value}>
-            {t.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <>
+      <Select
+        value={type ?? UNSET_VALUE}
+        onValueChange={(value) => {
+          if (value !== (type ?? UNSET_VALUE)) {
+            setPendingType(value)
+            fetcher.submit(
+              {
+                intent: 'confirm-update-type',
+                login,
+                type: value === UNSET_VALUE ? '' : value,
+              },
+              { method: 'post' },
+            )
+          }
+        }}
+        disabled={fetcher.state !== 'idle'}
+      >
+        <SelectTrigger className="h-8 w-24">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={UNSET_VALUE}>-</SelectItem>
+          {USER_TYPES.map((t) => (
+            <SelectItem key={t.value} value={t.value}>
+              {t.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <ConfirmDialog
+        title="ユーザータイプの変更"
+        desc={getConfirmDesc(login, pendingType)}
+        confirmText="変更"
+        destructive={pendingType === 'Bot'}
+        fetcher={fetcher}
+      >
+        <input type="hidden" name="intent" value="update-type" />
+        <input type="hidden" name="login" value={login} />
+        <input
+          type="hidden"
+          name="type"
+          value={pendingType === UNSET_VALUE ? '' : pendingType}
+        />
+      </ConfirmDialog>
+    </>
   )
 }
 

@@ -149,21 +149,24 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       })
       return data({ ok: true })
     })
-    .with('delete', async () => {
+    .with('confirm-delete', 'delete', async (matched) => {
       const parsed = deleteSchema.safeParse({
         login: formData.get('login'),
       })
       if (!parsed.success) {
         return data({ error: 'Invalid input' }, { status: 400 })
       }
+      if (matched === 'confirm-delete') {
+        return data({ shouldConfirm: true })
+      }
       try {
         await deleteGithubUser(parsed.data.login, organization.id, user.id)
       } catch (e) {
-        return data({ error: String(e) }, { status: 400 })
+        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
       }
       return data({ ok: true })
     })
-    .with('update-type', async () => {
+    .with('confirm-update-type', 'update-type', async (matched) => {
       const parsed = updateTypeSchema.safeParse({
         login: formData.get('login'),
         type: formData.get('type'),
@@ -171,19 +174,25 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       if (!parsed.success) {
         return data({ error: 'Invalid input' }, { status: 400 })
       }
+      if (matched === 'confirm-update-type') {
+        return data({ shouldConfirm: true })
+      }
       await updateGithubUserType({
         ...parsed.data,
         organizationId: organization.id,
       })
       return data({ ok: true })
     })
-    .with('toggle-active', async () => {
+    .with('confirm-toggle-active', 'toggle-active', async (matched) => {
       const parsed = toggleActiveSchema.safeParse({
         login: formData.get('login'),
         isActive: formData.get('isActive'),
       })
       if (!parsed.success) {
         return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      if (matched === 'confirm-toggle-active') {
+        return data({ shouldConfirm: true })
       }
       try {
         await toggleGithubUserActive({
@@ -192,7 +201,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           currentUserId: user.id,
         })
       } catch (e) {
-        return data({ error: String(e) }, { status: 400 })
+        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
       }
       return data({ ok: true })
     })

@@ -79,10 +79,13 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       await updateTeam({ ...parsed.data, organizationId: organization.id })
       return data({ ok: true })
     })
-    .with('delete', async () => {
+    .with('confirm-delete', 'delete', async (matched) => {
       const parsed = deleteSchema.safeParse({ id: formData.get('id') })
       if (!parsed.success) {
         return data({ error: 'Invalid input' }, { status: 400 })
+      }
+      if (matched === 'confirm-delete') {
+        return data({ shouldConfirm: true })
       }
       await deleteTeam(organization.id, parsed.data.id)
       return data({ ok: true })
@@ -133,7 +136,6 @@ function TeamRow({
 }) {
   const updateFetcher = useFetcher()
   const deleteFetcher = useFetcher()
-  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const submitUpdate = (
     fields: Partial<{
@@ -189,13 +191,16 @@ function TeamRow({
           type="button"
           size="sm"
           variant="ghost"
-          onClick={() => setDeleteOpen(true)}
+          onClick={() => {
+            deleteFetcher.submit(
+              { intent: 'confirm-delete', id: team.id },
+              { method: 'post' },
+            )
+          }}
         >
           <TrashIcon size={14} />
         </Button>
         <ConfirmDialog
-          open={deleteOpen}
-          onOpenChange={setDeleteOpen}
           title="Delete Team"
           desc={`Are you sure you want to delete "${team.name}"?`}
           confirmText="Delete"

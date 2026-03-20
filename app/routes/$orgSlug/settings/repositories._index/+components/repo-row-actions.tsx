@@ -5,7 +5,6 @@ import {
   SettingsIcon,
   TrashIcon,
 } from 'lucide-react'
-import { useState } from 'react'
 import { Link, href, useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { Button } from '~/app/components/ui/button'
@@ -27,7 +26,6 @@ export function RepoRowActions({
   orgSlug: string
 }) {
   const repo = row.original
-  const [deleteOpen, setDeleteOpen] = useState(false)
   const deleteFetcher = useFetcher()
 
   return (
@@ -66,7 +64,12 @@ export function RepoRowActions({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => setDeleteOpen(true)}
+            onClick={() => {
+              deleteFetcher.submit(
+                { intent: 'confirm-delete', repositoryId: repo.id },
+                { method: 'post' },
+              )
+            }}
             className="text-destructive"
           >
             <TrashIcon className="mr-2 h-4 w-4" />
@@ -76,18 +79,15 @@ export function RepoRowActions({
       </DropdownMenu>
 
       <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
         title="Delete Repository"
         desc={`Are you sure you want to delete ${repo.owner}/${repo.repo}? This action cannot be undone.`}
         confirmText="Delete"
         destructive
         fetcher={deleteFetcher}
-        action={href('/:orgSlug/settings/repositories/:repository/delete', {
-          orgSlug,
-          repository: repo.id,
-        })}
-      />
+      >
+        <input type="hidden" name="intent" value="delete" />
+        <input type="hidden" name="repositoryId" value={repo.id} />
+      </ConfirmDialog>
     </>
   )
 }

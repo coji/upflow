@@ -18,6 +18,17 @@ export const updateRepositoryTeam = async (
   }
 }
 
+export const deleteRepository = async (
+  organizationId: OrganizationId,
+  repositoryId: string,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  await tenantDb
+    .deleteFrom('repositories')
+    .where('id', '=', repositoryId)
+    .execute()
+}
+
 export const bulkUpdateRepositoryTeam = async (
   organizationId: OrganizationId,
   repositoryIds: string[],
