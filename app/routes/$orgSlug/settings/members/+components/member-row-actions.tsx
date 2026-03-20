@@ -142,6 +142,11 @@ function ChangeRoleDialog({
               <div>{`Change the role of ${member.name}.`}</div>
             </DialogDescription>
           </DialogHeader>
+          {(fetcher.data as { error?: string } | undefined)?.error && (
+            <p className="text-destructive text-sm">
+              {(fetcher.data as { error?: string }).error}
+            </p>
+          )}
           <input type="hidden" name="intent" value="changeRole" />
           <input type="hidden" name="memberId" value={member.id} />
           <input type="hidden" name="role" value={role} />
