@@ -218,28 +218,23 @@ function DangerZone({
       title="Danger Zone"
       desc="Irreversible actions for this repository."
     >
-      <>
-        <Button
-          variant="destructive"
-          onClick={() => {
-            deleteFetcher.submit(
-              { intent: 'confirm-delete' },
-              { method: 'post' },
-            )
-          }}
-        >
-          Delete Repository
-        </Button>
-        <ConfirmDialog
-          title="Delete Repository"
-          desc={`Are you sure you want to delete ${repository.owner}/${repository.repo}? This action cannot be undone.`}
-          confirmText="Delete"
-          destructive
-          fetcher={deleteFetcher}
-        >
-          <input type="hidden" name="intent" value="delete" />
-        </ConfirmDialog>
-      </>
+      <Button
+        variant="destructive"
+        onClick={() => {
+          deleteFetcher.submit({ intent: 'confirm-delete' }, { method: 'post' })
+        }}
+      >
+        Delete Repository
+      </Button>
+      <ConfirmDialog
+        title="Delete Repository"
+        desc={`Are you sure you want to delete ${repository.owner}/${repository.repo}? This action cannot be undone.`}
+        confirmText="Delete"
+        destructive
+        fetcher={deleteFetcher}
+      >
+        <input type="hidden" name="intent" value="delete" />
+      </ConfirmDialog>
     </ContentSection>
   )
 }
