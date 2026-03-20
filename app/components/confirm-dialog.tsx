@@ -10,14 +10,18 @@ import {
 } from '~/app/components/ui/alert-dialog'
 import { Button } from '~/app/components/ui/button'
 
+interface ConfirmDialogData {
+  shouldConfirm?: boolean
+  error?: string
+}
+
 interface ConfirmDialogProps {
   title: React.ReactNode
   desc: React.JSX.Element | string
   cancelBtnText?: string
   confirmText?: React.ReactNode
   destructive?: boolean
-  // biome-ignore lint/suspicious/noExplicitAny: fetcher data type varies
-  fetcher: FetcherWithComponents<any>
+  fetcher: FetcherWithComponents<ConfirmDialogData>
   action?: string
   children?: React.ReactNode
 }
