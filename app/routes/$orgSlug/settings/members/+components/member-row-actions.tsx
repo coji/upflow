@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/app/components/ui/select'
+import type { action } from '../index'
 import type { MemberRow } from '../queries.server'
 
 export function MemberRowActions({
@@ -40,7 +41,6 @@ export function MemberRowActions({
   const isSelf = member.id === currentMembershipId
   const [roleOpen, setRoleOpen] = useState(false)
   const deleteFetcher = useFetcher()
-  const roleFetcher = useFetcher()
 
   return (
     <>
@@ -89,7 +89,6 @@ export function MemberRowActions({
         open={roleOpen}
         onOpenChange={setRoleOpen}
         member={member}
-        fetcher={roleFetcher}
       />
     </>
   )
@@ -99,13 +98,12 @@ function ChangeRoleDialog({
   open,
   onOpenChange,
   member,
-  fetcher,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   member: MemberRow
-  fetcher: ReturnType<typeof useFetcher>
 }) {
+  const fetcher = useFetcher<typeof action>()
   const [role, setRole] = useState<string>(member.role)
   const isSubmitting = fetcher.state !== 'idle'
 
@@ -125,8 +123,7 @@ function ChangeRoleDialog({
       fetcher.data !== prevData.current
     ) {
       prevData.current = fetcher.data
-      const res = fetcher.data as Record<string, unknown>
-      if (!('error' in res)) {
+      if (!('error' in fetcher.data)) {
         onOpenChange(false)
       }
     }
@@ -142,9 +139,9 @@ function ChangeRoleDialog({
               <div>{`Change the role of ${member.name}.`}</div>
             </DialogDescription>
           </DialogHeader>
-          {(fetcher.data as { error?: string } | undefined)?.error && (
+          {'error' in (fetcher.data ?? {}) && (
             <p className="text-destructive text-sm">
-              {(fetcher.data as { error?: string }).error}
+              {(fetcher.data as { error: string }).error}
             </p>
           )}
           <input type="hidden" name="intent" value="changeRole" />
