@@ -1,3 +1,4 @@
+import { parseWithZod } from '@conform-to/zod/v4'
 import { useMemo } from 'react'
 import { data, href } from 'react-router'
 import { match } from 'ts-pattern'
@@ -59,59 +60,66 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   return { members, pagination, currentMembershipId: membership.id }
 }
 
-const changeRoleSchema = z.object({
+export const changeRoleSchema = z.object({
+  intent: z.literal('changeRole'),
   memberId: z.string().min(1),
   role: z.enum(['owner', 'admin', 'member']),
 })
 
-const removeMemberSchema = z.object({
+const confirmRemoveMemberSchema = z.object({
+  intent: z.literal('confirm-removeMember'),
   memberId: z.string().min(1),
 })
+
+const removeMemberSchema = z.object({
+  intent: z.literal('removeMember'),
+  memberId: z.string().min(1),
+})
+
+const actionSchema = z.discriminatedUnion('intent', [
+  changeRoleSchema,
+  confirmRemoveMemberSchema,
+  removeMemberSchema,
+])
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization, membership } = context.get(orgContext)
   const formData = await request.formData()
-  const intent = String(formData.get('intent'))
+  const submission = parseWithZod(formData, { schema: actionSchema })
+  if (submission.status !== 'success') {
+    return data({ lastResult: submission.reply() }, { status: 400 })
+  }
 
-  return match(intent)
-    .with('changeRole', async () => {
-      const parsed = changeRoleSchema.safeParse({
-        memberId: formData.get('memberId'),
-        role: formData.get('role'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
+  return match(submission.value)
+    .with({ intent: 'changeRole' }, async ({ memberId, role }) => {
       try {
-        await changeMemberRole(
-          parsed.data.memberId,
-          organization.id,
-          parsed.data.role,
-          membership.id,
+        await changeMemberRole(memberId, organization.id, role, membership.id)
+      } catch (e) {
+        return data(
+          { lastResult: submission.reply({ formErrors: [String(e)] }) },
+          { status: 400 },
         )
-      } catch (e) {
-        return data({ error: String(e) }, { status: 400 })
       }
       return data({ ok: true })
     })
-    .with('confirm-removeMember', 'removeMember', async (matched) => {
-      const parsed = removeMemberSchema.safeParse({
-        memberId: formData.get('memberId'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      if (matched === 'confirm-removeMember') {
-        return data({ shouldConfirm: true })
-      }
+    .with({ intent: 'confirm-removeMember' }, () => {
+      return data({ shouldConfirm: true })
+    })
+    .with({ intent: 'removeMember' }, async ({ memberId }) => {
       try {
-        await removeMember(parsed.data.memberId, organization.id, membership.id)
+        await removeMember(memberId, organization.id, membership.id)
       } catch (e) {
-        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [String(e)] }),
+            shouldConfirm: true,
+          },
+          { status: 400 },
+        )
       }
       return data({ ok: true })
     })
-    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
+    .exhaustive()
 }
 
 export default function OrganizationMembersPage({

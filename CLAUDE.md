@@ -162,14 +162,51 @@ import { parseWithZod } from '@conform-to/zod/v4'
 import { zx } from '@coji/zodix/v4'
 ```
 
-Routes with multiple form actions use intent-based dispatch with `ts-pattern`:
+Routes with multiple form actions use discriminated union schema + `parseWithZod` + `ts-pattern`:
 
 ```typescript
-const { intent } = await zx.parseForm(formData, { intent: intentsSchema })
-return match(intent)
-  .with(INTENTS.save, () => saveAction(...))
-  .with(INTENTS.delete, () => deleteAction(...))
-  .exhaustive()
+const addSchema = z.object({
+  intent: z.literal('add'),
+  name: z.string().min(1),
+})
+const deleteSchema = z.object({
+  intent: z.literal('delete'),
+  id: z.string().min(1),
+})
+const actionSchema = z.discriminatedUnion('intent', [addSchema, deleteSchema])
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formData = await request.formData()
+  const submission = parseWithZod(formData, { schema: actionSchema })
+  if (submission.status !== 'success') {
+    return data({ lastResult: submission.reply() }, { status: 400 })
+  }
+  return match(submission.value)
+    .with({ intent: 'add' }, async ({ name }) => {
+      /* ... */
+    })
+    .with({ intent: 'delete' }, async ({ id }) => {
+      /* ... */
+    })
+    .exhaustive()
+}
+```
+
+ConfirmDialog 連携（サーバー駆動型 confirm → execute フロー）:
+
+```typescript
+// confirm-* intent: ダイアログを開く
+.with({ intent: 'confirm-delete' }, () => data({ shouldConfirm: true }))
+// delete intent: 実行し、エラー時は submission.reply() で返す
+.with({ intent: 'delete' }, async ({ id }) => {
+  try { await deleteItem(id) } catch (e) {
+    return data(
+      { lastResult: submission.reply({ formErrors: [String(e)] }), shouldConfirm: true },
+      { status: 400 },
+    )
+  }
+  return data({ ok: true })
+})
 ```
 
 ### UI Spacing Rules
@@ -251,3 +288,9 @@ LLM に投げるプロンプト（system instruction 等）を作成・編集す
 4. 追加・変更したロジックにユニットテストがある
 5. 凝集度が高いか: 関数・モジュールが単一の責務に集中しているか。複数の関心事が混在していたら分割する
 6. 結合度が低いか: 依存を引数で受け取れるようにしてテスト可能にする。ロジックの重複は共通化する
+
+### 作業方針
+
+- **スコープ外でも対応する**: 作業中に関連する問題を見つけたら、PRのスコープ外であっても対応する。部分的な修正を残して技術的負債を蓄積させない
+- **本質的な対応を優先する**: 表面的なワークアラウンドや場当たり的な修正ではなく、設計レベルで正しい解決策を選ぶ。時間がかかっても構わない
+- **例**: エラーハンドリングを統一する際、各 action で文字列を返すのではなく、ConfirmDialog の型定義まで遡って `SubmissionResult` に統一する

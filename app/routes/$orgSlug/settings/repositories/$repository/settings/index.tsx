@@ -73,6 +73,24 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   }
 }
 
+const updateRepoSchema = githubSchema.extend({
+  intent: z.literal('update'),
+})
+
+const confirmDeleteRepoSchema = z.object({
+  intent: z.literal('confirm-delete'),
+})
+
+const deleteRepoSchema = z.object({
+  intent: z.literal('delete'),
+})
+
+const actionSchema = z.discriminatedUnion('intent', [
+  updateRepoSchema,
+  confirmDeleteRepoSchema,
+  deleteRepoSchema,
+])
+
 export const action = async ({
   request,
   params,
@@ -87,29 +105,34 @@ export const action = async ({
     throw new Response('repository not found', { status: 404 })
   }
   const formData = await request.formData()
-  const intent = String(formData.get('intent'))
+  const submission = parseWithZod(formData, { schema: actionSchema })
+  if (submission.status !== 'success') {
+    return data({ lastResult: submission.reply() }, { status: 400 })
+  }
 
-  return match(intent)
-    .with('update', async () => {
-      const submission = parseWithZod(formData, { schema: githubSchema })
-      if (submission.status !== 'success') {
-        return data(submission.reply(), { status: 400 })
-      }
-      await updateRepository(organization.id, repositoryId, submission.value)
+  return match(submission.value)
+    .with({ intent: 'update' }, async ({ intent: _, ...values }) => {
+      await updateRepository(organization.id, repositoryId, values)
       return redirect(
         href('/:orgSlug/settings/repositories', {
           orgSlug: organization.slug,
         }),
       )
     })
-    .with('confirm-delete', () => {
+    .with({ intent: 'confirm-delete' }, () => {
       return data({ shouldConfirm: true })
     })
-    .with('delete', async () => {
+    .with({ intent: 'delete' }, async () => {
       try {
         await deleteRepository(organization.id, repositoryId)
       } catch (e) {
-        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [String(e)] }),
+            shouldConfirm: true,
+          },
+          { status: 400 },
+        )
       }
       return redirect(
         href('/:orgSlug/settings/repositories', {
@@ -117,7 +140,7 @@ export const action = async ({
         }),
       )
     })
-    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
+    .exhaustive()
 }
 
 const GithubRepositoryForm = ({

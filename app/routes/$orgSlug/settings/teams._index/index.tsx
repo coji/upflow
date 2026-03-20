@@ -1,3 +1,4 @@
+import { parseWithZod } from '@conform-to/zod/v4'
 import { PlusIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 import { data, href, useFetcher } from 'react-router'
@@ -33,68 +34,81 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
   return { teams }
 }
 
-const addSchema = z.object({
+const addTeamSchema = z.object({
+  intent: z.literal('add'),
   name: z.string().min(1),
   displayOrder: z.coerce.number().int().default(0),
 })
 
-const updateSchema = z.object({
+const updateTeamSchema = z.object({
+  intent: z.literal('update'),
   id: z.string().min(1),
   name: z.string().min(1),
   displayOrder: z.coerce.number().int().default(0),
   personalLimit: z.coerce.number().int().min(1).default(2),
 })
 
-const deleteSchema = z.object({
+const confirmDeleteTeamSchema = z.object({
+  intent: z.literal('confirm-delete'),
   id: z.string().min(1),
 })
+
+const deleteTeamSchema = z.object({
+  intent: z.literal('delete'),
+  id: z.string().min(1),
+})
+
+const actionSchema = z.discriminatedUnion('intent', [
+  addTeamSchema,
+  updateTeamSchema,
+  confirmDeleteTeamSchema,
+  deleteTeamSchema,
+])
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization } = context.get(orgContext)
   const formData = await request.formData()
-  const intent = String(formData.get('intent'))
+  const submission = parseWithZod(formData, { schema: actionSchema })
+  if (submission.status !== 'success') {
+    return data({ lastResult: submission.reply() }, { status: 400 })
+  }
 
-  return match(intent)
-    .with('add', async () => {
-      const parsed = addSchema.safeParse({
-        name: formData.get('name'),
-        displayOrder: formData.get('displayOrder'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      await addTeam({ ...parsed.data, organizationId: organization.id })
+  return match(submission.value)
+    .with({ intent: 'add' }, async ({ name, displayOrder }) => {
+      await addTeam({ name, displayOrder, organizationId: organization.id })
       return data({ ok: true })
     })
-    .with('update', async () => {
-      const parsed = updateSchema.safeParse({
-        id: formData.get('id'),
-        name: formData.get('name'),
-        displayOrder: formData.get('displayOrder'),
-        personalLimit: formData.get('personalLimit'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      await updateTeam({ ...parsed.data, organizationId: organization.id })
-      return data({ ok: true })
+    .with(
+      { intent: 'update' },
+      async ({ id, name, displayOrder, personalLimit }) => {
+        await updateTeam({
+          id,
+          name,
+          displayOrder,
+          personalLimit,
+          organizationId: organization.id,
+        })
+        return data({ ok: true })
+      },
+    )
+    .with({ intent: 'confirm-delete' }, () => {
+      return data({ shouldConfirm: true })
     })
-    .with('confirm-delete', 'delete', async (matched) => {
-      const parsed = deleteSchema.safeParse({ id: formData.get('id') })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      if (matched === 'confirm-delete') {
-        return data({ shouldConfirm: true })
-      }
+    .with({ intent: 'delete' }, async ({ id }) => {
       try {
-        await deleteTeam(organization.id, parsed.data.id)
+        await deleteTeam(organization.id, id)
       } catch (e) {
-        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [String(e)] }),
+            shouldConfirm: true,
+          },
+          { status: 400 },
+        )
       }
       return data({ ok: true })
     })
-    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
+    .exhaustive()
 }
 
 function AddTeamForm() {

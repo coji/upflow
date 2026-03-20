@@ -1,6 +1,8 @@
+import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { parseWithZod } from '@conform-to/zod/v4'
 import type { Row } from '@tanstack/react-table'
 import { MoreHorizontalIcon, TrashIcon, UserCogIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { Button } from '~/app/components/ui/button'
@@ -28,6 +30,7 @@ import {
   SelectValue,
 } from '~/app/components/ui/select'
 import type { action } from '../index'
+import { changeRoleSchema } from '../index'
 import type { MemberRow } from '../queries.server'
 
 export function MemberRowActions({
@@ -104,48 +107,64 @@ function ChangeRoleDialog({
   member: MemberRow
 }) {
   const fetcher = useFetcher<typeof action>()
-  const [role, setRole] = useState<string>(member.role)
   const isSubmitting = fetcher.state !== 'idle'
 
-  // Reset form state when dialog opens
-  useEffect(() => {
-    if (open) {
-      setRole(member.role)
-    }
-  }, [open, member])
+  const [form, fields] = useForm({
+    lastResult:
+      fetcher.data && 'lastResult' in fetcher.data
+        ? fetcher.data.lastResult
+        : undefined,
+    defaultValue: {
+      intent: 'changeRole',
+      memberId: member.id,
+      role: member.role,
+    },
+    onValidate: ({ formData }) =>
+      parseWithZod(formData, { schema: changeRoleSchema }),
+  })
 
   // Close on successful submission
-  const prevData = useRef(fetcher.data)
   useEffect(() => {
-    if (
-      fetcher.state === 'idle' &&
-      fetcher.data != null &&
-      fetcher.data !== prevData.current
-    ) {
-      prevData.current = fetcher.data
-      if (!('error' in fetcher.data)) {
-        onOpenChange(false)
-      }
+    if (fetcher.state === 'idle' && fetcher.data && 'ok' in fetcher.data) {
+      onOpenChange(false)
     }
   }, [fetcher.state, fetcher.data, onOpenChange])
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) form.reset()
+  }, [open, form])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <fetcher.Form method="POST" className="grid gap-4">
+        <fetcher.Form
+          method="POST"
+          {...getFormProps(form)}
+          className="grid gap-4"
+        >
           <DialogHeader>
             <DialogTitle>Change Role</DialogTitle>
             <DialogDescription asChild>
               <div>{`Change the role of ${member.name}.`}</div>
             </DialogDescription>
           </DialogHeader>
-          {fetcher.data && 'error' in fetcher.data && (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
+          {form.errors && (
+            <p className="text-destructive text-sm">{form.errors}</p>
           )}
-          <input type="hidden" name="intent" value="changeRole" />
-          <input type="hidden" name="memberId" value={member.id} />
-          <input type="hidden" name="role" value={role} />
-          <Select value={role} onValueChange={setRole}>
+          <input
+            {...getInputProps(fields.intent, { type: 'hidden' })}
+            key={fields.intent.key}
+          />
+          <input
+            {...getInputProps(fields.memberId, { type: 'hidden' })}
+            key={fields.memberId.key}
+          />
+          <Select
+            key={fields.role.key}
+            name={fields.role.name}
+            defaultValue={fields.role.initialValue}
+          >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
