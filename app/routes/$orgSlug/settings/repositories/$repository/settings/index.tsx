@@ -132,7 +132,7 @@ const GithubRepositoryForm = ({
             name={releaseDetectionMethod.name}
             defaultValue={releaseDetectionMethod.initialValue}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a method" />
             </SelectTrigger>
             <SelectContent {...getSelectProps(releaseDetectionMethod)}>

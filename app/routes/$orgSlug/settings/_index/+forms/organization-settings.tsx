@@ -82,7 +82,7 @@ export const OrganizationSettings = ({
             name={fields.releaseDetectionMethod.name}
             defaultValue={fields.releaseDetectionMethod.initialValue}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a method" />
             </SelectTrigger>
             <SelectContent {...getSelectProps(fields.releaseDetectionMethod)}>
@@ -117,7 +117,7 @@ export const OrganizationSettings = ({
             name={fields.timezone.name}
             defaultValue={fields.timezone.initialValue}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a timezone" />
             </SelectTrigger>
             <SelectContent {...getSelectProps(fields.timezone)}>
@@ -142,7 +142,7 @@ export const OrganizationSettings = ({
             name={fields.language.name}
             defaultValue={fields.language.initialValue}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a language" />
             </SelectTrigger>
             <SelectContent {...getSelectProps(fields.language)}>
