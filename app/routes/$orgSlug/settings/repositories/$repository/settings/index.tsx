@@ -112,14 +112,28 @@ export const action = async ({
   }
 
   return match(submission.value)
-    .with({ intent: 'update' }, async ({ intent: _, ...values }) => {
-      await updateRepository(organization.id, repositoryId, values)
-      return redirect(
-        href('/:orgSlug/settings/repositories', {
-          orgSlug: organization.slug,
-        }),
-      )
-    })
+    .with(
+      { intent: 'update' },
+      async ({ intent: _, provider: __, ...values }) => {
+        try {
+          await updateRepository(organization.id, repositoryId, values)
+        } catch (e) {
+          return data(
+            {
+              lastResult: submission.reply({
+                formErrors: [getErrorMessage(e)],
+              }),
+            },
+            { status: 400 },
+          )
+        }
+        return redirect(
+          href('/:orgSlug/settings/repositories', {
+            orgSlug: organization.slug,
+          }),
+        )
+      },
+    )
     .with({ intent: 'confirm-delete' }, () => {
       return data({ shouldConfirm: true })
     })

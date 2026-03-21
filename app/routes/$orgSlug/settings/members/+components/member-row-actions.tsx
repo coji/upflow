@@ -131,12 +131,13 @@ function ChangeRoleDialog({
   }, [fetcher.state, fetcher.data, onOpenChange])
 
   // Reset form and fetcher when dialog opens
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form and fetcher are unstable references from hooks, but we only want this to run when open changes
   useEffect(() => {
     if (open) {
       form.reset()
       fetcher.reset()
     }
-  }, [open, form, fetcher])
+  }, [open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
