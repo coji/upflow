@@ -184,9 +184,6 @@ const GithubRepositoryForm = ({
   return (
     <Form method="POST" {...getFormProps(form)}>
       <Stack>
-        {form.errors && form.errors.length > 0 && (
-          <p className="text-destructive text-sm">{form.errors.join(', ')}</p>
-        )}
         <fieldset className="space-y-1">
           <AppProviderBadge provider="github" />
           <input type="hidden" name="provider" value="github" />
@@ -234,6 +231,9 @@ const GithubRepositoryForm = ({
           <div className="text-destructive">{releaseDetectionKey.errors}</div>
         </fieldset>
 
+        {form.errors && form.errors.length > 0 && (
+          <p className="text-destructive text-sm">{form.errors.join(', ')}</p>
+        )}
         <Stack direction="row">
           <Button type="submit" loading={isSubmitting}>
             Update
