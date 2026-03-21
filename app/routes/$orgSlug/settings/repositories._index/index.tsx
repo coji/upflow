@@ -1,3 +1,4 @@
+import { parseWithZod } from '@conform-to/zod/v4'
 import { useMemo } from 'react'
 import { data } from 'react-router'
 import { match } from 'ts-pattern'
@@ -53,53 +54,46 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   return { organization, repositories, pagination, teams }
 }
 
+const nullableTeamId = z.preprocess(
+  (v) => (v === '' || v === undefined ? null : v),
+  z.string().min(1).nullable(),
+)
+
 const updateTeamSchema = z.object({
+  intent: z.literal('updateTeam'),
   repositoryId: z.string().min(1),
-  teamId: z.string().nullable(),
+  teamId: nullableTeamId,
 })
 
 const bulkUpdateTeamSchema = z.object({
+  intent: z.literal('bulkUpdateTeam'),
   repositoryIds: z.array(z.string().min(1)).min(1),
-  teamId: z.string().nullable(),
+  teamId: nullableTeamId,
 })
+
+const actionSchema = z.discriminatedUnion('intent', [
+  updateTeamSchema,
+  bulkUpdateTeamSchema,
+])
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization } = context.get(orgContext)
   const formData = await request.formData()
-  const intent = String(formData.get('intent'))
+  const submission = parseWithZod(formData, { schema: actionSchema })
+  if (submission.status !== 'success') {
+    return data({ lastResult: submission.reply() }, { status: 400 })
+  }
 
-  return match(intent)
-    .with('updateTeam', async () => {
-      const parsed = updateTeamSchema.safeParse({
-        repositoryId: formData.get('repositoryId'),
-        teamId: formData.get('teamId') || null,
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      await updateRepositoryTeam(
-        organization.id,
-        parsed.data.repositoryId,
-        parsed.data.teamId,
-      )
+  return match(submission.value)
+    .with({ intent: 'updateTeam' }, async ({ repositoryId, teamId }) => {
+      await updateRepositoryTeam(organization.id, repositoryId, teamId)
       return data({ ok: true })
     })
-    .with('bulkUpdateTeam', async () => {
-      const parsed = bulkUpdateTeamSchema.safeParse({
-        repositoryIds: formData.getAll('repositoryIds'),
-        teamId: formData.get('teamId') || null,
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      await bulkUpdateRepositoryTeam(
-        organization.id,
-        parsed.data.repositoryIds,
-        parsed.data.teamId,
-      )
+    .with({ intent: 'bulkUpdateTeam' }, async ({ repositoryIds, teamId }) => {
+      await bulkUpdateRepositoryTeam(organization.id, repositoryIds, teamId)
       return data({ ok: true })
     })
-    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
+    .exhaustive()
 }
 
 export default function OrganizationRepositoryIndexPage({

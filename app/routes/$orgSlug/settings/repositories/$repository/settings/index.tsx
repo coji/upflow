@@ -12,6 +12,7 @@ import {
   data,
   href,
   redirect,
+  useActionData,
   useFetcher,
   useNavigation,
 } from 'react-router'
@@ -31,6 +32,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../../../+components/content-section'
 import { getRepository } from '../queries.server'
@@ -73,6 +75,24 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   }
 }
 
+const updateRepoSchema = githubSchema.extend({
+  intent: z.literal('update'),
+})
+
+const confirmDeleteRepoSchema = z.object({
+  intent: z.literal('confirm-delete'),
+})
+
+const deleteRepoSchema = z.object({
+  intent: z.literal('delete'),
+})
+
+const actionSchema = z.discriminatedUnion('intent', [
+  updateRepoSchema,
+  confirmDeleteRepoSchema,
+  deleteRepoSchema,
+])
+
 export const action = async ({
   request,
   params,
@@ -87,29 +107,48 @@ export const action = async ({
     throw new Response('repository not found', { status: 404 })
   }
   const formData = await request.formData()
-  const intent = String(formData.get('intent'))
+  const submission = parseWithZod(formData, { schema: actionSchema })
+  if (submission.status !== 'success') {
+    return data({ lastResult: submission.reply() }, { status: 400 })
+  }
 
-  return match(intent)
-    .with('update', async () => {
-      const submission = parseWithZod(formData, { schema: githubSchema })
-      if (submission.status !== 'success') {
-        return data(submission.reply(), { status: 400 })
-      }
-      await updateRepository(organization.id, repositoryId, submission.value)
-      return redirect(
-        href('/:orgSlug/settings/repositories', {
-          orgSlug: organization.slug,
-        }),
-      )
-    })
-    .with('confirm-delete', () => {
+  return match(submission.value)
+    .with(
+      { intent: 'update' },
+      async ({ intent: _intent, provider: _provider, ...values }) => {
+        try {
+          await updateRepository(organization.id, repositoryId, values)
+        } catch (e) {
+          return data(
+            {
+              lastResult: submission.reply({
+                formErrors: [getErrorMessage(e)],
+              }),
+            },
+            { status: 400 },
+          )
+        }
+        return redirect(
+          href('/:orgSlug/settings/repositories', {
+            orgSlug: organization.slug,
+          }),
+        )
+      },
+    )
+    .with({ intent: 'confirm-delete' }, () => {
       return data({ shouldConfirm: true })
     })
-    .with('delete', async () => {
+    .with({ intent: 'delete' }, async () => {
       try {
         await deleteRepository(organization.id, repositoryId)
       } catch (e) {
-        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+            shouldConfirm: true,
+          },
+          { status: 400 },
+        )
       }
       return redirect(
         href('/:orgSlug/settings/repositories', {
@@ -117,7 +156,7 @@ export const action = async ({
         }),
       )
     })
-    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
+    .exhaustive()
 }
 
 const GithubRepositoryForm = ({
@@ -129,9 +168,14 @@ const GithubRepositoryForm = ({
 }) => {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting'
+  const actionData = useActionData<typeof action>()
   const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] =
     useForm({
       id: 'repository-edit-form',
+      lastResult:
+        actionData && 'lastResult' in actionData
+          ? actionData.lastResult
+          : undefined,
       onValidate: ({ formData }) =>
         parseWithZod(formData, { schema: githubSchema }),
       defaultValue: repository,
@@ -187,6 +231,9 @@ const GithubRepositoryForm = ({
           <div className="text-destructive">{releaseDetectionKey.errors}</div>
         </fieldset>
 
+        {form.errors && form.errors.length > 0 && (
+          <p className="text-destructive text-sm">{form.errors.join(', ')}</p>
+        )}
         <Stack direction="row">
           <Button type="submit" loading={isSubmitting}>
             Update

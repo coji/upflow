@@ -1,6 +1,7 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { href } from 'react-router'
 import { dataWithSuccess } from 'remix-toast'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { ExportSettings } from '../_index/+forms/export-settings'
@@ -41,10 +42,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       privateKey,
     })
   } catch (e) {
-    console.error(
-      'Export settings save failed:',
-      e instanceof Error ? e.message : 'Unknown error',
-    )
+    console.error('Export settings save failed:', getErrorMessage(e))
     return {
       intent: 'export-settings' as const,
       lastResult: submission.reply({

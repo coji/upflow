@@ -1,9 +1,11 @@
+import { parseWithZod } from '@conform-to/zod/v4'
 import { useMemo } from 'react'
 import { data, href } from 'react-router'
 import { dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import ContentSection from '../+components/content-section'
@@ -87,29 +89,49 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   }
 }
 
-const addSchema = z.object({
+const addGithubUserSchema = z.object({
+  intent: z.literal('add'),
   login: z.string().min(1),
   displayName: z.string().min(1),
 })
 
-const updateSchema = z.object({
+const updateGithubUserSchema = z.object({
+  intent: z.literal('update'),
   login: z.string().min(1),
   displayName: z.string().min(1),
 })
 
-const deleteSchema = z.object({
-  login: z.string().min(1),
+const deleteFields = { login: z.string().min(1) }
+
+const confirmDeleteSchema = z.object({
+  intent: z.literal('confirm-delete'),
+  ...deleteFields,
 })
 
-const updateTypeSchema = z.object({
+const deleteGithubUserSchema = z.object({
+  intent: z.literal('delete'),
+  ...deleteFields,
+})
+
+const typeFields = {
   login: z.string().min(1),
   type: z.preprocess(
     (v) => (v === '' ? null : v),
     z.enum(['User', 'Bot']).nullable(),
   ),
+}
+
+const confirmUpdateTypeSchema = z.object({
+  intent: z.literal('confirm-update-type'),
+  ...typeFields,
 })
 
-const toggleActiveSchema = z.object({
+const updateTypeSchema = z.object({
+  intent: z.literal('update-type'),
+  ...typeFields,
+})
+
+const toggleActiveFields = {
   login: z.string().min(1),
   isActive: z.coerce
     .number()
@@ -117,109 +139,138 @@ const toggleActiveSchema = z.object({
     .min(0)
     .max(1)
     .pipe(z.union([z.literal(0), z.literal(1)])),
+}
+
+const confirmToggleActiveSchema = z.object({
+  intent: z.literal('confirm-toggle-active'),
+  ...toggleActiveFields,
 })
+
+const toggleActiveSchema = z.object({
+  intent: z.literal('toggle-active'),
+  ...toggleActiveFields,
+})
+
+const actionSchema = z.discriminatedUnion('intent', [
+  addGithubUserSchema,
+  updateGithubUserSchema,
+  confirmDeleteSchema,
+  deleteGithubUserSchema,
+  confirmUpdateTypeSchema,
+  updateTypeSchema,
+  confirmToggleActiveSchema,
+  toggleActiveSchema,
+])
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization, user } = context.get(orgContext)
   const formData = await request.formData()
-  const intent = String(formData.get('intent'))
+  const submission = parseWithZod(formData, { schema: actionSchema })
+  if (submission.status !== 'success') {
+    return data({ lastResult: submission.reply() }, { status: 400 })
+  }
 
-  return match(intent)
-    .with('add', async () => {
-      const parsed = addSchema.safeParse({
-        login: formData.get('login'),
-        displayName: formData.get('displayName'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      await addGithubUser({ ...parsed.data, organizationId: organization.id })
-      return data({ ok: true })
-    })
-    .with('update', async () => {
-      const parsed = updateSchema.safeParse({
-        login: formData.get('login'),
-        displayName: formData.get('displayName'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      await updateGithubUser({
-        ...parsed.data,
-        organizationId: organization.id,
-      })
-      return data({ ok: true })
-    })
-    .with('confirm-delete', 'delete', async (matched) => {
-      const parsed = deleteSchema.safeParse({
-        login: formData.get('login'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      if (matched === 'confirm-delete') {
-        return data({ shouldConfirm: true })
-      }
+  return match(submission.value)
+    .with({ intent: 'add' }, async ({ login, displayName }) => {
       try {
-        await deleteGithubUser(parsed.data.login, organization.id, user.id)
-      } catch (e) {
-        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
-      }
-      return data({ ok: true })
-    })
-    .with('confirm-update-type', 'update-type', async (matched) => {
-      const parsed = updateTypeSchema.safeParse({
-        login: formData.get('login'),
-        type: formData.get('type'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      if (matched === 'confirm-update-type') {
-        return data({ shouldConfirm: true })
-      }
-      try {
-        await updateGithubUserType({
-          ...parsed.data,
+        await addGithubUser({
+          login,
+          displayName,
           organizationId: organization.id,
         })
       } catch (e) {
-        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+          },
+          { status: 400 },
+        )
+      }
+      return data({ ok: true })
+    })
+    .with({ intent: 'update' }, async ({ login, displayName }) => {
+      try {
+        await updateGithubUser({
+          login,
+          displayName,
+          organizationId: organization.id,
+        })
+      } catch (e) {
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+          },
+          { status: 400 },
+        )
+      }
+      return data({ ok: true })
+    })
+    .with({ intent: 'confirm-delete' }, () => {
+      return data({ shouldConfirm: true })
+    })
+    .with({ intent: 'delete' }, async ({ login }) => {
+      try {
+        await deleteGithubUser(login, organization.id, user.id)
+      } catch (e) {
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+            shouldConfirm: true,
+          },
+          { status: 400 },
+        )
+      }
+      return data({ ok: true })
+    })
+    .with({ intent: 'confirm-update-type' }, () => {
+      return data({ shouldConfirm: true })
+    })
+    .with({ intent: 'update-type' }, async ({ login, type }) => {
+      try {
+        await updateGithubUserType({
+          login,
+          type,
+          organizationId: organization.id,
+        })
+      } catch (e) {
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+            shouldConfirm: true,
+          },
+          { status: 400 },
+        )
       }
       const typeLabel =
-        parsed.data.type === 'Bot'
-          ? 'Bot'
-          : parsed.data.type === 'User'
-            ? 'User'
-            : '未設定'
+        type === 'Bot' ? 'Bot' : type === 'User' ? 'User' : '未設定'
       return dataWithSuccess(
         { ok: true },
-        `${parsed.data.login} のタイプを ${typeLabel} に変更しました`,
+        `${login} のタイプを ${typeLabel} に変更しました`,
       )
     })
-    .with('confirm-toggle-active', 'toggle-active', async (matched) => {
-      const parsed = toggleActiveSchema.safeParse({
-        login: formData.get('login'),
-        isActive: formData.get('isActive'),
-      })
-      if (!parsed.success) {
-        return data({ error: 'Invalid input' }, { status: 400 })
-      }
-      if (matched === 'confirm-toggle-active') {
-        return data({ shouldConfirm: true })
-      }
+    .with({ intent: 'confirm-toggle-active' }, () => {
+      return data({ shouldConfirm: true })
+    })
+    .with({ intent: 'toggle-active' }, async ({ login, isActive }) => {
       try {
         await toggleGithubUserActive({
-          ...parsed.data,
+          login,
+          isActive,
           organizationId: organization.id,
           currentUserId: user.id,
         })
       } catch (e) {
-        return data({ error: String(e), shouldConfirm: true }, { status: 400 })
+        return data(
+          {
+            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+            shouldConfirm: true,
+          },
+          { status: 400 },
+        )
       }
       return data({ ok: true })
     })
-    .otherwise(() => data({ error: 'Invalid intent' }, { status: 400 }))
+    .exhaustive()
 }
 
 export default function GithubUsersPage({

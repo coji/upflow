@@ -1,3 +1,4 @@
+import type { SubmissionResult } from '@conform-to/react'
 import type { FetcherWithComponents } from 'react-router'
 import {
   AlertDialog,
@@ -12,7 +13,7 @@ import { Button } from '~/app/components/ui/button'
 
 interface ConfirmDialogData {
   shouldConfirm?: boolean
-  error?: string
+  lastResult?: SubmissionResult
 }
 
 interface ConfirmDialogProps {
@@ -46,6 +47,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
 
   const open = fetcher.data?.shouldConfirm === true
   const isSubmitting = fetcher.state !== 'idle'
+  const formErrors = fetcher.data?.lastResult?.error?.['']
 
   return (
     <AlertDialog
@@ -61,8 +63,8 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
             <div>{desc}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {fetcher.data?.error && (
-          <p className="text-destructive text-sm">{fetcher.data.error}</p>
+        {formErrors && formErrors.length > 0 && (
+          <p className="text-destructive text-sm">{formErrors.join(', ')}</p>
         )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isSubmitting}>

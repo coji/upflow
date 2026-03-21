@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai'
 import { data } from 'react-router'
 import { z } from 'zod'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { escapeXml } from '~/app/libs/escape-xml'
 import { PR_SIZE_LABELS } from '~/app/libs/pr-classify'
 import {
@@ -191,7 +192,7 @@ Why did the human correct the classification from ${pr.complexity ?? 'unknown'} 
     const reason = response.text?.trim() ?? ''
     return data({ reason })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     console.error('Gemini API error:', message)
     return data({ error: 'Failed to generate draft' }, { status: 500 })
   }
