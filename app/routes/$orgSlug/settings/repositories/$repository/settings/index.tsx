@@ -12,6 +12,7 @@ import {
   data,
   href,
   redirect,
+  useActionData,
   useFetcher,
   useNavigation,
 } from 'react-router'
@@ -167,9 +168,14 @@ const GithubRepositoryForm = ({
 }) => {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting'
+  const actionData = useActionData<typeof action>()
   const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] =
     useForm({
       id: 'repository-edit-form',
+      lastResult:
+        actionData && 'lastResult' in actionData
+          ? actionData.lastResult
+          : undefined,
       onValidate: ({ formData }) =>
         parseWithZod(formData, { schema: githubSchema }),
       defaultValue: repository,
@@ -178,6 +184,9 @@ const GithubRepositoryForm = ({
   return (
     <Form method="POST" {...getFormProps(form)}>
       <Stack>
+        {form.errors && form.errors.length > 0 && (
+          <p className="text-destructive text-sm">{form.errors.join(', ')}</p>
+        )}
         <fieldset className="space-y-1">
           <AppProviderBadge provider="github" />
           <input type="hidden" name="provider" value="github" />
