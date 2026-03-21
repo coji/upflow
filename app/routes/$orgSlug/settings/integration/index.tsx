@@ -1,6 +1,7 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { href } from 'react-router'
 import { dataWithSuccess } from 'remix-toast'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { IntegrationSettings } from '../_index/+forms/integration-settings'
@@ -62,10 +63,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       await upsertIntegration(organization.id, { ...rest, privateToken })
     }
   } catch (e) {
-    console.error(
-      'Integration upsert failed:',
-      e instanceof Error ? e.message : 'Unknown error',
-    )
+    console.error('Integration upsert failed:', getErrorMessage(e))
     return {
       intent: 'integration-settings' as const,
       lastResult: submission.reply({

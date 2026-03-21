@@ -115,7 +115,7 @@ export const action = async ({
   return match(submission.value)
     .with(
       { intent: 'update' },
-      async ({ intent: _, provider: __, ...values }) => {
+      async ({ intent: _intent, provider: _provider, ...values }) => {
         try {
           await updateRepository(organization.id, repositoryId, values)
         } catch (e) {
