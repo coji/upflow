@@ -1,5 +1,7 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { href, redirect } from 'react-router'
+import { dataWithError } from 'remix-toast'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { DeleteOrganization } from '../_index/+forms/delete-organization'
@@ -40,7 +42,18 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     }
   }
 
-  await deleteOrganization(organization.id)
+  try {
+    await deleteOrganization(organization.id)
+  } catch (e) {
+    const message = getErrorMessage(e)
+    return dataWithError(
+      {
+        intent: 'delete-organization' as const,
+        lastResult: submission.reply({ formErrors: [message] }),
+      },
+      { message },
+    )
+  }
 
   throw redirect('/')
 }

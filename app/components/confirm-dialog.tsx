@@ -12,8 +12,9 @@ import {
 import { Button } from '~/app/components/ui/button'
 
 interface ConfirmDialogData {
+  ok?: boolean
+  lastResult?: SubmissionResult | null
   shouldConfirm?: boolean
-  lastResult?: SubmissionResult
 }
 
 interface ConfirmDialogProps {

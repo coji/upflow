@@ -2,7 +2,7 @@ import { parseWithZod } from '@conform-to/zod/v4'
 import { PlusIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 import { data, href, useFetcher } from 'react-router'
-import { dataWithError } from 'remix-toast'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
@@ -73,7 +73,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const formData = await request.formData()
   const submission = parseWithZod(formData, { schema: actionSchema })
   if (submission.status !== 'success') {
-    return data({ lastResult: submission.reply() }, { status: 400 })
+    return data({ ok: false, lastResult: submission.reply() }, { status: 400 })
   }
 
   return match(submission.value)
@@ -83,11 +83,17 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         const message = getErrorMessage(e)
         return dataWithError(
-          { lastResult: submission.reply({ formErrors: [message] }) },
+          {
+            ok: false,
+            lastResult: submission.reply({ formErrors: [message] }),
+          },
           { message },
         )
       }
-      return data({ ok: true })
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: 'チームを追加しました' },
+      )
     })
     .with(
       { intent: 'update' },
@@ -103,15 +109,21 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         } catch (e) {
           const message = getErrorMessage(e)
           return dataWithError(
-            { lastResult: submission.reply({ formErrors: [message] }) },
+            {
+              ok: false,
+              lastResult: submission.reply({ formErrors: [message] }),
+            },
             { message },
           )
         }
-        return data({ ok: true })
+        return dataWithSuccess(
+          { ok: true, lastResult: null },
+          { message: 'チームを更新しました' },
+        )
       },
     )
     .with({ intent: 'confirm-delete' }, () => {
-      return data({ shouldConfirm: true })
+      return data({ ok: false, lastResult: null, shouldConfirm: true })
     })
     .with({ intent: 'delete' }, async ({ id }) => {
       try {
@@ -119,13 +131,17 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
+            ok: false,
             lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },
         )
       }
-      return data({ ok: true })
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: 'チームを削除しました' },
+      )
     })
     .exhaustive()
 }

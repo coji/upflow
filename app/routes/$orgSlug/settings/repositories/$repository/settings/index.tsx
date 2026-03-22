@@ -109,7 +109,7 @@ export const action = async ({
   const formData = await request.formData()
   const submission = parseWithZod(formData, { schema: actionSchema })
   if (submission.status !== 'success') {
-    return data({ lastResult: submission.reply() }, { status: 400 })
+    return data({ ok: false, lastResult: submission.reply() }, { status: 400 })
   }
 
   return match(submission.value)
@@ -121,6 +121,7 @@ export const action = async ({
         } catch (e) {
           return data(
             {
+              ok: false,
               lastResult: submission.reply({
                 formErrors: [getErrorMessage(e)],
               }),
@@ -136,7 +137,7 @@ export const action = async ({
       },
     )
     .with({ intent: 'confirm-delete' }, () => {
-      return data({ shouldConfirm: true })
+      return data({ ok: false, lastResult: null, shouldConfirm: true })
     })
     .with({ intent: 'delete' }, async () => {
       try {
@@ -144,6 +145,7 @@ export const action = async ({
       } catch (e) {
         return data(
           {
+            ok: false,
             lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
@@ -172,10 +174,7 @@ const GithubRepositoryForm = ({
   const [form, { owner, repo, releaseDetectionKey, releaseDetectionMethod }] =
     useForm({
       id: 'repository-edit-form',
-      lastResult:
-        actionData && 'lastResult' in actionData
-          ? actionData.lastResult
-          : undefined,
+      lastResult: actionData?.lastResult ?? undefined,
       onValidate: ({ formData }) =>
         parseWithZod(formData, { schema: githubSchema }),
       defaultValue: repository,

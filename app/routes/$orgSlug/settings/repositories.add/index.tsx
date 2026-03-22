@@ -131,11 +131,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       repo: submission.value.name,
     })
   } catch (e) {
-    console.error('Failed to add repository:', getErrorMessage(e))
-    return dataWithError(
-      {},
-      { message: 'Failed to add repository. Please try again.' },
-    )
+    const message = getErrorMessage(e)
+    return dataWithError({}, { message })
   }
 
   return dataWithSuccess(

@@ -1,6 +1,6 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { href } from 'react-router'
-import { dataWithSuccess } from 'remix-toast'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
@@ -48,12 +48,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     if (!privateToken) {
       const existing = await getIntegration(organization.id)
       if (!existing?.privateToken) {
-        return {
-          intent: 'integration-settings' as const,
-          lastResult: submission.reply({
-            formErrors: ['Private token is required for new integrations.'],
-          }),
-        }
+        const message = 'Private token is required for new integrations.'
+        return dataWithError(
+          {
+            intent: 'integration-settings' as const,
+            lastResult: submission.reply({ formErrors: [message] }),
+          },
+          { message },
+        )
       }
       await upsertIntegration(organization.id, {
         ...rest,
@@ -63,13 +65,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       await upsertIntegration(organization.id, { ...rest, privateToken })
     }
   } catch (e) {
-    console.error('Integration upsert failed:', getErrorMessage(e))
-    return {
-      intent: 'integration-settings' as const,
-      lastResult: submission.reply({
-        formErrors: ['Integration upsert failed. Please try again.'],
-      }),
-    }
+    const message = getErrorMessage(e)
+    return dataWithError(
+      {
+        intent: 'integration-settings' as const,
+        lastResult: submission.reply({ formErrors: [message] }),
+      },
+      { message },
+    )
   }
 
   return dataWithSuccess(

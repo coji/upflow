@@ -1,5 +1,6 @@
 import { parseWithZod } from '@conform-to/zod/v4'
-import { dataWithSuccess } from 'remix-toast'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { OrganizationSettings } from './+forms/organization-settings'
@@ -57,13 +58,15 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       timezone,
       language,
     })
-  } catch (_e) {
-    return {
-      intent: 'organization-settings' as const,
-      lastResult: submission.reply({
-        formErrors: ['Failed to update organization'],
-      }),
-    }
+  } catch (e) {
+    const message = getErrorMessage(e)
+    return dataWithError(
+      {
+        intent: 'organization-settings' as const,
+        lastResult: submission.reply({ formErrors: [message] }),
+      },
+      { message },
+    )
   }
 
   return dataWithSuccess(

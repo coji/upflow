@@ -110,10 +110,7 @@ function ChangeRoleDialog({
   const isSubmitting = fetcher.state !== 'idle'
 
   const [form, fields] = useForm({
-    lastResult:
-      fetcher.data && 'lastResult' in fetcher.data
-        ? fetcher.data.lastResult
-        : undefined,
+    lastResult: fetcher.data?.lastResult ?? undefined,
     defaultValue: {
       intent: 'changeRole',
       memberId: member.id,
@@ -125,7 +122,7 @@ function ChangeRoleDialog({
 
   // Close on successful submission
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data && 'ok' in fetcher.data) {
+    if (fetcher.state === 'idle' && fetcher.data?.ok === true) {
       onOpenChange(false)
     }
   }, [fetcher.state, fetcher.data, onOpenChange])
