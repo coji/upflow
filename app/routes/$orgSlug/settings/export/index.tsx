@@ -1,6 +1,6 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { href } from 'react-router'
-import { dataWithSuccess } from 'remix-toast'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
@@ -42,13 +42,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       privateKey,
     })
   } catch (e) {
-    console.error('Export settings save failed:', getErrorMessage(e))
-    return {
-      intent: 'export-settings' as const,
-      lastResult: submission.reply({
-        formErrors: ['Failed to save export settings'],
-      }),
-    }
+    const message = getErrorMessage(e)
+    return dataWithError(
+      {
+        intent: 'export-settings' as const,
+        lastResult: submission.reply({ formErrors: [message] }),
+      },
+      { message },
+    )
   }
   return dataWithSuccess(
     {

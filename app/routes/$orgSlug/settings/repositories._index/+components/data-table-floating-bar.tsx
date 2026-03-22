@@ -26,12 +26,11 @@ export function DataTableFloatingBar({
   const selectedRows = table.getFilteredSelectedRowModel().rows
   const selectedCount = selectedRows.length
 
-  const fetcher = useFetcher({ key: 'bulk-update-team' })
+  const fetcher = useFetcher<{ ok: boolean }>({ key: 'bulk-update-team' })
   const isSubmitting = fetcher.state !== 'idle'
 
   useEffect(() => {
-    const responseData = fetcher.data as Record<string, unknown> | undefined
-    if (fetcher.state === 'idle' && responseData?.ok) {
+    if (fetcher.state === 'idle' && fetcher.data?.ok === true) {
       table.resetRowSelection()
     }
   }, [fetcher.data, fetcher.state, table])

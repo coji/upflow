@@ -167,7 +167,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const formData = await request.formData()
   const submission = parseWithZod(formData, { schema: actionSchema })
   if (submission.status !== 'success') {
-    return data({ lastResult: submission.reply() }, { status: 400 })
+    return data({ ok: false, lastResult: submission.reply() }, { status: 400 })
   }
 
   return match(submission.value)
@@ -181,11 +181,17 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         const message = getErrorMessage(e)
         return dataWithError(
-          { lastResult: submission.reply({ formErrors: [message] }) },
+          {
+            ok: false,
+            lastResult: submission.reply({ formErrors: [message] }),
+          },
           { message },
         )
       }
-      return data({ ok: true })
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: `${login} を追加しました` },
+      )
     })
     .with({ intent: 'update' }, async ({ login, displayName }) => {
       try {
@@ -197,14 +203,20 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         const message = getErrorMessage(e)
         return dataWithError(
-          { lastResult: submission.reply({ formErrors: [message] }) },
+          {
+            ok: false,
+            lastResult: submission.reply({ formErrors: [message] }),
+          },
           { message },
         )
       }
-      return data({ ok: true })
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: `${login} を更新しました` },
+      )
     })
     .with({ intent: 'confirm-delete' }, () => {
-      return data({ shouldConfirm: true })
+      return data({ ok: false, lastResult: null, shouldConfirm: true })
     })
     .with({ intent: 'delete' }, async ({ login }) => {
       try {
@@ -212,16 +224,20 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
+            ok: false,
             lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },
         )
       }
-      return data({ ok: true })
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: `${login} を削除しました` },
+      )
     })
     .with({ intent: 'confirm-update-type' }, () => {
-      return data({ shouldConfirm: true })
+      return data({ ok: false, lastResult: null, shouldConfirm: true })
     })
     .with({ intent: 'update-type' }, async ({ login, type }) => {
       try {
@@ -233,6 +249,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
+            ok: false,
             lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
@@ -242,12 +259,12 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       const typeLabel =
         type === 'Bot' ? 'Bot' : type === 'User' ? 'User' : '未設定'
       return dataWithSuccess(
-        { ok: true },
-        `${login} のタイプを ${typeLabel} に変更しました`,
+        { ok: true, lastResult: null },
+        { message: `${login} のタイプを ${typeLabel} に変更しました` },
       )
     })
     .with({ intent: 'confirm-toggle-active' }, () => {
-      return data({ shouldConfirm: true })
+      return data({ ok: false, lastResult: null, shouldConfirm: true })
     })
     .with({ intent: 'toggle-active' }, async ({ login, isActive }) => {
       try {
@@ -260,13 +277,18 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         return data(
           {
+            ok: false,
             lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
             shouldConfirm: true,
           },
           { status: 400 },
         )
       }
-      return data({ ok: true })
+      const statusLabel = isActive ? 'ログイン許可' : 'ログイン拒否'
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: `${login} を${statusLabel}に変更しました` },
+      )
     })
     .exhaustive()
 }

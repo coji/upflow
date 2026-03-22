@@ -23,7 +23,6 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import { clearOrgCache, getOrgCachedData } from '~/app/services/cache.server'
 import ContentSection from '../+components/content-section'
@@ -131,7 +130,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       repo: submission.value.name,
     })
   } catch (e) {
-    console.error('Failed to add repository:', getErrorMessage(e))
+    console.error('Failed to add repository:', e)
     return dataWithError(
       {},
       { message: 'Failed to add repository. Please try again.' },

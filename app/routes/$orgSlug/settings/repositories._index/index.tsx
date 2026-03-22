@@ -1,7 +1,7 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { useMemo } from 'react'
 import { data } from 'react-router'
-import { dataWithError } from 'remix-toast'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { getErrorMessage } from '~/app/libs/error-message'
@@ -83,7 +83,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const formData = await request.formData()
   const submission = parseWithZod(formData, { schema: actionSchema })
   if (submission.status !== 'success') {
-    return data({ lastResult: submission.reply() }, { status: 400 })
+    return data({ ok: false, lastResult: submission.reply() }, { status: 400 })
   }
 
   return match(submission.value)
@@ -93,11 +93,17 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         const message = getErrorMessage(e)
         return dataWithError(
-          { lastResult: submission.reply({ formErrors: [message] }) },
+          {
+            ok: false,
+            lastResult: submission.reply({ formErrors: [message] }),
+          },
           { message },
         )
       }
-      return data({ ok: true })
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: 'チームを変更しました' },
+      )
     })
     .with({ intent: 'bulkUpdateTeam' }, async ({ repositoryIds, teamId }) => {
       try {
@@ -105,11 +111,17 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       } catch (e) {
         const message = getErrorMessage(e)
         return dataWithError(
-          { lastResult: submission.reply({ formErrors: [message] }) },
+          {
+            ok: false,
+            lastResult: submission.reply({ formErrors: [message] }),
+          },
           { message },
         )
       }
-      return data({ ok: true })
+      return dataWithSuccess(
+        { ok: true, lastResult: null },
+        { message: `${repositoryIds.length}件のチームを変更しました` },
+      )
     })
     .exhaustive()
 }
