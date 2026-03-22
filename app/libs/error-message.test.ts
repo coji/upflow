@@ -47,5 +47,7 @@ describe('getErrorMessageForLog', () => {
 
   test('returns fallback for unknown value', () => {
     expect(getErrorMessageForLog(42)).toBe('Unknown error')
+    expect(getErrorMessageForLog(null)).toBe('Unknown error')
+    expect(getErrorMessageForLog(undefined)).toBe('Unknown error')
   })
 })
