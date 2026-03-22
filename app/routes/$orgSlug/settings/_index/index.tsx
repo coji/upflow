@@ -59,6 +59,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       language,
     })
   } catch (e) {
+    console.error('Failed to update organization:', e)
     const message = getErrorMessage(e)
     return dataWithError(
       {

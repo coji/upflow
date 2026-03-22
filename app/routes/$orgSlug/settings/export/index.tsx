@@ -42,6 +42,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       privateKey,
     })
   } catch (e) {
+    console.error('Failed to save export settings:', e)
     const message = getErrorMessage(e)
     return dataWithError(
       {

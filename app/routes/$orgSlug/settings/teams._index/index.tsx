@@ -81,6 +81,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await addTeam({ name, displayOrder, organizationId: organization.id })
       } catch (e) {
+        console.error('Failed to add team:', e)
         const message = getErrorMessage(e)
         return dataWithError(
           {
@@ -107,6 +108,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
             organizationId: organization.id,
           })
         } catch (e) {
+          console.error('Failed to update team:', e)
           const message = getErrorMessage(e)
           return dataWithError(
             {
@@ -129,6 +131,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await deleteTeam(organization.id, id)
       } catch (e) {
+        console.error('Failed to delete team:', e)
         return data(
           {
             ok: false,

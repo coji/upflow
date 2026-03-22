@@ -119,6 +119,7 @@ export const action = async ({
         try {
           await updateRepository(organization.id, repositoryId, values)
         } catch (e) {
+          console.error('Failed to update repository:', e)
           return data(
             {
               ok: false,
@@ -143,6 +144,7 @@ export const action = async ({
       try {
         await deleteRepository(organization.id, repositoryId)
       } catch (e) {
+        console.error('Failed to delete repository:', e)
         return data(
           {
             ok: false,

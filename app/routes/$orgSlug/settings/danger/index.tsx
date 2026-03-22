@@ -45,6 +45,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   try {
     await deleteOrganization(organization.id)
   } catch (e) {
+    console.error('Failed to delete organization:', e)
     const message = getErrorMessage(e)
     return dataWithError(
       {

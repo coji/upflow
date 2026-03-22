@@ -49,9 +49,11 @@ export const action = async ({ request }: Route.ActionArgs) => {
     })
     return redirect(href('/:orgSlug', { orgSlug: organization.slug }))
   } catch (e) {
+    console.error('Failed to create organization:', e)
+    const message = getErrorMessage(e)
     return {
       lastResult: submission.reply({
-        formErrors: [`Failed to create organization: ${getErrorMessage(e)}`],
+        formErrors: [message],
       }),
     }
   }
