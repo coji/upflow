@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '~/app/components/ui/select'
 import dayjs from '~/app/libs/dayjs'
+import { hasFetcherError } from '~/app/libs/fetcher-error'
 import type { GithubUserRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { GithubUserRowActions } from './github-user-row-actions'
@@ -109,6 +110,7 @@ function EditableDisplayName({
     <EditableCell
       value={displayName}
       pending={fetcher.state !== 'idle'}
+      error={hasFetcherError(fetcher)}
       onSave={(newValue) => {
         const formData = new FormData()
         formData.set('intent', 'update')

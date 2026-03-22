@@ -2,6 +2,7 @@ import { parseWithZod } from '@conform-to/zod/v4'
 import { PlusIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 import { data, href, useFetcher } from 'react-router'
+import { dataWithError } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
@@ -16,6 +17,7 @@ import {
   TableRow,
 } from '~/app/components/ui/table'
 import { getErrorMessage } from '~/app/libs/error-message'
+import { hasFetcherError } from '~/app/libs/fetcher-error'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import type { Route } from './+types/index'
@@ -79,11 +81,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await addTeam({ name, displayOrder, organizationId: organization.id })
       } catch (e) {
-        return data(
-          {
-            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
-          },
-          { status: 400 },
+        const message = getErrorMessage(e)
+        return dataWithError(
+          { lastResult: submission.reply({ formErrors: [message] }) },
+          { message },
         )
       }
       return data({ ok: true })
@@ -100,13 +101,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
             organizationId: organization.id,
           })
         } catch (e) {
-          return data(
-            {
-              lastResult: submission.reply({
-                formErrors: [getErrorMessage(e)],
-              }),
-            },
-            { status: 400 },
+          const message = getErrorMessage(e)
+          return dataWithError(
+            { lastResult: submission.reply({ formErrors: [message] }) },
+            { message },
           )
         }
         return data({ ok: true })
@@ -175,6 +173,7 @@ function TeamRow({
 }) {
   const updateFetcher = useFetcher()
   const deleteFetcher = useFetcher()
+  const updateError = hasFetcherError(updateFetcher)
 
   const submitUpdate = (
     fields: Partial<{
@@ -204,6 +203,7 @@ function TeamRow({
         <EditableCell
           value={team.name}
           pending={updateFetcher.state !== 'idle'}
+          error={updateError}
           onSave={(newValue) => submitUpdate({ name: newValue })}
         />
       </TableCell>
@@ -211,6 +211,7 @@ function TeamRow({
         <EditableCell
           value={String(team.displayOrder)}
           pending={updateFetcher.state !== 'idle'}
+          error={updateError}
           onSave={(newValue) => submitUpdate({ displayOrder: newValue })}
           type="number"
           className="w-20"
@@ -220,6 +221,7 @@ function TeamRow({
         <EditableCell
           value={String(team.personalLimit)}
           pending={updateFetcher.state !== 'idle'}
+          error={updateError}
           onSave={(newValue) => submitUpdate({ personalLimit: newValue })}
           type="number"
           className="w-20"

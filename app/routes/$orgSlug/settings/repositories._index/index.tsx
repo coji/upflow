@@ -1,8 +1,10 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { useMemo } from 'react'
 import { data } from 'react-router'
+import { dataWithError } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { listTeams } from '../teams._index/queries.server'
@@ -86,11 +88,27 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   return match(submission.value)
     .with({ intent: 'updateTeam' }, async ({ repositoryId, teamId }) => {
-      await updateRepositoryTeam(organization.id, repositoryId, teamId)
+      try {
+        await updateRepositoryTeam(organization.id, repositoryId, teamId)
+      } catch (e) {
+        const message = getErrorMessage(e)
+        return dataWithError(
+          { lastResult: submission.reply({ formErrors: [message] }) },
+          { message },
+        )
+      }
       return data({ ok: true })
     })
     .with({ intent: 'bulkUpdateTeam' }, async ({ repositoryIds, teamId }) => {
-      await bulkUpdateRepositoryTeam(organization.id, repositoryIds, teamId)
+      try {
+        await bulkUpdateRepositoryTeam(organization.id, repositoryIds, teamId)
+      } catch (e) {
+        const message = getErrorMessage(e)
+        return dataWithError(
+          { lastResult: submission.reply({ formErrors: [message] }) },
+          { message },
+        )
+      }
       return data({ ok: true })
     })
     .exhaustive()
