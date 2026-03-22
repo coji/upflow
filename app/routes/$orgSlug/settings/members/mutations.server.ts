@@ -1,3 +1,4 @@
+import { AppError } from '~/app/libs/app-error'
 import { db } from '~/app/services/db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -8,7 +9,7 @@ export const changeMemberRole = async (
   currentMembershipId: string,
 ) => {
   if (memberId === currentMembershipId) {
-    throw new Error('Cannot change your own role')
+    throw new AppError('Cannot change your own role')
   }
 
   const target = await db
@@ -18,7 +19,7 @@ export const changeMemberRole = async (
     .where('organizationId', '=', organizationId)
     .executeTakeFirst()
   if (!target) {
-    throw new Error('Member not found')
+    throw new AppError('Member not found')
   }
 
   if (target.role === 'owner') {
@@ -29,7 +30,7 @@ export const changeMemberRole = async (
       .where('role', '=', 'owner')
       .executeTakeFirstOrThrow()
     if (ownerCount.count <= 1) {
-      throw new Error('Cannot change the role of the sole owner')
+      throw new AppError('Cannot change the role of the sole owner')
     }
   }
 
@@ -47,7 +48,7 @@ export const removeMember = async (
   currentMembershipId: string,
 ) => {
   if (memberId === currentMembershipId) {
-    throw new Error('Cannot remove yourself')
+    throw new AppError('Cannot remove yourself')
   }
 
   const member = await db
@@ -66,7 +67,7 @@ export const removeMember = async (
       .where('role', '=', 'owner')
       .executeTakeFirstOrThrow()
     if (ownerCount.count <= 1) {
-      throw new Error('Cannot remove the sole owner of the organization')
+      throw new AppError('Cannot remove the sole owner of the organization')
     }
   }
 

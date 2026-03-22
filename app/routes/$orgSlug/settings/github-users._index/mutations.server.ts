@@ -1,3 +1,4 @@
+import { AppError } from '~/app/libs/app-error'
 import { db } from '~/app/services/db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -71,7 +72,7 @@ export const deleteGithubUser = async (
     .executeTakeFirst()
 
   if (row?.userId === currentUserId) {
-    throw new Error('Cannot delete yourself')
+    throw new AppError('Cannot delete yourself')
   }
 
   // Revoke all sessions for the user before deleting
@@ -102,7 +103,7 @@ export const toggleGithubUserActive = async (params: {
       .executeTakeFirst()
 
     if (row?.userId === params.currentUserId) {
-      throw new Error('Cannot deactivate yourself')
+      throw new AppError('Cannot deactivate yourself')
     }
 
     if (row?.userId) {

@@ -97,6 +97,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await changeMemberRole(memberId, organization.id, role, membership.id)
       } catch (e) {
+        console.error('Failed to change member role:', e)
         const message = getErrorMessage(e)
         return dataWithError(
           {
@@ -118,6 +119,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await removeMember(memberId, organization.id, membership.id)
       } catch (e) {
+        console.error('Failed to remove member:', e)
         return data(
           {
             ok: false,

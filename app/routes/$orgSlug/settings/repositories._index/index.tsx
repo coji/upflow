@@ -91,6 +91,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await updateRepositoryTeam(organization.id, repositoryId, teamId)
       } catch (e) {
+        console.error('Failed to update repository team:', e)
         const message = getErrorMessage(e)
         return dataWithError(
           {
@@ -109,6 +110,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await bulkUpdateRepositoryTeam(organization.id, repositoryIds, teamId)
       } catch (e) {
+        console.error('Failed to bulk update repository teams:', e)
         const message = getErrorMessage(e)
         return dataWithError(
           {

@@ -1,3 +1,4 @@
+import { AppError } from '~/app/libs/app-error'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -14,7 +15,7 @@ export const updateRepositoryTeam = async (
     .executeTakeFirst()
 
   if (Number(result.numUpdatedRows ?? 0) !== 1) {
-    throw new Error('Repository not found')
+    throw new AppError('Repository not found')
   }
 }
 
@@ -35,7 +36,7 @@ export const bulkUpdateRepositoryTeam = async (
       .executeTakeFirst()
 
     if (Number(result.numUpdatedRows ?? 0) !== uniqueIds.length) {
-      throw new Error('Some repositories were not found')
+      throw new AppError('Some repositories were not found')
     }
   })
 }

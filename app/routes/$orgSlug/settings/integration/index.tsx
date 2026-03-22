@@ -65,6 +65,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       await upsertIntegration(organization.id, { ...rest, privateToken })
     }
   } catch (e) {
+    console.error('Failed to update integration:', e)
     const message = getErrorMessage(e)
     return dataWithError(
       {

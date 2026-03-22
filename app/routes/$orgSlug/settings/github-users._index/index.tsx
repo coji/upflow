@@ -179,6 +179,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           organizationId: organization.id,
         })
       } catch (e) {
+        console.error('Failed to add github user:', e)
         const message = getErrorMessage(e)
         return dataWithError(
           {
@@ -201,6 +202,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           organizationId: organization.id,
         })
       } catch (e) {
+        console.error('Failed to update github user:', e)
         const message = getErrorMessage(e)
         return dataWithError(
           {
@@ -222,6 +224,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       try {
         await deleteGithubUser(login, organization.id, user.id)
       } catch (e) {
+        console.error('Failed to delete github user:', e)
         return data(
           {
             ok: false,
@@ -247,6 +250,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           organizationId: organization.id,
         })
       } catch (e) {
+        console.error('Failed to update github user type:', e)
         return data(
           {
             ok: false,
@@ -275,6 +279,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           currentUserId: user.id,
         })
       } catch (e) {
+        console.error('Failed to toggle github user active:', e)
         return data(
           {
             ok: false,

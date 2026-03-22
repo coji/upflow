@@ -1,4 +1,5 @@
 import type { Updateable } from 'kysely'
+import { AppError } from '~/app/libs/app-error'
 import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -13,7 +14,7 @@ export const deleteRepository = async (
     .executeTakeFirst()
 
   if (Number(result.numDeletedRows ?? 0) !== 1) {
-    throw new Error('Repository not found')
+    throw new AppError('Repository not found')
   }
 }
 

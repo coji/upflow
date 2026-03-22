@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { AppError } from '~/app/libs/app-error'
 import { isReservedSlug } from '~/app/libs/auth.server'
 import { db, sql, type DB } from '~/app/services/db.server'
 import {
@@ -18,7 +19,7 @@ export const createOrganization = async ({
   creatorUserId: string
 }) => {
   if (isReservedSlug(organizationSlug)) {
-    throw new Error(`"${organizationSlug}" is a reserved slug`)
+    throw new AppError(`"${organizationSlug}" is a reserved slug`)
   }
 
   // 1. Create organization + member in shared DB
