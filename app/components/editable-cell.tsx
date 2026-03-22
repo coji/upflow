@@ -29,7 +29,7 @@ export function EditableCell({
   }
 
   // Discard failed edit so the user sees last-known-good server value
-  if (error && pendingValue.current !== null) {
+  if (error && !pending && pendingValue.current !== null) {
     pendingValue.current = null
   }
 

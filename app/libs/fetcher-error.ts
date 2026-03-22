@@ -9,6 +9,7 @@ export function hasFetcherError(fetcher: {
   return (
     fetcher.state === 'idle' &&
     fetcher.data != null &&
-    !('ok' in (fetcher.data as Record<string, unknown>))
+    typeof fetcher.data === 'object' &&
+    (fetcher.data as Record<string, unknown>).ok !== true
   )
 }
