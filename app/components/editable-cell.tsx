@@ -6,6 +6,7 @@ interface EditableCellProps {
   value: string
   onSave: (newValue: string) => void
   pending?: boolean
+  error?: boolean
   type?: 'text' | 'number'
   className?: string
 }
@@ -14,6 +15,7 @@ export function EditableCell({
   value,
   onSave,
   pending = false,
+  error = false,
   type = 'text',
   className,
 }: EditableCellProps) {
@@ -23,6 +25,11 @@ export function EditableCell({
 
   // Server has caught up once value matches what we submitted
   if (pendingValue.current !== null && value === pendingValue.current) {
+    pendingValue.current = null
+  }
+
+  // Discard failed edit so the user sees last-known-good server value
+  if (error && pendingValue.current !== null) {
     pendingValue.current = null
   }
 

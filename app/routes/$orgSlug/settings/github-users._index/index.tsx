@@ -1,7 +1,7 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { useMemo } from 'react'
 import { data, href } from 'react-router'
-import { dataWithSuccess } from 'remix-toast'
+import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { useTimezone } from '~/app/hooks/use-timezone'
@@ -179,11 +179,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           organizationId: organization.id,
         })
       } catch (e) {
-        return data(
-          {
-            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
-          },
-          { status: 400 },
+        const message = getErrorMessage(e)
+        return dataWithError(
+          { lastResult: submission.reply({ formErrors: [message] }) },
+          { message },
         )
       }
       return data({ ok: true })
@@ -196,11 +195,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           organizationId: organization.id,
         })
       } catch (e) {
-        return data(
-          {
-            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
-          },
-          { status: 400 },
+        const message = getErrorMessage(e)
+        return dataWithError(
+          { lastResult: submission.reply({ formErrors: [message] }) },
+          { message },
         )
       }
       return data({ ok: true })
