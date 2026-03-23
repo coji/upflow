@@ -1,5 +1,7 @@
 # GitHub App 移行 — 残りの実装ステップ
 
+> 正本: `docs/github-app-phase2-plan.md`（設計判断・UX フロー）、ロードマップ: `docs/github-app-migration.md`（Phase 0-5 全体）
+
 > PR 1（スキーマ + integrations 移行 + deps）は完了。以降を `feat/github-app-migration` ブランチに1本で積む。
 
 ## Step 2: Octokit factory + fetcher リファクタ
@@ -302,12 +304,29 @@ export function verifyInstallState(state: string): { organizationId: string }
 
 ### 4-2. loader の変更
 
-```typescript
-// 現在の loader
-const integration = await getIntegration(organization.id)
-const safeIntegration = { provider, method, hasToken: !!privateToken }
+`github_app_links` のクエリは `batch/db/queries.ts` の `getGithubAppLinkByOrgId` と同じ SELECT だが、batch モジュールからの import は依存の方向が不自然。**ルート層の `+functions/queries.server.ts` に同じクエリを置く**（このプロジェクトの routing convention に従う）。
 
-// 変更後
+```typescript
+// app/routes/$orgSlug/settings/integration/+functions/queries.server.ts（新規 or 既存に追加）
+export const getGithubAppLink = async (organizationId: OrganizationId) => {
+  return (
+    (await db
+      .selectFrom('githubAppLinks')
+      .select([
+        'githubOrg',
+        'appRepositorySelection',
+        'installationId',
+        'deletedAt',
+      ])
+      .where('organizationId', '=', organizationId)
+      .where('deletedAt', 'is', null)
+      .executeTakeFirst()) ?? null
+  )
+}
+```
+
+```typescript
+// loader
 const integration = await getIntegration(organization.id)
 const githubAppLink = await getGithubAppLink(organization.id)
 return {
