@@ -11,6 +11,8 @@ import {
   test,
   vi,
 } from 'vitest'
+import { closeTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
 import type {
   ShapedGitHubCommit,
@@ -20,6 +22,7 @@ import type {
   ShapedGitHubTag,
   ShapedTimelineItem,
 } from './model'
+import { createStore } from './store'
 
 // Set up a temp directory for tenant DB
 const testDir = path.join(tmpdir(), `store-test-${Date.now()}`)
@@ -33,10 +36,6 @@ vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 afterAll(() => {
   vi.unstubAllEnvs()
 })
-
-const { closeTenantDb } = await import('~/app/services/tenant-db.server')
-type OrganizationId = import('~/app/types/organization').OrganizationId
-const { createStore } = await import('./store')
 
 const orgId = 'test-org' as OrganizationId
 const repositoryId = 'repo-1'

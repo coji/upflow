@@ -11,7 +11,10 @@ import {
   test,
   vi,
 } from 'vitest'
+import { closeTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
+import { deleteGithubUser, toggleGithubUserActive } from './mutations.server'
 
 const testDir = path.join(tmpdir(), `github-users-mutations-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -44,12 +47,7 @@ sharedDb.close()
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${sharedDbPath}`)
 
-const { closeTenantDb } = await import('~/app/services/tenant-db.server')
-type OrganizationId = import('~/app/types/organization').OrganizationId
 const toOrgId = (s: string) => s as OrganizationId
-
-const { deleteGithubUser, toggleGithubUserActive } =
-  await import('./mutations.server')
 
 let testCounter = 0
 function createFreshOrg(): OrganizationId {
