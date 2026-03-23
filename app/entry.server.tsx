@@ -8,9 +8,15 @@ import type { AppLoadContext, EntryContext } from 'react-router'
 import { ServerRouter } from 'react-router'
 import '~/app/libs/dotenv.server'
 
-export const handleError = Sentry.createSentryHandleError({
+const sentryHandleError = Sentry.createSentryHandleError({
   logErrors: false,
 })
+
+export const handleError: typeof sentryHandleError = (error, ctx) => {
+  // Skip reporting 404s to Sentry (bot/scanner noise)
+  if (error instanceof Response && error.status === 404) return
+  sentryHandleError(error, ctx)
+}
 
 export const streamTimeout = 30000
 
