@@ -9,9 +9,14 @@ import type { TeamRow } from '../../teams._index/queries.server'
 interface DataTableToolbarProps {
   teams: TeamRow[]
   orgSlug: string
+  canAddRepositories: boolean
 }
 
-export function DataTableToolbar({ teams, orgSlug }: DataTableToolbarProps) {
+export function DataTableToolbar({
+  teams,
+  orgSlug,
+  canAddRepositories,
+}: DataTableToolbarProps) {
   const { queries, updateQueries, isFiltered, resetFilters } =
     useDataTableState()
 
@@ -38,12 +43,14 @@ export function DataTableToolbar({ teams, orgSlug }: DataTableToolbarProps) {
           </Button>
         )}
       </div>
-      <Button asChild>
-        <Link to={href('/:orgSlug/settings/repositories/add', { orgSlug })}>
-          <PlusIcon className="h-4 w-4" />
-          Add
-        </Link>
-      </Button>
+      {canAddRepositories ? (
+        <Button asChild>
+          <Link to={href('/:orgSlug/settings/repositories/add', { orgSlug })}>
+            <PlusIcon className="h-4 w-4" />
+            Add
+          </Link>
+        </Button>
+      ) : null}
     </div>
   )
 }

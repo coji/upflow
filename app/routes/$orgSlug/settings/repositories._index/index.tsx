@@ -4,6 +4,7 @@ import { data } from 'react-router'
 import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
+import { isOrgOwner } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
@@ -23,7 +24,7 @@ import {
 import { listFilteredRepositories } from './queries.server'
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const searchParams = new URL(request.url).searchParams
 
   const { repo, team } = QuerySchema.parse({
@@ -53,7 +54,13 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const teams = await listTeams(organization.id)
 
-  return { organization, repositories, pagination, teams }
+  return {
+    organization,
+    repositories,
+    pagination,
+    teams,
+    canAddRepositories: isOrgOwner(membership.role),
+  }
 }
 
 const nullableTeamId = z.preprocess(
@@ -129,7 +136,13 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 }
 
 export default function OrganizationRepositoryIndexPage({
-  loaderData: { organization, repositories, pagination, teams },
+  loaderData: {
+    organization,
+    repositories,
+    pagination,
+    teams,
+    canAddRepositories,
+  },
 }: Route.ComponentProps) {
   const slug = organization.slug
   const columns = useMemo(() => createColumns(slug, teams), [slug, teams])
@@ -146,6 +159,7 @@ export default function OrganizationRepositoryIndexPage({
         pagination={pagination}
         teams={teams}
         orgSlug={slug}
+        canAddRepositories={canAddRepositories}
       />
     </ContentSection>
   )

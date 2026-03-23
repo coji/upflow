@@ -23,6 +23,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
+import { requireOrgOwner } from '~/app/libs/auth.server'
 import { orgContext } from '~/app/middleware/context'
 import { clearOrgCache, getOrgCachedData } from '~/app/services/cache.server'
 import ContentSection from '../+components/content-section'
@@ -45,7 +46,8 @@ export const loader = async ({
   params,
   context,
 }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
+  requireOrgOwner(membership, organization.slug)
   const { owner, cursor, query, refresh } = zx.parseQuery(request, {
     owner: z.string().optional(),
     cursor: z.string().optional(),
@@ -111,7 +113,8 @@ export const loader = async ({
 }
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
+  requireOrgOwner(membership, organization.slug)
   const integration = await getIntegration(organization.id)
   if (!integration) {
     throw new Error('integration not created')

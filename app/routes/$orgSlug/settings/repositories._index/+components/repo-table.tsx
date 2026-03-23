@@ -37,6 +37,7 @@ interface DataTableProps {
   pagination: PaginationProps
   teams: TeamRow[]
   orgSlug: string
+  canAddRepositories: boolean
 }
 
 export function RepoTable({
@@ -45,6 +46,7 @@ export function RepoTable({
   pagination,
   teams,
   orgSlug,
+  canAddRepositories,
 }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
@@ -62,7 +64,11 @@ export function RepoTable({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar teams={teams} orgSlug={orgSlug} />
+      <DataTableToolbar
+        teams={teams}
+        orgSlug={orgSlug}
+        canAddRepositories={canAddRepositories}
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
