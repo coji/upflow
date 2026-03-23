@@ -1,9 +1,9 @@
 import { configDefaults, defineConfig, mergeConfig } from 'vitest/config'
 import viteConfigFn from './vite.config'
 
-export default defineConfig((configEnv) =>
+export default defineConfig(async (configEnv) =>
   mergeConfig(
-    viteConfigFn(configEnv),
+    await viteConfigFn(configEnv),
     defineConfig({
       test: {
         exclude: [...configDefaults.exclude, 'opensrc/**', '.react-router/**'],

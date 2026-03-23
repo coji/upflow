@@ -52,7 +52,18 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --offline --frozen-lockfile && pnpm rebuild better-sqlite3
 
 COPY . .
-RUN pnpm run build
+
+# Sentry (optional). DSN is baked into the client bundle at build time; server reads SENTRY_DSN at runtime.
+ARG SENTRY_DSN
+ARG SENTRY_AUTH_TOKEN
+ARG SENTRY_TRACES_SAMPLE_RATE
+
+RUN SENTRY_DSN="$SENTRY_DSN" \
+    VITE_SENTRY_DSN="$SENTRY_DSN" \
+    SENTRY_TRACES_SAMPLE_RATE="$SENTRY_TRACES_SAMPLE_RATE" \
+    VITE_SENTRY_TRACES_SAMPLE_RATE="$SENTRY_TRACES_SAMPLE_RATE" \
+    SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" \
+    pnpm run build
 
 
 # --- Production image ---
@@ -80,5 +91,6 @@ COPY --from=build /upflow/app /upflow/app
 COPY --from=build /upflow/batch /upflow/batch
 COPY --from=build /upflow/ops/remote /upflow/ops/remote
 COPY --from=build /upflow/server.mjs /upflow/server.mjs
+COPY --from=build /upflow/instrument.server.mjs /upflow/instrument.server.mjs
 
 CMD [ "sh", "./start.sh" ]
