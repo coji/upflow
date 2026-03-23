@@ -13,7 +13,7 @@ export default defineConfig({
       'pull_request_reviews.state':
         '"APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "DISMISSED"',
       'integrations.provider': '"github"',
-      'integrations.method': '"token"',
+      'integrations.method': '"token" | "github_app"',
       'repositories.provider': '"github"',
       'organization_settings.language': 'Generated<"en" | "ja">',
       'organization_settings.release_detection_method':

@@ -48,6 +48,7 @@
     "@google/genai": "1.46.0",
     "@googleapis/sheets": "13.0.1",
     "@holiday-jp/holiday_jp": "2.5.1",
+    "@octokit/auth-app": "8.2.0",
     "@octokit/plugin-rest-endpoint-methods": "17.0.0",
     "@react-router/express": "7.13.1",
     "@react-router/node": "7.13.1",

@@ -40,6 +40,17 @@ export interface AtlasSchemaRevisions {
   version: string;
 }
 
+export interface GithubAppLinks {
+  appRepositorySelection: "all" | "selected";
+  createdAt: Generated<string>;
+  deletedAt: string | null;
+  githubAccountId: number;
+  githubOrg: string;
+  installationId: number;
+  organizationId: string;
+  updatedAt: Generated<string>;
+}
+
 export interface Invitations {
   createdAt: Generated<string>;
   email: string;
@@ -124,6 +135,7 @@ export interface Verifications {
 export interface DB {
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
+  githubAppLinks: GithubAppLinks;
   invitations: Invitations;
   members: Members;
   organizations: Organizations;

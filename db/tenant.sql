@@ -5,6 +5,7 @@ CREATE TABLE `organization_settings` (
   `release_detection_key` text NOT NULL DEFAULT 'production',
   `is_active` boolean NOT NULL DEFAULT true,
   `timezone` text NOT NULL DEFAULT 'Asia/Tokyo',
+  `language` text NOT NULL DEFAULT 'en',
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   PRIMARY KEY (`id`)
@@ -25,6 +26,7 @@ CREATE TABLE `integrations` (
   `provider` text NOT NULL,
   `method` text NOT NULL,
   `private_token` text NULL,
+  `app_suspended_at` text NULL,
   PRIMARY KEY (`id`)
 );
 -- Create "repositories" table

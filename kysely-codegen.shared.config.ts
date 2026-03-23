@@ -10,6 +10,7 @@ export default defineConfig({
     columns: {
       'members.role': '"owner" | "admin" | "member"',
       'users.role': '"admin" | "user"',
+      'github_app_links.app_repository_selection': '"all" | "selected"',
     },
   },
 })

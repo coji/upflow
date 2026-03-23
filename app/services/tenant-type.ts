@@ -63,8 +63,9 @@ export interface GithubRawTags {
 }
 
 export interface Integrations {
+  appSuspendedAt: string | null;
   id: string;
-  method: "token";
+  method: "token" | "github_app";
   privateToken: string | null;
   provider: "github";
 }

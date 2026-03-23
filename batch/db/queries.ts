@@ -12,6 +12,34 @@ export const getPullRequestReport = async (organizationId: OrganizationId) => {
     .execute()
 }
 
+const githubAppLinkColumns = [
+  'organizationId',
+  'installationId',
+  'githubOrg',
+  'githubAccountId',
+  'appRepositorySelection',
+] as const
+
+async function getGithubAppLink(organizationId: OrganizationId) {
+  return (
+    (await db
+      .selectFrom('githubAppLinks')
+      .select(githubAppLinkColumns)
+      .where('organizationId', '=', organizationId)
+      .where('deletedAt', 'is', null)
+      .executeTakeFirst()) ?? null
+  )
+}
+
+async function getAllGithubAppLinks() {
+  const rows = await db
+    .selectFrom('githubAppLinks')
+    .select(githubAppLinkColumns)
+    .where('deletedAt', 'is', null)
+    .execute()
+  return new Map(rows.map((r) => [r.organizationId, r]))
+}
+
 async function getTenantData(organizationId: OrganizationId) {
   const tenantDb = getTenantDb(organizationId)
   const [organizationSetting, integration, repositories, exportSetting] =
@@ -22,7 +50,7 @@ async function getTenantData(organizationId: OrganizationId) {
         .executeTakeFirst(),
       tenantDb
         .selectFrom('integrations')
-        .select(['id', 'method', 'provider', 'privateToken'])
+        .select(['id', 'method', 'provider', 'privateToken', 'appSuspendedAt'])
         .executeTakeFirst(),
       tenantDb
         .selectFrom('repositories')
@@ -72,15 +100,19 @@ export async function getBotLogins(
 }
 
 export const listAllOrganizations = async () => {
-  const orgs = await db
-    .selectFrom('organizations')
-    .select(['id', 'name', 'slug', 'createdAt'])
-    .execute()
+  const [orgs, appLinksMap] = await Promise.all([
+    db
+      .selectFrom('organizations')
+      .select(['id', 'name', 'slug', 'createdAt'])
+      .execute(),
+    getAllGithubAppLinks(),
+  ])
 
   return Promise.all(
     orgs.map(async (org) => {
       const tenantData = await getTenantData(org.id as OrganizationId)
-      return { ...org, ...tenantData }
+      const githubAppLink = appLinksMap.get(org.id) ?? null
+      return { ...org, ...tenantData, githubAppLink }
     }),
   )
 }
@@ -92,9 +124,10 @@ export const getOrganization = async (organizationId: OrganizationId) => {
     .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  const [tenantData, botLogins] = await Promise.all([
+  const [tenantData, botLogins, githubAppLink] = await Promise.all([
     getTenantData(org.id as OrganizationId),
     getBotLogins(org.id as OrganizationId),
+    getGithubAppLink(org.id as OrganizationId),
   ])
-  return { ...org, ...tenantData, botLogins }
+  return { ...org, ...tenantData, botLogins, githubAppLink }
 }
