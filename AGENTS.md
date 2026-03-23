@@ -21,6 +21,8 @@ Instructions for AI coding agents working with this codebase.
 - No commit before user verification and explicit instruction.
 - No `git push` or PR creation without explicit instruction.
 - Never commit directly to `main`.
+- After a PR is merged and confirmed, switch to `main` and `pull` before continuing work.
+- If asked to create a PR while on `main`, create a branch and proceed through commit + PR creation; if git state is unusual, stop and confirm first.
 
 For all other project-specific guidance, conventions, and workflow details, see `CLAUDE.md`.
 
