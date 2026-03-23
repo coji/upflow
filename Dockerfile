@@ -52,6 +52,14 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --offline --frozen-lockfile && pnpm rebuild better-sqlite3
 
 COPY . .
+
+# Sentry (optional). DSN is baked into the client bundle at build time; server reads SENTRY_DSN at runtime.
+ARG SENTRY_DSN
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_DSN=$SENTRY_DSN
+ENV VITE_SENTRY_DSN=$SENTRY_DSN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
+
 RUN pnpm run build
 
 

@@ -2,6 +2,7 @@ node_modules
 *.log
 .DS_Store
 .env
+.env.sentry-build-plugin
 .cache
 public/build
 build

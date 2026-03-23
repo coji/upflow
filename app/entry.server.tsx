@@ -1,4 +1,5 @@
 import { createReadableStreamFromReadable } from '@react-router/node'
+import * as Sentry from '@sentry/react-router'
 import { consola } from 'consola'
 import { isbot } from 'isbot'
 import { PassThrough } from 'node:stream'
@@ -7,9 +8,13 @@ import type { AppLoadContext, EntryContext } from 'react-router'
 import { ServerRouter } from 'react-router'
 import '~/app/libs/dotenv.server'
 
+export const handleError = Sentry.createSentryHandleError({
+  logErrors: false,
+})
+
 export const streamTimeout = 30000
 
-export default function handleRequest(
+function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
@@ -120,3 +125,4 @@ function handleBrowserRequest(
     )
   })
 }
+export default Sentry.wrapSentryHandleRequest(handleRequest)

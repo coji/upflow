@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-router'
 import { useEffect } from 'react'
 import {
   Links,
@@ -83,6 +84,10 @@ export function ErrorBoundary() {
         <p>{error.data}</p>
       </main>
     )
+  }
+
+  if (error && error instanceof Error) {
+    Sentry.captureException(error)
   }
 
   return (
