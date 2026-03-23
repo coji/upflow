@@ -54,11 +54,11 @@ RUN pnpm install --offline --frozen-lockfile && pnpm rebuild better-sqlite3
 COPY . .
 
 # Sentry (optional). DSN is baked into the client bundle at build time; server reads SENTRY_DSN at runtime.
-# SENTRY_PUBLISH_RELEASE=1 enables source map upload; without it, build skips Sentry upload.
+# SENTRY_PUBLISH_RELEASE=1 enables source map upload (requires SENTRY_AUTH_TOKEN).
 ARG SENTRY_DSN
 ARG SENTRY_AUTH_TOKEN
 ARG SENTRY_TRACES_SAMPLE_RATE
-ARG SENTRY_PUBLISH_RELEASE=1
+ARG SENTRY_PUBLISH_RELEASE
 
 RUN SENTRY_DSN="$SENTRY_DSN" \
     VITE_SENTRY_DSN="$SENTRY_DSN" \

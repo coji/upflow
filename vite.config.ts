@@ -21,15 +21,16 @@ export default defineConfig(async (configEnv) => {
       tailwindcss(),
       reactRouter(),
       mode !== 'production' && devtoolsJson(),
-      ...(await sentryReactRouter(
-        {
-          org: 'techtalkjp',
-          project: 'upflow',
-          authToken: process.env.SENTRY_AUTH_TOKEN,
-          sourcemaps: publishRelease ? undefined : { disable: true },
-        },
-        configEnv,
-      )),
+      ...(publishRelease
+        ? await sentryReactRouter(
+            {
+              org: 'techtalkjp',
+              project: 'upflow',
+              authToken: process.env.SENTRY_AUTH_TOKEN,
+            },
+            configEnv,
+          )
+        : []),
     ],
 
     optimizeDeps: {
