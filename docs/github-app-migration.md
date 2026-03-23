@@ -48,7 +48,7 @@
     ↓
 クライアントが自分の org に App をインストール
     ↓
-Installation ID を取得（webhook で正本反映）
+Setup callback + 署名付き state で Installation ID を安全に取得・保存
     ↓
 Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app が自動リフレッシュ）
     ↓
@@ -70,7 +70,7 @@ Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app 
 | Repository: metadata      | read | リポジトリ一覧（暗黙的に付与）         | **追加** |
 | Repository: deployments   | read | DeployedEvent タイムラインアイテム取得 | **追加** |
 
-> **注意**: `fetcher.ts` の GraphQL で `DeployedEvent` を取得しているため `deployments:read` が必要。PoC で全クエリの動作確認をすること。
+> PoC（2026-03-23）で全クエリの動作確認済み。`deployments:read` により `DeployedEvent` も正常取得。
 
 ## 影響範囲（GitHub トークンを使う全箇所）
 
@@ -104,161 +104,82 @@ Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app 
 - Client Secret はそのまま有効、環境変数の更新不要
 - ログイン動作確認済み
 
-### Phase 1: PoC（技術検証）
+### Phase 1: PoC（技術検証） ✅ 完了（2026-03-23）
 
-既存 App に権限を追加する前に、テスト環境でクリティカルな仮定を検証する。
+テスト用 GitHub App（upflow-poc-test、App ID: 3164807）を作成し、techtalkjp org にインストールして検証。
 
-1. **テスト用 GitHub App を作成**（個人アカウントでOK、検証後に削除）
-   - 必要な権限（contents, pull_requests, deployments: read）を設定
-   - Private key を生成
-2. **テスト org にインストール**
-3. **検証項目**:
-   - `@octokit/auth-app` の `createAppAuth` → `installationId` 指定で Octokit を生成し、リクエストごとに自動リフレッシュされるか
-   - `GET /installation/repositories` でリポ一覧が取得できるか
-   - `fetcher.ts` の全 GraphQL クエリが Installation Token で動作するか（特に `DeployedEvent`, `ReviewRequestedEvent` 等のタイムラインアイテム）
-   - **REST Search API** (`GET /search/repositories`) が Installation Token で期待通りスコープされるか。されない場合は `GET /installation/repositories` ベースのフィルタリングに切り替え
-   - **アクセス喪失時の挙動**: 選択インストールで対象外のリポに GraphQL を投げた場合のエラー形式
-   - **選択インストール時の repo 一覧**: `GET /installation/repositories` が選択されたリポのみ返すか
-4. **PoC の結果で権限リストと設計を最終確定**
+**検証結果**:
+
+| 検証項目                                       | 結果                                                         |
+| ---------------------------------------------- | ------------------------------------------------------------ |
+| `@octokit/auth-app` で Installation Token 取得 | ✅ 動作確認                                                  |
+| `GET /installation/repositories` でリポ一覧    | ✅ 27リポ取得、owner 抽出も可能                              |
+| GraphQL: PR 一覧取得                           | ✅                                                           |
+| GraphQL: タイムライン（DeployedEvent 含む）    | ✅ `deployments:read` で動作                                 |
+| GraphQL: コミット一覧                          | ✅                                                           |
+| GraphQL: レビュー一覧                          | ✅                                                           |
+| REST: pulls.listFiles                          | ✅                                                           |
+| GraphQL: タグ一覧                              | ✅                                                           |
+| `GET /user/repos`（現行リポ追加画面）          | ❌ 403 — Installation Token では使用不可                     |
+| Search API のスコープ                          | ⚠️ **スコープされない**（facebook/react 等の公開リポも返る） |
+
+**重要な発見**:
+
+1. **`GET /user/repos` は Installation Token で 403** → `GET /installation/repositories` への切り替えが必須（計画通り）
+2. **Search API は Installation Token でもスコープされない**（GitHub の既知の制限）→ `GET /installation/repositories` で全件取得 + アプリ側フィルタに変更。Renovate 等の主要 GitHub App も同じ手法を採用。クライアント org のリポ数は数十〜数百なので実用上問題なし（既存の5分キャッシュも活用可能）
+3. **全 GraphQL クエリが Installation Token でそのまま動作** → `createFetcher` の Octokit 差し替えだけで crawler は移行可能
+
+PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 
 ### Phase 2: GitHub App 基盤整備
 
-1. **既存 App「upflow-team」に権限追加 + 設定更新**
-   - PoC で確定した権限を追加
-   - Private key を生成
-   - Webhook Secret を設定
-   - Setup URL: `https://upflow.team/api/github/setup`
-   - 「Redirect on update」を有効化（リポ選択変更時に callback）
+> **詳細実装計画**: `docs/github-app-phase2-plan.md` を参照。以下は概要のみ。
 
-2. **`@octokit/auth-app` を導入**
-   - JWT 生成、Installation Token キャッシュ、自動リフレッシュを全て委譲
-   - 自前の JWT 署名やキャッシュロジックは不要
+**アーキテクチャ**:
 
-3. **`integrations` テーブル拡張**（tenant DB）
+- **データ分割**: 接続先情報（installation_id, github_org 等）は shared DB の `github_app_links` テーブルで管理。認証設定（method, privateToken）は tenant DB の `integrations` で管理。tenant DB 全走査が不要
+- **接続経路**: Setup URL callback + 署名付き state パラメータが主経路。セッション不要で安全にテナント特定。Webhook は状態更新（deleted, suspend, repo selection 変更）に使用
+- **method の意味**: `method` は常に実効の認証方式を表す。GitHub App link が完了した時点で自動的に `token` → `github_app` に切り替わる。リンク前は PAT のまま（crawl が止まらない）
 
-   ```sql
-   -- 既存
-   provider TEXT NOT NULL DEFAULT 'github'
-   method TEXT NOT NULL DEFAULT 'token'
-   private_token TEXT
+**PR 構成（4分割）**:
 
-   -- 追加
-   app_installation_id INTEGER                    -- GitHub App の Installation ID
-   app_installation_target_login TEXT             -- インストール先 org/user の login 名
-   app_repository_selection TEXT                  -- 'all' | 'selected'（インストール時の選択）
-   app_installation_suspended_at TEXT             -- サスペンド日時（webhook で更新）
-   ```
+1. スキーマ拡張 + 依存関係（`github_app_links` テーブル、`app_suspended_at` カラム）
+2. Octokit factory + fetcher リファクタ + 全 call site 更新
+3. Webhook + Setup callback + Installation 紐付け + state トークン
+4. 設定 UI + リポ追加画面の App UX
 
-   - `method: 'token'` → PAT 方式（現行）
-   - `method: 'github_app'` → GitHub App 方式（新規）
-   - **移行期間中は `private_token` を保持する**（ロールバック用）。PAT の削除は Phase 4 の検証完了後に明示的に行う
+**接続フロー（org 名の手入力不要）**:
 
-   **関連する更新**:
-   - `db/tenant.sql`: スキーマ定義追加
-   - `db/migrations/tenant/`: マイグレーション SQL 生成
-   - `app/services/tenant-type.ts`: `pnpm db:generate` で型再生成
-   - `db/seed.ts`: seed データに新カラム追加
-   - `app/routes/$orgSlug/settings/_index/+schema.ts`: `method: z.enum(['token', 'github_app'])`
+1. ユーザーが「GitHub App をインストール」ボタン or「インストール URL をコピー」
+2. サーバーが署名付き state（organizationId + expiry）を生成
+3. GitHub でインストール → setup callback に state 付きリダイレクト
+4. state 検証 → GitHub API で installation 検証 → link 保存 + method 自動切替
 
-4. **Octokit 認証の抽象化**
+### Phase 3: 未対応の詳細（Phase 2 完了後）
 
-   `tokenProvider` 関数ではなく、**Octokit インスタンス自体に `@octokit/auth-app` の `authStrategy` を組み込む**。これにより各リクエストで自動的にトークンがリフレッシュされ、長時間 crawl でもトークン失効しない。
-
-   ```typescript
-   // GitHub App 方式
-   import { createAppAuth } from '@octokit/auth-app'
-
-   const octokit = new Octokit({
-     authStrategy: createAppAuth,
-     auth: {
-       appId: GITHUB_APP_ID,
-       privateKey: GITHUB_APP_PRIVATE_KEY,
-       installationId: integration.appInstallationId,
-     },
-   })
-
-   // PAT 方式（現行互換）
-   const octokit = new Octokit({ auth: token })
-   ```
-
-   - `createFetcher` のインターフェースを `{ token: string }` → `{ octokit: Octokit }` に変更
-   - Octokit 生成を呼び出し側に移し、fetcher はもらった octokit を使うだけにする
-   - **全 call site**（影響範囲の表を参照）に共通の Octokit 生成関数を適用
-
-5. **リポジトリ追加画面の API 切り替え**
-   - `getUniqueOwners()`:
-     - PAT: `GET /user/repos?affiliation=...`（現行）
-     - App: `GET /installation/repositories` → owner を抽出
-   - `getRepositoriesByOwnerAndKeyword()`:
-     - PAT: `GET /search/repositories`（現行）
-     - App: PoC 結果に基づき Search API or `GET /installation/repositories` + フィルタ
-   - loader の前提条件更新: `privateToken` 必須 → `method` に応じて `privateToken` or `appInstallationId` を要求
-   - `getIntegration()` クエリを拡張: `method`, `appInstallationId`, 接続状態を返す
-   - **重要**: この画面は PAT → App で API エンドポイントが根本的に異なる。単純なトークン差し替えでは済まない
-
-6. **Webhook エンドポイント**
-   - ルート: `app/routes/api.github.webhook.ts`
-   - `X-Hub-Signature-256` でペイロード署名を検証
-   - 購読イベント:
-     - `installation`: インストール・アンインストール・サスペンド検知
-     - `installation_repositories`: リポの追加・削除検知（選択インストール対応）
-   - **installation イベント処理**:
-     - `created`: `appInstallationId`, `targetLogin`, `repositorySelection` を tenant DB に保存（**正本**）
-     - `deleted`: integration の method を無効化、UI に警告表示
-     - `suspend` / `unsuspend`: `appInstallationSuspendedAt` を更新
-   - **installation_repositories イベント処理**:
-     - org キャッシュを無効化（`clearOrgCache`）
-     - 登録済みリポがアクセス不可になった場合: リポの状態フラグを更新、設定画面に警告表示
-   - **installation_id の信頼性**: `setup_url` callback の `installation_id` は spoof 可能（GitHub 公式ドキュメントで警告あり）。callback は UX の補助（設定画面への自動遷移）にのみ使い、**installation_id の正本は webhook で反映する**
-
-7. **Setup URL callback ルート**
-   - ルート: `app/routes/api.github.setup.ts`
-   - 役割: インストール完了後にユーザーを設定画面にリダイレクトするだけ
-   - `installation_id` の保存は行わない（webhook が正本）
-   - state パラメータで org を特定し、`/:orgSlug/settings/integration` にリダイレクト
-
-8. **キャッシュ戦略**
-   - integration の method 変更時に `clearOrgCache` を呼ぶ
-   - webhook 受信時にも `clearOrgCache` を呼ぶ
-   - これにより旧トークンベースの owner/repo 一覧が残り続ける問題を防ぐ
-
-### Phase 3: 設定画面 UI
-
-1. **Integration 設定画面の拡張**
-   - 接続方式の選択: 「GitHub Token（PAT）」 or 「GitHub App」
-   - GitHub App 選択時:
-     - 「GitHub App をインストール」リンク → GitHub のインストール画面
-     - インストール完了 → setup_url callback → 設定画面にリダイレクト
-     - webhook で `installation_id` が保存されるまでポーリングまたは画面リロードで反映
-   - 接続状態の表示:
-     - 未接続
-     - インストール済み（`app_installation_target_login` 表示）
-     - サスペンド中（要確認）
-     - アンインストール済み（要再接続）
-   - リポ選択モードの表示: 「全リポジトリ」or「選択されたリポジトリ（GitHub App 設定で変更可）」
-
-2. **リポジトリ追加画面**
-   - GitHub App 接続時、インストール先 org のリポのみ表示（API レベルで保証）
-   - App がリポ選択インストールされている場合の注意表示: 「一部のリポジトリのみアクセス可能です。GitHub の App 設定から変更できます」
-   - 登録済みリポがアクセス不可の場合の警告表示
+- `installation_repositories` イベントでの個別リポのアクセス状態フラグ更新・警告 UI
+- `repositories` テーブルへの `is_accessible` カラム追加
+- 定期 reconciliation バッチ（`GET /app/installations` と `github_app_links` の突合）
 
 ### Phase 4: クライアント移行
 
 各クライアント独立に進行可能:
 
 ```text
-1. クライアントに GitHub App インストールを依頼
-   - インストール URL を共有（https://github.com/apps/upflow-team/installations/new）
-   - 「全リポジトリ」推奨だが、選択リポでも可（制限あり表示）
-2. webhook で installation_id が自動保存される
-3. 設定画面で method を github_app に切り替え
+1. Settings → Integration で「インストール URL をコピー」
+   → 署名付き state 入りの URL がコピーされる
+2. クライアントに URL を共有（Slack 等）
+   → 「全リポジトリ」推奨だが、選択リポでも可（制限あり表示）
+3. クライアントが GitHub で Install
+   → setup callback で自動リンク + method 自動切替
+   → PAT は保持されたまま（ロールバック用）
 4. 動作確認（crawler 1サイクル完了、リポ一覧表示、リポ追加）
-5. 検証期間（最低1週間）: PAT は integration に残しておく
+5. 検証期間（最低1週間）
 6. 問題なければ設定画面から PAT を明示的に削除
 7. リポ追加/削除権限を admin に開放
 ```
 
-**ロールバック手順**: GitHub App で問題発生時、設定画面で method を `token` に戻す。PAT が残っていれば即座に復旧。PAT 削除済みの場合は PAT を再発行して設定。
+**ロールバック手順**: Settings で「接続解除」→ method が自動で `token` に復帰。PAT が残っていれば即座に復旧。PAT 削除済みの場合は PAT を再発行して設定。
 
 ### Phase 5: クリーンアップ（全クライアント移行完了後）
 
@@ -274,7 +195,8 @@ Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app 
 - `@octokit/auth-app` の `authStrategy` による Octokit 認証の委譲（自前実装しない）
 - 移行期間中のリポ追加 owner 限定（既存ロールで対応）
 - PoC による技術検証を先行
-- webhook 主導の installation 管理（setup_url callback は補助のみ）
+- Setup callback + 署名付き state による installation 管理（webhook は状態更新のみ）
+- `github_app_links`（shared DB）で installation → tenant の O(1) ルックアップ
 
 ### やらないこと（YAGNI）
 
@@ -285,6 +207,10 @@ Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app 
   - 理由: OAuth フローと Installation Token は同一 App で共存可能。2つの App を管理する運用コストに見合わない
 - GitHub App Manifest フロー（各クライアントが自分の App を作る方式）
   - 理由: 2クライアントでは過剰。単一 App で十分
+- 1テナント複数 org 対応（`integrations` を複数行対応にする）
+  - 前提: 1テナント = 1 GitHub org。現在の2クライアントとも1 org ずつ
+  - `integrations` テーブルは1行のみの前提で設計する（`executeTakeFirst()` のまま）
+  - 将来: 複数 org が必要になったら `integrations` を複数行対応に拡張
 
 ## 技術メモ
 
@@ -304,7 +230,7 @@ Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app 
 - `@octokit/auth-app` の `authStrategy` が Octokit のリクエストごとに透過的にリフレッシュ
 - App 秘密鍵が漏洩した場合: GitHub App 設定画面で鍵をローテーション → 環境変数を更新 → 再デプロイ
 - Webhook ペイロードは必ず署名検証する（`X-Hub-Signature-256`）
-- `setup_url` の `installation_id` は信用しない（spoof 可能、GitHub 公式で警告あり）
+- `setup_url` の `installation_id` は単独で信用しない（spoof 可能、GitHub 公式で警告あり）。署名付き state でテナント特定 + GitHub API で installation を検証する二重チェック
 
 ### 注意点
 
