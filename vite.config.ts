@@ -6,6 +6,7 @@ import devtoolsJson from 'vite-plugin-devtools-json'
 
 export default defineConfig(async (configEnv) => {
   const { mode } = configEnv
+  const publishRelease = process.env.SENTRY_PUBLISH_RELEASE === '1'
 
   return {
     build: {
@@ -20,14 +21,16 @@ export default defineConfig(async (configEnv) => {
       tailwindcss(),
       reactRouter(),
       mode !== 'production' && devtoolsJson(),
-      ...(await sentryReactRouter(
-        {
-          org: 'techtalkjp',
-          project: 'upflow',
-          authToken: process.env.SENTRY_AUTH_TOKEN,
-        },
-        configEnv,
-      )),
+      ...(publishRelease
+        ? await sentryReactRouter(
+            {
+              org: 'techtalkjp',
+              project: 'upflow',
+              authToken: process.env.SENTRY_AUTH_TOKEN,
+            },
+            configEnv,
+          )
+        : []),
     ],
 
     optimizeDeps: {
