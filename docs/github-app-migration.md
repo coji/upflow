@@ -43,7 +43,7 @@
 
 ## GitHub App 方式の概要
 
-```
+```text
 既存 App「upflow-team」を techtalkjp org に Transfer + 権限追加
     ↓
 クライアントが自分の org に App をインストール
@@ -246,7 +246,7 @@ Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app 
 
 各クライアント独立に進行可能:
 
-```
+```text
 1. クライアントに GitHub App インストールを依頼
    - インストール URL を共有（https://github.com/apps/upflow-team/installations/new）
    - 「全リポジトリ」推奨だが、選択リポでも可（制限あり表示）
