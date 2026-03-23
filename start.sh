@@ -15,4 +15,6 @@ atlas migrate apply --env local --url "$DB_URL"
 # 2. Apply tenant migrations to all existing tenant DBs
 node build/db/apply-tenant-migrations.js
 
+# Load Sentry before server (same as pnpm start). No-op when SENTRY_DSN is unset.
+export NODE_OPTIONS="--import ./instrument.server.mjs${NODE_OPTIONS:+ $NODE_OPTIONS}"
 exec node server.mjs

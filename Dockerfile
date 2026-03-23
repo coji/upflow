@@ -91,5 +91,6 @@ COPY --from=build /upflow/app /upflow/app
 COPY --from=build /upflow/batch /upflow/batch
 COPY --from=build /upflow/ops/remote /upflow/ops/remote
 COPY --from=build /upflow/server.mjs /upflow/server.mjs
+COPY --from=build /upflow/instrument.server.mjs /upflow/instrument.server.mjs
 
 CMD [ "sh", "./start.sh" ]
