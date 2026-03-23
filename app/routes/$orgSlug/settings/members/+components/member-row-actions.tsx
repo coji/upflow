@@ -2,7 +2,7 @@ import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import type { Row } from '@tanstack/react-table'
 import { MoreHorizontalIcon, TrashIcon, UserCogIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { Button } from '~/app/components/ui/button'
@@ -88,11 +88,13 @@ export function MemberRowActions({
         <input type="hidden" name="memberId" value={member.id} />
       </ConfirmDialog>
 
-      <ChangeRoleDialog
-        open={roleOpen}
-        onOpenChange={setRoleOpen}
-        member={member}
-      />
+      {roleOpen && (
+        <ChangeRoleDialog
+          open={roleOpen}
+          onOpenChange={setRoleOpen}
+          member={member}
+        />
+      )}
     </>
   )
 }
@@ -126,15 +128,6 @@ function ChangeRoleDialog({
       onOpenChange(false)
     }
   }, [fetcher.state, fetcher.data, onOpenChange])
-
-  // Reset form and fetcher when dialog opens
-  // biome-ignore lint/correctness/useExhaustiveDependencies: form and fetcher are unstable references from hooks, but we only want this to run when open changes
-  useEffect(() => {
-    if (open) {
-      form.reset()
-      fetcher.reset()
-    }
-  }, [open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -7,7 +7,7 @@ import { db, dialect } from '~/app/services/db.server'
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
-import type { MemberRole } from './member-role'
+import { isOrgOwner, type MemberRole } from './member-role'
 import { RESERVED_SLUGS } from './reserved-slugs'
 
 export const auth = betterAuth({
@@ -362,7 +362,7 @@ export const isReservedSlug = (slug: string): boolean => {
   return RESERVED_SLUGS.has(slug.toLowerCase())
 }
 
-export { isOrgAdmin } from './member-role'
+export { isOrgAdmin, isOrgOwner } from './member-role'
 export type { MemberRole } from './member-role'
 
 export interface OrgContext {
@@ -410,6 +410,15 @@ export const requireOrgMember = async (
       id: result.memberId,
       role: result.role,
     },
+  }
+}
+
+export const requireOrgOwner = (
+  membership: { role: MemberRole },
+  orgSlug: string,
+): void => {
+  if (!isOrgOwner(membership.role)) {
+    throw redirect(href('/:orgSlug/settings/repositories', { orgSlug }))
   }
 }
 
