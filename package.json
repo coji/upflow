@@ -37,6 +37,7 @@
     "lab:serve": "python3 -m http.server 8787 -d lab/output"
   },
   "dependencies": {
+    "@base-ui/react": "1.3.0",
     "@coji/durably": "^0.14.0",
     "@coji/durably-react": "^0.14.0",
     "@coji/zodix": "0.7.0",
