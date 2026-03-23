@@ -2,7 +2,10 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import { closeTenantDb, getTenantDb } from '~/app/services/tenant-db.server'
+import { toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
+import { upsertCompanyGithubUsers } from './mutations'
 
 const testDir = path.join(tmpdir(), `mutations-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -12,13 +15,7 @@ writeFileSync(testDbPath, '')
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 
-const { getTenantDb, closeTenantDb } =
-  await import('~/app/services/tenant-db.server')
-type OrganizationId = import('~/app/types/organization').OrganizationId
-
-const { upsertCompanyGithubUsers } = await import('./mutations')
-
-const orgId = `test-org-${Date.now()}` as OrganizationId
+const orgId = toOrgId(`test-org-${Date.now()}`)
 
 const tenantDbPath = path.join(testDir, `tenant_${orgId}.db`)
 setupTenantSchema(tenantDbPath)

@@ -3,6 +3,13 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import {
+  closeAllTenantDbs,
+  closeTenantDb,
+  deleteTenantDb,
+  getTenantDb,
+} from '~/app/services/tenant-db.server'
+import { toOrgId } from '~/app/types/organization'
 
 // Set up a temp directory to act as the data dir
 const testDir = path.join(tmpdir(), `tenant-db-test-${Date.now()}`)
@@ -14,11 +21,6 @@ writeFileSync(testDbPath, '') // create empty shared DB file
 // In production mode, pathname is used as-is. Use production mode for predictable paths.
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
-
-const { closeTenantDb, closeAllTenantDbs, deleteTenantDb, getTenantDb } =
-  await import('./tenant-db.server')
-type OrganizationId = import('~/app/types/organization').OrganizationId
-const toOrgId = (s: string) => s as OrganizationId
 
 function createTestTenantDb(orgId: string): string {
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)

@@ -10,7 +10,10 @@ import {
   test,
   vi,
 } from 'vitest'
+import { closeTenantDb, getTenantDb } from '~/app/services/tenant-db.server'
+import { type OrganizationId, toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
+import { getClosedPRs } from './queries.server'
 
 const testDir = path.join(tmpdir(), `workload-login-queries-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -19,12 +22,6 @@ writeFileSync(testDbPath, '')
 
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
-
-const { closeTenantDb, getTenantDb } =
-  await import('~/app/services/tenant-db.server')
-const { getClosedPRs } = await import('./queries.server')
-type OrganizationId = import('~/app/types/organization').OrganizationId
-const toOrgId = (s: string) => s as OrganizationId
 
 let testCounter = 0
 function createFreshOrg(): OrganizationId {

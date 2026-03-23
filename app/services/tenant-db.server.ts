@@ -78,7 +78,6 @@ export async function closeTenantDb(
   const entry = tenantDbCache.get(organizationId)
   if (entry) {
     await entry.kysely.destroy()
-    entry.raw.close()
     tenantDbCache.delete(organizationId)
   }
 }
@@ -87,7 +86,6 @@ export async function closeAllTenantDbs(): Promise<void> {
   await Promise.all(
     [...tenantDbCache.values()].map(async (entry) => {
       await entry.kysely.destroy()
-      entry.raw.close()
     }),
   )
   tenantDbCache.clear()
