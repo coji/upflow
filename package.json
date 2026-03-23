@@ -1,6 +1,7 @@
 {
   "name": "upflow",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "sideEffects": false,
   "type": "module",
   "scripts": {
