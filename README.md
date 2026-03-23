@@ -2,14 +2,7 @@
 
 Development productivity dashboard that tracks pull request cycle times from GitHub. Calculates coding time, pickup time, review time, and deploy time to help teams understand their development workflow.
 
-## Tech Stack
-
-- **Framework**: React Router v7 (SSR) + Express
-- **Database**: SQLite (multi-tenant, database-per-org) via Atlas + Kysely
-- **Auth**: better-auth with GitHub OAuth
-- **UI**: shadcn/ui + Tailwind CSS v4
-- **Testing**: Vitest + Playwright
-- **Hosting**: Fly.io
+Data is stored in SQLite with a multi-tenant (database-per-org) architecture.
 
 ## Setup
 
@@ -32,15 +25,15 @@ cp .env.example .env
 
 Edit `.env` with your values:
 
-| Variable                    | Description                                        |
-| --------------------------- | -------------------------------------------------- |
-| `DATABASE_URL`              | SQLite database path (e.g. `file:../data/data.db`) |
-| `BETTER_AUTH_SECRET`        | Secret for better-auth (min 32 chars)              |
-| `BETTER_AUTH_URL`           | App URL (e.g. `http://localhost:5173`)             |
-| `GITHUB_CLIENT_ID`          | GitHub App client ID                               |
-| `GITHUB_CLIENT_SECRET`      | GitHub App client secret                           |
-| `INTEGRATION_PRIVATE_TOKEN` | GitHub PAT for PR data fetching                    |
-| `GEMINI_API_KEY`            | Gemini API key for AI features                     |
+| Variable                    | Description                                        | Required |
+| --------------------------- | -------------------------------------------------- | -------- |
+| `DATABASE_URL`              | SQLite database path (e.g. `file:../data/data.db`) | Yes      |
+| `BETTER_AUTH_SECRET`        | Secret for better-auth (min 32 chars)              | Yes      |
+| `BETTER_AUTH_URL`           | App URL (e.g. `http://localhost:5173`)             | Yes      |
+| `GITHUB_CLIENT_ID`          | GitHub App client ID                               | Yes      |
+| `GITHUB_CLIENT_SECRET`      | GitHub App client secret                           | Yes      |
+| `INTEGRATION_PRIVATE_TOKEN` | GitHub PAT for PR data fetching                    | Yes      |
+| `GEMINI_API_KEY`            | Gemini API key for PR classification               | No       |
 
 ### 3. Set up GitHub App
 
@@ -66,31 +59,22 @@ pnpm db:setup
 pnpm dev
 ```
 
-## Commands
+## Fetching PR Data
+
+UpFlow needs to fetch PR data from GitHub to display metrics. After setting up a repository in the dashboard, run:
 
 ```bash
-pnpm dev          # Start dev server with HMR
-pnpm build        # Build for production
-pnpm start        # Run production server
-pnpm test         # Run unit tests
-pnpm test:e2e     # Run E2E tests
-pnpm typecheck    # Type checking
-pnpm lint         # Lint (Biome)
-pnpm format       # Format check (Prettier)
-pnpm validate     # Full validation pipeline
-pnpm db:setup     # Reset database with seed data
-pnpm db:migrate   # Generate migration from schema changes
-pnpm db:apply     # Apply migrations
-pnpm db:generate  # Generate Kysely types
+pnpm tsx batch/cli.ts crawl <org-id>
 ```
+
+In production, `crawl` runs automatically every hour.
 
 ## Authentication
 
-- **GitHub OAuth only**: Login requires the user's GitHub login to be in `companyGithubUsers` with `isActive=1`
-- **Batch auto-registration**: PR authors and reviewers are automatically added to `companyGithubUsers` as inactive (`isActive=0`). An admin enables them via the Active toggle in Settings > GitHub Users
+- **GitHub OAuth only**: Login requires the user's GitHub login to be registered in the org's GitHub Users list with Active status
 - **First-user bootstrap**: On a fresh database with no users, the first GitHub login is allowed unconditionally and promoted to super admin
-- On login, users are automatically added as members to orgs where their GitHub login is registered and active
+- **Auto-registration**: PR authors and reviewers are automatically added as inactive GitHub users during crawl. An admin enables them via Settings > GitHub Users
 
 ## License
 
-Private
+[O'Saasy License](./LICENSE) — 自由に使用・改変・配布できますが、本ソフトウェアの機能そのものを主たる価値とする競合 SaaS の提供は禁止されています。
