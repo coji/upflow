@@ -133,8 +133,13 @@ Types are generated to `app/services/type.ts` from the database.
 - **DB 保存形式**: ISO 8601（`2026-03-16T02:56:35Z`）。Z付きで保存し、ローカルタイム形式（`2026-03-16 02:56:35`）は使わない
 - **DB から読んだ日時のパース**: 必ず `dayjs.utc(value)` を使う。`dayjs(value)` はローカルタイムとして解釈されるため、タイムゾーン変換が正しく動かない
 - **表示層でのタイムゾーン変換**: `dayjs.utc(value).tz(timezone)` のパターンを使う
+- **SSR コンポーネントでの日付操作**: `dayjs(date)` や `dayjs(date).startOf('day')` を `.tz(timezone)` なしで使うと、SSR(UTC) とブラウザ(JST 等) で日付境界がずれてハイドレーションエラーになる。コンポーネント内では必ず `dayjs(date).tz(timezone)` を使い、`useTimezone()` フックで組織タイムゾーンを取得する。URL パラメータへの日付書き込み（`searchParams.set('from', dayjs(start).format(...))`）も同様
 - **batch での書き込み**: GitHub API から取得した ISO 8601 文字列をそのまま DB に保存する。独自のフォーマット変換をかけない
 - **`timeFormatTz`**（`batch/helper/timeformat.ts`）: レポートやスプレッドシート出力用。内部で `dayjs.utc()` を使用済み
+
+### Sentry ビルド設定
+
+ソースマップの Sentry アップロードは `SENTRY_PUBLISH_RELEASE=1` のときだけ有効。フラグなしでは `sentryReactRouter` プラグイン自体がロードされない。Dockerfile はデフォルト無効、`deploy.yml` の Docker build で明示的に `=1` を渡す。ローカル `pnpm build` / `pnpm validate` では一切 Sentry 処理が走らない。
 
 ### Path Aliases
 
