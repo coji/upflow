@@ -8,6 +8,10 @@ export default defineConfig(async (configEnv) => {
   const { mode } = configEnv
 
   return {
+    build: {
+      sourcemap: 'hidden' as const,
+    },
+
     resolve: {
       tsconfigPaths: true,
     },
