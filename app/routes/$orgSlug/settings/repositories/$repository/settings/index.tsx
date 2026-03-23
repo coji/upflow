@@ -109,6 +109,7 @@ export const action = async ({
     throw new Response('repository not found', { status: 404 })
   }
   const formData = await request.formData()
+  // update (settings change) is allowed for all roles; delete requires owner
   const intent = formData.get('intent')
   if (intent !== 'update') {
     requireOrgOwner(membership, organization.slug)
