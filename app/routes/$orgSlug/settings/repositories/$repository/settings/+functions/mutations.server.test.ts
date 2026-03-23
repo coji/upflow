@@ -37,9 +37,6 @@ function createFreshOrg(): {
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)
   setupTenantSchema(dbPath)
   const db = new SQLite(dbPath)
-  db.exec(`
-    INSERT INTO integrations (id, provider, method) VALUES ('int-1', 'github', 'token');
-  `)
   return { orgId: toOrgId(orgId), db }
 }
 

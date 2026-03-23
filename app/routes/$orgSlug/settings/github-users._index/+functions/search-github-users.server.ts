@@ -1,4 +1,4 @@
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import { db } from '~/app/services/db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 interface GitHubSearchUser {
@@ -14,10 +14,10 @@ export const searchGithubUsers = async (
   organizationId: OrganizationId,
   query: string,
 ): Promise<{ login: string; avatarUrl: string }[]> => {
-  const tenantDb = getTenantDb(organizationId)
-  const integration = await tenantDb
+  const integration = await db
     .selectFrom('integrations')
     .select('privateToken')
+    .where('organizationId', '=', organizationId)
     .executeTakeFirst()
 
   if (!integration?.privateToken) return []

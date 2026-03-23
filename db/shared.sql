@@ -126,6 +126,21 @@ CREATE TABLE `team_members` (
 CREATE INDEX `team_members_team_id_idx` ON `team_members` (`team_id`);
 -- Create index "team_members_user_id_idx" to table: "team_members"
 CREATE INDEX `team_members_user_id_idx` ON `team_members` (`user_id`);
+-- Create "integrations" table
+CREATE TABLE `integrations` (
+  `id` text NOT NULL,
+  `organization_id` text NOT NULL,
+  `provider` text NOT NULL DEFAULT 'github',
+  `method` text NOT NULL DEFAULT 'token',
+  `private_token` text NULL,
+  `app_suspended_at` text NULL,
+  `created_at` text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  `updated_at` text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `integrations_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+-- Create index "integrations_organization_id_key" to table: "integrations"
+CREATE UNIQUE INDEX `integrations_organization_id_key` ON `integrations` (`organization_id`);
 -- Create "github_app_links" table
 CREATE TABLE `github_app_links` (
   `organization_id` text NOT NULL,

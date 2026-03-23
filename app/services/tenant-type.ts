@@ -62,14 +62,6 @@ export interface GithubRawTags {
   tags: ColumnType<unknown, string, string>;
 }
 
-export interface Integrations {
-  appSuspendedAt: string | null;
-  id: string;
-  method: "token" | "github_app";
-  privateToken: string | null;
-  provider: "github";
-}
-
 export interface OrganizationSettings {
   createdAt: Generated<string>;
   id: string;
@@ -169,7 +161,6 @@ export interface DB {
   exportSettings: ExportSettings;
   githubRawData: GithubRawData;
   githubRawTags: GithubRawTags;
-  integrations: Integrations;
   organizationSettings: OrganizationSettings;
   pullRequestFeedbacks: PullRequestFeedbacks;
   pullRequestReviewers: PullRequestReviewers;

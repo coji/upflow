@@ -1,10 +1,10 @@
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import { db } from '~/app/services/db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 export const getIntegration = async (organizationId: OrganizationId) => {
-  const tenantDb = getTenantDb(organizationId)
-  return await tenantDb
+  return await db
     .selectFrom('integrations')
     .selectAll()
+    .where('organizationId', '=', organizationId)
     .executeTakeFirst()
 }

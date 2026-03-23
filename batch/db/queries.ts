@@ -20,17 +20,6 @@ const githubAppLinkColumns = [
   'appRepositorySelection',
 ] as const
 
-async function getGithubAppLink(organizationId: OrganizationId) {
-  return (
-    (await db
-      .selectFrom('githubAppLinks')
-      .select(githubAppLinkColumns)
-      .where('organizationId', '=', organizationId)
-      .where('deletedAt', 'is', null)
-      .executeTakeFirst()) ?? null
-  )
-}
-
 async function getAllGithubAppLinks() {
   const rows = await db
     .selectFrom('githubAppLinks')
@@ -40,48 +29,47 @@ async function getAllGithubAppLinks() {
   return new Map(rows.map((r) => [r.organizationId, r]))
 }
 
+async function getAllIntegrations() {
+  const rows = await db.selectFrom('integrations').selectAll().execute()
+  return new Map(rows.map((r) => [r.organizationId, r]))
+}
+
 async function getTenantData(organizationId: OrganizationId) {
   const tenantDb = getTenantDb(organizationId)
-  const [organizationSetting, integration, repositories, exportSetting] =
-    await Promise.all([
-      tenantDb
-        .selectFrom('organizationSettings')
-        .select(['releaseDetectionMethod', 'releaseDetectionKey', 'isActive'])
-        .executeTakeFirst(),
-      tenantDb
-        .selectFrom('integrations')
-        .select(['id', 'method', 'provider', 'privateToken', 'appSuspendedAt'])
-        .executeTakeFirst(),
-      tenantDb
-        .selectFrom('repositories')
-        .select([
-          'id',
-          'repo',
-          'owner',
-          'integrationId',
-          'provider',
-          'releaseDetectionKey',
-          'releaseDetectionMethod',
-          'teamId',
-          'updatedAt',
-          'createdAt',
-        ])
-        .execute(),
-      tenantDb
-        .selectFrom('exportSettings')
-        .select([
-          'id',
-          'sheetId',
-          'clientEmail',
-          'privateKey',
-          'updatedAt',
-          'createdAt',
-        ])
-        .executeTakeFirst(),
-    ])
+  const [organizationSetting, repositories, exportSetting] = await Promise.all([
+    tenantDb
+      .selectFrom('organizationSettings')
+      .select(['releaseDetectionMethod', 'releaseDetectionKey', 'isActive'])
+      .executeTakeFirst(),
+    tenantDb
+      .selectFrom('repositories')
+      .select([
+        'id',
+        'repo',
+        'owner',
+        'integrationId',
+        'provider',
+        'releaseDetectionKey',
+        'releaseDetectionMethod',
+        'teamId',
+        'updatedAt',
+        'createdAt',
+      ])
+      .execute(),
+    tenantDb
+      .selectFrom('exportSettings')
+      .select([
+        'id',
+        'sheetId',
+        'clientEmail',
+        'privateKey',
+        'updatedAt',
+        'createdAt',
+      ])
+      .executeTakeFirst(),
+  ])
   return {
     organizationSetting: organizationSetting ?? null,
-    integration: integration ?? null,
     repositories,
     exportSetting: exportSetting ?? null,
   }
@@ -100,19 +88,21 @@ export async function getBotLogins(
 }
 
 export const listAllOrganizations = async () => {
-  const [orgs, appLinksMap] = await Promise.all([
+  const [orgs, appLinksMap, integrationsMap] = await Promise.all([
     db
       .selectFrom('organizations')
       .select(['id', 'name', 'slug', 'createdAt'])
       .execute(),
     getAllGithubAppLinks(),
+    getAllIntegrations(),
   ])
 
   return Promise.all(
     orgs.map(async (org) => {
       const tenantData = await getTenantData(org.id as OrganizationId)
+      const integration = integrationsMap.get(org.id) ?? null
       const githubAppLink = appLinksMap.get(org.id) ?? null
-      return { ...org, ...tenantData, githubAppLink }
+      return { ...org, ...tenantData, integration, githubAppLink }
     }),
   )
 }
@@ -124,10 +114,65 @@ export const getOrganization = async (organizationId: OrganizationId) => {
     .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  const [tenantData, botLogins, githubAppLink] = await Promise.all([
+  const row = await db
+    .selectFrom('integrations')
+    .leftJoin('githubAppLinks', (join) =>
+      join
+        .onRef(
+          'githubAppLinks.organizationId',
+          '=',
+          'integrations.organizationId',
+        )
+        .on('githubAppLinks.deletedAt', 'is', null),
+    )
+    .select([
+      'integrations.id',
+      'integrations.organizationId',
+      'integrations.method',
+      'integrations.provider',
+      'integrations.privateToken',
+      'integrations.appSuspendedAt',
+      'integrations.createdAt',
+      'integrations.updatedAt',
+      'githubAppLinks.installationId',
+      'githubAppLinks.githubOrg',
+      'githubAppLinks.githubAccountId',
+      'githubAppLinks.appRepositorySelection',
+    ])
+    .where('integrations.organizationId', '=', organizationId)
+    .executeTakeFirst()
+
+  const integration = row
+    ? {
+        id: row.id,
+        organizationId: row.organizationId,
+        method: row.method,
+        provider: row.provider,
+        privateToken: row.privateToken,
+        appSuspendedAt: row.appSuspendedAt,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      }
+    : null
+
+  const githubAppLink =
+    row?.installationId != null &&
+    row.githubOrg != null &&
+    row.githubAccountId != null &&
+    row.appRepositorySelection != null
+      ? {
+          organizationId,
+          installationId: row.installationId,
+          githubOrg: row.githubOrg,
+          githubAccountId: row.githubAccountId,
+          appRepositorySelection: row.appRepositorySelection,
+        }
+      : null
+
+  const [tenantData, botLogins] = await Promise.all([
     getTenantData(org.id as OrganizationId),
     getBotLogins(org.id as OrganizationId),
-    getGithubAppLink(org.id as OrganizationId),
   ])
-  return { ...org, ...tenantData, botLogins, githubAppLink }
+
+  return { ...org, ...tenantData, botLogins, integration, githubAppLink }
 }

@@ -1,5 +1,6 @@
 import type { Selectable } from 'kysely'
 import invariant from 'tiny-invariant'
+import type { DB } from '~/app/services/db.server'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { logger } from '~/batch/helper/logger'
@@ -9,7 +10,7 @@ import { createStore } from './store'
 export async function backfillRepo(
   organizationId: OrganizationId,
   repository: Selectable<TenantDB.Repositories>,
-  integration: Pick<Selectable<TenantDB.Integrations>, 'privateToken'>,
+  integration: Pick<Selectable<DB.Integrations>, 'privateToken'>,
   options?: { files?: boolean },
 ) {
   invariant(repository.repo, 'repo not specified')

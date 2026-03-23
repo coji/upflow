@@ -51,6 +51,17 @@ export interface GithubAppLinks {
   updatedAt: Generated<string>;
 }
 
+export interface Integrations {
+  appSuspendedAt: string | null;
+  createdAt: Generated<string>;
+  id: string;
+  method: "token" | "github_app";
+  organizationId: string;
+  privateToken: string | null;
+  provider: "github";
+  updatedAt: Generated<string>;
+}
+
 export interface Invitations {
   createdAt: Generated<string>;
   email: string;
@@ -136,6 +147,7 @@ export interface DB {
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
   githubAppLinks: GithubAppLinks;
+  integrations: Integrations;
   invitations: Invitations;
   members: Members;
   organizations: Organizations;

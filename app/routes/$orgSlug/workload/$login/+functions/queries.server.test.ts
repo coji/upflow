@@ -36,16 +36,6 @@ async function seedRepository(orgId: OrganizationId) {
   const tenantDb = getTenantDb(orgId)
 
   await tenantDb
-    .insertInto('integrations')
-    .values({
-      id: 'integration-1',
-      provider: 'github',
-      method: 'token',
-      privateToken: null,
-    })
-    .execute()
-
-  await tenantDb
     .insertInto('repositories')
     .values({
       id: 'repo-1',

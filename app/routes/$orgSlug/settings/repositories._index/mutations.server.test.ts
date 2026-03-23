@@ -38,7 +38,6 @@ function createFreshOrg(): {
   setupTenantSchema(dbPath)
   const db = new SQLite(dbPath)
   db.exec(`
-    INSERT INTO integrations (id, provider, method) VALUES ('int-1', 'github', 'token');
     INSERT INTO teams (id, name, display_order) VALUES ('team-a', 'Frontend', 0);
     INSERT INTO teams (id, name, display_order) VALUES ('team-b', 'Backend', 1);
   `)

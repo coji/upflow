@@ -116,14 +116,17 @@ async function seed() {
     })
     .execute()
 
-  // integration
-  const integration = await tenantDb
+  // integration (shared DB)
+  const integration = await db
     .insertInto('integrations')
     .values({
       id: nanoid(),
+      organizationId: organization.id,
       provider: 'github',
       method: 'token',
       privateToken: process.env.INTEGRATION_PRIVATE_TOKEN ?? null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })
     .returningAll()
     .executeTakeFirstOrThrow()

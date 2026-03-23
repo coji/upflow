@@ -1,4 +1,4 @@
-import { jsonObjectFrom } from 'kysely/helpers/sqlite'
+import { db } from '~/app/services/db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -7,21 +7,26 @@ export const getRepositoryWithIntegration = async (
   repositoryId: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  return await tenantDb
+  const repo = await tenantDb
     .selectFrom('repositories')
     .where('id', '=', repositoryId)
-    .select((eb) => [
-      'id',
-      'owner',
-      'repo',
-      jsonObjectFrom(
-        eb
-          .selectFrom('integrations')
-          .select(['privateToken'])
-          .whereRef('integrations.id', '=', 'repositories.integrationId'),
-      ).as('integration'),
-    ])
+    .select(['id', 'owner', 'repo', 'integrationId'])
     .executeTakeFirst()
+  if (!repo) return undefined
+
+  const integration = await db
+    .selectFrom('integrations')
+    .select(['privateToken'])
+    .where('id', '=', repo.integrationId)
+    .where('organizationId', '=', organizationId)
+    .executeTakeFirst()
+
+  return {
+    id: repo.id,
+    owner: repo.owner,
+    repo: repo.repo,
+    integration: integration ?? null,
+  }
 }
 
 export const getPullRequest = async (

@@ -1,4 +1,4 @@
-h1:uZxV/iYZSfP5kBf3tFtfucYj9C41YOulKtb3SaCSn0s=
+h1:7qLuG3yxMP6dnU1l/Cux8QOBPDTV4aLP+s8tVFmg3XA=
 20260226112249_initial_tenant.sql h1:dIhBg2gzyh+ZjLzPXdHYafd5e62yIEjk1eFlllEyYX0=
 20260226233619_add_teams.sql h1:n8MRMUA4BgeXYEnL9HJPc8mnXh8lqIfrCcdYtFFoWqw=
 20260227163239.sql h1:ENMZUW7zHK8UjG2TdYlBOZSVPPUCXftIw5U5k2C54oo=
@@ -20,4 +20,4 @@ h1:uZxV/iYZSfP5kBf3tFtfucYj9C41YOulKtb3SaCSn0s=
 20260317120000_drop_refresh_requested_at.sql h1:R4jHtMkCpdY09orFA4RPvtLeUJ2Z7S4WPMmg/bDJuGg=
 20260318120000_migrate_excluded_users_to_bot_type.sql h1:QhLNJld3iqMSd/Zi8/jHadFB+0u4ocStzpprBqCaG+M=
 20260319120000_add_last_activity_at.sql h1:2evW+gCdRyH1OvTH2NDh5cV2xaxOHIldHYrkwS2ThE4=
-20260323144602.sql h1:BoFR3reXXzajAAXH6Ybf7U32TLnURjvhb6ZkdjdG3Zc=
+20260324000000_move_integrations_to_shared.sql h1:KsJftEmsruoNtxLi2katRAhETjXx2uTefqV3iX2pVsE=

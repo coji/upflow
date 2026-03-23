@@ -137,13 +137,13 @@ PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 
 **アーキテクチャ**:
 
-- **データ分割**: 接続先情報（installation_id, github_org 等）は shared DB の `github_app_links` テーブルで管理。認証設定（method, privateToken）は tenant DB の `integrations` で管理。tenant DB 全走査が不要
+- **データ分割**: 接続先情報（installation_id, github_org 等）は shared DB の `github_app_links`、認証設定（method, privateToken, app_suspended_at）は shared DB の `integrations`（`organization_id` で org に紐づく）で管理。`integrations` と `github_app_links` は同一 DB なので 1 クエリで JOIN 可能。tenant DB 全走査は不要
 - **接続経路**: Setup URL callback + 署名付き state パラメータが主経路。セッション不要で安全にテナント特定。Webhook は状態更新（deleted, suspend, repo selection 変更）に使用
 - **method の意味**: `method` は常に実効の認証方式を表す。GitHub App link が完了した時点で自動的に `token` → `github_app` に切り替わる。リンク前は PAT のまま（crawl が止まらない）
 
 **PR 構成（4分割）**:
 
-1. スキーマ拡張 + 依存関係（`github_app_links` テーブル、`app_suspended_at` カラム）
+1. スキーマ拡張 + 依存関係（`integrations` の shared DB 移行、`github_app_links`、`app_suspended_at`）
 2. Octokit factory + fetcher リファクタ + 全 call site 更新
 3. Webhook + Setup callback + Installation 紐付け + state トークン
 4. 設定 UI + リポ追加画面の App UX
