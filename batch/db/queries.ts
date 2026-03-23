@@ -20,6 +20,17 @@ const githubAppLinkColumns = [
   'appRepositorySelection',
 ] as const
 
+async function getGithubAppLinkByOrgId(organizationId: OrganizationId) {
+  return (
+    (await db
+      .selectFrom('githubAppLinks')
+      .select(githubAppLinkColumns)
+      .where('organizationId', '=', organizationId)
+      .where('deletedAt', 'is', null)
+      .executeTakeFirst()) ?? null
+  )
+}
+
 async function getAllGithubAppLinks() {
   const rows = await db
     .selectFrom('githubAppLinks')
@@ -29,8 +40,30 @@ async function getAllGithubAppLinks() {
   return new Map(rows.map((r) => [r.organizationId, r]))
 }
 
+const integrationColumns = [
+  'id',
+  'organizationId',
+  'method',
+  'provider',
+  'privateToken',
+  'appSuspendedAt',
+] as const
+
+async function getIntegrationByOrgId(organizationId: OrganizationId) {
+  return (
+    (await db
+      .selectFrom('integrations')
+      .select(integrationColumns)
+      .where('organizationId', '=', organizationId)
+      .executeTakeFirst()) ?? null
+  )
+}
+
 async function getAllIntegrations() {
-  const rows = await db.selectFrom('integrations').selectAll().execute()
+  const rows = await db
+    .selectFrom('integrations')
+    .select(integrationColumns)
+    .execute()
   return new Map(rows.map((r) => [r.organizationId, r]))
 }
 
@@ -114,65 +147,14 @@ export const getOrganization = async (organizationId: OrganizationId) => {
     .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  const row = await db
-    .selectFrom('integrations')
-    .leftJoin('githubAppLinks', (join) =>
-      join
-        .onRef(
-          'githubAppLinks.organizationId',
-          '=',
-          'integrations.organizationId',
-        )
-        .on('githubAppLinks.deletedAt', 'is', null),
-    )
-    .select([
-      'integrations.id',
-      'integrations.organizationId',
-      'integrations.method',
-      'integrations.provider',
-      'integrations.privateToken',
-      'integrations.appSuspendedAt',
-      'integrations.createdAt',
-      'integrations.updatedAt',
-      'githubAppLinks.installationId',
-      'githubAppLinks.githubOrg',
-      'githubAppLinks.githubAccountId',
-      'githubAppLinks.appRepositorySelection',
-    ])
-    .where('integrations.organizationId', '=', organizationId)
-    .executeTakeFirst()
-
-  const integration = row
-    ? {
-        id: row.id,
-        organizationId: row.organizationId,
-        method: row.method,
-        provider: row.provider,
-        privateToken: row.privateToken,
-        appSuspendedAt: row.appSuspendedAt,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-      }
-    : null
-
-  const githubAppLink =
-    row?.installationId != null &&
-    row.githubOrg != null &&
-    row.githubAccountId != null &&
-    row.appRepositorySelection != null
-      ? {
-          organizationId,
-          installationId: row.installationId,
-          githubOrg: row.githubOrg,
-          githubAccountId: row.githubAccountId,
-          appRepositorySelection: row.appRepositorySelection,
-        }
-      : null
-
-  const [tenantData, botLogins] = await Promise.all([
-    getTenantData(org.id as OrganizationId),
-    getBotLogins(org.id as OrganizationId),
-  ])
+  const [integration, githubAppLink, tenantData, botLogins] = await Promise.all(
+    [
+      getIntegrationByOrgId(organizationId),
+      getGithubAppLinkByOrgId(organizationId),
+      getTenantData(organizationId),
+      getBotLogins(organizationId),
+    ],
+  )
 
   return { ...org, ...tenantData, botLogins, integration, githubAppLink }
 }

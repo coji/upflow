@@ -49,7 +49,6 @@ export const upsertIntegration = async (
     'id' | 'organizationId' | 'createdAt' | 'updatedAt'
   >,
 ) => {
-  const now = new Date().toISOString()
   const existing = await db
     .selectFrom('integrations')
     .select('id')
@@ -60,7 +59,7 @@ export const upsertIntegration = async (
     return await db
       .updateTable('integrations')
       .where('organizationId', '=', organizationId)
-      .set({ ...data, updatedAt: now })
+      .set(data)
       .execute()
   }
   return await db
@@ -69,8 +68,6 @@ export const upsertIntegration = async (
       id: nanoid(),
       organizationId,
       ...data,
-      createdAt: now,
-      updatedAt: now,
     })
     .execute()
 }

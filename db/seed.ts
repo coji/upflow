@@ -125,8 +125,6 @@ async function seed() {
       provider: 'github',
       method: 'token',
       privateToken: process.env.INTEGRATION_PRIVATE_TOKEN ?? null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     })
     .returningAll()
     .executeTakeFirstOrThrow()

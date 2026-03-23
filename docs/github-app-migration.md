@@ -186,6 +186,7 @@ PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 - PAT 方式のコードパスを整理（新規 org セットアップでも GitHub App を使うなら削除可）
 - `requireOrgOwner` のリポ操作制限を解除し admin に開放
 - 個人 PAT を GitHub から revoke
+- integrations データ移行スクリプトの削除（`db/migrate-integrations-to-shared.ts`, `start.sh` の呼び出し, `package.json` のスクリプト）
 
 ## 設計上の判断
 
