@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { match } from 'ts-pattern'
 import { Toaster } from '~/app/components/ui'
 import { TooltipProvider } from '~/app/components/ui/tooltip'
+import { getErrorMessage } from '~/app/libs/error-message'
 import type { Route } from './+types/root'
 import { AppLoadingProgress } from './components'
 import './styles/globals.css'
@@ -75,6 +76,12 @@ export default function App({
 export function ErrorBoundary() {
   const error = useRouteError()
 
+  useEffect(() => {
+    if (error instanceof Error) {
+      Sentry.captureException(error)
+    }
+  }, [error])
+
   if (isRouteErrorResponse(error)) {
     return (
       <main className="p-8">
@@ -86,18 +93,10 @@ export function ErrorBoundary() {
     )
   }
 
-  if (error && error instanceof Error) {
-    Sentry.captureException(error)
-  }
-
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold">Error!</h1>
-      <p>
-        {error && typeof error === 'object' && 'message' in error
-          ? String(error.message)
-          : 'Unknown error'}
-      </p>
+      <p>{getErrorMessage(error)}</p>
     </main>
   )
 }

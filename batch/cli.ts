@@ -2,7 +2,6 @@ import { cli, command } from 'cleye'
 import 'dotenv/config'
 import {
   captureExceptionToSentry,
-  ensureSentryNodeInitialized,
   flushSentryNode,
 } from '~/app/libs/sentry-node.server'
 
@@ -128,16 +127,12 @@ const report = command(
   },
 )
 
-ensureSentryNodeInitialized()
-
-const runCli = async () => {
-  await cli({
-    commands: [crawl, recalculate, classify, backfill, report],
-  })
-}
-
-runCli().catch(async (error) => {
+process.on('unhandledRejection', async (error) => {
   captureExceptionToSentry(error, { tags: { component: 'batch-cli' } })
   await flushSentryNode()
   process.exit(1)
+})
+
+cli({
+  commands: [crawl, recalculate, classify, backfill, report],
 })

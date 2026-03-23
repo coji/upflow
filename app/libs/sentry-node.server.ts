@@ -47,9 +47,10 @@ export function captureExceptionToSentry(
 }
 
 export function registerDurablySentryListeners(durably: DurablyInstance) {
+  ensureSentryNodeInitialized()
+  if (!getClient()) return
+
   durably.on('run:fail', (event) => {
-    ensureSentryNodeInitialized()
-    if (!getClient()) return
     const err = new Error(event.error)
     err.name = `DurablyJob:${event.jobName}`
     captureException(err, {
@@ -65,8 +66,6 @@ export function registerDurablySentryListeners(durably: DurablyInstance) {
   })
 
   durably.on('worker:error', (event) => {
-    ensureSentryNodeInitialized()
-    if (!getClient()) return
     captureMessage(event.error, {
       level: 'error',
       tags: { 'durably.context': event.context },

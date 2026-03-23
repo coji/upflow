@@ -11,7 +11,6 @@ const dsn = process.env.SENTRY_DSN
 if (dsn) {
   Sentry.init({
     dsn,
-    // https://docs.sentry.io/platforms/javascript/guides/react-router/configuration/options/#sendDefaultPii
     sendDefaultPii: true,
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
   })
