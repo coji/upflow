@@ -69,6 +69,5 @@ export const db = createLazyProxy<Kysely<DB.DB>>(
 export async function closeDb(): Promise<void> {
   if (!sharedDbState) return
   await sharedDbState.kysely.destroy()
-  sharedDbState.database.close()
   sharedDbState = undefined
 }
