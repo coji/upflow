@@ -143,9 +143,7 @@ export function DataTableToolbar<TData>({
           onOpenChange={setOpen}
           value={null}
           onValueChange={(user) => {
-            if (user && !existingLogins.has(user.login)) {
-              handleSelect(user.login)
-            }
+            if (user) handleSelect(user.login)
           }}
           items={listItems}
           itemToStringValue={(user) => user.login}
