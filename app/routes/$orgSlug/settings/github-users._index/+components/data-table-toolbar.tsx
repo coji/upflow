@@ -1,6 +1,6 @@
 import type { Table } from '@tanstack/react-table'
 import { ExternalLinkIcon, LoaderIcon, PlusIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useSearchParams } from 'react-router'
 import { SearchInput } from '~/app/components/search-input'
 import {
@@ -13,19 +13,19 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Button } from '~/app/components/ui/button'
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '~/app/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/app/components/ui/popover'
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from '~/app/components/ui/combobox'
 import { useDataTableState } from '../+hooks/use-data-table-state'
+
+type GithubUserCandidate = { login: string; avatarUrl: string }
+const EMPTY_CANDIDATES: GithubUserCandidate[] = []
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
@@ -39,7 +39,7 @@ export function DataTableToolbar<TData>({
     useDataTableState()
   const currentLoginStatus = searchParams.get('loginStatus') ?? '__all__'
   const searchFetcher = useFetcher<{
-    candidates: { login: string; avatarUrl: string }[]
+    candidates: GithubUserCandidate[]
   }>()
   const addFetcher = useFetcher()
   const [open, setOpen] = useState(false)
@@ -71,6 +71,12 @@ export function DataTableToolbar<TData>({
   )
   const candidates = searchFetcher.data?.candidates ?? []
   const isSearching = searchFetcher.state === 'loading'
+  const hasQuery = Boolean(searchValue.trim())
+
+  const listItems = useMemo(() => {
+    if (!hasQuery || isSearching) return EMPTY_CANDIDATES
+    return candidates
+  }, [hasQuery, isSearching, candidates])
 
   const handleSelect = (login: string) => {
     if (existingLogins.has(login)) return
@@ -132,83 +138,94 @@ export function DataTableToolbar<TData>({
       </div>
 
       <div className="flex items-center gap-2">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button size="sm">
-              <PlusIcon className="mr-1 h-4 w-4" />
-              Add
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
-            <Command shouldFilter={false}>
-              <CommandInput
-                placeholder="Search GitHub login..."
-                value={searchValue}
-                onValueChange={setSearchValue}
-                onCompositionStart={() => {
-                  isComposingRef.current = true
-                }}
-                onCompositionEnd={() => {
-                  isComposingRef.current = false
-                  debouncedSearch(searchValue)
-                }}
-              />
-              <CommandList>
-                {isSearching ? (
-                  <div className="flex items-center justify-center py-6">
-                    <LoaderIcon className="text-muted-foreground h-4 w-4 animate-spin" />
-                  </div>
-                ) : searchValue.trim() ? (
-                  <>
-                    <CommandEmpty>No results found</CommandEmpty>
-                    <CommandGroup>
-                      {candidates.map((user) => (
-                        <CommandItem
-                          key={user.login}
-                          value={user.login}
-                          disabled={existingLogins.has(user.login)}
-                          onSelect={() => handleSelect(user.login)}
-                          className="flex items-center justify-between"
+        <Combobox<GithubUserCandidate>
+          open={open}
+          onOpenChange={setOpen}
+          value={null}
+          onValueChange={(user) => {
+            if (user) handleSelect(user.login)
+          }}
+          items={listItems}
+          itemToStringValue={(user) => user.login}
+          itemToStringLabel={(user) => user.login}
+          filter={null}
+          inputValue={searchValue}
+          onInputValueChange={setSearchValue}
+        >
+          <ComboboxTrigger
+            className="[&_[data-slot=combobox-trigger-icon]]:hidden"
+            render={<Button size="sm" type="button" />}
+          >
+            <PlusIcon className="mr-1 h-4 w-4" />
+            Add
+          </ComboboxTrigger>
+          <ComboboxContent className="w-72 min-w-[18rem] p-0" align="end">
+            <ComboboxInput
+              placeholder="Search GitHub login..."
+              showTrigger={false}
+              className="w-full min-w-0"
+              onCompositionStart={() => {
+                isComposingRef.current = true
+              }}
+              onCompositionEnd={(event) => {
+                isComposingRef.current = false
+                debouncedSearch(event.currentTarget.value)
+              }}
+            />
+            <ComboboxList>
+              {isSearching ? (
+                <div className="flex items-center justify-center py-6">
+                  <LoaderIcon className="text-muted-foreground h-4 w-4 animate-spin" />
+                </div>
+              ) : !hasQuery ? (
+                <div className="text-muted-foreground py-6 text-center text-sm">
+                  Enter a GitHub login
+                </div>
+              ) : (
+                <>
+                  <ComboboxEmpty>No results found</ComboboxEmpty>
+                  <ComboboxCollection>
+                    {(user) => (
+                      <ComboboxItem
+                        key={user.login}
+                        value={user}
+                        disabled={existingLogins.has(user.login)}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center">
+                          <Avatar className="mr-2 h-6 w-6">
+                            <AvatarImage
+                              src={user.avatarUrl}
+                              alt={user.login}
+                            />
+                            <AvatarFallback>
+                              {user.login.slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{user.login}</span>
+                          {existingLogins.has(user.login) && (
+                            <span className="text-muted-foreground ml-2 text-xs">
+                              Registered
+                            </span>
+                          )}
+                        </div>
+                        <a
+                          href={`https://github.com/${user.login}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground ml-2 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex items-center">
-                            <Avatar className="mr-2 h-6 w-6">
-                              <AvatarImage
-                                src={user.avatarUrl}
-                                alt={user.login}
-                              />
-                              <AvatarFallback>
-                                {user.login.slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{user.login}</span>
-                            {existingLogins.has(user.login) && (
-                              <span className="text-muted-foreground ml-2 text-xs">
-                                Registered
-                              </span>
-                            )}
-                          </div>
-                          <a
-                            href={`https://github.com/${user.login}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-foreground ml-2 shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLinkIcon className="h-3.5 w-3.5" />
-                          </a>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </>
-                ) : (
-                  <div className="text-muted-foreground py-6 text-center text-sm">
-                    Enter a GitHub login
-                  </div>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+                          <ExternalLinkIcon className="h-3.5 w-3.5" />
+                        </a>
+                      </ComboboxItem>
+                    )}
+                  </ComboboxCollection>
+                </>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
     </div>
   )
