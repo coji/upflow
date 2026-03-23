@@ -16,6 +16,14 @@ Instructions for AI coding agents working with this codebase.
 - Do not use vague hedge words to leave yourself escape hatches. State what is confirmed, state what is unconfirmed, and make the condition explicit when an answer depends on one.
 - When blocked by environment limits, state the limit plainly and move to the best available workaround.
 
+## Git Workflow Safety
+
+- No commit before user verification and explicit instruction.
+- No `git push` or PR creation without explicit instruction.
+- Never commit directly to `main`.
+- After a PR is merged and confirmed, switch to `main` and `pull` before continuing work.
+- If asked to create a PR while on `main`, create a branch and proceed through commit + PR creation; if git state is unusual, stop and confirm first.
+
 For all other project-specific guidance, conventions, and workflow details, see `CLAUDE.md`.
 
 <!-- opensrc:start -->
