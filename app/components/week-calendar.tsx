@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui'
+import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { cn } from '~/app/libs/utils'
 
@@ -22,12 +23,17 @@ interface WeekInterval {
 /**
  * Calculate the week interval (start – end) containing the given date,
  * based on the specified week-start day (0=Sun … 6=Sat, default 1=Mon).
+ *
+ * `timeZone` must match org/report timezone (see loaders using `timezoneContext`).
+ * Without it, SSR (often UTC) and the browser (e.g. JST) disagree on calendar day
+ * around week boundaries — e.g. Monday 00:00 JST is still Sunday in UTC.
  */
 export const getWeekInterval = (
   date: Date,
   startOfWeekDay: number,
+  timeZone: string,
 ): WeekInterval => {
-  const normalizedDate = dayjs(date).startOf('day')
+  const normalizedDate = dayjs(date).tz(timeZone).startOf('day')
   const dayOfWeek = normalizedDate.day()
 
   let diff = dayOfWeek - startOfWeekDay
@@ -42,27 +48,33 @@ export const getWeekInterval = (
 /**
  * Custom day button that highlights the entire selected week.
  * Extracted to module scope to maintain a stable component identity.
+ *
+ * `weekStart`/`weekEnd` are pre-computed dayjs objects (hoisted from the
+ * parent) so we avoid re-parsing the same weekInterval 28-42× per render.
  */
 function WeekDayButton({
   className,
   day,
   modifiers,
-  weekInterval,
+  weekStart,
+  weekEnd,
+  timeZone,
   ...props
-}: React.ComponentProps<typeof DayButton> & { weekInterval: WeekInterval }) {
-  const targetDate = dayjs(day.date)
-  const isSelected = targetDate.isBetween(
-    weekInterval.start,
-    weekInterval.end,
-    'day',
-    '[]',
-  )
-  const isWeekStart = targetDate.isSame(weekInterval.start, 'day')
-  const isWeekEnd = targetDate.isSame(weekInterval.end, 'day')
+}: React.ComponentProps<typeof DayButton> & {
+  weekStart: dayjs.Dayjs
+  weekEnd: dayjs.Dayjs
+  timeZone: string
+}) {
+  const targetDate = dayjs(day.date).tz(timeZone).startOf('day')
+  const isSelected = targetDate.isBetween(weekStart, weekEnd, 'day', '[]')
+  const isWeekStart = targetDate.isSame(weekStart, 'day')
+  const isWeekEnd = targetDate.isSame(weekEnd, 'day')
 
-  const dayOfWeek = day.date.getDay()
+  const dayOfWeek = targetDate.day()
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-  const isHoliday = holiday_jp.isHoliday(day.date)
+  const isHoliday = holiday_jp.isHoliday(
+    new Date(targetDate.year(), targetDate.month(), targetDate.date()),
+  )
 
   const ref = React.useRef<HTMLButtonElement>(null)
   React.useEffect(() => {
@@ -74,7 +86,7 @@ function WeekDayButton({
       ref={ref}
       variant="ghost"
       size="icon"
-      data-day={day.date.toLocaleDateString()}
+      data-day={targetDate.format('YYYY-MM-DD')}
       data-selected={isSelected}
       className={cn(
         className,
@@ -112,18 +124,19 @@ const WeeklyCalendar = ({
   startDay = 1,
 }: WeeklyCalendarProps) => {
   const [open, setOpen] = React.useState(false)
+  const timeZone = useTimezone()
 
   // Convert to Date once, then derive a stable primitive key so useMemo
   // doesn't re-run when the parent passes a new Date with the same timestamp.
   const valueDate = value instanceof Date ? value : new Date(value)
   const valueMs = valueDate.getTime()
   const weekInterval = useMemo(
-    () => getWeekInterval(new Date(valueMs), startDay),
-    [valueMs, startDay],
+    () => getWeekInterval(new Date(valueMs), startDay, timeZone),
+    [valueMs, startDay, timeZone],
   )
 
   const navigateTo = (date: Date) => {
-    const { start } = getWeekInterval(date, startDay)
+    const { start } = getWeekInterval(date, startDay, timeZone)
     onWeekChange(start)
   }
 
@@ -142,17 +155,24 @@ const WeeklyCalendar = ({
     setOpen(false)
   }
 
-  const isCurrentWeek = dayjs().isBetween(
-    weekInterval.start,
-    weekInterval.end,
-    'day',
-    '[]',
+  // weekInterval dates are already at start-of-day in timeZone (from
+  // getWeekInterval), so .tz() is enough — no extra .startOf('day').
+  const weekStart = useMemo(
+    () => dayjs(weekInterval.start).tz(timeZone),
+    [weekInterval.start, timeZone],
+  )
+  const weekEnd = useMemo(
+    () => dayjs(weekInterval.end).tz(timeZone),
+    [weekInterval.end, timeZone],
   )
 
+  const isCurrentWeek = dayjs()
+    .tz(timeZone)
+    .startOf('day')
+    .isBetween(weekStart, weekEnd, 'day', '[]')
+
   const formatWeekLabel = () => {
-    const start = dayjs(weekInterval.start)
-    const end = dayjs(weekInterval.end)
-    return `${start.format('M/D')} – ${end.format('M/D')}`
+    return `${weekStart.format('M/D')} – ${weekEnd.format('M/D')}`
   }
 
   // Bind weekInterval to the module-scope WeekDayButton via a stable wrapper.
@@ -161,9 +181,16 @@ const WeeklyCalendar = ({
     return function BoundWeekDayButton(
       props: React.ComponentProps<typeof DayButton>,
     ) {
-      return <WeekDayButton {...props} weekInterval={weekInterval} />
+      return (
+        <WeekDayButton
+          {...props}
+          weekStart={weekStart}
+          weekEnd={weekEnd}
+          timeZone={timeZone}
+        />
+      )
     }
-  }, [weekInterval])
+  }, [weekStart, weekEnd, timeZone])
 
   const calendarComponents = useMemo(
     () => ({ DayButton: BoundWeekDayButton }),

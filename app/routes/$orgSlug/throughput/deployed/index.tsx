@@ -134,8 +134,11 @@ export default function DeployedPage({
             value={from}
             onWeekChange={(start) => {
               setSearchParams((prev) => {
-                prev.set('from', dayjs(start).format('YYYY-MM-DD'))
-                prev.set('to', dayjs(start).add(6, 'day').format('YYYY-MM-DD'))
+                prev.set('from', dayjs(start).tz(timezone).format('YYYY-MM-DD'))
+                prev.set(
+                  'to',
+                  dayjs(start).tz(timezone).add(6, 'day').format('YYYY-MM-DD'),
+                )
                 return prev
               })
             }}

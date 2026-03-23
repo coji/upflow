@@ -70,7 +70,7 @@ export const loader = async ({
   // Build holiday map for the week
   const holidays: Record<string, string> = {}
   for (const h of holiday_jp.between(weekStart.toDate(), weekEnd.toDate())) {
-    holidays[dayjs(h.date).format('YYYY-MM-DD')] = h.name
+    holidays[dayjs(h.date).tz(timezone).format('YYYY-MM-DD')] = h.name
   }
 
   return {
@@ -120,7 +120,7 @@ export default function MemberWeeklyPage({
 
   const handleWeekChange = (start: Date) => {
     setSearchParams((prev) => {
-      prev.set('week', dayjs(start).format('YYYY-MM-DD'))
+      prev.set('week', dayjs(start).tz(timezone).format('YYYY-MM-DD'))
       return prev
     })
   }
