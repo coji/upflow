@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { closeTenantDb, getTenantDb } from '~/app/services/tenant-db.server'
-import type { OrganizationId } from '~/app/types/organization'
+import { toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
 import { upsertCompanyGithubUsers } from './mutations'
 
@@ -15,7 +15,7 @@ writeFileSync(testDbPath, '')
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
 
-const orgId = `test-org-${Date.now()}` as OrganizationId
+const orgId = toOrgId(`test-org-${Date.now()}`)
 
 const tenantDbPath = path.join(testDir, `tenant_${orgId}.db`)
 setupTenantSchema(tenantDbPath)

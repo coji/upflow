@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, test, vi } from 'vitest'
 import { closeAllTenantDbs } from '~/app/services/tenant-db.server'
-import type { OrganizationId } from '~/app/types/organization'
+import { toOrgId } from '~/app/types/organization'
 import { DEFAULT_TIMEZONE } from './constants'
 import { getOrganizationTimezone } from './timezone.server'
 
@@ -15,8 +15,6 @@ writeFileSync(testDbPath, '')
 
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
-
-const toOrgId = (s: string) => s as OrganizationId
 
 function createTenantWithSettings(orgId: string, timezone?: string) {
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)

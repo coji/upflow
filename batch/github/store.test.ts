@@ -12,7 +12,7 @@ import {
   vi,
 } from 'vitest'
 import { closeTenantDb } from '~/app/services/tenant-db.server'
-import type { OrganizationId } from '~/app/types/organization'
+import { toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
 import type {
   ShapedGitHubCommit,
@@ -37,7 +37,7 @@ afterAll(() => {
   vi.unstubAllEnvs()
 })
 
-const orgId = 'test-org' as OrganizationId
+const orgId = toOrgId('test-org')
 const repositoryId = 'repo-1'
 const tenantDbPath = path.join(testDir, `tenant_${orgId}.db`)
 

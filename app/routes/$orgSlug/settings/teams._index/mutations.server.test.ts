@@ -11,7 +11,7 @@ import {
   vi,
 } from 'vitest'
 import { closeTenantDb } from '~/app/services/tenant-db.server'
-import type { OrganizationId } from '~/app/types/organization'
+import { type OrganizationId, toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
 import { addTeam, deleteTeam, updateTeam } from './mutations.server'
 import { listTeams } from './queries.server'
@@ -23,8 +23,6 @@ writeFileSync(testDbPath, '')
 
 vi.stubEnv('NODE_ENV', 'production')
 vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
-
-const toOrgId = (s: string) => s as OrganizationId
 
 let testCounter = 0
 function createFreshOrg(): OrganizationId {
