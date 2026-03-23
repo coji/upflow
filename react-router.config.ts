@@ -10,6 +10,7 @@ export default {
   },
 
   buildEnd: async ({ viteConfig, reactRouterConfig, buildManifest }) => {
+    if (process.env.SENTRY_PUBLISH_RELEASE !== '1') return
     await sentryOnBuildEnd({
       viteConfig,
       reactRouterConfig,

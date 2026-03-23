@@ -6,6 +6,7 @@ import devtoolsJson from 'vite-plugin-devtools-json'
 
 export default defineConfig(async (configEnv) => {
   const { mode } = configEnv
+  const publishRelease = process.env.SENTRY_PUBLISH_RELEASE === '1'
 
   return {
     build: {
@@ -25,6 +26,7 @@ export default defineConfig(async (configEnv) => {
           org: 'techtalkjp',
           project: 'upflow',
           authToken: process.env.SENTRY_AUTH_TOKEN,
+          sourcemaps: publishRelease ? undefined : { disable: true },
         },
         configEnv,
       )),
