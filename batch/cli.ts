@@ -1,5 +1,10 @@
 import { cli, command } from 'cleye'
 import 'dotenv/config'
+import {
+  captureExceptionToSentry,
+  ensureSentryNodeInitialized,
+  flushSentryNode,
+} from '~/app/libs/sentry-node.server'
 
 // コマンドは全て dynamic import で遅延ロードする。
 // トップレベル import にすると durably.server.ts が読み込まれて
@@ -123,6 +128,16 @@ const report = command(
   },
 )
 
-cli({
-  commands: [crawl, recalculate, classify, backfill, report],
+ensureSentryNodeInitialized()
+
+const runCli = async () => {
+  await cli({
+    commands: [crawl, recalculate, classify, backfill, report],
+  })
+}
+
+runCli().catch(async (error) => {
+  captureExceptionToSentry(error, { tags: { component: 'batch-cli' } })
+  await flushSentryNode()
+  process.exit(1)
 })

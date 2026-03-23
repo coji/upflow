@@ -1,5 +1,6 @@
 import consola from 'consola'
 import schedule from 'node-schedule'
+import { captureExceptionToSentry } from '~/app/libs/sentry-node.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { listAllOrganizations } from './db'
 import { logger } from './helper/logger'
@@ -36,12 +37,19 @@ export const createJobScheduler = () => {
             logger.info(`crawl job triggered for ${org.name}`)
           } catch (e) {
             logger.error(`failed to trigger crawl for ${org.name}:`, orgId, e)
+            captureExceptionToSentry(e, {
+              tags: { component: 'job-scheduler', operation: 'crawl.trigger' },
+              extra: { organizationId: orgId, organizationName: org.name },
+            })
           }
         }
 
         logger.info('crawl cycle completed.')
       } catch (e) {
         logger.error(e)
+        captureExceptionToSentry(e, {
+          tags: { component: 'job-scheduler', operation: 'crawl.cycle' },
+        })
       }
     })
   }

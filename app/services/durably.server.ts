@@ -2,6 +2,7 @@ import { createDurably, createDurablyHandler } from '@coji/durably'
 import SQLite from 'better-sqlite3'
 import { SqliteDialect } from 'kysely'
 import { getSession, getUserOrganizations } from '~/app/libs/auth.server'
+import { registerDurablySentryListeners } from '~/app/libs/sentry-node.server'
 import { backfillJob } from '~/app/services/jobs/backfill.server'
 import { classifyJob } from '~/app/services/jobs/classify.server'
 import { crawlJob } from '~/app/services/jobs/crawl.server'
@@ -34,6 +35,7 @@ declare global {
 
 if (!globalThis.__durably) {
   globalThis.__durably = createDurablyInstance()
+  registerDurablySentryListeners(globalThis.__durably)
 }
 export const durably = globalThis.__durably
 

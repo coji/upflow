@@ -50,6 +50,7 @@
     "@octokit/plugin-rest-endpoint-methods": "17.0.0",
     "@react-router/express": "7.13.1",
     "@react-router/node": "7.13.1",
+    "@sentry/node": "10.45.0",
     "@sentry/react-router": "10.45.0",
     "@tanstack/react-table": "8.21.3",
     "better-auth": "1.5.5",
