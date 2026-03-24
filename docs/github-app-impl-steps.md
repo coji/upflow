@@ -48,7 +48,12 @@ export function createOctokit(auth: IntegrationAuth): Octokit {
 
 - env vars は `method: 'github_app'` 時のみ必要
 - `GITHUB_APP_PRIVATE_KEY` は base64 → PEM デコード（Fly.io secrets で改行を含む鍵を安全に保存するため）
-- `InvariantError` で fail-fast（正本の方針に沿う）
+- `InvariantError`（tiny-invariant）で fail-fast（正本の方針に沿う）
+
+**例外の使い分け方針**:
+
+- `invariant()` / `InvariantError`: 開発者向け fail-fast。「ここに到達したらコードのバグ」（例: env var 未設定で github_app method を使おうとした）
+- `throw new Error(...)`: ユーザー起因のエラー。「設定が不足している」（例: integration 未設定、auth 方式が決定できない）。call site では後者を使う
 
 ### 2-2. `batch/github/fetcher.ts` リファクタ
 
@@ -278,15 +283,18 @@ export function verifyInstallState(state: string): { organizationId: string }
 ### 3-4. `app/routes/api.github.setup.ts`（新規）
 
 - `installation_id` + `state` クエリパラメータを受け取る
-- **state 検証**: nonce 消費 + 署名 + expiry チェック → `organizationId` 取得（セッション不要）
+- **state 検証**: 署名 + expiry チェック → `organizationId` 取得（セッション不要）。**nonce はまだ消費しない**
 - **GitHub API 検証**: App JWT で `GET /app/installations/:installation_id` を呼び検証
   - installation が自分の App のものか確認
   - `account.login`, `account.id`, `repository_selection` を取得
-- **単一トランザクションで以下を実行**（`db.transaction()` 必須）:
+  - API エラー時は nonce 未消費のまま → ユーザーは同じ URL で再試行可能
+- **単一トランザクションで以下を全て実行**（`db.transaction()` 必須。nonce 消費も含む）:
+  - nonce を消費済みにする（ここで初めて消費。API 検証成功後のみ）
   - `github_app_links` に UPSERT（soft delete 復活対応: `deleted_at = NULL` に戻す）
   - `integrations.method` を `github_app` に自動切替
   - `integrations.appSuspendedAt` を NULL にクリア（前回 suspend 状態からの再接続に対応）
 - `UNIQUE` 制約で重複防止（同一 installation が他 tenant にリンク済みならエラー）
+- トランザクション失敗時は nonce も未消費 → 再試行可能
 - `clearOrgCache`
 - **リダイレクト仕様**:
   1. ログイン済み + org にアクセス可能 → `/:orgSlug/settings/integration`
@@ -300,8 +308,11 @@ export function verifyInstallState(state: string): { organizationId: string }
 - intent: `disconnect-github-app`
 - **単一トランザクションで実行**:
   - `github_app_links` を soft delete（`deleted_at` 設定）
-  - `integrations.method` を `token` に戻す（PAT があれば即復帰）
+  - `integrations.method` を `token` に戻す
 - `clearOrgCache`
+- **PAT 有無による挙動**（`revert-to-token` と同じ）:
+  - PAT あり → 即座に PAT で動作再開
+  - PAT なし → UI は「未接続 + PAT なし」状態になる（PAT 入力を促す）
 
 ### 3-6. 本番 App 設定更新（GitHub UI 手動作業）
 
@@ -387,7 +398,13 @@ export function verifyInstallState(state: string): { organizationId: string }
 | `install-github-app`    | state 生成 → GitHub インストール URL にリダイレクト                        |
 | `copy-install-url`      | state 生成 → state 付き URL を返す（クライアントでクリップボードにコピー） |
 | `disconnect-github-app` | Step 3-5 の接続解除（トランザクション）                                    |
-| `revert-to-token`       | `integrations.method` を `token` に戻す（「要再接続」状態から PAT に復帰） |
+| `revert-to-token`       | `integrations.method` を `token` に戻す（「要再接続」状態から復帰）        |
+
+**`revert-to-token` の PAT 有無による挙動**:
+
+- PAT あり → `method='token'` に切替。即座に PAT で動作再開
+- PAT なし → `method='token'` に切替。UI は「未接続 + PAT なし」状態になる（PAT 入力を促す）
+- **UI 側**: PAT がない場合は「Token に戻す」ボタンに「※ Token が未設定のため、切替後に Token の入力が必要です」の注記を表示
 
 **schema 拡張**: `app/routes/$orgSlug/settings/_index/+schema.ts` の `integrationSettingsSchema` に新 intent を追加するか、`integration/index.tsx` に独立した action schema を定義。
 
