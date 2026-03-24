@@ -119,20 +119,32 @@ export function verifyInstallState(state: string): {
 }
 ```
 
+**state 形式**: JWT ライクな `payload.signature` 形式を使用（`:` 区切りは ISO 8601 の `:` と衝突するため不可）
+
+```
+base64url(JSON.stringify({ orgId, nonce, exp })).base64url(signature)
+```
+
+- `exp`: Unix timestamp（秒）
+- signature: `HMAC-SHA256(payloadPart, GITHUB_APP_STATE_SECRET)`
+- `.` で payload と signature を区切る
+
 **`generateInstallState`**:
 
 1. `crypto.randomUUID()` で nonce 生成
-2. expiry = 現在 + 7日（ISO 8601）
-3. `HMAC-SHA256(orgId:nonce:expiry, GITHUB_APP_STATE_SECRET)` で署名
-4. `github_app_install_states` テーブルに INSERT（`id`, `organization_id`, `nonce`, `expires_at`）
-5. state 文字列を返す: `orgId:nonce:expiry:signature`
+2. exp = `Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60`（7日後の Unix timestamp）
+3. payload = `base64url(JSON.stringify({ orgId: organizationId, nonce, exp }))`
+4. signature = `base64url(HMAC-SHA256(payload, GITHUB_APP_STATE_SECRET))`
+5. `github_app_install_states` テーブルに INSERT（`id`, `organization_id`, `nonce`, `expires_at`）
+6. state 文字列を返す: `${payload}.${signature}`
 
 **`verifyInstallState`**（DB に触らない — 署名 + expiry のみ検証）:
 
-1. state を `:` で分割 → `orgId`, `nonce`, `expiry`, `signature`
+1. state を `.` で分割 → `payloadPart`, `signaturePart`
 2. HMAC-SHA256 で署名を再計算して一致確認
-3. expiry が現在時刻より未来であることを確認
-4. `{ organizationId, nonce }` を返す
+3. payload を base64url デコード → JSON parse → `{ orgId, nonce, exp }`
+4. `exp` が現在時刻より未来であることを確認
+5. `{ organizationId: orgId, nonce }` を返す
 
 **nonce の消費は呼び出し側（setup callback）のトランザクション内で行う。**
 
@@ -269,11 +281,22 @@ await db.transaction().execute(async (trx) => {
     )
     .execute()
 
-  // 3. method 切替 + appSuspendedAt クリア
+  // 3. integrations UPSERT（新規 org で integration 行がない場合にも対応）
   await trx
-    .updateTable('integrations')
-    .set({ method: 'github_app', appSuspendedAt: null })
-    .where('organizationId', '=', organizationId)
+    .insertInto('integrations')
+    .values({
+      id: nanoid(),
+      organizationId,
+      provider: 'github',
+      method: 'github_app',
+      appSuspendedAt: null,
+    })
+    .onConflict((oc) =>
+      oc.column('organizationId').doUpdateSet({
+        method: 'github_app',
+        appSuspendedAt: null,
+      }),
+    )
     .execute()
 })
 ```
@@ -284,35 +307,48 @@ await db.transaction().execute(async (trx) => {
 2. ログイン済み + org にアクセス不可 → `/`
 3. 未ログイン → リンクは完了（state で認証済み）→ `/login`
 
-ログイン状態の確認: `auth.api.getSession({ headers: request.headers })` を使用。org アクセス可能かは `organizationId` から `organizations.slug` を取得して判断。
+ログイン状態の確認: `auth.api.getSession({ headers: request.headers })` を使用（実コードでは `auth.api.getSession(request)` の形式もあるので、`app/libs/auth.server.ts` の既存パターンに合わせる）。org アクセス可能かは `organizationId` から shared DB の `organizations.slug` + `members` テーブルで判断。
+
+**注意**: setup callback 成功後に **`clearOrgCache(organizationId)`** を必ず呼ぶこと。リポ追加画面等で GitHub API の一覧取得結果がキャッシュされているため、認証方式が変わった後にキャッシュが残ると古い認証でリクエストが飛ぶ。
 
 ---
 
 ### 3-6. 接続解除 action
 
-`app/routes/$orgSlug/settings/integration/index.tsx` の action に intent を追加:
+`app/routes/$orgSlug/settings/integration/index.tsx` の action を変更。
 
-**intent: `disconnect-github-app`**
+**現在の action 構造**: `integrationSettingsSchema` を `parseWithZod` してから処理している。`disconnect-github-app` は schema が異なるので、**先に `formData.get('intent')` で intent を分岐**し、既存の token 更新フローと disconnect を分ける。
 
 ```typescript
-.with({ intent: 'disconnect-github-app' }, async () => {
-  await db.transaction().execute(async (trx) => {
-    await trx
-      .updateTable('githubAppLinks')
-      .set({ deletedAt: new Date().toISOString() })
-      .where('organizationId', '=', organization.id)
-      .where('deletedAt', 'is', null)
-      .execute()
+export const action = async ({ request, context }: Route.ActionArgs) => {
+  const { organization } = context.get(orgContext)
+  const formData = await request.formData()
+  const intent = formData.get('intent')
 
-    await trx
-      .updateTable('integrations')
-      .set({ method: 'token' })
-      .where('organizationId', '=', organization.id)
-      .execute()
-  })
-  clearOrgCache(organization.id)
-  return dataWithSuccess({}, { message: 'GitHub App disconnected' })
-})
+  // disconnect は独自の処理（既存の parseWithZod フローとは別）
+  if (intent === 'disconnect-github-app') {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable('githubAppLinks')
+        .set({ deletedAt: new Date().toISOString() })
+        .where('organizationId', '=', organization.id)
+        .where('deletedAt', 'is', null)
+        .execute()
+
+      await trx
+        .updateTable('integrations')
+        .set({ method: 'token' })
+        .where('organizationId', '=', organization.id)
+        .execute()
+    })
+    clearOrgCache(organization.id)
+    return dataWithSuccess({}, { message: 'GitHub App disconnected' })
+  }
+
+  // 既存の token 更新フロー
+  const submission = await parseWithZod(formData, { schema })
+  // ...
+}
 ```
 
 **PAT 有無による挙動**:
@@ -358,17 +394,24 @@ GITHUB_APP_STATE_SECRET=     # インストール state トークン署名用
 
 - 正常フロー: state 有効 + installation 有効 → link 作成 + method 切替（トランザクション）
 - nonce 消費済み → reject
-- duplicate installation → UNIQUE 制約エラー
-- 無効な installation_id → GitHub API エラー → エラーレスポンス
-- soft delete 済み link の復活
+- 同一 org + 同一 installation の再実行 → 成功（UPSERT で冪等）
+- 別 org に既存 installation を結び直そうとした → UNIQUE 制約エラー
+- 無効な installation_id → GitHub API エラー → エラーレスポンス（nonce 未消費）
+- soft delete 済み link の復活（deletedAt が NULL に戻る）
+- state パラメータ欠落 → エラーレスポンス
+- installation_id パラメータ欠落 → エラーレスポンス
+- integration 行がない新規 org → UPSERT で integration 作成 + method 切替
 
-**Webhook イベント** (`app/routes/api.github.webhook.test.ts`):
+**Webhook エンドポイント** (`app/routes/api.github.webhook.test.ts`):
 
+- 署名検証失敗 → 401
+- malformed JSON body → エラーレスポンス
 - `installation.created`: link あり → `app_repository_selection` 更新 + org rename 追従
 - `installation.created`: link なし → ログのみ（エラーにしない）
 - `installation.deleted`: soft delete + `clearOrgCache`
 - `installation.suspend` / `unsuspend`: `appSuspendedAt` 更新
 - `installation_repositories`: `app_repository_selection` 更新
+- 未知のイベント → 202
 
 **接続解除**:
 
