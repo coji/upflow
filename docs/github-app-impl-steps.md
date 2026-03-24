@@ -69,7 +69,10 @@ export function resolveOctokitFromOrg(org: {
   const { integration, githubAppLink } = org
   if (!integration) throw new Error('No integration configured')
 
-  if (integration.method === 'github_app' && githubAppLink) {
+  if (integration.method === 'github_app') {
+    // github_app を選んでいるなら link 必須。link がなければエラー（UI は「要再接続」）
+    // PAT への暗黙フォールバックはしない（UI 状態と実動作がずれるため）
+    if (!githubAppLink) throw new Error('GitHub App is not connected')
     return createOctokit({
       method: 'github_app',
       installationId: githubAppLink.installationId,
@@ -118,6 +121,8 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
 ```
 
 ### 2-3. call site の更新
+
+> **スコープ**: 以下の call site は `createFetcher({ token })` → `createFetcher({ octokit })` への切り替えが対象。`repositories.add` 系（`get-unique-owners.ts`, `get-repositories-by-owner-and-keyword.ts`）は **Step 4 で UI ごと置き換える**ため Step 2 の対象外。これらは PAT 直結の API（`GET /user/repos`, Search API）を使っており、GitHub App では別 API（`GET /installation/repositories`）に切り替えが必要。
 
 #### `app/services/jobs/crawl.server.ts`
 
@@ -185,7 +190,7 @@ export async function backfillRepo(
 
 #### `app/routes/$orgSlug/settings/repositories/$repository/$pull/index.tsx`
 
-action 内で `createOctokit` + `createFetcher` を使う:
+action 内で `resolveOctokitFromOrg` + `createFetcher` を使う。integration は action 側で org 単位に取得する（`getRepositoryWithIntegration` の JOIN ではなく、`getIntegration` + `getGithubAppLink` で分離取得）。
 
 **変更前**: `createFetcher({ ..., token: repository.integration.privateToken })`
 **変更後**:
