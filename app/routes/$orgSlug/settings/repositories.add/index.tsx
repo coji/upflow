@@ -31,7 +31,7 @@ import { RepositoryItem, RepositoryList } from './+components'
 import { getRepositoriesByOwnerAndKeyword } from './+functions/get-repositories-by-owner-and-keyword'
 import { getUniqueOwners } from './+functions/get-unique-owners'
 import { addRepository } from './+functions/mutations.server'
-import { getIntegration } from './+functions/queries.server'
+import { getIntegrationWithRepositories } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
@@ -64,7 +64,7 @@ export const loader = async ({
     )
   }
 
-  const integration = await getIntegration(organization.id)
+  const integration = await getIntegrationWithRepositories(organization.id)
   if (!integration) {
     throw new Error('integration not created')
   }
@@ -115,7 +115,7 @@ export const loader = async ({
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization, membership } = context.get(orgContext)
   requireOrgOwner(membership, organization.slug)
-  const integration = await getIntegration(organization.id)
+  const integration = await getIntegrationWithRepositories(organization.id)
   if (!integration) {
     throw new Error('integration not created')
   }

@@ -9,7 +9,7 @@ import { orgContext } from '~/app/middleware/context'
 import {
   getGithubAppLink,
   getIntegration,
-} from '~/app/routes/$orgSlug/settings/_index/+functions/queries.server'
+} from '~/app/services/github-integration-queries.server'
 import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
 import {
   upsertPullRequest,

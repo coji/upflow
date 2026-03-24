@@ -1,15 +1,14 @@
-import { db } from '~/app/services/db.server'
+import { getIntegration } from '~/app/services/github-integration-queries.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
-export const getIntegration = async (organizationId: OrganizationId) => {
+/** Integration row + tenant repositories for the add-repositories flow. */
+export const getIntegrationWithRepositories = async (
+  organizationId: OrganizationId,
+) => {
   const tenantDb = getTenantDb(organizationId)
   const [integration, repositories] = await Promise.all([
-    db
-      .selectFrom('integrations')
-      .select(['privateToken', 'id', 'method', 'provider'])
-      .where('organizationId', '=', organizationId)
-      .executeTakeFirst(),
+    getIntegration(organizationId),
     tenantDb
       .selectFrom('repositories')
       .select(['id', 'owner', 'repo'])
