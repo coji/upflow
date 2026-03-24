@@ -3,6 +3,8 @@ import { href } from 'react-router'
 import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
+import { clearOrgCache } from '~/app/services/cache.server'
+import { db } from '~/app/services/db.server'
 import { getIntegration } from '~/app/services/github-integration-queries.server'
 import ContentSection from '../+components/content-section'
 import { IntegrationSettings } from '../_index/+forms/integration-settings'
@@ -33,8 +35,49 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization } = context.get(orgContext)
+  const formData = await request.formData()
+  const intent = formData.get('intent')
 
-  const submission = await parseWithZod(await request.formData(), { schema })
+  if (intent === 'disconnect-github-app') {
+    try {
+      const now = new Date().toISOString()
+      await db.transaction().execute(async (trx) => {
+        await trx
+          .updateTable('githubAppLinks')
+          .set({ deletedAt: now, updatedAt: now })
+          .where('organizationId', '=', organization.id)
+          .where('deletedAt', 'is', null)
+          .execute()
+
+        await trx
+          .updateTable('integrations')
+          .set({ method: 'token', updatedAt: now })
+          .where('organizationId', '=', organization.id)
+          .execute()
+      })
+      clearOrgCache(organization.id)
+    } catch (e) {
+      console.error('Failed to disconnect GitHub App:', e)
+      const message = getErrorMessage(e)
+      return dataWithError(
+        {
+          intent: 'disconnect-github-app' as const,
+          lastResult: undefined,
+        },
+        { message },
+      )
+    }
+
+    return dataWithSuccess(
+      {
+        intent: 'disconnect-github-app' as const,
+        lastResult: undefined,
+      },
+      { message: 'GitHub App disconnected' },
+    )
+  }
+
+  const submission = await parseWithZod(formData, { schema })
   if (submission.status !== 'success') {
     return {
       intent: 'integration-settings' as const,

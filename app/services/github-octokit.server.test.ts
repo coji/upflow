@@ -1,9 +1,33 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import {
   assertOrgGithubAuthResolvable,
+  createAppOctokit,
   createOctokit,
   resolveOctokitFromOrg,
 } from './github-octokit.server'
+
+describe('createAppOctokit', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  test('requires env vars', () => {
+    vi.stubEnv('GITHUB_APP_ID', '')
+    vi.stubEnv('GITHUB_APP_PRIVATE_KEY', '')
+    expect(() => createAppOctokit()).toThrow(
+      /GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY/,
+    )
+  })
+
+  test('returns Octokit when env is set', () => {
+    vi.stubEnv('GITHUB_APP_ID', '12345')
+    vi.stubEnv(
+      'GITHUB_APP_PRIVATE_KEY',
+      Buffer.from('fake-pem').toString('base64'),
+    )
+    expect(createAppOctokit()).toBeDefined()
+  })
+})
 
 describe('createOctokit', () => {
   afterEach(() => {

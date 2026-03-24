@@ -2,6 +2,29 @@ import { createAppAuth } from '@octokit/auth-app'
 import { Octokit } from 'octokit'
 import invariant from 'tiny-invariant'
 
+function getAppCredentials(): { appId: number; privateKey: string } {
+  const appId = process.env.GITHUB_APP_ID
+  const privateKey = Buffer.from(
+    process.env.GITHUB_APP_PRIVATE_KEY ?? '',
+    'base64',
+  ).toString('utf-8')
+  invariant(
+    appId && privateKey,
+    'GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY are required',
+  )
+  return { appId: Number(appId), privateKey }
+}
+
+/**
+ * App-level JWT (no installation). Use for e.g. `GET /app/installations/:id`.
+ */
+export function createAppOctokit(): Octokit {
+  return new Octokit({
+    authStrategy: createAppAuth,
+    auth: getAppCredentials(),
+  })
+}
+
 export type IntegrationAuth =
   | { method: 'token'; privateToken: string }
   | { method: 'github_app'; installationId: number }
@@ -19,24 +42,10 @@ export function createOctokit(auth: IntegrationAuth): Octokit {
     return new Octokit({ auth: auth.privateToken })
   }
 
-  const appId = process.env.GITHUB_APP_ID
-  const privateKey = Buffer.from(
-    process.env.GITHUB_APP_PRIVATE_KEY ?? '',
-    'base64',
-  ).toString('utf-8')
-
-  invariant(
-    appId && privateKey,
-    'GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY are required for github_app method',
-  )
-
+  const credentials = getAppCredentials()
   return new Octokit({
     authStrategy: createAppAuth,
-    auth: {
-      appId: Number(appId),
-      privateKey,
-      installationId: auth.installationId,
-    },
+    auth: { ...credentials, installationId: auth.installationId },
   })
 }
 
