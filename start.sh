@@ -7,10 +7,8 @@
 
 set -ex
 
-DB_URL='sqlite:///upflow/data/data.db'
-
 # 1. Apply shared DB migrations
-atlas migrate apply --env local --url "$DB_URL"
+atlas migrate apply --env local --url "sqlite://${UPFLOW_DATA_DIR}/data.db"
 
 # 2. Migrate integrations data from tenant DBs to shared DB (idempotent, safe to re-run)
 node build/db/migrate-integrations-to-shared.js

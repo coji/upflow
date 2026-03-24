@@ -105,6 +105,8 @@ jobs:
 
       - name: 🛠 Setup Database
         run: pnpm db:setup
+        env:
+          UPFLOW_DATA_DIR: ./data
 
       - name: 🔎 Check generated types are up to date
         run: |

@@ -25,15 +25,15 @@ cp .env.example .env
 
 Edit `.env` with your values:
 
-| Variable                    | Description                                        | Required |
-| --------------------------- | -------------------------------------------------- | -------- |
-| `DATABASE_URL`              | SQLite database path (e.g. `file:../data/data.db`) | Yes      |
-| `BETTER_AUTH_SECRET`        | Secret for better-auth (min 32 chars)              | Yes      |
-| `BETTER_AUTH_URL`           | App URL (e.g. `http://localhost:5173`)             | Yes      |
-| `GITHUB_CLIENT_ID`          | GitHub App client ID                               | Yes      |
-| `GITHUB_CLIENT_SECRET`      | GitHub App client secret                           | Yes      |
-| `INTEGRATION_PRIVATE_TOKEN` | GitHub PAT for PR data fetching                    | Yes      |
-| `GEMINI_API_KEY`            | Gemini API key for PR classification               | No       |
+| Variable                    | Description                            | Required |
+| --------------------------- | -------------------------------------- | -------- |
+| `UPFLOW_DATA_DIR`           | Data directory path (e.g. `./data`)    | Yes      |
+| `BETTER_AUTH_SECRET`        | Secret for better-auth (min 32 chars)  | Yes      |
+| `BETTER_AUTH_URL`           | App URL (e.g. `http://localhost:5173`) | Yes      |
+| `GITHUB_CLIENT_ID`          | GitHub App client ID                   | Yes      |
+| `GITHUB_CLIENT_SECRET`      | GitHub App client secret               | Yes      |
+| `INTEGRATION_PRIVATE_TOKEN` | GitHub PAT for PR data fetching        | Yes      |
+| `GEMINI_API_KEY`            | Gemini API key for PR classification   | No       |
 
 ### 3. Set up GitHub App
 

@@ -1,5 +1,12 @@
-import { describe, expect, test } from 'vitest'
-import { safeRedirectTo } from './auth.server'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { describe, expect, test, vi } from 'vitest'
+
+vi.stubEnv('UPFLOW_DATA_DIR', mkdtempSync(path.join(tmpdir(), 'auth-test-')))
+
+// Import after env stub to avoid resolveDataDir() throwing
+const { safeRedirectTo } = await import('./auth.server')
 
 describe('safeRedirectTo', () => {
   test('returns the path when it starts with /', () => {

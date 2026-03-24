@@ -72,13 +72,12 @@ RUN SENTRY_DSN="$SENTRY_DSN" \
 # --- Production image ---
 FROM runtime-base
 
-ENV DATABASE_URL="file:/upflow/data/data.db?connection_limit=1"
 ENV UPFLOW_DATA_DIR="/upflow/data"
 ENV PORT="8080"
 ENV NODE_ENV="production"
 
 # add shortcut for connecting to database CLI
-RUN printf '#!/bin/sh\nset -x\nsqlite3 file:/upflow/data/data.db\n' > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
+RUN printf '#!/bin/sh\nset -x\nsqlite3 "${UPFLOW_DATA_DIR}/data.db"\n' > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
 
 WORKDIR /upflow
 
