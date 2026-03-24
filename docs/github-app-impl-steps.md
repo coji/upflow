@@ -55,6 +55,38 @@ export function createOctokit(auth: IntegrationAuth): Octokit {
 - `invariant()` / `InvariantError`: 開発者向け fail-fast。「ここに到達したらコードのバグ」（例: env var 未設定で github_app method を使おうとした）
 - `throw new Error(...)`: ユーザー起因のエラー。「設定が不足している」（例: integration 未設定、auth 方式が決定できない）。call site では後者を使う
 
+**`resolveOctokitFromOrg` ヘルパー**（同ファイルに追加）:
+
+```typescript
+/**
+ * org の integration + githubAppLink から Octokit を生成する。
+ * method 分岐・PAT fallback・エラー判定を1箇所に集約。
+ */
+export function resolveOctokitFromOrg(org: {
+  integration: { method: string; privateToken: string | null } | null
+  githubAppLink: { installationId: number } | null
+}): Octokit {
+  const { integration, githubAppLink } = org
+  if (!integration) throw new Error('No integration configured')
+
+  if (integration.method === 'github_app' && githubAppLink) {
+    return createOctokit({
+      method: 'github_app',
+      installationId: githubAppLink.installationId,
+    })
+  }
+  if (integration.privateToken) {
+    return createOctokit({
+      method: 'token',
+      privateToken: integration.privateToken,
+    })
+  }
+  throw new Error('No auth configured')
+}
+```
+
+全 call site でこのヘルパーを使い、method 分岐のコピペをなくす。
+
 ### 2-2. `batch/github/fetcher.ts` リファクタ
 
 **変更前**:
@@ -104,18 +136,7 @@ const fetcher = createFetcher({ owner: repo.owner, repo: repo.repo, token })
 ```typescript
 // step の外で Octokit を生成（durably.db に永続化されないように）
 const org = await getOrganization(orgId)
-const integration = org.integration
-if (!integration) throw new Error('No integration configured')
-
-const octokit = createOctokit(
-  integration.method === 'github_app' && org.githubAppLink
-    ? { method: 'github_app', installationId: org.githubAppLink.installationId }
-    : integration.privateToken
-      ? { method: 'token', privateToken: integration.privateToken }
-      : (() => {
-          throw new Error('No auth configured')
-        })(),
-)
+const octokit = resolveOctokitFromOrg(org)
 
 const fetcher = createFetcher({ owner: repo.owner, repo: repo.repo, octokit })
 ```
@@ -170,17 +191,9 @@ action 内で `createOctokit` + `createFetcher` を使う:
 **変更後**:
 
 ```typescript
-const integration = await getIntegration(organization.id) // shared DB
-const githubAppLink = await getGithubAppLink(organization.id) // shared DB
-const octokit = createOctokit(
-  integration.method === 'github_app' && githubAppLink
-    ? { method: 'github_app', installationId: githubAppLink.installationId }
-    : integration.privateToken
-      ? { method: 'token', privateToken: integration.privateToken }
-      : (() => {
-          throw new Error('No auth configured')
-        })(),
-)
+const integration = await getIntegration(organization.id)
+const githubAppLink = await getGithubAppLink(organization.id)
+const octokit = resolveOctokitFromOrg({ integration, githubAppLink })
 const fetcher = createFetcher({
   owner: repository.owner,
   repo: repository.repo,
@@ -196,7 +209,9 @@ raw `fetch` → Octokit に統一:
 **変更後**:
 
 ```typescript
-const octokit = createOctokit(/* ... */)
+const integration = await getIntegration(organizationId)
+const githubAppLink = await getGithubAppLink(organizationId)
+const octokit = resolveOctokitFromOrg({ integration, githubAppLink })
 const { data } = await octokit.rest.search.users({
   q: `${query} in:login`,
   per_page: 8,
@@ -397,14 +412,16 @@ export function verifyInstallState(state: string): { organizationId: string }
 | `integration-settings`  | 既存の PAT 更新（変更なし）                                                |
 | `install-github-app`    | state 生成 → GitHub インストール URL にリダイレクト                        |
 | `copy-install-url`      | state 生成 → state 付き URL を返す（クライアントでクリップボードにコピー） |
-| `disconnect-github-app` | Step 3-5 の接続解除（トランザクション）                                    |
-| `revert-to-token`       | `integrations.method` を `token` に戻す（「要再接続」状態から復帰）        |
+| `disconnect-github-app` | 接続解除: soft delete + method='token'（「接続済み」状態から）             |
+| `revert-to-token`       | Token に戻す: soft delete + method='token'（「要再接続」状態から）         |
 
-**`revert-to-token` の PAT 有無による挙動**:
+> `disconnect-github-app` と `revert-to-token` は**内部処理は同一**（`disconnectGithubApp(organizationId)` ヘルパーを共有）。intent 名を分けるのは操作意図・UI 文言・監査ログの文脈が異なるため。
+
+**PAT 有無による挙動**（両 intent 共通）:
 
 - PAT あり → `method='token'` に切替。即座に PAT で動作再開
 - PAT なし → `method='token'` に切替。UI は「未接続 + PAT なし」状態になる（PAT 入力を促す）
-- **UI 側**: PAT がない場合は「Token に戻す」ボタンに「※ Token が未設定のため、切替後に Token の入力が必要です」の注記を表示
+- **UI 側**: PAT がない場合はボタンに「※ Token が未設定のため、切替後に Token の入力が必要です」の注記を表示
 
 **schema 拡張**: `app/routes/$orgSlug/settings/_index/+schema.ts` の `integrationSettingsSchema` に新 intent を追加するか、`integration/index.tsx` に独立した action schema を定義。
 
