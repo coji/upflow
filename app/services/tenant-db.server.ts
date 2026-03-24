@@ -10,6 +10,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import type { OrganizationId } from '~/app/types/organization'
+import { resolveDataDir } from './db.server'
 import type * as TenantDB from './tenant-type'
 
 export type { TenantDB }
@@ -26,12 +27,7 @@ const tenantDbCache = new Map<
 >()
 
 function getTenantDbPath(organizationId: OrganizationId): string {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is required')
-  }
-  const sharedDbPath = `${process.env.NODE_ENV === 'production' ? '' : '.'}${new URL(process.env.DATABASE_URL).pathname}`
-  const dir = path.dirname(sharedDbPath)
-  return path.join(dir, `tenant_${organizationId}.db`)
+  return path.join(resolveDataDir(), `tenant_${organizationId}.db`)
 }
 
 function ensureTenantDb(organizationId: OrganizationId) {

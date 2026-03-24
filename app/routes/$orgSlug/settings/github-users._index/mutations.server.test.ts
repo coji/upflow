@@ -44,8 +44,7 @@ sharedDb.exec(`
 `)
 sharedDb.close()
 
-vi.stubEnv('NODE_ENV', 'production')
-vi.stubEnv('DATABASE_URL', `file://${sharedDbPath}`)
+vi.stubEnv('UPFLOW_DATA_DIR', path.dirname(sharedDbPath))
 
 let testCounter = 0
 function createFreshOrg(): OrganizationId {

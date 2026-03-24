@@ -10,7 +10,11 @@ import {
   type Selectable,
   type Updateable,
 } from 'kysely'
+import path from 'node:path'
+import { resolveDataDir } from '~/db/data-dir'
 import type * as DB from './type'
+
+export { resolveDataDir }
 
 const debug = createDebug('app:db')
 const SQLITE_BUSY_TIMEOUT_MS = 5000
@@ -29,10 +33,7 @@ let sharedDbState: SharedDbState | undefined
 function getSharedDbState(): SharedDbState {
   if (sharedDbState) return sharedDbState
 
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is required')
-  }
-  const filename = `${process.env.NODE_ENV === 'production' ? '' : '.'}${new URL(process.env.DATABASE_URL).pathname}`
+  const filename = path.join(resolveDataDir(), 'data.db')
   const database = new SQLite(filename)
   database.pragma('journal_mode = WAL')
   database.pragma(`busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`)

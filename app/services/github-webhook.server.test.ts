@@ -62,8 +62,7 @@ rawInit.exec(`
 `)
 rawInit.close()
 
-vi.stubEnv('NODE_ENV', 'production')
-vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
+vi.stubEnv('UPFLOW_DATA_DIR', path.dirname(testDbPath))
 
 describe('processGithubWebhookPayload', () => {
   const clearSpy = vi.spyOn(cache, 'clearOrgCache')

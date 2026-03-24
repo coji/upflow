@@ -17,10 +17,8 @@ mkdirSync(testDir, { recursive: true })
 const testDbPath = path.join(testDir, 'data.db')
 writeFileSync(testDbPath, '') // create empty shared DB file
 
-// getTenantDbPath uses: `${NODE_ENV === 'production' ? '' : '.'}${new URL(DATABASE_URL).pathname}`
-// In production mode, pathname is used as-is. Use production mode for predictable paths.
-vi.stubEnv('NODE_ENV', 'production')
-vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
+// getTenantDbPath uses: path.join(resolveDataDir(), `tenant_${orgId}.db`)
+vi.stubEnv('UPFLOW_DATA_DIR', path.dirname(testDbPath))
 
 function createTestTenantDb(orgId: string): string {
   const dbPath = path.join(testDir, `tenant_${orgId}.db`)

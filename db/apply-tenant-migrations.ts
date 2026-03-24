@@ -8,8 +8,9 @@ import { consola } from 'consola'
 import { execFileSync } from 'node:child_process'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { resolveDataDir } from './data-dir'
 
-const dataDir = './data'
+const dataDir = resolveDataDir()
 const migrationsDir = './db/migrations/tenant'
 
 function getTenantDbFiles(): string[] {

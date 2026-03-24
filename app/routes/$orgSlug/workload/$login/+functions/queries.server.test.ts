@@ -20,8 +20,7 @@ mkdirSync(testDir, { recursive: true })
 const testDbPath = path.join(testDir, 'data.db')
 writeFileSync(testDbPath, '')
 
-vi.stubEnv('NODE_ENV', 'production')
-vi.stubEnv('DATABASE_URL', `file://${testDbPath}`)
+vi.stubEnv('UPFLOW_DATA_DIR', path.dirname(testDbPath))
 
 let testCounter = 0
 function createFreshOrg(): OrganizationId {

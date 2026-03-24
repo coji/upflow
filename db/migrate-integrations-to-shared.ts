@@ -7,18 +7,9 @@ import { consola } from 'consola'
 import 'dotenv/config'
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { resolveDataDir } from './data-dir'
 
-const dataDir = join(process.cwd(), 'data')
-
-function sharedDbFilePath(): string {
-  const url = process.env.DATABASE_URL ?? 'file:./data/data.db'
-  const pathname = new URL(url).pathname
-  const normalized =
-    process.env.NODE_ENV === 'production'
-      ? pathname
-      : `.${pathname.replace(/^\./, '')}`
-  return join(process.cwd(), normalized)
-}
+const dataDir = resolveDataDir()
 
 function hasTable(db: InstanceType<typeof Database>, name: string): boolean {
   const row = db
@@ -30,12 +21,11 @@ function hasTable(db: InstanceType<typeof Database>, name: string): boolean {
 }
 
 function migrate(): void {
-  const sharedPath = sharedDbFilePath()
+  const sharedPath = join(dataDir, 'data.db')
   if (!existsSync(sharedPath)) {
-    consola.info(
-      `Shared DB missing at ${sharedPath}; skipping integrations migration.`,
+    throw new Error(
+      `Shared DB not found at ${sharedPath}. Check UPFLOW_DATA_DIR (current: ${process.env.UPFLOW_DATA_DIR ?? '(unset)'}).`,
     )
-    return
   }
 
   const shared = new Database(sharedPath)
