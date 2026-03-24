@@ -300,14 +300,11 @@ export function verifyInstallState(state: string): { organizationId: string }
 
 **実装要件**:
 
-- 形式: `orgId:nonce:expiry:signature`
-- nonce: `crypto.randomUUID()` — 単回消費用
-- expiry: 7日
-- signature: HMAC-SHA256(`orgId:nonce:expiry`, secret)
-- `GITHUB_APP_STATE_SECRET` env var（`BETTER_AUTH_SECRET` とは分離。ローテーションと責務が異なる）
-- **nonce の単回消費**: shared DB に `github_app_install_states` テーブル（または `github_app_links` に `pending_nonce` カラム）を使い、callback で nonce を消費済みにする
-- expired state は reject（署名が valid でも）
-- 消費済み nonce の再利用は reject
+- state = nonce（UUID）のみ。署名は不要
+- DB に `github_app_install_states` テーブルを作り、nonce + organizationId + expiresAt + consumedAt を管理
+- `generateInstallState`: nonce 生成 → DB INSERT → nonce を返す
+- `consumeInstallState`: DB で未消費 + 未期限切れを検証 → 消費済みにして organizationId を返す
+- expired / 消費済み / 存在しない nonce は reject
 
 ### 3-3. `app/routes/api.github.webhook.ts`（新規）
 
@@ -333,7 +330,7 @@ export function verifyInstallState(state: string): { organizationId: string }
 ### 3-4. `app/routes/api.github.setup.ts`（新規）
 
 - `installation_id` + `state` クエリパラメータを受け取る
-- **state 検証**: 署名 + expiry チェック → `organizationId` 取得（セッション不要）。**nonce はまだ消費しない**
+- **state 検証**: `consumeInstallState(nonce)` で DB 検証・消費 → `organizationId` 取得（セッション不要）
 - **GitHub API 検証**: App JWT で `GET /app/installations/:installation_id` を呼び検証
   - installation が自分の App のものか確認
   - `account.login`, `account.id`, `repository_selection` を取得
@@ -371,7 +368,6 @@ export function verifyInstallState(state: string): { organizationId: string }
 - Webhook URL: `https://upflow.team/api/github/webhook`
 - Webhook Secret + `GITHUB_WEBHOOK_SECRET` 投入
 - Setup URL: `https://upflow.team/api/github/setup`
-- `GITHUB_APP_STATE_SECRET` 投入
 
 ### 3-7. テスト
 

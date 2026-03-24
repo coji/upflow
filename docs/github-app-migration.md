@@ -48,7 +48,7 @@
     ↓
 クライアントが自分の org に App をインストール
     ↓
-Setup callback + 署名付き state で Installation ID を安全に取得・保存
+Setup callback + DB ベースの nonce で Installation ID を安全に取得・保存
     ↓
 Installation Access Token を都度発行（有効期限 1h、@octokit/auth-app が自動リフレッシュ）
     ↓
@@ -138,7 +138,7 @@ PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 **アーキテクチャ**:
 
 - **データ分割**: 接続先情報（installation_id, github_org 等）は shared DB の `github_app_links`、認証設定（method, privateToken, app_suspended_at）は shared DB の `integrations`（`organization_id` で org に紐づく）で管理。`integrations` と `github_app_links` は同一 DB なので 1 クエリで JOIN 可能。tenant DB 全走査は不要
-- **接続経路**: Setup URL callback + 署名付き state パラメータが主経路。セッション不要で安全にテナント特定。Webhook は状態更新（deleted, suspend, repo selection 変更）に使用
+- **接続経路**: Setup URL callback + DB ベースの nonce（UUID）が主経路。セッション不要で安全にテナント特定。Webhook は状態更新（deleted, suspend, repo selection 変更）に使用
 - **method の意味**: `method` は常に実効の認証方式を表す。GitHub App link が完了した時点で自動的に `token` → `github_app` に切り替わる。リンク前は PAT のまま（crawl が止まらない）
 
 **PR 構成（4分割）**:
@@ -151,7 +151,7 @@ PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 **接続フロー（org 名の手入力不要）**:
 
 1. ユーザーが「GitHub App をインストール」ボタン or「インストール URL をコピー」
-2. サーバーが署名付き state（organizationId + expiry）を生成
+2. サーバーが nonce（UUID）を生成し DB に保存
 3. GitHub でインストール → setup callback に state 付きリダイレクト
 4. state 検証 → GitHub API で installation 検証 → link 保存 + method 自動切替
 
@@ -167,7 +167,7 @@ PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 
 ```text
 1. Settings → Integration で「インストール URL をコピー」
-   → 署名付き state 入りの URL がコピーされる
+   → nonce 付きの URL がコピーされる
 2. クライアントに URL を共有（Slack 等）
    → 「全リポジトリ」推奨だが、選択リポでも可（制限あり表示）
 3. クライアントが GitHub で Install
@@ -196,7 +196,7 @@ PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 - `@octokit/auth-app` の `authStrategy` による Octokit 認証の委譲（自前実装しない）
 - 移行期間中のリポ追加 owner 限定（既存ロールで対応）
 - PoC による技術検証を先行
-- Setup callback + 署名付き state による installation 管理（webhook は状態更新のみ）
+- Setup callback + DB ベースの nonce による installation 管理（webhook は状態更新のみ）
 - `github_app_links`（shared DB）で installation → tenant の O(1) ルックアップ
 
 ### やらないこと（YAGNI）
@@ -231,7 +231,7 @@ PoC スクリプト: `scripts/poc-github-app.ts`, `scripts/poc-repo-add-api.ts`
 - `@octokit/auth-app` の `authStrategy` が Octokit のリクエストごとに透過的にリフレッシュ
 - App 秘密鍵が漏洩した場合: GitHub App 設定画面で鍵をローテーション → 環境変数を更新 → 再デプロイ
 - Webhook ペイロードは必ず署名検証する（`X-Hub-Signature-256`）
-- `setup_url` の `installation_id` は単独で信用しない（spoof 可能、GitHub 公式で警告あり）。署名付き state でテナント特定 + GitHub API で installation を検証する二重チェック
+- `setup_url` の `installation_id` は単独で信用しない（spoof 可能、GitHub 公式で警告あり）。DB ベースの nonce でテナント特定 + GitHub API で installation を検証する二重チェック
 
 ### 注意点
 

@@ -122,7 +122,7 @@ export async function consumeInstallState(
 
 **state 形式**: nonce（UUID）のみ。署名は不要。
 
-> **設計判断**: 以前の設計では base64url(JSON).HMAC 署名で state に orgId/expiry を埋め込んでいたが、簡素化した。DB に nonce + organizationId + expiresAt を持つので、署名なしでも同等の機能が実現できる。防御層は1枚減る（DB 到達前にゴミリクエストを弾けない）が、UUID は推測不能で DB lookup は UNIQUE index の sub-millisecond クエリなので実害はない。`GITHUB_APP_STATE_SECRET` env var が不要になる。
+> **設計判断**: 以前の設計では HMAC 署名付き state に orgId/expiry を埋め込んでいたが、簡素化した。DB に nonce + organizationId + expiresAt を持つので、署名なしでも同等の機能が実現できる。防御層は1枚減る（DB 到達前にゴミリクエストを弾けない）が、UUID は推測不能で DB lookup は UNIQUE index の sub-millisecond クエリなので実害はない。専用 secret の env var も不要。
 
 **`generateInstallState`**:
 
