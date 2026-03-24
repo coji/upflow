@@ -7,6 +7,11 @@ import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
 import { orgContext } from '~/app/middleware/context'
 import {
+  getGithubAppLink,
+  getIntegration,
+} from '~/app/routes/$orgSlug/settings/_index/+functions/queries.server'
+import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
+import {
   upsertPullRequest,
   upsertPullRequestReview,
   upsertPullRequestReviewers,
@@ -23,7 +28,7 @@ import {
   getPullRequestRawData,
   getPullRequestReviewers,
   getPullRequestReviews,
-  getRepositoryWithIntegration,
+  getRepository,
   getShapedPullRequest,
 } from './queries.server'
 
@@ -90,26 +95,24 @@ export const action = async ({
   const formData = await request.formData()
   const intent = intentSchema.parse(formData.get('intent'))
 
-  const repository = await getRepositoryWithIntegration(
-    organization.id,
-    repositoryId,
-  )
+  const [repository, integration, githubAppLink] = await Promise.all([
+    getRepository(organization.id, repositoryId),
+    getIntegration(organization.id),
+    getGithubAppLink(organization.id),
+  ])
   if (!repository) {
     throw new Response('Repository not found', { status: 404 })
   }
-  if (
-    repository.owner === null ||
-    repository.repo === null ||
-    repository.integration === null ||
-    repository.integration.privateToken === null
-  ) {
+  if (repository.owner === null || repository.repo === null) {
     throw new Error('Repository is not integrated')
   }
+
+  const octokit = resolveOctokitFromOrg({ integration, githubAppLink })
 
   const fetcher = createFetcher({
     owner: repository.owner,
     repo: repository.repo,
-    token: repository.integration.privateToken,
+    octokit,
   })
 
   return match(intent)

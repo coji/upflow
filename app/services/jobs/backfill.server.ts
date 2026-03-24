@@ -1,5 +1,9 @@
 import { defineJob } from '@coji/durably'
 import { z } from 'zod'
+import {
+  assertOrgGithubAuthResolvable,
+  resolveOctokitFromOrg,
+} from '~/app/services/github-octokit.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
 import { backfillRepo } from '~/batch/github/backfill-repo'
@@ -16,22 +20,24 @@ export const backfillJob = defineJob({
   run: async (step, input) => {
     const orgId = input.organizationId as OrganizationId
 
-    const organization = await step.run('load-organization', async () => {
+    // Fetch org once before step (secrets stay outside step output)
+    const fullOrg = await getOrganization(orgId)
+
+    const organization = await step.run('load-organization', () => {
       step.progress(0, 0, 'Loading organization...')
-      const org = await getOrganization(orgId)
-      if (!org.integration?.privateToken) {
-        throw new Error('No integration or token configured')
-      }
+      assertOrgGithubAuthResolvable({
+        integration: fullOrg.integration,
+        githubAppLink: fullOrg.githubAppLink,
+      })
       return {
-        repositories: org.repositories,
+        repositories: fullOrg.repositories,
       }
     })
 
-    const org = await getOrganization(orgId)
-    const token = org.integration?.privateToken
-    if (!token) {
-      throw new Error('No integration token')
-    }
+    const octokit = resolveOctokitFromOrg({
+      integration: fullOrg.integration,
+      githubAppLink: fullOrg.githubAppLink,
+    })
 
     const repoCount = organization.repositories.length
 
@@ -41,14 +47,9 @@ export const backfillJob = defineJob({
 
       await step.run(`backfill:${repoLabel}`, async () => {
         step.progress(i + 1, repoCount, `Backfilling ${repoLabel}...`)
-        await backfillRepo(
-          orgId,
-          repository,
-          { privateToken: token },
-          {
-            files: input.files,
-          },
-        )
+        await backfillRepo(orgId, repository, octokit, {
+          files: input.files,
+        })
       })
     }
 

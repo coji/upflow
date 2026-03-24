@@ -1,32 +1,16 @@
-import { db } from '~/app/services/db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
-export const getRepositoryWithIntegration = async (
+export const getRepository = async (
   organizationId: OrganizationId,
   repositoryId: string,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  const repo = await tenantDb
+  return await tenantDb
     .selectFrom('repositories')
     .where('id', '=', repositoryId)
-    .select(['id', 'owner', 'repo', 'integrationId'])
+    .select(['id', 'owner', 'repo'])
     .executeTakeFirst()
-  if (!repo) return undefined
-
-  const integration = await db
-    .selectFrom('integrations')
-    .select(['privateToken'])
-    .where('id', '=', repo.integrationId)
-    .where('organizationId', '=', organizationId)
-    .executeTakeFirst()
-
-  return {
-    id: repo.id,
-    owner: repo.owner,
-    repo: repo.repo,
-    integration: integration ?? null,
-  }
 }
 
 export const getPullRequest = async (
