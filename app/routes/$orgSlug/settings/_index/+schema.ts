@@ -19,7 +19,7 @@ export const organizationSettingsSchema = z.object({
 
 export const integrationSettingsSchema = z.object({
   provider: z.enum(['github']),
-  method: z.enum(['token']),
+  method: z.enum(['token', 'github_app']),
   privateToken: z.string().max(500).optional().default(''),
 })
 

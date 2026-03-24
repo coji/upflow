@@ -1,16 +1,23 @@
+import type { SubmissionResult } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
-import { href } from 'react-router'
+import { data, href, redirect } from 'react-router'
 import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { getErrorMessage } from '~/app/libs/error-message'
+import { generateInstallState } from '~/app/libs/github-app-state.server'
 import { orgContext } from '~/app/middleware/context'
-import { clearOrgCache } from '~/app/services/cache.server'
-import { db } from '~/app/services/db.server'
-import { getIntegration } from '~/app/services/github-integration-queries.server'
+import { disconnectGithubApp } from '~/app/services/github-app-mutations.server'
+import {
+  getGithubAppLink,
+  getIntegration,
+} from '~/app/services/github-integration-queries.server'
 import ContentSection from '../+components/content-section'
 import { IntegrationSettings } from '../_index/+forms/integration-settings'
 import { upsertIntegration } from '../_index/+functions/mutations.server'
 import { integrationSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
+
+const GITHUB_APP_INSTALL_NEW_URL =
+  'https://github.com/apps/upflow-team/installations/new'
 
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
@@ -21,16 +28,25 @@ export const handle = {
 
 export const loader = async ({ context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
-  const integration = await getIntegration(organization.id)
-  // Never send privateToken to the client
+  const [integration, githubAppLink] = await Promise.all([
+    getIntegration(organization.id),
+    getGithubAppLink(organization.id),
+  ])
   const safeIntegration = integration
     ? {
         provider: integration.provider,
         method: integration.method,
         hasToken: !!integration.privateToken,
+        appSuspendedAt: integration.appSuspendedAt,
       }
-    : undefined
-  return { integration: safeIntegration }
+    : null
+  const safeGithubAppLink = githubAppLink
+    ? {
+        githubOrg: githubAppLink.githubOrg,
+        appRepositorySelection: githubAppLink.appRepositorySelection,
+      }
+    : null
+  return { integration: safeIntegration, githubAppLink: safeGithubAppLink }
 }
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
@@ -38,33 +54,25 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const formData = await request.formData()
   const intent = formData.get('intent')
 
+  if (intent === 'confirm-disconnect-github-app') {
+    return data({ shouldConfirm: true as const })
+  }
+
   if (intent === 'disconnect-github-app') {
     try {
-      const now = new Date().toISOString()
-      await db.transaction().execute(async (trx) => {
-        await trx
-          .updateTable('githubAppLinks')
-          .set({ deletedAt: now, updatedAt: now })
-          .where('organizationId', '=', organization.id)
-          .where('deletedAt', 'is', null)
-          .execute()
-
-        await trx
-          .updateTable('integrations')
-          .set({ method: 'token', updatedAt: now })
-          .where('organizationId', '=', organization.id)
-          .execute()
-      })
-      clearOrgCache(organization.id)
+      await disconnectGithubApp(organization.id)
     } catch (e) {
       console.error('Failed to disconnect GitHub App:', e)
       const message = getErrorMessage(e)
-      return dataWithError(
+      return data(
         {
           intent: 'disconnect-github-app' as const,
-          lastResult: undefined,
+          lastResult: {
+            error: { '': [message] },
+          } as SubmissionResult,
+          shouldConfirm: true,
         },
-        { message },
+        { status: 400 },
       )
     }
 
@@ -77,6 +85,52 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     )
   }
 
+  if (intent === 'confirm-revert-to-token') {
+    return data({ shouldConfirm: true as const })
+  }
+
+  if (intent === 'revert-to-token') {
+    try {
+      await disconnectGithubApp(organization.id)
+    } catch (e) {
+      console.error('Failed to revert to token:', e)
+      const message = getErrorMessage(e)
+      return data(
+        {
+          intent: 'revert-to-token' as const,
+          lastResult: {
+            error: { '': [message] },
+          } as SubmissionResult,
+          shouldConfirm: true,
+        },
+        { status: 400 },
+      )
+    }
+
+    return dataWithSuccess(
+      {
+        intent: 'revert-to-token' as const,
+        lastResult: undefined,
+      },
+      { message: 'Switched to personal access token' },
+    )
+  }
+
+  if (intent === 'install-github-app') {
+    const nonce = await generateInstallState(organization.id)
+    const installUrl = `${GITHUB_APP_INSTALL_NEW_URL}?state=${encodeURIComponent(nonce)}`
+    throw redirect(installUrl)
+  }
+
+  if (intent === 'copy-install-url') {
+    const nonce = await generateInstallState(organization.id)
+    const installUrl = `${GITHUB_APP_INSTALL_NEW_URL}?state=${encodeURIComponent(nonce)}`
+    return data({
+      intent: 'copy-install-url' as const,
+      installUrl,
+    })
+  }
+
   const submission = await parseWithZod(formData, { schema })
   if (submission.status !== 'success') {
     return {
@@ -85,12 +139,33 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     }
   }
 
+  const activeGithubAppLink = await getGithubAppLink(organization.id)
+  const existingIntegration = await getIntegration(organization.id)
+  if (activeGithubAppLink && existingIntegration?.method === 'github_app') {
+    const message =
+      'GitHub App is connected. Use the App section to manage the connection.'
+    return dataWithError(
+      {
+        intent: 'integration-settings' as const,
+        lastResult: submission.reply({ formErrors: [message] }),
+      },
+      { message },
+    )
+  }
+
   try {
     const { privateToken, ...rest } = submission.value
-    // If token is empty, keep existing; if new integration, require token
-    if (!privateToken) {
-      const existing = await getIntegration(organization.id)
-      if (!existing?.privateToken) {
+
+    if (submission.value.method === 'github_app') {
+      const resolvedToken = privateToken
+        ? privateToken
+        : (existingIntegration?.privateToken ?? null)
+      await upsertIntegration(organization.id, {
+        ...rest,
+        privateToken: resolvedToken,
+      })
+    } else if (!privateToken) {
+      if (!existingIntegration?.privateToken) {
         const message = 'Private token is required for new integrations.'
         return dataWithError(
           {
@@ -102,7 +177,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       await upsertIntegration(organization.id, {
         ...rest,
-        privateToken: existing.privateToken,
+        privateToken: existingIntegration.privateToken,
       })
     } else {
       await upsertIntegration(organization.id, { ...rest, privateToken })
@@ -131,14 +206,17 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 }
 
 export default function IntegrationSettingsPage({
-  loaderData: { integration },
+  loaderData: { integration, githubAppLink },
 }: Route.ComponentProps) {
   return (
     <ContentSection
       title="Integration"
       desc="Configure your GitHub integration settings."
     >
-      <IntegrationSettings integration={integration} />
+      <IntegrationSettings
+        integration={integration ?? undefined}
+        githubAppLink={githubAppLink}
+      />
     </ContentSection>
   )
 }

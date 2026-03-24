@@ -23,14 +23,14 @@ export const RepositoryItem = ({
       <div className="text-sm">
         {repo.owner}/{repo.name}
       </div>
-      {repo.visibility === 'PRIVATE' && (
+      {(repo.visibility ?? '').toLowerCase() === 'private' && (
         <div>
           <LockIcon className="text-muted-foreground h-3 w-3" />
         </div>
       )}
       <div className="text-muted-foreground">·</div>
       <div className="text-muted-foreground text-xs">
-        {dayjs.utc(repo.pushedAt).fromNow()}
+        {repo.pushedAt ? dayjs.utc(repo.pushedAt).fromNow() : '—'}
       </div>
 
       <div className="flex-1" />
