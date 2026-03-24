@@ -19,7 +19,7 @@ export const organizationSettingsSchema = z.object({
 
 export const integrationSettingsSchema = z.object({
   provider: z.enum(['github']),
-  method: z.enum(['token']),
+  method: z.enum(['token', 'github_app']),
   privateToken: z.string().max(500).optional().default(''),
 })
 
@@ -41,6 +41,12 @@ export enum INTENTS {
   integrationSettings = 'integration-settings',
   exportSettings = 'export-settings',
   deleteOrganization = 'delete-organization',
+  installGithubApp = 'install-github-app',
+  copyInstallUrl = 'copy-install-url',
+  disconnectGithubApp = 'disconnect-github-app',
+  confirmDisconnectGithubApp = 'confirm-disconnect-github-app',
+  revertToToken = 'revert-to-token',
+  confirmRevertToToken = 'confirm-revert-to-token',
 }
 
 export const intentsSchema = z.enum(INTENTS)

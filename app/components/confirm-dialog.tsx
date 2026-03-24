@@ -11,7 +11,7 @@ import {
 } from '~/app/components/ui/alert-dialog'
 import { Button } from '~/app/components/ui/button'
 
-interface ConfirmDialogData {
+export interface ConfirmDialogData {
   ok?: boolean
   lastResult?: SubmissionResult | null
   shouldConfirm?: boolean

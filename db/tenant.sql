@@ -5,6 +5,7 @@ CREATE TABLE `organization_settings` (
   `release_detection_key` text NOT NULL DEFAULT 'production',
   `is_active` boolean NOT NULL DEFAULT true,
   `timezone` text NOT NULL DEFAULT 'Asia/Tokyo',
+  `language` text NOT NULL DEFAULT 'en',
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   PRIMARY KEY (`id`)
@@ -17,14 +18,6 @@ CREATE TABLE `export_settings` (
   `private_key` text NOT NULL,
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-  PRIMARY KEY (`id`)
-);
--- Create "integrations" table
-CREATE TABLE `integrations` (
-  `id` text NOT NULL,
-  `provider` text NOT NULL,
-  `method` text NOT NULL,
-  `private_token` text NULL,
   PRIMARY KEY (`id`)
 );
 -- Create "repositories" table
@@ -40,7 +33,6 @@ CREATE TABLE `repositories` (
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   `team_id` text NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `repositories_integration_id_fkey` FOREIGN KEY (`integration_id`) REFERENCES `integrations` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT `repositories_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
 );
 -- Create index "repositories_integration_id_owner_repo_key" to table: "repositories"

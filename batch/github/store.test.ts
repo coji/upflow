@@ -45,9 +45,6 @@ function setupTenantDb() {
   setupTenantSchema(tenantDbPath)
   const db = new SQLite(tenantDbPath)
   db.prepare(
-    'INSERT INTO integrations (id, provider, method, private_token) VALUES (?, ?, ?, ?)',
-  ).run('int-1', 'github', 'token', 'test-token')
-  db.prepare(
     'INSERT INTO repositories (id, integration_id, provider, owner, repo, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
   ).run(
     repositoryId,

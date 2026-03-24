@@ -124,7 +124,7 @@ pnpm db:generate
 
 Types are generated to `app/services/type.ts` from the database.
 
-**マイグレーション作成時の注意**: Atlas が自動生成した SQL は必ずレビューする。`DROP TABLE` は `IF EXISTS` を付ける。destructive な操作は本番 DB 相当の状態でテストしてからデプロイする。
+**マイグレーション作成時の注意**: Atlas が自動生成した SQL は必ずレビューする。手動で追加する `DROP TABLE` には `IF EXISTS` を付ける（Atlas がテーブル再作成の中間ステップとして生成する `DROP TABLE` はそのままでよい — 直前の `INSERT SELECT` が成功している前提で動く）。destructive な操作は本番 DB 相当の状態でテストしてからデプロイする。
 
 **CamelCasePlugin と `sql` テンプレート**: `sql` テンプレートリテラル内の識別子は CamelCasePlugin で変換されない。`sql` 内でカラムを参照するときは `sql.ref('tableName.columnName')` を使うこと。
 
@@ -270,9 +270,9 @@ All org-scoped routes live under `app/routes/$orgSlug/`. Key rules:
 - **Mutation functions must scope to org**: Every UPDATE/DELETE on shared DB org-scoped tables must include `WHERE organizationId = ?` with a server-derived value
 - **Route-layer ownership check for child resources**: When operating on a resource by ID (repository, member), verify `resource.organizationId === organization.id` before any mutation
 
-Shared DB org-scoped tables (have `organizationId` column): `members`, `invitations`
+Shared DB org-scoped tables (have `organizationId` column): `members`, `invitations`, `integrations`, `githubAppLinks`
 
-Tenant DB tables (per-org SQLite, scoped by DB file): `companyGithubUsers`, `exportSettings`, `integrations`, `organizationSettings`, `repositories`, `teams`
+Tenant DB tables (per-org SQLite, scoped by DB file): `companyGithubUsers`, `exportSettings`, `organizationSettings`, `repositories`, `teams`
 
 **Org scoping in queries**: Shared DB の org-scoped tables は `WHERE organizationId = ?` を手動で含めること。Tenant DB のテーブルは `getTenantDb(organizationId)` で取得した DB 自体が org スコープなので、クエリに `organizationId` 条件は不要。
 

@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { sql } from '~/app/services/db.server'
+import { db, sql } from '~/app/services/db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -13,9 +13,10 @@ export const addRepository = async (
     .selectFrom('organizationSettings')
     .selectAll()
     .executeTakeFirstOrThrow()
-  const integration = await tenantDb
+  const integration = await db
     .selectFrom('integrations')
     .selectAll()
+    .where('organizationId', '=', organizationId)
     .executeTakeFirstOrThrow()
 
   return await tenantDb

@@ -12,6 +12,8 @@ import {
 import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { z } from 'zod'
 import {
+  Alert,
+  AlertDescription,
   Button,
   HStack,
   Input,
@@ -26,12 +28,21 @@ import {
 import { requireOrgOwner } from '~/app/libs/auth.server'
 import { orgContext } from '~/app/middleware/context'
 import { clearOrgCache, getOrgCachedData } from '~/app/services/cache.server'
+import { getGithubAppLink } from '~/app/services/github-integration-queries.server'
+import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
+import type { OrganizationId } from '~/app/types/organization'
 import ContentSection from '../+components/content-section'
 import { RepositoryItem, RepositoryList } from './+components'
+import {
+  extractOwners,
+  fetchAllInstallationRepos,
+  filterInstallationRepos,
+} from './+functions/get-installation-repos'
+import type { Repository } from './+functions/get-repositories-by-owner-and-keyword'
 import { getRepositoriesByOwnerAndKeyword } from './+functions/get-repositories-by-owner-and-keyword'
 import { getUniqueOwners } from './+functions/get-unique-owners'
 import { addRepository } from './+functions/mutations.server'
-import { getIntegration } from './+functions/queries.server'
+import { getIntegrationWithRepositories } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
@@ -40,6 +51,115 @@ const AddRepoSchema = z.object({
   owner: z.string(),
   name: z.string(),
 })
+
+type IntegrationWithRepositories = NonNullable<
+  Awaited<ReturnType<typeof getIntegrationWithRepositories>>
+>
+
+type AddRepositoriesLoaderData = {
+  registeredRepos: IntegrationWithRepositories['repositories']
+  pageInfo: { hasNextPage: boolean; endCursor: string | null }
+  query: string
+  owner: string | undefined
+  owners: string[]
+  repos: Repository[]
+  isGithubAppRepos: boolean
+  appRepositorySelection?: 'all' | 'selected'
+}
+
+async function loadReposForToken(
+  integration: IntegrationWithRepositories,
+  organizationId: OrganizationId,
+  owner: string | undefined,
+  cursor: string | undefined,
+  query: string,
+): Promise<AddRepositoriesLoaderData> {
+  const token = integration.privateToken
+  if (!token) {
+    throw new Error('integration not configured')
+  }
+  const registeredOwners = [
+    ...new Set(integration.repositories.map((r) => r.owner)),
+  ]
+  const apiOwners = await getOrgCachedData(
+    organizationId,
+    'owners',
+    () => getUniqueOwners(token),
+    300000,
+  )
+  const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
+    (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
+  )
+  if (owner && !owners.includes(owner)) {
+    throw new Error('invalid owner')
+  }
+
+  const { pageInfo, repos } = await getOrgCachedData(
+    organizationId,
+    `repos-${owner}-${cursor}-${query}`,
+    () =>
+      getRepositoriesByOwnerAndKeyword({
+        token,
+        cursor,
+        owner,
+        keyword: query,
+      }),
+    300000,
+  )
+
+  return {
+    registeredRepos: integration.repositories,
+    pageInfo,
+    query,
+    owner,
+    owners,
+    repos,
+    isGithubAppRepos: false,
+  }
+}
+
+async function loadReposForApp(
+  integration: IntegrationWithRepositories,
+  organizationId: OrganizationId,
+  owner: string | undefined,
+  query: string,
+): Promise<AddRepositoriesLoaderData> {
+  const githubAppLink = await getGithubAppLink(organizationId)
+  if (!githubAppLink) {
+    throw new Error('GitHub App is not connected')
+  }
+  const octokit = resolveOctokitFromOrg({ integration, githubAppLink })
+  const registeredOwners = [
+    ...new Set(integration.repositories.map((r) => r.owner)),
+  ]
+  // Fetch all installation repos once (cached), derive owners + filtered repos
+  const allRepos = await getOrgCachedData(
+    organizationId,
+    'app-installation-all-repos',
+    () => fetchAllInstallationRepos(octokit),
+    300000,
+  )
+  const apiOwners = extractOwners(allRepos)
+  const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
+    (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
+  )
+  if (owner && !owners.includes(owner)) {
+    throw new Error('invalid owner')
+  }
+
+  const repos = filterInstallationRepos(allRepos, owner, query)
+
+  return {
+    registeredRepos: integration.repositories,
+    pageInfo: { hasNextPage: false as const, endCursor: null as null },
+    query,
+    owner,
+    owners,
+    repos,
+    appRepositorySelection: githubAppLink.appRepositorySelection,
+    isGithubAppRepos: true,
+  }
+}
 
 export const loader = async ({
   request,
@@ -64,58 +184,22 @@ export const loader = async ({
     )
   }
 
-  const integration = await getIntegration(organization.id)
+  const integration = await getIntegrationWithRepositories(organization.id)
   if (!integration) {
     throw new Error('integration not created')
   }
-  if (!integration.privateToken) {
-    throw new Error('integration not configured')
-  }
-  const token = integration.privateToken
-  const registeredOwners = [
-    ...new Set(integration.repositories.map((r) => r.owner)),
-  ]
-  const apiOwners = await getOrgCachedData(
-    organization.id,
-    'owners',
-    () => getUniqueOwners(token),
-    300000, // 5 minutes
-  )
-  const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
-    (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
-  )
-  if (owner && !owners.includes(owner)) {
-    // invalid
-    throw new Error('invalid owner')
+
+  if (integration.method === 'github_app') {
+    return loadReposForApp(integration, organization.id, owner, query)
   }
 
-  const { pageInfo, repos } = await getOrgCachedData(
-    organization.id,
-    `repos-${owner}-${cursor}-${query}`,
-    () =>
-      getRepositoriesByOwnerAndKeyword({
-        token,
-        cursor,
-        owner,
-        keyword: query,
-      }),
-    300000, // 5 minutes
-  )
-
-  return {
-    registeredRepos: integration.repositories,
-    pageInfo,
-    query,
-    owner,
-    owners,
-    repos,
-  }
+  return loadReposForToken(integration, organization.id, owner, cursor, query)
 }
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization, membership } = context.get(orgContext)
   requireOrgOwner(membership, organization.slug)
-  const integration = await getIntegration(organization.id)
+  const integration = await getIntegrationWithRepositories(organization.id)
   if (!integration) {
     throw new Error('integration not created')
   }
@@ -149,7 +233,16 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 }
 
 export default function AddRepositoryPage({
-  loaderData: { registeredRepos, pageInfo, query, owner, owners, repos },
+  loaderData: {
+    registeredRepos,
+    pageInfo,
+    query,
+    owner,
+    owners,
+    repos,
+    appRepositorySelection,
+    isGithubAppRepos,
+  },
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -160,6 +253,16 @@ export default function AddRepositoryPage({
       fullWidth
     >
       <Stack>
+        {appRepositorySelection === 'selected' ? (
+          <Alert>
+            <AlertDescription>
+              Only repositories selected in the GitHub App settings are shown.
+              You can change which repositories are included in the GitHub App
+              settings on GitHub.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
         <div className="flex items-end justify-between gap-2">
           <fieldset className="flex flex-1 flex-col gap-1">
             <Label>Organization</Label>
@@ -261,52 +364,54 @@ export default function AddRepositoryPage({
           )}
         </RepositoryList>
 
-        <HStack>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            disabled={searchParams.get('cursor') === null}
-            onClick={() => {
-              setSearchParams(
-                (prev) => {
-                  prev.delete('cursor')
-                  prev.delete('refresh')
-                  return prev
-                },
-                {
-                  preventScrollReset: true,
-                },
-              )
-            }}
-          >
-            <ChevronsLeftIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            disabled={!pageInfo.hasNextPage}
-            onClick={() => {
-              setSearchParams(
-                (prev) => {
-                  if (pageInfo.endCursor) {
-                    prev.set('cursor', pageInfo.endCursor)
-                  } else {
+        {!isGithubAppRepos ? (
+          <HStack>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={searchParams.get('cursor') === null}
+              onClick={() => {
+                setSearchParams(
+                  (prev) => {
                     prev.delete('cursor')
-                  }
-                  prev.delete('refresh')
-                  return prev
-                },
-                {
-                  preventScrollReset: true,
-                },
-              )
-            }}
-          >
-            <ChevronRightIcon className="h-4 w-4" />
-          </Button>
-        </HStack>
+                    prev.delete('refresh')
+                    return prev
+                  },
+                  {
+                    preventScrollReset: true,
+                  },
+                )
+              }}
+            >
+              <ChevronsLeftIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={!pageInfo.hasNextPage}
+              onClick={() => {
+                setSearchParams(
+                  (prev) => {
+                    if (pageInfo.endCursor) {
+                      prev.set('cursor', pageInfo.endCursor)
+                    } else {
+                      prev.delete('cursor')
+                    }
+                    prev.delete('refresh')
+                    return prev
+                  },
+                  {
+                    preventScrollReset: true,
+                  },
+                )
+              }}
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </HStack>
+        ) : null}
       </Stack>
     </ContentSection>
   )

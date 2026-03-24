@@ -1,6 +1,10 @@
 import { defineJob } from '@coji/durably'
 import { z } from 'zod'
 import { clearOrgCache } from '~/app/services/cache.server'
+import {
+  assertOrgGithubAuthResolvable,
+  resolveOctokitFromOrg,
+} from '~/app/services/github-octokit.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
 import { createFetcher } from '~/batch/github/fetcher'
@@ -23,27 +27,30 @@ export const crawlJob = defineJob({
   run: async (step, input) => {
     const orgId = input.organizationId as OrganizationId
 
-    // Step 1: Load organization data (token excluded from step output to avoid persisting secrets)
-    const organization = await step.run('load-organization', async () => {
-      const org = await getOrganization(orgId)
-      if (!org.organizationSetting) {
+    // Fetch org once before step (secrets stay outside step output)
+    const fullOrg = await getOrganization(orgId)
+
+    // Step 1: Validate and extract serializable org data (no secrets in step output)
+    const organization = await step.run('load-organization', () => {
+      if (!fullOrg.organizationSetting) {
         throw new Error('No organization setting configured')
       }
-      if (!org.integration?.privateToken) {
-        throw new Error('No integration or token configured')
-      }
+      assertOrgGithubAuthResolvable({
+        integration: fullOrg.integration,
+        githubAppLink: fullOrg.githubAppLink,
+      })
       return {
-        organizationSetting: org.organizationSetting,
-        botLogins: org.botLogins,
-        repositories: org.repositories,
-        exportSetting: org.exportSetting,
+        organizationSetting: fullOrg.organizationSetting,
+        botLogins: fullOrg.botLogins,
+        repositories: fullOrg.repositories,
+        exportSetting: fullOrg.exportSetting,
       }
     })
 
-    // Load token separately (not persisted in step output)
-    const org = await getOrganization(orgId)
-    const token = org.integration?.privateToken
-    if (!token) throw new Error('No integration token')
+    const octokit = resolveOctokitFromOrg({
+      integration: fullOrg.integration,
+      githubAppLink: fullOrg.githubAppLink,
+    })
 
     const repoCount = organization.repositories.length
     const updatedPrNumbers = new Map<string, Set<number>>()
@@ -60,7 +67,7 @@ export const crawlJob = defineJob({
       const fetcher = createFetcher({
         owner: repo.owner,
         repo: repo.repo,
-        token,
+        octokit,
       })
 
       // Step 2a: Fetch tags (if tag-based release detection)

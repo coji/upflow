@@ -40,6 +40,37 @@ export interface AtlasSchemaRevisions {
   version: string;
 }
 
+export interface GithubAppInstallStates {
+  consumedAt: string | null;
+  createdAt: Generated<string>;
+  expiresAt: string;
+  id: string;
+  nonce: string;
+  organizationId: string;
+}
+
+export interface GithubAppLinks {
+  appRepositorySelection: "all" | "selected";
+  createdAt: Generated<string>;
+  deletedAt: string | null;
+  githubAccountId: number;
+  githubOrg: string;
+  installationId: number;
+  organizationId: string;
+  updatedAt: Generated<string>;
+}
+
+export interface Integrations {
+  appSuspendedAt: string | null;
+  createdAt: Generated<string>;
+  id: string;
+  method: "token" | "github_app";
+  organizationId: string;
+  privateToken: string | null;
+  provider: "github";
+  updatedAt: Generated<string>;
+}
+
 export interface Invitations {
   createdAt: Generated<string>;
   email: string;
@@ -124,6 +155,9 @@ export interface Verifications {
 export interface DB {
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
+  githubAppInstallStates: GithubAppInstallStates;
+  githubAppLinks: GithubAppLinks;
+  integrations: Integrations;
   invitations: Invitations;
   members: Members;
   organizations: Organizations;

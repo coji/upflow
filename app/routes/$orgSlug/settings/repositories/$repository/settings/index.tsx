@@ -35,13 +35,13 @@ import {
 import { isOrgOwner, requireOrgOwner } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
+import { getIntegration } from '~/app/services/github-integration-queries.server'
 import ContentSection from '../../../+components/content-section'
 import { getRepository } from '../queries.server'
 import {
   deleteRepository,
   updateRepository,
 } from './+functions/mutations.server'
-import { getIntegration } from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = { breadcrumb: () => ({ label: 'Edit' }) }

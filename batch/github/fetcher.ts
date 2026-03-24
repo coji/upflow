@@ -1,5 +1,5 @@
 import { print } from 'graphql'
-import { Octokit } from 'octokit'
+import type { Octokit } from 'octokit'
 import dayjs from '~/app/libs/dayjs'
 import { logger } from '~/batch/helper/logger'
 import { graphql, type ResultOf } from './graphql'
@@ -708,7 +708,7 @@ export function buildRequestedAtMap(
 interface createFetcherProps {
   owner: string
   repo: string
-  token: string
+  octokit: Octokit
 }
 const REQUEST_TIMEOUT_MS = 30_000
 
@@ -754,9 +754,7 @@ export function shapeTagNode(node: {
   return { name: node.name, sha, committedAt: committedDate }
 }
 
-export const createFetcher = ({ owner, repo, token }: createFetcherProps) => {
-  const octokit = new Octokit({ auth: token })
-
+export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
   /** タイムアウト付き GraphQL リクエスト */
   function graphqlWithTimeout<T>(
     query: string,

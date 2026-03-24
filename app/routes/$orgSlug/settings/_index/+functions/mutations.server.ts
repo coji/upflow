@@ -44,24 +44,31 @@ export const deleteOrganization = async (id: OrganizationId) => {
 
 export const upsertIntegration = async (
   organizationId: OrganizationId,
-  data: Omit<Insertable<TenantDB.Integrations>, 'id'>,
+  data: Omit<
+    Insertable<DB.Integrations>,
+    'id' | 'organizationId' | 'createdAt' | 'updatedAt'
+  >,
 ) => {
-  const tenantDb = getTenantDb(organizationId)
-  const existing = await tenantDb
+  const existing = await db
     .selectFrom('integrations')
     .select('id')
+    .where('organizationId', '=', organizationId)
     .executeTakeFirst()
 
   if (existing) {
-    return await tenantDb
+    return await db
       .updateTable('integrations')
-      .where('id', '=', existing.id)
+      .where('organizationId', '=', organizationId)
       .set(data)
       .execute()
   }
-  return await tenantDb
+  return await db
     .insertInto('integrations')
-    .values({ id: nanoid(), ...data })
+    .values({
+      id: nanoid(),
+      organizationId,
+      ...data,
+    })
     .execute()
 }
 

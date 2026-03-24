@@ -1,8 +1,7 @@
-import { jsonObjectFrom } from 'kysely/helpers/sqlite'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
-export const getRepositoryWithIntegration = async (
+export const getRepository = async (
   organizationId: OrganizationId,
   repositoryId: string,
 ) => {
@@ -10,17 +9,7 @@ export const getRepositoryWithIntegration = async (
   return await tenantDb
     .selectFrom('repositories')
     .where('id', '=', repositoryId)
-    .select((eb) => [
-      'id',
-      'owner',
-      'repo',
-      jsonObjectFrom(
-        eb
-          .selectFrom('integrations')
-          .select(['privateToken'])
-          .whereRef('integrations.id', '=', 'repositories.integrationId'),
-      ).as('integration'),
-    ])
+    .select(['id', 'owner', 'repo'])
     .executeTakeFirst()
 }
 

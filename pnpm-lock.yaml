@@ -38,6 +38,9 @@ importers:
       '@holiday-jp/holiday_jp':
         specifier: 2.5.1
         version: 2.5.1
+      '@octokit/auth-app':
+        specifier: 8.2.0
+        version: 8.2.0
       '@octokit/plugin-rest-endpoint-methods':
         specifier: 17.0.0
         version: 17.0.0(@octokit/core@7.0.6)

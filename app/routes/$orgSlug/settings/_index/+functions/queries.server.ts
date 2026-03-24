@@ -45,11 +45,3 @@ export const getExportSetting = async (organizationId: OrganizationId) => {
     .selectAll()
     .executeTakeFirst()
 }
-
-export const getIntegration = async (organizationId: OrganizationId) => {
-  const tenantDb = getTenantDb(organizationId)
-  return await tenantDb
-    .selectFrom('integrations')
-    .selectAll()
-    .executeTakeFirst()
-}

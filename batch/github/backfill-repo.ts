@@ -1,4 +1,5 @@
 import type { Selectable } from 'kysely'
+import type { Octokit } from 'octokit'
 import invariant from 'tiny-invariant'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -9,17 +10,16 @@ import { createStore } from './store'
 export async function backfillRepo(
   organizationId: OrganizationId,
   repository: Selectable<TenantDB.Repositories>,
-  integration: Pick<Selectable<TenantDB.Integrations>, 'privateToken'>,
+  octokit: Octokit,
   options?: { files?: boolean },
 ) {
   invariant(repository.repo, 'repo not specified')
   invariant(repository.owner, 'owner not specified')
-  invariant(integration.privateToken, 'private token not specified')
 
   const fetcher = createFetcher({
     owner: repository.owner,
     repo: repository.repo,
-    token: integration.privateToken,
+    octokit,
   })
   const store = createStore({
     organizationId,

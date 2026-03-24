@@ -12,8 +12,6 @@ export default defineConfig({
       'pull_requests.state': '"open" | "closed" | "merged"',
       'pull_request_reviews.state':
         '"APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "DISMISSED"',
-      'integrations.provider': '"github"',
-      'integrations.method': '"token"',
       'repositories.provider': '"github"',
       'organization_settings.language': 'Generated<"en" | "ja">',
       'organization_settings.release_detection_method':
