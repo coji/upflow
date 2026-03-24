@@ -47,6 +47,8 @@ GitHub App のインストール・アンインストール・サスペンドを
 
 **`batch/db/queries.ts` は触らない** — batch は独自の一括取得関数（`getAllIntegrations`, `getAllGithubAppLinks`）を持っており、依存方向が逆。
 
+> **コミット方針**: 3-0 は Step 3 本体（webhook/setup）とは独立した整理作業。**先にこれだけで `pnpm validate` を通してコミット**してから 3-1 以降に進む。差分レビューと不具合切り分けが楽になる。
+
 ---
 
 ### 3-1. Nonce テーブル追加
@@ -113,47 +115,36 @@ export async function generateInstallState(
   organizationId: string,
 ): Promise<string>
 
-export function verifyInstallState(state: string): {
-  organizationId: string
-  nonce: string
-}
+export async function consumeInstallState(
+  nonce: string,
+): Promise<{ organizationId: string }>
 ```
 
-**state 形式**: JWT ライクな `payload.signature` 形式を使用（`:` 区切りは ISO 8601 の `:` と衝突するため不可）
+**state 形式**: nonce（UUID）のみ。署名は不要。
 
-```
-base64url(JSON.stringify({ orgId, nonce, exp })).base64url(signature)
-```
-
-- `exp`: Unix timestamp（秒）
-- signature: `HMAC-SHA256(payloadPart, GITHUB_APP_STATE_SECRET)`
-- `.` で payload と signature を区切る
+> **設計判断**: 以前の設計では base64url(JSON).HMAC 署名で state に orgId/expiry を埋め込んでいたが、簡素化した。DB に nonce + organizationId + expiresAt を持つので、署名なしでも同等の機能が実現できる。防御層は1枚減る（DB 到達前にゴミリクエストを弾けない）が、UUID は推測不能で DB lookup は UNIQUE index の sub-millisecond クエリなので実害はない。`GITHUB_APP_STATE_SECRET` env var が不要になる。
 
 **`generateInstallState`**:
 
 1. `crypto.randomUUID()` で nonce 生成
-2. exp = `Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60`（7日後の Unix timestamp）
-3. payload = `base64url(JSON.stringify({ orgId: organizationId, nonce, exp }))`
-4. signature = `base64url(HMAC-SHA256(payload, GITHUB_APP_STATE_SECRET))`
-5. `github_app_install_states` テーブルに INSERT（`id`, `organization_id`, `nonce`, `expires_at`）
-6. state 文字列を返す: `${payload}.${signature}`
+2. expiresAt = 現在 + 7日（ISO 8601）
+3. `github_app_install_states` テーブルに INSERT（`id: nanoid()`, `organizationId`, `nonce`, `expiresAt`）
+4. nonce 文字列をそのまま返す（これが GitHub に渡す `state` パラメータ）
 
-**`verifyInstallState`**（DB に触らない — 署名 + expiry のみ検証）:
+**`consumeInstallState`**（setup callback のトランザクション内で呼ぶ）:
 
-1. state を `.` で分割 → `payloadPart`, `signaturePart`
-2. HMAC-SHA256 で署名を再計算して一致確認
-3. payload を base64url デコード → JSON parse → `{ orgId, nonce, exp }`
-4. `exp` が現在時刻より未来であることを確認
-5. `{ organizationId: orgId, nonce }` を返す
-
-**nonce の消費は呼び出し側（setup callback）のトランザクション内で行う。**
+1. `github_app_install_states` を `nonce` で検索
+2. `consumedAt IS NULL` かつ `expiresAt > NOW()` を確認
+3. `consumedAt` を設定して消費済みにする
+4. `{ organizationId }` を返す
+5. 見つからない / 消費済み / 期限切れ → エラー
 
 **テスト**: `app/libs/github-app-state.server.test.ts`
 
-- 生成 → 検証 → organizationId + nonce 取得
-- expired state → reject
-- 署名改変 → reject
-- （nonce 消費のテストは setup callback 側で）
+- 生成 → 消費 → organizationId 取得成功
+- expired nonce → reject
+- 存在しない nonce → reject
+- 消費済み nonce の再利用 → reject
 
 ---
 
@@ -214,30 +205,42 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const installationId = url.searchParams.get('installation_id')
   const state = url.searchParams.get('state')
 
-  // 1. state 検証（署名 + expiry。nonce はまだ消費しない）
-  // 2. GitHub API 検証（App JWT で GET /app/installations/:id）
-  // 3. トランザクション（nonce 消費 + link UPSERT + method 切替 + appSuspendedAt クリア）
-  // 4. リダイレクト
+  // 1. パラメータ検証（installation_id, state 必須）
+  // 2. GitHub API 検証（createAppOctokit() で GET /app/installations/:id）
+  // 3. トランザクション（nonce 消費 + link UPSERT + integration UPSERT）
+  // 4. clearOrgCache
+  // 5. リダイレクト
 }
 ```
 
 **App JWT で GitHub API を叩く方法**:
 
-```typescript
-import { createAppAuth } from '@octokit/auth-app'
-import { Octokit } from 'octokit'
+`github-octokit.server.ts` に `createAppOctokit()` ヘルパーを追加（`createOctokit` と base64 デコード等のロジックを共有）:
 
-const appOctokit = new Octokit({
-  authStrategy: createAppAuth,
-  auth: {
-    appId: Number(process.env.GITHUB_APP_ID),
-    privateKey: Buffer.from(
-      process.env.GITHUB_APP_PRIVATE_KEY ?? '',
-      'base64',
-    ).toString('utf-8'),
-  },
-})
-// これは App JWT を使う（installation token ではない）
+```typescript
+// github-octokit.server.ts に追加
+export function createAppOctokit(): Octokit {
+  const appId = process.env.GITHUB_APP_ID
+  const privateKey = Buffer.from(
+    process.env.GITHUB_APP_PRIVATE_KEY ?? '',
+    'base64',
+  ).toString('utf-8')
+  invariant(
+    appId && privateKey,
+    'GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY are required',
+  )
+  return new Octokit({
+    authStrategy: createAppAuth,
+    auth: { appId: Number(appId), privateKey },
+  })
+}
+```
+
+使用:
+
+```typescript
+const appOctokit = createAppOctokit()
+// App JWT で認証（installation token ではない）
 const { data: installation } = await appOctokit.rest.apps.getInstallation({
   installation_id: Number(installationId),
 })
@@ -246,19 +249,12 @@ const { data: installation } = await appOctokit.rest.apps.getInstallation({
 **トランザクション内の処理**:
 
 ```typescript
-await db.transaction().execute(async (trx) => {
-  // 1. nonce 消費
-  const nonceRow = await trx
-    .updateTable('githubAppInstallStates')
-    .set({ consumedAt: new Date().toISOString() })
-    .where('nonce', '=', nonce)
-    .where('consumedAt', 'is', null)
-    .executeTakeFirst()
-  if (nonceRow.numUpdatedRows === 0n) {
-    throw new Error('State already consumed or not found')
-  }
+// 1. nonce 消費（トランザクション外。失敗時はユーザーが新しい state を生成して再試行）
+const { organizationId } = await consumeInstallState(state)
 
-  // 2. github_app_links UPSERT
+// 2. link + integration を原子的に更新
+await db.transaction().execute(async (trx) => {
+  // github_app_links UPSERT
   await trx
     .insertInto('githubAppLinks')
     .values({
@@ -370,7 +366,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
 ```
 GITHUB_WEBHOOK_SECRET=       # Webhook 署名検証用
-GITHUB_APP_STATE_SECRET=     # インストール state トークン署名用
 ```
 
 ---
@@ -386,9 +381,10 @@ GITHUB_APP_STATE_SECRET=     # インストール state トークン署名用
 
 **State トークン** (`app/libs/github-app-state.server.test.ts`):
 
-- 生成 → 検証 → organizationId + nonce 取得
-- expired state → reject
-- 署名改変 → reject
+- 生成 → 消費 → organizationId 取得成功
+- expired nonce → reject
+- 存在しない nonce → reject
+- 消費済み nonce の再利用 → reject
 
 **Setup callback** (`app/routes/api.github.setup.test.ts` or 結合テスト):
 
