@@ -22,7 +22,12 @@ export const createJobScheduler = () => {
 
         for (const org of organizations) {
           if (!org.organizationSetting?.isActive) continue
-          if (!org.integration) continue
+          if (!org.integration) {
+            logger.warn(
+              `org "${org.name}" (${org.slug}) is active but has no integration configured. Skipping crawl.`,
+            )
+            continue
+          }
 
           const orgId = org.id as OrganizationId
 
