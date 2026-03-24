@@ -21,8 +21,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   const event = request.headers.get('X-GitHub-Event')
-  const handled =
-    event === 'installation' || event === 'installation_repositories'
+  if (event !== 'installation' && event !== 'installation_repositories') {
+    return new Response(null, { status: 202 })
+  }
 
   try {
     await processGithubWebhookPayload(event, payload)
@@ -31,5 +32,5 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return new Response('Webhook processing failed', { status: 500 })
   }
 
-  return new Response(null, { status: handled ? 204 : 202 })
+  return new Response(null, { status: 204 })
 }

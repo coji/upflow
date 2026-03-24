@@ -59,11 +59,11 @@ describe('api.github.webhook', () => {
     expect(process).not.toHaveBeenCalled()
   })
 
-  test('202 for unhandled event when signature ok', async () => {
+  test('202 for unhandled event without calling processor', async () => {
     verify.mockReturnValue(true)
     const res = await post('{}', { 'X-GitHub-Event': 'ping' })
     expect(res.status).toBe(202)
-    expect(process).toHaveBeenCalledWith('ping', {})
+    expect(process).not.toHaveBeenCalled()
   })
 
   test('204 for installation and calls processor', async () => {

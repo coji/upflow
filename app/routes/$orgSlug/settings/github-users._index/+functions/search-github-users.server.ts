@@ -10,8 +10,10 @@ export const searchGithubUsers = async (
   query: string,
 ): Promise<{ login: string; avatarUrl: string }[]> => {
   try {
-    const integration = await getIntegration(organizationId)
-    const githubAppLink = await getGithubAppLink(organizationId)
+    const [integration, githubAppLink] = await Promise.all([
+      getIntegration(organizationId),
+      getGithubAppLink(organizationId),
+    ])
     const octokit = resolveOctokitFromOrg({ integration, githubAppLink })
     const { data } = await octokit.rest.search.users({
       q: `${query} in:login`,

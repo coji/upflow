@@ -104,10 +104,15 @@ export const action = async ({
     throw new Response('Repository not found', { status: 404 })
   }
   if (repository.owner === null || repository.repo === null) {
-    throw new Error('Repository is not integrated')
+    throw new Response('Repository is not properly configured', { status: 422 })
   }
 
-  const octokit = resolveOctokitFromOrg({ integration, githubAppLink })
+  let octokit: ReturnType<typeof resolveOctokitFromOrg>
+  try {
+    octokit = resolveOctokitFromOrg({ integration, githubAppLink })
+  } catch {
+    throw new Response('GitHub integration is not configured', { status: 422 })
+  }
 
   const fetcher = createFetcher({
     owner: repository.owner,

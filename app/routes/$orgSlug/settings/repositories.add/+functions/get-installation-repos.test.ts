@@ -71,6 +71,23 @@ describe('get-installation-repos', () => {
     })
   })
 
+  test('filterInstallationRepos falls back to String(id) when node_id is missing', () => {
+    const repos = [
+      {
+        id: 42,
+        name: 'no-node-id',
+        full_name: 'acme/no-node-id',
+        private: false,
+        owner: { login: 'acme' },
+        pushed_at: null,
+      },
+    ] as Awaited<ReturnType<typeof fetchAllInstallationRepos>>
+
+    const result = filterInstallationRepos(repos, 'acme')
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('42')
+  })
+
   test('filterInstallationRepos returns [] when owner is missing', () => {
     const repos = [] as unknown as Awaited<
       ReturnType<typeof fetchAllInstallationRepos>
