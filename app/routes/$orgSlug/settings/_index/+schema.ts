@@ -41,6 +41,12 @@ export enum INTENTS {
   integrationSettings = 'integration-settings',
   exportSettings = 'export-settings',
   deleteOrganization = 'delete-organization',
+  installGithubApp = 'install-github-app',
+  copyInstallUrl = 'copy-install-url',
+  disconnectGithubApp = 'disconnect-github-app',
+  confirmDisconnectGithubApp = 'confirm-disconnect-github-app',
+  revertToToken = 'revert-to-token',
+  confirmRevertToToken = 'confirm-revert-to-token',
 }
 
 export const intentsSchema = z.enum(INTENTS)

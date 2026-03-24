@@ -55,7 +55,7 @@ function GitHubAppSection({
       !d ||
       typeof d !== 'object' ||
       !('intent' in d) ||
-      d.intent !== 'copy-install-url' ||
+      d.intent !== INTENTS.copyInstallUrl ||
       !('installUrl' in d) ||
       typeof d.installUrl !== 'string'
     ) {
@@ -129,7 +129,7 @@ function GitHubAppSection({
               size="sm"
               onClick={() => {
                 disconnectFetcher.submit(
-                  { intent: 'confirm-disconnect-github-app' },
+                  { intent: INTENTS.confirmDisconnectGithubApp },
                   { method: 'POST' },
                 )
               }}
@@ -171,7 +171,7 @@ function GitHubAppSection({
               size="sm"
               onClick={() => {
                 disconnectFetcher.submit(
-                  { intent: 'confirm-disconnect-github-app' },
+                  { intent: INTENTS.confirmDisconnectGithubApp },
                   { method: 'POST' },
                 )
               }}
@@ -192,7 +192,11 @@ function GitHubAppSection({
           destructive
           fetcher={disconnectFetcher}
         >
-          <input type="hidden" name="intent" value="disconnect-github-app" />
+          <input
+            type="hidden"
+            name="intent"
+            value={INTENTS.disconnectGithubApp}
+          />
         </ConfirmDialog>
       )}
 
@@ -207,7 +211,11 @@ function GitHubAppSection({
           </Alert>
           <HStack className="flex-wrap">
             <Form method="POST">
-              <input type="hidden" name="intent" value="install-github-app" />
+              <input
+                type="hidden"
+                name="intent"
+                value={INTENTS.installGithubApp}
+              />
               <Button type="submit" size="sm">
                 Reinstall GitHub App
               </Button>
@@ -218,7 +226,7 @@ function GitHubAppSection({
               size="sm"
               onClick={() => {
                 revertFetcher.submit(
-                  { intent: 'confirm-revert-to-token' },
+                  { intent: INTENTS.confirmRevertToToken },
                   { method: 'POST' },
                 )
               }}
@@ -234,7 +242,7 @@ function GitHubAppSection({
             destructive
             fetcher={revertFetcher}
           >
-            <input type="hidden" name="intent" value="revert-to-token" />
+            <input type="hidden" name="intent" value={INTENTS.revertToToken} />
           </ConfirmDialog>
         </Stack>
       )}
@@ -243,7 +251,11 @@ function GitHubAppSection({
         <Stack gap="2">
           <HStack className="flex-wrap">
             <Form method="POST">
-              <input type="hidden" name="intent" value="install-github-app" />
+              <input
+                type="hidden"
+                name="intent"
+                value={INTENTS.installGithubApp}
+              />
               <Button type="submit" size="sm">
                 Install GitHub App
               </Button>
@@ -255,7 +267,7 @@ function GitHubAppSection({
               loading={copyFetcher.state !== 'idle'}
               onClick={() => {
                 copyFetcher.submit(
-                  { intent: 'copy-install-url' },
+                  { intent: INTENTS.copyInstallUrl },
                   { method: 'POST' },
                 )
               }}
@@ -285,15 +297,16 @@ export const IntegrationSettings = ({
     integration?.method === 'github_app' && githubAppLink != null
   )
 
-  const integrationSubmission =
+  const integrationLastResult =
     actionData &&
     'intent' in actionData &&
-    actionData.intent === INTENTS.integrationSettings
-      ? actionData
+    actionData.intent === INTENTS.integrationSettings &&
+    'lastResult' in actionData
+      ? actionData.lastResult
       : undefined
 
   const [form, { provider, method, privateToken }] = useForm({
-    lastResult: integrationSubmission?.lastResult,
+    lastResult: integrationLastResult,
     defaultValue: integration
       ? {
           provider: integration.provider,

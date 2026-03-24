@@ -13,7 +13,7 @@ import {
 import ContentSection from '../+components/content-section'
 import { IntegrationSettings } from '../_index/+forms/integration-settings'
 import { upsertIntegration } from '../_index/+functions/mutations.server'
-import { integrationSettingsSchema as schema } from '../_index/+schema'
+import { INTENTS, integrationSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
 const GITHUB_APP_INSTALL_NEW_URL =
@@ -54,11 +54,11 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   const formData = await request.formData()
   const intent = formData.get('intent')
 
-  if (intent === 'confirm-disconnect-github-app') {
+  if (intent === INTENTS.confirmDisconnectGithubApp) {
     return data({ shouldConfirm: true as const })
   }
 
-  if (intent === 'disconnect-github-app') {
+  if (intent === INTENTS.disconnectGithubApp) {
     try {
       await disconnectGithubApp(organization.id)
     } catch (e) {
@@ -66,7 +66,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       const message = getErrorMessage(e)
       return data(
         {
-          intent: 'disconnect-github-app' as const,
+          intent: INTENTS.disconnectGithubApp,
           lastResult: {
             error: { '': [message] },
           } as SubmissionResult,
@@ -78,18 +78,18 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
     return dataWithSuccess(
       {
-        intent: 'disconnect-github-app' as const,
+        intent: INTENTS.disconnectGithubApp,
         lastResult: undefined,
       },
       { message: 'GitHub App disconnected' },
     )
   }
 
-  if (intent === 'confirm-revert-to-token') {
+  if (intent === INTENTS.confirmRevertToToken) {
     return data({ shouldConfirm: true as const })
   }
 
-  if (intent === 'revert-to-token') {
+  if (intent === INTENTS.revertToToken) {
     try {
       await disconnectGithubApp(organization.id)
     } catch (e) {
@@ -97,7 +97,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       const message = getErrorMessage(e)
       return data(
         {
-          intent: 'revert-to-token' as const,
+          intent: INTENTS.revertToToken,
           lastResult: {
             error: { '': [message] },
           } as SubmissionResult,
@@ -109,24 +109,24 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
     return dataWithSuccess(
       {
-        intent: 'revert-to-token' as const,
+        intent: INTENTS.revertToToken,
         lastResult: undefined,
       },
       { message: 'Switched to personal access token' },
     )
   }
 
-  if (intent === 'install-github-app') {
+  if (intent === INTENTS.installGithubApp) {
     const nonce = await generateInstallState(organization.id)
     const installUrl = `${GITHUB_APP_INSTALL_NEW_URL}?state=${encodeURIComponent(nonce)}`
     throw redirect(installUrl)
   }
 
-  if (intent === 'copy-install-url') {
+  if (intent === INTENTS.copyInstallUrl) {
     const nonce = await generateInstallState(organization.id)
     const installUrl = `${GITHUB_APP_INSTALL_NEW_URL}?state=${encodeURIComponent(nonce)}`
     return data({
-      intent: 'copy-install-url' as const,
+      intent: INTENTS.copyInstallUrl,
       installUrl,
     })
   }
