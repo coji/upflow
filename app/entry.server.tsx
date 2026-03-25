@@ -13,8 +13,16 @@ const sentryHandleError = Sentry.createSentryHandleError({
 })
 
 export const handleError: typeof sentryHandleError = (error, ctx) => {
-  // Skip reporting 404s to Sentry (bot/scanner noise)
+  // Skip react-router internal errors (bot/scanner 404s, missing-loader 400s)
   if (error instanceof Response && error.status === 404) return
+  if (
+    error instanceof Error &&
+    'status' in error &&
+    'internal' in error &&
+    ((error as { status: number }).status === 404 ||
+      (error as { status: number }).status === 400)
+  )
+    return
   sentryHandleError(error, ctx)
 }
 

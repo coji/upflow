@@ -2,6 +2,10 @@ import { verifyWebhookSignature } from '~/app/libs/webhook-verify.server'
 import { processGithubWebhookPayload } from '~/app/services/github-webhook.server'
 import type { Route } from './+types/api.github.webhook'
 
+export const loader = () => {
+  return new Response('Method Not Allowed', { status: 405 })
+}
+
 export const action = async ({ request }: Route.ActionArgs) => {
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 })
