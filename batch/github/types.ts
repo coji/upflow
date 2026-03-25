@@ -35,12 +35,3 @@ export interface AnalyzedReviewer {
   repositoryId: string
   reviewers: { login: string; requestedAt: string | null }[]
 }
-
-/** buildPullRequests が返すレビューレスポンス情報 */
-export interface AnalyzedReviewResponse {
-  repo: string
-  number: string
-  author: string
-  createdAt: string
-  responseTime: number
-}

@@ -227,7 +227,6 @@ describe('buildPullRequests filter', () => {
     expect(resultFiltered.pulls).toEqual(resultAll.pulls)
     expect(resultFiltered.reviews).toEqual(resultAll.reviews)
     expect(resultFiltered.reviewers).toEqual(resultAll.reviewers)
-    expect(resultFiltered.reviewResponses).toEqual(resultAll.reviewResponses)
   })
 
   test('サブセットフィルタ → 対象PRの結果が全件処理時と一致する', async () => {
@@ -256,12 +255,6 @@ describe('buildPullRequests filter', () => {
       subset.has(r.pullRequestNumber),
     )
     expect(resultSubset.reviewers).toEqual(expectedReviewers)
-
-    // reviewResponses
-    const expectedResponses = resultAll.reviewResponses.filter((r) =>
-      subset.has(Number(r.number)),
-    )
-    expect(resultSubset.reviewResponses).toEqual(expectedResponses)
   })
 
   test('空フィルタ → 結果が空になる', async () => {
@@ -272,7 +265,6 @@ describe('buildPullRequests filter', () => {
     expect(result.pulls).toEqual([])
     expect(result.reviews).toEqual([])
     expect(result.reviewers).toEqual([])
-    expect(result.reviewResponses).toEqual([])
   })
 
   test('リリース検出はフィルタに関係なく全PRから行われる', async () => {

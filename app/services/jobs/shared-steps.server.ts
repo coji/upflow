@@ -162,8 +162,6 @@ export async function analyzeAndFinalizeSteps(
           // sheet.paste() overwrites the entire sheet, so we must always export full data.
           const allPullsFromDb = await getPullRequestReport(orgId)
           await exportPulls(exportSetting, allPullsFromDb)
-          // TODO: reviewResponses は差分データしか持っていないため全件 export できない。
-          // DB に永続化してから全件 export に対応する。
         } catch (e) {
           step.log.warn(`Export failed: ${e instanceof Error ? e.message : e}`)
         }

@@ -23,10 +23,8 @@ import {
   buildTagReleaseList,
   findReleaseDateFromTags,
 } from './release-detect'
-import { analyzeReviewResponse } from './review-response'
 import type {
   AnalyzedReview,
-  AnalyzedReviewResponse,
   AnalyzedReviewer,
   PullRequestLoaders,
 } from './types'
@@ -205,7 +203,6 @@ export const buildPullRequests = async (
   const pulls: Selectable<TenantDB.PullRequests>[] = []
   const reviews: AnalyzedReview[] = []
   const reviewers: AnalyzedReviewer[] = []
-  const reviewResponses: AnalyzedReviewResponse[] = []
   const botUsers = new Set<string>()
 
   let processed = 0
@@ -235,17 +232,6 @@ export const buildPullRequests = async (
 
       // 3. アクター除外フィルタ（純粋関数）
       const artifacts = filterActors(rawArtifacts, pr, config.botLogins)
-
-      // 4. レビューレスポンス解析
-      reviewResponses.push(
-        ...analyzeReviewResponse(artifacts.discussions).map((res) => ({
-          repo: String(pr.repo),
-          number: String(pr.number),
-          author: res.author ?? '',
-          createdAt: res.createdAt,
-          responseTime: res.responseTime,
-        })),
-      )
 
       // 5. 日時計算（純粋関数）
       const dates = computeDates(pr, artifacts)
@@ -307,5 +293,5 @@ export const buildPullRequests = async (
     }
   }
 
-  return { pulls, reviews, reviewers, reviewResponses, botUsers }
+  return { pulls, reviews, reviewers, botUsers }
 }
