@@ -9,18 +9,31 @@ const escapeTabString = (str: string) => {
 
 const tz = 'Asia/Tokyo'
 
-/** ReviewResponse の型定義 */
-interface ReviewResponse {
+interface ExportPullRequest {
   repo: string
-  number: string
+  number: number
+  sourceBranch: string
+  targetBranch: string
+  state: string
   author: string
-  createdAt: string
-  responseTime: number
+  title: string
+  url: string
+  codingTime: number | null
+  pickupTime: number | null
+  reviewTime: number | null
+  deployTime: number | null
+  totalTime: number | null
+  firstCommittedAt: string | null
+  pullRequestCreatedAt: string | null
+  firstReviewedAt: string | null
+  mergedAt: string | null
+  releasedAt: string | null
+  updatedAt: string | null
 }
 
 export async function exportPulls(
   exportSetting: Selectable<TenantDB.ExportSettings>,
-  pullrequests: Selectable<TenantDB.PullRequests>[],
+  pullrequests: ExportPullRequest[],
 ): Promise<void> {
   const sheet = createSheetApi({
     spreadsheetId: exportSetting.sheetId,
@@ -74,37 +87,6 @@ export async function exportPulls(
         mergedAt: timeFormatTz(pr.mergedAt, tz),
         releasedAt: timeFormatTz(pr.releasedAt, tz),
         updatedAt: timeFormatTz(pr.updatedAt, tz),
-      }).join('\t')
-    }),
-  ].join('\n')
-
-  await sheet.paste(data)
-}
-
-export async function exportReviewResponses(
-  exportSetting: Selectable<TenantDB.ExportSettings>,
-  reviewResponses: ReviewResponse[],
-): Promise<void> {
-  const sheet = createSheetApi({
-    spreadsheetId: exportSetting.sheetId,
-    sheetTitle: 'reviewres',
-    clientEmail: exportSetting.clientEmail,
-    privateKey: exportSetting.privateKey,
-  })
-  const header = ['repo', 'number', 'author', 'createdAt', 'responseTime'].join(
-    '\t',
-  )
-
-  const data = [
-    header,
-    ...reviewResponses.map((res) => {
-      // １行タブ区切り x 改行区切りで全行まとめてペースト
-      return Object.values({
-        repo: res.repo,
-        number: res.number,
-        author: res.author,
-        createdAt: timeFormatTz(res.createdAt, tz),
-        responseTime: res.responseTime,
       }).join('\t')
     }),
   ].join('\n')
