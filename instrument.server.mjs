@@ -13,5 +13,18 @@ if (dsn) {
     dsn,
     sendDefaultPii: true,
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
+    beforeSend(event) {
+      // Filter out react-router internal errors (404 bot/scanner noise, 400 missing loader)
+      const serialized = event.extra?.__serialized__
+      if (
+        serialized &&
+        typeof serialized === 'object' &&
+        serialized.internal === true &&
+        (serialized.status === 404 || serialized.status === 400)
+      ) {
+        return null
+      }
+      return event
+    },
   })
 }
