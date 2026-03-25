@@ -8,7 +8,27 @@ export const getPullRequestReport = async (organizationId: OrganizationId) => {
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .orderBy('mergedAt', 'desc')
-    .selectAll('pullRequests')
+    .select([
+      'pullRequests.repo',
+      'pullRequests.number',
+      'pullRequests.sourceBranch',
+      'pullRequests.targetBranch',
+      'pullRequests.state',
+      'pullRequests.author',
+      'pullRequests.title',
+      'pullRequests.url',
+      'pullRequests.codingTime',
+      'pullRequests.pickupTime',
+      'pullRequests.reviewTime',
+      'pullRequests.deployTime',
+      'pullRequests.totalTime',
+      'pullRequests.firstCommittedAt',
+      'pullRequests.pullRequestCreatedAt',
+      'pullRequests.firstReviewedAt',
+      'pullRequests.mergedAt',
+      'pullRequests.releasedAt',
+      'pullRequests.updatedAt',
+    ])
     .execute()
 }
 

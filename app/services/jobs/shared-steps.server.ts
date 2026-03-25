@@ -6,16 +6,9 @@ import type { Selectable } from 'kysely'
 import { clearOrgCache } from '~/app/services/cache.server'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
-import {
-  exportPulls,
-  exportReviewResponses,
-} from '~/batch/bizlogic/export-spreadsheet'
-import { upsertAnalyzedData } from '~/batch/db'
-import type {
-  AnalyzedReview,
-  AnalyzedReviewResponse,
-  AnalyzedReviewer,
-} from '~/batch/github/types'
+import { exportPulls } from '~/batch/bizlogic/export-spreadsheet'
+import { getPullRequestReport, upsertAnalyzedData } from '~/batch/db'
+import type { AnalyzedReview, AnalyzedReviewer } from '~/batch/github/types'
 
 import type { SqliteBusyEvent } from './run-in-worker'
 import { runAnalyzeInWorker } from './run-in-worker'
@@ -24,7 +17,6 @@ interface AnalyzeResult {
   pulls: Selectable<TenantDB.PullRequests>[]
   reviews: AnalyzedReview[]
   reviewers: AnalyzedReviewer[]
-  reviewResponses: AnalyzedReviewResponse[]
   botUsers: string[]
 }
 
@@ -108,7 +100,6 @@ export async function analyzeAndFinalizeSteps(
   const allPulls: Selectable<TenantDB.PullRequests>[] = []
   const allReviews: AnalyzedReview[] = []
   const allReviewers: AnalyzedReviewer[] = []
-  const allReviewResponses: AnalyzedReviewResponse[] = []
   const allBotUsers = new Set<string>()
   const sqliteBusyEvents: SqliteBusyEvent[] = []
 
@@ -142,7 +133,6 @@ export async function analyzeAndFinalizeSteps(
     allPulls.push(...result.pulls)
     allReviews.push(...result.reviews)
     allReviewers.push(...result.reviewers)
-    allReviewResponses.push(...result.reviewResponses)
     for (const login of result.botUsers) allBotUsers.add(login)
   }
 
@@ -168,8 +158,12 @@ export async function analyzeAndFinalizeSteps(
       await runTimedStep(step, 'export', async () => {
         step.progress(0, 0, 'Exporting to spreadsheet...')
         try {
-          await exportPulls(exportSetting, allPulls)
-          await exportReviewResponses(exportSetting, allReviewResponses)
+          // Export ALL pull requests from DB, not just the ones analyzed in this run.
+          // sheet.paste() overwrites the entire sheet, so we must always export full data.
+          const allPullsFromDb = await getPullRequestReport(orgId)
+          await exportPulls(exportSetting, allPullsFromDb)
+          // TODO: reviewResponses は差分データしか持っていないため全件 export できない。
+          // DB に永続化してから全件 export に対応する。
         } catch (e) {
           step.log.warn(`Export failed: ${e instanceof Error ? e.message : e}`)
         }
