@@ -12,10 +12,11 @@ export interface OpenPRInventoryRawRow {
 export interface InventoryWeekPoint {
   weekLabel: string
   snapshotAt: string
-  days0to3: number
-  days4to7: number
-  days8to14: number
-  days15to30: number
+  daysUnder1: number
+  days1to3: number
+  days3to7: number
+  days7to14: number
+  days14to30: number
   days31Plus: number
   total: number
 }
@@ -79,10 +80,11 @@ function getSnapshotAtForWeek(
 
 function addToBucket(point: InventoryWeekPoint, ageDays: number): void {
   point.total++
-  if (ageDays <= 3) point.days0to3++
-  else if (ageDays <= 7) point.days4to7++
-  else if (ageDays <= 14) point.days8to14++
-  else if (ageDays <= 30) point.days15to30++
+  if (ageDays < 1) point.daysUnder1++
+  else if (ageDays < 3) point.days1to3++
+  else if (ageDays < 7) point.days3to7++
+  else if (ageDays < 14) point.days7to14++
+  else if (ageDays < 30) point.days14to30++
   else point.days31Plus++
 }
 
@@ -101,10 +103,11 @@ export function aggregateWeeklyOpenPRInventory(
       const point: InventoryWeekPoint = {
         weekLabel: weekStart.format('MM/DD'),
         snapshotAt,
-        days0to3: 0,
-        days4to7: 0,
-        days8to14: 0,
-        days15to30: 0,
+        daysUnder1: 0,
+        days1to3: 0,
+        days3to7: 0,
+        days7to14: 0,
+        days14to30: 0,
         days31Plus: 0,
         total: 0,
       }

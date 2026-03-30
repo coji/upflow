@@ -19,12 +19,14 @@ import dayjs from '~/app/libs/dayjs'
 
 import type { OpenPRInventoryAggregation } from '../+functions/aggregate'
 
+// Colors aligned with Review Stacks age thresholds
 const chartConfig = {
-  days0to3: { label: '0-3 days', color: 'var(--color-chart-2)' },
-  days4to7: { label: '4-7 days', color: 'var(--color-chart-5)' },
-  days8to14: { label: '8-14 days', color: 'var(--color-chart-1)' },
-  days15to30: { label: '15-30 days', color: 'var(--color-chart-4)' },
-  days31Plus: { label: '31+ days', color: 'var(--color-chart-3)' },
+  daysUnder1: { label: '< 1d', color: '#10b981' }, // emerald-500
+  days1to3: { label: '1-3d', color: '#3b82f6' }, // blue-500
+  days3to7: { label: '3-7d', color: '#f59e0b' }, // amber-500
+  days7to14: { label: '7-14d', color: '#ef4444' }, // red-500
+  days14to30: { label: '14-30d', color: '#a855f7' }, // purple-500
+  days31Plus: { label: '31d+', color: '#262626' }, // neutral-800
 } satisfies ChartConfig
 
 export function OpenPRInventoryChart({

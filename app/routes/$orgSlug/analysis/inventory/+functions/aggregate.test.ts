@@ -49,6 +49,15 @@ describe('isOpenAtSnapshot', () => {
 describe('aggregateWeeklyOpenPRInventory', () => {
   const tz = 'UTC'
 
+  const allBucketKeys = [
+    'daysUnder1',
+    'days1to3',
+    'days3to7',
+    'days7to14',
+    'days14to30',
+    'days31Plus',
+  ] as const
+
   test('counts only PRs open at each week snapshot', () => {
     const snapshotSunday = '2024-06-09T23:59:59.999Z'
     const sinceDate = '2024-06-01T00:00:00.000Z'
@@ -72,25 +81,28 @@ describe('aggregateWeeklyOpenPRInventory', () => {
     const { weeks } = aggregateWeeklyOpenPRInventory(rows, sinceDate, now, tz)
     const w = weeks.find((x) => x.snapshotAt === snapshotSunday)
     expect(w?.total).toBe(1)
-    expect(w?.days0to3).toBe(1)
+    expect(w?.days1to3).toBe(1)
   })
 
   test('bucket boundaries (age days)', () => {
     const snapshotSunday = '2024-06-09T23:59:59.999Z'
-    const sinceDate = '2024-06-01T00:00:00.000Z'
+    const sinceDate = '2024-05-01T00:00:00.000Z'
     const now = snapshotSunday
 
     const cases: {
       age: number
-      key: 'days0to3' | 'days4to7' | 'days8to14' | 'days15to30' | 'days31Plus'
+      key: (typeof allBucketKeys)[number]
     }[] = [
-      { age: 3, key: 'days0to3' },
-      { age: 4, key: 'days4to7' },
-      { age: 7, key: 'days4to7' },
-      { age: 8, key: 'days8to14' },
-      { age: 14, key: 'days8to14' },
-      { age: 15, key: 'days15to30' },
-      { age: 30, key: 'days15to30' },
+      { age: 0, key: 'daysUnder1' },
+      { age: 1, key: 'days1to3' },
+      { age: 2, key: 'days1to3' },
+      { age: 3, key: 'days3to7' },
+      { age: 6, key: 'days3to7' },
+      { age: 7, key: 'days7to14' },
+      { age: 13, key: 'days7to14' },
+      { age: 14, key: 'days14to30' },
+      { age: 29, key: 'days14to30' },
+      { age: 30, key: 'days31Plus' },
       { age: 31, key: 'days31Plus' },
     ]
 
@@ -109,14 +121,9 @@ describe('aggregateWeeklyOpenPRInventory', () => {
       const w = weeks.find((x) => x.snapshotAt === snapshotSunday)
       expect(w, `age ${age}`).toBeDefined()
       expect(w?.total, `age ${age}`).toBe(1)
-      expect(w?.[key], `age ${age} bucket`).toBe(1)
-      expect(
-        (w?.days0to3 ?? 0) +
-          (w?.days4to7 ?? 0) +
-          (w?.days8to14 ?? 0) +
-          (w?.days15to30 ?? 0) +
-          (w?.days31Plus ?? 0),
-      ).toBe(1)
+      expect(w?.[key], `age ${age} → ${key}`).toBe(1)
+      const bucketSum = allBucketKeys.reduce((sum, k) => sum + (w?.[k] ?? 0), 0)
+      expect(bucketSum, `age ${age} single bucket`).toBe(1)
     }
   })
 
@@ -150,14 +157,12 @@ describe('aggregateWeeklyOpenPRInventory', () => {
   test('unreviewedOnly filters by snapshot-time review status', () => {
     const sinceDate = '2024-06-01T00:00:00.000Z'
     const now = '2024-06-16T23:59:59.999Z'
-    // PR created Jun 3, reviewed on Jun 10
     const rows: OpenPRInventoryRawRow[] = [
       baseRow({
         number: 1,
         pullRequestCreatedAt: '2024-06-03T10:00:00.000Z',
         firstReviewedAt: '2024-06-10T12:00:00.000Z',
       }),
-      // PR created Jun 5, never reviewed
       baseRow({
         number: 2,
         pullRequestCreatedAt: '2024-06-05T10:00:00.000Z',
@@ -170,7 +175,7 @@ describe('aggregateWeeklyOpenPRInventory', () => {
       sinceDate,
       now,
       tz,
-      true, // unreviewedOnly
+      true,
     )
 
     // Week of Jun 3 (snapshot Jun 9): PR#1 not yet reviewed → counted, PR#2 counted → total 2
