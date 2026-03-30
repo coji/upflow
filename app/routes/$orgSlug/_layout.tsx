@@ -5,9 +5,11 @@ import { Main } from '~/app/components/layout/main'
 import { SidebarProvider } from '~/app/components/ui/sidebar'
 import { useBreadcrumbs } from '~/app/hooks/use-breadcrumbs'
 import { getUserOrganizations } from '~/app/libs/auth.server'
+import { getSelectedTeam } from '~/app/libs/team-cookie.server'
 import { cn } from '~/app/libs/utils'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { orgMemberMiddleware } from '~/app/middleware/org-member'
+import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { Route } from './+types/_layout'
 
 export interface RouteHandle {
@@ -47,6 +49,13 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     ?.split('=')[1]
   const defaultOpen = sidebarState !== 'false'
 
+  const teams = await listTeams(organization.id)
+  const selectedTeamCookie = getSelectedTeam(request)
+  const selectedTeamId =
+    selectedTeamCookie && teams.some((t) => t.id === selectedTeamCookie)
+      ? selectedTeamCookie
+      : null
+
   return {
     user,
     organization,
@@ -54,11 +63,21 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     organizations,
     defaultOpen,
     timezone,
+    teams,
+    selectedTeamId,
   }
 }
 
 export default function OrgLayout({
-  loaderData: { user, organization, membership, organizations, defaultOpen },
+  loaderData: {
+    user,
+    organization,
+    membership,
+    organizations,
+    defaultOpen,
+    teams,
+    selectedTeamId,
+  },
 }: Route.ComponentProps) {
   const { Breadcrumbs } = useBreadcrumbs()
   const matches = useMatches()
@@ -74,6 +93,8 @@ export default function OrgLayout({
         organization={organization}
         organizations={organizations}
         memberRole={membership.role}
+        teams={teams}
+        selectedTeamId={selectedTeamId}
       />
       <div
         id="content"

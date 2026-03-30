@@ -6,7 +6,6 @@ import {
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
-import { TeamFilter } from '~/app/components/team-filter'
 import {
   Select,
   SelectContent,
@@ -16,8 +15,8 @@ import {
 } from '~/app/components/ui/select'
 import { Stack } from '~/app/components/ui/stack'
 import { calcSinceDate } from '~/app/libs/date-utils'
+import { getSelectedTeam } from '~/app/libs/team-cookie.server'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
-import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { QueueTrendChart } from './+components/queue-trend-chart'
@@ -53,7 +52,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team')
+  const teamParam = url.searchParams.get('team') ?? getSelectedTeam(request)
   const periodParam = url.searchParams.get('period')
   const VALID_PERIODS = [1, 3, 6, 12]
   const periodMonths =
@@ -64,8 +63,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
         : 3
 
   const sinceDate = calcSinceDate(periodMonths, timezone)
-
-  const teams = await listTeams(organization.id)
 
   const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}`
   const FIVE_MINUTES = 5 * 60 * 1000
@@ -83,7 +80,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   )
 
   return {
-    teams,
     queueHistoryRaw,
     wipCycleRaw,
     prSizesRaw,
@@ -95,19 +91,12 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 export const clientLoader = async ({
   serverLoader,
 }: Route.ClientLoaderArgs) => {
-  const {
-    teams,
-    queueHistoryRaw,
-    wipCycleRaw,
-    prSizesRaw,
-    sinceDate,
-    periodMonths,
-  } = await serverLoader()
+  const { queueHistoryRaw, wipCycleRaw, prSizesRaw, sinceDate, periodMonths } =
+    await serverLoader()
 
   const wipCounts = computeWipCounts(wipCycleRaw)
 
   return {
-    teams,
     queueTrend: aggregateWeeklyQueueTrend(
       queueHistoryRaw.filter(
         (r): r is typeof r & { requestedAt: string } => r.requestedAt !== null,
@@ -138,7 +127,6 @@ export function HydrateFallback() {
 
 export default function ReviewsPage({
   loaderData: {
-    teams,
     queueTrend,
     wipCycle,
     wipCycleLabeled,
@@ -179,7 +167,6 @@ export default function ReviewsPage({
               ))}
             </SelectContent>
           </Select>
-          <TeamFilter teams={teams} />
         </PageHeaderActions>
       </PageHeader>
 

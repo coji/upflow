@@ -10,6 +10,7 @@ import { type MemberRole, isOrgAdmin } from '~/app/libs/member-role'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { OrgSwitcher } from './org-switcher'
+import { TeamSwitcher } from './team-switcher'
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
@@ -30,6 +31,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     slug: string | null
   }>
   memberRole: MemberRole
+  teams: Array<{ id: string; name: string }>
+  selectedTeamId: string | null
 }
 
 export function AppSidebar({
@@ -37,6 +40,8 @@ export function AppSidebar({
   organization,
   organizations,
   memberRole,
+  teams,
+  selectedTeamId,
   ...props
 }: AppSidebarProps) {
   const orgSlug = organization.slug ?? organization.id
@@ -49,6 +54,7 @@ export function AppSidebar({
     <Sidebar collapsible="icon" variant="floating" {...props}>
       <SidebarHeader>
         <OrgSwitcher currentOrg={organization} organizations={organizations} />
+        <TeamSwitcher teams={teams} selectedTeamId={selectedTeamId} />
       </SidebarHeader>
       <SidebarContent>
         {navGroups.map((group) => (
