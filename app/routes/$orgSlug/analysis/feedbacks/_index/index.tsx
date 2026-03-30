@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
-import dayjs from '~/app/libs/dayjs'
+import { calcSinceDate } from '~/app/libs/date-utils'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { DataTablePagination } from './+components/data-table-pagination'
@@ -72,16 +72,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
         ? Number(periodParam)
         : 1
 
-  const sinceDate =
-    periodMonths === 'all'
-      ? '2000-01-01T00:00:00.000Z'
-      : dayjs
-          .utc()
-          .tz(timezone)
-          .subtract(periodMonths, 'month')
-          .startOf('day')
-          .utc()
-          .toISOString()
+  const sinceDate = calcSinceDate(periodMonths, timezone)
 
   const page = Number(url.searchParams.get('page') || '1')
   const perPage = Number(url.searchParams.get('per_page') || '20')

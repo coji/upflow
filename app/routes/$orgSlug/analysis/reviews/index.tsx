@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '~/app/components/ui/select'
 import { Stack } from '~/app/components/ui/stack'
-import dayjs from '~/app/libs/dayjs'
+import { calcSinceDate } from '~/app/libs/date-utils'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { getOrgCachedData } from '~/app/services/cache.server'
@@ -63,16 +63,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
         ? Number(periodParam)
         : 3
 
-  const sinceDate =
-    periodMonths === 'all'
-      ? '2000-01-01T00:00:00.000Z'
-      : dayjs
-          .utc()
-          .tz(timezone)
-          .subtract(periodMonths, 'month')
-          .startOf('day')
-          .utc()
-          .toISOString()
+  const sinceDate = calcSinceDate(periodMonths, timezone)
 
   const teams = await listTeams(organization.id)
 

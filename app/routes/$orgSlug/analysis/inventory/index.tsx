@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '~/app/components/ui/select'
 import { Switch } from '~/app/components/ui/switch'
+import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
@@ -54,13 +55,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const excludeBots = url.searchParams.get('excludeBots') !== '0'
   const unreviewedOnly = url.searchParams.get('unreviewedOnly') === '1'
 
-  const sinceDate = dayjs
-    .utc()
-    .tz(timezone)
-    .subtract(periodMonths, 'month')
-    .startOf('day')
-    .utc()
-    .toISOString()
+  const sinceDate = calcSinceDate(periodMonths, timezone)
 
   const now = dayjs.utc().toISOString()
 
