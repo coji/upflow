@@ -43,8 +43,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team')
-  const periodParam = url.searchParams.get('period')
+  const teamParam = url.searchParams.get('team') || null
+  const periodParam = url.searchParams.get('period') || null
   const periodMonths = VALID_PERIODS.includes(
     Number(periodParam) as (typeof VALID_PERIODS)[number],
   )
