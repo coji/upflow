@@ -37,31 +37,29 @@ export function TeamSwitcher({
   if (teams.length === 0) return null
 
   return (
-    <div className="flex items-center gap-1.5 px-2 group-data-[collapsible=icon]:px-0">
-      <UsersIcon className="text-muted-foreground size-4 shrink-0 group-data-[collapsible=icon]:mx-auto" />
-      <Select
-        value={selectedTeamId ?? '__all__'}
-        onValueChange={(value) => {
-          if (value === '__all__') {
-            clearTeamCookie()
-          } else {
-            setTeamCookie(value)
-          }
-          revalidator.revalidate()
-        }}
-      >
-        <SelectTrigger className="h-7 flex-1 border-none bg-transparent px-1 text-xs shadow-none group-data-[collapsible=icon]:hidden">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__all__">All Teams</SelectItem>
-          {teams.map((team) => (
-            <SelectItem key={team.id} value={team.id}>
-              {team.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select
+      value={selectedTeamId ?? '__all__'}
+      onValueChange={(value) => {
+        if (value === '__all__') {
+          clearTeamCookie()
+        } else {
+          setTeamCookie(value)
+        }
+        revalidator.revalidate()
+      }}
+    >
+      <SelectTrigger className="mx-2 h-8 border-none bg-transparent px-2 text-xs shadow-none group-data-[collapsible=icon]:hidden">
+        <UsersIcon className="text-muted-foreground mr-1.5 size-4 shrink-0" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__all__">All Teams</SelectItem>
+        {teams.map((team) => (
+          <SelectItem key={team.id} value={team.id}>
+            {team.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
