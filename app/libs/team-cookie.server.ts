@@ -5,5 +5,10 @@ export function getSelectedTeam(request: Request): string | null {
   const prefix = `${TEAM_COOKIE_NAME}=`
   const match = cookieHeader.split('; ').find((c) => c.startsWith(prefix))
   if (!match) return null
-  return decodeURIComponent(match.split('=')[1] ?? '') || null
+  const rawValue = match.slice(prefix.length)
+  try {
+    return decodeURIComponent(rawValue) || null
+  } catch {
+    return null
+  }
 }
