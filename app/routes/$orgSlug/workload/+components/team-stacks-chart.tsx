@@ -332,7 +332,7 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
 
 function Legend({ mode }: { mode: ColorMode }) {
   return (
-    <div className="flex items-center gap-3 text-xs">
+    <div className="flex flex-wrap items-center gap-3 text-xs">
       {mode === 'size' ? (
         <>
           {PR_SIZE_LABELS.map((label) => (
