@@ -29,8 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
-import dayjs from '~/app/libs/dayjs'
-import { orgContext } from '~/app/middleware/context'
+import { calcSinceDate } from '~/app/libs/date-utils'
+import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
@@ -60,6 +60,7 @@ const VALID_PERIODS = [1, 3, 6, 12]
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
+  const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team') || undefined
@@ -71,10 +72,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
         ? Number(periodParam)
         : 1
 
-  const sinceDate =
-    periodMonths === 'all'
-      ? '2000-01-01T00:00:00.000Z'
-      : dayjs.utc().subtract(periodMonths, 'month').startOf('day').toISOString()
+  const sinceDate = calcSinceDate(periodMonths, timezone)
 
   const page = Number(url.searchParams.get('page') || '1')
   const perPage = Number(url.searchParams.get('per_page') || '20')
