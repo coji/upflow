@@ -16,7 +16,7 @@ import {
 } from '~/app/components/ui/select'
 import { Stack } from '~/app/components/ui/stack'
 import dayjs from '~/app/libs/dayjs'
-import { orgContext } from '~/app/middleware/context'
+import { orgContext, timezoneContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { PRSizeChart } from './+components/pr-size-chart'
@@ -50,6 +50,7 @@ const PERIOD_OPTIONS = [
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
+  const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
   const teamParam = url.searchParams.get('team')
@@ -65,7 +66,13 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sinceDate =
     periodMonths === 'all'
       ? '2000-01-01T00:00:00.000Z'
-      : dayjs.utc().subtract(periodMonths, 'month').startOf('day').toISOString()
+      : dayjs
+          .utc()
+          .tz(timezone)
+          .subtract(periodMonths, 'month')
+          .startOf('day')
+          .utc()
+          .toISOString()
 
   const teams = await listTeams(organization.id)
 
