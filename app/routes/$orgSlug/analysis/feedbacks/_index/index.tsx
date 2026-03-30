@@ -29,8 +29,11 @@ import {
   TableRow,
 } from '~/app/components/ui/table'
 import { calcSinceDate } from '~/app/libs/date-utils'
-import { getSelectedTeam } from '~/app/libs/team-cookie.server'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
@@ -62,8 +65,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
-  const teamParam =
-    url.searchParams.get('team') ?? getSelectedTeam(request) ?? undefined
+  const teamParam = context.get(teamContext) ?? undefined
   const periodParam = url.searchParams.get('period')
   const periodMonths =
     periodParam === 'all'

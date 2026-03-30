@@ -15,8 +15,11 @@ import {
 } from '~/app/components/ui/select'
 import { Stack } from '~/app/components/ui/stack'
 import { calcSinceDate } from '~/app/libs/date-utils'
-import { getSelectedTeam } from '~/app/libs/team-cookie.server'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { QueueTrendChart } from './+components/queue-trend-chart'
@@ -52,7 +55,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team') ?? getSelectedTeam(request)
+  const teamParam = context.get(teamContext)
   const periodParam = url.searchParams.get('period')
   const VALID_PERIODS = [1, 3, 6, 12]
   const periodMonths =

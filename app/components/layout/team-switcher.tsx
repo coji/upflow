@@ -7,22 +7,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/app/components/ui/select'
+import { TEAM_COOKIE_MAX_AGE, TEAM_COOKIE_NAME } from '~/app/libs/team-cookie'
 
 interface Team {
   id: string
   name: string
 }
 
-const COOKIE_MAX_AGE = 2592000 // 30 days
-
 function setTeamCookie(teamId: string) {
   // biome-ignore lint/suspicious/noDocumentCookie: matches sidebar_state cookie pattern in sidebar.tsx
-  document.cookie = `selected_team=${encodeURIComponent(teamId)}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`
+  document.cookie = `${TEAM_COOKIE_NAME}=${encodeURIComponent(teamId)}; path=/; max-age=${TEAM_COOKIE_MAX_AGE}; samesite=lax`
 }
 
 function clearTeamCookie() {
   // biome-ignore lint/suspicious/noDocumentCookie: matches sidebar_state cookie pattern in sidebar.tsx
-  document.cookie = 'selected_team=; path=/; max-age=0; samesite=lax'
+  document.cookie = `${TEAM_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`
 }
 
 export function TeamSwitcher({

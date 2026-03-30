@@ -17,8 +17,11 @@ import {
 import { Switch } from '~/app/components/ui/switch'
 import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { getSelectedTeam } from '~/app/libs/team-cookie.server'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
@@ -43,8 +46,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
-  const teamParam =
-    url.searchParams.get('team') ?? getSelectedTeam(request) ?? null
+  const teamParam = context.get(teamContext)
   const periodParam = url.searchParams.get('period') || null
   const periodMonths = VALID_PERIODS.includes(
     Number(periodParam) as (typeof VALID_PERIODS)[number],

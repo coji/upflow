@@ -5,8 +5,7 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { Stack } from '~/app/components/ui/stack'
-import { getSelectedTeam } from '~/app/libs/team-cookie.server'
-import { orgContext } from '~/app/middleware/context'
+import { orgContext, teamContext } from '~/app/middleware/context'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
 import {
@@ -19,11 +18,10 @@ import {
 } from './+functions/stacks.server'
 import type { Route } from './+types/index'
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
 
-  const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team') ?? getSelectedTeam(request)
+  const teamParam = context.get(teamContext)
 
   const teams = await listTeams(organization.id)
   const selectedTeam = teamParam

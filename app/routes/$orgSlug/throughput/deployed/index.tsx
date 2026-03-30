@@ -16,8 +16,11 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { getSelectedTeam } from '~/app/libs/team-cookie.server'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { DiffBadge } from '../+components/diff-badge'
 import { StatCard } from '../+components/stat-card'
 import { calcStats } from '../+functions/calc-stats'
@@ -41,7 +44,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const fromParam = url.searchParams.get('from')
   const toParam = url.searchParams.get('to')
-  const teamParam = url.searchParams.get('team') ?? getSelectedTeam(request)
+  const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
 
   let from: dayjs.Dayjs

@@ -5,9 +5,12 @@ import { Main } from '~/app/components/layout/main'
 import { SidebarProvider } from '~/app/components/ui/sidebar'
 import { useBreadcrumbs } from '~/app/hooks/use-breadcrumbs'
 import { getUserOrganizations } from '~/app/libs/auth.server'
-import { getSelectedTeam } from '~/app/libs/team-cookie.server'
 import { cn } from '~/app/libs/utils'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { orgMemberMiddleware } from '~/app/middleware/org-member'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { Route } from './+types/_layout'
@@ -40,6 +43,7 @@ export const middleware = [orgMemberMiddleware]
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { user, organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
+  const selectedTeamId = context.get(teamContext)
   const organizations = await getUserOrganizations(user.id)
 
   const cookieHeader = request.headers.get('Cookie') ?? ''
@@ -50,11 +54,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const defaultOpen = sidebarState !== 'false'
 
   const teams = await listTeams(organization.id)
-  const selectedTeamCookie = getSelectedTeam(request)
-  const selectedTeamId =
-    selectedTeamCookie && teams.some((t) => t.id === selectedTeamCookie)
-      ? selectedTeamCookie
-      : null
 
   return {
     user,

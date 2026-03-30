@@ -15,8 +15,7 @@ import {
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { median as calcMedian } from '~/app/libs/stats'
-import { getSelectedTeam } from '~/app/libs/team-cookie.server'
-import { orgContext } from '~/app/middleware/context'
+import { orgContext, teamContext } from '~/app/middleware/context'
 import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
 import { getOngoingPullRequestReport } from './+functions/queries.server'
@@ -36,7 +35,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
 
   const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team') ?? getSelectedTeam(request)
+  const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
 
   const pullRequests = await getOngoingPullRequestReport(
