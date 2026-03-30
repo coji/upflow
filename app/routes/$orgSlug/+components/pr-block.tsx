@@ -43,16 +43,16 @@ export const UNKNOWN_COLOR: BlockColor = {
 export const AGE_THRESHOLDS = [
   {
     maxDays: 1,
-    bg: 'bg-emerald-500',
-    ring: 'ring-emerald-500',
-    bgFaint: 'bg-emerald-500/20',
+    bg: 'bg-blue-500',
+    ring: 'ring-blue-500',
+    bgFaint: 'bg-blue-500/20',
     label: '< 1d',
   },
   {
     maxDays: 3,
-    bg: 'bg-blue-500',
-    ring: 'ring-blue-500',
-    bgFaint: 'bg-blue-500/20',
+    bg: 'bg-emerald-500',
+    ring: 'ring-emerald-500',
+    bgFaint: 'bg-emerald-500/20',
     label: '1-3d',
   },
   {
@@ -63,11 +63,25 @@ export const AGE_THRESHOLDS = [
     label: '3-7d',
   },
   {
-    maxDays: Infinity,
+    maxDays: 14,
     bg: 'bg-red-500',
     ring: 'ring-red-500',
     bgFaint: 'bg-red-500/20',
-    label: '7d+',
+    label: '7-14d',
+  },
+  {
+    maxDays: 30,
+    bg: 'bg-purple-500',
+    ring: 'ring-purple-500',
+    bgFaint: 'bg-purple-500/20',
+    label: '14-30d',
+  },
+  {
+    maxDays: Infinity,
+    bg: 'bg-neutral-800',
+    ring: 'ring-neutral-800',
+    bgFaint: 'bg-neutral-800/20',
+    label: '31d+',
   },
 ] as const
 
