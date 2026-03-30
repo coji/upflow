@@ -21,8 +21,8 @@ import type { OpenPRInventoryAggregation } from '../+functions/aggregate'
 
 // Colors aligned with Review Stacks age thresholds
 const chartConfig = {
-  daysUnder1: { label: '< 1d', color: '#10b981' }, // emerald-500
-  days1to3: { label: '1-3d', color: '#3b82f6' }, // blue-500
+  daysUnder1: { label: '< 1d', color: '#3b82f6' }, // blue-500
+  days1to3: { label: '1-3d', color: '#10b981' }, // emerald-500
   days3to7: { label: '3-7d', color: '#f59e0b' }, // amber-500
   days7to14: { label: '7-14d', color: '#ef4444' }, // red-500
   days14to30: { label: '14-30d', color: '#a855f7' }, // purple-500
