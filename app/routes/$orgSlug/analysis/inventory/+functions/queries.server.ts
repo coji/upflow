@@ -16,13 +16,6 @@ export const getOpenPRInventoryRawData = (
   return tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .leftJoin('companyGithubUsers', (join) =>
-      join.onRef(
-        (eb) => eb.fn('lower', ['pullRequests.author']),
-        '=',
-        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
-      ),
-    )
     .where('pullRequests.pullRequestCreatedAt', '<=', now)
     .where(({ or, eb }) =>
       or([
@@ -39,7 +32,17 @@ export const getOpenPRInventoryRawData = (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
-    .$if(excludeBotAuthors, (qb) => qb.where(excludeBots))
+    .$if(excludeBotAuthors, (qb) =>
+      qb
+        .leftJoin('companyGithubUsers', (join) =>
+          join.onRef(
+            (eb) => eb.fn('lower', ['pullRequests.author']),
+            '=',
+            (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+          ),
+        )
+        .where(excludeBots),
+    )
     .select([
       'pullRequests.repositoryId',
       'pullRequests.number',

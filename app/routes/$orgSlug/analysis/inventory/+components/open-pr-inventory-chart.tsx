@@ -85,41 +85,16 @@ export function OpenPRInventoryChart({
             <ChartLegend
               content={<ChartLegendContent className="flex-wrap" />}
             />
-            <Area
-              type="linear"
-              dataKey="days0to3"
-              stackId="inventory"
-              fill="var(--color-days0to3)"
-              stroke="var(--color-days0to3)"
-            />
-            <Area
-              type="linear"
-              dataKey="days4to7"
-              stackId="inventory"
-              fill="var(--color-days4to7)"
-              stroke="var(--color-days4to7)"
-            />
-            <Area
-              type="linear"
-              dataKey="days8to14"
-              stackId="inventory"
-              fill="var(--color-days8to14)"
-              stroke="var(--color-days8to14)"
-            />
-            <Area
-              type="linear"
-              dataKey="days15to30"
-              stackId="inventory"
-              fill="var(--color-days15to30)"
-              stroke="var(--color-days15to30)"
-            />
-            <Area
-              type="linear"
-              dataKey="days31Plus"
-              stackId="inventory"
-              fill="var(--color-days31Plus)"
-              stroke="var(--color-days31Plus)"
-            />
+            {Object.keys(chartConfig).map((key) => (
+              <Area
+                key={key}
+                type="linear"
+                dataKey={key}
+                stackId="inventory"
+                fill={`var(--color-${key})`}
+                stroke={`var(--color-${key})`}
+              />
+            ))}
           </AreaChart>
         </ChartContainer>
       </CardContent>

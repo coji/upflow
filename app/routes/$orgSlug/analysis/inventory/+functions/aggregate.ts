@@ -109,6 +109,7 @@ export function aggregateWeeklyOpenPRInventory(
         total: 0,
       }
 
+      const snapshotDayjs = dayjs.utc(snapshotAt)
       for (const row of rows) {
         if (!isOpenAtSnapshot(row, snapshotAt)) continue
         // unreviewedOnly: skip if PR was already reviewed before this snapshot
@@ -119,10 +120,10 @@ export function aggregateWeeklyOpenPRInventory(
         )
           continue
 
-        const ageDays = dayjs
-          .utc(snapshotAt)
-          .tz(timezone)
-          .diff(dayjs.utc(row.pullRequestCreatedAt).tz(timezone), 'day')
+        const ageDays = snapshotDayjs.diff(
+          dayjs.utc(row.pullRequestCreatedAt),
+          'day',
+        )
 
         addToBucket(point, ageDays)
       }
