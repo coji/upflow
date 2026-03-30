@@ -48,7 +48,7 @@ export function TeamSwitcher({
         revalidator.revalidate()
       }}
     >
-      <SelectTrigger className="mx-2 h-8 border-none bg-transparent px-2 text-xs shadow-none group-data-[collapsible=icon]:hidden">
+      <SelectTrigger className="mx-2 h-8 w-auto border-none bg-transparent px-2 text-xs shadow-none group-data-[collapsible=icon]:hidden">
         <UsersIcon className="text-muted-foreground mr-1.5 size-4 shrink-0" />
         <SelectValue />
       </SelectTrigger>
