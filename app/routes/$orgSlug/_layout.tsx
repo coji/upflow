@@ -6,8 +6,13 @@ import { SidebarProvider } from '~/app/components/ui/sidebar'
 import { useBreadcrumbs } from '~/app/hooks/use-breadcrumbs'
 import { getUserOrganizations } from '~/app/libs/auth.server'
 import { cn } from '~/app/libs/utils'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { orgMemberMiddleware } from '~/app/middleware/org-member'
+import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { Route } from './+types/_layout'
 
 export interface RouteHandle {
@@ -38,6 +43,7 @@ export const middleware = [orgMemberMiddleware]
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { user, organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
+  const selectedTeamId = context.get(teamContext)
   const organizations = await getUserOrganizations(user.id)
 
   const cookieHeader = request.headers.get('Cookie') ?? ''
@@ -47,6 +53,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     ?.split('=')[1]
   const defaultOpen = sidebarState !== 'false'
 
+  const teams = await listTeams(organization.id)
+
   return {
     user,
     organization,
@@ -54,11 +62,21 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     organizations,
     defaultOpen,
     timezone,
+    teams,
+    selectedTeamId,
   }
 }
 
 export default function OrgLayout({
-  loaderData: { user, organization, membership, organizations, defaultOpen },
+  loaderData: {
+    user,
+    organization,
+    membership,
+    organizations,
+    defaultOpen,
+    teams,
+    selectedTeamId,
+  },
 }: Route.ComponentProps) {
   const { Breadcrumbs } = useBreadcrumbs()
   const matches = useMatches()
@@ -74,6 +92,8 @@ export default function OrgLayout({
         organization={organization}
         organizations={organizations}
         memberRole={membership.role}
+        teams={teams}
+        selectedTeamId={selectedTeamId}
       />
       <div
         id="content"

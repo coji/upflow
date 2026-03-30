@@ -3,12 +3,10 @@ import { useSearchParams } from 'react-router'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
-  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
-import { TeamFilter } from '~/app/components/team-filter'
 import { Stack } from '~/app/components/ui'
 import {
   DropdownMenuCheckboxItem,
@@ -18,8 +16,11 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
-import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { DiffBadge } from '../+components/diff-badge'
 import { StatCard } from '../+components/stat-card'
 import { calcStats } from '../+functions/calc-stats'
@@ -43,7 +44,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const fromParam = url.searchParams.get('from')
   const toParam = url.searchParams.get('to')
-  const teamParam = url.searchParams.get('team')
+  const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
 
   let from: dayjs.Dayjs
@@ -59,8 +60,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const prevFrom = from.subtract(7, 'day')
   const prevTo = to.subtract(7, 'day')
 
-  const [teams, pullRequests, prevPullRequests] = await Promise.all([
-    listTeams(organization.id),
+  const [pullRequests, prevPullRequests] = await Promise.all([
     getDeployedPullRequestReport(
       organization.id,
       from.utc().toISOString(),
@@ -88,7 +88,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     objective,
     ...stats,
     prev,
-    teams,
     businessDaysOnly,
   }
 }
@@ -102,7 +101,6 @@ export default function DeployedPage({
     achievementRate,
     median,
     prev,
-    teams,
     businessDaysOnly,
   },
   params: { orgSlug },
@@ -123,9 +121,6 @@ export default function DeployedPage({
             Pull requests deployed this week with cycle time metrics.
           </PageHeaderDescription>
         </PageHeaderHeading>
-        <PageHeaderActions>
-          <TeamFilter teams={teams} />
-        </PageHeaderActions>
       </PageHeader>
 
       <AppDataTable

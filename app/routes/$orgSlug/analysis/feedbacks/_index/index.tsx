@@ -12,7 +12,6 @@ import {
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
-import { TeamFilter } from '~/app/components/team-filter'
 import {
   Select,
   SelectContent,
@@ -30,8 +29,11 @@ import {
   TableRow,
 } from '~/app/components/ui/table'
 import { calcSinceDate } from '~/app/libs/date-utils'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
-import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
@@ -63,7 +65,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team') || undefined
+  const teamParam = context.get(teamContext) ?? undefined
   const periodParam = url.searchParams.get('period')
   const periodMonths =
     periodParam === 'all'
@@ -80,7 +82,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sortOrder =
     (url.searchParams.get('sort_order') as 'asc' | 'desc') || 'desc'
 
-  const [feedbackResult, summary, teams] = await Promise.all([
+  const [feedbackResult, summary] = await Promise.all([
     listFilteredFeedbacks({
       organizationId: organization.id,
       teamId: teamParam,
@@ -95,20 +97,18 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       teamId: teamParam,
       sinceDate,
     }),
-    listTeams(organization.id),
   ])
 
   return {
     feedbacks: feedbackResult.data,
     pagination: feedbackResult.pagination,
     summary,
-    teams,
     periodMonths,
   }
 }
 
 export default function FeedbacksPage({
-  loaderData: { feedbacks, pagination, summary, teams, periodMonths },
+  loaderData: { feedbacks, pagination, summary, periodMonths },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
   const { sort, updateSort } = useDataTableState()
@@ -152,7 +152,6 @@ export default function FeedbacksPage({
               ))}
             </SelectContent>
           </Select>
-          <TeamFilter teams={teams} />
         </PageHeaderActions>
       </PageHeader>
 

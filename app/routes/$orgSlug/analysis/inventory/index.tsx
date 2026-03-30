@@ -6,7 +6,6 @@ import {
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
-import { TeamFilter } from '~/app/components/team-filter'
 import { HStack, Label, Stack } from '~/app/components/ui'
 import {
   Select,
@@ -18,8 +17,11 @@ import {
 import { Switch } from '~/app/components/ui/switch'
 import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { orgContext, timezoneContext } from '~/app/middleware/context'
-import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import {
+  orgContext,
+  teamContext,
+  timezoneContext,
+} from '~/app/middleware/context'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
@@ -44,7 +46,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team') || null
+  const teamParam = context.get(teamContext)
   const periodParam = url.searchParams.get('period') || null
   const periodMonths = VALID_PERIODS.includes(
     Number(periodParam) as (typeof VALID_PERIODS)[number],
@@ -59,10 +61,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const now = dayjs.utc().toISOString()
 
-  const teams = await listTeams(organization.id)
-
-  // unreviewedOnly はクライアント集計で判定するため、キャッシュキーには含めない
-  // （同じ raw データから unreviewedOnly ON/OFF 両方の集計が可能）
   const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}`
 
   const FIVE_MINUTES = 5 * 60 * 1000
@@ -82,7 +80,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   )
 
   return {
-    teams,
     rawRows,
     sinceDate,
     now,
@@ -97,7 +94,6 @@ export const clientLoader = async ({
   serverLoader,
 }: Route.ClientLoaderArgs) => {
   const {
-    teams,
     rawRows,
     sinceDate,
     now,
@@ -108,7 +104,6 @@ export const clientLoader = async ({
   } = await serverLoader()
 
   return {
-    teams,
     inventory: aggregateWeeklyOpenPRInventory(
       rawRows,
       sinceDate,
@@ -137,7 +132,7 @@ export function HydrateFallback() {
 }
 
 export default function InventoryPage({
-  loaderData: { teams, inventory, periodMonths, excludeBots, unreviewedOnly },
+  loaderData: { inventory, periodMonths, excludeBots, unreviewedOnly },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
 
@@ -176,7 +171,6 @@ export default function InventoryPage({
               ))}
             </SelectContent>
           </Select>
-          <TeamFilter teams={teams} />
           <HStack className="rounded-md border px-3 py-2">
             <Label htmlFor="exclude-bots">Exclude bots</Label>
             <Switch

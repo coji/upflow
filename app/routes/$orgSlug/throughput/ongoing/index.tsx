@@ -3,12 +3,10 @@ import { useSearchParams } from 'react-router'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
-  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
-import { TeamFilter } from '~/app/components/team-filter'
 import { Stack } from '~/app/components/ui'
 import {
   DropdownMenuCheckboxItem,
@@ -17,8 +15,7 @@ import {
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { median as calcMedian } from '~/app/libs/stats'
-import { orgContext } from '~/app/middleware/context'
-import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import { orgContext, teamContext } from '~/app/middleware/context'
 import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
 import { getOngoingPullRequestReport } from './+functions/queries.server'
@@ -38,10 +35,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
 
   const url = new URL(request.url)
-  const teamParam = url.searchParams.get('team')
+  const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
-
-  const teams = await listTeams(organization.id)
 
   const pullRequests = await getOngoingPullRequestReport(
     organization.id,
@@ -56,11 +51,11 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     .filter((v): v is number => v !== null)
   const median = calcMedian(ages)
 
-  return { pullRequests, median, teams, businessDaysOnly }
+  return { pullRequests, median, businessDaysOnly }
 }
 
 export default function OngoingPage({
-  loaderData: { pullRequests, median, teams, businessDaysOnly },
+  loaderData: { pullRequests, median, businessDaysOnly },
   params: { orgSlug },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
@@ -79,9 +74,6 @@ export default function OngoingPage({
             Pull requests currently in progress.
           </PageHeaderDescription>
         </PageHeaderHeading>
-        <PageHeaderActions>
-          <TeamFilter teams={teams} />
-        </PageHeaderActions>
       </PageHeader>
 
       <AppDataTable
