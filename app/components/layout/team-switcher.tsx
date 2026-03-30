@@ -22,10 +22,12 @@ interface Team {
 const COOKIE_MAX_AGE = 2592000 // 30 days
 
 function setTeamCookie(teamId: string) {
+  // biome-ignore lint/suspicious/noDocumentCookie: matches sidebar_state cookie pattern in sidebar.tsx
   document.cookie = `selected_team=${encodeURIComponent(teamId)}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`
 }
 
 function clearTeamCookie() {
+  // biome-ignore lint/suspicious/noDocumentCookie: matches sidebar_state cookie pattern in sidebar.tsx
   document.cookie = 'selected_team=; path=/; max-age=0; samesite=lax'
 }
 
