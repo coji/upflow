@@ -1,4 +1,5 @@
 import {
+  ChartAreaIcon,
   CircleDotIcon,
   FunnelIcon,
   GitMergeIcon,
@@ -49,6 +50,11 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
           title: 'Review Bottleneck',
           url: href('/:orgSlug/analysis/reviews', { orgSlug }),
           icon: FunnelIcon,
+        },
+        {
+          title: 'Inventory',
+          url: href('/:orgSlug/analysis/inventory', { orgSlug }),
+          icon: ChartAreaIcon,
         },
         {
           title: 'Feedbacks',
