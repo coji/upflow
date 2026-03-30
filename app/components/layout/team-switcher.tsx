@@ -50,7 +50,7 @@ export function TeamSwitcher({
           revalidator.revalidate()
         }}
       >
-        <SelectTrigger className="h-7 border-none bg-transparent px-1 text-xs shadow-none group-data-[collapsible=icon]:hidden">
+        <SelectTrigger className="h-7 flex-1 border-none bg-transparent px-1 text-xs shadow-none group-data-[collapsible=icon]:hidden">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
