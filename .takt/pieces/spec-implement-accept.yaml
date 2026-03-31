@@ -1,0 +1,254 @@
+name: spec-implement-accept
+description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Supervision'
+max_movements: 30
+initial_movement: spec-draft
+
+# Custom facets
+personas:
+  acceptor: ../facets/personas/acceptor.md
+  supervisor: ../facets/personas/supervisor.md
+instructions:
+  spec-draft: ../facets/instructions/spec-draft.md
+  spec-review: ../facets/instructions/spec-review.md
+  acceptance: ../facets/instructions/acceptance.md
+  supervise: ../facets/instructions/supervise.md
+knowledge:
+  implementation-plan: ../facets/knowledge/implementation-plan.md
+policies:
+  step-implementation: ../facets/policies/step-implementation.md
+  spec-revision: ../facets/policies/spec-revision.md
+report_formats:
+  spec-review-report: ../facets/output-contracts/spec-review-report.md
+  acceptance-report: ../facets/output-contracts/acceptance-report.md
+  supervise-report: ../facets/output-contracts/supervise-report.md
+
+loop_monitors:
+  # Spec review <-> Spec revision loop
+  - cycle:
+      - spec-review
+      - spec-revise
+    threshold: 4
+    judge:
+      persona: architecture-reviewer
+      instruction: |
+        The spec review -> revision loop has repeated {cycle_count} times.
+
+        **Refer to the report:**
+        - Spec review result: {report:spec-review-report.md}
+
+        **Judgment criteria:**
+        - Are blocking issues decreasing?
+        - Are revisions being accurately reflected?
+        - Are new blocking issues continuing to emerge?
+        - If only suggestion-level issues remain, the spec can be finalized
+      rules:
+        - condition: Progress is being made (blocking issues decreasing, revisions reflected)
+          next: spec-review
+        - condition: Only suggestion-level issues remain and implementation is feasible
+          next: implement
+        - condition: Blocking issues are repeating without progress
+          next: ABORT
+
+  # Acceptance testing <-> Fix loop
+  - cycle:
+      - acceptance
+      - fix
+    threshold: 3
+    judge:
+      persona: acceptor
+      instruction: |
+        The acceptance testing -> fix loop has repeated {cycle_count} times.
+
+        **Refer to the report:**
+        - Acceptance testing result: {report:acceptance-report.md}
+
+        **Judgment criteria:**
+        - Are issues decreasing with each cycle?
+        - Are fixes actually being reflected?
+        - Are the same issues being repeated?
+      rules:
+        - condition: Progress is being made (issue count decreasing, fixes reflected)
+          next: acceptance
+        - condition: Unproductive (same issues repeating)
+          next: supervise
+
+movements:
+  # 1. Spec draft generation
+  - name: spec-draft
+    edit: true
+    persona: architecture-reviewer
+    knowledge: implementation-plan
+    instruction: spec-draft
+    required_permission_mode: edit
+    rules:
+      - condition: order.md generation complete
+        next: spec-review
+      - condition: Task description insufficient to write a spec
+        next: ABORT
+
+  # 2. Spec review
+  - name: spec-review
+    edit: false
+    persona: architecture-reviewer
+    knowledge: implementation-plan
+    instruction: spec-review
+    output_contracts:
+      report:
+        - name: spec-review-report.md
+          format: spec-review-report
+    rules:
+      - condition: Spec is clear and implementable (no blocking issues)
+        next: implement
+      - condition: Spec has improvable issues (blocking issues present)
+        next: spec-revise
+      - condition: Spec is fundamentally broken and cannot be fixed
+        next: ABORT
+
+  # 3. Spec revision
+  - name: spec-revise
+    edit: true
+    persona: architecture-reviewer
+    policy: spec-revision
+    knowledge: implementation-plan
+    required_permission_mode: edit
+    instruction: |
+      Revise order.md in response to issues raised in the spec review.
+
+      **Steps:**
+      1. Read the spec review report and understand the blocking issues
+      2. Read the files to change and verify the actual state of existing code
+      3. Revise order.md:
+         - Fix or supplement the spec to address blocking issues
+         - Selectively incorporate suggestions (not mandatory)
+         - Add or update files to change
+         - Add or update completion criteria
+      4. Report a summary of the changes
+
+      **Rules:**
+      - Only modify order.md (do not change implementation code)
+      - Do not include code examples or snippets (keep at requirements level)
+      - Maintain the existing structure of order.md
+      - Explicitly document how each review issue was addressed
+    rules:
+      - condition: Spec revision complete
+        next: spec-review
+      - condition: Cannot revise (fundamental direction change needed)
+        next: ABORT
+
+  # 4. Implementation
+  - name: implement
+    edit: true
+    persona: coder
+    policy:
+      - coding
+      - step-implementation
+    knowledge: implementation-plan
+    session: refresh
+    required_permission_mode: edit
+    instruction: |
+      Implement according to the task spec (order.md).
+
+      **Steps:**
+      1. Read order.md and understand the implementation details, files to change, and completion criteria
+      2. Read the files to change and understand the existing code structure
+      3. If DB schema changes are needed:
+         a. Edit the declarative schema (`db/shared.sql` or `db/tenant.sql`)
+         b. Run `pnpm db:migrate` to generate migration SQL
+         c. Review the generated migration carefully
+         d. Run `pnpm db:apply` to apply the migration
+         e. Run `pnpm db:generate` to regenerate Kysely types
+      4. Perform the implementation
+      5. Run formatting fix and validation:
+         ```bash
+         pnpm format:fix && pnpm validate
+         ```
+
+      **Rules:**
+      - Only modify files listed in order.md's files to change
+      - Do not modify PLAN.md or order.md
+      - Follow existing code patterns and conventions (refer to CLAUDE.md)
+      - Keep changes minimal
+    rules:
+      - condition: Implementation complete, validation passes
+        next: acceptance
+      - condition: Cannot implement, insufficient information
+        next: ABORT
+
+  # 5. Acceptance testing
+  - name: acceptance
+    edit: false
+    persona: acceptor
+    policy: step-implementation
+    knowledge: implementation-plan
+    instruction: acceptance
+    output_contracts:
+      report:
+        - name: acceptance-report.md
+          format: acceptance-report
+    rules:
+      - condition: All completion criteria met, validation passes
+        next: supervise
+      - condition: Completion criteria not met or issues found
+        next: fix
+
+  # 6. Fix
+  - name: fix
+    edit: true
+    persona: coder
+    provider: claude
+    policy:
+      - coding
+      - step-implementation
+    knowledge: implementation-plan
+    session: refresh
+    required_permission_mode: edit
+    pass_previous_response: false
+    provider_options:
+      claude:
+        allowed_tools:
+          - Read
+          - Glob
+          - Grep
+          - Edit
+          - Write
+          - Bash
+    instruction: |
+      Fix the issues raised in the acceptance testing.
+
+      **Steps:**
+      1. Read the acceptance testing report and understand the issues
+      2. If a supervise report exists (supervise-report.md), read it for additional context
+      3. Apply fixes for each issue
+      4. Run formatting fix and validation:
+         ```bash
+         pnpm format:fix && pnpm validate
+         ```
+
+      **Rules:**
+      - Do not modify PLAN.md or order.md
+      - Only make fixes within scope
+    rules:
+      - condition: Fix complete
+        next: acceptance
+      - condition: Cannot fix
+        next: supervise
+
+  # 7. Final verification
+  - name: supervise
+    edit: false
+    persona: supervisor
+    policy: step-implementation
+    knowledge: implementation-plan
+    instruction: supervise
+    pass_previous_response: false
+    output_contracts:
+      report:
+        - name: supervise-report.md
+          format: supervise-report
+    rules:
+      - condition: All completion criteria met, ready to complete
+        next: COMPLETE
+      - condition: Implementation-level issues remain (resolvable by code changes)
+        next: fix
+      - condition: Spec-level issues (order.md needs modification)
+        next: spec-review
