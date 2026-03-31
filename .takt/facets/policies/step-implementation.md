@@ -21,7 +21,10 @@ When the task involves DB schema changes:
 
 - Edit the declarative schema (`db/shared.sql` or `db/tenant.sql`) first
 - Run `pnpm db:migrate` to generate migration SQL, then review it carefully
-- Atlas auto-generated SQL must be reviewed: add `IF EXISTS` to manually added `DROP TABLE` statements
+- Atlas auto-generated SQL must be reviewed:
+  - Add `IF EXISTS` only to manually added `DROP TABLE` statements
+  - Do NOT modify Atlas-generated intermediate `DROP TABLE` in table-recreation flows
+    (to avoid breaking `atlas.sum` checksum validation)
 - Run `pnpm db:apply` to apply the migration
 - Run `pnpm db:generate` to regenerate Kysely types (`app/services/type.ts`)
 - Destructive operations must be tested against production-equivalent data before deploying

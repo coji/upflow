@@ -18,7 +18,7 @@ Verify the overall consistency of the implementation and determine whether it ca
    pnpm db:setup
    ```
 
-4. Check changed files with `git diff --name-only`:
+4. Check changed files with `git diff --name-only HEAD`:
    - Are there any out-of-scope changes?
    - Have order.md or PLAN.md been modified?
 

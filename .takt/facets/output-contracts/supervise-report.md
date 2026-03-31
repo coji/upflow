@@ -28,6 +28,7 @@ Summary of pnpm validate output
 | Aspect                         | Result |
 | ------------------------------ | ------ |
 | Changed files are within scope | OK/NG  |
+| PLAN.md unmodified             | OK/NG  |
 | order.md unmodified            | OK/NG  |
 
 ## Remaining Issues (if FIX / SPEC_REVIEW)

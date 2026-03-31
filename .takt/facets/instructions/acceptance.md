@@ -28,7 +28,7 @@ Verify that the implementation meets the completion criteria of the task spec (o
    Confirm that clean-slate migration + seed succeeds
 
 5. Scope check:
-   - Get the list of changed files with `git diff --name-only`
+   - Get the list of changed files with `git diff --name-only HEAD`
    - Cross-reference with the files to change listed in order.md
    - Check for any out-of-scope changes (refer to prohibited actions in the policy)
 

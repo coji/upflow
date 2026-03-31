@@ -24,6 +24,7 @@ Ambiguity that implementers can reasonably resolve on their own is not grounds f
 | Verifiability of completion criteria | OK/NG  |       |
 | Appropriateness of scope             | OK/NG  |       |
 | Leveraging existing patterns         | OK/NG  |       |
+| Multi-tenant security invariants     | OK/NG  |       |
 | DB migration safety (if applicable)  | OK/NG  |       |
 
 ## Issues (if any)

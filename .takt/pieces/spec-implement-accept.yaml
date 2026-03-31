@@ -44,8 +44,10 @@ loop_monitors:
       rules:
         - condition: Progress is being made (blocking issues decreasing, revisions reflected)
           next: spec-review
-        - condition: Unproductive (same issues repeating, or only suggestions remain and implementation is feasible)
+        - condition: Only suggestion-level issues remain and implementation is feasible
           next: implement
+        - condition: Blocking issues are repeating without progress
+          next: ABORT
 
   # Acceptance testing <-> Fix loop
   - cycle:

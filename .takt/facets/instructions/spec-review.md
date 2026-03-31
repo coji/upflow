@@ -12,7 +12,7 @@ Review the task spec (order.md) and the existing code targeted for changes.
 
 2. Actually read the files to change and understand the existing code structure
 
-3. If a supervise report exists (`supervise-report.md`), read it and incorporate its findings into the review
+3. If a supervision report exists (`supervise-report.md`), read it and incorporate its findings into the review
 
 4. Review from the following perspectives:
    - Are any files to change missing?
@@ -26,7 +26,7 @@ Review the task spec (order.md) and the existing code targeted for changes.
    - If the spec modifies `db/shared.sql` or `db/tenant.sql`: does it address migration safety for existing production data?
    - Are destructive operations (DROP TABLE, DROP COLUMN) justified and guarded with `IF EXISTS` where appropriate?
    - Is `pnpm db:setup` included in completion criteria?
-   - Are Kysely type regeneration (`pnpm db:generate`) consequences accounted for?
+   - Are Kysely type-regeneration (`pnpm db:generate`) consequences accounted for?
 
    **Multi-tenant security:**
    - Do mutations scope to the correct organization (shared DB: `WHERE organizationId = ?`, tenant DB: correct `getTenantDb`)?
