@@ -56,6 +56,8 @@ export const crawlJob = defineJob({
     const repoCount = organization.repositories.length
     const updatedPrNumbers = new Map<string, Set<number>>()
 
+    const FETCH_ALL_SENTINEL = '2000-01-01T00:00:00Z'
+
     // Step 2: Fetch per repo
     for (let i = 0; i < organization.repositories.length; i++) {
       const repo = organization.repositories[i]
@@ -81,35 +83,33 @@ export const crawlJob = defineJob({
         })
       }
 
-      // Step 2b: Fetch PR list
-      const allPullRequests = await step.run(
-        `fetch-prs:${repoLabel}`,
-        async () => {
-          step.progress(i + 1, repoCount, `Fetching PR list: ${repoLabel}...`)
-          return await fetcher.pullrequests()
-        },
-      )
-
-      // Determine which PRs need detail fetching (cached for deterministic resume)
+      // Step 2b: Determine lastFetchedAt (before list fetch for early termination)
       const lastFetchedAt = await step.run(
         `last-fetched-at:${repoLabel}`,
         async () => {
-          if (input.refresh) return '2000-01-01T00:00:00Z'
+          if (input.refresh) return FETCH_ALL_SENTINEL
           return (
             (await store.getLatestUpdatedAt().catch(() => null)) ??
-            '2000-01-01T00:00:00Z'
+            FETCH_ALL_SENTINEL
           )
         },
       )
 
+      // Step 2c: Fetch lightweight PR list (number + updatedAt only)
       const prNumberSet = input.prNumbers ? new Set(input.prNumbers) : null
       const prsToFetch = prNumberSet
-        ? allPullRequests.filter((pr) => prNumberSet.has(pr.number))
-        : input.refresh
-          ? allPullRequests
-          : allPullRequests.filter((pr) => pr.updatedAt > lastFetchedAt)
+        ? // --pr 指定時: リスト取得をスキップ
+          (input.prNumbers?.map((n) => ({ number: n, updatedAt: '' })) ?? [])
+        : await step.run(`fetch-prs:${repoLabel}`, async () => {
+            step.progress(i + 1, repoCount, `Fetching PR list: ${repoLabel}...`)
+            const stopBefore =
+              input.refresh || lastFetchedAt === FETCH_ALL_SENTINEL
+                ? undefined
+                : lastFetchedAt
+            return await fetcher.pullrequestList(stopBefore)
+          })
 
-      // Step 2c: Fetch details per PR
+      // Step 2d: Fetch details per PR (including PR metadata)
       const repoUpdated = new Set<number>()
       for (let j = 0; j < prsToFetch.length; j++) {
         const pr = prsToFetch[j]
@@ -122,16 +122,23 @@ export const crawlJob = defineJob({
               `Fetching ${repoLabel}#${pr.number} (${j + 1}/${prsToFetch.length})...`,
             )
             try {
-              const [commits, discussions, reviews, timelineItems, files] =
-                await Promise.all([
-                  fetcher.commits(pr.number),
-                  fetcher.comments(pr.number),
-                  fetcher.reviews(pr.number),
-                  fetcher.timelineItems(pr.number),
-                  fetcher.files(pr.number),
-                ])
-              pr.files = files
-              await store.savePrData(pr, {
+              const [
+                prMetadata,
+                commits,
+                discussions,
+                reviews,
+                timelineItems,
+                files,
+              ] = await Promise.all([
+                fetcher.pullrequest(pr.number),
+                fetcher.commits(pr.number),
+                fetcher.comments(pr.number),
+                fetcher.reviews(pr.number),
+                fetcher.timelineItems(pr.number),
+                fetcher.files(pr.number),
+              ])
+              prMetadata.files = files
+              await store.savePrData(prMetadata, {
                 commits,
                 reviews,
                 discussions,
