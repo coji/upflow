@@ -37,9 +37,9 @@ export async function backfillRepo(
     for (const pr of prs) {
       if (pr.files && pr.files.length > 0) continue // already has files
       try {
+        const fetchedAt = new Date().toISOString()
         const files = await fetcher.files(pr.number)
         const prWithFiles = { ...pr, files }
-        const fetchedAt = new Date().toISOString()
         await store.updatePrMetadata([{ pr: prWithFiles, fetchedAt }])
         updated++
       } catch (err) {

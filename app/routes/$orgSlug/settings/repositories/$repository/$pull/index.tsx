@@ -5,6 +5,7 @@ import { href, useFetcher, useRevalidator } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import {
   getGithubAppLink,
@@ -156,16 +157,22 @@ export const action = async ({
       )
 
       const { durably } = await import('~/app/services/durably.server')
-      await durably.jobs.process.triggerAndWait(
-        {
-          organizationId: organization.id,
-          scopes: [{ repositoryId, prNumbers: [pullId] }],
-        },
-        {
-          concurrencyKey: processConcurrencyKey(organization.id),
-          labels: { organizationId: organization.id },
-        },
-      )
+      try {
+        await durably.jobs.process.triggerAndWait(
+          {
+            organizationId: organization.id,
+            scopes: [{ repositoryId, prNumbers: [pullId] }],
+          },
+          {
+            concurrencyKey: processConcurrencyKey(organization.id),
+            labels: { organizationId: organization.id },
+          },
+        )
+      } catch (e) {
+        throw new Response(`Process job failed: ${getErrorMessage(e)}`, {
+          status: 500,
+        })
+      }
 
       return { intent: 'refresh' as const, success: true }
     })

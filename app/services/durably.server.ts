@@ -24,6 +24,7 @@ function createDurablyInstance() {
       classify: classifyJob,
       crawl: crawlJob,
       process: processJob,
+      recalculate: processJob, // migration alias: remove after retainRuns window (7d)
     },
   })
 }
