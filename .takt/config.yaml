@@ -20,7 +20,7 @@ persona_providers:
 
 provider_profiles:
   cursor:
-    default_permission_mode: edit
+    default_permission_mode: full
   codex:
     default_permission_mode: edit
   claude:
