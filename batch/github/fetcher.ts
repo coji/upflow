@@ -1097,6 +1097,7 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       let stopped = false
       for (const node of pullRequests.nodes) {
         if (!node) continue
+        // ISO 8601 UTC 文字列同士なので lexicographic 比較 = 時系列比較
         if (stopBefore && node.updatedAt < stopBefore) {
           stopped = true
           break

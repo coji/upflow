@@ -97,9 +97,9 @@ export const crawlJob = defineJob({
 
       // Step 2c: Fetch lightweight PR list (number + updatedAt only)
       const prNumberSet = input.prNumbers ? new Set(input.prNumbers) : null
-      const prsToFetch = prNumberSet
-        ? // --pr 指定時: リスト取得をスキップ
-          (input.prNumbers?.map((n) => ({ number: n, updatedAt: '' })) ?? [])
+      const prsToFetch: Array<{ number: number }> = prNumberSet
+        ? // --pr 指定時: リスト取得をスキップし、指定番号だけ処理する
+          (input.prNumbers?.map((n) => ({ number: n })) ?? [])
         : await step.run(`fetch-prs:${repoLabel}`, async () => {
             step.progress(i + 1, repoCount, `Fetching PR list: ${repoLabel}...`)
             const stopBefore =
