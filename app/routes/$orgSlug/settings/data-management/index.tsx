@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { data, href, useFetcher, useLoaderData } from 'react-router'
 import { match } from 'ts-pattern'
 import {
@@ -251,12 +251,31 @@ export default function DataManagementPage({
       pageSize: 10,
     })
 
-  const {
-    cancel,
-    retrigger,
-    isLoading: isActing,
-    error: actionError,
-  } = durably.useRunActions()
+  const { cancel, retrigger } = durably.useRunActions()
+  const [isActing, startTransition] = useTransition()
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const handleCancel = (runId: string) => {
+    setActionError(null)
+    startTransition(async () => {
+      try {
+        await cancel(runId)
+      } catch (e) {
+        setActionError(e instanceof Error ? e.message : String(e))
+      }
+    })
+  }
+
+  const handleRetrigger = (runId: string) => {
+    setActionError(null)
+    startTransition(async () => {
+      try {
+        await retrigger(runId)
+      } catch (e) {
+        setActionError(e instanceof Error ? e.message : String(e))
+      }
+    })
+  }
 
   const isCrawlRunning = runs.some(
     (r) => r.jobName === 'crawl' && isRunActive(r.status),
@@ -281,8 +300,8 @@ export default function DataManagementPage({
           isLoading={isLoading}
           onNextPage={nextPage}
           onPrevPage={prevPage}
-          onCancel={cancel}
-          onRetrigger={retrigger}
+          onCancel={handleCancel}
+          onRetrigger={handleRetrigger}
           isActing={isActing}
           actionError={actionError}
         />
