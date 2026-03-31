@@ -740,6 +740,109 @@ function handleGraphQLError<T>(
   throw error
 }
 
+interface PageInfo {
+  hasNextPage: boolean
+  endCursor?: string | null
+}
+
+interface PaginateOptions<TNode> {
+  /** ページネーション用の初期ページサイズ（デフォルト: 100） */
+  initialPageSize?: number
+  /** handleGraphQLError の最小ページサイズ。指定するとエラー時にページサイズ削減+リトライする */
+  minPageSize?: number
+  /** ラベル（ログ用） */
+  label?: string
+  /** ノードに対する早期打ち切り判定。true を返すとそのノードでページング停止 */
+  shouldStop?: (node: TNode) => boolean
+}
+
+/**
+ * GraphQL カーソルベースページネーションの共通ヘルパー。
+ * extractConnection でレスポンスからノード配列と pageInfo を取り出し、
+ * processNode でノードをアイテムに変換する。
+ */
+async function paginateGraphQL<TResult, TNode, TItem>(
+  graphqlFn: (variables: Record<string, unknown>) => Promise<TResult>,
+  extractConnection: (
+    result: TResult,
+  ) => { nodes: (TNode | null)[] | null; pageInfo: PageInfo } | null,
+  processNode: (node: TNode) => TItem | null,
+  options: PaginateOptions<TNode> = {},
+): Promise<TItem[]> {
+  const {
+    initialPageSize = 100,
+    minPageSize,
+    label = 'paginateGraphQL',
+    shouldStop,
+  } = options
+  const items: TItem[] = []
+  let cursor: string | null = null
+  let hasNextPage = true
+  const pageSizeRef = { value: initialPageSize }
+
+  while (hasNextPage) {
+    let result: TResult
+    const variables = { cursor, first: pageSizeRef.value }
+
+    if (minPageSize != null) {
+      // パターン A: handleGraphQLError 付き
+      try {
+        result = await graphqlFn(variables)
+      } catch (error: unknown) {
+        const handled = handleGraphQLError<TResult>(
+          error,
+          pageSizeRef,
+          minPageSize,
+          label,
+        )
+        if (handled.action === 'retry') continue
+        result = handled.data
+      }
+    } else {
+      // パターン B: シンプル（エラーは呼び出し元に伝播）
+      result = await graphqlFn(variables)
+    }
+
+    const connection = extractConnection(result)
+    const nodes = connection?.nodes
+    if (!nodes) {
+      if (minPageSize != null && pageSizeRef.value > minPageSize) {
+        pageSizeRef.value = Math.max(
+          minPageSize,
+          Math.floor(pageSizeRef.value / 2),
+        )
+        logger.warn(
+          `${label}: empty response, reducing page size to ${pageSizeRef.value}`,
+        )
+        continue
+      }
+      if (minPageSize != null) {
+        throw new Error(
+          `${label}: empty response at min page size ${pageSizeRef.value} (cursor: ${cursor})`,
+        )
+      }
+      break
+    }
+
+    let stopped = false
+    for (const node of nodes) {
+      if (!node) continue
+      if (shouldStop?.(node)) {
+        stopped = true
+        break
+      }
+      const item = processNode(node)
+      if (item != null) items.push(item)
+    }
+
+    if (stopped) break
+    hasNextPage = connection.pageInfo.hasNextPage
+    cursor = connection.pageInfo.endCursor ?? null
+  }
+
+  return items
+}
+
 /**
  * GraphQL の timelineItems ノードを ShapedTimelineItem[] に変換
  */
@@ -805,6 +908,56 @@ export function buildRequestedAtMap(
     }
   }
   return map
+}
+
+function shapeCommentNode(node: {
+  databaseId: number | null
+  author: { __typename: string; login: string } | null
+  url: string
+  createdAt: string
+}): ShapedGitHubIssueComment | null {
+  if (!node.databaseId) return null
+  return {
+    id: node.databaseId,
+    user: node.author?.login ?? null,
+    isBot: node.author?.__typename === 'Bot',
+    url: node.url,
+    createdAt: node.createdAt,
+  }
+}
+
+function shapeCommitNode(node: {
+  commit: {
+    oid: string
+    commitUrl: string
+    committedDate: string
+    committer: { user: { login: string } | null } | null
+  }
+}): ShapedGitHubCommit {
+  return {
+    sha: node.commit.oid,
+    url: node.commit.commitUrl,
+    committer: node.commit.committer?.user?.login ?? null,
+    date: node.commit.committedDate,
+  }
+}
+
+function shapeReviewNode(node: {
+  databaseId: number | null
+  author: { __typename: string; login: string } | null
+  state: ShapedGitHubReview['state']
+  url: string
+  submittedAt: string | null
+}): ShapedGitHubReview | null {
+  if (!node.databaseId) return null
+  return {
+    id: node.databaseId,
+    user: node.author?.login ?? null,
+    isBot: node.author?.__typename === 'Bot',
+    state: node.state,
+    url: node.url,
+    submittedAt: node.submittedAt ?? null,
+  }
 }
 
 function shapePullRequestNode(
@@ -972,145 +1125,42 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
     }
   }
 
-  /**
-   * プロジェクトのすべてのプルリク情報を GraphQL で取得
-   * @returns プロジェクトのすべてのプルリク情報の配列
-   */
-  const pullrequests = async () => {
-    type PullRequestsResult = ResultOf<typeof GetPullRequestsQuery>
-
+  const pullrequests = () => {
+    type Result = ResultOf<typeof GetPullRequestsQuery>
+    type PrNode = NonNullable<
+      NonNullable<Result['repository']>['pullRequests']['nodes']
+    >[number]
     const queryStr = print(GetPullRequestsQuery)
-    const allPulls: ShapedGitHubPullRequest[] = []
-    let cursor: string | null = null
-    let hasNextPage = true
-    const pageSizeRef = { value: 100 }
 
-    while (hasNextPage) {
-      let result: PullRequestsResult
-      try {
-        result = await graphqlWithTimeout<PullRequestsResult>(queryStr, {
-          owner,
-          repo,
-          cursor,
-          first: pageSizeRef.value,
-        })
-      } catch (error: unknown) {
-        const handled = handleGraphQLError<PullRequestsResult>(
-          error,
-          pageSizeRef,
-          10,
-          'pullrequests()',
-        )
-        if (handled.action === 'retry') continue
-        result = handled.data
-      }
-
-      const pullRequests = result?.repository?.pullRequests
-      if (!pullRequests || !pullRequests.nodes) {
-        // 200 OK だが repository が null → タイムアウト起因の可能性
-        if (pageSizeRef.value > 10) {
-          pageSizeRef.value = Math.max(10, Math.floor(pageSizeRef.value / 2))
-          logger.warn(
-            `pullrequests(): empty response, reducing page size to ${pageSizeRef.value}`,
-          )
-          continue
-        }
-        logger.warn(
-          'pullrequests(): unexpected empty response (already at min page size)',
-          JSON.stringify({
-            hasRepository: !!result?.repository,
-            hasPullRequests: !!pullRequests,
-            hasNodes: !!pullRequests?.nodes,
-            pageSize: pageSizeRef.value,
-            cursor,
-          }),
-        )
-        break
-      }
-
-      for (const node of pullRequests.nodes) {
-        const shaped = shapePullRequestNode(node, owner, repo)
-        if (shaped) allPulls.push(shaped)
-      }
-
-      hasNextPage = pullRequests.pageInfo.hasNextPage
-      cursor = pullRequests.pageInfo.endCursor ?? null
-    }
-
-    return allPulls
+    return paginateGraphQL<Result, PrNode, ShapedGitHubPullRequest>(
+      (vars) => graphqlWithTimeout<Result>(queryStr, { owner, repo, ...vars }),
+      (r) => r?.repository?.pullRequests ?? null,
+      (node) => shapePullRequestNode(node, owner, repo),
+      { minPageSize: 10, label: 'pullrequests()' },
+    )
   }
 
   /**
    * stopBefore が指定されると、updatedAt がそれより古い PR が出た時点でページング停止
    */
-  const pullrequestList = async (stopBefore?: string) => {
-    type ListResult = ResultOf<typeof GetPullRequestListQuery>
-
+  const pullrequestList = (stopBefore?: string) => {
+    type Result = ResultOf<typeof GetPullRequestListQuery>
+    type Node = { number: number; updatedAt: string }
     const queryStr = print(GetPullRequestListQuery)
-    const items: Array<{ number: number; updatedAt: string }> = []
-    let cursor: string | null = null
-    let hasNextPage = true
-    const pageSizeRef = { value: 100 }
 
-    while (hasNextPage) {
-      let result: ListResult
-      try {
-        result = await graphqlWithTimeout<ListResult>(queryStr, {
-          owner,
-          repo,
-          cursor,
-          first: pageSizeRef.value,
-        })
-      } catch (error: unknown) {
-        const handled = handleGraphQLError<ListResult>(
-          error,
-          pageSizeRef,
-          10,
-          'pullrequestList()',
-        )
-        if (handled.action === 'retry') continue
-        result = handled.data
-      }
-
-      const pullRequests = result?.repository?.pullRequests
-      if (!pullRequests?.nodes) {
-        if (pageSizeRef.value > 10) {
-          pageSizeRef.value = Math.max(10, Math.floor(pageSizeRef.value / 2))
-          logger.warn(
-            `pullrequestList(): empty response, reducing page size to ${pageSizeRef.value}`,
-          )
-          continue
-        }
-        logger.warn(
-          'pullrequestList(): unexpected empty response (already at min page size)',
-          JSON.stringify({
-            hasRepository: !!result?.repository,
-            hasPullRequests: !!pullRequests,
-            hasNodes: !!pullRequests?.nodes,
-            pageSize: pageSizeRef.value,
-            cursor,
-          }),
-        )
-        break
-      }
-
-      let stopped = false
-      for (const node of pullRequests.nodes) {
-        if (!node) continue
+    return paginateGraphQL<Result, Node, { number: number; updatedAt: string }>(
+      (vars) => graphqlWithTimeout<Result>(queryStr, { owner, repo, ...vars }),
+      (r) => r?.repository?.pullRequests ?? null,
+      (node) => ({ number: node.number, updatedAt: node.updatedAt }),
+      {
+        minPageSize: 10,
+        label: 'pullrequestList()',
         // ISO 8601 UTC 文字列同士なので lexicographic 比較 = 時系列比較
-        if (stopBefore && node.updatedAt < stopBefore) {
-          stopped = true
-          break
-        }
-        items.push({ number: node.number, updatedAt: node.updatedAt })
-      }
-
-      if (stopped) break
-      hasNextPage = pullRequests.pageInfo.hasNextPage
-      cursor = pullRequests.pageInfo.endCursor ?? null
-    }
-
-    return items
+        shouldStop: stopBefore
+          ? (node) => node.updatedAt < stopBefore
+          : undefined,
+      },
+    )
   }
 
   const pullrequest = async (
@@ -1133,116 +1183,65 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
     return shaped
   }
 
-  const commits = async (pullNumber: number) => {
-    type CommitsResult = ResultOf<typeof GetPullRequestCommitsQuery>
-
+  const commits = (pullNumber: number) => {
+    type Result = ResultOf<typeof GetPullRequestCommitsQuery>
     const queryStr = print(GetPullRequestCommitsQuery)
-    const allCommits: ShapedGitHubCommit[] = []
-    let cursor: string | null = null
-    let hasNextPage = true
 
-    while (hasNextPage) {
-      const result: CommitsResult = await graphqlWithTimeout<CommitsResult>(
-        queryStr,
-        { owner, repo, number: pullNumber, cursor },
-      )
-
-      const commits = result.repository?.pullRequest?.commits
-      if (!commits || !commits.nodes) break
-
-      for (const node of commits.nodes) {
-        if (!node) continue
-        const c = node.commit
-
-        allCommits.push({
-          sha: c.oid,
-          url: c.commitUrl,
-          committer: c.committer?.user?.login ?? null,
-          date: c.committedDate,
-        })
-      }
-
-      hasNextPage = commits.pageInfo.hasNextPage
-      cursor = commits.pageInfo.endCursor ?? null
-    }
-
-    return allCommits
-  }
-
-  /**
-   * PR の issue comments と review comments を GraphQL で一括取得
-   */
-  const comments = async (pullNumber: number) => {
-    type CommentsResult = ResultOf<typeof GetPullRequestCommentsQuery>
-
-    const queryStr = print(GetPullRequestCommentsQuery)
-
-    // issue comments
-    const issueComments: ShapedGitHubIssueComment[] = []
-    let commentsCursor: string | null = null
-    let hasMoreComments = true
-
-    while (hasMoreComments) {
-      const result: CommentsResult = await graphqlWithTimeout<CommentsResult>(
-        queryStr,
-        {
+    return paginateGraphQL(
+      (vars) =>
+        graphqlWithTimeout<Result>(queryStr, {
           owner,
           repo,
           number: pullNumber,
-          commentsCursor,
+          ...vars,
+        }),
+      (r) => r.repository?.pullRequest?.commits ?? null,
+      shapeCommitNode,
+    )
+  }
+
+  const comments = async (pullNumber: number) => {
+    type Result = ResultOf<typeof GetPullRequestCommentsQuery>
+    const queryStr = print(GetPullRequestCommentsQuery)
+
+    // issue comments
+    const issueComments = await paginateGraphQL(
+      (vars) =>
+        graphqlWithTimeout<Result>(queryStr, {
+          owner,
+          repo,
+          number: pullNumber,
+          commentsCursor: vars.cursor,
           reviewThreadsCursor: null,
-        },
-      )
+          first: undefined,
+        }),
+      (r) => r.repository?.pullRequest?.comments ?? null,
+      shapeCommentNode,
+    )
 
-      const comments = result.repository?.pullRequest?.comments
-      if (!comments || !comments.nodes) break
-
-      for (const node of comments.nodes) {
-        if (!node || !node.databaseId) continue
-        issueComments.push({
-          id: node.databaseId,
-          user: node.author?.login ?? null,
-          isBot: node.author?.__typename === 'Bot',
-          url: node.url,
-          createdAt: node.createdAt,
-        })
-      }
-
-      hasMoreComments = comments.pageInfo.hasNextPage
-      commentsCursor = comments.pageInfo.endCursor ?? null
-    }
-
-    // review comments (via reviewThreads)
+    // review comments — スレッド→コメントの展開が必要なので手動ループ
     const reviewComments: ShapedGitHubReviewComment[] = []
     let reviewThreadsCursor: string | null = null
     let hasMoreThreads = true
 
     while (hasMoreThreads) {
-      const result: CommentsResult = await graphqlWithTimeout<CommentsResult>(
-        queryStr,
-        {
-          owner,
-          repo,
-          number: pullNumber,
-          commentsCursor: null,
-          reviewThreadsCursor,
-        },
-      )
+      const result: Result = await graphqlWithTimeout<Result>(queryStr, {
+        owner,
+        repo,
+        number: pullNumber,
+        commentsCursor: null,
+        reviewThreadsCursor,
+      })
 
       const reviewThreads = result.repository?.pullRequest?.reviewThreads
-      if (!reviewThreads || !reviewThreads.nodes) break
+      if (!reviewThreads?.nodes) break
 
       for (const thread of reviewThreads.nodes) {
         if (!thread?.comments?.nodes) continue
         for (const node of thread.comments.nodes) {
-          if (!node || !node.databaseId) continue
-          reviewComments.push({
-            id: node.databaseId,
-            user: node.author?.login ?? null,
-            isBot: node.author?.__typename === 'Bot',
-            url: node.url,
-            createdAt: node.createdAt,
-          })
+          if (!node) continue
+          const shaped = shapeCommentNode(node)
+          if (shaped) reviewComments.push(shaped)
         }
       }
 
@@ -1258,136 +1257,59 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
     return allComments
   }
 
-  const reviews = async (pullNumber: number) => {
-    type ReviewsResult = ResultOf<typeof GetPullRequestReviewsQuery>
-
+  const reviews = (pullNumber: number) => {
+    type Result = ResultOf<typeof GetPullRequestReviewsQuery>
     const queryStr = print(GetPullRequestReviewsQuery)
-    const allReviews: ShapedGitHubReview[] = []
-    let cursor: string | null = null
-    let hasNextPage = true
 
-    while (hasNextPage) {
-      const result: ReviewsResult = await graphqlWithTimeout<ReviewsResult>(
-        queryStr,
-        { owner, repo, number: pullNumber, cursor },
-      )
-
-      const reviews = result.repository?.pullRequest?.reviews
-      if (!reviews || !reviews.nodes) break
-
-      for (const node of reviews.nodes) {
-        if (!node || !node.databaseId) continue
-
-        allReviews.push({
-          id: node.databaseId,
-          user: node.author?.login ?? null,
-          isBot: node.author?.__typename === 'Bot',
-          state: node.state,
-          url: node.url,
-          submittedAt: node.submittedAt ?? null,
-        })
-      }
-
-      hasNextPage = reviews.pageInfo.hasNextPage
-      cursor = reviews.pageInfo.endCursor ?? null
-    }
-
-    return allReviews
-  }
-
-  /** タグ一覧 + コミット日時を GraphQL で一括取得 */
-  const tags = async () => {
-    type TagsResult = ResultOf<typeof GetTagsQuery>
-
-    const queryStr = print(GetTagsQuery)
-    const allTags: ShapedGitHubTag[] = []
-    let cursor: string | null = null
-    let hasNextPage = true
-
-    while (hasNextPage) {
-      const result: TagsResult = await graphqlWithTimeout<TagsResult>(
-        queryStr,
-        {
+    return paginateGraphQL(
+      (vars) =>
+        graphqlWithTimeout<Result>(queryStr, {
           owner,
           repo,
-          cursor,
-        },
-      )
+          number: pullNumber,
+          ...vars,
+        }),
+      (r) => r.repository?.pullRequest?.reviews ?? null,
+      shapeReviewNode,
+    )
+  }
 
-      const refs = result.repository?.refs
-      if (!refs || !refs.nodes) break
+  const tags = () => {
+    type Result = ResultOf<typeof GetTagsQuery>
+    const queryStr = print(GetTagsQuery)
 
-      for (const node of refs.nodes) {
-        if (!node) continue
-        const shaped = shapeTagNode(node)
-        if (shaped) allTags.push(shaped)
-      }
-
-      hasNextPage = refs.pageInfo.hasNextPage
-      cursor = refs.pageInfo.endCursor ?? null
-    }
-
-    return allTags
+    return paginateGraphQL(
+      (vars) => graphqlWithTimeout<Result>(queryStr, { owner, repo, ...vars }),
+      (r) => r.repository?.refs ?? null,
+      shapeTagNode,
+    )
   }
 
   /**
    * PR + commits + reviews + comments を一括取得（N+1 問題解消版）
    * 各 PR の関連データが 100 件を超える場合は needsMore* フラグで通知
    */
-  const pullrequestsWithDetails = async (): Promise<
-    ShapedGitHubPullRequestWithDetails[]
-  > => {
+  const pullrequestsWithDetails = () => {
     type Result = ResultOf<typeof GetPullRequestsWithDetailsQuery>
-
+    type PrDetailNode = NonNullable<
+      NonNullable<
+        NonNullable<Result['repository']>['pullRequests']['nodes']
+      >[number]
+    >
     const queryStr = print(GetPullRequestsWithDetailsQuery)
-    const allResults: ShapedGitHubPullRequestWithDetails[] = []
-    let cursor: string | null = null
-    let hasNextPage = true
-    const pageSizeRef = { value: 25 }
 
-    while (hasNextPage) {
-      let result: Result
-      try {
-        result = await graphqlWithTimeout<Result>(queryStr, {
-          owner,
-          repo,
-          cursor,
-          first: pageSizeRef.value,
-        })
-      } catch (error: unknown) {
-        const handled = handleGraphQLError<Result>(
-          error,
-          pageSizeRef,
-          5,
-          'pullrequestsWithDetails()',
-        )
-        if (handled.action === 'retry') continue
-        result = handled.data
-      }
+    return paginateGraphQL<
+      Result,
+      PrDetailNode,
+      ShapedGitHubPullRequestWithDetails
+    >(
+      (vars) => graphqlWithTimeout<Result>(queryStr, { owner, repo, ...vars }),
+      (r) => r?.repository?.pullRequests ?? null,
+      (node) => {
+        const basePr = shapePullRequestNode(node, owner, repo)
+        if (!basePr) return null
 
-      const pullRequests = result?.repository?.pullRequests
-      if (!pullRequests || !pullRequests.nodes) {
-        if (pageSizeRef.value > 5) {
-          pageSizeRef.value = Math.max(5, Math.floor(pageSizeRef.value / 2))
-          logger.warn(
-            `pullrequestsWithDetails(): empty response, reducing page size to ${pageSizeRef.value}`,
-          )
-          continue
-        }
-        logger.warn(
-          'pullrequestsWithDetails(): empty response at min page size, stopping',
-        )
-        break
-      }
-
-      for (const node of pullRequests.nodes) {
-        if (!node || !node.databaseId) continue
-
-        // PR 基本情報
-        const state =
-          node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
-
-        // timelineItems をローデータとしてパース
+        // timeline から requestedAt を補完
         const prTimelineItems = node.timelineItems?.nodes
           ? shapeTimelineNodes(
               node.timelineItems.nodes as readonly (Record<
@@ -1397,85 +1319,27 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
             )
           : []
         const requestedAtMap = buildRequestedAtMap(prTimelineItems)
-
-        // reviewRequests（現在の pending reviewer）と requestedAt を統合
-        const reviewers: { login: string; requestedAt: string | null }[] = []
-        if (node.reviewRequests?.nodes) {
-          for (const rr of node.reviewRequests.nodes) {
-            const reviewer = rr?.requestedReviewer
-            if (
-              reviewer &&
-              (reviewer.__typename === 'User' ||
-                reviewer.__typename === 'Bot' ||
-                reviewer.__typename === 'Mannequin')
-            ) {
-              reviewers.push({
-                login: reviewer.login,
-                requestedAt: requestedAtMap.get(reviewer.login) ?? null,
-              })
-            }
-          }
-        }
-
         const pr: ShapedGitHubPullRequest = {
-          id: node.databaseId,
-          organization: owner,
-          repo,
-          number: node.number,
-          state,
-          title: node.title,
-          body: node.body ?? null,
-          url: node.url,
-          author: node.author?.login ?? null,
-          authorIsBot: node.author?.__typename === 'Bot',
-          assignees:
-            node.assignees.nodes
-              ?.filter((n) => n != null)
-              .map((n) => n.login) ?? [],
-          reviewers,
-          draft: node.isDraft,
-          sourceBranch: node.headRefName,
-          targetBranch: node.baseRefName,
-          createdAt: node.createdAt,
-          updatedAt: node.updatedAt,
-          mergedAt: node.mergedAt ?? null,
-          closedAt: node.closedAt ?? null,
-          mergeCommitSha: node.mergeCommit?.oid ?? null,
-          additions: node.additions ?? null,
-          deletions: node.deletions ?? null,
-          changedFiles: node.changedFiles ?? null,
-          files: [],
+          ...basePr,
+          reviewers: basePr.reviewers.map((r) => ({
+            ...r,
+            requestedAt: requestedAtMap.get(r.login) ?? r.requestedAt,
+          })),
         }
 
         // commits
         const prCommits: ShapedGitHubCommit[] = []
-        if (node.commits?.nodes) {
-          for (const commitNode of node.commits.nodes) {
-            if (!commitNode) continue
-            const c = commitNode.commit
-            prCommits.push({
-              sha: c.oid,
-              url: c.commitUrl,
-              committer: c.committer?.user?.login ?? null,
-              date: c.committedDate,
-            })
-          }
+        for (const commitNode of node.commits?.nodes ?? []) {
+          if (!commitNode) continue
+          prCommits.push(shapeCommitNode(commitNode))
         }
 
         // reviews
         const prReviews: ShapedGitHubReview[] = []
-        if (node.reviews?.nodes) {
-          for (const reviewNode of node.reviews.nodes) {
-            if (!reviewNode || !reviewNode.databaseId) continue
-            prReviews.push({
-              id: reviewNode.databaseId,
-              user: reviewNode.author?.login ?? null,
-              isBot: reviewNode.author?.__typename === 'Bot',
-              state: reviewNode.state,
-              url: reviewNode.url,
-              submittedAt: reviewNode.submittedAt ?? null,
-            })
-          }
+        for (const reviewNode of node.reviews?.nodes ?? []) {
+          if (!reviewNode) continue
+          const shaped = shapeReviewNode(reviewNode)
+          if (shaped) prReviews.push(shaped)
         }
 
         // comments (issue comments + review thread comments)
@@ -1483,47 +1347,28 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
           | ShapedGitHubIssueComment
           | ShapedGitHubReviewComment
         )[] = []
-
-        // issue comments
-        if (node.comments?.nodes) {
-          for (const commentNode of node.comments.nodes) {
-            if (!commentNode || !commentNode.databaseId) continue
-            prComments.push({
-              id: commentNode.databaseId,
-              user: commentNode.author?.login ?? null,
-              isBot: commentNode.author?.__typename === 'Bot',
-              url: commentNode.url,
-              createdAt: commentNode.createdAt,
-            })
-          }
+        for (const commentNode of node.comments?.nodes ?? []) {
+          if (!commentNode) continue
+          const shaped = shapeCommentNode(commentNode)
+          if (shaped) prComments.push(shaped)
         }
 
-        // review thread comments
         let needsMoreReviewThreadComments = false
-        if (node.reviewThreads?.nodes) {
-          for (const thread of node.reviewThreads.nodes) {
-            if (!thread?.comments) continue
-            if (thread.comments.pageInfo.hasNextPage) {
-              needsMoreReviewThreadComments = true
-            }
-            if (!thread.comments.nodes) continue
-            for (const commentNode of thread.comments.nodes) {
-              if (!commentNode || !commentNode.databaseId) continue
-              prComments.push({
-                id: commentNode.databaseId,
-                user: commentNode.author?.login ?? null,
-                isBot: commentNode.author?.__typename === 'Bot',
-                url: commentNode.url,
-                createdAt: commentNode.createdAt,
-              })
-            }
+        for (const thread of node.reviewThreads?.nodes ?? []) {
+          if (!thread?.comments) continue
+          if (thread.comments.pageInfo.hasNextPage) {
+            needsMoreReviewThreadComments = true
+          }
+          for (const commentNode of thread.comments.nodes ?? []) {
+            if (!commentNode) continue
+            const shaped = shapeCommentNode(commentNode)
+            if (shaped) prComments.push(shaped)
           }
         }
 
-        // コメントを時系列でソート
         prComments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
-        allResults.push({
+        return {
           pr,
           commits: prCommits,
           reviews: prReviews,
@@ -1537,14 +1382,14 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
           needsMoreReviewThreadComments,
           needsMoreTimelineItems:
             node.timelineItems?.pageInfo.hasNextPage ?? false,
-        })
-      }
-
-      hasNextPage = pullRequests.pageInfo.hasNextPage
-      cursor = pullRequests.pageInfo.endCursor ?? null
-    }
-
-    return allResults
+        }
+      },
+      {
+        initialPageSize: 25,
+        minPageSize: 5,
+        label: 'pullrequestsWithDetails()',
+      },
+    )
   }
 
   /**
