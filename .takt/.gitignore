@@ -1,0 +1,7 @@
+# Runtime data (not version-controlled)
+runs/
+tasks/
+clone-meta/
+worktree-sessions/
+session-state.json
+persona_sessions.json
