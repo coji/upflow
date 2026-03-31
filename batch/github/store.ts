@@ -40,6 +40,7 @@ export const createStore = ({
       discussions: ShapedGitHubReviewComment[]
       timelineItems?: ShapedTimelineItem[]
     },
+    fetchedAt: string,
   ) => {
     await db
       .insertInto('githubRawData')
@@ -54,16 +55,21 @@ export const createStore = ({
           ? JSON.stringify(data.timelineItems)
           : null,
         updatedAt: pr.updatedAt ?? null,
+        fetchedAt,
       })
       .onConflict((oc) =>
-        oc.columns(['repositoryId', 'pullRequestNumber']).doUpdateSet((eb) => ({
-          pullRequest: eb.ref('excluded.pullRequest'),
-          commits: eb.ref('excluded.commits'),
-          reviews: eb.ref('excluded.reviews'),
-          discussions: eb.ref('excluded.discussions'),
-          timelineItems: eb.ref('excluded.timelineItems'),
-          updatedAt: eb.ref('excluded.updatedAt'),
-        })),
+        oc
+          .columns(['repositoryId', 'pullRequestNumber'])
+          .doUpdateSet((eb) => ({
+            pullRequest: eb.ref('excluded.pullRequest'),
+            commits: eb.ref('excluded.commits'),
+            reviews: eb.ref('excluded.reviews'),
+            discussions: eb.ref('excluded.discussions'),
+            timelineItems: eb.ref('excluded.timelineItems'),
+            updatedAt: eb.ref('excluded.updatedAt'),
+            fetchedAt: eb.ref('excluded.fetchedAt'),
+          }))
+          .whereRef('excluded.fetchedAt', '>=', 'githubRawData.fetchedAt'),
       )
       .execute()
   }
@@ -73,17 +79,21 @@ export const createStore = ({
    * commits/reviews 等はそのまま残る。
    * 既に raw データがある PR のみ更新し、ない PR は無視する。
    */
-  const updatePrMetadata = async (prs: ShapedGitHubPullRequest[]) => {
+  const updatePrMetadata = async (
+    items: Array<{ pr: ShapedGitHubPullRequest; fetchedAt: string }>,
+  ) => {
     let updated = 0
-    for (const pr of prs) {
+    for (const { pr, fetchedAt } of items) {
       const result = await db
         .updateTable('githubRawData')
         .set({
           pullRequest: JSON.stringify(pr),
           updatedAt: pr.updatedAt ?? null,
+          fetchedAt,
         })
         .where('repositoryId', '=', repositoryId)
         .where('pullRequestNumber', '=', pr.number)
+        .where((eb) => eb('fetchedAt', '<=', fetchedAt))
         .execute()
       if (result[0].numUpdatedRows > 0n) {
         updated++

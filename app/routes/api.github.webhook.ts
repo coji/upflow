@@ -25,9 +25,6 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   const event = request.headers.get('X-GitHub-Event')
-  if (event !== 'installation' && event !== 'installation_repositories') {
-    return new Response(null, { status: 202 })
-  }
 
   try {
     await processGithubWebhookPayload(event, payload)

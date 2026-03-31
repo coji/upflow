@@ -24,37 +24,38 @@ const crawl = command(
       pr: {
         type: [Number],
         description:
-          'Specific PR numbers to refresh (requires --repo). e.g. --repo falcon9 --pr 123',
+          'Specific PR numbers (requires --repository). e.g. --repository org/repo --pr 123',
       },
-      repo: {
+      repository: {
         type: String,
-        description: 'Repository name to target (required with --pr)',
+        description:
+          'Target repository as owner/repo or repository id (required with --pr)',
       },
     },
     help: {
       description:
-        'Fetch from GitHub → analyze → upsert → export → trigger classify. Runs as a durable job.',
+        'Fetch raw PR data from GitHub, then enqueue process (analyze → upsert → export → classify). Runs as a durable job.',
     },
   },
   async (argv) => {
     const { crawlCommand } = await import('./commands/crawl')
     const prNumbers = argv.flags.pr?.length ? argv.flags.pr : undefined
-    if (prNumbers && !argv.flags.repo) {
-      consola.error('--repo is required when using --pr')
+    if (prNumbers && !argv.flags.repository) {
+      consola.error('--repository is required when using --pr')
       process.exit(1)
     }
     await crawlCommand({
       organizationId: argv._.organizationId,
       refresh: argv.flags.refresh,
       prNumbers,
-      repoName: argv.flags.repo,
+      repository: argv.flags.repository,
     })
   },
 )
 
-const recalculate = command(
+const processCmd = command(
   {
-    name: 'recalculate',
+    name: 'process',
     parameters: ['[organization id]'],
     flags: {
       export: {
@@ -65,12 +66,12 @@ const recalculate = command(
     },
     help: {
       description:
-        'Re-analyze raw data → upsert to DB. No GitHub API calls. Runs as a durable job.',
+        'Analyze stored raw data → upsert → export → classify trigger. No GitHub API calls. Runs as a durable job.',
     },
   },
   async (argv) => {
-    const { recalculateCommand } = await import('./commands/recalculate')
-    await recalculateCommand({
+    const { processCommand } = await import('./commands/process')
+    await processCommand({
       organizationId: argv._.organizationId,
       export: argv.flags.export,
     })
@@ -119,7 +120,7 @@ const backfill = command(
     },
     help: {
       description:
-        'Re-fetch PR metadata to fill missing fields in raw data. Runs as a durable job. Run recalculate after this.',
+        'Re-fetch PR metadata to fill missing fields in raw data. Runs as a durable job. Run process after this.',
     },
   },
   async (argv) => {
@@ -151,5 +152,5 @@ process.on('unhandledRejection', async (error) => {
 })
 
 cli({
-  commands: [crawl, recalculate, classify, backfill, report],
+  commands: [crawl, processCmd, classify, backfill, report],
 })

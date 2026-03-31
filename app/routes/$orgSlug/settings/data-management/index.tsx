@@ -53,7 +53,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         )
       }
     })
-    .with('recalculate', async () => {
+    .with('process', async () => {
       const selectedSteps = formData.getAll('steps').map(String)
       const steps = {
         upsert: selectedSteps.includes('upsert'),
@@ -63,7 +63,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       if (!steps.upsert && !steps.export) {
         return data(
           {
-            intent: 'recalculate' as const,
+            intent: 'process' as const,
             error: 'At least one step must be selected',
           },
           { status: 400 },
@@ -71,19 +71,19 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
 
       try {
-        await serverDurably.jobs.recalculate.trigger(
+        await serverDurably.jobs.process.trigger(
           { organizationId: org.id, steps },
           {
-            concurrencyKey: `recalculate:${org.id}`,
+            concurrencyKey: `process:${org.id}`,
             labels: { organizationId: org.id },
           },
         )
-        return data({ intent: 'recalculate' as const, ok: true })
+        return data({ intent: 'process' as const, ok: true })
       } catch {
         return data(
           {
-            intent: 'recalculate' as const,
-            error: 'Failed to start recalculation',
+            intent: 'process' as const,
+            error: 'Failed to start process job',
           },
           { status: 500 },
         )
@@ -126,28 +126,28 @@ function RefreshSection({ isRunning }: { isRunning: boolean }) {
   )
 }
 
-// --- Recalculate Section ---
+// --- Process Section ---
 
-function RecalculateSection({ isRunning }: { isRunning: boolean }) {
+function ProcessSection({ isRunning }: { isRunning: boolean }) {
   const fetcher = useFetcher()
   const [upsert, setUpsert] = useState(true)
   const [exportData, setExportData] = useState(false)
   const noneSelected = !upsert && !exportData
   const isSubmitting = fetcher.state !== 'idle'
   const triggerError =
-    fetcher.data?.intent === 'recalculate' ? fetcher.data?.error : null
+    fetcher.data?.intent === 'process' ? fetcher.data?.error : null
 
   return (
     <Stack>
       <div className="space-y-1">
-        <p className="text-sm font-medium">Recalculate Cycle Times</p>
+        <p className="text-sm font-medium">Process Cycle Times</p>
         <p className="text-muted-foreground text-xs">
           Re-analyze PR data from stored raw data. Select which steps to run.
         </p>
       </div>
       <fetcher.Form method="post">
         <Stack gap="4">
-          <input type="hidden" name="intent" value="recalculate" />
+          <input type="hidden" name="intent" value="process" />
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -182,7 +182,7 @@ function RecalculateSection({ isRunning }: { isRunning: boolean }) {
               loading={isSubmitting}
               disabled={noneSelected || isRunning}
             >
-              Recalculate
+              Process
             </Button>
           </div>
         </Stack>
@@ -271,18 +271,18 @@ export default function DataManagementPage({
   const isCrawlRunning = runs.some(
     (r) => r.jobName === 'crawl' && isRunActive(r.status),
   )
-  const isRecalculateRunning = runs.some(
-    (r) => r.jobName === 'recalculate' && isRunActive(r.status),
+  const isProcessRunning = runs.some(
+    (r) => r.jobName === 'process' && isRunActive(r.status),
   )
 
   return (
     <ContentSection
       title="Data Management"
-      desc="Manage data refresh and recalculation for this organization."
+      desc="Manage data refresh and processing for this organization."
     >
       <Stack gap="6">
         <RefreshSection isRunning={isCrawlRunning} />
-        <RecalculateSection isRunning={isRecalculateRunning} />
+        <ProcessSection isRunning={isProcessRunning} />
         <ExportDataSection orgSlug={orgSlug} />
         <JobHistory
           runs={runs}

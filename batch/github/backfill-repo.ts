@@ -38,8 +38,9 @@ export async function backfillRepo(
       if (pr.files && pr.files.length > 0) continue // already has files
       try {
         const files = await fetcher.files(pr.number)
-        pr.files = files
-        await store.updatePrMetadata([pr])
+        const prWithFiles = { ...pr, files }
+        const fetchedAt = new Date().toISOString()
+        await store.updatePrMetadata([{ pr: prWithFiles, fetchedAt }])
         updated++
       } catch (err) {
         errors++
@@ -63,8 +64,10 @@ export async function backfillRepo(
   const allPullRequests = await fetcher.pullrequests()
   logger.info(`fetched ${allPullRequests.length} PR metadata.`)
 
-  // raw データの pullRequest JSON だけを更新
-  const updated = await store.updatePrMetadata(allPullRequests)
+  const fetchedAt = new Date().toISOString()
+  const updated = await store.updatePrMetadata(
+    allPullRequests.map((pr) => ({ pr, fetchedAt })),
+  )
   logger.info(
     `updated ${updated} raw records in ${repository.owner}/${repository.repo}`,
   )

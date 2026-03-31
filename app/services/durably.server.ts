@@ -6,7 +6,7 @@ import { registerDurablySentryListeners } from '~/app/libs/sentry-node.server'
 import { backfillJob } from '~/app/services/jobs/backfill.server'
 import { classifyJob } from '~/app/services/jobs/classify.server'
 import { crawlJob } from '~/app/services/jobs/crawl.server'
-import { recalculateJob } from '~/app/services/jobs/recalculate.server'
+import { processJob } from '~/app/services/jobs/process.server'
 
 function createDurablyInstance() {
   const database = new SQLite('./data/durably.db')
@@ -23,7 +23,7 @@ function createDurablyInstance() {
       backfill: backfillJob,
       classify: classifyJob,
       crawl: crawlJob,
-      recalculate: recalculateJob,
+      process: processJob,
     },
   })
 }

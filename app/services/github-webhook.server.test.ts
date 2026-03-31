@@ -15,6 +15,32 @@ import * as cache from '~/app/services/cache.server'
 import { closeDb, db } from '~/app/services/db.server'
 import { processGithubWebhookPayload } from './github-webhook.server'
 
+const mockTenantRepoLookup = vi.fn()
+vi.mock('~/app/services/tenant-db.server', () => ({
+  getTenantDb: vi.fn(() => ({
+    selectFrom: () => ({
+      select: () => ({
+        where: () => ({
+          where: () => ({
+            executeTakeFirst: () => mockTenantRepoLookup(),
+          }),
+        }),
+      }),
+    }),
+  })),
+}))
+
+const crawlTriggerMock = vi.fn()
+vi.mock('~/app/services/durably.server', () => ({
+  durably: {
+    jobs: {
+      crawl: {
+        trigger: (...args: unknown[]) => crawlTriggerMock(...args),
+      },
+    },
+  },
+}))
+
 const testDir = path.join(tmpdir(), `github-webhook-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
 const testDbPath = path.join(testDir, 'data.db')
@@ -69,7 +95,6 @@ describe('processGithubWebhookPayload', () => {
 
   afterAll(async () => {
     await closeDb()
-    vi.unstubAllEnvs()
   })
 
   afterEach(() => {
@@ -226,5 +251,93 @@ describe('processGithubWebhookPayload', () => {
   test('ping event is ignored', async () => {
     await processGithubWebhookPayload('ping', { zen: 'x' })
     expect(clearSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('PR webhook enqueue', () => {
+  afterAll(() => {
+    vi.unstubAllEnvs()
+  })
+
+  beforeEach(() => {
+    vi.stubEnv('UPFLOW_DATA_DIR', path.dirname(testDbPath))
+    crawlTriggerMock.mockReset()
+    mockTenantRepoLookup.mockReset()
+    mockTenantRepoLookup.mockResolvedValue({ id: 'tracked-repo' })
+  })
+
+  test('pull_request enqueues crawl with repository id and PR number', async () => {
+    await processGithubWebhookPayload('pull_request', {
+      action: 'opened',
+      installation: { id: 42 },
+      repository: { name: 'test-repo', owner: { login: 'test-owner' } },
+      pull_request: { number: 7 },
+    })
+
+    expect(crawlTriggerMock).toHaveBeenCalledWith(
+      {
+        organizationId: 'o1',
+        refresh: false,
+        repositoryId: 'tracked-repo',
+        prNumbers: [7],
+      },
+      expect.objectContaining({
+        concurrencyKey: 'crawl:o1',
+        coalesce: 'skip',
+        labels: { organizationId: 'o1' },
+      }),
+    )
+  })
+
+  test('pull_request_review uses pull_request.number', async () => {
+    await processGithubWebhookPayload('pull_request_review', {
+      action: 'submitted',
+      installation: { id: 42 },
+      repository: { name: 'test-repo', owner: { login: 'test-owner' } },
+      pull_request: { number: 12 },
+    })
+
+    expect(crawlTriggerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ prNumbers: [12] }),
+      expect.anything(),
+    )
+  })
+
+  test('pull_request_review_comment enqueues crawl', async () => {
+    await processGithubWebhookPayload('pull_request_review_comment', {
+      action: 'created',
+      installation: { id: 42 },
+      repository: { name: 'test-repo', owner: { login: 'test-owner' } },
+      pull_request: { number: 3 },
+    })
+
+    expect(crawlTriggerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ prNumbers: [3] }),
+      expect.anything(),
+    )
+  })
+
+  test('unknown installation does not enqueue', async () => {
+    await processGithubWebhookPayload('pull_request', {
+      action: 'opened',
+      installation: { id: 99999 },
+      repository: { name: 'test-repo', owner: { login: 'test-owner' } },
+      pull_request: { number: 1 },
+    })
+
+    expect(crawlTriggerMock).not.toHaveBeenCalled()
+  })
+
+  test('untracked repository does not enqueue', async () => {
+    mockTenantRepoLookup.mockResolvedValue(undefined)
+
+    await processGithubWebhookPayload('pull_request', {
+      action: 'opened',
+      installation: { id: 42 },
+      repository: { name: 'other-repo', owner: { login: 'test-owner' } },
+      pull_request: { number: 1 },
+    })
+
+    expect(crawlTriggerMock).not.toHaveBeenCalled()
   })
 })

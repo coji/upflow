@@ -1,5 +1,5 @@
 /**
- * crawl と recalculate ジョブで共有する analyze → upsert → export → finalize ステップ群
+ * process ジョブで使う analyze → upsert → export → finalize ステップ群
  */
 import type { StepContext } from '@coji/durably'
 import type { Selectable } from 'kysely'

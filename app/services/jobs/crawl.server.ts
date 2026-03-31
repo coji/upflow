@@ -5,14 +5,11 @@ import {
   assertOrgGithubAuthResolvable,
   resolveOctokitFromOrg,
 } from '~/app/services/github-octokit.server'
+import { shouldTriggerFullOrgProcessJob } from '~/app/services/jobs/crawl-process-handoff.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
 import { createFetcher } from '~/batch/github/fetcher'
 import { createStore } from '~/batch/github/store'
-import {
-  analyzeAndFinalizeSteps,
-  triggerClassifyStep,
-} from './shared-steps.server'
 
 export const crawlJob = defineJob({
   name: 'crawl',
@@ -20,7 +17,7 @@ export const crawlJob = defineJob({
     organizationId: z.string(),
     refresh: z.boolean().default(false),
     prNumbers: z.array(z.number()).optional(),
-    repoName: z.string().optional(),
+    repositoryId: z.string().optional(),
   }),
   output: z.object({
     fetchedRepos: z.number(),
@@ -29,10 +26,12 @@ export const crawlJob = defineJob({
   run: async (step, input) => {
     const orgId = input.organizationId as OrganizationId
 
-    // Fetch org once before step (secrets stay outside step output)
+    if (input.prNumbers?.length && !input.repositoryId) {
+      throw new Error('repositoryId is required when prNumbers is set')
+    }
+
     const fullOrg = await getOrganization(orgId)
 
-    // Step 1: Validate and extract serializable org data (no secrets in step output)
     const organization = await step.run('load-organization', () => {
       if (!fullOrg.organizationSetting) {
         throw new Error('No organization setting configured')
@@ -58,10 +57,12 @@ export const crawlJob = defineJob({
 
     const FETCH_ALL_SENTINEL = '2000-01-01T00:00:00Z'
 
-    // Step 2: Fetch per repo
-    const targetRepos = input.repoName
-      ? organization.repositories.filter((r) => r.repo === input.repoName)
+    const targetRepos = input.repositoryId
+      ? organization.repositories.filter((r) => r.id === input.repositoryId)
       : organization.repositories
+    if (input.repositoryId && targetRepos.length === 0) {
+      throw new Error('repositoryId does not match any organization repository')
+    }
     const repoCount = targetRepos.length
 
     for (let i = 0; i < targetRepos.length; i++) {
@@ -78,7 +79,6 @@ export const crawlJob = defineJob({
         octokit,
       })
 
-      // Step 2a: Fetch tags (if tag-based release detection)
       if (repo.releaseDetectionMethod === 'tags') {
         await step.run(`fetch-tags:${repoLabel}`, async () => {
           step.progress(i + 1, repoCount, `Fetching tags: ${repoLabel}...`)
@@ -88,7 +88,6 @@ export const crawlJob = defineJob({
         })
       }
 
-      // Step 2b: Determine lastFetchedAt (before list fetch for early termination)
       const lastFetchedAt = await step.run(
         `last-fetched-at:${repoLabel}`,
         async () => {
@@ -100,11 +99,9 @@ export const crawlJob = defineJob({
         },
       )
 
-      // Step 2c: Fetch lightweight PR list (number + updatedAt only)
       const prNumberSet = input.prNumbers ? new Set(input.prNumbers) : null
       const prsToFetch: Array<{ number: number }> = prNumberSet
-        ? // --pr 指定時: リスト取得をスキップし、指定番号だけ処理する
-          (input.prNumbers?.map((n) => ({ number: n })) ?? [])
+        ? (input.prNumbers?.map((n) => ({ number: n })) ?? [])
         : await step.run(`fetch-prs:${repoLabel}`, async () => {
             step.progress(i + 1, repoCount, `Fetching PR list: ${repoLabel}...`)
             const stopBefore =
@@ -114,7 +111,6 @@ export const crawlJob = defineJob({
             return await fetcher.pullrequestList(stopBefore)
           })
 
-      // Step 2d: Fetch details per PR (including PR metadata)
       const repoUpdated = new Set<number>()
       for (let j = 0; j < prsToFetch.length; j++) {
         const pr = prsToFetch[j]
@@ -126,6 +122,7 @@ export const crawlJob = defineJob({
               prsToFetch.length,
               `Fetching ${repoLabel}#${pr.number} (${j + 1}/${prsToFetch.length})...`,
             )
+            const fetchedAt = new Date().toISOString()
             try {
               const [
                 prMetadata,
@@ -142,13 +139,17 @@ export const crawlJob = defineJob({
                 fetcher.timelineItems(pr.number),
                 fetcher.files(pr.number),
               ])
-              prMetadata.files = files
-              await store.savePrData(prMetadata, {
-                commits,
-                reviews,
-                discussions,
-                timelineItems,
-              })
+              const prForSave = { ...prMetadata, files }
+              await store.savePrData(
+                prForSave,
+                {
+                  commits,
+                  reviews,
+                  discussions,
+                  timelineItems,
+                },
+                fetchedAt,
+              )
               return { saved: true as const, number: pr.number }
             } catch (e) {
               step.log.warn(
@@ -168,9 +169,8 @@ export const crawlJob = defineJob({
       }
     }
 
-    // Skip analyze if no updates (and not a refresh or specific PR fetch)
     if (!input.refresh && !input.prNumbers && updatedPrNumbers.size === 0) {
-      step.log.info('No updated PRs, skipping analyze.')
+      step.log.info('No updated PRs, skipping process.')
       await step.run('finalize', () => {
         clearOrgCache(orgId)
       })
@@ -183,23 +183,49 @@ export const crawlJob = defineJob({
       )
     }
 
-    // Steps 3-6: Analyze → Upsert → Export → Finalize
-    const { pullCount } = await analyzeAndFinalizeSteps(
-      step,
-      orgId,
-      organization,
-      {
-        filterPrNumbers:
-          input.refresh && !input.prNumbers ? undefined : updatedPrNumbers,
-        skipRepo:
-          input.refresh && !input.prNumbers
-            ? undefined
-            : (repoId) => !updatedPrNumbers.has(repoId),
-      },
-    )
+    let pullCount = 0
+    for (const set of updatedPrNumbers.values()) {
+      pullCount += set.size
+    }
 
-    // Trigger classify job (fire-and-forget)
-    await triggerClassifyStep(step, orgId)
+    await step.run('trigger-process', async () => {
+      const { durably } = await import('~/app/services/durably.server')
+      const processOpts = {
+        concurrencyKey: `process:${orgId}`,
+        labels: { organizationId: orgId },
+        coalesce: 'skip' as const,
+      }
+      if (
+        shouldTriggerFullOrgProcessJob({
+          refresh: input.refresh,
+          repositoryId: input.repositoryId,
+          prNumbers: input.prNumbers,
+        })
+      ) {
+        await durably.jobs.process.trigger(
+          { organizationId: orgId },
+          processOpts,
+        )
+      } else {
+        const scopes = [...updatedPrNumbers.entries()].map(
+          ([repositoryId, set]) => ({
+            repositoryId,
+            prNumbers: [...set],
+          }),
+        )
+        if (scopes.length === 0) {
+          step.log.info(
+            'No updated PRs for scoped process, skipping process job.',
+          )
+          clearOrgCache(orgId)
+          return
+        }
+        await durably.jobs.process.trigger(
+          { organizationId: orgId, scopes },
+          processOpts,
+        )
+      }
+    })
 
     return { fetchedRepos: repoCount, pullCount }
   },
