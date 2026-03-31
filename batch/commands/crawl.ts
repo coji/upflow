@@ -6,11 +6,13 @@ import { shutdown } from './shutdown'
 interface CrawlCommandProps {
   organizationId?: string
   refresh: boolean
+  prNumbers?: number[]
 }
 
 export async function crawlCommand({
   organizationId,
   refresh,
+  prNumbers,
 }: CrawlCommandProps) {
   const result = await requireOrganization(organizationId)
   if (!result) return
@@ -18,12 +20,15 @@ export async function crawlCommand({
   const { orgId } = result
 
   try {
-    consola.info(
-      `Starting crawl for ${orgId}${refresh ? ' (full refresh)' : ''}...`,
-    )
+    const prLabel = prNumbers
+      ? ` (PRs: ${prNumbers.join(', ')})`
+      : refresh
+        ? ' (full refresh)'
+        : ''
+    consola.info(`Starting crawl for ${orgId}${prLabel}...`)
 
     const { output } = await durably.jobs.crawl.triggerAndWait(
-      { organizationId: orgId, refresh },
+      { organizationId: orgId, refresh, prNumbers },
       {
         concurrencyKey: `crawl:${orgId}`,
         labels: { organizationId: orgId },
