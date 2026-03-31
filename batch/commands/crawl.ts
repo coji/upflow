@@ -1,6 +1,7 @@
 import consola from 'consola'
 import type { Selectable } from 'kysely'
 import { durably } from '~/app/services/durably.server'
+import { crawlConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import { requireOrganization } from './helpers'
 import { shutdown } from './shutdown'
@@ -67,7 +68,7 @@ export async function crawlCommand({
         repositoryId,
       },
       {
-        concurrencyKey: `crawl:${orgId}`,
+        concurrencyKey: crawlConcurrencyKey(orgId),
         labels: { organizationId: orgId },
         onProgress: (p) => {
           if (p.message) consola.info(p.message)

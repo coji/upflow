@@ -2,24 +2,13 @@ import createDebug from 'debug'
 import type { Kysely } from 'kysely'
 import { db, type DB } from '~/app/services/db.server'
 import {
-  type InstallationLike,
+  findActiveLinkByInstallation,
   readInstallation,
   selectionFromInstallation,
+  type InstallationLike,
 } from '~/app/services/github-webhook-shared.server'
 
 const debug = createDebug('app:github-webhook:installation')
-
-async function findActiveLinkByInstallation(
-  trx: Kysely<DB.DB>,
-  installationId: number,
-) {
-  return await trx
-    .selectFrom('githubAppLinks')
-    .selectAll()
-    .where('installationId', '=', installationId)
-    .where('deletedAt', 'is', null)
-    .executeTakeFirst()
-}
 
 async function findActiveLinkByInstallationOrAccount(
   trx: Kysely<DB.DB>,

@@ -13,6 +13,10 @@ import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import { durably } from '~/app/services/durably'
 import { durably as serverDurably } from '~/app/services/durably.server'
+import {
+  crawlConcurrencyKey,
+  processConcurrencyKey,
+} from '~/app/services/jobs/concurrency-keys.server'
 import type { JobSteps } from '~/app/services/jobs/shared-steps.server'
 import ContentSection from '../+components/content-section'
 import { JobHistory, isRunActive } from './+components/job-history'
@@ -41,7 +45,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         await serverDurably.jobs.crawl.trigger(
           { organizationId: org.id, refresh: true },
           {
-            concurrencyKey: `crawl:${org.id}`,
+            concurrencyKey: crawlConcurrencyKey(org.id),
             labels: { organizationId: org.id },
           },
         )
@@ -74,7 +78,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         await serverDurably.jobs.process.trigger(
           { organizationId: org.id, steps },
           {
-            concurrencyKey: `process:${org.id}`,
+            concurrencyKey: processConcurrencyKey(org.id),
             labels: { organizationId: org.id },
           },
         )

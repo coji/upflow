@@ -1,1 +1,87 @@
-tasks: []
+tasks:
+  - worktree: false
+    branch: feat/webhook-realtime-pr-update
+    piece: implement-step
+    issue: 255
+    auto_pr: false
+    draft_pr: false
+    name: webhook-realtime-pr-update-impl
+    status: failed
+    slug: 20260331-113806-wh255
+    task_dir: .takt/tasks/20260331-113806-wh255
+    created_at: 2026-03-31T11:38:06.000Z
+    started_at: 2026-03-31T11:41:07.279Z
+    completed_at: 2026-03-31T12:09:48.132Z
+    owner_pid: null
+    failure:
+      movement: fix
+      error: "Movement execution failed: All parallel sub-movements failed:
+        arch-review: Report phase failed for architect-review.md: You've hit
+        your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro),
+        visit https://chatgpt.com/codex/settings/usage to purchase more credits
+        or try again at Apr 3rd, 2026 11:33 PM.; supervise: Report phase failed
+        for supervisor-validation.md: You've hit your usage limit. Upgrade to
+        Pro (https://chatgpt.com/explore/pro), visit
+        https://chatgpt.com/codex/settings/usage to purchase more credits or try
+        again at Apr 3rd, 2026 11:33 PM."
+      last_message: >-
+        レビュー報告を確認し、指摘を修正します。
+
+
+
+
+
+
+        レビュー指摘を修正します: PR オブジェクトの直接ミューテーションと、リポジトリスコープ付き refresh 時の full-org
+        `process` 誤起動。
+
+
+
+        PR オブジェクトの非ミュータブル化と、リポジトリスコープ付き refresh 時の full-org `process`
+        誤判定を修正します。ヘルパーと回帰テストを追加します。
+
+
+
+
+
+
+
+
+
+
+
+
+        対応内容は次のとおりです。
+
+
+        ## 1. PR オブジェクトの直接ミューテーション（ARCH-NEW-direct-pr-files-mutation /
+        VAL-NEW-direct-mutation）
+
+        - **`crawl.server.ts`**: `prMetadata.files = files` をやめ、`const prForSave
+        = { ...prMetadata, files }` を `savePrData` に渡すように変更。
+
+        - **`$pull/index.tsx`**: 同様に `const prForSave = { ...prMetadata, files
+        }` を使用。
+
+        - **`backfill-repo.ts`**: `pr.files = files` をやめ、`const prWithFiles = {
+        ...pr, files }` を `updatePrMetadata` に渡すように変更。
+
+
+        ## 2. リポジトリ指定付き refresh で full-org `process` が走る問題（carry-over
+        ARCH-NEW-crawl-scoped-handoff）
+
+        - **`crawl-process-handoff.server.ts`**
+        を追加し、`shouldTriggerFullOrgProcessJob` で  
+          「`refresh` かつ **`repositoryId` なし** かつ **PR 番号の指定なし**」のときだけ org 全体の `process` と判定。
+        - **`crawl.server.ts`**: 従来の `input.refresh && !input.prNumbers`
+        を、この関数呼び出しに置き換え。`--repository … --refresh` のときは常に scoped
+        側（`updatedPrNumbers` 由来の `scopes`）へ。
+
+
+        ## 3. 回帰テスト
+
+        - **`crawl-process-handoff.server.test.ts`**: 上記判定のユニットテストを追加（リポジトリ付き
+        refresh が full-org にならないこと等）。
+
+
+        `pnpm validate` は問題なく完了しています（テスト 310 件）。

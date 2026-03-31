@@ -33,3 +33,14 @@ export function selectionFromInstallation(
 ): 'all' | 'selected' {
   return installation.repository_selection === 'selected' ? 'selected' : 'all'
 }
+
+export async function findActiveLinkByInstallation<
+  T extends import('kysely').Kysely<import('~/app/services/db.server').DB.DB>,
+>(dbOrTrx: T, installationId: number) {
+  return await dbOrTrx
+    .selectFrom('githubAppLinks')
+    .selectAll()
+    .where('installationId', '=', installationId)
+    .where('deletedAt', 'is', null)
+    .executeTakeFirst()
+}

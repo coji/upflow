@@ -1,6 +1,7 @@
 import consola from 'consola'
 import schedule from 'node-schedule'
 import { captureExceptionToSentry } from '~/app/libs/sentry-node.server'
+import { crawlConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { listAllOrganizations } from './db'
 import { logger } from './helper/logger'
@@ -35,7 +36,7 @@ export const createJobScheduler = () => {
             await durably.jobs.crawl.trigger(
               { organizationId: orgId, refresh: false },
               {
-                concurrencyKey: `crawl:${orgId}`,
+                concurrencyKey: crawlConcurrencyKey(orgId),
                 labels: { organizationId: orgId },
               },
             )

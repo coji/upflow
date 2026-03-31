@@ -1,5 +1,6 @@
 import consola from 'consola'
 import { durably } from '~/app/services/durably.server'
+import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { requireOrganization } from './helpers'
 import { shutdown } from './shutdown'
 
@@ -28,7 +29,7 @@ export async function processCommand({
     const { output } = await durably.jobs.process.triggerAndWait(
       { organizationId: orgId, steps },
       {
-        concurrencyKey: `process:${orgId}`,
+        concurrencyKey: processConcurrencyKey(orgId),
         labels: { organizationId: orgId },
         onProgress: (p) => {
           if (p.message) consola.info(p.message)

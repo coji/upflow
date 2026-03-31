@@ -5,6 +5,7 @@ import {
   assertOrgGithubAuthResolvable,
   resolveOctokitFromOrg,
 } from '~/app/services/github-octokit.server'
+import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { shouldTriggerFullOrgProcessJob } from '~/app/services/jobs/crawl-process-handoff.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
@@ -191,7 +192,7 @@ export const crawlJob = defineJob({
     await step.run('trigger-process', async () => {
       const { durably } = await import('~/app/services/durably.server')
       const processOpts = {
-        concurrencyKey: `process:${orgId}`,
+        concurrencyKey: processConcurrencyKey(orgId),
         labels: { organizationId: orgId },
         coalesce: 'skip' as const,
       }
@@ -213,13 +214,6 @@ export const crawlJob = defineJob({
             prNumbers: [...set],
           }),
         )
-        if (scopes.length === 0) {
-          step.log.info(
-            'No updated PRs for scoped process, skipping process job.',
-          )
-          clearOrgCache(orgId)
-          return
-        }
         await durably.jobs.process.trigger(
           { organizationId: orgId, scopes },
           processOpts,

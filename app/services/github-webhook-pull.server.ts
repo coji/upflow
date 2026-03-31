@@ -1,8 +1,10 @@
 import { db } from '~/app/services/db.server'
 import {
+  findActiveLinkByInstallation,
   isRecord,
   readInstallation,
 } from '~/app/services/github-webhook-shared.server'
+import { crawlConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -36,12 +38,7 @@ export async function handlePullWebhookEvent(
   const installation = readInstallation(payload)
   if (!installation) return
 
-  const link = await db
-    .selectFrom('githubAppLinks')
-    .select('organizationId')
-    .where('installationId', '=', installation.id)
-    .where('deletedAt', 'is', null)
-    .executeTakeFirst()
+  const link = await findActiveLinkByInstallation(db, installation.id)
   if (!link) return
 
   const orgId = link.organizationId as OrganizationId
@@ -70,7 +67,7 @@ export async function handlePullWebhookEvent(
       prNumbers: [prNumber],
     },
     {
-      concurrencyKey: `crawl:${orgId}`,
+      concurrencyKey: crawlConcurrencyKey(orgId),
       labels: { organizationId: orgId },
       coalesce: 'skip',
     },

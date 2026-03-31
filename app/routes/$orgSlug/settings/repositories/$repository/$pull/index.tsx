@@ -11,6 +11,7 @@ import {
   getIntegration,
 } from '~/app/services/github-integration-queries.server'
 import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
+import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { createFetcher } from '~/batch/github/fetcher'
 import { createStore } from '~/batch/github/store'
 import type { Route } from './+types/index'
@@ -161,7 +162,7 @@ export const action = async ({
           scopes: [{ repositoryId, prNumbers: [pullId] }],
         },
         {
-          concurrencyKey: `process:${organization.id}`,
+          concurrencyKey: processConcurrencyKey(organization.id),
           labels: { organizationId: organization.id },
         },
       )
