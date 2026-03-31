@@ -12,11 +12,11 @@ importers:
         specifier: 1.3.0
         version: 1.3.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@coji/durably':
-        specifier: ^0.14.0
-        version: 0.14.0(kysely@0.28.13)(zod@4.3.6)
+        specifier: ^0.15.0
+        version: 0.15.0(kysely@0.28.13)(zod@4.3.6)
       '@coji/durably-react':
-        specifier: ^0.14.0
-        version: 0.14.0(@coji/durably@0.14.0(kysely@0.28.13)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: ^0.15.0
+        version: 0.15.0(@coji/durably@0.15.0(kysely@0.28.13)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@coji/zodix':
         specifier: 0.7.0
         version: 0.7.0(zod@4.3.6)
@@ -729,8 +729,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@coji/durably-react@0.14.0':
-    resolution: {integrity: sha512-zXQQ2ICBwhp1zUu7+mAll1d665wBYINk6IvkOopQPpiJ1Kd3veNPMMneZVxgq8yRSEkUpdq24vMhbXfKkFid0Q==}
+  '@coji/durably-react@0.15.0':
+    resolution: {integrity: sha512-+7nTDRQf9o+nFCCdXWFBYmVxcsHAcRiA7TU45LZty4xnhguSPn9nzwIu/J7qW7pYZLg2+VwmLCsjmSnKQm7MPA==}
     peerDependencies:
       '@coji/durably': '*'
       react: '>=19.0.0'
@@ -739,8 +739,8 @@ packages:
       '@coji/durably':
         optional: true
 
-  '@coji/durably@0.14.0':
-    resolution: {integrity: sha512-nu2YyuxG34LpKiAiJ6pT7r5Vnl9ioxIXYPqTyXVtyjUOaTWVvLimqwgflXaNACxZfIvrBFTyP6UFXJlhe5uC0Q==}
+  '@coji/durably@0.15.0':
+    resolution: {integrity: sha512-lMeq6jYsjtjPtnMfvS2m+gAfgp7I/hDIoYzW8AvT5iSy8O8bwDReuL09kfxJy0hFtu6PeIhINqphfme5jCxLmQ==}
     peerDependencies:
       kysely: ^0.27.0
       zod: ^4.0.0
@@ -4768,8 +4768,8 @@ packages:
     resolution: {integrity: sha512-3O/iVVsJAPsOnpwWIeD+d6z/7PmqApyQePUtCndjatj/9I5LylHvt5qluFaBT3I5h3r1ejfR056c+FCv+NnNXg==}
     engines: {node: 18 || 20 || >=22}
 
-  path-to-regexp@0.1.12:
-    resolution: {integrity: sha512-RA1GjUVMnvYFxuqovrEqZoxxW5NUZqbwKtYz/Tt7nXerk0LbLblQmrsgdeOxV5SFHf0UDggjS/bSeOZwt1pmEQ==}
+  path-to-regexp@0.1.13:
+    resolution: {integrity: sha512-A/AGNMFN3c8bOlvV9RreMdrv7jsmF9XIfDeCd87+I8RNg6s78BhJxMu69NEMHBSJFxKidViTEdruRwEk/WIKqA==}
 
   path-to-regexp@6.3.0:
     resolution: {integrity: sha512-Yhpw4T9C6hPpgPeA28us07OJeqZ5EzQTkbfwuhsUg0c237RomFoETJgmp2sa3F/41gfLE6G5cqcYwznmeEeOlQ==}
@@ -6675,14 +6675,14 @@ snapshots:
   '@biomejs/cli-win32-x64@2.4.8':
     optional: true
 
-  '@coji/durably-react@0.14.0(@coji/durably@0.14.0(kysely@0.28.13)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@coji/durably-react@0.15.0(@coji/durably@0.15.0(kysely@0.28.13)(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
     optionalDependencies:
-      '@coji/durably': 0.14.0(kysely@0.28.13)(zod@4.3.6)
+      '@coji/durably': 0.15.0(kysely@0.28.13)(zod@4.3.6)
 
-  '@coji/durably@0.14.0(kysely@0.28.13)(zod@4.3.6)':
+  '@coji/durably@0.15.0(kysely@0.28.13)(zod@4.3.6)':
     dependencies:
       better-sqlite3: 12.6.2
       kysely: 0.28.13
@@ -9964,7 +9964,7 @@ snapshots:
       methods: 1.1.2
       on-finished: 2.4.1
       parseurl: 1.3.3
-      path-to-regexp: 0.1.12
+      path-to-regexp: 0.1.13
       proxy-addr: 2.0.7
       qs: 6.14.2
       range-parser: 1.2.1
@@ -10937,7 +10937,7 @@ snapshots:
       lru-cache: 11.2.7
       minipass: 7.1.3
 
-  path-to-regexp@0.1.12:
+  path-to-regexp@0.1.13:
     optional: true
 
   path-to-regexp@6.3.0: {}
