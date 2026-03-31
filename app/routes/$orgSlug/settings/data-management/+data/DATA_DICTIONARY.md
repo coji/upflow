@@ -7,36 +7,36 @@ Each row represents **one pull request**. Reviewer information is nested as a JS
 
 ## Columns
 
-| Column                    | Type        | Description                                                                               |
-| ------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
-| `repo`                    | string      | Repository in `owner/repo` format                                                         |
-| `number`                  | integer     | Pull request number                                                                       |
-| `title`                   | string      | Pull request title                                                                        |
-| `url`                     | string      | GitHub URL                                                                                |
-| `state`                   | string      | `open`, `closed`, or `merged`                                                             |
-| `author`                  | string      | GitHub login of the PR author                                                             |
-| `source_branch`           | string      | Source (head) branch name                                                                 |
-| `target_branch`           | string      | Target (base) branch name                                                                 |
-| `first_committed_at`      | datetime    | First commit timestamp (ISO 8601 UTC)                                                     |
-| `pull_request_created_at` | datetime    | PR creation timestamp (ISO 8601 UTC)                                                      |
-| `first_reviewed_at`       | datetime?   | First review submission timestamp                                                         |
-| `merged_at`               | datetime?   | Merge timestamp                                                                           |
-| `released_at`             | datetime?   | Release timestamp (based on release detection config)                                     |
-| `coding_time`             | float?      | Time from first commit to PR creation (days)                                              |
-| `pickup_time`             | float?      | Time from PR creation to first review (days)                                              |
-| `review_time`             | float?      | Time from first review to merge (days)                                                    |
-| `deploy_time`             | float?      | Time from merge to release (days)                                                         |
-| `total_time`              | float?      | Total cycle time from first commit to release (days)                                      |
-| `additions`               | integer?    | Lines added                                                                               |
-| `deletions`               | integer?    | Lines deleted                                                                             |
-| `changed_files`           | integer?    | Number of files changed                                                                   |
-| `complexity`              | string?     | AI-classified complexity (e.g., `trivial`, `simple`, `medium`, `complex`, `very_complex`) |
-| `complexity_reason`       | string?     | AI explanation for complexity classification                                              |
-| `corrected_complexity`    | string?     | Manually corrected complexity (overrides AI)                                              |
-| `author_display_name`     | string?     | Author's display name in the organization                                                 |
-| `author_is_active`        | boolean?    | Whether the author is marked as active                                                    |
-| `team_name`               | string?     | Team the repository belongs to                                                            |
-| `reviewers`               | JSON string | Array of reviewer objects (see below)                                                     |
+| Column                    | Type        | Description                                                                                                 |
+| ------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| `repo`                    | string      | Repository in `owner/repo` format                                                                           |
+| `number`                  | integer     | Pull request number                                                                                         |
+| `title`                   | string      | Pull request title                                                                                          |
+| `url`                     | string      | GitHub URL                                                                                                  |
+| `state`                   | string      | `open`, `closed`, or `merged`                                                                               |
+| `author`                  | string      | GitHub login of the PR author                                                                               |
+| `source_branch`           | string      | Source (head) branch name                                                                                   |
+| `target_branch`           | string      | Target (base) branch name                                                                                   |
+| `first_committed_at`      | datetime    | First commit timestamp (ISO 8601 UTC)                                                                       |
+| `pull_request_created_at` | datetime    | PR creation timestamp (ISO 8601 UTC)                                                                        |
+| `first_reviewed_at`       | datetime?   | First review submission timestamp                                                                           |
+| `merged_at`               | datetime?   | Merge timestamp                                                                                             |
+| `released_at`             | datetime?   | Release timestamp (based on release detection config)                                                       |
+| `coding_time`             | float?      | Time from first commit to first review request when available, otherwise PR creation (days)                 |
+| `pickup_time`             | float?      | Time from first review request to first review when available, otherwise PR creation to first review (days) |
+| `review_time`             | float?      | Time from first review to merge (days)                                                                      |
+| `deploy_time`             | float?      | Time from merge to release (days)                                                                           |
+| `total_time`              | float?      | Total cycle time from first commit to release (days)                                                        |
+| `additions`               | integer?    | Lines added                                                                                                 |
+| `deletions`               | integer?    | Lines deleted                                                                                               |
+| `changed_files`           | integer?    | Number of files changed                                                                                     |
+| `complexity`              | string?     | AI-classified complexity (e.g., `trivial`, `simple`, `medium`, `complex`, `very_complex`)                   |
+| `complexity_reason`       | string?     | AI explanation for complexity classification                                                                |
+| `corrected_complexity`    | string?     | Manually corrected complexity (overrides AI)                                                                |
+| `author_display_name`     | string?     | Author's display name in the organization                                                                   |
+| `author_is_active`        | boolean?    | Whether the author is marked as active                                                                      |
+| `team_name`               | string?     | Team the repository belongs to                                                                              |
+| `reviewers`               | JSON string | Array of reviewer objects (see below)                                                                       |
 
 ### Optional Raw Data Columns (opt-in)
 
@@ -67,12 +67,13 @@ Each element in the `reviewers` JSON array:
 ## Cycle Time Calculation
 
 ```text
-|-- coding_time --|-- pickup_time --|-- review_time --|-- deploy_time --|
-first_committed_at  pr_created_at    first_reviewed_at  merged_at        released_at
+|-------- coding_time ---------|-- pickup_time --|-- review_time --|-- deploy_time --|
+first_committed_at    review_requested_at*    first_reviewed_at  merged_at        released_at
 ```
 
-- **coding_time**: First commit → PR creation
-- **pickup_time**: PR creation → First review
+- `review_requested_at*` is an internal calculation boundary only. No new export column is added.
+- **coding_time**: First commit → First review request, or PR creation when no review request event exists
+- **pickup_time**: First review request → First review, or PR creation → First review when no review request event exists
 - **review_time**: First review → Merge
 - **deploy_time**: Merge → Release
 - **total_time**: First commit → Release

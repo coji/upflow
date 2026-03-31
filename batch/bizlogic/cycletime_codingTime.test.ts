@@ -6,6 +6,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: null,
+        pickupStartedAt: null,
         pullRequestCreatedAt: null,
       }),
     ).toBeNull()
@@ -15,6 +16,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: null,
+        pickupStartedAt: null,
         pullRequestCreatedAt: '2022-08-01T10:00:00Z',
       }),
     ).toBeNull()
@@ -24,6 +26,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01T10:00:00Z',
+        pickupStartedAt: null,
         pullRequestCreatedAt: null,
       }),
     ).toBeNull()
@@ -33,6 +36,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-10T10:00:00Z',
+        pickupStartedAt: null,
         pullRequestCreatedAt: '2022-08-10T10:00:00Z',
       }),
     ).toStrictEqual(0)
@@ -42,6 +46,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01T10:00:00Z',
+        pickupStartedAt: null,
         pullRequestCreatedAt: '2022-08-02T11:00:00Z',
       }),
     ).toStrictEqual(1 + 1 / 24)
@@ -51,6 +56,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-02T11:00:00Z',
+        pickupStartedAt: null,
         pullRequestCreatedAt: '2022-08-01T10:00:00Z',
       }),
     ).toStrictEqual(1 + 1 / 24)
@@ -60,6 +66,7 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01T10:00:00Z',
+        pickupStartedAt: null,
         pullRequestCreatedAt: '2023-08-01T10:00:00Z',
       }),
     ).toStrictEqual(365)
@@ -69,8 +76,19 @@ describe('codingTime', () => {
     expect(
       codingTime({
         firstCommittedAt: '2022-08-01T10:00:00Z',
+        pickupStartedAt: null,
         pullRequestCreatedAt: '2062-08-01T10:00:00Z',
       }),
     ).toStrictEqual(40 * 365 + 10) // うるう年が10年 = +10日分ある
+  })
+
+  test('uses pickupStartedAt when present', () => {
+    expect(
+      codingTime({
+        firstCommittedAt: '2022-08-01T10:00:00Z',
+        pickupStartedAt: '2022-08-03T10:00:00Z',
+        pullRequestCreatedAt: '2022-08-02T10:00:00Z',
+      }),
+    ).toStrictEqual(2)
   })
 })

@@ -54,7 +54,7 @@ const prs: ShapedGitHubPullRequest[] = [
     updatedAt: '2024-01-03T00:00:00Z',
     mergedAt: '2024-01-02T00:00:00Z',
     closedAt: '2024-01-02T00:00:00Z',
-    reviewers: [{ login: 'reviewer1', requestedAt: '2024-01-01T01:00:00Z' }],
+    reviewers: [{ login: 'reviewer1', requestedAt: null }],
   },
   {
     ...basePr,
@@ -184,9 +184,34 @@ const discussionsMap: Record<number, ShapedGitHubReviewComment[]> = {
 const timelineItemsMap: Record<number, ShapedTimelineItem[]> = {
   1: [
     {
-      type: 'review_requested',
-      createdAt: '2024-01-01T01:00:00Z',
+      type: 'ReviewRequestedEvent',
+      createdAt: '2024-01-01T09:00:00Z',
       reviewer: 'reviewer1',
+      reviewerType: 'User',
+    },
+    {
+      type: 'ReviewRequestedEvent',
+      createdAt: '2024-01-01T02:00:00Z',
+      reviewer: 'renovate',
+      reviewerType: 'Bot',
+    },
+    {
+      type: 'ReviewRequestedEvent',
+      createdAt: '2024-01-01T03:00:00Z',
+      reviewer: 'author1',
+      reviewerType: 'User',
+    },
+    {
+      type: 'ReviewRequestedEvent',
+      createdAt: '2024-01-01T06:00:00Z',
+      reviewer: 'reviewer1',
+      reviewerType: 'User',
+    },
+    {
+      type: 'ReviewRequestedEvent',
+      createdAt: '2024-01-01T04:00:00Z',
+      reviewer: 'mannequin-reviewer',
+      reviewerType: 'Mannequin',
     },
   ],
   2: [],
@@ -297,5 +322,36 @@ describe('buildPullRequests filter', () => {
     const pr3Reviewers = result.reviewers.find((r) => r.pullRequestNumber === 3)
     expect(pr3Reviewers).toBeDefined()
     expect(pr3Reviewers?.reviewers).toEqual([])
+  })
+
+  test('earliest eligible request is used for PR row while reviewer snapshot keeps latest requestedAt', async () => {
+    const result = await buildPullRequests(config, prs, mockLoaders)
+
+    const pr1 = result.pulls.find((pull) => pull.number === 1)
+    const pr1Reviewers = result.reviewers.find(
+      (reviewer) => reviewer.pullRequestNumber === 1,
+    )
+
+    expect(pr1?.codingTime).toBe(1 + 6 / 24)
+    expect(pr1?.pickupTime).toBe(4 / 24)
+    expect(pr1?.totalTime).toBe(8)
+    expect(pr1Reviewers).toEqual({
+      pullRequestNumber: 1,
+      repositoryId: 'repo-1',
+      reviewers: [
+        {
+          login: 'reviewer1',
+          requestedAt: '2024-01-01T09:00:00Z',
+        },
+      ],
+    })
+  })
+
+  test('falls back to pull request created at when no ReviewRequestedEvent exists', async () => {
+    const result = await buildPullRequests(config, prs, mockLoaders)
+    const pr2 = result.pulls.find((pull) => pull.number === 2)
+
+    expect(pr2?.codingTime).toBe(1)
+    expect(pr2?.pickupTime).toBe(1)
   })
 })
