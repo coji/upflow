@@ -1,4 +1,5 @@
 import { cli, command } from 'cleye'
+import consola from 'consola'
 import 'dotenv/config'
 import {
   captureExceptionToSentry,
@@ -22,7 +23,12 @@ const crawl = command(
       },
       pr: {
         type: [Number],
-        description: 'Specific PR numbers to refresh (e.g. --pr 123 --pr 456)',
+        description:
+          'Specific PR numbers to refresh (requires --repo). e.g. --repo falcon9 --pr 123',
+      },
+      repo: {
+        type: String,
+        description: 'Repository name to target (required with --pr)',
       },
     },
     help: {
@@ -32,10 +38,16 @@ const crawl = command(
   },
   async (argv) => {
     const { crawlCommand } = await import('./commands/crawl')
+    const prNumbers = argv.flags.pr?.length ? argv.flags.pr : undefined
+    if (prNumbers && !argv.flags.repo) {
+      consola.error('--repo is required when using --pr')
+      process.exit(1)
+    }
     await crawlCommand({
       organizationId: argv._.organizationId,
       refresh: argv.flags.refresh,
-      prNumbers: argv.flags.pr?.length ? argv.flags.pr : undefined,
+      prNumbers,
+      repoName: argv.flags.repo,
     })
   },
 )

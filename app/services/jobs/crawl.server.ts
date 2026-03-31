@@ -20,6 +20,7 @@ export const crawlJob = defineJob({
     organizationId: z.string(),
     refresh: z.boolean().default(false),
     prNumbers: z.array(z.number()).optional(),
+    repoName: z.string().optional(),
   }),
   output: z.object({
     fetchedRepos: z.number(),
@@ -53,14 +54,18 @@ export const crawlJob = defineJob({
       githubAppLink: fullOrg.githubAppLink,
     })
 
-    const repoCount = organization.repositories.length
     const updatedPrNumbers = new Map<string, Set<number>>()
 
     const FETCH_ALL_SENTINEL = '2000-01-01T00:00:00Z'
 
     // Step 2: Fetch per repo
-    for (let i = 0; i < organization.repositories.length; i++) {
-      const repo = organization.repositories[i]
+    const targetRepos = input.repoName
+      ? organization.repositories.filter((r) => r.repo === input.repoName)
+      : organization.repositories
+    const repoCount = targetRepos.length
+
+    for (let i = 0; i < targetRepos.length; i++) {
+      const repo = targetRepos[i]
       const repoLabel = `${repo.owner}/${repo.repo}`
 
       const store = createStore({
