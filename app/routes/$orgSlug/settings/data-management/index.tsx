@@ -9,6 +9,7 @@ import {
   Label,
   Stack,
 } from '~/app/components/ui'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import { durably } from '~/app/services/durably'
 import { durably as serverDurably } from '~/app/services/durably.server'
@@ -255,27 +256,17 @@ export default function DataManagementPage({
   const [isActing, startTransition] = useTransition()
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const handleCancel = (runId: string) => {
-    setActionError(null)
-    startTransition(async () => {
-      try {
-        await cancel(runId)
-      } catch (e) {
-        setActionError(e instanceof Error ? e.message : String(e))
-      }
-    })
-  }
-
-  const handleRetrigger = (runId: string) => {
-    setActionError(null)
-    startTransition(async () => {
-      try {
-        await retrigger(runId)
-      } catch (e) {
-        setActionError(e instanceof Error ? e.message : String(e))
-      }
-    })
-  }
+  const wrapAction =
+    (action: (runId: string) => Promise<unknown>) => (runId: string) => {
+      setActionError(null)
+      startTransition(async () => {
+        try {
+          await action(runId)
+        } catch (e) {
+          setActionError(getErrorMessage(e))
+        }
+      })
+    }
 
   const isCrawlRunning = runs.some(
     (r) => r.jobName === 'crawl' && isRunActive(r.status),
@@ -300,8 +291,8 @@ export default function DataManagementPage({
           isLoading={isLoading}
           onNextPage={nextPage}
           onPrevPage={prevPage}
-          onCancel={handleCancel}
-          onRetrigger={handleRetrigger}
+          onCancel={wrapAction(cancel)}
+          onRetrigger={wrapAction(retrigger)}
           isActing={isActing}
           actionError={actionError}
         />
