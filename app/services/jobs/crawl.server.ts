@@ -19,6 +19,7 @@ export const crawlJob = defineJob({
   input: z.object({
     organizationId: z.string(),
     refresh: z.boolean().default(false),
+    prNumbers: z.array(z.number()).optional(),
   }),
   output: z.object({
     fetchedRepos: z.number(),
@@ -101,9 +102,12 @@ export const crawlJob = defineJob({
         },
       )
 
-      const prsToFetch = input.refresh
-        ? allPullRequests
-        : allPullRequests.filter((pr) => pr.updatedAt > lastFetchedAt)
+      const prNumberSet = input.prNumbers ? new Set(input.prNumbers) : null
+      const prsToFetch = prNumberSet
+        ? allPullRequests.filter((pr) => prNumberSet.has(pr.number))
+        : input.refresh
+          ? allPullRequests
+          : allPullRequests.filter((pr) => pr.updatedAt > lastFetchedAt)
 
       // Step 2c: Fetch details per PR
       const repoUpdated = new Set<number>()
@@ -152,13 +156,19 @@ export const crawlJob = defineJob({
       }
     }
 
-    // Skip analyze if no updates (and not a refresh)
-    if (!input.refresh && updatedPrNumbers.size === 0) {
+    // Skip analyze if no updates (and not a refresh or specific PR fetch)
+    if (!input.refresh && !input.prNumbers && updatedPrNumbers.size === 0) {
       step.log.info('No updated PRs, skipping analyze.')
       await step.run('finalize', () => {
         clearOrgCache(orgId)
       })
       return { fetchedRepos: repoCount, pullCount: 0 }
+    }
+
+    if (input.prNumbers && updatedPrNumbers.size === 0) {
+      step.log.warn(
+        `No PRs matched or fetched for requested numbers: ${input.prNumbers.join(', ')}`,
+      )
     }
 
     // Steps 3-6: Analyze → Upsert → Export → Finalize
@@ -167,10 +177,12 @@ export const crawlJob = defineJob({
       orgId,
       organization,
       {
-        filterPrNumbers: input.refresh ? undefined : updatedPrNumbers,
-        skipRepo: input.refresh
-          ? undefined
-          : (repoId) => !updatedPrNumbers.has(repoId),
+        filterPrNumbers:
+          input.refresh && !input.prNumbers ? undefined : updatedPrNumbers,
+        skipRepo:
+          input.refresh && !input.prNumbers
+            ? undefined
+            : (repoId) => !updatedPrNumbers.has(repoId),
       },
     )
 

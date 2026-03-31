@@ -6,7 +6,8 @@ import devtoolsJson from 'vite-plugin-devtools-json'
 
 export default defineConfig(async (configEnv) => {
   const { mode } = configEnv
-  const publishRelease = process.env.SENTRY_PUBLISH_RELEASE === '1'
+  const isTest = mode === 'test'
+  const publishRelease = !isTest && process.env.SENTRY_PUBLISH_RELEASE === '1'
 
   return {
     build: {
@@ -19,8 +20,8 @@ export default defineConfig(async (configEnv) => {
 
     plugins: [
       tailwindcss(),
-      reactRouter(),
-      mode !== 'production' && devtoolsJson(),
+      !isTest && reactRouter(),
+      !isTest && mode !== 'production' && devtoolsJson(),
       ...(publishRelease
         ? await sentryReactRouter(
             {

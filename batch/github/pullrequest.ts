@@ -1,5 +1,4 @@
 import type { Selectable } from 'kysely'
-import { first } from 'remeda'
 import dayjs from '~/app/libs/dayjs'
 import type { TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -10,6 +9,11 @@ import {
   reviewTime,
   totalTime,
 } from '~/batch/bizlogic/cycletime'
+import {
+  computeFirstReviewedAt,
+  deriveReviewWait,
+  normalizeTimelineEvents,
+} from '~/batch/bizlogic/review-wait'
 import { logger } from '~/batch/helper/logger'
 import { buildRequestedAtMap } from './fetcher'
 import type {
@@ -17,6 +21,7 @@ import type {
   ShapedGitHubPullRequest,
   ShapedGitHubReview,
   ShapedGitHubReviewComment,
+  ShapedTimelineItem,
 } from './model'
 import {
   buildBranchReleaseLookup,
@@ -34,12 +39,15 @@ interface PrArtifacts {
   commits: ShapedGitHubCommit[]
   reviews: ShapedGitHubReview[]
   discussions: ShapedGitHubReviewComment[]
+  timelineItems: ShapedTimelineItem[]
 }
 
 /** PR の各種日時 */
 interface PrDates {
   firstCommittedAt: string | null
   pullRequestCreatedAt: string
+  pickupStartedAt: string | null
+  pickupTimeDays: number | null
   firstReviewedAt: string | null
   mergedAt: string | null
 }
@@ -68,6 +76,7 @@ async function loadPrArtifacts(
     commits: await loaders.commits(pr.number),
     reviews: await loaders.reviews(pr.number),
     discussions: await loaders.discussions(pr.number),
+    timelineItems: await loaders.timelineItems(pr.number),
   }
 }
 
@@ -93,25 +102,43 @@ function filterActors(
         d.user !== pr.author &&
         !botLogins.has((d.user ?? '').toLowerCase()),
     ),
+    timelineItems: artifacts.timelineItems,
   }
 }
 
 /**
  * PR の各種日時を計算（純粋関数）
+ * timeline items から状態機械で review-wait interval を導出する
  */
 function computeDates(
   pr: ShapedGitHubPullRequest,
   artifacts: PrArtifacts,
+  botLogins: Set<string>,
 ): PrDates {
+  const firstReviewedAt = nullOrDate(
+    computeFirstReviewedAt(artifacts.discussions, artifacts.reviews),
+  )
+
+  const normalizedTimeline = normalizeTimelineEvents(
+    artifacts.timelineItems,
+    pr,
+    botLogins,
+  )
+
+  const { pickupStartedAt, pickupTimeDays } = deriveReviewWait(
+    pr,
+    normalizedTimeline,
+    firstReviewedAt,
+  )
+
   return {
     firstCommittedAt: nullOrDate(
       artifacts.commits.length > 0 ? artifacts.commits[0].date : null,
     ),
     pullRequestCreatedAt: nullOrDate(pr.createdAt) ?? '',
-    firstReviewedAt: nullOrDate(
-      first(artifacts.discussions)?.createdAt ??
-        first(artifacts.reviews)?.submittedAt,
-    ),
+    pickupStartedAt,
+    pickupTimeDays,
+    firstReviewedAt,
     mergedAt: nullOrDate(pr.mergedAt),
   }
 }
@@ -142,9 +169,11 @@ function buildPullRequestRow(
     releasedAt,
     codingTime: codingTime({
       firstCommittedAt: dates.firstCommittedAt,
+      pickupStartedAt: dates.pickupStartedAt,
       pullRequestCreatedAt: dates.pullRequestCreatedAt,
     }),
     pickupTime: pickupTime({
+      pickupTimeDays: dates.pickupTimeDays,
       pullRequestCreatedAt: dates.pullRequestCreatedAt,
       firstReviewedAt: dates.firstReviewedAt,
       mergedAt: dates.mergedAt,
@@ -234,7 +263,7 @@ export const buildPullRequests = async (
       const artifacts = filterActors(rawArtifacts, pr, config.botLogins)
 
       // 5. 日時計算（純粋関数）
-      const dates = computeDates(pr, artifacts)
+      const dates = computeDates(pr, artifacts, config.botLogins)
 
       // 6. リリース日時計算（事前計算済みルックアップから O(1) or O(log n) で取得）
       let releasedAt: string | null = null
@@ -272,7 +301,7 @@ export const buildPullRequests = async (
       const prReviewers = pr.reviewers ?? []
       const requestedAtMap =
         prReviewers.length > 0
-          ? buildRequestedAtMap(await loaders.timelineItems(pr.number))
+          ? buildRequestedAtMap(rawArtifacts.timelineItems)
           : new Map<string, string>()
       reviewers.push({
         pullRequestNumber: pr.number,

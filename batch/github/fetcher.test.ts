@@ -1,8 +1,10 @@
-import { describe, expect, test } from 'vitest'
+import type { Octokit } from 'octokit'
+import { describe, expect, test, vi } from 'vitest'
 import type { ShapedTimelineItem } from './model'
 
 // 純粋関数なので直接 import してテスト
-const { buildRequestedAtMap, shapeTagNode } = await import('./fetcher')
+const { buildRequestedAtMap, createFetcher, shapeTagNode } =
+  await import('./fetcher')
 
 describe('buildRequestedAtMap', () => {
   test('returns empty map for empty items', () => {
@@ -16,6 +18,7 @@ describe('buildRequestedAtMap', () => {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-01T10:00:00Z',
         reviewer: 'alice',
+        reviewerType: 'User',
       },
     ]
     const result = buildRequestedAtMap(items)
@@ -28,16 +31,19 @@ describe('buildRequestedAtMap', () => {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-01T10:00:00Z',
         reviewer: 'alice',
+        reviewerType: 'User',
       },
       {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-02T10:00:00Z',
         reviewer: 'alice',
+        reviewerType: 'User',
       },
       {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-01T12:00:00Z',
         reviewer: 'alice',
+        reviewerType: 'User',
       },
     ]
     const result = buildRequestedAtMap(items)
@@ -60,6 +66,7 @@ describe('buildRequestedAtMap', () => {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-01T10:00:00Z',
         reviewer: 'alice',
+        reviewerType: 'User',
       },
     ]
     const result = buildRequestedAtMap(items)
@@ -73,10 +80,12 @@ describe('buildRequestedAtMap', () => {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-01T10:00:00Z',
         reviewer: null,
+        reviewerType: 'User',
       },
       {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-01T10:00:00Z',
+        reviewerType: 'User',
       },
     ]
     const result = buildRequestedAtMap(items)
@@ -89,21 +98,89 @@ describe('buildRequestedAtMap', () => {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-01T10:00:00Z',
         reviewer: 'alice',
+        reviewerType: 'User',
       },
       {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-02T10:00:00Z',
         reviewer: 'bob',
+        reviewerType: 'User',
       },
       {
         type: 'ReviewRequestedEvent',
         createdAt: '2024-01-03T10:00:00Z',
         reviewer: 'alice',
+        reviewerType: 'User',
       },
     ]
     const result = buildRequestedAtMap(items)
     expect(result.get('alice')).toBe('2024-01-03T10:00:00Z')
     expect(result.get('bob')).toBe('2024-01-02T10:00:00Z')
+  })
+})
+
+describe('createFetcher.timelineItems', () => {
+  test('keeps reviewerType in shaped timeline items', async () => {
+    const graphql = vi.fn(async () => ({
+      repository: {
+        pullRequest: {
+          timelineItems: {
+            nodes: [
+              {
+                __typename: 'ReviewRequestedEvent',
+                createdAt: '2024-01-01T10:00:00Z',
+                requestedReviewer: {
+                  __typename: 'Bot',
+                  login: 'renovate',
+                },
+              },
+              {
+                __typename: 'ReviewRequestedEvent',
+                createdAt: '2024-01-01T11:00:00Z',
+                requestedReviewer: {
+                  __typename: 'User',
+                  login: 'alice',
+                },
+              },
+              {
+                __typename: 'ReviewRequestedEvent',
+                createdAt: '2024-01-01T12:00:00Z',
+                requestedReviewer: {
+                  __typename: 'Mannequin',
+                  login: 'ghost-user',
+                },
+              },
+            ],
+          },
+        },
+      },
+    }))
+    const fetcher = createFetcher({
+      owner: 'test-owner',
+      repo: 'test-repo',
+      octokit: { graphql } as unknown as Octokit,
+    })
+
+    await expect(fetcher.timelineItems(1)).resolves.toEqual([
+      {
+        type: 'ReviewRequestedEvent',
+        createdAt: '2024-01-01T10:00:00Z',
+        reviewer: 'renovate',
+        reviewerType: 'Bot',
+      },
+      {
+        type: 'ReviewRequestedEvent',
+        createdAt: '2024-01-01T11:00:00Z',
+        reviewer: 'alice',
+        reviewerType: 'User',
+      },
+      {
+        type: 'ReviewRequestedEvent',
+        createdAt: '2024-01-01T12:00:00Z',
+        reviewer: 'ghost-user',
+        reviewerType: 'Mannequin',
+      },
+    ])
   })
 })
 

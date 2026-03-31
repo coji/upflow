@@ -134,6 +134,7 @@ const makeTimelineItems = (n: number): ShapedTimelineItem[] => [
     type: 'ReviewRequestedEvent',
     createdAt: '2024-01-01T06:00:00Z',
     reviewer: 'reviewer1',
+    reviewerType: 'User',
   },
   {
     type: 'ReadyForReviewEvent',

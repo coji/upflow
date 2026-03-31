@@ -20,6 +20,10 @@ const crawl = command(
         description: 'Full refresh (re-fetch all PRs from GitHub)',
         default: false,
       },
+      pr: {
+        type: [Number],
+        description: 'Specific PR numbers to refresh (e.g. --pr 123 --pr 456)',
+      },
     },
     help: {
       description:
@@ -31,6 +35,7 @@ const crawl = command(
     await crawlCommand({
       organizationId: argv._.organizationId,
       refresh: argv.flags.refresh,
+      prNumbers: argv.flags.pr?.length ? argv.flags.pr : undefined,
     })
   },
 )

@@ -3,32 +3,39 @@ import dayjs from '~/app/libs/dayjs'
 
 interface codingTimeProps {
   firstCommittedAt: string | null
+  pickupStartedAt: string | null
   pullRequestCreatedAt: string | null
 }
 export const codingTime = ({
   firstCommittedAt,
+  pickupStartedAt,
   pullRequestCreatedAt,
 }: codingTimeProps) => {
-  if (firstCommittedAt && pullRequestCreatedAt) {
+  const end = pickupStartedAt ?? pullRequestCreatedAt
+  if (firstCommittedAt && end) {
     return Math.abs(
-      dayjs
-        .utc(pullRequestCreatedAt)
-        .diff(dayjs.utc(firstCommittedAt), 'days', true),
+      dayjs.utc(end).diff(dayjs.utc(firstCommittedAt), 'days', true),
     )
   }
   return null
 }
 
 interface pickupTimeProps {
+  pickupTimeDays: number | null
   pullRequestCreatedAt: string
   firstReviewedAt: string | null
   mergedAt: string | null
 }
 export const pickupTime = ({
+  pickupTimeDays,
   pullRequestCreatedAt,
   firstReviewedAt,
   mergedAt,
 }: pickupTimeProps) => {
+  // 状態機械が結果を返した場合はそのまま使う
+  if (pickupTimeDays != null) return pickupTimeDays
+
+  // timeline がない場合のフォールバック（旧定義互換）
   if (firstReviewedAt) {
     return Math.abs(
       dayjs
