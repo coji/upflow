@@ -670,34 +670,50 @@ const GetTagsQuery = graphql(`
  * GitHub GraphQL の 502/504 タイムアウトに対してページサイズを縮小してリトライする。
  * @returns 'retry' ならページサイズ縮小済みで continue すべき、それ以外は結果 or throw
  */
-function handleGraphQLError<T>(
-  error: unknown,
-  pageSize: { value: number },
-  minPageSize: number,
-  label: string,
-): { action: 'retry' } | { action: 'use'; data: T } {
-  const status =
-    error && typeof error === 'object' && 'status' in error
-      ? (error as { status: number }).status
-      : null
+/** error から HTTP status を取り出す */
+function getErrorStatus(error: unknown): number | null {
+  return error && typeof error === 'object' && 'status' in error
+    ? (error as { status: number }).status
+    : null
+}
 
-  // HTTP 502/504
-  if ((status === 502 || status === 504) && pageSize.value > minPageSize) {
-    pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
-    logger.warn(
-      `${label}: GitHub API timeout (${status}), reducing page size to ${pageSize.value}`,
-    )
-    return { action: 'retry' }
-  }
+/** error が transient (502/504) かどうか */
+function isTransientError(error: unknown): boolean {
+  const status = getErrorStatus(error)
+  return status === 502 || status === 504
+}
 
-  // GraphQL partial error (data + errors)
+/** error から partial data を取り出す（GraphQL の data + errors レスポンス） */
+function getPartialData<T>(error: unknown): T | null {
   if (
     error &&
     typeof error === 'object' &&
     'data' in error &&
     error.data != null
   ) {
-    const partialData = error.data as T
+    return error.data as T
+  }
+  return null
+}
+
+function handleGraphQLError<T>(
+  error: unknown,
+  pageSize: { value: number },
+  minPageSize: number,
+  label: string,
+): { action: 'retry' } | { action: 'use'; data: T } {
+  // HTTP 502/504 → ページサイズ削減してリトライ
+  if (isTransientError(error) && pageSize.value > minPageSize) {
+    pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
+    logger.warn(
+      `${label}: GitHub API timeout (${getErrorStatus(error)}), reducing page size to ${pageSize.value}`,
+    )
+    return { action: 'retry' }
+  }
+
+  // GraphQL partial error (data + errors)
+  const partialData = getPartialData<T>(error)
+  if (partialData != null) {
     // data はあるが中身が空の場合はタイムアウト起因の可能性が高い
     const repo =
       partialData &&
@@ -714,7 +730,9 @@ function handleGraphQLError<T>(
     }
     logger.warn(
       `${label}: GraphQL partial error`,
-      'errors' in error ? JSON.stringify(error.errors) : '',
+      error && typeof error === 'object' && 'errors' in error
+        ? JSON.stringify((error as { errors: unknown }).errors)
+        : '',
     )
     return { action: 'use', data: partialData }
   }
@@ -921,24 +939,37 @@ export function shapeTagNode(node: {
 
 export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
   /** タイムアウト付き GraphQL リクエスト */
-  function graphqlWithTimeout<T>(
+  async function graphqlWithTimeout<T>(
     query: string,
     variables: Record<string, unknown>,
+    maxRetries = 2,
   ): Promise<T> {
-    return Promise.race([
-      octokit.graphql<T>(query, variables),
-      new Promise<never>((_, reject) =>
-        setTimeout(
-          () =>
-            reject(
-              Object.assign(new Error('GraphQL request timeout'), {
-                status: 504,
-              }),
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await Promise.race([
+          octokit.graphql<T>(query, variables),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () =>
+                reject(
+                  Object.assign(new Error('GraphQL request timeout'), {
+                    status: 504,
+                  }),
+                ),
+              REQUEST_TIMEOUT_MS,
             ),
-          REQUEST_TIMEOUT_MS,
-        ),
-      ),
-    ])
+          ),
+        ])
+      } catch (error) {
+        if (isTransientError(error) && attempt < maxRetries) {
+          logger.warn(
+            `GraphQL transient error (${getErrorStatus(error)}), retrying (${attempt + 1}/${maxRetries})...`,
+          )
+          continue
+        }
+        throw error
+      }
+    }
   }
 
   /**
