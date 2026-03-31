@@ -82,6 +82,85 @@ const GetPullRequestsQuery = graphql(`
   }
 `)
 
+const GetPullRequestListQuery = graphql(`
+  query GetPullRequestList(
+    $owner: String!
+    $repo: String!
+    $cursor: String
+    $first: Int = 100
+  ) {
+    repository(owner: $owner, name: $repo) {
+      pullRequests(
+        first: $first
+        after: $cursor
+        orderBy: { field: UPDATED_AT, direction: DESC }
+      ) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          number
+          updatedAt
+        }
+      }
+    }
+  }
+`)
+
+const GetPullRequestQuery = graphql(`
+  query GetPullRequest($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        databaseId
+        number
+        state
+        title
+        body
+        url
+        isDraft
+        createdAt
+        updatedAt
+        mergedAt
+        closedAt
+        additions
+        deletions
+        changedFiles
+        headRefName
+        baseRefName
+        mergeCommit {
+          oid
+        }
+        author {
+          __typename
+          login
+        }
+        assignees(first: 100) {
+          nodes {
+            login
+          }
+        }
+        reviewRequests(first: 100) {
+          nodes {
+            requestedReviewer {
+              __typename
+              ... on User {
+                login
+              }
+              ... on Bot {
+                login
+              }
+              ... on Mannequin {
+                login
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`)
+
 const GetPullRequestTimelineQuery = graphql(`
   query GetPullRequestTimeline($owner: String!, $repo: String!, $number: Int!) {
     repository(owner: $owner, name: $repo) {
@@ -591,34 +670,50 @@ const GetTagsQuery = graphql(`
  * GitHub GraphQL の 502/504 タイムアウトに対してページサイズを縮小してリトライする。
  * @returns 'retry' ならページサイズ縮小済みで continue すべき、それ以外は結果 or throw
  */
-function handleGraphQLError<T>(
-  error: unknown,
-  pageSize: { value: number },
-  minPageSize: number,
-  label: string,
-): { action: 'retry' } | { action: 'use'; data: T } {
-  const status =
-    error && typeof error === 'object' && 'status' in error
-      ? (error as { status: number }).status
-      : null
+/** error から HTTP status を取り出す */
+function getErrorStatus(error: unknown): number | null {
+  return error && typeof error === 'object' && 'status' in error
+    ? (error as { status: number }).status
+    : null
+}
 
-  // HTTP 502/504
-  if ((status === 502 || status === 504) && pageSize.value > minPageSize) {
-    pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
-    logger.warn(
-      `${label}: GitHub API timeout (${status}), reducing page size to ${pageSize.value}`,
-    )
-    return { action: 'retry' }
-  }
+/** error が transient (502/504) かどうか */
+function isTransientError(error: unknown): boolean {
+  const status = getErrorStatus(error)
+  return status === 502 || status === 504
+}
 
-  // GraphQL partial error (data + errors)
+/** error から partial data を取り出す（GraphQL の data + errors レスポンス） */
+function getPartialData<T>(error: unknown): T | null {
   if (
     error &&
     typeof error === 'object' &&
     'data' in error &&
     error.data != null
   ) {
-    const partialData = error.data as T
+    return error.data as T
+  }
+  return null
+}
+
+function handleGraphQLError<T>(
+  error: unknown,
+  pageSize: { value: number },
+  minPageSize: number,
+  label: string,
+): { action: 'retry' } | { action: 'use'; data: T } {
+  // HTTP 502/504 → ページサイズ削減してリトライ
+  if (isTransientError(error) && pageSize.value > minPageSize) {
+    pageSize.value = Math.max(minPageSize, Math.floor(pageSize.value / 2))
+    logger.warn(
+      `${label}: GitHub API timeout (${getErrorStatus(error)}), reducing page size to ${pageSize.value}`,
+    )
+    return { action: 'retry' }
+  }
+
+  // GraphQL partial error (data + errors)
+  const partialData = getPartialData<T>(error)
+  if (partialData != null) {
     // data はあるが中身が空の場合はタイムアウト起因の可能性が高い
     const repo =
       partialData &&
@@ -635,7 +730,9 @@ function handleGraphQLError<T>(
     }
     logger.warn(
       `${label}: GraphQL partial error`,
-      'errors' in error ? JSON.stringify(error.errors) : '',
+      error && typeof error === 'object' && 'errors' in error
+        ? JSON.stringify((error as { errors: unknown }).errors)
+        : '',
     )
     return { action: 'use', data: partialData }
   }
@@ -710,6 +807,87 @@ export function buildRequestedAtMap(
   return map
 }
 
+function shapePullRequestNode(
+  node: {
+    databaseId?: number | null
+    number: number
+    state: string
+    title: string
+    body?: string | null
+    url: string
+    isDraft: boolean
+    createdAt: string
+    updatedAt: string
+    mergedAt?: string | null
+    closedAt?: string | null
+    additions?: number | null
+    deletions?: number | null
+    changedFiles?: number | null
+    headRefName: string
+    baseRefName: string
+    mergeCommit?: { oid: string } | null
+    author?: { __typename: string; login: string } | null
+    assignees: { nodes?: Array<{ login: string } | null> | null }
+    reviewRequests?: {
+      nodes?: Array<{
+        requestedReviewer?: {
+          __typename: string
+          login?: string
+        } | null
+      } | null> | null
+    } | null
+  } | null,
+  owner: string,
+  repo: string,
+): ShapedGitHubPullRequest | null {
+  if (!node || !node.databaseId) return null
+
+  const state = node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
+
+  const reviewers: { login: string; requestedAt: string | null }[] = []
+  if (node.reviewRequests?.nodes) {
+    for (const rr of node.reviewRequests.nodes) {
+      const reviewer = rr?.requestedReviewer
+      if (
+        reviewer?.login &&
+        (reviewer.__typename === 'User' ||
+          reviewer.__typename === 'Bot' ||
+          reviewer.__typename === 'Mannequin')
+      ) {
+        reviewers.push({ login: reviewer.login, requestedAt: null })
+      }
+    }
+  }
+
+  return {
+    id: node.databaseId,
+    organization: owner,
+    repo,
+    number: node.number,
+    state,
+    title: node.title,
+    body: node.body ?? null,
+    url: node.url,
+    author: node.author?.login ?? null,
+    authorIsBot: node.author?.__typename === 'Bot',
+    assignees:
+      node.assignees.nodes?.filter((n) => n != null).map((n) => n.login) ?? [],
+    reviewers,
+    draft: node.isDraft,
+    sourceBranch: node.headRefName,
+    targetBranch: node.baseRefName,
+    createdAt: node.createdAt,
+    updatedAt: node.updatedAt,
+    mergedAt: node.mergedAt ?? null,
+    closedAt: node.closedAt ?? null,
+    mergeCommitSha: node.mergeCommit?.oid ?? null,
+    additions: node.additions ?? null,
+    deletions: node.deletions ?? null,
+    changedFiles: node.changedFiles ?? null,
+    files: [],
+  }
+}
+
 interface createFetcherProps {
   owner: string
   repo: string
@@ -761,24 +939,37 @@ export function shapeTagNode(node: {
 
 export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
   /** タイムアウト付き GraphQL リクエスト */
-  function graphqlWithTimeout<T>(
+  async function graphqlWithTimeout<T>(
     query: string,
     variables: Record<string, unknown>,
+    maxRetries = 2,
   ): Promise<T> {
-    return Promise.race([
-      octokit.graphql<T>(query, variables),
-      new Promise<never>((_, reject) =>
-        setTimeout(
-          () =>
-            reject(
-              Object.assign(new Error('GraphQL request timeout'), {
-                status: 504,
-              }),
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await Promise.race([
+          octokit.graphql<T>(query, variables),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () =>
+                reject(
+                  Object.assign(new Error('GraphQL request timeout'), {
+                    status: 504,
+                  }),
+                ),
+              REQUEST_TIMEOUT_MS,
             ),
-          REQUEST_TIMEOUT_MS,
-        ),
-      ),
-    ])
+          ),
+        ])
+      } catch (error) {
+        if (isTransientError(error) && attempt < maxRetries) {
+          logger.warn(
+            `GraphQL transient error (${getErrorStatus(error)}), retrying (${attempt + 1}/${maxRetries})...`,
+          )
+          continue
+        }
+        throw error
+      }
+    }
   }
 
   /**
@@ -838,61 +1029,8 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       }
 
       for (const node of pullRequests.nodes) {
-        if (!node || !node.databaseId) continue
-
-        // GraphQL state は OPEN/CLOSED/MERGED、REST 互換で open/closed に変換
-        const state =
-          node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
-
-        // reviewRequests（現在の pending reviewer）を取得
-        // requestedAt は pullrequestsWithDetails() のフルリフレッシュ時のみ取得
-        const reviewers: { login: string; requestedAt: string | null }[] = []
-        if (node.reviewRequests?.nodes) {
-          for (const rr of node.reviewRequests.nodes) {
-            const reviewer = rr?.requestedReviewer
-            if (
-              reviewer &&
-              (reviewer.__typename === 'User' ||
-                reviewer.__typename === 'Bot' ||
-                reviewer.__typename === 'Mannequin')
-            ) {
-              reviewers.push({
-                login: reviewer.login,
-                requestedAt: null,
-              })
-            }
-          }
-        }
-
-        allPulls.push({
-          id: node.databaseId,
-          organization: owner,
-          repo,
-          number: node.number,
-          state,
-          title: node.title,
-          body: node.body ?? null,
-          url: node.url,
-          author: node.author?.login ?? null,
-          authorIsBot: node.author?.__typename === 'Bot',
-          assignees:
-            node.assignees.nodes
-              ?.filter((n) => n != null)
-              .map((n) => n.login) ?? [],
-          reviewers,
-          draft: node.isDraft,
-          sourceBranch: node.headRefName,
-          targetBranch: node.baseRefName,
-          createdAt: node.createdAt,
-          updatedAt: node.updatedAt,
-          mergedAt: node.mergedAt ?? null,
-          closedAt: node.closedAt ?? null,
-          mergeCommitSha: node.mergeCommit?.oid ?? null,
-          additions: node.additions ?? null,
-          deletions: node.deletions ?? null,
-          changedFiles: node.changedFiles ?? null,
-          files: [],
-        })
+        const shaped = shapePullRequestNode(node, owner, repo)
+        if (shaped) allPulls.push(shaped)
       }
 
       hasNextPage = pullRequests.pageInfo.hasNextPage
@@ -900,6 +1038,99 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
     }
 
     return allPulls
+  }
+
+  /**
+   * stopBefore が指定されると、updatedAt がそれより古い PR が出た時点でページング停止
+   */
+  const pullrequestList = async (stopBefore?: string) => {
+    type ListResult = ResultOf<typeof GetPullRequestListQuery>
+
+    const queryStr = print(GetPullRequestListQuery)
+    const items: Array<{ number: number; updatedAt: string }> = []
+    let cursor: string | null = null
+    let hasNextPage = true
+    const pageSizeRef = { value: 100 }
+
+    while (hasNextPage) {
+      let result: ListResult
+      try {
+        result = await graphqlWithTimeout<ListResult>(queryStr, {
+          owner,
+          repo,
+          cursor,
+          first: pageSizeRef.value,
+        })
+      } catch (error: unknown) {
+        const handled = handleGraphQLError<ListResult>(
+          error,
+          pageSizeRef,
+          10,
+          'pullrequestList()',
+        )
+        if (handled.action === 'retry') continue
+        result = handled.data
+      }
+
+      const pullRequests = result?.repository?.pullRequests
+      if (!pullRequests?.nodes) {
+        if (pageSizeRef.value > 10) {
+          pageSizeRef.value = Math.max(10, Math.floor(pageSizeRef.value / 2))
+          logger.warn(
+            `pullrequestList(): empty response, reducing page size to ${pageSizeRef.value}`,
+          )
+          continue
+        }
+        logger.warn(
+          'pullrequestList(): unexpected empty response (already at min page size)',
+          JSON.stringify({
+            hasRepository: !!result?.repository,
+            hasPullRequests: !!pullRequests,
+            hasNodes: !!pullRequests?.nodes,
+            pageSize: pageSizeRef.value,
+            cursor,
+          }),
+        )
+        break
+      }
+
+      let stopped = false
+      for (const node of pullRequests.nodes) {
+        if (!node) continue
+        // ISO 8601 UTC 文字列同士なので lexicographic 比較 = 時系列比較
+        if (stopBefore && node.updatedAt < stopBefore) {
+          stopped = true
+          break
+        }
+        items.push({ number: node.number, updatedAt: node.updatedAt })
+      }
+
+      if (stopped) break
+      hasNextPage = pullRequests.pageInfo.hasNextPage
+      cursor = pullRequests.pageInfo.endCursor ?? null
+    }
+
+    return items
+  }
+
+  const pullrequest = async (
+    pullNumber: number,
+  ): Promise<ShapedGitHubPullRequest> => {
+    type PRResult = ResultOf<typeof GetPullRequestQuery>
+
+    const queryStr = print(GetPullRequestQuery)
+    const result = await graphqlWithTimeout<PRResult>(queryStr, {
+      owner,
+      repo,
+      number: pullNumber,
+    })
+
+    const node = result?.repository?.pullRequest ?? null
+    const shaped = shapePullRequestNode(node, owner, repo)
+    if (!shaped) {
+      throw new Error(`PR #${pullNumber} not found in ${owner}/${repo}`)
+    }
+    return shaped
   }
 
   const commits = async (pullNumber: number) => {
@@ -1372,6 +1603,8 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
 
   return {
     pullrequests,
+    pullrequestList,
+    pullrequest,
     pullrequestsWithDetails,
     commits,
     comments,
