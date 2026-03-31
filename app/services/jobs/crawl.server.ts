@@ -165,6 +165,12 @@ export const crawlJob = defineJob({
       return { fetchedRepos: repoCount, pullCount: 0 }
     }
 
+    if (input.prNumbers && updatedPrNumbers.size === 0) {
+      step.log.warn(
+        `No PRs matched or fetched for requested numbers: ${input.prNumbers.join(', ')}`,
+      )
+    }
+
     // Steps 3-6: Analyze → Upsert → Export → Finalize
     const { pullCount } = await analyzeAndFinalizeSteps(
       step,

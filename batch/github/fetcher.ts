@@ -658,7 +658,7 @@ function shapeTimelineNodes(
     // ReviewRequestedEvent / ReviewRequestRemovedEvent: reviewer 情報
     if ('requestedReviewer' in node && node.requestedReviewer) {
       const rr = node.requestedReviewer as {
-        __typename?: 'User' | 'Bot' | 'Mannequin' | 'Team'
+        __typename?: 'User' | 'Bot' | 'Mannequin'
         login?: string
         name?: string
       }

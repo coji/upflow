@@ -29,6 +29,7 @@ export function isEligibleReviewer(props: {
 }): boolean {
   const login = props.login?.toLowerCase()
   if (!login) return false
+  // null は旧 raw データ（reviewerType 未保存）との後方互換。botLogins で補完する
   if (props.actorType && props.actorType !== 'User') return false
   if (props.authorLogin && login === props.authorLogin.toLowerCase())
     return false

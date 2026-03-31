@@ -49,7 +49,7 @@ const makeTimeline = (
   type: string,
   createdAt: string,
   reviewer?: string,
-  reviewerType?: 'User' | 'Bot' | 'Mannequin' | 'Team',
+  reviewerType?: 'User' | 'Bot' | 'Mannequin',
 ): ShapedTimelineItem => ({
   type,
   createdAt,
@@ -319,6 +319,23 @@ describe('deriveReviewWait', () => {
     const pr = makePr()
     const timeline = normalizeTimelineEvents([], pr, botLogins)
     const result = deriveReviewWait(pr, timeline, '2022-08-01T15:00:00Z')
+    expect(result.pickupStartedAt).toBeNull()
+    expect(result.pickupTimeDays).toBeNull()
+  })
+
+  test('firstReviewedAt before any timeline event → null (fallback to old definition)', () => {
+    const pr = makePr()
+    const items = [
+      makeTimeline(
+        'ReviewRequestedEvent',
+        '2022-08-01T14:00:00Z',
+        'alice',
+        'User',
+      ),
+    ]
+    const timeline = normalizeTimelineEvents(items, pr, botLogins)
+    // review happened at 12:00, request at 14:00 → cutoff breaks immediately
+    const result = deriveReviewWait(pr, timeline, '2022-08-01T12:00:00Z')
     expect(result.pickupStartedAt).toBeNull()
     expect(result.pickupTimeDays).toBeNull()
   })

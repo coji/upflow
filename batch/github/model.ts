@@ -81,7 +81,7 @@ export type ShapedGitHubTag = {
   committedAt: string
 }
 
-export type ReviewerType = 'User' | 'Bot' | 'Mannequin' | 'Team'
+export type ReviewerType = 'User' | 'Bot' | 'Mannequin'
 
 // Timeline item (ローデータ保存用)
 export type ShapedTimelineItem = {

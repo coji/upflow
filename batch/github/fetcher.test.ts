@@ -142,6 +142,14 @@ describe('createFetcher.timelineItems', () => {
                   login: 'alice',
                 },
               },
+              {
+                __typename: 'ReviewRequestedEvent',
+                createdAt: '2024-01-01T12:00:00Z',
+                requestedReviewer: {
+                  __typename: 'Mannequin',
+                  login: 'ghost-user',
+                },
+              },
             ],
           },
         },
@@ -165,6 +173,12 @@ describe('createFetcher.timelineItems', () => {
         createdAt: '2024-01-01T11:00:00Z',
         reviewer: 'alice',
         reviewerType: 'User',
+      },
+      {
+        type: 'ReviewRequestedEvent',
+        createdAt: '2024-01-01T12:00:00Z',
+        reviewer: 'ghost-user',
+        reviewerType: 'Mannequin',
       },
     ])
   })
