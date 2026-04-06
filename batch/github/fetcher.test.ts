@@ -271,7 +271,7 @@ describe('paginateGraphQL shouldStop', () => {
     let callIndex = 0
     return (_vars: Record<string, unknown>) => {
       const nodes = pages[callIndex++] ?? []
-      return {
+      return Promise.resolve({
         pullRequests: {
           nodes,
           pageInfo: {
@@ -279,15 +279,10 @@ describe('paginateGraphQL shouldStop', () => {
             endCursor: `cursor-${callIndex}`,
           },
         },
-      }
+      })
     }
   }
-  type Result =
-    ReturnType<Awaited<ReturnType<typeof makeGraphqlFn>>> extends Promise<
-      infer R
-    >
-      ? R
-      : never
+  type Result = Awaited<ReturnType<ReturnType<typeof makeGraphqlFn>>>
 
   const extractConnection = (r: Result) => r.pullRequests
   const processNode = (n: Node) => n
