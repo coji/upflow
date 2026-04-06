@@ -25,6 +25,24 @@ export function createAppOctokit(): Octokit {
   })
 }
 
+let cachedAppSlug: string | null = null
+
+/**
+ * Get the GitHub App slug (e.g. "upflow-team") via GET /app.
+ * Cached in memory after first successful call.
+ */
+export async function getGithubAppSlug(): Promise<string | null> {
+  if (cachedAppSlug) return cachedAppSlug
+  try {
+    const octokit = createAppOctokit()
+    const { data } = await octokit.rest.apps.getAuthenticated()
+    cachedAppSlug = data?.slug ?? null
+    return cachedAppSlug
+  } catch {
+    return null
+  }
+}
+
 export type IntegrationAuth =
   | { method: 'token'; privateToken: string }
   | { method: 'github_app'; installationId: number }

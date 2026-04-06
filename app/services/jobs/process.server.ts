@@ -30,6 +30,7 @@ export const processJob = defineJob({
   run: async (step, input) => {
     const orgId = input.organizationId as OrganizationId
 
+    // scopes: undefined → full-org processing, scopes: [] → no-op
     if (input.scopes !== undefined && input.scopes.length === 0) {
       return { pullCount: 0 }
     }
