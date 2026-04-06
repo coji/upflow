@@ -761,7 +761,7 @@ interface PaginateOptions<TNode> {
  * extractConnection でレスポンスからノード配列と pageInfo を取り出し、
  * processNode でノードをアイテムに変換する。
  */
-async function paginateGraphQL<TResult, TNode, TItem>(
+export async function paginateGraphQL<TResult, TNode, TItem>(
   graphqlFn: (variables: Record<string, unknown>) => Promise<TResult>,
   extractConnection: (
     result: TResult,
@@ -1157,7 +1157,7 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
         label: 'pullrequestList()',
         // ISO 8601 UTC 文字列同士なので lexicographic 比較 = 時系列比較
         shouldStop: stopBefore
-          ? (node) => node.updatedAt < stopBefore
+          ? (node) => node.updatedAt <= stopBefore
           : undefined,
       },
     )
