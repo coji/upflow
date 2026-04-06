@@ -265,7 +265,6 @@ describe('shapeTagNode', () => {
 })
 
 describe('paginateGraphQL shouldStop', () => {
-  // ページネーション結果のモック生成ヘルパー
   type Node = { number: number; updatedAt: string }
   const makeGraphqlFn = (pages: Node[][]) => {
     let callIndex = 0
