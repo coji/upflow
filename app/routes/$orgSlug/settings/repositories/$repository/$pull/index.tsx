@@ -161,7 +161,7 @@ export const action = async ({
         await durably.jobs.process.triggerAndWait(
           {
             organizationId: organization.id,
-            scopes: [{ repositoryId, prNumbers: [pullId] }],
+            scopes: [{ repositoryId, prNumbers: [Number(pullId)] }],
           },
           {
             concurrencyKey: processConcurrencyKey(organization.id),
