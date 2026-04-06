@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from 'vitest'
 import type { ShapedTimelineItem } from './model'
 
 // 純粋関数なので直接 import してテスト
-const { buildRequestedAtMap, createFetcher, shapeTagNode } =
+const { buildRequestedAtMap, createFetcher, paginateGraphQL, shapeTagNode } =
   await import('./fetcher')
 
 describe('buildRequestedAtMap', () => {
@@ -261,5 +261,85 @@ describe('shapeTagNode', () => {
     })
 
     expect(result).toBeNull()
+  })
+})
+
+describe('paginateGraphQL shouldStop', () => {
+  type Node = { number: number; updatedAt: string }
+  const makeGraphqlFn = (pages: Node[][]) => {
+    let callIndex = 0
+    return (_vars: Record<string, unknown>) => {
+      const nodes = pages[callIndex++] ?? []
+      return Promise.resolve({
+        pullRequests: {
+          nodes,
+          pageInfo: {
+            hasNextPage: callIndex < pages.length,
+            endCursor: `cursor-${callIndex}`,
+          },
+        },
+      })
+    }
+  }
+  type Result = Awaited<ReturnType<ReturnType<typeof makeGraphqlFn>>>
+
+  const extractConnection = (r: Result) => r.pullRequests
+  const processNode = (n: Node) => n
+
+  test('excludes node with updatedAt equal to stopBefore', async () => {
+    const stopBefore = '2026-04-01T00:00:00Z'
+    const pages: Node[][] = [
+      [
+        { number: 3, updatedAt: '2026-04-02T00:00:00Z' },
+        { number: 2, updatedAt: '2026-04-01T00:00:00Z' }, // == stopBefore → 除外
+        { number: 1, updatedAt: '2026-03-31T00:00:00Z' },
+      ],
+    ]
+    const result = await paginateGraphQL(
+      makeGraphqlFn(pages),
+      extractConnection,
+      processNode,
+      { shouldStop: (node) => node.updatedAt <= stopBefore },
+    )
+    expect(result).toEqual([{ number: 3, updatedAt: '2026-04-02T00:00:00Z' }])
+  })
+
+  test('includes nodes newer than stopBefore', async () => {
+    const stopBefore = '2026-04-01T00:00:00Z'
+    const pages: Node[][] = [
+      [
+        { number: 5, updatedAt: '2026-04-03T00:00:00Z' },
+        { number: 4, updatedAt: '2026-04-02T00:00:00Z' },
+        { number: 3, updatedAt: '2026-03-31T00:00:00Z' }, // older → stop
+      ],
+    ]
+    const result = await paginateGraphQL(
+      makeGraphqlFn(pages),
+      extractConnection,
+      processNode,
+      { shouldStop: (node) => node.updatedAt <= stopBefore },
+    )
+    expect(result).toEqual([
+      { number: 5, updatedAt: '2026-04-03T00:00:00Z' },
+      { number: 4, updatedAt: '2026-04-02T00:00:00Z' },
+    ])
+  })
+
+  test('returns all nodes when shouldStop is not provided', async () => {
+    const pages: Node[][] = [
+      [
+        { number: 1, updatedAt: '2026-04-01T00:00:00Z' },
+        { number: 2, updatedAt: '2026-03-01T00:00:00Z' },
+      ],
+    ]
+    const result = await paginateGraphQL(
+      makeGraphqlFn(pages),
+      extractConnection,
+      processNode,
+    )
+    expect(result).toEqual([
+      { number: 1, updatedAt: '2026-04-01T00:00:00Z' },
+      { number: 2, updatedAt: '2026-03-01T00:00:00Z' },
+    ])
   })
 })
