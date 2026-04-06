@@ -34,6 +34,10 @@ export default defineConfig(async (configEnv) => {
         : []),
     ],
 
+    server: {
+      allowedHosts: ['.ngrok-free.app'],
+    },
+
     optimizeDeps: {
       exclude: ['@sentry/react-router'],
     },

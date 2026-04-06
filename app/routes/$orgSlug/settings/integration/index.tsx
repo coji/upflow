@@ -10,14 +10,12 @@ import {
   getGithubAppLink,
   getIntegration,
 } from '~/app/services/github-integration-queries.server'
+import { getGithubAppSlug } from '~/app/services/github-octokit.server'
 import ContentSection from '../+components/content-section'
 import { IntegrationSettings } from '../_index/+forms/integration-settings'
 import { upsertIntegration } from '../_index/+functions/mutations.server'
 import { INTENTS, integrationSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
-
-const GITHUB_APP_INSTALL_NEW_URL =
-  'https://github.com/apps/upflow-team/installations/new'
 
 export const handle = {
   breadcrumb: (_data: unknown, params: { orgSlug: string }) => ({
@@ -28,9 +26,10 @@ export const handle = {
 
 export const loader = async ({ context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
-  const [integration, githubAppLink] = await Promise.all([
+  const [integration, githubAppLink, githubAppSlug] = await Promise.all([
     getIntegration(organization.id),
     getGithubAppLink(organization.id),
+    getGithubAppSlug(),
   ])
   const safeIntegration = integration
     ? {
@@ -46,7 +45,11 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
         appRepositorySelection: githubAppLink.appRepositorySelection,
       }
     : null
-  return { integration: safeIntegration, githubAppLink: safeGithubAppLink }
+  return {
+    integration: safeIntegration,
+    githubAppLink: safeGithubAppLink,
+    githubAppSlug,
+  }
 }
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
@@ -116,15 +119,27 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     )
   }
 
-  if (intent === INTENTS.installGithubApp) {
+  if (
+    intent === INTENTS.installGithubApp ||
+    intent === INTENTS.copyInstallUrl
+  ) {
+    const slug = await getGithubAppSlug()
+    if (!slug) {
+      return dataWithError(
+        { intent: intent as string },
+        {
+          message:
+            'GitHub App is not configured (GITHUB_APP_ID / GITHUB_APP_PRIVATE_KEY missing)',
+        },
+      )
+    }
+    const baseUrl = `https://github.com/apps/${slug}/installations/new`
     const nonce = await generateInstallState(organization.id)
-    const installUrl = `${GITHUB_APP_INSTALL_NEW_URL}?state=${encodeURIComponent(nonce)}`
-    throw redirect(installUrl)
-  }
+    const installUrl = `${baseUrl}?state=${encodeURIComponent(nonce)}`
 
-  if (intent === INTENTS.copyInstallUrl) {
-    const nonce = await generateInstallState(organization.id)
-    const installUrl = `${GITHUB_APP_INSTALL_NEW_URL}?state=${encodeURIComponent(nonce)}`
+    if (intent === INTENTS.installGithubApp) {
+      throw redirect(installUrl)
+    }
     return data({
       intent: INTENTS.copyInstallUrl,
       installUrl,

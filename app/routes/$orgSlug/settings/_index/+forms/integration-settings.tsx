@@ -79,7 +79,7 @@ function GitHubAppSection({
     integration?.method === 'github_app' && githubAppLink == null
 
   const githubInstallationsSettingsUrl = githubAppLink
-    ? `https://github.com/orgs/${encodeURIComponent(githubAppLink.githubOrg)}/settings/installations`
+    ? `https://github.com/organizations/${encodeURIComponent(githubAppLink.githubOrg)}/settings/installations`
     : null
 
   const tokenNote = !integration?.hasToken ? (
