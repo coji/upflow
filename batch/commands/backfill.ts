@@ -36,7 +36,7 @@ export async function backfillCommand(props: BackfillCommandProps) {
     )
 
     consola.success(
-      `Backfill completed for ${output.repositoryCount} repositories. Run \`recalculate\` to apply changes.`,
+      `Backfill completed for ${output.repositoryCount} repositories. Run \`process\` to apply changes.`,
     )
   } finally {
     await durably.stop()

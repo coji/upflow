@@ -5,31 +5,23 @@ import { href, useFetcher, useRevalidator } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import {
   getGithubAppLink,
   getIntegration,
 } from '~/app/services/github-integration-queries.server'
 import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
-import {
-  upsertPullRequest,
-  upsertPullRequestReview,
-  upsertPullRequestReviewers,
-} from '~/batch/db/mutations'
-import { getBotLogins } from '~/batch/db/queries'
+import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { createFetcher } from '~/batch/github/fetcher'
-import type { ShapedGitHubPullRequest } from '~/batch/github/model'
-import { buildPullRequests } from '~/batch/github/pullrequest'
 import { createStore } from '~/batch/github/store'
 import type { Route } from './+types/index'
 import {
-  getOrganizationSettings,
   getPullRequest,
   getPullRequestRawData,
   getPullRequestReviewers,
   getPullRequestReviews,
   getRepository,
-  getShapedPullRequest,
 } from './queries.server'
 
 export const handle = {
@@ -137,72 +129,49 @@ export const action = async ({
       }
     })
     .with('refresh', async () => {
-      // 1. Get existing PR shape from raw data
-      const shapedPr = await getShapedPullRequest(
-        organization.id,
-        repositoryId,
-        pullId,
-      )
-      if (!shapedPr) {
-        throw new Response('Raw PR data not found. Run Compare first.', {
-          status: 404,
-        })
-      }
-      const pr = shapedPr as unknown as ShapedGitHubPullRequest
+      const fetchedAt = new Date().toISOString()
+      const [prMetadata, commits, comments, reviews, timelineItems, files] =
+        await Promise.all([
+          fetcher.pullrequest(pullId),
+          fetcher.commits(pullId),
+          fetcher.comments(pullId),
+          fetcher.reviews(pullId),
+          fetcher.timelineItems(pullId),
+          fetcher.files(pullId),
+        ])
+      const prForSave = { ...prMetadata, files }
 
-      // 2. Re-fetch commits/comments/reviews/timelineItems from GitHub
-      const [commits, comments, reviews, timelineItems] = await Promise.all([
-        fetcher.commits(pullId),
-        fetcher.comments(pullId),
-        fetcher.reviews(pullId),
-        fetcher.timelineItems(pullId),
-      ])
-
-      // 3. Save raw data via store
       const store = createStore({
         organizationId: organization.id,
         repositoryId,
       })
-      await store.savePrData(pr, {
-        commits,
-        reviews,
-        discussions: comments,
-        timelineItems,
-      })
-
-      // 4. Get organization settings and bot logins for build config
-      const [settings, botLoginsList] = await Promise.all([
-        getOrganizationSettings(organization.id),
-        getBotLogins(organization.id),
-      ])
-
-      // 5. Build pull request data (analyze)
-      const result = await buildPullRequests(
+      await store.savePrData(
+        prForSave,
         {
-          organizationId: organization.id,
-          repositoryId,
-          botLogins: new Set(botLoginsList),
-          releaseDetectionMethod: settings?.releaseDetectionMethod ?? 'branch',
-          releaseDetectionKey: settings?.releaseDetectionKey ?? '',
+          commits,
+          reviews,
+          discussions: comments,
+          timelineItems,
         },
-        [pr],
-        store.loader,
+        fetchedAt,
       )
 
-      // 6. Upsert to DB
-      for (const pull of result.pulls) {
-        await upsertPullRequest(organization.id, pull)
-      }
-      for (const review of result.reviews) {
-        await upsertPullRequestReview(organization.id, review)
-      }
-      for (const reviewer of result.reviewers) {
-        await upsertPullRequestReviewers(
-          organization.id,
-          reviewer.repositoryId,
-          reviewer.pullRequestNumber,
-          reviewer.reviewers,
+      const { durably } = await import('~/app/services/durably.server')
+      try {
+        await durably.jobs.process.triggerAndWait(
+          {
+            organizationId: organization.id,
+            scopes: [{ repositoryId, prNumbers: [Number(pullId)] }],
+          },
+          {
+            concurrencyKey: processConcurrencyKey(organization.id),
+            labels: { organizationId: organization.id },
+          },
         )
+      } catch (e) {
+        throw new Response(`Process job failed: ${getErrorMessage(e)}`, {
+          status: 500,
+        })
       }
 
       return { intent: 'refresh' as const, success: true }

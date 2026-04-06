@@ -1,17 +1,18 @@
 import consola from 'consola'
 import { durably } from '~/app/services/durably.server'
+import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { requireOrganization } from './helpers'
 import { shutdown } from './shutdown'
 
-interface RecalculateCommandProps {
+interface ProcessCommandProps {
   organizationId?: string
   export: boolean
 }
 
-export async function recalculateCommand({
+export async function processCommand({
   organizationId,
   export: exportFlag,
-}: RecalculateCommandProps) {
+}: ProcessCommandProps) {
   const result = await requireOrganization(organizationId)
   if (!result) return
 
@@ -22,13 +23,13 @@ export async function recalculateCommand({
     const flags = [exportFlag ? 'export' : null].filter(Boolean)
 
     consola.info(
-      `Starting recalculate for ${orgId}${flags.length ? ` (+${flags.join(', ')})` : ''}...`,
+      `Starting process for ${orgId}${flags.length ? ` (+${flags.join(', ')})` : ''}...`,
     )
 
-    const { output } = await durably.jobs.recalculate.triggerAndWait(
+    const { output } = await durably.jobs.process.triggerAndWait(
       { organizationId: orgId, steps },
       {
-        concurrencyKey: `recalculate:${orgId}`,
+        concurrencyKey: processConcurrencyKey(orgId),
         labels: { organizationId: orgId },
         onProgress: (p) => {
           if (p.message) consola.info(p.message)
@@ -41,7 +42,7 @@ export async function recalculateCommand({
       },
     )
 
-    consola.success(`Recalculate completed. ${output.pullCount} PRs updated.`)
+    consola.success(`Process completed. ${output.pullCount} PRs updated.`)
   } finally {
     await durably.stop()
     await shutdown()

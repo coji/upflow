@@ -298,7 +298,7 @@ async function updateLastActivityAt(
 
 /**
  * analyze 結果を一括で DB に書き込む共通関数。
- * durably ジョブ（crawl, recalculate）の共通 upsert 処理。
+ * durably ジョブ（process）の共通 upsert 処理。
  */
 export async function upsertAnalyzedData(
   organizationId: OrganizationId,

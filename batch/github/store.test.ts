@@ -40,6 +40,10 @@ const orgId = toOrgId('test-org')
 const repositoryId = 'repo-1'
 const tenantDbPath = path.join(testDir, `tenant_${orgId}.db`)
 
+function isoAt(ms: number) {
+  return new Date(ms).toISOString()
+}
+
 function setupTenantDb() {
   setupTenantSchema(tenantDbPath)
   const db = new SQLite(tenantDbPath)
@@ -168,12 +172,16 @@ describe('store', () => {
     const discussions = makeDiscussions(1)
     const timelineItems = makeTimelineItems(1)
 
-    await store.savePrData(pr, {
-      commits,
-      reviews,
-      discussions,
-      timelineItems,
-    })
+    await store.savePrData(
+      pr,
+      {
+        commits,
+        reviews,
+        discussions,
+        timelineItems,
+      },
+      isoAt(1_700_000_000_000),
+    )
 
     expect(await store.loader.pullrequests()).toEqual([pr])
     expect(await store.loader.commits(1)).toEqual(commits)
@@ -186,11 +194,15 @@ describe('store', () => {
     const store = createStore({ organizationId: orgId, repositoryId })
     const pr = makePr(1)
 
-    await store.savePrData(pr, {
-      commits: makeCommits(1),
-      reviews: makeReviews(1),
-      discussions: makeDiscussions(1),
-    })
+    await store.savePrData(
+      pr,
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      isoAt(1_700_000_000_000),
+    )
 
     const updatedPr = { ...pr, title: 'Updated PR #1' }
     const updatedCommits: ShapedGitHubCommit[] = [
@@ -203,11 +215,15 @@ describe('store', () => {
       },
     ]
 
-    await store.savePrData(updatedPr, {
-      commits: updatedCommits,
-      reviews: makeReviews(1),
-      discussions: makeDiscussions(1),
-    })
+    await store.savePrData(
+      updatedPr,
+      {
+        commits: updatedCommits,
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      isoAt(1_700_000_100_000),
+    )
 
     const prs = await store.loader.pullrequests()
     expect(prs).toHaveLength(1)
@@ -228,11 +244,15 @@ describe('store', () => {
     const store = createStore({ organizationId: orgId, repositoryId })
     const pr = makePr(1)
 
-    await store.savePrData(pr, {
-      commits: makeCommits(1),
-      reviews: makeReviews(1),
-      discussions: makeDiscussions(1),
-    })
+    await store.savePrData(
+      pr,
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      isoAt(1_700_000_000_000),
+    )
 
     expect(await store.loader.timelineItems(1)).toEqual([])
   })
@@ -258,11 +278,15 @@ describe('store', () => {
     const store = createStore({ organizationId: orgId, repositoryId })
 
     for (const n of [1, 2, 3]) {
-      await store.savePrData(makePr(n), {
-        commits: makeCommits(n),
-        reviews: makeReviews(n),
-        discussions: makeDiscussions(n),
-      })
+      await store.savePrData(
+        makePr(n),
+        {
+          commits: makeCommits(n),
+          reviews: makeReviews(n),
+          discussions: makeDiscussions(n),
+        },
+        isoAt(1_700_000_000_000 + n),
+      )
     }
 
     await store.preloadAll()
@@ -278,16 +302,24 @@ describe('store', () => {
   test('multiple PRs are stored independently', async () => {
     const store = createStore({ organizationId: orgId, repositoryId })
 
-    await store.savePrData(makePr(1), {
-      commits: makeCommits(1),
-      reviews: makeReviews(1),
-      discussions: makeDiscussions(1),
-    })
-    await store.savePrData(makePr(2), {
-      commits: makeCommits(2),
-      reviews: makeReviews(2),
-      discussions: makeDiscussions(2),
-    })
+    await store.savePrData(
+      makePr(1),
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      isoAt(1_700_000_000_000),
+    )
+    await store.savePrData(
+      makePr(2),
+      {
+        commits: makeCommits(2),
+        reviews: makeReviews(2),
+        discussions: makeDiscussions(2),
+      },
+      isoAt(1_700_000_000_001),
+    )
 
     expect(await store.loader.pullrequests()).toHaveLength(2)
     expect(await store.loader.commits(1)).toEqual(makeCommits(1))
@@ -301,21 +333,33 @@ describe('store', () => {
     const pr2 = { ...makePr(2), updatedAt: '2024-01-05T00:00:00Z' }
     const pr3 = { ...makePr(3), updatedAt: '2024-01-03T00:00:00Z' }
 
-    await store.savePrData(pr1, {
-      commits: makeCommits(1),
-      reviews: makeReviews(1),
-      discussions: makeDiscussions(1),
-    })
-    await store.savePrData(pr2, {
-      commits: makeCommits(2),
-      reviews: makeReviews(2),
-      discussions: makeDiscussions(2),
-    })
-    await store.savePrData(pr3, {
-      commits: makeCommits(3),
-      reviews: makeReviews(3),
-      discussions: makeDiscussions(3),
-    })
+    await store.savePrData(
+      pr1,
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      isoAt(1_700_000_000_000),
+    )
+    await store.savePrData(
+      pr2,
+      {
+        commits: makeCommits(2),
+        reviews: makeReviews(2),
+        discussions: makeDiscussions(2),
+      },
+      isoAt(1_700_000_000_001),
+    )
+    await store.savePrData(
+      pr3,
+      {
+        commits: makeCommits(3),
+        reviews: makeReviews(3),
+        discussions: makeDiscussions(3),
+      },
+      isoAt(1_700_000_000_002),
+    )
 
     expect(await store.getLatestUpdatedAt()).toBe('2024-01-05T00:00:00Z')
   })
@@ -328,12 +372,16 @@ describe('store', () => {
   test('preloadAll uses lazy parsing (data accessible after preload)', async () => {
     const store = createStore({ organizationId: orgId, repositoryId })
 
-    await store.savePrData(makePr(1), {
-      commits: makeCommits(1),
-      reviews: makeReviews(1),
-      discussions: makeDiscussions(1),
-      timelineItems: makeTimelineItems(1),
-    })
+    await store.savePrData(
+      makePr(1),
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+        timelineItems: makeTimelineItems(1),
+      },
+      isoAt(1_700_000_000_000),
+    )
 
     await store.preloadAll()
 
@@ -346,5 +394,83 @@ describe('store', () => {
     expect(await store.loader.reviews(1)).toEqual(makeReviews(1))
     expect(await store.loader.discussions(1)).toEqual(makeDiscussions(1))
     expect(await store.loader.timelineItems(1)).toEqual(makeTimelineItems(1))
+  })
+
+  test('savePrData does not overwrite row when incoming fetchedAt is older', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    const pr = makePr(1)
+    const newer = isoAt(1_700_000_100_000)
+    const older = isoAt(1_700_000_000_000)
+
+    await store.savePrData(
+      pr,
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      newer,
+    )
+
+    const stalePr = { ...pr, title: 'Stale overwrite attempt' }
+    await store.savePrData(
+      stalePr,
+      {
+        commits: [{ ...makeCommits(1)[0], sha: 'stale-sha' }],
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      older,
+    )
+
+    const prs = await store.loader.pullrequests()
+    expect(prs[0].title).toBe('PR #1')
+    expect(await store.loader.commits(1)).toEqual(makeCommits(1))
+  })
+
+  test('updatePrMetadata skips when incoming fetchedAt is older than stored', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    const pr = makePr(1)
+    await store.savePrData(
+      pr,
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      isoAt(1_700_000_100_000),
+    )
+
+    const staleMeta = { ...pr, title: 'Stale metadata' }
+    const n = await store.updatePrMetadata([
+      { pr: staleMeta, fetchedAt: isoAt(1_700_000_000_000) },
+    ])
+    expect(n).toBe(0)
+
+    const prs = await store.loader.pullrequests()
+    expect(prs[0].title).toBe('PR #1')
+  })
+
+  test('updatePrMetadata applies when incoming fetchedAt is newer or equal', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    const pr = makePr(1)
+    await store.savePrData(
+      pr,
+      {
+        commits: makeCommits(1),
+        reviews: makeReviews(1),
+        discussions: makeDiscussions(1),
+      },
+      isoAt(1_700_000_000_000),
+    )
+
+    const updated = { ...pr, title: 'New title' }
+    const n = await store.updatePrMetadata([
+      { pr: updated, fetchedAt: isoAt(1_700_000_100_000) },
+    ])
+    expect(n).toBe(1)
+
+    const prs = await store.loader.pullrequests()
+    expect(prs[0].title).toBe('New title')
   })
 })

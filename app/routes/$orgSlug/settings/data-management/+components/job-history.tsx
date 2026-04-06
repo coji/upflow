@@ -20,7 +20,7 @@ export function isRunActive(status: RunStatus): boolean {
 
 const jobNameColors: Record<string, string> = {
   crawl: 'bg-blue-100 text-blue-800',
-  recalculate: 'bg-purple-100 text-purple-800',
+  process: 'bg-purple-100 text-purple-800',
   classify: 'bg-amber-100 text-amber-800',
   backfill: 'bg-emerald-100 text-emerald-800',
 }

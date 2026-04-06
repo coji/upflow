@@ -59,11 +59,11 @@ describe('api.github.webhook', () => {
     expect(process).not.toHaveBeenCalled()
   })
 
-  test('202 for unhandled event without calling processor', async () => {
+  test('204 for ping and delegates to processor (no-op in service)', async () => {
     verify.mockReturnValue(true)
     const res = await post('{}', { 'X-GitHub-Event': 'ping' })
-    expect(res.status).toBe(202)
-    expect(process).not.toHaveBeenCalled()
+    expect(res.status).toBe(204)
+    expect(process).toHaveBeenCalledWith('ping', {})
   })
 
   test('204 for installation and calls processor', async () => {
@@ -80,5 +80,49 @@ describe('api.github.webhook', () => {
     process.mockRejectedValue(new Error('db down'))
     const res = await post('{}', { 'X-GitHub-Event': 'installation' })
     expect(res.status).toBe(500)
+  })
+
+  const prPayload = {
+    action: 'opened',
+    installation: { id: 1 },
+    repository: { name: 'r', owner: { login: 'o' } },
+    pull_request: { number: 2 },
+  }
+
+  test('204 for pull_request and delegates to processor', async () => {
+    verify.mockReturnValue(true)
+    const res = await post(JSON.stringify(prPayload), {
+      'X-GitHub-Event': 'pull_request',
+    })
+    expect(res.status).toBe(204)
+    expect(process).toHaveBeenCalledWith('pull_request', prPayload)
+  })
+
+  test('204 for pull_request_review and delegates to processor', async () => {
+    verify.mockReturnValue(true)
+    const res = await post(JSON.stringify(prPayload), {
+      'X-GitHub-Event': 'pull_request_review',
+    })
+    expect(res.status).toBe(204)
+    expect(process).toHaveBeenCalledWith('pull_request_review', prPayload)
+  })
+
+  test('204 for pull_request_review_comment and delegates to processor', async () => {
+    verify.mockReturnValue(true)
+    const res = await post(JSON.stringify(prPayload), {
+      'X-GitHub-Event': 'pull_request_review_comment',
+    })
+    expect(res.status).toBe(204)
+    expect(process).toHaveBeenCalledWith(
+      'pull_request_review_comment',
+      prPayload,
+    )
+  })
+
+  test('204 for unsupported event still delegates to processor (service no-op)', async () => {
+    verify.mockReturnValue(true)
+    const res = await post('{}', { 'X-GitHub-Event': 'issues' })
+    expect(res.status).toBe(204)
+    expect(process).toHaveBeenCalledWith('issues', {})
   })
 })
