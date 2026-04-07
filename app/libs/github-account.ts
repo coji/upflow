@@ -54,3 +54,15 @@ export const buildInstallationSettingsUrl = (
   }
   return null
 }
+
+/**
+ * Predicate for the "broken repository" state: a repository whose canonical
+ * GitHub App installation was lost (e.g. the installation was uninstalled and
+ * canonical reassignment found 0 or 2+ candidates). Shared between the
+ * repositories list UI and the batch CLI command.
+ */
+export const isRepositoryBroken = (
+  repo: { githubInstallationId: number | null },
+  integrationMethod: 'token' | 'github_app' | null,
+): boolean =>
+  integrationMethod === 'github_app' && repo.githubInstallationId === null

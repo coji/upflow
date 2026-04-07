@@ -14,7 +14,10 @@ import {
 import { closeDb, db } from '~/app/services/db.server'
 import { closeAllTenantDbs } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
-import { reassignCanonicalAfterLinkLoss } from './github-app-membership.server'
+import {
+  reassignBrokenRepository,
+  reassignCanonicalAfterLinkLoss,
+} from './github-app-membership.server'
 
 const ORG_ID = 'org-test' as OrganizationId
 const LOST_INSTALLATION = 100
@@ -482,5 +485,179 @@ describe('reassignCanonicalAfterLinkLoss', () => {
       .selectAll()
       .execute()
     expect(events).toHaveLength(0)
+  })
+})
+
+describe('reassignBrokenRepository', () => {
+  const seedBrokenRepo = async () => {
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb
+      .insertInto('repositories')
+      .values({
+        id: REPO_ID,
+        integrationId: 'int-1',
+        provider: 'github',
+        owner: 'octo',
+        repo: 'hello',
+        githubInstallationId: null,
+        updatedAt: '2026-04-07T00:00:00Z',
+      })
+      .execute()
+  }
+
+  beforeEach(async () => {
+    await db.deleteFrom('githubAppLinkEvents').execute()
+    await db.deleteFrom('githubAppLinks').execute()
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb.deleteFrom('repositoryInstallationMemberships').execute()
+    await tenantDb.deleteFrom('repositories').execute()
+  })
+
+  test('1 eligible candidate → reassigned + canonical_reassigned event', async () => {
+    await insertLink(ALT_INSTALLATION)
+    await seedBrokenRepo()
+    await insertMembership(ALT_INSTALLATION)
+
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: REPO_ID,
+      source: 'manual_reassign',
+    })
+
+    expect(result).toEqual({
+      status: 'reassigned',
+      installationId: ALT_INSTALLATION,
+    })
+
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const repo = await getTenantDb(ORG_ID)
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', REPO_ID)
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBe(ALT_INSTALLATION)
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .selectAll()
+      .execute()
+    expect(events.map((e) => e.eventType)).toEqual(['canonical_reassigned'])
+  })
+
+  test('0 candidates → no_candidates, no audit event written', async () => {
+    await seedBrokenRepo()
+
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: REPO_ID,
+      source: 'manual_reassign',
+    })
+
+    expect(result).toEqual({ status: 'no_candidates' })
+
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const repo = await getTenantDb(ORG_ID)
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', REPO_ID)
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBeNull()
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .selectAll()
+      .execute()
+    expect(events).toHaveLength(0)
+  })
+
+  test('2+ candidates → ambiguous, no audit event written', async () => {
+    await insertLink(ALT_INSTALLATION)
+    await insertLink(SECOND_ALT_INSTALLATION)
+    await seedBrokenRepo()
+    await insertMembership(ALT_INSTALLATION)
+    await insertMembership(SECOND_ALT_INSTALLATION)
+
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: REPO_ID,
+      source: 'manual_reassign',
+    })
+
+    expect(result).toEqual({ status: 'ambiguous', candidateCount: 2 })
+
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const repo = await getTenantDb(ORG_ID)
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', REPO_ID)
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBeNull()
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .selectAll()
+      .execute()
+    expect(events).toHaveLength(0)
+  })
+
+  test('not_broken: repo already has a canonical installation → no event', async () => {
+    await insertLink(ALT_INSTALLATION)
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb
+      .insertInto('repositories')
+      .values({
+        id: REPO_ID,
+        integrationId: 'int-1',
+        provider: 'github',
+        owner: 'octo',
+        repo: 'hello',
+        githubInstallationId: ALT_INSTALLATION,
+        updatedAt: '2026-04-07T00:00:00Z',
+      })
+      .execute()
+
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: REPO_ID,
+      source: 'manual_reassign',
+    })
+    expect(result).toEqual({ status: 'not_broken' })
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .selectAll()
+      .execute()
+    expect(events).toHaveLength(0)
+  })
+
+  test('suspended link is excluded from candidates', async () => {
+    await insertLink(ALT_INSTALLATION, {
+      suspendedAt: '2026-04-07T00:00:00Z',
+    })
+    await seedBrokenRepo()
+    await insertMembership(ALT_INSTALLATION)
+
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: REPO_ID,
+      source: 'manual_reassign',
+    })
+    expect(result).toEqual({ status: 'no_candidates' })
+  })
+
+  test('uninitialized link is excluded from candidates', async () => {
+    await insertLink(ALT_INSTALLATION, { membershipInitializedAt: null })
+    await seedBrokenRepo()
+    await insertMembership(ALT_INSTALLATION)
+
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: REPO_ID,
+      source: 'manual_reassign',
+    })
+    expect(result).toEqual({ status: 'no_candidates' })
   })
 })

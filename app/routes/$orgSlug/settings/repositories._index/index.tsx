@@ -7,6 +7,8 @@ import { z } from 'zod'
 import { isOrgOwner } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
+import { reassignBrokenRepository } from '~/app/services/github-app-membership.server'
+import { getIntegration } from '~/app/services/github-integration-queries.server'
 import ContentSection from '../+components/content-section'
 import { listTeams } from '../teams._index/queries.server'
 import { createColumns } from './+components/repo-columns'
@@ -42,17 +44,27 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     per_page: searchParams.get('per_page'),
   })
 
-  const { data: repositories, pagination } = await listFilteredRepositories({
-    organizationId: organization.id,
-    repo,
-    teamId: team || undefined,
-    currentPage,
-    pageSize,
-    sortBy,
-    sortOrder,
-  })
+  const [{ data: repositories, pagination }, teams, integration] =
+    await Promise.all([
+      listFilteredRepositories({
+        organizationId: organization.id,
+        repo,
+        teamId: team || undefined,
+        currentPage,
+        pageSize,
+        sortBy,
+        sortOrder,
+      }),
+      listTeams(organization.id),
+      getIntegration(organization.id),
+    ])
 
-  const teams = await listTeams(organization.id)
+  const integrationMethod: 'token' | 'github_app' | null =
+    integration?.method === 'github_app'
+      ? 'github_app'
+      : integration?.method === 'token'
+        ? 'token'
+        : null
 
   return {
     organization,
@@ -60,6 +72,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     pagination,
     teams,
     canAddRepositories: isOrgOwner(membership.role),
+    integrationMethod,
   }
 }
 
@@ -80,9 +93,15 @@ const bulkUpdateTeamSchema = z.object({
   teamId: nullableTeamId,
 })
 
+const reassignBrokenSchema = z.object({
+  intent: z.literal('reassignBroken'),
+  repositoryId: z.string().min(1),
+})
+
 const actionSchema = z.discriminatedUnion('intent', [
   updateTeamSchema,
   bulkUpdateTeamSchema,
+  reassignBrokenSchema,
 ])
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
@@ -132,6 +151,50 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         { message: `${repositoryIds.length}件のチームを変更しました` },
       )
     })
+    .with({ intent: 'reassignBroken' }, async ({ repositoryId }) => {
+      try {
+        const result = await reassignBrokenRepository({
+          organizationId: organization.id,
+          repositoryId,
+          source: 'manual_reassign',
+        })
+        return match(result)
+          .with({ status: 'reassigned' }, () =>
+            dataWithSuccess(
+              { ok: true, lastResult: null },
+              { message: 'Repository reassigned to an active installation.' },
+            ),
+          )
+          .with({ status: 'no_candidates' }, () =>
+            dataWithError(
+              { ok: false, lastResult: null },
+              {
+                message:
+                  'No active installation can see this repository. Reinstall the GitHub App and try again.',
+              },
+            ),
+          )
+          .with({ status: 'ambiguous' }, ({ candidateCount }) =>
+            dataWithError(
+              { ok: false, lastResult: null },
+              {
+                message: `${candidateCount} installations can see this repository. Manual reassignment is required — disconnect the unwanted installations to resolve.`,
+              },
+            ),
+          )
+          .with({ status: 'not_broken' }, () =>
+            dataWithSuccess(
+              { ok: true, lastResult: null },
+              { message: 'Repository is already assigned.' },
+            ),
+          )
+          .exhaustive()
+      } catch (e) {
+        console.error('Failed to reassign broken repository:', e)
+        const message = getErrorMessage(e)
+        return dataWithError({ ok: false, lastResult: null }, { message })
+      }
+    })
     .exhaustive()
 }
 
@@ -142,10 +205,14 @@ export default function OrganizationRepositoryIndexPage({
     pagination,
     teams,
     canAddRepositories,
+    integrationMethod,
   },
 }: Route.ComponentProps) {
   const slug = organization.slug
-  const columns = useMemo(() => createColumns(slug, teams), [slug, teams])
+  const columns = useMemo(
+    () => createColumns(slug, teams, integrationMethod),
+    [slug, teams, integrationMethod],
+  )
 
   return (
     <ContentSection
