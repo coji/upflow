@@ -2,7 +2,7 @@
   "include": ["**/*.ts", "**/*.tsx", ".react-router/types/**/*"],
   "exclude": ["node_modules", "opensrc"],
   "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "lib": ["DOM", "DOM.Iterable", "ES2024"],
     "types": ["@types/node", "vite/client"],
     "isolatedModules": true,
     "esModuleInterop": true,

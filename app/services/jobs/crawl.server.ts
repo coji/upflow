@@ -2,10 +2,7 @@ import { defineJob } from '@coji/durably'
 import { z } from 'zod'
 import { getErrorMessageForLog } from '~/app/libs/error-message'
 import { clearOrgCache } from '~/app/services/cache.server'
-import {
-  assertOrgGithubAuthResolvable,
-  resolveOctokitFromOrg,
-} from '~/app/services/github-octokit.server'
+import { resolveOctokitForRepository } from '~/app/services/github-octokit.server'
 import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { shouldTriggerFullOrgProcessJob } from '~/app/services/jobs/crawl-process-handoff.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -45,21 +42,27 @@ export const crawlJob = defineJob({
       if (!fullOrg.organizationSetting) {
         throw new Error('No organization setting configured')
       }
-      assertOrgGithubAuthResolvable({
-        integration: fullOrg.integration,
-        githubAppLink: fullOrg.githubAppLink,
-      })
+      if (!fullOrg.integration) {
+        throw new Error('No integration configured')
+      }
+      if (
+        fullOrg.integration.method === 'github_app' &&
+        fullOrg.githubAppLinks.filter((l) => !l.suspendedAt).length === 0
+      ) {
+        throw new Error('GitHub App is not connected')
+      }
+      if (
+        fullOrg.integration.method === 'token' &&
+        !fullOrg.integration.privateToken
+      ) {
+        throw new Error('No auth configured')
+      }
       return {
         organizationSetting: fullOrg.organizationSetting,
         botLogins: fullOrg.botLogins,
         repositories: fullOrg.repositories,
         exportSetting: fullOrg.exportSetting,
       }
-    })
-
-    const octokit = resolveOctokitFromOrg({
-      integration: fullOrg.integration,
-      githubAppLink: fullOrg.githubAppLink,
     })
 
     const updatedPrNumbers = new Map<string, Set<number>>()
@@ -85,6 +88,11 @@ export const crawlJob = defineJob({
       const repoLabel = `${repo.owner}/${repo.repo}`
 
       try {
+        const octokit = resolveOctokitForRepository({
+          integration: fullOrg.integration,
+          githubAppLinks: fullOrg.githubAppLinks,
+          repository: repo,
+        })
         const store = createStore({
           organizationId: orgId,
           repositoryId: repo.id,
