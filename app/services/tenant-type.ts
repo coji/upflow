@@ -136,6 +136,7 @@ export interface PullRequests {
 
 export interface Repositories {
   createdAt: Generated<string>;
+  githubInstallationId: number | null;
   id: string;
   integrationId: string;
   owner: string;
@@ -146,6 +147,14 @@ export interface Repositories {
   scanWatermark: string | null;
   teamId: string | null;
   updatedAt: string;
+}
+
+export interface RepositoryInstallationMemberships {
+  createdAt: Generated<string>;
+  deletedAt: string | null;
+  installationId: number;
+  repositoryId: string;
+  updatedAt: Generated<string>;
 }
 
 export interface Teams {
@@ -168,5 +177,6 @@ export interface DB {
   pullRequestReviews: PullRequestReviews;
   pullRequests: PullRequests;
   repositories: Repositories;
+  repositoryInstallationMemberships: RepositoryInstallationMemberships;
   teams: Teams;
 }
