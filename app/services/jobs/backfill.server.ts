@@ -1,9 +1,7 @@
 import { defineJob } from '@coji/durably'
 import { z } from 'zod'
-import {
-  assertOrgGithubAuthResolvable,
-  resolveOctokitFromOrg,
-} from '~/app/services/github-octokit.server'
+import { getErrorMessageForLog } from '~/app/libs/error-message'
+import { resolveOctokitForRepository } from '~/app/services/github-octokit.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
 import { backfillRepo } from '~/batch/github/backfill-repo'
@@ -25,18 +23,24 @@ export const backfillJob = defineJob({
 
     const organization = await step.run('load-organization', () => {
       step.progress(0, 0, 'Loading organization...')
-      assertOrgGithubAuthResolvable({
-        integration: fullOrg.integration,
-        githubAppLink: fullOrg.githubAppLink,
-      })
+      if (!fullOrg.integration) {
+        throw new Error('No integration configured')
+      }
+      if (
+        fullOrg.integration.method === 'github_app' &&
+        fullOrg.githubAppLinks.filter((l) => !l.suspendedAt).length === 0
+      ) {
+        throw new Error('GitHub App is not connected')
+      }
+      if (
+        fullOrg.integration.method === 'token' &&
+        !fullOrg.integration.privateToken
+      ) {
+        throw new Error('No auth configured')
+      }
       return {
         repositories: fullOrg.repositories,
       }
-    })
-
-    const octokit = resolveOctokitFromOrg({
-      integration: fullOrg.integration,
-      githubAppLink: fullOrg.githubAppLink,
     })
 
     const repoCount = organization.repositories.length
@@ -47,6 +51,17 @@ export const backfillJob = defineJob({
 
       await step.run(`backfill:${repoLabel}`, async () => {
         step.progress(i + 1, repoCount, `Backfilling ${repoLabel}...`)
+        let octokit: ReturnType<typeof resolveOctokitForRepository>
+        try {
+          octokit = resolveOctokitForRepository({
+            integration: fullOrg.integration,
+            githubAppLinks: fullOrg.githubAppLinks,
+            repository,
+          })
+        } catch (e) {
+          step.log.warn(`Skipping ${repoLabel}: ${getErrorMessageForLog(e)}`)
+          return
+        }
         await backfillRepo(orgId, repository, octokit, {
           files: input.files,
         })

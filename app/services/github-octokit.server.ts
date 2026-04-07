@@ -47,11 +47,24 @@ export type IntegrationAuth =
   | { method: 'token'; privateToken: string }
   | { method: 'github_app'; installationId: number }
 
+export type IntegrationMethod = 'token' | 'github_app'
+
+export type IntegrationForOctokit = {
+  method: IntegrationMethod | (string & {})
+  privateToken: string | null
+}
+
+export type GithubAppLinkForOctokit = {
+  installationId: number
+  suspendedAt?: string | null
+}
+
+export type RepositoryForOctokit = {
+  githubInstallationId: number | null
+}
+
 export type OrgGithubAuthInput = {
-  integration:
-    | { method: string; privateToken: string | null }
-    | null
-    | undefined
+  integration: IntegrationForOctokit | null | undefined
   githubAppLink: { installationId: number } | null | undefined
 }
 
@@ -68,7 +81,18 @@ export function createOctokit(auth: IntegrationAuth): Octokit {
 }
 
 /**
- * durably step 内で呼べる。Octokit は作らず、ユーザー向けエラーのみ投げる。
+ * Build an Octokit for a specific installation id.
+ */
+export function resolveOctokitForInstallation(installationId: number): Octokit {
+  return createOctokit({ method: 'github_app', installationId })
+}
+
+/**
+ * Single-link sanity check used by legacy callers that still treat GitHub App
+ * as one installation per org. New callers should validate per repository via
+ * {@link resolveOctokitForRepository}.
+ *
+ * @deprecated
  */
 export function assertOrgGithubAuthResolvable(org: OrgGithubAuthInput): void {
   const { integration, githubAppLink } = org
@@ -84,8 +108,68 @@ export function assertOrgGithubAuthResolvable(org: OrgGithubAuthInput): void {
 }
 
 /**
+ * Resolve Octokit for a single repository.
+ *
+ * Strict path: when `repository.githubInstallationId` is set, use the matching
+ * (non-suspended) GitHub App link.
+ *
+ * Transitional fallback for `github_app` mode without an explicit installation id:
+ *   - exactly 1 active link → use it
+ *   - 0 active links → throw (PAT auto-fallback is forbidden by design)
+ *   - 2+ active links → throw (ambiguous; requires explicit assignment)
+ */
+export function resolveOctokitForRepository(input: {
+  integration: IntegrationForOctokit | null | undefined
+  githubAppLinks: GithubAppLinkForOctokit[]
+  repository: RepositoryForOctokit
+}): Octokit {
+  const { integration, githubAppLinks, repository } = input
+  if (!integration) throw new Error('No integration configured')
+
+  if (integration.method === 'github_app') {
+    if (repository.githubInstallationId !== null) {
+      const matched = githubAppLinks.find(
+        (l) => l.installationId === repository.githubInstallationId,
+      )
+      if (!matched) {
+        throw new Error(
+          `GitHub App installation ${repository.githubInstallationId} is not active for this organization`,
+        )
+      }
+      if (matched.suspendedAt) {
+        throw new Error(
+          `GitHub App installation ${repository.githubInstallationId} is suspended`,
+        )
+      }
+      return resolveOctokitForInstallation(matched.installationId)
+    }
+
+    const activeLinks = githubAppLinks.filter((l) => !l.suspendedAt)
+    if (activeLinks.length === 1) {
+      return resolveOctokitForInstallation(activeLinks[0].installationId)
+    }
+    if (activeLinks.length === 0) {
+      throw new Error('GitHub App is not connected')
+    }
+    throw new Error(
+      `Repository has no canonical installation assigned and ${activeLinks.length} active installations exist. Backfill required.`,
+    )
+  }
+
+  if (integration.privateToken) {
+    return createOctokit({
+      method: 'token',
+      privateToken: integration.privateToken,
+    })
+  }
+  throw new Error('No auth configured')
+}
+
+/**
  * org の integration + githubAppLink から Octokit を生成する。
- * method 分岐・エラー判定を1箇所に集約。
+ *
+ * @deprecated Use {@link resolveOctokitForRepository} (per-repo) or
+ *   {@link resolveOctokitForInstallation} (explicit installation id).
  */
 export function resolveOctokitFromOrg(org: OrgGithubAuthInput): Octokit {
   assertOrgGithubAuthResolvable(org)
@@ -100,10 +184,7 @@ export function resolveOctokitFromOrg(org: OrgGithubAuthInput): Octokit {
       githubAppLink,
       'githubAppLink must be set for github_app method after assertOrgGithubAuthResolvable',
     )
-    return createOctokit({
-      method: 'github_app',
-      installationId: githubAppLink.installationId,
-    })
+    return resolveOctokitForInstallation(githubAppLink.installationId)
   }
 
   invariant(

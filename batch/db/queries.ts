@@ -37,18 +37,19 @@ const githubAppLinkColumns = [
   'installationId',
   'githubOrg',
   'githubAccountId',
+  'githubAccountType',
   'appRepositorySelection',
+  'suspendedAt',
+  'membershipInitializedAt',
 ] as const
 
-async function getGithubAppLinkByOrgId(organizationId: OrganizationId) {
-  return (
-    (await db
-      .selectFrom('githubAppLinks')
-      .select(githubAppLinkColumns)
-      .where('organizationId', '=', organizationId)
-      .where('deletedAt', 'is', null)
-      .executeTakeFirst()) ?? null
-  )
+async function getGithubAppLinksByOrgId(organizationId: OrganizationId) {
+  return await db
+    .selectFrom('githubAppLinks')
+    .select(githubAppLinkColumns)
+    .where('organizationId', '=', organizationId)
+    .where('deletedAt', 'is', null)
+    .execute()
 }
 
 async function getAllGithubAppLinks() {
@@ -57,7 +58,7 @@ async function getAllGithubAppLinks() {
     .select(githubAppLinkColumns)
     .where('deletedAt', 'is', null)
     .execute()
-  return new Map(rows.map((r) => [r.organizationId, r]))
+  return Map.groupBy(rows, (r) => r.organizationId)
 }
 
 const integrationColumns = [
@@ -156,8 +157,8 @@ export const listAllOrganizations = async () => {
     orgs.map(async (org) => {
       const tenantData = await getTenantData(org.id as OrganizationId)
       const integration = integrationsMap.get(org.id) ?? null
-      const githubAppLink = appLinksMap.get(org.id) ?? null
-      return { ...org, ...tenantData, integration, githubAppLink }
+      const githubAppLinks = appLinksMap.get(org.id) ?? []
+      return { ...org, ...tenantData, integration, githubAppLinks }
     }),
   )
 }
@@ -169,14 +170,13 @@ export const getOrganization = async (organizationId: OrganizationId) => {
     .where('id', '=', organizationId)
     .executeTakeFirstOrThrow()
 
-  const [integration, githubAppLink, tenantData, botLogins] = await Promise.all(
-    [
+  const [integration, githubAppLinks, tenantData, botLogins] =
+    await Promise.all([
       getIntegrationByOrgId(organizationId),
-      getGithubAppLinkByOrgId(organizationId),
+      getGithubAppLinksByOrgId(organizationId),
       getTenantData(organizationId),
       getBotLogins(organizationId),
-    ],
-  )
+    ])
 
-  return { ...org, ...tenantData, botLogins, integration, githubAppLink }
+  return { ...org, ...tenantData, botLogins, integration, githubAppLinks }
 }
