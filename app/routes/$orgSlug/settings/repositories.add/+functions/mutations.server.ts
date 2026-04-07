@@ -40,5 +40,6 @@ export const addRepository = async (
         updatedAt: eb.ref('excluded.updatedAt'),
       })),
     )
-    .executeTakeFirst()
+    .returning('id')
+    .executeTakeFirstOrThrow()
 }
