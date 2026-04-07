@@ -183,6 +183,7 @@ export function PRBlock({
   showAuthor,
   onMouseEnter,
   onMouseLeave,
+  onClick,
   dataPrKey,
 }: {
   pr: PRBlockData
@@ -190,6 +191,7 @@ export function PRBlock({
   showAuthor?: boolean
   onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void
   onMouseLeave?: () => void
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   dataPrKey?: string
 }) {
   const { bg, ring, bgFaint } = getBlockColor(pr, colorMode)
@@ -204,6 +206,7 @@ export function PRBlock({
           aria-label={`${pr.repo}#${pr.number}`}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
+          onClick={onClick}
         />
       </PopoverTrigger>
       <PopoverContent side="top" className="w-72 p-3">
