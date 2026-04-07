@@ -107,6 +107,7 @@ async function getTenantData(organizationId: OrganizationId) {
         'teamId',
         'updatedAt',
         'createdAt',
+        'scanWatermark',
       ])
       .execute(),
     tenantDb

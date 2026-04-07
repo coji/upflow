@@ -270,16 +270,27 @@ export const createStore = ({
   }
 
   /**
-   * Get the latest updatedAt timestamp for this repository.
-   * Uses SQL MAX() — no JSON parsing needed.
+   * Scan watermark: the upper bound (PR updatedAt) up to which a full-sweep
+   * crawl has guaranteed to have fetched every PR. Only full-sweep crawls
+   * should advance this; targeted fetches (webhook-driven) must NOT touch it,
+   * otherwise older PRs that were updated during a gap get skipped by the
+   * next full crawl's `stopBefore` check. See issue #278.
    */
-  const getLatestUpdatedAt = async (): Promise<string | null> => {
+  const getScanWatermark = async (): Promise<string | null> => {
     const row = await db
-      .selectFrom('githubRawData')
-      .select((eb) => eb.fn.max('updatedAt').as('maxUpdatedAt'))
-      .where('repositoryId', '=', repositoryId)
+      .selectFrom('repositories')
+      .select('scanWatermark')
+      .where('id', '=', repositoryId)
       .executeTakeFirst()
-    return (row?.maxUpdatedAt as string | null) ?? null
+    return row?.scanWatermark ?? null
+  }
+
+  const setScanWatermark = async (watermark: string): Promise<void> => {
+    await db
+      .updateTable('repositories')
+      .set({ scanWatermark: watermark })
+      .where('id', '=', repositoryId)
+      .execute()
   }
 
   return {
@@ -287,7 +298,8 @@ export const createStore = ({
     updatePrMetadata,
     saveTags,
     preloadAll,
-    getLatestUpdatedAt,
+    getScanWatermark,
+    setScanWatermark,
     loader: {
       commits,
       discussions,

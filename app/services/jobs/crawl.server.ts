@@ -11,6 +11,7 @@ import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
 import { createFetcher } from '~/batch/github/fetcher'
 import { createStore } from '~/batch/github/store'
+import { computeAdvancedScanWatermark } from './scan-watermark'
 
 export const crawlJob = defineJob({
   name: 'crawl',
@@ -89,28 +90,29 @@ export const crawlJob = defineJob({
         })
       }
 
-      const lastFetchedAt = await step.run(
-        `last-fetched-at:${repoLabel}`,
-        async () => {
-          if (input.refresh) return FETCH_ALL_SENTINEL
-          return (
-            (await store.getLatestUpdatedAt().catch(() => null)) ??
-            FETCH_ALL_SENTINEL
-          )
-        },
-      )
+      // Watermark bounds full-sweep progress; targeted fetches must not
+      // advance it (see computeAdvancedScanWatermark / #278). Already
+      // preloaded via getOrganization, so no extra round-trip here.
+      const scanWatermark = input.refresh
+        ? FETCH_ALL_SENTINEL
+        : (repo.scanWatermark ?? FETCH_ALL_SENTINEL)
 
       const prNumberSet = input.prNumbers ? new Set(input.prNumbers) : null
-      const prsToFetch: Array<{ number: number }> = prNumberSet
-        ? (input.prNumbers?.map((n) => ({ number: n })) ?? [])
-        : await step.run(`fetch-prs:${repoLabel}`, async () => {
-            step.progress(i + 1, repoCount, `Fetching PR list: ${repoLabel}...`)
-            const stopBefore =
-              input.refresh || lastFetchedAt === FETCH_ALL_SENTINEL
-                ? undefined
-                : lastFetchedAt
-            return await fetcher.pullrequestList(stopBefore)
-          })
+      const prsToFetch: Array<{ number: number; updatedAt?: string }> =
+        prNumberSet
+          ? (input.prNumbers?.map((n) => ({ number: n })) ?? [])
+          : await step.run(`fetch-prs:${repoLabel}`, async () => {
+              step.progress(
+                i + 1,
+                repoCount,
+                `Fetching PR list: ${repoLabel}...`,
+              )
+              const stopBefore =
+                input.refresh || scanWatermark === FETCH_ALL_SENTINEL
+                  ? undefined
+                  : scanWatermark
+              return await fetcher.pullrequestList(stopBefore)
+            })
 
       const repoUpdated = new Set<number>()
       for (let j = 0; j < prsToFetch.length; j++) {
@@ -167,6 +169,19 @@ export const crawlJob = defineJob({
 
       if (repoUpdated.size > 0) {
         updatedPrNumbers.set(repo.id, repoUpdated)
+      }
+
+      // Advance the scan watermark only after a fully successful full-sweep.
+      // See computeAdvancedScanWatermark for the invariants.
+      const nextWatermark = computeAdvancedScanWatermark({
+        isTargetedFetch: prNumberSet !== null,
+        prsToFetch,
+        savedPrNumbers: repoUpdated,
+      })
+      if (nextWatermark !== null) {
+        await step.run(`advance-scan-watermark:${repoLabel}`, async () => {
+          await store.setScanWatermark(nextWatermark)
+        })
       }
     }
 
