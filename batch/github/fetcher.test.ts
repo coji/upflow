@@ -3,8 +3,13 @@ import { describe, expect, test, vi } from 'vitest'
 import type { ShapedTimelineItem } from './model'
 
 // 純粋関数なので直接 import してテスト
-const { buildRequestedAtMap, createFetcher, paginateGraphQL, shapeTagNode } =
-  await import('./fetcher')
+const {
+  buildRequestedAtMap,
+  createFetcher,
+  GraphQLResourceMissingError,
+  paginateGraphQL,
+  shapeTagNode,
+} = await import('./fetcher')
 
 describe('buildRequestedAtMap', () => {
   test('returns empty map for empty items', () => {
@@ -323,6 +328,49 @@ describe('paginateGraphQL shouldStop', () => {
       { number: 5, updatedAt: '2026-04-03T00:00:00Z' },
       { number: 4, updatedAt: '2026-04-02T00:00:00Z' },
     ])
+  })
+
+  test('throws GraphQLResourceMissingError when isResourceMissing returns true', async () => {
+    const graphqlFn = vi.fn(() => Promise.resolve({ repository: null }))
+    await expect(
+      paginateGraphQL(
+        graphqlFn,
+        (r: {
+          repository: {
+            nodes: unknown[]
+            pageInfo: { hasNextPage: boolean; endCursor: string | null }
+          } | null
+        }) => r.repository,
+        (n: unknown) => n,
+        {
+          minPageSize: 10,
+          label: 'test(owner/repo)',
+          isResourceMissing: (r) => r?.repository == null,
+        },
+      ),
+    ).rejects.toBeInstanceOf(GraphQLResourceMissingError)
+    // ページサイズを縮小しながらリトライせず、1回呼んだだけで throw
+    expect(graphqlFn).toHaveBeenCalledTimes(1)
+  })
+
+  test('throws GraphQLResourceMissingError including label/cursor', async () => {
+    const graphqlFn = () => Promise.resolve({ repository: null })
+    await expect(
+      paginateGraphQL(
+        graphqlFn,
+        (r: {
+          repository: {
+            nodes: unknown[]
+            pageInfo: { hasNextPage: boolean; endCursor: string | null }
+          } | null
+        }) => r.repository,
+        (n: unknown) => n,
+        {
+          label: 'pullrequestList(acme/ghost)',
+          isResourceMissing: (r) => r?.repository == null,
+        },
+      ),
+    ).rejects.toThrow(/pullrequestList\(acme\/ghost\)/)
   })
 
   test('returns all nodes when shouldStop is not provided', async () => {
