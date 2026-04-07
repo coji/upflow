@@ -229,9 +229,10 @@ webhook 解決への影響:
 
 migration:
 
-- shared DB migration で `github_app_links` を再作成し、複合主キー・`suspended_at`・`github_account_type` を持つ新 schema に置き換える
-- 既存 row は `organization_id`, `installation_id`, `github_account_id`, `github_org`, `app_repository_selection`, `deleted_at`, `created_at`, `updated_at` をコピーし、`suspended_at` と `github_account_type` は `NULL` で初期化する
+- shared DB migration で `github_app_links` を再作成し、複合主キー・`suspended_at`・`github_account_type`・`membership_initialized_at` を持つ新 schema に置き換える
+- 既存 row は `organization_id`, `installation_id`, `github_account_id`, `github_org`, `app_repository_selection`, `deleted_at`, `created_at`, `updated_at` をコピーし、`suspended_at` / `github_account_type` / `membership_initialized_at` は `NULL` で初期化する
 - `github_account_type` は setup callback [`app/routes/api.github.setup.ts`](../../app/routes/api.github.setup.ts) と `installation.created` webhook で以後埋める
+- `membership_initialized_at` は setup callback での初期投入成功時、または crawl の自動 repair 経路で埋める。既存 row は migration 直後 `NULL` のまま放置し、初回 repair で初期化される
 
 ### 2. tenant DB `repositories`
 
@@ -353,6 +354,69 @@ canonical reassignment での使い方:
   - PAT モード
 - `method='token'` かつ `private_token IS NULL`:
   - 未接続状態
+
+### 4. shared DB `github_app_link_events` (新規 audit log table)
+
+対象: [`db/shared.sql`](../../db/shared.sql)
+
+目的:
+
+- shared / tenant cross-store 更新の監査ログを残し、orphan 検出 / repair / 異常検知の根拠データにする
+- canonical reassignment, link soft-delete, membership repair などすべての installation 関連状態変更を記録する
+
+schema:
+
+- table: `github_app_link_events`
+- columns:
+  - `id INTEGER PRIMARY KEY AUTOINCREMENT`
+  - `organization_id TEXT NOT NULL` (server-derived。`github_app_links.organization_id` を参照する論理 FK)
+  - `installation_id INTEGER NOT NULL`
+  - `event_type TEXT NOT NULL` (`link_created` / `link_deleted` / `link_suspended` / `link_unsuspended` / `membership_initialized` / `membership_repaired` / `canonical_reassigned` / `canonical_cleared` / `assignment_required`)
+  - `source TEXT NOT NULL` (`setup_callback` / `installation_webhook` / `installation_repositories_webhook` / `user_disconnect` / `crawl_repair` / `manual_reassign` / `cli_repair`)
+  - `status TEXT NOT NULL` (`success` / `failed` / `skipped`)
+  - `details_json TEXT NULL` (任意の payload。失敗時のエラーメッセージ、reassignment の前後値、affected repository ids など)
+  - `created_at TEXT NOT NULL` (ISO 8601 UTC)
+- indexes:
+  - `INDEX github_app_link_events_org_created_idx (organization_id, created_at)` - 組織ごとの時系列クエリ用
+  - `INDEX github_app_link_events_installation_idx (installation_id)` - installation 単位の追跡用
+  - `INDEX github_app_link_events_event_type_idx (event_type)` - 異常パターン検知用
+- 不要な制約:
+  - `installation_id` への FK は付けない (`github_app_links` row が hard-delete された場合でもログは残す)
+
+retention:
+
+- 当面は無制限保持する。SQLite のサイズ増加が現実的問題になるまで TTL を入れない
+- 将来的に必要なら 90 日 retention を導入し、`created_at < now() - 90 days` の row を別 table へアーカイブする
+
+書き込みポリシー:
+
+- 全 writer は idempotent。同一 `(organization_id, installation_id, event_type, source)` を短時間に複数回受けても、それぞれを別 row として記録してよい (event log の性質上、重複記録は問題ない)
+- 失敗時は `status='failed'` で記録し、`details_json` にエラー内容を入れる
+- writer は cross-store 整合性ルール (tenant first / shared second) の最後に書き込む。event log 書き込み自体の失敗は warn に留め、本処理を巻き戻さない (event log は監査用途であり、本データの整合性が優先)
+
+例 DDL:
+
+```sql
+CREATE TABLE github_app_link_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  organization_id TEXT NOT NULL,
+  installation_id INTEGER NOT NULL,
+  event_type TEXT NOT NULL,
+  source TEXT NOT NULL,
+  status TEXT NOT NULL,
+  details_json TEXT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX github_app_link_events_org_created_idx ON github_app_link_events (organization_id, created_at);
+CREATE INDEX github_app_link_events_installation_idx ON github_app_link_events (installation_id);
+CREATE INDEX github_app_link_events_event_type_idx ON github_app_link_events (event_type);
+```
+
+migration:
+
+- PR 1 で table を追加する
+- writer は PR 2 (`disconnectGithubAppLink`) / PR 3 (canonical reassignment, repair, webhook) に分散して入る
+- backfill は不要 (新規 event のみ記録)
 
 ## アプリケーション変更
 
