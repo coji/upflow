@@ -84,6 +84,13 @@ export async function crawlCommand({
     consola.success(
       `Crawl completed. ${output.fetchedRepos} repos, ${output.pullCount} PRs fetched.`,
     )
+    if (output.failedRepos.length > 0) {
+      consola.warn(
+        `Failed to crawl ${output.failedRepos.length} repo(s):\n${output.failedRepos
+          .map((f) => `  - ${f.repoLabel}: ${f.error}`)
+          .join('\n')}`,
+      )
+    }
   } finally {
     await durably.stop()
     await shutdown()

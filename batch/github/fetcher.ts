@@ -745,7 +745,25 @@ interface PageInfo {
   endCursor?: string | null
 }
 
-interface PaginateOptions<TNode> {
+/**
+ * GraphQL のトップレベルリソース（例: `repository`）が null の場合に投げられるエラー。
+ * ページサイズを下げてもリソース自体が存在しない問題は解決しないため、
+ * paginateGraphQL は即座にこの例外を投げてリトライループを打ち切る。
+ */
+export class GraphQLResourceMissingError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'GraphQLResourceMissingError'
+  }
+}
+
+const repositoryMissing = (r: unknown): boolean =>
+  r != null &&
+  typeof r === 'object' &&
+  'repository' in r &&
+  (r as { repository: unknown }).repository == null
+
+interface PaginateOptions<TNode, TResult = unknown> {
   /** ページネーション用の初期ページサイズ（デフォルト: 100） */
   initialPageSize?: number
   /** handleGraphQLError の最小ページサイズ。指定するとエラー時にページサイズ削減+リトライする */
@@ -754,6 +772,12 @@ interface PaginateOptions<TNode> {
   label?: string
   /** ノードに対する早期打ち切り判定。true を返すとそのノードでページング停止 */
   shouldStop?: (node: TNode) => boolean
+  /**
+   * リソース（例: repository）が存在しないことを判定する。
+   * true を返すと GraphQLResourceMissingError を throw してループを即座に打ち切る。
+   * nodes が null でもリソース自体が null なのか空ページなのかを区別できる。
+   */
+  isResourceMissing?: (result: TResult) => boolean
 }
 
 /**
@@ -767,13 +791,14 @@ export async function paginateGraphQL<TResult, TNode, TItem>(
     result: TResult,
   ) => { nodes: (TNode | null)[] | null; pageInfo: PageInfo } | null,
   processNode: (node: TNode) => TItem | null,
-  options: PaginateOptions<TNode> = {},
+  options: PaginateOptions<TNode, TResult> = {},
 ): Promise<TItem[]> {
   const {
     initialPageSize = 100,
     minPageSize,
     label = 'paginateGraphQL',
     shouldStop,
+    isResourceMissing,
   } = options
   const items: TItem[] = []
   let cursor: string | null = null
@@ -801,6 +826,12 @@ export async function paginateGraphQL<TResult, TNode, TItem>(
     } else {
       // パターン B: シンプル（エラーは呼び出し元に伝播）
       result = await graphqlFn(variables)
+    }
+
+    if (isResourceMissing?.(result)) {
+      throw new GraphQLResourceMissingError(
+        `${label}: resource not found (cursor: ${cursor})`,
+      )
     }
 
     const connection = extractConnection(result)
@@ -1136,7 +1167,11 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       (vars) => graphqlWithTimeout<Result>(queryStr, { owner, repo, ...vars }),
       (r) => r?.repository?.pullRequests ?? null,
       (node) => shapePullRequestNode(node, owner, repo),
-      { minPageSize: 10, label: 'pullrequests()' },
+      {
+        minPageSize: 10,
+        label: `pullrequests(${owner}/${repo})`,
+        isResourceMissing: repositoryMissing,
+      },
     )
   }
 
@@ -1154,7 +1189,8 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       (node) => ({ number: node.number, updatedAt: node.updatedAt }),
       {
         minPageSize: 10,
-        label: 'pullrequestList()',
+        label: `pullrequestList(${owner}/${repo})`,
+        isResourceMissing: repositoryMissing,
         // ISO 8601 UTC 文字列同士なので lexicographic 比較 = 時系列比較
         shouldStop: stopBefore
           ? (node) => node.updatedAt <= stopBefore
@@ -1175,6 +1211,11 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       number: pullNumber,
     })
 
+    if (repositoryMissing(result)) {
+      throw new GraphQLResourceMissingError(
+        `pullrequest(${owner}/${repo}): repository not found`,
+      )
+    }
     const node = result?.repository?.pullRequest ?? null
     const shaped = shapePullRequestNode(node, owner, repo)
     if (!shaped) {
@@ -1282,6 +1323,10 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       (vars) => graphqlWithTimeout<Result>(queryStr, { owner, repo, ...vars }),
       (r) => r.repository?.refs ?? null,
       shapeTagNode,
+      {
+        label: `tags(${owner}/${repo})`,
+        isResourceMissing: repositoryMissing,
+      },
     )
   }
 
@@ -1387,7 +1432,8 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       {
         initialPageSize: 25,
         minPageSize: 5,
-        label: 'pullrequestsWithDetails()',
+        label: `pullrequestsWithDetails(${owner}/${repo})`,
+        isResourceMissing: repositoryMissing,
       },
     )
   }

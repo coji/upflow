@@ -3,8 +3,13 @@ import { describe, expect, test, vi } from 'vitest'
 import type { ShapedTimelineItem } from './model'
 
 // 純粋関数なので直接 import してテスト
-const { buildRequestedAtMap, createFetcher, paginateGraphQL, shapeTagNode } =
-  await import('./fetcher')
+const {
+  buildRequestedAtMap,
+  createFetcher,
+  GraphQLResourceMissingError,
+  paginateGraphQL,
+  shapeTagNode,
+} = await import('./fetcher')
 
 describe('buildRequestedAtMap', () => {
   test('returns empty map for empty items', () => {
@@ -323,6 +328,38 @@ describe('paginateGraphQL shouldStop', () => {
       { number: 5, updatedAt: '2026-04-03T00:00:00Z' },
       { number: 4, updatedAt: '2026-04-02T00:00:00Z' },
     ])
+  })
+
+  type RepoResult = {
+    repository: {
+      nodes: unknown[]
+      pageInfo: { hasNextPage: boolean; endCursor: string | null }
+    } | null
+  }
+  const extractRepoConnection = (r: RepoResult) => r.repository
+  const isRepoMissing = (r: RepoResult) => r?.repository == null
+
+  test('throws GraphQLResourceMissingError when isResourceMissing returns true', async () => {
+    const graphqlFn = vi.fn(() => Promise.resolve({ repository: null }))
+    await expect(
+      paginateGraphQL(graphqlFn, extractRepoConnection, (n: unknown) => n, {
+        minPageSize: 10,
+        label: 'test(owner/repo)',
+        isResourceMissing: isRepoMissing,
+      }),
+    ).rejects.toBeInstanceOf(GraphQLResourceMissingError)
+    // ページサイズを縮小しながらリトライせず、1回呼んだだけで throw
+    expect(graphqlFn).toHaveBeenCalledTimes(1)
+  })
+
+  test('throws GraphQLResourceMissingError including label/cursor', async () => {
+    const graphqlFn = () => Promise.resolve({ repository: null })
+    await expect(
+      paginateGraphQL(graphqlFn, extractRepoConnection, (n: unknown) => n, {
+        label: 'pullrequestList(acme/ghost)',
+        isResourceMissing: isRepoMissing,
+      }),
+    ).rejects.toThrow(/pullrequestList\(acme\/ghost\)/)
   })
 
   test('returns all nodes when shouldStop is not provided', async () => {
