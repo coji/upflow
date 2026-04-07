@@ -323,8 +323,12 @@ canonical reassignment での使い方:
 
 未初期化 link のガード:
 
-- 対象 org に `membership_initialized_at IS NULL` の active link が 1 件でも存在する場合、membership 集合が不完全である可能性があるため自動 reassignment を行ってはいけない
-- このとき canonical installation を失った repository は無条件で `github_installation_id = NULL`（assignment required）に倒す
+- canonical reassignment の判定では、`membership_initialized_at IS NOT NULL` の link のみを reassignment 候補として扱う
+  - 初期化済み link に紐づく membership は完全な集合と見なせるため、そこからの自動 reassignment は安全
+  - `membership_initialized_at IS NULL` の link は候補から除外する。集合が不完全な可能性があり、誤った判定で reassignment すると正しい候補を取り逃すため
+- 候補数の判定 (0 / 1 / 2+) は除外後の数で行う
+- 「初期化済み候補が 0 件」かつ「未初期化 link が 1 件以上残っている」ケースは、正解が未初期化集合の中にある可能性があるため、`github_installation_id = NULL` (assignment required) に倒す
+- 「初期化済み候補が 0 件」かつ「未初期化 link も 0 件」のケースは、純粋に候補が存在しないので `github_installation_id = NULL`
 - 該当 link の repair が完了し全 link の `membership_initialized_at` が埋まった後で、batch 補助 CLI が再走査して assignment required の解消を試みる
 
 ### 3. `integrations`
@@ -705,7 +709,7 @@ Issue 本文の「batch 側の crawl パイプライン（org -> 単一 Octokit 
 20. lookup 切替は `schema 追加 -> backfill 完了 -> strict lookup 切替` の順で行われ、backfill 未完了期間の fallback は「active installation が 1 件の org に限る」。active installation が複数ある org の未割当 repository は scheduled crawl で skip される。
 21. `integrations.app_suspended_at` の既存値は、active link が 1 件だけの org で `github_app_links.suspended_at` に移され、integration settings UI でも installation 単位の suspended 表示が維持される。
 22. setup callback で membership 初期投入が成功した link は `membership_initialized_at` がセットされ、GitHub API 失敗時は link は保存されたうえで `membership_initialized_at IS NULL` のまま自動 repair 経路で埋められる。
-23. `membership_initialized_at IS NULL` の active link が 1 件でも残っている org では、canonical installation を失った repository は自動 reassignment されず常に `github_installation_id = NULL` (assignment required) に倒れる。
+23. canonical reassignment は `membership_initialized_at IS NOT NULL` の link のみを候補に判定する。初期化済み候補が 0 件で未初期化 link が残っているケースは `github_installation_id = NULL` (assignment required) に倒れ、未初期化 link の repair 完了後に再判定される。
 24. PAT 方式の organization は、今回の変更後も従来通り repository 追加・crawl が動作する。
 
 ## リスク・補足

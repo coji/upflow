@@ -117,7 +117,7 @@ RDD: [`issue-283-multiple-github-accounts.md`](./issue-283-multiple-github-accou
 - `app/services/github-webhook-pull.server.ts`: `owner + repo + installation_id` lookup へ変更
 - canonical reassignment helper（mutation 層）:
   - membership 候補数で 0/1/2+ を判定
-  - 未初期化 link が残っていれば常に assignment required
+  - reassignment 候補は `membership_initialized_at IS NOT NULL` の link のみ。未初期化 link は候補から除外し、初期化済み候補が 0 件かつ未初期化 link が残るケースは assignment required に倒す
   - tenant first / shared second
   - `github_app_link_events` への audit log
 - 自動 repair:
@@ -129,7 +129,7 @@ RDD: [`issue-283-multiple-github-accounts.md`](./issue-283-multiple-github-accou
   - cross-store 整合性: tenant 更新成功 / shared 更新失敗時の orphan 検出と repair
   - idempotency: 同じ webhook を 2 回受けた時に最終状態が同一
   - canonical reassignment: 0/1/2+ 候補それぞれのケース
-  - 未初期化 link ガード: `membership_initialized_at IS NULL` の link が残る間は assignment required に倒れる
+  - 未初期化 link ガード: 未初期化 link は reassignment 候補から除外。初期化済み link からの reassignment は許可、初期化済み候補 0 件かつ未初期化 link 残存時のみ assignment required に倒れる
   - audit log: 各 event_type が `github_app_link_events` に正しく記録される
 
 **スコープ外**:
