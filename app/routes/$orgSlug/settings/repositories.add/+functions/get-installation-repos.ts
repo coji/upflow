@@ -11,29 +11,35 @@ export async function fetchAllInstallationRepos(octokit: Octokit) {
 
 type InstallationRepo = Awaited<ReturnType<typeof fetchAllInstallationRepos>>[0]
 
+export type TaggedInstallationRepo = {
+  installationId: number
+  repo: InstallationRepo
+}
+
 /** Extract unique owners from pre-fetched installation repos. */
-export function extractOwners(repos: InstallationRepo[]): string[] {
-  return [...new Set(repos.map((r) => r.owner.login))].sort((a, b) =>
+export function extractOwners(tagged: TaggedInstallationRepo[]): string[] {
+  return [...new Set(tagged.map((t) => t.repo.owner.login))].sort((a, b) =>
     a.localeCompare(b, undefined, { sensitivity: 'base' }),
   )
 }
 
 /** Filter + map pre-fetched installation repos by owner and keyword. */
 export function filterInstallationRepos(
-  repos: InstallationRepo[],
+  tagged: TaggedInstallationRepo[],
   owner?: string,
   keyword?: string,
 ): Repository[] {
   if (!owner) return []
   const kw = keyword?.trim().toLowerCase() ?? ''
-  return repos
-    .filter((r) => r.owner.login === owner)
-    .filter((r) => !kw || r.name.toLowerCase().includes(kw))
-    .map((r) => ({
-      id: r.node_id ?? String(r.id),
-      name: r.name,
-      owner: r.owner.login,
-      visibility: r.visibility ?? (r.private ? 'private' : 'public'),
-      pushedAt: r.pushed_at ?? null,
+  return tagged
+    .filter((t) => t.repo.owner.login === owner)
+    .filter((t) => !kw || t.repo.name.toLowerCase().includes(kw))
+    .map(({ installationId, repo }) => ({
+      id: repo.node_id ?? String(repo.id),
+      name: repo.name,
+      owner: repo.owner.login,
+      visibility: repo.visibility ?? (repo.private ? 'private' : 'public'),
+      pushedAt: repo.pushed_at ?? null,
+      installationId,
     }))
 }

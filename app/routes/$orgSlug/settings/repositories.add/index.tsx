@@ -30,8 +30,11 @@ import { captureExceptionToSentry } from '~/app/libs/sentry-node.server'
 import { orgContext } from '~/app/middleware/context'
 import { clearOrgCache, getOrgCachedData } from '~/app/services/cache.server'
 import { durably } from '~/app/services/durably.server'
-import { getGithubAppLink } from '~/app/services/github-integration-queries.server'
-import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
+import {
+  assertInstallationBelongsToOrg,
+  getActiveInstallationOptions,
+} from '~/app/services/github-integration-queries.server'
+import { resolveOctokitForInstallation } from '~/app/services/github-octokit.server'
 import { crawlRepoConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import type { OrganizationId } from '~/app/types/organization'
 import ContentSection from '../+components/content-section'
@@ -40,6 +43,7 @@ import {
   extractOwners,
   fetchAllInstallationRepos,
   filterInstallationRepos,
+  type TaggedInstallationRepo,
 } from './+functions/get-installation-repos'
 import type { Repository } from './+functions/get-repositories-by-owner-and-keyword'
 import { getRepositoriesByOwnerAndKeyword } from './+functions/get-repositories-by-owner-and-keyword'
@@ -53,6 +57,7 @@ export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 const AddRepoSchema = z.object({
   owner: z.string(),
   name: z.string(),
+  installationId: z.coerce.number().int().positive().optional(),
 })
 
 type IntegrationWithRepositories = NonNullable<
@@ -67,7 +72,12 @@ type AddRepositoriesLoaderData = {
   owners: string[]
   repos: Repository[]
   isGithubAppRepos: boolean
-  appRepositorySelection?: 'all' | 'selected'
+  /** Number of active installations whose appRepositorySelection is `'selected'`. */
+  selectedInstallationCount: number
+  /** Total number of active installations queried. */
+  totalInstallationCount: number
+  /** Installations whose repository fetch failed (so the UI can warn). */
+  failedInstallationIds: number[]
 }
 
 async function loadReposForToken(
@@ -118,6 +128,9 @@ async function loadReposForToken(
     owners,
     repos,
     isGithubAppRepos: false,
+    selectedInstallationCount: 0,
+    totalInstallationCount: 0,
+    failedInstallationIds: [],
   }
 }
 
@@ -127,22 +140,56 @@ async function loadReposForApp(
   owner: string | undefined,
   query: string,
 ): Promise<AddRepositoriesLoaderData> {
-  const githubAppLink = await getGithubAppLink(organizationId)
-  if (!githubAppLink) {
+  const installationOptions = await getActiveInstallationOptions(organizationId)
+  if (installationOptions.length === 0) {
     throw new Error('GitHub App is not connected')
   }
-  const octokit = resolveOctokitFromOrg({ integration, githubAppLink })
+
+  // Fetch every installation's visible repositories in parallel.
+  // Use allSettled so a transient failure on one installation (e.g. revoked
+  // token mid-request) doesn't blank out the entire Add UI.
+  const settled = await Promise.allSettled(
+    installationOptions.map(async (link) => {
+      const octokit = resolveOctokitForInstallation(link.installationId)
+      const repos = await getOrgCachedData(
+        organizationId,
+        `app-installation-all-repos:${link.installationId}`,
+        () => fetchAllInstallationRepos(octokit),
+        300000,
+      )
+      return repos.map(
+        (repo): TaggedInstallationRepo => ({
+          installationId: link.installationId,
+          repo,
+        }),
+      )
+    }),
+  )
+  const failedInstallationIds: number[] = []
+  // Dedupe by `owner/repo`. The createdAt-asc order from
+  // getActiveInstallationOptions makes the *oldest* active installation win,
+  // which keeps the canonical attribution stable across page reloads. The
+  // membership table is the source of truth for "which installations can
+  // see this repo" so this UI choice does not affect crawl correctness.
+  const seen = new Set<string>()
+  const allTagged: TaggedInstallationRepo[] = []
+  settled.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      failedInstallationIds.push(installationOptions[index].installationId)
+      return
+    }
+    for (const tagged of result.value) {
+      const key = `${tagged.repo.owner.login}/${tagged.repo.name}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      allTagged.push(tagged)
+    }
+  })
+
   const registeredOwners = [
     ...new Set(integration.repositories.map((r) => r.owner)),
   ]
-  // Fetch all installation repos once (cached), derive owners + filtered repos
-  const allRepos = await getOrgCachedData(
-    organizationId,
-    'app-installation-all-repos',
-    () => fetchAllInstallationRepos(octokit),
-    300000,
-  )
-  const apiOwners = extractOwners(allRepos)
+  const apiOwners = extractOwners(allTagged)
   const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
     (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
   )
@@ -150,7 +197,10 @@ async function loadReposForApp(
     throw new Error('invalid owner')
   }
 
-  const repos = filterInstallationRepos(allRepos, owner, query)
+  const repos = filterInstallationRepos(allTagged, owner, query)
+  const selectedInstallationCount = installationOptions.filter(
+    (l) => l.appRepositorySelection === 'selected',
+  ).length
 
   return {
     registeredRepos: integration.repositories,
@@ -159,8 +209,10 @@ async function loadReposForApp(
     owner,
     owners,
     repos,
-    appRepositorySelection: githubAppLink.appRepositorySelection,
     isGithubAppRepos: true,
+    selectedInstallationCount,
+    totalInstallationCount: installationOptions.length,
+    failedInstallationIds,
   }
 }
 
@@ -214,9 +266,34 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     return dataWithError({}, { message: 'Invalid form submission' })
   }
 
+  let installationId: number | null = null
+  if (integration.method === 'github_app') {
+    if (submission.value.installationId === undefined) {
+      return dataWithError(
+        {},
+        { message: 'Installation id is required for GitHub App mode' },
+      )
+    }
+    try {
+      await assertInstallationBelongsToOrg(
+        organization.id,
+        submission.value.installationId,
+      )
+    } catch (e) {
+      return dataWithError(
+        {},
+        {
+          message: e instanceof Error ? e.message : 'Invalid installation id',
+        },
+      )
+    }
+    installationId = submission.value.installationId
+  }
+
   const inserted = await addRepository(organization.id, {
     owner: submission.value.owner,
     repo: submission.value.name,
+    githubInstallationId: installationId,
   }).catch((e) => {
     console.error('Failed to add repository:', e)
     return null
@@ -225,6 +302,19 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     return dataWithError(
       {},
       { message: 'Failed to add repository. Please try again.' },
+    )
+  }
+  if (inserted.membershipUpsertFailed) {
+    captureExceptionToSentry(
+      new Error('addRepository: membership upsert failed'),
+      {
+        tags: { component: 'repositories.add', operation: 'membership.upsert' },
+        extra: {
+          organizationId: organization.id,
+          repositoryId: inserted.id,
+          installationId,
+        },
+      },
     )
   }
 
@@ -269,11 +359,19 @@ export default function AddRepositoryPage({
     owner,
     owners,
     repos,
-    appRepositorySelection,
     isGithubAppRepos,
+    selectedInstallationCount,
+    totalInstallationCount,
+    failedInstallationIds,
   },
 }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
+
+  const allInstallationsAreSelected =
+    totalInstallationCount > 0 &&
+    selectedInstallationCount === totalInstallationCount
+  const someInstallationsAreSelected =
+    selectedInstallationCount > 0 && !allInstallationsAreSelected
 
   return (
     <ContentSection
@@ -282,12 +380,31 @@ export default function AddRepositoryPage({
       fullWidth
     >
       <Stack>
-        {appRepositorySelection === 'selected' ? (
+        {failedInstallationIds.length > 0 ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Failed to load repositories from {failedInstallationIds.length}{' '}
+              installation(s). The list below may be incomplete. Try refreshing
+              or check the GitHub App settings.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {allInstallationsAreSelected ? (
           <Alert>
             <AlertDescription>
               Only repositories selected in the GitHub App settings are shown.
               You can change which repositories are included in the GitHub App
               settings on GitHub.
+            </AlertDescription>
+          </Alert>
+        ) : someInstallationsAreSelected ? (
+          <Alert>
+            <AlertDescription>
+              Some of your GitHub App installations only expose selected
+              repositories. Repositories from those installations may be missing
+              from this list — adjust the selection in the GitHub App settings
+              if needed.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -388,6 +505,7 @@ export default function AddRepositoryPage({
                   (r) => r.owner === repo.owner && r.repo === repo.name,
                 )}
                 isLast={index === repos.length - 1}
+                installationId={repo.installationId}
               />
             ))
           )}

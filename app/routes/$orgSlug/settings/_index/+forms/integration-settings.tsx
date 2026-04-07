@@ -1,3 +1,4 @@
+import type { SubmissionResult } from '@conform-to/react'
 import {
   getFormProps,
   getInputProps,
@@ -9,6 +10,7 @@ import { ExternalLinkIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { Form, useActionData, useFetcher, useNavigation } from 'react-router'
 import { toast } from 'sonner'
+import type { z } from 'zod'
 import type { ConfirmDialogData } from '~/app/components/confirm-dialog'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import Github from '~/app/components/icons/Github'
@@ -24,27 +26,127 @@ import {
   Stack,
   Textarea,
 } from '~/app/components/ui'
+import {
+  buildInstallationSettingsUrl,
+  isPersonalAccount,
+} from '~/app/libs/github-account'
 import { INTENTS, integrationSettingsSchema as schema } from '../+schema'
 import type { action } from '../../integration/index'
+
+export type GithubAppLinkSummary = {
+  installationId: number
+  githubOrg: string
+  githubAccountType: string | null
+  appRepositorySelection: 'all' | 'selected'
+  suspendedAt: string | null
+  membershipInitializedAt: string | null
+}
 
 export interface IntegrationSettingsProps {
   integration?: {
     provider: string
     method: 'token' | 'github_app'
     hasToken: boolean
-    appSuspendedAt: string | null
   }
-  githubAppLink: {
-    githubOrg: string
-    appRepositorySelection: 'all' | 'selected'
-  } | null
+  githubAppLinks: GithubAppLinkSummary[]
+}
+
+function InstallationCard({ link }: { link: GithubAppLinkSummary }) {
+  const disconnectFetcher = useFetcher<ConfirmDialogData>()
+  const settingsUrl = buildInstallationSettingsUrl(link)
+  const isPersonal = isPersonalAccount(link)
+  const isSuspended = link.suspendedAt !== null
+  const needsRepair = link.membershipInitializedAt === null
+
+  return (
+    <Stack gap="2" className="border-muted rounded-md border p-3">
+      <div className="space-y-1">
+        <p className="text-sm">
+          {isPersonal ? 'Personal account ' : 'Organization '}
+          <span className="font-medium">{link.githubOrg}</span>
+          {link.appRepositorySelection === 'selected' ? (
+            <span className="text-muted-foreground">
+              {' '}
+              (selected repositories only)
+            </span>
+          ) : null}
+        </p>
+        <p className="text-muted-foreground text-xs">
+          Installation #{link.installationId}
+        </p>
+      </div>
+
+      {isSuspended && (
+        <Alert variant="destructive">
+          <AlertTitle>Suspended</AlertTitle>
+          <AlertDescription>
+            GitHub has suspended this installation. Unsuspend it in GitHub to
+            resume syncing.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {needsRepair && (
+        <Alert>
+          <AlertTitle>Initializing membership</AlertTitle>
+          <AlertDescription>
+            Repository visibility is being initialized. The next crawl will
+            complete this automatically.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <HStack className="flex-wrap">
+        <Button variant="outline" size="sm" asChild>
+          <a href={settingsUrl} target="_blank" rel="noreferrer">
+            <ExternalLinkIcon className="mr-1 h-4 w-4" />
+            GitHub App settings
+          </a>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            disconnectFetcher.submit(
+              {
+                intent: INTENTS.confirmDisconnectGithubAppLink,
+                installationId: String(link.installationId),
+              },
+              { method: 'POST' },
+            )
+          }}
+        >
+          Disconnect
+        </Button>
+      </HStack>
+
+      <ConfirmDialog
+        title="Disconnect GitHub App installation"
+        desc={`Disconnect installation #${link.installationId} (${link.githubOrg}). Repositories tied to it will be reassigned to another active installation if available, or marked as needing manual reassignment.`}
+        confirmText="Disconnect"
+        destructive
+        fetcher={disconnectFetcher}
+      >
+        <input
+          type="hidden"
+          name="intent"
+          value={INTENTS.disconnectGithubAppLink}
+        />
+        <input
+          type="hidden"
+          name="installationId"
+          value={String(link.installationId)}
+        />
+      </ConfirmDialog>
+    </Stack>
+  )
 }
 
 function GitHubAppSection({
   integration,
-  githubAppLink,
-}: Pick<IntegrationSettingsProps, 'integration' | 'githubAppLink'>) {
-  const disconnectFetcher = useFetcher<ConfirmDialogData>()
+  githubAppLinks,
+}: Pick<IntegrationSettingsProps, 'integration' | 'githubAppLinks'>) {
   const revertFetcher = useFetcher<ConfirmDialogData>()
   const copyFetcher = useFetcher<typeof action>()
 
@@ -65,27 +167,15 @@ function GitHubAppSection({
       toast.success('Install URL copied to clipboard')
       copyFetcher.reset()
     })
-  }, [copyFetcher.data, copyFetcher.reset, copyFetcher.state])
+  }, [copyFetcher])
 
-  const isAppConnected =
-    integration?.method === 'github_app' &&
-    githubAppLink != null &&
-    !integration.appSuspendedAt
-  const isAppSuspended =
-    integration?.method === 'github_app' &&
-    githubAppLink != null &&
-    !!integration.appSuspendedAt
-  const needsReconnect =
-    integration?.method === 'github_app' && githubAppLink == null
-
-  const githubInstallationsSettingsUrl = githubAppLink
-    ? `https://github.com/organizations/${encodeURIComponent(githubAppLink.githubOrg)}/settings/installations`
-    : null
+  const hasAnyLink = githubAppLinks.length > 0
+  const needsReconnect = integration?.method === 'github_app' && !hasAnyLink
 
   const tokenNote = !integration?.hasToken ? (
     <p className="text-muted-foreground text-xs">
-      ※ No personal access token is stored. After switching, you will need to
-      enter a token in the Integration settings.
+      ※ No personal access token is stored. After disconnecting all GitHub Apps,
+      you will need to enter a token in the Integration settings.
     </p>
   ) : null
 
@@ -94,110 +184,29 @@ function GitHubAppSection({
       <div className="space-y-1">
         <Label>GitHub App</Label>
         <p className="text-muted-foreground text-sm">
-          Connect with the Upflow GitHub App instead of a personal access token.
+          Connect one or more GitHub accounts via the Upflow GitHub App.
         </p>
       </div>
 
-      {isAppConnected && githubAppLink && (
+      {hasAnyLink && (
         <Stack gap="2">
-          <p className="text-sm">
-            Connected to GitHub organization{' '}
-            <span className="font-medium">{githubAppLink.githubOrg}</span>
-            {githubAppLink.appRepositorySelection === 'selected' ? (
-              <span className="text-muted-foreground">
-                {' '}
-                (selected repositories only)
-              </span>
-            ) : null}
-          </p>
+          {githubAppLinks.map((link) => (
+            <InstallationCard key={link.installationId} link={link} />
+          ))}
           <HStack className="flex-wrap">
-            {githubInstallationsSettingsUrl ? (
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href={githubInstallationsSettingsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <ExternalLinkIcon className="mr-1 h-4 w-4" />
-                  GitHub App settings
-                </a>
+            <Form method="POST">
+              <input
+                type="hidden"
+                name="intent"
+                value={INTENTS.installGithubApp}
+              />
+              <Button type="submit" size="sm" variant="outline">
+                Add another GitHub account
               </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                disconnectFetcher.submit(
-                  { intent: INTENTS.confirmDisconnectGithubApp },
-                  { method: 'POST' },
-                )
-              }}
-            >
-              Disconnect
-            </Button>
+            </Form>
           </HStack>
           {tokenNote}
         </Stack>
-      )}
-
-      {isAppSuspended && githubAppLink && githubInstallationsSettingsUrl && (
-        <Stack gap="2">
-          <Alert variant="destructive">
-            <AlertTitle>Suspended</AlertTitle>
-            <AlertDescription>
-              GitHub has suspended this installation. Unsuspend it in GitHub to
-              resume syncing.
-            </AlertDescription>
-          </Alert>
-          <p className="text-sm">
-            Organization:{' '}
-            <span className="font-medium">{githubAppLink.githubOrg}</span>
-          </p>
-          <Button variant="outline" size="sm" asChild>
-            <a
-              href={githubInstallationsSettingsUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <ExternalLinkIcon className="mr-1 h-4 w-4" />
-              Open GitHub App settings
-            </a>
-          </Button>
-          <HStack className="flex-wrap">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                disconnectFetcher.submit(
-                  { intent: INTENTS.confirmDisconnectGithubApp },
-                  { method: 'POST' },
-                )
-              }}
-            >
-              Disconnect
-            </Button>
-          </HStack>
-          {tokenNote}
-        </Stack>
-      )}
-
-      {/* Shared disconnect dialog for connected + suspended states */}
-      {(isAppConnected || isAppSuspended) && (
-        <ConfirmDialog
-          title="Disconnect GitHub App"
-          desc="The organization will use a personal access token for GitHub API access again. You can reconnect the app at any time."
-          confirmText="Disconnect"
-          destructive
-          fetcher={disconnectFetcher}
-        >
-          <input
-            type="hidden"
-            name="intent"
-            value={INTENTS.disconnectGithubApp}
-          />
-        </ConfirmDialog>
       )}
 
       {needsReconnect && (
@@ -205,8 +214,8 @@ function GitHubAppSection({
           <Alert>
             <AlertTitle>Reconnection required</AlertTitle>
             <AlertDescription>
-              The GitHub App was uninstalled or the link was removed. Reinstall
-              the app or switch back to a personal access token.
+              All GitHub App installations have been removed. Reinstall the app
+              or switch back to a personal access token.
             </AlertDescription>
           </Alert>
           <HStack className="flex-wrap">
@@ -247,7 +256,7 @@ function GitHubAppSection({
         </Stack>
       )}
 
-      {!isAppConnected && !isAppSuspended && !needsReconnect && (
+      {!hasAnyLink && !needsReconnect && (
         <Stack gap="2">
           <HStack className="flex-wrap">
             <Form method="POST">
@@ -283,7 +292,7 @@ function GitHubAppSection({
 
 export const IntegrationSettings = ({
   integration,
-  githubAppLink,
+  githubAppLinks,
 }: IntegrationSettingsProps) => {
   const actionData = useActionData<typeof action>()
   const navigation = useNavigation()
@@ -291,11 +300,9 @@ export const IntegrationSettings = ({
     navigation.state === 'submitting' &&
     navigation.formData?.get('intent') === INTENTS.integrationSettings
 
-  const needsReconnect =
-    integration?.method === 'github_app' && githubAppLink == null
-  const showPatSection = !(
-    integration?.method === 'github_app' && githubAppLink != null
-  )
+  const hasAnyLink = githubAppLinks.length > 0
+  const needsReconnect = integration?.method === 'github_app' && !hasAnyLink
+  const showPatSection = !(integration?.method === 'github_app' && hasAnyLink)
 
   const integrationLastResult =
     actionData &&
@@ -305,8 +312,10 @@ export const IntegrationSettings = ({
       ? actionData.lastResult
       : undefined
 
-  const [form, { provider, method, privateToken }] = useForm({
-    lastResult: integrationLastResult,
+  const [form, { provider, method, privateToken }] = useForm<
+    z.input<typeof schema>
+  >({
+    lastResult: integrationLastResult as SubmissionResult<string[]> | undefined,
     defaultValue: integration
       ? {
           provider: integration.provider,
@@ -388,7 +397,7 @@ export const IntegrationSettings = ({
 
       <GitHubAppSection
         integration={integration}
-        githubAppLink={githubAppLink}
+        githubAppLinks={githubAppLinks}
       />
     </Stack>
   )

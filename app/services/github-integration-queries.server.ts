@@ -58,6 +58,32 @@ export const getGithubAppLinkByInstallationId = async (
   )
 }
 
+export type ActiveInstallationOption = {
+  installationId: number
+  githubOrg: string
+  githubAccountType: string | null
+  appRepositorySelection: 'all' | 'selected'
+}
+
+/**
+ * Active (non-deleted, non-suspended) installations for an org in the shape
+ * UI loaders need for installation selectors. Suspended links are excluded
+ * because they can't be used for API calls.
+ */
+export const getActiveInstallationOptions = async (
+  organizationId: OrganizationId,
+): Promise<ActiveInstallationOption[]> => {
+  const links = await getGithubAppLinks(organizationId)
+  return links
+    .filter((l) => l.suspendedAt === null)
+    .map((l) => ({
+      installationId: l.installationId,
+      githubOrg: l.githubOrg,
+      githubAccountType: l.githubAccountType,
+      appRepositorySelection: l.appRepositorySelection,
+    }))
+}
+
 /**
  * Boundary guard for client-provided `installationId`. Throws if the
  * installation does not belong to the given org or is deleted/suspended.
