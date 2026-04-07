@@ -90,20 +90,12 @@ export const crawlJob = defineJob({
         })
       }
 
-      // Read the scan watermark: the PR updatedAt upper bound that a prior
-      // full-sweep has guaranteed to be fully fetched. Targeted (webhook)
-      // fetches must NOT advance this, otherwise older PRs updated during a
-      // gap get skipped by the next full crawl's stopBefore check (#278).
-      const scanWatermark = await step.run(
-        `scan-watermark:${repoLabel}`,
-        async () => {
-          if (input.refresh) return FETCH_ALL_SENTINEL
-          return (
-            (await store.getScanWatermark().catch(() => null)) ??
-            FETCH_ALL_SENTINEL
-          )
-        },
-      )
+      // Watermark bounds full-sweep progress; targeted fetches must not
+      // advance it (see computeAdvancedScanWatermark / #278). Already
+      // preloaded via getOrganization, so no extra round-trip here.
+      const scanWatermark = input.refresh
+        ? FETCH_ALL_SENTINEL
+        : (repo.scanWatermark ?? FETCH_ALL_SENTINEL)
 
       const prNumberSet = input.prNumbers ? new Set(input.prNumbers) : null
       const prsToFetch: Array<{ number: number; updatedAt?: string }> =
