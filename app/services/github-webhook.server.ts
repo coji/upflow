@@ -14,8 +14,8 @@ export async function processGithubWebhookPayload(
   if (!event || !isRecord(payload)) return
 
   if (event === 'installation' || event === 'installation_repositories') {
-    const orgToClear = await runInstallationWebhookInTransaction(event, payload)
-    if (orgToClear) clearOrgCache(orgToClear)
+    const result = await runInstallationWebhookInTransaction(event, payload)
+    if (result.organizationId) clearOrgCache(result.organizationId)
     return
   }
 

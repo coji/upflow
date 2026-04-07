@@ -1,12 +1,19 @@
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { getSession } from '~/app/libs/auth.server'
+import { getErrorMessage } from '~/app/libs/error-message'
 import {
   consumeInstallState,
   InstallStateError,
 } from '~/app/libs/github-app-state.server'
 import { clearOrgCache } from '~/app/services/cache.server'
 import { db } from '~/app/services/db.server'
+import {
+  logGithubAppLinkEvent,
+  tryLogGithubAppLinkEvent,
+} from '~/app/services/github-app-link-events.server'
+import { initializeMembershipsForInstallation } from '~/app/services/github-app-membership.server'
+import { fetchInstallationRepositories } from '~/app/services/github-installation-repos.server'
 import { createAppOctokit } from '~/app/services/github-octokit.server'
 import type { OrganizationId } from '~/app/types/organization'
 import type { Route } from './+types/api.github.setup'
@@ -26,7 +33,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   let installation: {
     id: number
-    account: { id: number; login: string }
+    account: { id: number; login: string; type: string | null }
     repository_selection?: 'all' | 'selected' | null
   }
 
@@ -42,9 +49,13 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     if (!('login' in account) || typeof account.login !== 'string') {
       return new Response('Invalid installation account', { status: 502 })
     }
+    const accountType =
+      'type' in account && typeof account.type === 'string'
+        ? account.type
+        : null
     installation = {
       id: data.id,
-      account: { id: account.id, login: account.login },
+      account: { id: account.id, login: account.login, type: accountType },
       repository_selection: data.repository_selection,
     }
   } catch {
@@ -74,14 +85,15 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           organizationId,
           installationId: installation.id,
           githubAccountId: installation.account.id,
+          githubAccountType: installation.account.type,
           githubOrg: installation.account.login,
           appRepositorySelection,
           deletedAt: null,
         })
         .onConflict((oc) =>
-          oc.column('organizationId').doUpdateSet({
-            installationId: installation.id,
+          oc.columns(['organizationId', 'installationId']).doUpdateSet({
             githubAccountId: installation.account.id,
+            githubAccountType: installation.account.type,
             githubOrg: installation.account.login,
             appRepositorySelection,
             deletedAt: null,
@@ -108,10 +120,58 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           }),
         )
         .execute()
+
+      await logGithubAppLinkEvent(
+        {
+          organizationId,
+          installationId: installation.id,
+          eventType: 'link_created',
+          source: 'setup_callback',
+          status: 'success',
+          details: { accountType: installation.account.type },
+        },
+        trx,
+      )
     })
   } catch (e) {
     console.error('[api.github.setup]', e)
     return new Response('Failed to save installation', { status: 500 })
+  }
+
+  // Best-effort membership initialization. If the GitHub API call fails, the
+  // link is still saved without `membership_initialized_at`; the auto-repair
+  // step in the next crawl will fill it in.
+  try {
+    const repos = await fetchInstallationRepositories(installation.id)
+    await initializeMembershipsForInstallation({
+      organizationId,
+      installationId: installation.id,
+      repositories: repos,
+    })
+    await db
+      .updateTable('githubAppLinks')
+      .set({ membershipInitializedAt: new Date().toISOString() })
+      .where('organizationId', '=', organizationId)
+      .where('installationId', '=', installation.id)
+      .execute()
+    await tryLogGithubAppLinkEvent({
+      organizationId,
+      installationId: installation.id,
+      eventType: 'membership_initialized',
+      source: 'setup_callback',
+      status: 'success',
+      details: { repoCount: repos.length },
+    })
+  } catch (e) {
+    console.error('[api.github.setup] membership init failed', e)
+    await tryLogGithubAppLinkEvent({
+      organizationId,
+      installationId: installation.id,
+      eventType: 'membership_initialized',
+      source: 'setup_callback',
+      status: 'failed',
+      details: { error: getErrorMessage(e) },
+    })
   }
 
   clearOrgCache(organizationId)

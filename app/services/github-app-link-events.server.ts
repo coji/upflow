@@ -56,3 +56,18 @@ export const logGithubAppLinkEvent = async (
     })
     .execute()
 }
+
+/**
+ * Best-effort variant: writes the audit log entry and swallows any error so the
+ * caller's primary mutation is never affected by audit-log failures. Logs to
+ * stderr if the write fails.
+ */
+export const tryLogGithubAppLinkEvent = async (
+  input: LogGithubAppLinkEventInput,
+): Promise<void> => {
+  try {
+    await logGithubAppLinkEvent(input)
+  } catch (e) {
+    console.error('[github_app_link_events] failed to write audit log entry', e)
+  }
+}
