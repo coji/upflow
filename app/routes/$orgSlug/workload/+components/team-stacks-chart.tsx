@@ -54,13 +54,26 @@ function sortByAge(prs: StackPR[]): StackPR[] {
 interface HoveredInfo {
   prKey: string
   author: string
-  sourceEl: HTMLElement
 }
 
 const HoveredContext = createContext<HoveredInfo | null>(null)
 const SetHoveredContext = createContext<(info: HoveredInfo | null) => void>(
   () => {},
 )
+interface SelectedInfo {
+  prKey: string
+  author: string
+  // Incremented on every click so re-clicking the same PR re-triggers scroll.
+  tick: number
+}
+const SelectedContext = createContext<SelectedInfo | null>(null)
+const SetSelectedContext = createContext<
+  (
+    e: React.MouseEvent<HTMLButtonElement>,
+    prKey: string,
+    author: string,
+  ) => void
+>(() => {})
 const ColorModeContext = createContext<ColorMode>('age')
 
 function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
@@ -75,22 +88,24 @@ function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
 
 // --- Scroll helper ---
 // Scrolls only the column's overflow-y-auto container, never parent/page.
-// Skips scrolling if the hovered element is in the same column (already visible).
-const HoverSourceColumnContext = createContext<HTMLElement | null>(null)
+// Skips scrolling if the click originated in the same column (already visible).
+const SelectedSourceColumnContext = createContext<HTMLElement | null>(null)
 
 function useScrollIntoColumn(
   ref: React.RefObject<HTMLDivElement | null>,
   active: boolean,
+  tick: number,
 ) {
-  const hoverSourceColumn = useContext(HoverSourceColumnContext)
+  const sourceColumn = useContext(SelectedSourceColumnContext)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tick is intentional — re-clicking the same PR must re-run the effect.
   useEffect(() => {
     const row = ref.current
     if (!active || !row) return
     const container = row.closest('.overflow-y-auto') as HTMLElement | null
     if (!container) return
-    // Don't scroll if the hover originated from the same column
-    if (hoverSourceColumn === container) return
+    // Don't scroll if the click originated from the same column
+    if (sourceColumn === container) return
     const rafId = requestAnimationFrame(() => {
       const cRect = container.getBoundingClientRect()
       const rRect = row.getBoundingClientRect()
@@ -107,7 +122,7 @@ function useScrollIntoColumn(
       }
     })
     return () => cancelAnimationFrame(rafId)
-  }, [ref, active, hoverSourceColumn])
+  }, [ref, active, sourceColumn, tick])
 }
 
 // --- Components ---
@@ -152,6 +167,7 @@ function StackRow({
 }) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
+  const selected = useContext(SelectedContext)
   const isOver = stack.prs.length > personalLimit
   const sortedPRs = useMemo(
     () => sortPRs(stack.prs, colorMode),
@@ -165,7 +181,12 @@ function StackRow({
     (stack.login === hovered.author ||
       stack.prs.some((p) => `${p.repo}:${p.number}` === hovered.prKey))
 
-  useScrollIntoColumn(rowRef, isRelated)
+  const isSelectedRelated =
+    selected !== null &&
+    (stack.login === selected.author ||
+      stack.prs.some((p) => `${p.repo}:${p.number}` === selected.prKey))
+
+  useScrollIntoColumn(rowRef, isSelectedRelated, selected?.tick ?? 0)
 
   return (
     <div
@@ -207,6 +228,7 @@ const PRBlock = memo(function PRBlock({
 }) {
   const colorMode = useContext(ColorModeContext)
   const setHovered = useContext(SetHoveredContext)
+  const setSelected = useContext(SetSelectedContext)
   const prKey = `${pr.repo}:${pr.number}`
 
   return (
@@ -229,14 +251,9 @@ const PRBlock = memo(function PRBlock({
         colorMode={colorMode}
         showAuthor={showAuthor}
         dataPrKey={prKey}
-        onMouseEnter={(e) =>
-          setHovered({
-            prKey,
-            author: pr.author,
-            sourceEl: e.currentTarget,
-          })
-        }
+        onMouseEnter={() => setHovered({ prKey, author: pr.author })}
         onMouseLeave={() => setHovered(null)}
+        onClick={(e) => setSelected(e, prKey, pr.author)}
       />
     </>
   )
@@ -294,6 +311,7 @@ function StackColumn({
 function UnassignedRows({ prs }: { prs: StackPR[] }) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
+  const selected = useContext(SelectedContext)
   const sortedPRs = useMemo(() => sortPRs(prs, colorMode), [prs, colorMode])
   const rowRef = useRef<HTMLDivElement>(null)
 
@@ -301,7 +319,11 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
     hovered !== null &&
     prs.some((p) => `${p.repo}:${p.number}` === hovered.prKey)
 
-  useScrollIntoColumn(rowRef, isRelated)
+  const isSelectedRelated =
+    selected !== null &&
+    prs.some((p) => `${p.repo}:${p.number}` === selected.prKey)
+
+  useScrollIntoColumn(rowRef, isSelectedRelated, selected?.tick ?? 0)
 
   return (
     <div
@@ -386,7 +408,8 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
     })
   }
   const [hovered, setHovered] = useState<HoveredInfo | null>(null)
-  const [hoverSourceColumn, setHoverSourceColumn] =
+  const [selected, setSelected] = useState<SelectedInfo | null>(null)
+  const [selectedSourceColumn, setSelectedSourceColumn] =
     useState<HTMLElement | null>(null)
 
   // DOM-based dimming: toggle classes directly to avoid re-rendering ~170 PRBlocks.
@@ -415,82 +438,91 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
         el.classList.add('pr-match')
       }
       prevMatches.current = Array.from(matches)
-
-      // Track which column the hover originated from
-      const sourceCol = info.sourceEl.closest(
-        '.overflow-y-auto',
-      ) as HTMLElement | null
-      setHoverSourceColumn(sourceCol)
     } else {
       grid.classList.remove('pr-hovering')
-      setHoverSourceColumn(null)
     }
   }, [])
+
+  const handleSelect = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>, prKey: string, author: string) => {
+      const sourceCol = e.currentTarget.closest(
+        '.overflow-y-auto',
+      ) as HTMLElement | null
+      setSelectedSourceColumn(sourceCol)
+      setSelected((prev) => ({ prKey, author, tick: (prev?.tick ?? 0) + 1 }))
+    },
+    [],
+  )
 
   return (
     <SetHoveredContext value={handleHover}>
       <HoveredContext value={hovered}>
-        <ColorModeContext value={colorMode}>
-          <HoverSourceColumnContext value={hoverSourceColumn}>
-            <div className="space-y-4">
-              {/* Dimming via DOM classes: .pr-hovering dims all buttons,
+        <SetSelectedContext value={handleSelect}>
+          <SelectedContext value={selected}>
+            <ColorModeContext value={colorMode}>
+              <SelectedSourceColumnContext value={selectedSourceColumn}>
+                <div className="space-y-4">
+                  {/* Dimming via DOM classes: .pr-hovering dims all buttons,
                 .pr-match + :hover exclude the matched/hovered ones */}
-              <div
-                ref={gridRef}
-                className="grid gap-8 md:grid-cols-2 [&.pr-hovering_.pr-match:not(:hover)]:scale-125 [&.pr-hovering_button:not(.pr-match):not(:hover)]:opacity-15"
-              >
-                <StackColumn
-                  title="Authored PRs (open)"
-                  stacks={authorStacks}
-                  personalLimit={personalLimit}
-                />
-                <StackColumn
-                  title="Review Queue (pending)"
-                  stacks={reviewerStacks}
-                  personalLimit={personalLimit}
-                  showAuthor
-                  unassignedPRs={unassignedPRs}
-                />
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                <div className="flex items-center gap-3">
-                  <ToggleGroup
-                    type="single"
-                    value={colorMode}
-                    onValueChange={(v) => {
-                      if (v) setColorMode(v as ColorMode)
-                    }}
-                    size="sm"
-                    className="bg-muted shrink-0 rounded-lg p-0.5"
+                  <div
+                    ref={gridRef}
+                    className="grid gap-8 md:grid-cols-2 [&.pr-hovering_.pr-match:not(:hover)]:scale-125 [&.pr-hovering_button:not(.pr-match):not(:hover)]:opacity-15"
                   >
-                    <ToggleGroupItem
-                      value="age"
-                      className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
-                    >
-                      Age
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                      value="size"
-                      className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
-                    >
-                      Size
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                  <Legend mode={colorMode} />
+                    <StackColumn
+                      title="Authored PRs (open)"
+                      stacks={authorStacks}
+                      personalLimit={personalLimit}
+                    />
+                    <StackColumn
+                      title="Review Queue (pending)"
+                      stacks={reviewerStacks}
+                      personalLimit={personalLimit}
+                      showAuthor
+                      unassignedPRs={unassignedPRs}
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                    <div className="flex items-center gap-3">
+                      <ToggleGroup
+                        type="single"
+                        value={colorMode}
+                        onValueChange={(v) => {
+                          if (v) setColorMode(v as ColorMode)
+                        }}
+                        size="sm"
+                        className="bg-muted shrink-0 rounded-lg p-0.5"
+                      >
+                        <ToggleGroupItem
+                          value="age"
+                          className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+                        >
+                          Age
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="size"
+                          className="data-[state=on]:bg-background rounded-md data-[state=on]:shadow-sm"
+                        >
+                          Size
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                      <Legend mode={colorMode} />
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      1 block = 1 PR. Dashed line = personal limit (
+                      {personalLimit}
+                      ).
+                    </p>
+                  </div>
+                  {insight && (
+                    <p className="text-muted-foreground text-center text-sm">
+                      {insight}
+                    </p>
+                  )}
                 </div>
-                <p className="text-muted-foreground text-xs">
-                  1 block = 1 PR. Dashed line = personal limit ({personalLimit}
-                  ).
-                </p>
-              </div>
-              {insight && (
-                <p className="text-muted-foreground text-center text-sm">
-                  {insight}
-                </p>
-              )}
-            </div>
-          </HoverSourceColumnContext>
-        </ColorModeContext>
+              </SelectedSourceColumnContext>
+            </ColorModeContext>
+          </SelectedContext>
+        </SetSelectedContext>
       </HoveredContext>
     </SetHoveredContext>
   )
