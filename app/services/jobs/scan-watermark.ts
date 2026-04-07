@@ -26,10 +26,12 @@ export const computeAdvancedScanWatermark = (params: {
 
   if (isTargetedFetch) return null
   if (prsToFetch.length === 0) return null
-  if (savedPrNumbers.size !== prsToFetch.length) return null
 
   let max: string | null = null
   for (const pr of prsToFetch) {
+    // Membership (not size): guarantees every listed PR was saved, even if
+    // savedPrNumbers ever contains unrelated numbers.
+    if (!savedPrNumbers.has(pr.number)) return null
     if (!pr.updatedAt) continue
     if (max === null || pr.updatedAt > max) max = pr.updatedAt
   }

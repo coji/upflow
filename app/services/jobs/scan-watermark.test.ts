@@ -36,6 +36,21 @@ describe('computeAdvancedScanWatermark', () => {
     ).toBe('2026-03-16T13:55:00Z')
   })
 
+  test('advancement requires set membership, not just matching counts', () => {
+    // If savedPrNumbers ever contains unrelated numbers (e.g. a caller bug
+    // or concurrent mutation), the function must still refuse to advance.
+    expect(
+      computeAdvancedScanWatermark({
+        isTargetedFetch: false,
+        prsToFetch: [
+          { number: 100, updatedAt: '2026-03-16T13:45:00Z' },
+          { number: 101, updatedAt: '2026-03-16T13:55:00Z' },
+        ],
+        savedPrNumbers: new Set([101, 999]),
+      }),
+    ).toBeNull()
+  })
+
   test('partial failure does NOT advance the watermark', () => {
     // PR#100 (13:45) failed, PR#101 (13:55) succeeded. If we advanced to
     // 13:55 here, the next full crawl would stopBefore=13:55 and skip
