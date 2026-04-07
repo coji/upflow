@@ -71,7 +71,12 @@ export const crawlJob = defineJob({
       ? organization.repositories.filter((r) => r.id === input.repositoryId)
       : organization.repositories
     if (input.repositoryId && targetRepos.length === 0) {
-      throw new Error('repositoryId does not match any organization repository')
+      // Repository may have been deleted between trigger and run. Skip instead
+      // of throwing so transient races (e.g. add-then-remove) don't fail the job.
+      step.log.warn(
+        `repositoryId ${input.repositoryId} does not match any organization repository; skipping crawl`,
+      )
+      return { fetchedRepos: 0, pullCount: 0, failedRepos: [] }
     }
     const repoCount = targetRepos.length
 

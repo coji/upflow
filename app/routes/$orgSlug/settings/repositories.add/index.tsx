@@ -26,10 +26,13 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { requireOrgOwner } from '~/app/libs/auth.server'
+import { captureExceptionToSentry } from '~/app/libs/sentry-node.server'
 import { orgContext } from '~/app/middleware/context'
 import { clearOrgCache, getOrgCachedData } from '~/app/services/cache.server'
+import { durably } from '~/app/services/durably.server'
 import { getGithubAppLink } from '~/app/services/github-integration-queries.server'
 import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
+import { crawlRepoConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import type { OrganizationId } from '~/app/types/organization'
 import ContentSection from '../+components/content-section'
 import { RepositoryItem, RepositoryList } from './+components'
@@ -211,18 +214,44 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     return dataWithError({}, { message: 'Invalid form submission' })
   }
 
-  try {
-    await addRepository(organization.id, {
-      owner: submission.value.owner,
-      repo: submission.value.name,
-    })
-  } catch (e) {
+  const inserted = await addRepository(organization.id, {
+    owner: submission.value.owner,
+    repo: submission.value.name,
+  }).catch((e) => {
     console.error('Failed to add repository:', e)
+    return null
+  })
+  if (!inserted) {
     return dataWithError(
       {},
       { message: 'Failed to add repository. Please try again.' },
     )
   }
+
+  // Fire-and-forget: kick off an initial crawl so existing PRs appear without
+  // waiting for the hourly scheduled job. Failures must not fail the add.
+  durably.jobs.crawl
+    .trigger(
+      {
+        organizationId: organization.id,
+        refresh: false,
+        repositoryId: inserted.id,
+      },
+      {
+        concurrencyKey: crawlRepoConcurrencyKey(organization.id, inserted.id),
+        labels: { organizationId: organization.id },
+        coalesce: 'skip',
+      },
+    )
+    .catch((e) => {
+      captureExceptionToSentry(e, {
+        tags: { component: 'repositories.add', operation: 'crawl.trigger' },
+        extra: {
+          organizationId: organization.id,
+          repositoryId: inserted.id,
+        },
+      })
+    })
 
   return dataWithSuccess(
     {},
