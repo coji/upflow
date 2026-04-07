@@ -143,6 +143,7 @@ export interface Repositories {
   releaseDetectionKey: Generated<string>;
   releaseDetectionMethod: Generated<"branch" | "tags">;
   repo: string;
+  scanWatermark: string | null;
   teamId: string | null;
   updatedAt: string;
 }

@@ -32,6 +32,7 @@ CREATE TABLE `repositories` (
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   `team_id` text NULL,
+  `scan_watermark` text NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `repositories_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
 );

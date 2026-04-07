@@ -326,15 +326,19 @@ describe('store', () => {
     expect(await store.loader.commits(2)).toEqual(makeCommits(2))
   })
 
-  test('getLatestUpdatedAt returns MAX(updatedAt) without JSON parsing', async () => {
+  test('scan watermark round-trip: null by default, updated via setScanWatermark', async () => {
     const store = createStore({ organizationId: orgId, repositoryId })
 
-    const pr1 = { ...makePr(1), updatedAt: '2024-01-02T00:00:00Z' }
-    const pr2 = { ...makePr(2), updatedAt: '2024-01-05T00:00:00Z' }
-    const pr3 = { ...makePr(3), updatedAt: '2024-01-03T00:00:00Z' }
+    expect(await store.getScanWatermark()).toBeNull()
 
+    await store.setScanWatermark('2024-01-05T00:00:00Z')
+    expect(await store.getScanWatermark()).toBe('2024-01-05T00:00:00Z')
+
+    // Watermark lives on repositories.scanWatermark and is independent of
+    // githubRawData rows; targeted fetches that write raw data must not
+    // implicitly advance it (see #278).
     await store.savePrData(
-      pr1,
+      { ...makePr(1), updatedAt: '2024-02-10T00:00:00Z' },
       {
         commits: makeCommits(1),
         reviews: makeReviews(1),
@@ -342,31 +346,7 @@ describe('store', () => {
       },
       isoAt(1_700_000_000_000),
     )
-    await store.savePrData(
-      pr2,
-      {
-        commits: makeCommits(2),
-        reviews: makeReviews(2),
-        discussions: makeDiscussions(2),
-      },
-      isoAt(1_700_000_000_001),
-    )
-    await store.savePrData(
-      pr3,
-      {
-        commits: makeCommits(3),
-        reviews: makeReviews(3),
-        discussions: makeDiscussions(3),
-      },
-      isoAt(1_700_000_000_002),
-    )
-
-    expect(await store.getLatestUpdatedAt()).toBe('2024-01-05T00:00:00Z')
-  })
-
-  test('getLatestUpdatedAt returns null when no data', async () => {
-    const store = createStore({ organizationId: orgId, repositoryId })
-    expect(await store.getLatestUpdatedAt()).toBeNull()
+    expect(await store.getScanWatermark()).toBe('2024-01-05T00:00:00Z')
   })
 
   test('preloadAll uses lazy parsing (data accessible after preload)', async () => {
