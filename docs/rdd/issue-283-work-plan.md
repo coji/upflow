@@ -237,7 +237,7 @@ RDD: [`issue-283-multiple-github-accounts.md`](./issue-283-multiple-github-accou
 
 - ✅ この PR を本番マージ
 - ✅ 本番で backfill コマンドを実行
-- ✅ `repositories.github_installation_id IS NULL` が想定通り 0 件であることを検証
+- ✅ `integrations.method = 'github_app'` の org に対して `repositories.github_installation_id IS NULL` が 0 件であることを検証（`method = 'token'` の org は対象外）
 - ⚠️ 検証完了まで PR 7 はマージしない
 
 **Runbook テンプレート** (PR 内に含める):
@@ -247,8 +247,8 @@ RDD: [`issue-283-multiple-github-accounts.md`](./issue-283-multiple-github-accou
    - `SELECT count(*) FROM repositories WHERE github_installation_id IS NULL`（org ごと）
    - `SELECT count(*) FROM github_app_links WHERE deleted_at IS NULL`（org ごと）
 3. backfill 実行: `pnpm tsx batch/cli.ts backfill-installation-membership`
-4. 完了後の検証
-   - `repositories.github_installation_id IS NULL` が token method org のみ
+4. 完了後の検証（PR 7 進行条件）
+   - `integrations.method = 'github_app'` の org に対して `repositories.github_installation_id IS NULL` が 0 件であること（単一の合否判定）
    - `repository_installation_memberships` が active link 数 × 期待 repository 数と一致
    - `github_app_links.membership_initialized_at IS NULL` の row が無い
 5. 異常時の rollback
@@ -345,7 +345,7 @@ RDD: [`issue-283-multiple-github-accounts.md`](./issue-283-multiple-github-accou
 
 ## 進行順
 
-```
+```text
 PR 1 (schema)
   └─ PR 2 (query/octokit)
        └─ PR 3 (webhook/membership)
