@@ -330,24 +330,23 @@ describe('paginateGraphQL shouldStop', () => {
     ])
   })
 
+  type RepoResult = {
+    repository: {
+      nodes: unknown[]
+      pageInfo: { hasNextPage: boolean; endCursor: string | null }
+    } | null
+  }
+  const extractRepoConnection = (r: RepoResult) => r.repository
+  const isRepoMissing = (r: RepoResult) => r?.repository == null
+
   test('throws GraphQLResourceMissingError when isResourceMissing returns true', async () => {
     const graphqlFn = vi.fn(() => Promise.resolve({ repository: null }))
     await expect(
-      paginateGraphQL(
-        graphqlFn,
-        (r: {
-          repository: {
-            nodes: unknown[]
-            pageInfo: { hasNextPage: boolean; endCursor: string | null }
-          } | null
-        }) => r.repository,
-        (n: unknown) => n,
-        {
-          minPageSize: 10,
-          label: 'test(owner/repo)',
-          isResourceMissing: (r) => r?.repository == null,
-        },
-      ),
+      paginateGraphQL(graphqlFn, extractRepoConnection, (n: unknown) => n, {
+        minPageSize: 10,
+        label: 'test(owner/repo)',
+        isResourceMissing: isRepoMissing,
+      }),
     ).rejects.toBeInstanceOf(GraphQLResourceMissingError)
     // ページサイズを縮小しながらリトライせず、1回呼んだだけで throw
     expect(graphqlFn).toHaveBeenCalledTimes(1)
@@ -356,20 +355,10 @@ describe('paginateGraphQL shouldStop', () => {
   test('throws GraphQLResourceMissingError including label/cursor', async () => {
     const graphqlFn = () => Promise.resolve({ repository: null })
     await expect(
-      paginateGraphQL(
-        graphqlFn,
-        (r: {
-          repository: {
-            nodes: unknown[]
-            pageInfo: { hasNextPage: boolean; endCursor: string | null }
-          } | null
-        }) => r.repository,
-        (n: unknown) => n,
-        {
-          label: 'pullrequestList(acme/ghost)',
-          isResourceMissing: (r) => r?.repository == null,
-        },
-      ),
+      paginateGraphQL(graphqlFn, extractRepoConnection, (n: unknown) => n, {
+        label: 'pullrequestList(acme/ghost)',
+        isResourceMissing: isRepoMissing,
+      }),
     ).rejects.toThrow(/pullrequestList\(acme\/ghost\)/)
   })
 

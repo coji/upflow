@@ -757,6 +757,12 @@ export class GraphQLResourceMissingError extends Error {
   }
 }
 
+const repositoryMissing = (r: unknown): boolean =>
+  r != null &&
+  typeof r === 'object' &&
+  'repository' in r &&
+  (r as { repository: unknown }).repository == null
+
 interface PaginateOptions<TNode, TResult = unknown> {
   /** ページネーション用の初期ページサイズ（デフォルト: 100） */
   initialPageSize?: number
@@ -1164,7 +1170,7 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       {
         minPageSize: 10,
         label: `pullrequests(${owner}/${repo})`,
-        isResourceMissing: (r) => r?.repository == null,
+        isResourceMissing: repositoryMissing,
       },
     )
   }
@@ -1184,7 +1190,7 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       {
         minPageSize: 10,
         label: `pullrequestList(${owner}/${repo})`,
-        isResourceMissing: (r) => r?.repository == null,
+        isResourceMissing: repositoryMissing,
         // ISO 8601 UTC 文字列同士なので lexicographic 比較 = 時系列比較
         shouldStop: stopBefore
           ? (node) => node.updatedAt <= stopBefore
@@ -1205,12 +1211,12 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       number: pullNumber,
     })
 
-    if (result?.repository == null) {
+    if (repositoryMissing(result)) {
       throw new GraphQLResourceMissingError(
         `pullrequest(${owner}/${repo}): repository not found`,
       )
     }
-    const node = result.repository.pullRequest ?? null
+    const node = result?.repository?.pullRequest ?? null
     const shaped = shapePullRequestNode(node, owner, repo)
     if (!shaped) {
       throw new Error(`PR #${pullNumber} not found in ${owner}/${repo}`)
@@ -1319,7 +1325,7 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
       shapeTagNode,
       {
         label: `tags(${owner}/${repo})`,
-        isResourceMissing: (r) => r?.repository == null,
+        isResourceMissing: repositoryMissing,
       },
     )
   }
@@ -1427,7 +1433,7 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
         initialPageSize: 25,
         minPageSize: 5,
         label: `pullrequestsWithDetails(${owner}/${repo})`,
-        isResourceMissing: (r) => r?.repository == null,
+        isResourceMissing: repositoryMissing,
       },
     )
   }
