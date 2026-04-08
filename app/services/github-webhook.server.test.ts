@@ -276,7 +276,7 @@ describe('processGithubWebhookPayload', () => {
     expect(row.suspendedAt).toBeNull()
   })
 
-  test('installation_repositories updates selection', async () => {
+  test('installation_repositories updates selection and emits membership_synced', async () => {
     await processGithubWebhookPayload('installation_repositories', {
       installation: {
         id: 42,
@@ -291,6 +291,19 @@ describe('processGithubWebhookPayload', () => {
       .executeTakeFirstOrThrow()
 
     expect(row.appRepositorySelection).toBe('selected')
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .select(['eventType', 'source'])
+      .where('organizationId', '=', 'o1')
+      .where('installationId', '=', 42)
+      .execute()
+    expect(events).toEqual([
+      {
+        eventType: 'membership_synced',
+        source: 'installation_repositories_webhook',
+      },
+    ])
   })
 
   test('ping event is ignored', async () => {
