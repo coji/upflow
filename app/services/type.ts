@@ -49,14 +49,28 @@ export interface GithubAppInstallStates {
   organizationId: string;
 }
 
+export interface GithubAppLinkEvents {
+  createdAt: Generated<string>;
+  detailsJson: string | null;
+  eventType: string;
+  id: Generated<number>;
+  installationId: number;
+  organizationId: string;
+  source: string;
+  status: string;
+}
+
 export interface GithubAppLinks {
   appRepositorySelection: "all" | "selected";
   createdAt: Generated<string>;
   deletedAt: string | null;
   githubAccountId: number;
+  githubAccountType: string | null;
   githubOrg: string;
   installationId: number;
+  membershipInitializedAt: string | null;
   organizationId: string;
+  suspendedAt: string | null;
   updatedAt: Generated<string>;
 }
 
@@ -156,6 +170,7 @@ export interface DB {
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
   githubAppInstallStates: GithubAppInstallStates;
+  githubAppLinkEvents: GithubAppLinkEvents;
   githubAppLinks: GithubAppLinks;
   integrations: Integrations;
   invitations: Invitations;

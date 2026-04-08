@@ -108,6 +108,7 @@ async function getTenantData(organizationId: OrganizationId) {
         'updatedAt',
         'createdAt',
         'scanWatermark',
+        'githubInstallationId',
       ])
       .execute(),
     tenantDb
