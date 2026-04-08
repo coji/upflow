@@ -190,17 +190,6 @@ async function handleInstallationRepositoriesEvent(
     .where('installationId', '=', installation.id)
     .execute()
 
-  await logGithubAppLinkEvent(
-    {
-      organizationId: link.organizationId as OrganizationId,
-      installationId: installation.id,
-      eventType: 'membership_repaired',
-      source: 'installation_repositories_webhook',
-      status: 'success',
-    },
-    trx,
-  )
-
   const { added, removed } = readRepositoryCoords(payload)
   return {
     organizationId: link.organizationId,
@@ -352,6 +341,13 @@ export async function runInstallationWebhookInTransaction(
       pending.installationId,
       { added: pending.added, removed: pending.removed },
     )
+    await logGithubAppLinkEvent({
+      organizationId: pending.organizationId as OrganizationId,
+      installationId: pending.installationId,
+      eventType: 'membership_repaired',
+      source: 'installation_repositories_webhook',
+      status: 'success',
+    })
     if (pending.removed.length > 0) {
       await reassignCanonicalAfterLinkLoss({
         organizationId: pending.organizationId as OrganizationId,
