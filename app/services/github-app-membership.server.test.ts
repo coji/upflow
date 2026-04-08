@@ -411,7 +411,6 @@ describe('reassignCanonicalAfterLinkLoss', () => {
     await insertLink(LOST_INSTALLATION)
     await insertLink(ALT_INSTALLATION)
 
-    // Two repos, both canonical = LOST. Only the first is in scope.
     const REPO_KEEP = 'repo-keep'
     const REPO_SCOPED = 'repo-scoped'
     for (const id of [REPO_KEEP, REPO_SCOPED]) {
@@ -427,7 +426,6 @@ describe('reassignCanonicalAfterLinkLoss', () => {
           updatedAt: '2026-04-07T00:00:00Z',
         })
         .execute()
-      // Both repos have ALT as an eligible alternative candidate.
       await tenantDb
         .insertInto('repositoryInstallationMemberships')
         .values({ repositoryId: id, installationId: ALT_INSTALLATION })
@@ -446,8 +444,8 @@ describe('reassignCanonicalAfterLinkLoss', () => {
       .select(['id', 'githubInstallationId'])
       .execute()
     const byId = new Map(rows.map((r) => [r.id, r.githubInstallationId]))
-    // Only the scoped repo is reassigned. The other keeps LOST as canonical
-    // because it still legitimately belongs to that installation.
+    // REPO_KEEP must stay on LOST: it still legitimately belongs to that
+    // installation (not in the scoped removal set).
     expect(byId.get(REPO_SCOPED)).toBe(ALT_INSTALLATION)
     expect(byId.get(REPO_KEEP)).toBe(LOST_INSTALLATION)
 

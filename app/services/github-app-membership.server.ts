@@ -14,9 +14,13 @@ export type ReassignmentSource = Extract<
 >
 
 /**
- * Replace `repository.github_installation_id` for every repo whose canonical
- * installation is `lostInstallationId`. Picks the next canonical from the
- * `repository_installation_memberships` table according to the rules below.
+ * Replace `repository.github_installation_id` when a link is lost. By default
+ * operates on every repository whose canonical is still `lostInstallationId`
+ * (the `installation.deleted` case). Pass `repositoryIds` to scope to a
+ * specific subset (e.g. `installation_repositories.removed`, where only a
+ * handful of repositories were dropped while the rest still belong to it).
+ *
+ * Next canonical is picked from `repository_installation_memberships`.
  *
  * Eligibility:
  *   - candidate's link must exist, be active (`deleted_at IS NULL`), not
@@ -26,23 +30,13 @@ export type ReassignmentSource = Extract<
  * Outcomes per repository:
  *   - 1 eligible candidate → reassign + emit `canonical_reassigned`
  *   - 0 eligible candidates → null + emit `canonical_cleared` (or
- *     `assignment_required` if any uninitialized link still exists for the org;
- *     callers can decide between these in the audit log)
+ *     `assignment_required` if any uninitialized link still exists for the org)
  *   - 2+ eligible candidates → null + emit `assignment_required`
  *
  * Cross-store rule (RDD: tenant first / shared second): tenant repository rows
  * are updated and tenant memberships are inspected before any shared-DB write.
- * The shared-DB audit log entries are written by this helper after the tenant
+ * The shared-DB audit log entries are written best-effort after the tenant
  * mutation succeeds.
- */
-/**
- * Reassigns the canonical installation for tenant repositories when a link
- * is lost. By default operates on every repository whose canonical is still
- * `lostInstallationId` (the `installation.deleted` case, where the whole
- * installation is gone). Pass `repositoryIds` to scope the reassignment to
- * a specific subset — e.g. `installation_repositories.removed`, where only
- * a handful of repositories were dropped from the installation while the
- * rest still belong to it.
  */
 export async function reassignCanonicalAfterLinkLoss(input: {
   organizationId: OrganizationId
@@ -51,7 +45,6 @@ export async function reassignCanonicalAfterLinkLoss(input: {
   repositoryIds?: string[]
 }): Promise<void> {
   const { organizationId, lostInstallationId, source, repositoryIds } = input
-  if (repositoryIds !== undefined && repositoryIds.length === 0) return
 
   const links = await db
     .selectFrom('githubAppLinks')

@@ -343,13 +343,14 @@ export async function runInstallationWebhookInTransaction(
       return await handleInstallationRepositoriesEvent(trx, payload)
     })
   if (pending) {
+    const orgId = pending.organizationId as OrganizationId
     const { removedRepositoryIds } = await applyMembershipChangesAfterCommit(
-      pending.organizationId,
+      orgId,
       pending.installationId,
       { added: pending.added, removed: pending.removed },
     )
     await tryLogGithubAppLinkEvent({
-      organizationId: pending.organizationId as OrganizationId,
+      organizationId: orgId,
       installationId: pending.installationId,
       eventType: 'membership_repaired',
       source: 'installation_repositories_webhook',
@@ -357,7 +358,7 @@ export async function runInstallationWebhookInTransaction(
     })
     if (removedRepositoryIds.length > 0) {
       await reassignCanonicalAfterLinkLoss({
-        organizationId: pending.organizationId as OrganizationId,
+        organizationId: orgId,
         lostInstallationId: pending.installationId,
         source: 'installation_repositories_webhook',
         repositoryIds: removedRepositoryIds,
