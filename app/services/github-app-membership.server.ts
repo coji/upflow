@@ -1,6 +1,6 @@
 import { db } from '~/app/services/db.server'
 import type { GithubAppLinkEventSource } from '~/app/services/github-app-link-events.server'
-import { logGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
+import { tryLogGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -146,7 +146,7 @@ export async function reassignCanonicalAfterLinkLoss(input: {
   }
 
   for (const decision of decisions) {
-    await logGithubAppLinkEvent({
+    await tryLogGithubAppLinkEvent({
       organizationId,
       installationId: lostInstallationId,
       eventType: decision.eventType,

@@ -179,7 +179,10 @@ describe('processGithubWebhookPayload', () => {
         deletedAt: null,
       })
       .execute()
-    await db.deleteFrom('githubAppLinkEvents').execute()
+    await db
+      .deleteFrom('githubAppLinkEvents')
+      .where('organizationId', '=', 'o1')
+      .execute()
     mockTenantSelectFrom.mockClear()
     mockTenantUpdateTable.mockClear()
   })
@@ -255,6 +258,7 @@ describe('processGithubWebhookPayload', () => {
     await db
       .updateTable('githubAppLinks')
       .set({ suspendedAt: '2026-01-01T00:00:00Z' })
+      .where('organizationId', '=', 'o1')
       .where('installationId', '=', 42)
       .execute()
 

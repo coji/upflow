@@ -1,7 +1,10 @@
 import createDebug from 'debug'
 import type { Kysely } from 'kysely'
 import { db, type DB } from '~/app/services/db.server'
-import { logGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
+import {
+  logGithubAppLinkEvent,
+  tryLogGithubAppLinkEvent,
+} from '~/app/services/github-app-link-events.server'
 import {
   reassignCanonicalAfterLinkLoss,
   softDeleteRepositoryMembership,
@@ -341,7 +344,7 @@ export async function runInstallationWebhookInTransaction(
       pending.installationId,
       { added: pending.added, removed: pending.removed },
     )
-    await logGithubAppLinkEvent({
+    await tryLogGithubAppLinkEvent({
       organizationId: pending.organizationId as OrganizationId,
       installationId: pending.installationId,
       eventType: 'membership_repaired',
