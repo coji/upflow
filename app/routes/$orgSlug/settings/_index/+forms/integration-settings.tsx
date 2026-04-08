@@ -167,7 +167,7 @@ function GitHubAppSection({
       toast.success('Install URL copied to clipboard')
       copyFetcher.reset()
     })
-  }, [copyFetcher])
+  }, [copyFetcher.state, copyFetcher.data, copyFetcher.reset])
 
   const hasAnyLink = githubAppLinks.length > 0
   const needsReconnect = integration?.method === 'github_app' && !hasAnyLink

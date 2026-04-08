@@ -26,6 +26,7 @@ import {
   Stack,
 } from '~/app/components/ui'
 import { requireOrgOwner } from '~/app/libs/auth.server'
+import { getErrorMessage } from '~/app/libs/error-message'
 import { captureExceptionToSentry } from '~/app/libs/sentry-node.server'
 import { orgContext } from '~/app/middleware/context'
 import { clearOrgCache, getOrgCachedData } from '~/app/services/cache.server'
@@ -283,7 +284,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       return dataWithError(
         {},
         {
-          message: e instanceof Error ? e.message : 'Invalid installation id',
+          message: getErrorMessage(e),
         },
       )
     }

@@ -1,3 +1,4 @@
+import { AppError } from '~/app/libs/app-error'
 import { db } from '~/app/services/db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -104,14 +105,14 @@ export const assertInstallationBelongsToOrg = async (
     .executeTakeFirst()
 
   if (!link) {
-    throw new Error(
+    throw new AppError(
       `Installation ${installationId} does not belong to this organization`,
     )
   }
   if (link.deletedAt !== null) {
-    throw new Error(`Installation ${installationId} is disconnected`)
+    throw new AppError(`Installation ${installationId} is disconnected`)
   }
   if (link.suspendedAt !== null) {
-    throw new Error(`Installation ${installationId} is suspended`)
+    throw new AppError(`Installation ${installationId} is suspended`)
   }
 }

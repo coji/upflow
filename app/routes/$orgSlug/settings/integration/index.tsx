@@ -59,6 +59,17 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
   }
 }
 
+const githubAppNotConfigured = (
+  intent: INTENTS.installGithubApp | INTENTS.copyInstallUrl,
+) =>
+  dataWithError(
+    { intent },
+    {
+      message:
+        'GitHub App is not configured (GITHUB_APP_ID / GITHUB_APP_PRIVATE_KEY missing)',
+    },
+  )
+
 async function buildInstallUrl(
   organizationId: OrganizationId,
 ): Promise<string | null> {
@@ -152,28 +163,12 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     })
     .with({ intent: INTENTS.installGithubApp }, async () => {
       const installUrl = await buildInstallUrl(organization.id)
-      if (!installUrl) {
-        return dataWithError(
-          { intent: INTENTS.installGithubApp },
-          {
-            message:
-              'GitHub App is not configured (GITHUB_APP_ID / GITHUB_APP_PRIVATE_KEY missing)',
-          },
-        )
-      }
+      if (!installUrl) return githubAppNotConfigured(INTENTS.installGithubApp)
       throw redirect(installUrl)
     })
     .with({ intent: INTENTS.copyInstallUrl }, async () => {
       const installUrl = await buildInstallUrl(organization.id)
-      if (!installUrl) {
-        return dataWithError(
-          { intent: INTENTS.copyInstallUrl },
-          {
-            message:
-              'GitHub App is not configured (GITHUB_APP_ID / GITHUB_APP_PRIVATE_KEY missing)',
-          },
-        )
-      }
+      if (!installUrl) return githubAppNotConfigured(INTENTS.copyInstallUrl)
       return data({ intent: INTENTS.copyInstallUrl, installUrl })
     })
     .with({ intent: INTENTS.integrationSettings }, async (v) => {
