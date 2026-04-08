@@ -1,7 +1,14 @@
 import { defineJob } from '@coji/durably'
 import { z } from 'zod'
-import { getErrorMessageForLog } from '~/app/libs/error-message'
+import {
+  getErrorMessage,
+  getErrorMessageForLog,
+} from '~/app/libs/error-message'
 import { clearOrgCache } from '~/app/services/cache.server'
+import { db } from '~/app/services/db.server'
+import { tryLogGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
+import { initializeMembershipsForInstallation } from '~/app/services/github-app-membership.server'
+import { fetchInstallationRepositories } from '~/app/services/github-installation-repos.server'
 import { resolveOctokitForRepository } from '~/app/services/github-octokit.server'
 import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { shouldTriggerFullOrgProcessJob } from '~/app/services/jobs/crawl-process-handoff.server'
@@ -13,6 +20,43 @@ import {
 } from '~/batch/github/fetcher'
 import { createStore } from '~/batch/github/store'
 import { computeAdvancedScanWatermark } from './scan-watermark'
+
+async function repairMembershipForLink(
+  organizationId: OrganizationId,
+  installationId: number,
+): Promise<void> {
+  try {
+    const repos = await fetchInstallationRepositories(installationId)
+    await initializeMembershipsForInstallation({
+      organizationId,
+      installationId,
+      repositories: repos,
+    })
+    await db
+      .updateTable('githubAppLinks')
+      .set({ membershipInitializedAt: new Date().toISOString() })
+      .where('organizationId', '=', organizationId)
+      .where('installationId', '=', installationId)
+      .execute()
+    await tryLogGithubAppLinkEvent({
+      organizationId,
+      installationId,
+      eventType: 'membership_repaired',
+      source: 'crawl_repair',
+      status: 'success',
+      details: { repoCount: repos.length },
+    })
+  } catch (e) {
+    await tryLogGithubAppLinkEvent({
+      organizationId,
+      installationId,
+      eventType: 'membership_repaired',
+      source: 'crawl_repair',
+      status: 'failed',
+      details: { error: getErrorMessage(e) },
+    })
+  }
+}
 
 export const crawlJob = defineJob({
   name: 'crawl',
@@ -64,6 +108,17 @@ export const crawlJob = defineJob({
         exportSetting: fullOrg.exportSetting,
       }
     })
+
+    if (fullOrg.integration?.method === 'github_app') {
+      const uninitialized = fullOrg.githubAppLinks.filter(
+        (l) => l.membershipInitializedAt === null,
+      )
+      for (const link of uninitialized) {
+        await step.run(`repair-membership:${link.installationId}`, async () => {
+          await repairMembershipForLink(orgId, link.installationId)
+        })
+      }
+    }
 
     const updatedPrNumbers = new Map<string, Set<number>>()
     const failedRepos: Array<{ repoLabel: string; error: string }> = []

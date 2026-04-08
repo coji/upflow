@@ -10,6 +10,7 @@ export type GithubAppLinkEventType =
   | 'link_unsuspended'
   | 'membership_initialized'
   | 'membership_repaired'
+  | 'membership_synced'
   | 'canonical_reassigned'
   | 'canonical_cleared'
   | 'assignment_required'
@@ -55,4 +56,19 @@ export const logGithubAppLinkEvent = async (
       detailsJson: input.details ? JSON.stringify(input.details) : null,
     })
     .execute()
+}
+
+/**
+ * Best-effort variant: writes the audit log entry and swallows any error so the
+ * caller's primary mutation is never affected by audit-log failures. Logs to
+ * stderr if the write fails.
+ */
+export const tryLogGithubAppLinkEvent = async (
+  input: LogGithubAppLinkEventInput,
+): Promise<void> => {
+  try {
+    await logGithubAppLinkEvent(input)
+  } catch (e) {
+    console.error('[github_app_link_events] failed to write audit log entry', e)
+  }
 }

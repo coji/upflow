@@ -50,11 +50,20 @@ export async function handlePullWebhookEvent(
   if (prNumber === null) return
 
   const tenantDb = getTenantDb(orgId)
+  // Match by `(owner, repo)` *and* the installation that delivered the
+  // webhook. `github_installation_id IS NULL` is still accepted while
+  // existing rows are unbackfilled; the strict variant drops the OR clause.
   const repo = await tenantDb
     .selectFrom('repositories')
     .select('id')
     .where('owner', '=', coords.owner)
     .where('repo', '=', coords.name)
+    .where((eb) =>
+      eb.or([
+        eb('githubInstallationId', '=', installation.id),
+        eb('githubInstallationId', 'is', null),
+      ]),
+    )
     .executeTakeFirst()
   if (!repo) return
 

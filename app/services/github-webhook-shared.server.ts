@@ -4,7 +4,7 @@ export function isRecord(x: unknown): x is Record<string, unknown> {
 
 export type InstallationLike = {
   id: number
-  account?: { id: number; login?: string }
+  account?: { id: number; login?: string; type?: string }
   repository_selection?: string
 }
 
@@ -14,11 +14,12 @@ export function readInstallation(
   const inst = payload.installation
   if (!isRecord(inst) || typeof inst.id !== 'number') return null
   const acc = inst.account
-  let account: { id: number; login?: string } | undefined
+  let account: { id: number; login?: string; type?: string } | undefined
   if (isRecord(acc) && typeof acc.id === 'number') {
     account = {
       id: acc.id,
       login: typeof acc.login === 'string' ? acc.login : undefined,
+      type: typeof acc.type === 'string' ? acc.type : undefined,
     }
   }
   const repository_selection =
