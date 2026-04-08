@@ -403,4 +403,86 @@ describe('reassignCanonicalAfterLinkLoss', () => {
     // Only the first run produces an event; the second run is a no-op.
     expect(events).toHaveLength(1)
   })
+
+  test('scoped repositoryIds only reassigns the specified repositories', async () => {
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+
+    await insertLink(LOST_INSTALLATION)
+    await insertLink(ALT_INSTALLATION)
+
+    // Two repos, both canonical = LOST. Only the first is in scope.
+    const REPO_KEEP = 'repo-keep'
+    const REPO_SCOPED = 'repo-scoped'
+    for (const id of [REPO_KEEP, REPO_SCOPED]) {
+      await tenantDb
+        .insertInto('repositories')
+        .values({
+          id,
+          integrationId: 'int-1',
+          provider: 'github',
+          owner: 'octo',
+          repo: id,
+          githubInstallationId: LOST_INSTALLATION,
+          updatedAt: '2026-04-07T00:00:00Z',
+        })
+        .execute()
+      // Both repos have ALT as an eligible alternative candidate.
+      await tenantDb
+        .insertInto('repositoryInstallationMemberships')
+        .values({ repositoryId: id, installationId: ALT_INSTALLATION })
+        .execute()
+    }
+
+    await reassignCanonicalAfterLinkLoss({
+      organizationId: ORG_ID,
+      lostInstallationId: LOST_INSTALLATION,
+      source: 'installation_repositories_webhook',
+      repositoryIds: [REPO_SCOPED],
+    })
+
+    const rows = await tenantDb
+      .selectFrom('repositories')
+      .select(['id', 'githubInstallationId'])
+      .execute()
+    const byId = new Map(rows.map((r) => [r.id, r.githubInstallationId]))
+    // Only the scoped repo is reassigned. The other keeps LOST as canonical
+    // because it still legitimately belongs to that installation.
+    expect(byId.get(REPO_SCOPED)).toBe(ALT_INSTALLATION)
+    expect(byId.get(REPO_KEEP)).toBe(LOST_INSTALLATION)
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .selectAll()
+      .execute()
+    expect(events).toHaveLength(1)
+    expect(events[0].eventType).toBe('canonical_reassigned')
+  })
+
+  test('empty repositoryIds array is a no-op', async () => {
+    await insertLink(LOST_INSTALLATION)
+    await seedRepository(LOST_INSTALLATION)
+    await insertMembership(LOST_INSTALLATION)
+
+    await reassignCanonicalAfterLinkLoss({
+      organizationId: ORG_ID,
+      lostInstallationId: LOST_INSTALLATION,
+      source: 'installation_repositories_webhook',
+      repositoryIds: [],
+    })
+
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const repo = await getTenantDb(ORG_ID)
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', REPO_ID)
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBe(LOST_INSTALLATION)
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .selectAll()
+      .execute()
+    expect(events).toHaveLength(0)
+  })
 })

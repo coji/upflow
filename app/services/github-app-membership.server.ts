@@ -35,12 +35,23 @@ export type ReassignmentSource = Extract<
  * The shared-DB audit log entries are written by this helper after the tenant
  * mutation succeeds.
  */
+/**
+ * Reassigns the canonical installation for tenant repositories when a link
+ * is lost. By default operates on every repository whose canonical is still
+ * `lostInstallationId` (the `installation.deleted` case, where the whole
+ * installation is gone). Pass `repositoryIds` to scope the reassignment to
+ * a specific subset — e.g. `installation_repositories.removed`, where only
+ * a handful of repositories were dropped from the installation while the
+ * rest still belong to it.
+ */
 export async function reassignCanonicalAfterLinkLoss(input: {
   organizationId: OrganizationId
   lostInstallationId: number
   source: ReassignmentSource
+  repositoryIds?: string[]
 }): Promise<void> {
-  const { organizationId, lostInstallationId, source } = input
+  const { organizationId, lostInstallationId, source, repositoryIds } = input
+  if (repositoryIds !== undefined && repositoryIds.length === 0) return
 
   const links = await db
     .selectFrom('githubAppLinks')
@@ -60,7 +71,7 @@ export async function reassignCanonicalAfterLinkLoss(input: {
 
   const tenantDb = getTenantDb(organizationId)
 
-  const rows = await tenantDb
+  let rowsQuery = tenantDb
     .selectFrom('repositories')
     .leftJoin(
       'repositoryInstallationMemberships',
@@ -73,7 +84,10 @@ export async function reassignCanonicalAfterLinkLoss(input: {
       'repositoryInstallationMemberships.deletedAt as membershipDeletedAt',
     ])
     .where('repositories.githubInstallationId', '=', lostInstallationId)
-    .execute()
+  if (repositoryIds !== undefined) {
+    rowsQuery = rowsQuery.where('repositories.id', 'in', repositoryIds)
+  }
+  const rows = await rowsQuery.execute()
 
   if (rows.length === 0) return
 

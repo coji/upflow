@@ -226,7 +226,7 @@ async function applyMembershipChangesAfterCommit(
   organizationId: string,
   installationId: number,
   changes: { added: RepoCoord[]; removed: RepoCoord[] },
-): Promise<void> {
+): Promise<{ removedRepositoryIds: string[] }> {
   const orgId = organizationId as OrganizationId
   const idByCoord = await resolveRepositoryIdsByCoords(orgId, [
     ...changes.added,
@@ -243,6 +243,7 @@ async function applyMembershipChangesAfterCommit(
     })
   }
 
+  const removedRepositoryIds: string[] = []
   for (const repo of changes.removed) {
     const repositoryId = idByCoord.get(`${repo.owner}/${repo.name}`)
     if (!repositoryId) continue
@@ -251,7 +252,10 @@ async function applyMembershipChangesAfterCommit(
       installationId,
       repositoryId,
     })
+    removedRepositoryIds.push(repositoryId)
   }
+
+  return { removedRepositoryIds }
 }
 
 async function handleInstallationEvent(
@@ -339,7 +343,7 @@ export async function runInstallationWebhookInTransaction(
       return await handleInstallationRepositoriesEvent(trx, payload)
     })
   if (pending) {
-    await applyMembershipChangesAfterCommit(
+    const { removedRepositoryIds } = await applyMembershipChangesAfterCommit(
       pending.organizationId,
       pending.installationId,
       { added: pending.added, removed: pending.removed },
@@ -351,11 +355,12 @@ export async function runInstallationWebhookInTransaction(
       source: 'installation_repositories_webhook',
       status: 'success',
     })
-    if (pending.removed.length > 0) {
+    if (removedRepositoryIds.length > 0) {
       await reassignCanonicalAfterLinkLoss({
         organizationId: pending.organizationId as OrganizationId,
         lostInstallationId: pending.installationId,
         source: 'installation_repositories_webhook',
+        repositoryIds: removedRepositoryIds,
       })
     }
   }
