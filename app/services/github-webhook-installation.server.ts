@@ -352,7 +352,7 @@ export async function runInstallationWebhookInTransaction(
     await tryLogGithubAppLinkEvent({
       organizationId: orgId,
       installationId: pending.installationId,
-      eventType: 'membership_repaired',
+      eventType: 'membership_synced',
       source: 'installation_repositories_webhook',
       status: 'success',
     })

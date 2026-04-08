@@ -371,7 +371,7 @@ schema:
   - `id INTEGER PRIMARY KEY AUTOINCREMENT`
   - `organization_id TEXT NOT NULL` (server-derived。`github_app_links.organization_id` を参照する論理 FK)
   - `installation_id INTEGER NOT NULL`
-  - `event_type TEXT NOT NULL` (`link_created` / `link_deleted` / `link_suspended` / `link_unsuspended` / `membership_initialized` / `membership_repaired` / `canonical_reassigned` / `canonical_cleared` / `assignment_required`)
+  - `event_type TEXT NOT NULL` (`link_created` / `link_deleted` / `link_suspended` / `link_unsuspended` / `membership_initialized` / `membership_repaired` / `membership_synced` / `canonical_reassigned` / `canonical_cleared` / `assignment_required`)
   - `source TEXT NOT NULL` (`setup_callback` / `installation_webhook` / `installation_repositories_webhook` / `user_disconnect` / `crawl_repair` / `manual_reassign` / `cli_repair`)
   - `status TEXT NOT NULL` (`success` / `failed` / `skipped`)
   - `details_json TEXT NULL` (任意の payload。失敗時のエラーメッセージ、reassignment の前後値、affected repository ids など)

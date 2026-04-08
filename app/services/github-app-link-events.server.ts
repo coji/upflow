@@ -10,6 +10,7 @@ export type GithubAppLinkEventType =
   | 'link_unsuspended'
   | 'membership_initialized'
   | 'membership_repaired'
+  | 'membership_synced'
   | 'canonical_reassigned'
   | 'canonical_cleared'
   | 'assignment_required'
