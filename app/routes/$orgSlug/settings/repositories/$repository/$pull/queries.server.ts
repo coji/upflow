@@ -9,7 +9,7 @@ export const getRepository = async (
   return await tenantDb
     .selectFrom('repositories')
     .where('id', '=', repositoryId)
-    .select(['id', 'owner', 'repo'])
+    .select(['id', 'owner', 'repo', 'githubInstallationId'])
     .executeTakeFirst()
 }
 

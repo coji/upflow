@@ -75,7 +75,6 @@ export interface GithubAppLinks {
 }
 
 export interface Integrations {
-  appSuspendedAt: string | null;
   createdAt: Generated<string>;
   id: string;
   method: "token" | "github_app";

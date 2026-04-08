@@ -109,7 +109,7 @@ async function handleInstallationDeleted(
   if (revertedToToken) {
     await trx
       .updateTable('integrations')
-      .set({ method: 'token', appSuspendedAt: null, updatedAt: now })
+      .set({ method: 'token', updatedAt: now })
       .where('organizationId', '=', link.organizationId)
       .execute()
   }

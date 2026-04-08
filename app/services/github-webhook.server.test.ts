@@ -83,7 +83,6 @@ rawInit.exec(`
     provider text NOT NULL DEFAULT 'github',
     method text NOT NULL DEFAULT 'token',
     private_token text,
-    app_suspended_at text,
     created_at text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     CONSTRAINT integrations_organization_id_fkey
@@ -162,7 +161,6 @@ describe('processGithubWebhookPayload', () => {
         provider: 'github',
         method: 'github_app',
         privateToken: null,
-        appSuspendedAt: null,
       })
       .execute()
     await db

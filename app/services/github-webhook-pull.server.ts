@@ -1,3 +1,4 @@
+import createDebug from 'debug'
 import { db } from '~/app/services/db.server'
 import {
   findActiveLinkByInstallation,
@@ -7,6 +8,8 @@ import {
 import { crawlConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
+
+const debug = createDebug('app:github-webhook:pull')
 
 function extractPullRequestNumber(
   payload: Record<string, unknown>,
@@ -32,40 +35,62 @@ function readRepositoryOwnerName(
 }
 
 export async function handlePullWebhookEvent(
-  _event: string,
+  event: string,
   payload: Record<string, unknown>,
 ): Promise<void> {
   const installation = readInstallation(payload)
-  if (!installation) return
+  if (!installation) {
+    debug('%s: payload has no installation, dropped', event)
+    return
+  }
 
   const link = await findActiveLinkByInstallation(db, installation.id)
-  if (!link) return
+  if (!link) {
+    debug(
+      '%s: no active github_app_links row for installation_id=%s, dropped',
+      event,
+      installation.id,
+    )
+    return
+  }
 
   const orgId = link.organizationId as OrganizationId
 
   const coords = readRepositoryOwnerName(payload)
-  if (!coords) return
+  if (!coords) {
+    debug('%s: payload has no repository owner/name, dropped', event)
+    return
+  }
 
   const prNumber = extractPullRequestNumber(payload)
-  if (prNumber === null) return
+  if (prNumber === null) {
+    debug('%s: payload has no pull_request.number, dropped', event)
+    return
+  }
 
   const tenantDb = getTenantDb(orgId)
-  // Match by `(owner, repo)` *and* the installation that delivered the
-  // webhook. `github_installation_id IS NULL` is still accepted while
-  // existing rows are unbackfilled; the strict variant drops the OR clause.
+  // Strict lookup: the repository must belong to the installation that
+  // delivered the webhook. Repositories with `github_installation_id IS NULL`
+  // (broken state) require the operator to run reassign-broken-repositories
+  // first; until then their webhooks fall through this guard.
   const repo = await tenantDb
     .selectFrom('repositories')
     .select('id')
     .where('owner', '=', coords.owner)
     .where('repo', '=', coords.name)
-    .where((eb) =>
-      eb.or([
-        eb('githubInstallationId', '=', installation.id),
-        eb('githubInstallationId', 'is', null),
-      ]),
-    )
+    .where('githubInstallationId', '=', installation.id)
     .executeTakeFirst()
-  if (!repo) return
+  if (!repo) {
+    debug(
+      '%s: no tenant repository for org=%s installation=%s %s/%s, dropped (run reassign-broken-repositories?)',
+      event,
+      orgId,
+      installation.id,
+      coords.owner,
+      coords.name,
+    )
+    return
+  }
 
   const { durably } = await import('~/app/services/durably.server')
   await durably.jobs.crawl.trigger(

@@ -110,12 +110,10 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           provider: 'github',
           method: 'github_app',
           privateToken: null,
-          appSuspendedAt: null,
         })
         .onConflict((oc) =>
           oc.column('organizationId').doUpdateSet({
             method: 'github_app',
-            appSuspendedAt: null,
             updatedAt: now,
           }),
         )

@@ -67,7 +67,6 @@ const integrationColumns = [
   'method',
   'provider',
   'privateToken',
-  'appSuspendedAt',
 ] as const
 
 async function getIntegrationByOrgId(organizationId: OrganizationId) {

@@ -6,8 +6,8 @@ import type { OrganizationId } from '~/app/types/organization'
 /**
  * Soft-delete a single GitHub App installation link.
  *
- * Reverts `integrations.method` to `'token'` (and clears `app_suspended_at`)
- * only when the deleted link was the last active one for the org.
+ * Reverts `integrations.method` to `'token'` only when the deleted link was
+ * the last active one for the org.
  *
  * Writes a `link_deleted` audit log event with `source='user_disconnect'`.
  *
@@ -41,7 +41,7 @@ export async function disconnectGithubAppLink(
     if (revertedToToken) {
       await trx
         .updateTable('integrations')
-        .set({ method: 'token', appSuspendedAt: null, updatedAt: now })
+        .set({ method: 'token', updatedAt: now })
         .where('organizationId', '=', organizationId)
         .execute()
     }
@@ -94,7 +94,7 @@ export async function disconnectGithubApp(organizationId: OrganizationId) {
 
     await trx
       .updateTable('integrations')
-      .set({ method: 'token', appSuspendedAt: null, updatedAt: now })
+      .set({ method: 'token', updatedAt: now })
       .where('organizationId', '=', organizationId)
       .execute()
 
