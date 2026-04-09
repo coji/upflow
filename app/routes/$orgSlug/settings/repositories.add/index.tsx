@@ -194,7 +194,11 @@ async function loadReposForApp(
   const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
     (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
   )
-  if (owner && !owners.includes(owner)) {
+  // Only reject an unknown owner when every installation's repo list
+  // resolved successfully. If any installation failed, the owner may
+  // legitimately belong to the missing set — degrade gracefully instead
+  // of crashing the page.
+  if (owner && !owners.includes(owner) && failedInstallationIds.length === 0) {
     throw new Error('invalid owner')
   }
 
@@ -286,6 +290,30 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         {
           message: getErrorMessage(e),
         },
+      )
+    }
+    // Defend against tampered hidden inputs: confirm the installation can
+    // actually see (owner, name) before inserting. `installationId` alone
+    // isn't enough — a malicious form submit could pair a valid org-owned
+    // installation with a repo from a different installation.
+    const octokit = resolveOctokitForInstallation(
+      submission.value.installationId,
+    )
+    const visibleRepos = await getOrgCachedData(
+      organization.id,
+      `app-installation-all-repos:${submission.value.installationId}`,
+      () => fetchAllInstallationRepos(octokit),
+      300000,
+    )
+    const canAccessRepo = visibleRepos.some(
+      (repo) =>
+        repo.owner.login === submission.value.owner &&
+        repo.name === submission.value.name,
+    )
+    if (!canAccessRepo) {
+      return dataWithError(
+        {},
+        { message: 'Selected installation cannot access this repository' },
       )
     }
     installationId = submission.value.installationId
