@@ -150,7 +150,6 @@ function GitHubAppSection({
   const revertFetcher = useFetcher<ConfirmDialogData>()
   const copyFetcher = useFetcher<typeof action>()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: useFetcher() returns a fresh object each render; depending only on the primitive `state` keeps the effect tied to the submit lifecycle.
   useEffect(() => {
     if (copyFetcher.state !== 'idle') return
     const d = copyFetcher.data
@@ -168,7 +167,7 @@ function GitHubAppSection({
       toast.success('Install URL copied to clipboard')
       copyFetcher.reset()
     })
-  }, [copyFetcher.state])
+  }, [copyFetcher.state, copyFetcher.data, copyFetcher.reset])
 
   const hasAnyLink = githubAppLinks.length > 0
   const needsReconnect = integration?.method === 'github_app' && !hasAnyLink
