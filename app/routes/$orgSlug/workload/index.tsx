@@ -28,7 +28,11 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
     ? (teams.find((t) => t.id === teamParam) ?? null)
     : null
   const teamId = selectedTeam?.id ?? null
-  const personalLimit = selectedTeam?.personalLimit ?? DEFAULT_PERSONAL_LIMIT
+  const personalLimit = selectedTeam
+    ? selectedTeam.personalLimit
+    : teams.length > 0
+      ? Math.max(...teams.map((t) => t.personalLimit))
+      : DEFAULT_PERSONAL_LIMIT
 
   const [openPRs, pendingReviews] = await Promise.all([
     getOpenPullRequests(organization.id, teamId),
