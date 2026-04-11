@@ -6,6 +6,7 @@ import { requireOrgOwner } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { generateInstallState } from '~/app/libs/github-app-state.server'
 import { orgContext } from '~/app/middleware/context'
+import { reassignCanonicalAfterLinkLoss } from '~/app/services/github-app-membership.server'
 import {
   disconnectGithubApp,
   disconnectGithubAppLink,
@@ -132,6 +133,14 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           getErrorMessage(e),
         )
       }
+      // Mirror the webhook path: soft-deleting the link leaves repositories
+      // whose `githubInstallationId` points at it dangling. Reassign them to
+      // another eligible installation (or clear to null) before returning.
+      await reassignCanonicalAfterLinkLoss({
+        organizationId: organization.id,
+        lostInstallationId: v.installationId,
+        source: 'user_disconnect',
+      })
       return dataWithSuccess(
         { intent: INTENTS.disconnectGithubAppLink, lastResult: undefined },
         { message: 'GitHub App installation disconnected' },

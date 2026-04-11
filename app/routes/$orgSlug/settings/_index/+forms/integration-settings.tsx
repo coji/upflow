@@ -28,7 +28,7 @@ import {
 } from '~/app/components/ui'
 import {
   buildInstallationSettingsUrl,
-  isPersonalAccount,
+  getAccountKind,
 } from '~/app/libs/github-account'
 import { INTENTS, integrationSettingsSchema as schema } from '../+schema'
 import type { action } from '../../integration/index'
@@ -54,7 +54,13 @@ export interface IntegrationSettingsProps {
 function InstallationCard({ link }: { link: GithubAppLinkSummary }) {
   const disconnectFetcher = useFetcher<ConfirmDialogData>()
   const settingsUrl = buildInstallationSettingsUrl(link)
-  const isPersonal = isPersonalAccount(link)
+  const accountKind = getAccountKind(link)
+  const kindPrefix =
+    accountKind === 'personal'
+      ? 'Personal account '
+      : accountKind === 'organization'
+        ? 'Organization '
+        : ''
   const isSuspended = link.suspendedAt !== null
   const needsRepair = link.membershipInitializedAt === null
 
@@ -62,7 +68,7 @@ function InstallationCard({ link }: { link: GithubAppLinkSummary }) {
     <Stack gap="2" className="border-muted rounded-md border p-3">
       <div className="space-y-1">
         <p className="text-sm">
-          {isPersonal ? 'Personal account ' : 'Organization '}
+          {kindPrefix}
           <span className="font-medium">{link.githubOrg}</span>
           {link.appRepositorySelection === 'selected' ? (
             <span className="text-muted-foreground">
@@ -97,12 +103,14 @@ function InstallationCard({ link }: { link: GithubAppLinkSummary }) {
       )}
 
       <HStack className="flex-wrap">
-        <Button variant="outline" size="sm" asChild>
-          <a href={settingsUrl} target="_blank" rel="noreferrer">
-            <ExternalLinkIcon className="mr-1 h-4 w-4" />
-            GitHub App settings
-          </a>
-        </Button>
+        {settingsUrl && (
+          <Button variant="outline" size="sm" asChild>
+            <a href={settingsUrl} target="_blank" rel="noreferrer">
+              <ExternalLinkIcon className="mr-1 h-4 w-4" />
+              GitHub App settings
+            </a>
+          </Button>
+        )}
         <Button
           type="button"
           variant="outline"
