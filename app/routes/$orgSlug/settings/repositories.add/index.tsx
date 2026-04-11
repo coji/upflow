@@ -56,8 +56,8 @@ import type { Route } from './+types/index'
 export const handle = { breadcrumb: () => ({ label: 'Add Repositories' }) }
 
 const AddRepoSchema = z.object({
-  owner: z.string(),
-  name: z.string(),
+  owner: z.string().trim().min(1),
+  name: z.string().trim().min(1),
   installationId: z.coerce.number().int().positive().optional(),
 })
 
@@ -296,15 +296,27 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     // actually see (owner, name) before inserting. `installationId` alone
     // isn't enough — a malicious form submit could pair a valid org-owned
     // installation with a repo from a different installation.
-    const octokit = resolveOctokitForInstallation(
-      submission.value.installationId,
-    )
-    const visibleRepos = await getOrgCachedData(
-      organization.id,
-      `app-installation-all-repos:${submission.value.installationId}`,
-      () => fetchAllInstallationRepos(octokit),
-      300000,
-    )
+    let visibleRepos: Awaited<ReturnType<typeof fetchAllInstallationRepos>>
+    try {
+      const octokit = resolveOctokitForInstallation(
+        submission.value.installationId,
+      )
+      visibleRepos = await getOrgCachedData(
+        organization.id,
+        `app-installation-all-repos:${submission.value.installationId}`,
+        () => fetchAllInstallationRepos(octokit),
+        300000,
+      )
+    } catch (e) {
+      console.error('Failed to verify installation access:', e)
+      return dataWithError(
+        {},
+        {
+          message:
+            'Could not verify the selected installation. Please try again.',
+        },
+      )
+    }
     const canAccessRepo = visibleRepos.some(
       (repo) =>
         repo.owner.login === submission.value.owner &&
