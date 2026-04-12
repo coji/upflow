@@ -45,8 +45,31 @@ export enum INTENTS {
   copyInstallUrl = 'copy-install-url',
   disconnectGithubApp = 'disconnect-github-app',
   confirmDisconnectGithubApp = 'confirm-disconnect-github-app',
+  disconnectGithubAppLink = 'disconnect-github-app-link',
+  confirmDisconnectGithubAppLink = 'confirm-disconnect-github-app-link',
   revertToToken = 'revert-to-token',
   confirmRevertToToken = 'confirm-revert-to-token',
 }
 
 export const intentsSchema = z.enum(INTENTS)
+
+/**
+ * Discriminated union of every intent the integration page action accepts.
+ * Use with parseWithZod + ts-pattern.
+ */
+export const integrationActionSchema = z.discriminatedUnion('intent', [
+  z.object({ intent: z.literal(INTENTS.confirmDisconnectGithubApp) }),
+  z.object({ intent: z.literal(INTENTS.disconnectGithubApp) }),
+  z.object({ intent: z.literal(INTENTS.confirmDisconnectGithubAppLink) }),
+  z.object({
+    intent: z.literal(INTENTS.disconnectGithubAppLink),
+    installationId: z.coerce.number().int().positive(),
+  }),
+  z.object({ intent: z.literal(INTENTS.confirmRevertToToken) }),
+  z.object({ intent: z.literal(INTENTS.revertToToken) }),
+  z.object({ intent: z.literal(INTENTS.installGithubApp) }),
+  z.object({ intent: z.literal(INTENTS.copyInstallUrl) }),
+  z
+    .object({ intent: z.literal(INTENTS.integrationSettings) })
+    .merge(integrationSettingsSchema),
+])

@@ -4,6 +4,7 @@ import {
   extractOwners,
   fetchAllInstallationRepos,
   filterInstallationRepos,
+  type TaggedInstallationRepo,
 } from './get-installation-repos'
 
 describe('get-installation-repos', () => {
@@ -22,45 +23,54 @@ describe('get-installation-repos', () => {
   })
 
   test('extractOwners returns sorted unique logins', () => {
-    const repos = [
-      { owner: { login: 'zebra' } },
-      { owner: { login: 'alpha' } },
-      { owner: { login: 'alpha' } },
-    ] as Awaited<ReturnType<typeof fetchAllInstallationRepos>>
+    const tagged = [
+      { installationId: 1, repo: { owner: { login: 'zebra' } } },
+      { installationId: 1, repo: { owner: { login: 'alpha' } } },
+      { installationId: 2, repo: { owner: { login: 'alpha' } } },
+    ] as unknown as TaggedInstallationRepo[]
 
-    expect(extractOwners(repos)).toEqual(['alpha', 'zebra'])
+    expect(extractOwners(tagged)).toEqual(['alpha', 'zebra'])
   })
 
   test('filterInstallationRepos filters by owner and keyword and maps fields', () => {
-    const repos = [
+    const tagged = [
       {
-        id: 1,
-        node_id: 'R_kgDOA',
-        name: 'foo-bar',
-        full_name: 'acme/foo-bar',
-        private: true,
-        owner: { login: 'acme' },
-        pushed_at: '2024-01-02T00:00:00Z',
+        installationId: 100,
+        repo: {
+          id: 1,
+          node_id: 'R_kgDOA',
+          name: 'foo-bar',
+          full_name: 'acme/foo-bar',
+          private: true,
+          owner: { login: 'acme' },
+          pushed_at: '2024-01-02T00:00:00Z',
+        },
       },
       {
-        id: 2,
-        node_id: 'R_kgDOB',
-        name: 'other',
-        full_name: 'acme/other',
-        private: false,
-        owner: { login: 'acme' },
-        pushed_at: null,
+        installationId: 100,
+        repo: {
+          id: 2,
+          node_id: 'R_kgDOB',
+          name: 'other',
+          full_name: 'acme/other',
+          private: false,
+          owner: { login: 'acme' },
+          pushed_at: null,
+        },
       },
       {
-        id: 3,
-        name: 'nope',
-        owner: { login: 'other-org' },
-        private: true,
-        pushed_at: null,
+        installationId: 200,
+        repo: {
+          id: 3,
+          name: 'nope',
+          owner: { login: 'other-org' },
+          private: true,
+          pushed_at: null,
+        },
       },
-    ] as Awaited<ReturnType<typeof fetchAllInstallationRepos>>
+    ] as unknown as TaggedInstallationRepo[]
 
-    const result = filterInstallationRepos(repos, 'acme', 'bar')
+    const result = filterInstallationRepos(tagged, 'acme', 'bar')
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({
       id: 'R_kgDOA',
@@ -68,30 +78,33 @@ describe('get-installation-repos', () => {
       owner: 'acme',
       visibility: 'private',
       pushedAt: '2024-01-02T00:00:00Z',
+      installationId: 100,
     })
   })
 
   test('filterInstallationRepos falls back to String(id) when node_id is missing', () => {
-    const repos = [
+    const tagged = [
       {
-        id: 42,
-        name: 'no-node-id',
-        full_name: 'acme/no-node-id',
-        private: false,
-        owner: { login: 'acme' },
-        pushed_at: null,
+        installationId: 7,
+        repo: {
+          id: 42,
+          name: 'no-node-id',
+          full_name: 'acme/no-node-id',
+          private: false,
+          owner: { login: 'acme' },
+          pushed_at: null,
+        },
       },
-    ] as Awaited<ReturnType<typeof fetchAllInstallationRepos>>
+    ] as unknown as TaggedInstallationRepo[]
 
-    const result = filterInstallationRepos(repos, 'acme')
+    const result = filterInstallationRepos(tagged, 'acme')
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('42')
+    expect(result[0].installationId).toBe(7)
   })
 
   test('filterInstallationRepos returns [] when owner is missing', () => {
-    const repos = [] as unknown as Awaited<
-      ReturnType<typeof fetchAllInstallationRepos>
-    >
-    expect(filterInstallationRepos(repos, undefined, 'x')).toEqual([])
+    const tagged = [] as TaggedInstallationRepo[]
+    expect(filterInstallationRepos(tagged, undefined, 'x')).toEqual([])
   })
 })

@@ -9,10 +9,12 @@ export const RepositoryItem = ({
   repo,
   isAdded,
   isLast,
+  installationId,
 }: {
   repo: Repository
   isAdded: boolean
   isLast: boolean
+  installationId: number | null
 }) => {
   const fetcher = useFetcher({
     key: `repo-${repo.owner}/${repo.name}`,
@@ -38,6 +40,13 @@ export const RepositoryItem = ({
       <fetcher.Form method="POST">
         <input type="hidden" name="owner" value={repo.owner} />
         <input type="hidden" name="name" value={repo.name} />
+        {installationId !== null && (
+          <input
+            type="hidden"
+            name="installationId"
+            value={String(installationId)}
+          />
+        )}
         <Button
           type="submit"
           size="sm"

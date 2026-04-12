@@ -4,6 +4,11 @@ export interface Repository {
   visibility: string
   owner: string
   pushedAt: string | null
+  /**
+   * Installation that surfaced this repository (for github_app mode). `null`
+   * for token-mode results.
+   */
+  installationId: number | null
 }
 
 interface PageInfo {
@@ -75,6 +80,7 @@ export const getRepositoriesByOwnerAndKeyword = async ({
       visibility: item.visibility ?? 'private',
       owner: item.owner.login,
       pushedAt: item.pushed_at,
+      installationId: null,
     }),
   )
 

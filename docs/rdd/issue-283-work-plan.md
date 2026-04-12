@@ -149,70 +149,92 @@ RDD: [`issue-283-multiple-github-accounts.md`](./issue-283-multiple-github-accou
 
 **ブランチ**: `feat/issue-283-ui` (base: 直前の PR ブランチ、`gt create` で作成)
 
+**UX 哲学** (PR 4 実装中に確立、Vercel/Netlify 風):
+
+ユーザーには「installation」概念を意識させない。リポジトリ一覧やユーザー検索では複数 installation を裏で merge して 1 リストとして見せ、各リポジトリは内部的に「どの installation 経由で見えていたか」を保持する。Installation そのものの管理は integration settings 画面でだけ行う。
+
 **スコープ**:
 
 - `app/routes/$orgSlug/settings/integration/index.tsx` + `_index/+forms/integration-settings.tsx`:
-  - `githubAppLinks[]` 表示
+  - `githubAppLinks[]` 表示（**ここだけは installation 単位カードで明示**）
   - installation 単位 connected / suspended / deleted バッジ
   - `Add another GitHub account` ボタン
   - personal account / org の URL 分岐 (`github_account_type`)
-  - installation 単位 disconnect
-- `app/routes/$orgSlug/settings/repositories.add/index.tsx` + `+functions/queries.server.ts` + `+functions/mutations.server.ts`:
-  - installation selector（loader / action / cache key に `installationId` 反映）
-  - `github_app` モードで installation 必須
-  - server-side で `assertInstallationBelongsToOrg()` による検証
-  - `addRepository()` mutation に `githubInstallationId` 引数追加
+  - installation 単位 disconnect (per-installation fetcher + ConfirmDialog)
+  - action は CLAUDE.md 規約に従い `parseWithZod` + `match.exhaustive` の discriminated union パターンへ refactor
+- `app/routes/$orgSlug/settings/repositories.add/`:
+  - **installation selector を出さない**。全 active installation の repo を `Promise.allSettled` で並列 fetch → owner/repo で dedupe → 1 リスト表示
+  - 各 repository は `TaggedInstallationRepo` (`{ installationId, repo }` wrapper) として元 installation を tag
+  - `Add` ボタン押下時、その repo の `installationId` を hidden input で submit
+  - server action 側で `assertInstallationBelongsToOrg()` を呼び、client 由来 `installationId` を検証
+  - `addRepository()` mutation に `githubInstallationId` 引数追加 + `upsertRepositoryMembership()` 呼び出し
+  - `fetchAllInstallationRepos` の cache key は per-installation
+  - 1 installation の fetch 失敗時は警告 Alert を表示（他は引き続き使える）
+  - `selected` notice は installation の状態（all / mixed / none）で 3 状態表示
 - `app/routes/$orgSlug/settings/github-users._index/`:
-  - installation selector
-  - `searchGithubUsers()` API に `installationId` 引数
-  - server-side 検証
-- `assertInstallationBelongsToOrg()` は PR 2 で既に追加済み。本 PR では loader / action から呼び出すだけ
+  - **installation selector を出さない**。`search.users` は global API なので、`getActiveInstallationOptions()` の最初の active installation を裏で使う
+- 共有 helpers:
+  - `app/libs/github-account.ts`: `formatGithubAccountLabel`, `isPersonalAccount`, `buildInstallationSettingsUrl`
+  - `app/services/github-integration-queries.server.ts`: `getActiveInstallationOptions(orgId)`
 - e2e / route テスト更新
 
 **満たす受入条件**: 1, 4, 5, 13, 14, 15, 17, 21
 **注意**:
 
-- `repositories.add` の cache key を `installationId` 込みに変更すること（既存固定 key の漏れに注意）
-- personal account の URL は `/settings/installations/<id>`、org は `/organizations/<login>/settings/installations`
+- `repositories.add` の cache key を per-installation (`app-installation-all-repos:<id>`) に変更
+- personal account の URL は `/settings/installations/<id>`、organization は `/organizations/<login>/settings/installations`
+- dedupe 順序は createdAt asc（古い installation が勝つ）。membership table が真実なので UI 表示の attribution は crawl 動作には影響しない
 
 **テスト要件**:
 
-- `assertInstallationBelongsToOrg()` で他 org の installation / deleted / suspended を弾くこと
-- `repositories.add` の cache key が installation 切替で正しく無効化されること
-- selector を持たない personal account の文言と URL が正しく分岐すること
+- `assertInstallationBelongsToOrg()` で他 org の installation / deleted / suspended を弾く
+- `TaggedInstallationRepo` wrapper の filter / dedupe ロジック
+- personal account / organization の URL 分岐
 
 ---
 
-### PR 5: PR webhook lookup 強化 + repository list/detail の installation 表示 + assignment required UI
+### PR 5: assignment required の救済 UI + 再割当 mutation + batch CLI
 
 **ブランチ**: `feat/issue-283-repo-ui` (base: 直前の PR ブランチ、`gt create` で作成)
+
+**UX 哲学**: PR 4 の Vercel 哲学に従い、通常時は repository 一覧/詳細に installation 名を出さない。canonical installation を失って `github_installation_id IS NULL` になった repository（broken state）だけを救済導線として可視化する。
 
 **スコープ**:
 
 - `app/routes/$orgSlug/settings/repositories._index/queries.server.ts`:
-  - `github_installation_id` を select に追加
-  - `assignment required` 判定
+  - `github_installation_id` を select に追加（broken 判定用）
 - `app/routes/$orgSlug/settings/repositories._index/index.tsx`:
-  - installation 名 / `assignment required` バッジ表示
-  - 再選択フォーム
-- 注: `repositories.add/+functions/queries.server.ts` は PR 4 が触る。本 PR は触らない
-- `app/routes/$orgSlug/settings/repositories/$repository/queries.server.ts` / `$pull/`:
-  - installation 情報を含めて取得
-- 注: `github_installation_id` を select する箇所が PR 3 (webhook lookup) と PR 5 (一覧 / 詳細) に分散するため、共通 select fragment を `app/services/github-integration-queries.server.ts` 等に切り出すことを検討する。本 PR で実施するか PR 3 にバックポートするかは実装時に判断
-- 個別 repository の installation 再選択 mutation:
-  - PR 3 で実装する canonical reassignment helper を再利用する
-  - target installation が `repository_installation_memberships` に `deleted_at IS NULL` で存在することを必ず検証
-  - 検証に通らない installation を指定した場合はエラーを返す
-  - cross-store 整合性ルール（tenant first / shared second）に従う
-- batch 側に `reassign-repository-installation` CLI 補助コマンド追加（同 helper を共有）
+  - `integrations.method === 'github_app'` かつ `github_installation_id IS NULL` の repository に「Needs reconnection」バッジ（または同等の visual cue）
+  - tooltip / help text で「GitHub App installation が外れた、再割当を試行してください」と説明
+  - 1 クリック「Try auto-reassign」ボタン:
+    - PR 3 の canonical reassignment helper (`reassignCanonicalAfterLinkLoss`) を呼び直す mutation
+    - 成功（候補 1 件で reassign） → トースト + バッジ消失
+    - 失敗（候補 0 件 or 2+ 件） → トーストでヘルプ（reinstall 推奨 or org admin に連絡）
+- mutation:
+  - `reassignBrokenRepository(orgId, repositoryId)` を repositories.add の +functions に追加
+  - 内部で canonical reassignment helper を呼ぶ
+  - cross-store 整合性ルール（tenant first / shared second）+ audit log
+- batch CLI:
+  - `batch/commands/reassign-repository-installation.ts` を追加
+  - 引数: `<organizationId>` または `<organizationId> <repositoryId>`
+  - 全 broken repository に対して canonical reassignment を順次実行
+  - 運用者が一括修復に使う
 
-**満たす受入条件**: 7, 18
+**スコープ外（Vercel 哲学に従い意図的に削除）**:
+
+- 通常 repository 一覧/詳細での installation 名表示
+- 個別 repository の installation 手動 dropdown 選択 UI
+- `repositories/$repository/queries.server.ts` / `$pull/` の変更（installation 情報は出さない）
+
+**満たす受入条件**: 7（broken 復旧経路）, 18（assignment required 表示）
 
 **テスト要件**:
 
-- 再選択 mutation: target installation が membership に存在しないケースでエラーを返す
-- 再選択 mutation: 検証通過時に `repositories.github_installation_id` 更新と `github_app_link_events` 記録が両方行われる
-- list / detail loader が `assignment required` を正しく判定する
+- mutation: broken でない repo に対して呼ぶと no-op で成功
+- mutation: 候補 0 件のときエラーを返し audit log に `assignment_required` が記録される
+- mutation: 候補 1 件のとき `repositories.github_installation_id` 更新 + `canonical_reassigned` 監査ログ
+- list loader が `github_installation_id IS NULL` を正しく検出
+- batch CLI コマンドが組織内の broken repo すべてに helper を呼ぶ
 
 ---
 

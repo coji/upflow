@@ -1,3 +1,4 @@
+import { AppError } from '~/app/libs/app-error'
 import { db } from '~/app/services/db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -58,6 +59,36 @@ export const getGithubAppLinkByInstallationId = async (
   )
 }
 
+export type ActiveInstallationOption = {
+  installationId: number
+  githubOrg: string
+  githubAccountType: string | null
+  appRepositorySelection: 'all' | 'selected'
+}
+
+/**
+ * Active (non-deleted, non-suspended) installations for an org in the shape
+ * UI loaders need for installation selectors. Suspended links are excluded
+ * because they can't be used for API calls.
+ *
+ * Order is deterministic: `createdAt ASC` (inherited from {@link getGithubAppLinks}).
+ * Callers that deduplicate repos across installations rely on this to
+ * keep the "oldest installation wins" attribution stable across reloads.
+ */
+export const getActiveInstallationOptions = async (
+  organizationId: OrganizationId,
+): Promise<ActiveInstallationOption[]> => {
+  const links = await getGithubAppLinks(organizationId)
+  return links
+    .filter((l) => l.suspendedAt === null)
+    .map((l) => ({
+      installationId: l.installationId,
+      githubOrg: l.githubOrg,
+      githubAccountType: l.githubAccountType,
+      appRepositorySelection: l.appRepositorySelection,
+    }))
+}
+
 /**
  * Boundary guard for client-provided `installationId`. Throws if the
  * installation does not belong to the given org or is deleted/suspended.
@@ -78,14 +109,14 @@ export const assertInstallationBelongsToOrg = async (
     .executeTakeFirst()
 
   if (!link) {
-    throw new Error(
+    throw new AppError(
       `Installation ${installationId} does not belong to this organization`,
     )
   }
   if (link.deletedAt !== null) {
-    throw new Error(`Installation ${installationId} is disconnected`)
+    throw new AppError(`Installation ${installationId} is disconnected`)
   }
   if (link.suspendedAt !== null) {
-    throw new Error(`Installation ${installationId} is suspended`)
+    throw new AppError(`Installation ${installationId} is suspended`)
   }
 }
