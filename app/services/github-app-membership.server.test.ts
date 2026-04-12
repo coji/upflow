@@ -676,4 +676,19 @@ describe('reassignBrokenRepository', () => {
     })
     expect(result).toEqual({ status: 'no_candidates' })
   })
+
+  test('not_found: non-existent repositoryId → no event', async () => {
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: 'missing-repo-id',
+      source: 'manual_reassign',
+    })
+    expect(result).toEqual({ status: 'not_found' })
+
+    const events = await db
+      .selectFrom('githubAppLinkEvents')
+      .selectAll()
+      .execute()
+    expect(events).toHaveLength(0)
+  })
 })

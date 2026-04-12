@@ -51,6 +51,7 @@ export async function reassignBrokenRepositoriesCommand(
       not_found: 0,
       not_broken: 0,
     }
+    let failed = 0
     for (const repo of broken) {
       const label = `${repo.owner}/${repo.repo}`
       try {
@@ -85,10 +86,11 @@ export async function reassignBrokenRepositoriesCommand(
           )
           .exhaustive()
       } catch (e) {
+        failed++
         consola.error(`${label}:`, e)
       }
     }
-    consola.info('Summary:', counts)
+    consola.info('Summary:', { ...counts, failed })
   } finally {
     await shutdown()
   }
