@@ -648,7 +648,7 @@ describe('reassignBrokenRepository', () => {
     expect(result).toEqual({ status: 'no_candidates' })
   })
 
-  test('uninitialized link is excluded from candidates', async () => {
+  test('uninitialized link → pending_initialization', async () => {
     await insertLink(ALT_INSTALLATION, { membershipInitializedAt: null })
     await seedBrokenRepo()
     await insertMembership(ALT_INSTALLATION)
@@ -658,6 +658,6 @@ describe('reassignBrokenRepository', () => {
       repositoryId: REPO_ID,
       source: 'manual_reassign',
     })
-    expect(result).toEqual({ status: 'no_candidates' })
+    expect(result).toEqual({ status: 'pending_initialization' })
   })
 })

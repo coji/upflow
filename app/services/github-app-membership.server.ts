@@ -49,6 +49,7 @@ async function fetchEligibleInstallationIds(
 export type ReassignBrokenRepositoryResult =
   | { status: 'reassigned'; installationId: number }
   | { status: 'no_candidates' }
+  | { status: 'pending_initialization' }
   | { status: 'ambiguous'; candidateCount: number }
   | { status: 'not_found' }
   | { status: 'not_broken' }
@@ -65,6 +66,7 @@ export type ReassignBrokenRepositoryResult =
  * Returns a discriminated result so callers can show the appropriate UI:
  *   - `reassigned`: a single eligible candidate was found, repo is now fixed
  *   - `no_candidates`: no installation can see this repo; user must reinstall
+ *   - `pending_initialization`: an installation exists but membership init hasn't completed yet
  *   - `ambiguous`: 2+ candidates, manual choice needed
  *   - `not_found`: no repository row exists for the given ID
  *   - `not_broken`: repository already has a `github_installation_id` set
@@ -85,7 +87,7 @@ export async function reassignBrokenRepository(input: {
   if (!repo) return { status: 'not_found' }
   if (repo.githubInstallationId !== null) return { status: 'not_broken' }
 
-  const { ids: eligibleSet } =
+  const { ids: eligibleSet, hasUninitializedLink } =
     await fetchEligibleInstallationIds(organizationId)
 
   const memberships = await tenantDb
@@ -120,7 +122,11 @@ export async function reassignBrokenRepository(input: {
   // no installation to attribute the event to (and the audit table requires a
   // non-null `installationId`). The function return value already conveys the
   // outcome to the UI / CLI caller, which surfaces it via toast / console.
-  if (candidates.length === 0) return { status: 'no_candidates' }
+  if (candidates.length === 0) {
+    return hasUninitializedLink
+      ? { status: 'pending_initialization' }
+      : { status: 'no_candidates' }
+  }
   return { status: 'ambiguous', candidateCount: candidates.length }
 }
 

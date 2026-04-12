@@ -174,6 +174,15 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
               },
             ),
           )
+          .with({ status: 'pending_initialization' }, () =>
+            dataWithError(
+              { ok: false, lastResult: null },
+              {
+                message:
+                  'An installation is pending membership initialization. Please wait a moment and try again.',
+              },
+            ),
+          )
           .with({ status: 'ambiguous' }, ({ candidateCount }) =>
             dataWithError(
               { ok: false, lastResult: null },
