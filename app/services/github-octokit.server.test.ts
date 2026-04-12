@@ -115,7 +115,7 @@ describe('resolveOctokitForRepository', () => {
           githubAppLinks: [{ installationId: 99, suspendedAt: null }],
           repository: { githubInstallationId: 42 },
         }),
-      ).toThrow(/installation 42 is not active/)
+      ).toThrow(/installation 42 not found in active links/)
     })
 
     test('throws when matching link is suspended', () => {

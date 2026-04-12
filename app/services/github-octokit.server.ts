@@ -111,7 +111,7 @@ export function resolveOctokitForRepository(input: {
     )
     if (!matched) {
       throw new Error(
-        `GitHub App installation ${repository.githubInstallationId} is not active for this organization`,
+        `GitHub App installation ${repository.githubInstallationId} not found in active links for this organization`,
       )
     }
     if (matched.suspendedAt) {
