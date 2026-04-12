@@ -5,7 +5,10 @@ import { href, useFetcher, useRevalidator } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
-import { getErrorMessage } from '~/app/libs/error-message'
+import {
+  getErrorMessage,
+  getErrorMessageForLog,
+} from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import {
   getGithubAppLinks,
@@ -107,7 +110,7 @@ export const action = async ({
       repository,
     })
   } catch (e) {
-    throw new Response(getErrorMessage(e), { status: 422 })
+    throw new Response(getErrorMessageForLog(e), { status: 422 })
   }
 
   const fetcher = createFetcher({
