@@ -1,11 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import {
-  assertOrgGithubAuthResolvable,
   createAppOctokit,
   createOctokit,
   resolveOctokitForInstallation,
   resolveOctokitForRepository,
-  resolveOctokitFromOrg,
 } from './github-octokit.server'
 
 const stubGithubAppEnv = () => {
@@ -68,73 +66,6 @@ describe('createOctokit', () => {
   })
 })
 
-describe('assertOrgGithubAuthResolvable', () => {
-  test('throws when no integration', () => {
-    expect(() =>
-      assertOrgGithubAuthResolvable({
-        integration: null,
-        githubAppLink: null,
-      }),
-    ).toThrow('No integration configured')
-  })
-
-  test('github_app without link throws', () => {
-    expect(() =>
-      assertOrgGithubAuthResolvable({
-        integration: {
-          method: 'github_app',
-          privateToken: 'ghp_x',
-        },
-        githubAppLink: null,
-      }),
-    ).toThrow('GitHub App is not connected')
-  })
-
-  test('github_app with link passes', () => {
-    expect(() =>
-      assertOrgGithubAuthResolvable({
-        integration: {
-          method: 'github_app',
-          privateToken: null,
-        },
-        githubAppLink: { installationId: 1 },
-      }),
-    ).not.toThrow()
-  })
-
-  test('token method without privateToken throws', () => {
-    expect(() =>
-      assertOrgGithubAuthResolvable({
-        integration: { method: 'token', privateToken: null },
-        githubAppLink: null,
-      }),
-    ).toThrow('No auth configured')
-  })
-})
-
-describe('resolveOctokitFromOrg', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs()
-  })
-
-  test('token path uses PAT', () => {
-    const o = resolveOctokitFromOrg({
-      integration: { method: 'token', privateToken: 'ghp_abc' },
-      githubAppLink: null,
-    })
-    expect(o).toBeDefined()
-  })
-
-  test('github_app path uses createOctokit when env set', () => {
-    stubGithubAppEnv()
-    const o = resolveOctokitFromOrg({
-      integration: { method: 'github_app', privateToken: null },
-      githubAppLink: { installationId: 42 },
-    })
-    expect(o).toBeDefined()
-  })
-})
-
 describe('resolveOctokitForInstallation', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
@@ -184,7 +115,7 @@ describe('resolveOctokitForRepository', () => {
           githubAppLinks: [{ installationId: 99, suspendedAt: null }],
           repository: { githubInstallationId: 42 },
         }),
-      ).toThrow(/installation 42 is not active/)
+      ).toThrow(/installation 42 not found in active links/)
     })
 
     test('throws when matching link is suspended', () => {
@@ -200,54 +131,20 @@ describe('resolveOctokitForRepository', () => {
     })
   })
 
-  describe('github_app mode transitional fallback (githubInstallationId IS NULL)', () => {
-    test('active link 1 件: uses that installation', () => {
-      const o = resolveOctokitForRepository({
-        integration: integrationGithubApp,
-        githubAppLinks: [{ installationId: 7, suspendedAt: null }],
-        repository: { githubInstallationId: null },
-      })
-      expect(o).toBeDefined()
-    })
-
-    test('active link 0 件: throws (does NOT fall back to PAT)', () => {
+  describe('github_app mode strict (no canonical installation)', () => {
+    test('throws when github_app repo has githubInstallationId === null', () => {
       expect(() =>
         resolveOctokitForRepository({
           integration: integrationGithubApp,
-          githubAppLinks: [],
+          githubAppLinks: [{ installationId: 7, suspendedAt: null }],
           repository: { githubInstallationId: null },
         }),
-      ).toThrow(/GitHub App is not connected/)
-    })
-
-    test('active link 2 件以上: throws backfill required', () => {
-      expect(() =>
-        resolveOctokitForRepository({
-          integration: integrationGithubApp,
-          githubAppLinks: [
-            { installationId: 1, suspendedAt: null },
-            { installationId: 2, suspendedAt: null },
-          ],
-          repository: { githubInstallationId: null },
-        }),
-      ).toThrow(/Backfill required/)
-    })
-
-    test('suspended links are excluded from active count (1 active + 1 suspended → uses active)', () => {
-      const o = resolveOctokitForRepository({
-        integration: integrationGithubApp,
-        githubAppLinks: [
-          { installationId: 1, suspendedAt: null },
-          { installationId: 2, suspendedAt: '2026-04-07T00:00:00Z' },
-        ],
-        repository: { githubInstallationId: null },
-      })
-      expect(o).toBeDefined()
+      ).toThrow(/Repository has no canonical installation assigned/)
     })
   })
 
   describe('token mode', () => {
-    test('with privateToken: uses PAT', () => {
+    test('with privateToken: uses PAT (canonical installation irrelevant)', () => {
       const o = resolveOctokitForRepository({
         integration: integrationToken,
         githubAppLinks: [],

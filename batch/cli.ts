@@ -159,7 +159,7 @@ const backfillInstallationMembership = command(
     },
     help: {
       description:
-        'One-shot migration: assign github_installation_id to repositories and seed memberships for orgs whose GitHub App method has exactly one active installation. Run before deploying PR 7 strict lookup.',
+        'One-shot migration: assign github_installation_id to repositories and seed memberships for orgs whose GitHub App method has exactly one active installation.',
     },
   },
   async (argv) => {

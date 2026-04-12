@@ -43,7 +43,6 @@ const setupSharedDb = () => {
       provider text NOT NULL DEFAULT 'github',
       method text NOT NULL DEFAULT 'token',
       private_token text,
-      app_suspended_at text,
       created_at text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
       updated_at text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
@@ -129,7 +128,6 @@ const insertOrg = async (id: string, method: 'token' | 'github_app') => {
       provider: 'github',
       method,
       privateToken: null,
-      appSuspendedAt: null,
     })
     .execute()
 }

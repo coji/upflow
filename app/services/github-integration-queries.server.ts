@@ -35,17 +35,6 @@ export const getGithubAppLinks = async (organizationId: OrganizationId) => {
     .execute()
 }
 
-/**
- * Oldest active GitHub App link for an organization, or null.
- *
- * @deprecated Returns an arbitrary link when an org has multiple active
- *   installations. Use {@link getGithubAppLinks} and operate per-installation.
- */
-export const getGithubAppLink = async (organizationId: OrganizationId) => {
-  const links = await getGithubAppLinks(organizationId)
-  return links[0] ?? null
-}
-
 export const getGithubAppLinkByInstallationId = async (
   installationId: number,
 ) => {

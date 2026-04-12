@@ -96,7 +96,8 @@ export async function backfillInstallationMembershipCommand(
           organizationName: org.organizationName,
           status: 'skipped_no_active_link',
           repositoryCount: 0,
-          notes: 'Reinstall the GitHub App before PR 7 deploy.',
+          notes:
+            'Reinstall the GitHub App to enable strict installation lookup.',
         })
         continue
       }
@@ -214,7 +215,7 @@ export async function backfillInstallationMembershipCommand(
     )
     if (requiresAttention.length > 0) {
       consola.warn(
-        `${requiresAttention.length} organization(s) require manual follow-up before PR 7 strict lookup deploy.`,
+        `${requiresAttention.length} organization(s) require manual follow-up before strict lookup is enabled.`,
       )
     }
   } finally {

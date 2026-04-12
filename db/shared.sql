@@ -133,7 +133,6 @@ CREATE TABLE `integrations` (
   `provider` text NOT NULL DEFAULT 'github',
   `method` text NOT NULL DEFAULT 'token',
   `private_token` text NULL,
-  `app_suspended_at` text NULL,
   `created_at` text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   `updated_at` text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   PRIMARY KEY (`id`),

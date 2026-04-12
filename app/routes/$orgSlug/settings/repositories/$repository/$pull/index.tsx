@@ -5,13 +5,16 @@ import { href, useFetcher, useRevalidator } from 'react-router'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import { Badge, Button, HStack, Heading, Stack } from '~/app/components/ui'
-import { getErrorMessage } from '~/app/libs/error-message'
+import {
+  getErrorMessage,
+  getErrorMessageForLog,
+} from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import {
-  getGithubAppLink,
+  getGithubAppLinks,
   getIntegration,
 } from '~/app/services/github-integration-queries.server'
-import { resolveOctokitFromOrg } from '~/app/services/github-octokit.server'
+import { resolveOctokitForRepository } from '~/app/services/github-octokit.server'
 import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { createFetcher } from '~/batch/github/fetcher'
 import { createStore } from '~/batch/github/store'
@@ -87,10 +90,10 @@ export const action = async ({
   const formData = await request.formData()
   const intent = intentSchema.parse(formData.get('intent'))
 
-  const [repository, integration, githubAppLink] = await Promise.all([
+  const [repository, integration, githubAppLinks] = await Promise.all([
     getRepository(organization.id, repositoryId),
     getIntegration(organization.id),
-    getGithubAppLink(organization.id),
+    getGithubAppLinks(organization.id),
   ])
   if (!repository) {
     throw new Response('Repository not found', { status: 404 })
@@ -99,11 +102,15 @@ export const action = async ({
     throw new Response('Repository is not properly configured', { status: 422 })
   }
 
-  let octokit: ReturnType<typeof resolveOctokitFromOrg>
+  let octokit: ReturnType<typeof resolveOctokitForRepository>
   try {
-    octokit = resolveOctokitFromOrg({ integration, githubAppLink })
-  } catch {
-    throw new Response('GitHub integration is not configured', { status: 422 })
+    octokit = resolveOctokitForRepository({
+      integration,
+      githubAppLinks,
+      repository,
+    })
+  } catch (e) {
+    throw new Response(getErrorMessageForLog(e), { status: 422 })
   }
 
   const fetcher = createFetcher({
