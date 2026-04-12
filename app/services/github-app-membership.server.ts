@@ -1,9 +1,6 @@
 import { db } from '~/app/services/db.server'
 import type { GithubAppLinkEventSource } from '~/app/services/github-app-link-events.server'
-import {
-  logGithubAppLinkEvent,
-  tryLogGithubAppLinkEvent,
-} from '~/app/services/github-app-link-events.server'
+import { tryLogGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -53,6 +50,7 @@ export type ReassignBrokenRepositoryResult =
   | { status: 'reassigned'; installationId: number }
   | { status: 'no_candidates' }
   | { status: 'ambiguous'; candidateCount: number }
+  | { status: 'not_found' }
   | { status: 'not_broken' }
 
 /**
@@ -68,6 +66,7 @@ export type ReassignBrokenRepositoryResult =
  *   - `reassigned`: a single eligible candidate was found, repo is now fixed
  *   - `no_candidates`: no installation can see this repo; user must reinstall
  *   - `ambiguous`: 2+ candidates, manual choice needed
+ *   - `not_found`: no repository row exists for the given ID
  *   - `not_broken`: repository already has a `github_installation_id` set
  */
 export async function reassignBrokenRepository(input: {
@@ -83,7 +82,7 @@ export async function reassignBrokenRepository(input: {
     .select(['id', 'githubInstallationId'])
     .where('id', '=', repositoryId)
     .executeTakeFirst()
-  if (!repo) return { status: 'not_broken' }
+  if (!repo) return { status: 'not_found' }
   if (repo.githubInstallationId !== null) return { status: 'not_broken' }
 
   const { ids: eligibleSet } =
@@ -106,7 +105,7 @@ export async function reassignBrokenRepository(input: {
       .set({ githubInstallationId: nextCanonical })
       .where('id', '=', repositoryId)
       .execute()
-    await logGithubAppLinkEvent({
+    await tryLogGithubAppLinkEvent({
       organizationId,
       installationId: nextCanonical,
       eventType: 'canonical_reassigned',

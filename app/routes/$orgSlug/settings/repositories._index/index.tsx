@@ -182,6 +182,12 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
               },
             ),
           )
+          .with({ status: 'not_found' }, () =>
+            dataWithError(
+              { ok: false, lastResult: null },
+              { message: 'Repository not found.' },
+            ),
+          )
           .with({ status: 'not_broken' }, () =>
             dataWithSuccess(
               { ok: true, lastResult: null },

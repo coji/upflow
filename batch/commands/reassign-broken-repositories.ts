@@ -46,6 +46,7 @@ export async function reassignBrokenRepositoriesCommand(
       reassigned: 0,
       no_candidates: 0,
       ambiguous: 0,
+      not_found: 0,
       not_broken: 0,
     }
     for (const repo of broken) {
@@ -68,6 +69,9 @@ export async function reassignBrokenRepositoriesCommand(
           )
           .with({ status: 'no_candidates' }, () =>
             consola.warn(`${label}: no active installation can see this repo`),
+          )
+          .with({ status: 'not_found' }, () =>
+            consola.warn(`${label}: repository not found`),
           )
           .with({ status: 'not_broken' }, () =>
             consola.info(`${label}: already assigned`),
