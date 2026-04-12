@@ -106,8 +106,8 @@ export const action = async ({
       githubAppLinks,
       repository,
     })
-  } catch {
-    throw new Response('GitHub integration is not configured', { status: 422 })
+  } catch (e) {
+    throw new Response(getErrorMessage(e), { status: 422 })
   }
 
   const fetcher = createFetcher({
