@@ -660,4 +660,20 @@ describe('reassignBrokenRepository', () => {
     })
     expect(result).toEqual({ status: 'pending_initialization' })
   })
+
+  test('suspended + uninitialized link → no_candidates (not pending_initialization)', async () => {
+    await insertLink(ALT_INSTALLATION, {
+      suspendedAt: '2026-04-07T00:00:00Z',
+      membershipInitializedAt: null,
+    })
+    await seedBrokenRepo()
+    await insertMembership(ALT_INSTALLATION)
+
+    const result = await reassignBrokenRepository({
+      organizationId: ORG_ID,
+      repositoryId: REPO_ID,
+      source: 'manual_reassign',
+    })
+    expect(result).toEqual({ status: 'no_candidates' })
+  })
 })

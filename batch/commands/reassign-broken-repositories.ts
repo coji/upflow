@@ -21,13 +21,13 @@ interface ReassignBrokenRepositoriesCommandProps {
 export async function reassignBrokenRepositoriesCommand(
   props: ReassignBrokenRepositoriesCommandProps,
 ) {
-  const result = await requireOrganization(props.organizationId)
-  if (!result) return
-
-  const { orgId } = result
-  const tenantDb = getTenantDb(orgId)
-
   try {
+    const result = await requireOrganization(props.organizationId)
+    if (!result) return
+
+    const { orgId } = result
+    const tenantDb = getTenantDb(orgId)
+
     let query = tenantDb
       .selectFrom('repositories')
       .select(['id', 'owner', 'repo'])
