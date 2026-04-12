@@ -145,6 +145,33 @@ const report = command(
   },
 )
 
+const backfillInstallationMembership = command(
+  {
+    name: 'backfill-installation-membership',
+    parameters: ['[organization id]'],
+    flags: {
+      dryRun: {
+        type: Boolean,
+        description:
+          'Print the planned changes without writing to the database',
+        default: false,
+      },
+    },
+    help: {
+      description:
+        'One-shot migration: assign github_installation_id to repositories and seed memberships for orgs whose GitHub App method has exactly one active installation. Run before deploying PR 7 strict lookup.',
+    },
+  },
+  async (argv) => {
+    const { backfillInstallationMembershipCommand } =
+      await import('./commands/backfill-installation-membership')
+    await backfillInstallationMembershipCommand({
+      organizationId: argv._.organizationId,
+      dryRun: argv.flags.dryRun,
+    })
+  },
+)
+
 const reassignBrokenRepositories = command(
   {
     name: 'reassign-broken-repositories',
@@ -184,6 +211,7 @@ cli({
     classify,
     backfill,
     report,
+    backfillInstallationMembership,
     reassignBrokenRepositories,
   ],
 })
