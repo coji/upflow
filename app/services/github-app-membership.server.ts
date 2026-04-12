@@ -56,7 +56,7 @@ export type ReassignBrokenRepositoryResult =
 /**
  * Try to assign a canonical installation to a single repository whose
  * `github_installation_id` is currently `NULL`. Used by the "Try auto-reassign"
- * UI button and the `reassign-repository-installation` CLI command.
+ * UI button and the `reassign-broken-repositories` CLI command.
  *
  * Eligibility rules match {@link reassignCanonicalAfterLinkLoss}: candidate
  * link must be active, non-suspended, and have `membership_initialized_at` set;
