@@ -145,6 +145,32 @@ const report = command(
   },
 )
 
+const reassignBrokenRepositories = command(
+  {
+    name: 'reassign-broken-repositories',
+    parameters: ['[organization id]'],
+    flags: {
+      repository: {
+        type: String,
+        description:
+          'Reassign a single repository by id (default: every broken repo)',
+      },
+    },
+    help: {
+      description:
+        'Reassign repositories whose canonical GitHub App installation was lost. Picks a new canonical from the membership table when exactly one eligible candidate exists.',
+    },
+  },
+  async (argv) => {
+    const { reassignBrokenRepositoriesCommand } =
+      await import('./commands/reassign-broken-repositories')
+    await reassignBrokenRepositoriesCommand({
+      organizationId: argv._.organizationId,
+      repositoryId: argv.flags.repository,
+    })
+  },
+)
+
 process.on('unhandledRejection', async (error) => {
   captureExceptionToSentry(error, { tags: { component: 'batch-cli' } })
   await flushSentryNode()
@@ -152,5 +178,12 @@ process.on('unhandledRejection', async (error) => {
 })
 
 cli({
-  commands: [crawl, processCmd, classify, backfill, report],
+  commands: [
+    crawl,
+    processCmd,
+    classify,
+    backfill,
+    report,
+    reassignBrokenRepositories,
+  ],
 })
