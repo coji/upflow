@@ -41,7 +41,7 @@ async function fetchEligibleInstallationIds(
       .map((l) => l.installationId),
   )
   const hasUninitializedLink = links.some(
-    (l) => l.membershipInitializedAt === null,
+    (l) => !l.suspendedAt && l.membershipInitializedAt === null,
   )
   return { ids, hasUninitializedLink }
 }
