@@ -59,12 +59,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       getIntegration(organization.id),
     ])
 
-  const integrationMethod: 'token' | 'github_app' | null =
-    integration?.method === 'github_app'
-      ? 'github_app'
-      : integration?.method === 'token'
-        ? 'token'
-        : null
+  const integrationMethod = integration?.method ?? null
 
   return {
     organization,

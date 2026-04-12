@@ -1,5 +1,6 @@
 import consola from 'consola'
 import { match } from 'ts-pattern'
+import type { ReassignBrokenRepositoryResult } from '~/app/services/github-app-membership.server'
 import { reassignBrokenRepository } from '~/app/services/github-app-membership.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import { requireOrganization } from './helpers'
@@ -42,7 +43,7 @@ export async function reassignBrokenRepositoriesCommand(
     }
     consola.info(`Found ${broken.length} broken repositories. Reassigning...`)
 
-    const counts = {
+    const counts: Record<ReassignBrokenRepositoryResult['status'], number> = {
       reassigned: 0,
       no_candidates: 0,
       pending_initialization: 0,
