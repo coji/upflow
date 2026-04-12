@@ -309,6 +309,16 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       )
     } catch (e) {
       console.error('Failed to verify installation access:', e)
+      captureExceptionToSentry(e, {
+        tags: {
+          component: 'repositories.add',
+          operation: 'visibility.check',
+        },
+        extra: {
+          organizationId: organization.id,
+          installationId: submission.value.installationId,
+        },
+      })
       return dataWithError(
         {},
         {

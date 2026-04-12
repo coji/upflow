@@ -70,6 +70,10 @@ export type ActiveInstallationOption = {
  * Active (non-deleted, non-suspended) installations for an org in the shape
  * UI loaders need for installation selectors. Suspended links are excluded
  * because they can't be used for API calls.
+ *
+ * Order is deterministic: `createdAt ASC` (inherited from {@link getGithubAppLinks}).
+ * Callers that deduplicate repos across installations rely on this to
+ * keep the "oldest installation wins" attribution stable across reloads.
  */
 export const getActiveInstallationOptions = async (
   organizationId: OrganizationId,

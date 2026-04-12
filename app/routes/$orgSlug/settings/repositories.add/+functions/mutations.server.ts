@@ -48,7 +48,10 @@ export const addRepository = async (
       cb.columns(['integrationId', 'owner', 'repo']).doUpdateSet((eb) => ({
         owner: eb.ref('excluded.owner'),
         repo: eb.ref('excluded.repo'),
-        githubInstallationId: eb.ref('excluded.githubInstallationId'),
+        // Preserve the existing githubInstallationId when the incoming value
+        // is null (e.g. stale POST from token mode). A null overwrite would
+        // break the link between the repository row and its membership.
+        githubInstallationId: sql`COALESCE(${eb.ref('excluded.githubInstallationId')}, ${sql.ref('repositories.githubInstallationId')})`,
         releaseDetectionKey: eb.ref('excluded.releaseDetectionKey'),
         releaseDetectionMethod: eb.ref('excluded.releaseDetectionMethod'),
         updatedAt: eb.ref('excluded.updatedAt'),
