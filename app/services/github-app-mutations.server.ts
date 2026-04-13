@@ -12,12 +12,26 @@ import type { OrganizationId } from '~/app/types/organization'
  */
 function tryDeleteGithubInstallations(installationIds: number[]) {
   if (installationIds.length === 0) return
-  const appOctokit = createAppOctokit()
-  Promise.allSettled(
-    installationIds.map((id) =>
-      appOctokit.rest.apps.deleteInstallation({ installation_id: id }),
-    ),
-  ).catch(() => {})
+  try {
+    const appOctokit = createAppOctokit()
+    Promise.allSettled(
+      installationIds.map((id) =>
+        appOctokit.rest.apps
+          .deleteInstallation({ installation_id: id })
+          .catch((e) =>
+            console.warn(
+              `[tryDeleteGithubInstallations] Failed to delete installation ${id}:`,
+              e,
+            ),
+          ),
+      ),
+    )
+  } catch (e) {
+    console.warn(
+      '[tryDeleteGithubInstallations] Failed to initialize GitHub App client:',
+      e,
+    )
+  }
 }
 
 /**
