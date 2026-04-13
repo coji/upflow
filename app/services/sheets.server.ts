@@ -56,14 +56,15 @@ export const createSheetApi = ({
           ],
         },
       })
-      if (!res?.data.replies) {
-        throw new Error('sheet create failed')
+      const sheetId = res?.data?.replies?.[0]?.addSheet?.properties?.sheetId
+      const title = res?.data?.replies?.[0]?.addSheet?.properties?.title
+      if (sheetId == null || title == null) {
+        throw new Error(
+          `batchUpdate AddSheetResponse missing sheetId/title: ${JSON.stringify(res?.data)}`,
+        )
       }
 
-      destSheet = {
-        sheetId: res.data.replies[0].addSheet?.properties?.sheetId,
-        title: res.data.replies[0].addSheet?.properties?.title,
-      }
+      destSheet = { sheetId, title }
     }
 
     await sheet.spreadsheets.batchUpdate({
@@ -73,7 +74,7 @@ export const createSheetApi = ({
           {
             deleteRange: {
               range: {
-                sheetId: destSheet?.sheetId,
+                sheetId: destSheet.sheetId,
                 startColumnIndex: 0,
                 endColumnIndex: 99,
               },
@@ -83,7 +84,7 @@ export const createSheetApi = ({
           {
             pasteData: {
               coordinate: {
-                sheetId: destSheet?.sheetId,
+                sheetId: destSheet.sheetId,
                 rowIndex: 0,
                 columnIndex: 0,
               },
