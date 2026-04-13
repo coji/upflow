@@ -344,28 +344,30 @@ export async function initializeMembershipsForInstallation(input: {
 
   const matchedIds = matched.map((r) => r.id)
   const now = new Date().toISOString()
-  await tenantDb
-    .insertInto('repositoryInstallationMemberships')
-    .values(
-      matched.map((repo) => ({
-        repositoryId: repo.id,
-        installationId: input.installationId,
-      })),
-    )
-    .onConflict((oc) =>
-      oc.columns(['repositoryId', 'installationId']).doUpdateSet({
-        deletedAt: null,
-        updatedAt: now,
-      }),
-    )
-    .execute()
+  await tenantDb.transaction().execute(async (tx) => {
+    await tx
+      .insertInto('repositoryInstallationMemberships')
+      .values(
+        matched.map((repo) => ({
+          repositoryId: repo.id,
+          installationId: input.installationId,
+        })),
+      )
+      .onConflict((oc) =>
+        oc.columns(['repositoryId', 'installationId']).doUpdateSet({
+          deletedAt: null,
+          updatedAt: now,
+        }),
+      )
+      .execute()
 
-  await tenantDb
-    .updateTable('repositories')
-    .set({ githubInstallationId: input.installationId })
-    .where('id', 'in', matchedIds)
-    .where('githubInstallationId', 'is', null)
-    .execute()
+    await tx
+      .updateTable('repositories')
+      .set({ githubInstallationId: input.installationId })
+      .where('id', 'in', matchedIds)
+      .where('githubInstallationId', 'is', null)
+      .execute()
+  })
 
   return matchedIds
 }

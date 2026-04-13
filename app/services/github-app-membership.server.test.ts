@@ -752,12 +752,24 @@ describe('initializeMembershipsForInstallation', () => {
     })
 
     const { getTenantDb } = await import('~/app/services/tenant-db.server')
-    const repo = await getTenantDb(ORG_ID)
+    const tenantDb = getTenantDb(ORG_ID)
+
+    const repo = await tenantDb
       .selectFrom('repositories')
       .select('githubInstallationId')
       .where('id', '=', 'repo-existing')
       .executeTakeFirstOrThrow()
     expect(repo.githubInstallationId).toBe(EXISTING_INSTALLATION)
+
+    const membership = await tenantDb
+      .selectFrom('repositoryInstallationMemberships')
+      .selectAll()
+      .where('repositoryId', '=', 'repo-existing')
+      .where('installationId', '=', INSTALLATION_ID)
+      .executeTakeFirst()
+    expect(membership).toBeDefined()
+    expect(membership?.repositoryId).toBe('repo-existing')
+    expect(membership?.installationId).toBe(INSTALLATION_ID)
   })
 
   test('empty repositories array is a no-op', async () => {
