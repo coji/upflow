@@ -134,17 +134,20 @@ const insertMembership = async (
     .execute()
 }
 
-const seedRepository = async (canonicalInstallationId: number) => {
+const seedRepository = async (
+  canonicalInstallationId: number | null,
+  opts: { id?: string; owner?: string; repo?: string } = {},
+) => {
   const { getTenantDb } = await import('~/app/services/tenant-db.server')
   const tenantDb = getTenantDb(ORG_ID)
   await tenantDb
     .insertInto('repositories')
     .values({
-      id: REPO_ID,
+      id: opts.id ?? REPO_ID,
       integrationId: 'int-1',
       provider: 'github',
-      owner: 'octo',
-      repo: 'hello',
+      owner: opts.owner ?? 'octo',
+      repo: opts.repo ?? 'hello',
       githubInstallationId: canonicalInstallationId,
       updatedAt: '2026-04-07T00:00:00Z',
     })
@@ -707,22 +710,7 @@ describe('initializeMembershipsForInstallation', () => {
   })
 
   test('sets github_installation_id for repos with null value', async () => {
-    const { getTenantDb } = await import('~/app/services/tenant-db.server')
-    const tenantDb = getTenantDb(ORG_ID)
-
-    // Seed a repository without github_installation_id (PAT-era repo)
-    await tenantDb
-      .insertInto('repositories')
-      .values({
-        id: 'repo-pat',
-        integrationId: 'int-1',
-        provider: 'github',
-        owner: 'octo',
-        repo: 'hello',
-        githubInstallationId: null,
-        updatedAt: '2026-04-07T00:00:00Z',
-      })
-      .execute()
+    await seedRepository(null, { id: 'repo-pat' })
 
     const matched = await initializeMembershipsForInstallation({
       organizationId: ORG_ID,
@@ -732,7 +720,9 @@ describe('initializeMembershipsForInstallation', () => {
 
     expect(matched).toEqual(['repo-pat'])
 
-    // Verify membership was created
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+
     const memberships = await tenantDb
       .selectFrom('repositoryInstallationMemberships')
       .selectAll()
@@ -740,7 +730,6 @@ describe('initializeMembershipsForInstallation', () => {
     expect(memberships).toHaveLength(1)
     expect(memberships[0].installationId).toBe(INSTALLATION_ID)
 
-    // Verify github_installation_id was set
     const repo = await tenantDb
       .selectFrom('repositories')
       .select('githubInstallationId')
@@ -750,22 +739,11 @@ describe('initializeMembershipsForInstallation', () => {
   })
 
   test('does not overwrite existing github_installation_id', async () => {
-    const { getTenantDb } = await import('~/app/services/tenant-db.server')
-    const tenantDb = getTenantDb(ORG_ID)
     const EXISTING_INSTALLATION = 999
-
-    await tenantDb
-      .insertInto('repositories')
-      .values({
-        id: 'repo-existing',
-        integrationId: 'int-1',
-        provider: 'github',
-        owner: 'octo',
-        repo: 'world',
-        githubInstallationId: EXISTING_INSTALLATION,
-        updatedAt: '2026-04-07T00:00:00Z',
-      })
-      .execute()
+    await seedRepository(EXISTING_INSTALLATION, {
+      id: 'repo-existing',
+      repo: 'world',
+    })
 
     await initializeMembershipsForInstallation({
       organizationId: ORG_ID,
@@ -773,7 +751,8 @@ describe('initializeMembershipsForInstallation', () => {
       repositories: [{ owner: 'octo', name: 'world' }],
     })
 
-    const repo = await tenantDb
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const repo = await getTenantDb(ORG_ID)
       .selectFrom('repositories')
       .select('githubInstallationId')
       .where('id', '=', 'repo-existing')

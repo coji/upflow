@@ -342,6 +342,7 @@ export async function initializeMembershipsForInstallation(input: {
 
   if (matched.length === 0) return []
 
+  const matchedIds = matched.map((r) => r.id)
   const now = new Date().toISOString()
   await tenantDb
     .insertInto('repositoryInstallationMemberships')
@@ -359,19 +360,12 @@ export async function initializeMembershipsForInstallation(input: {
     )
     .execute()
 
-  // Set github_installation_id for repositories that don't have one yet.
-  // Without this, switching from PAT to GitHub App leaves all repositories
-  // with github_installation_id = null, which the UI treats as "broken".
   await tenantDb
     .updateTable('repositories')
     .set({ githubInstallationId: input.installationId })
-    .where(
-      'id',
-      'in',
-      matched.map((r) => r.id),
-    )
+    .where('id', 'in', matchedIds)
     .where('githubInstallationId', 'is', null)
     .execute()
 
-  return matched.map((r) => r.id)
+  return matchedIds
 }
