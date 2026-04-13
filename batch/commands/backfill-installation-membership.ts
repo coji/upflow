@@ -21,6 +21,7 @@ type OrgSummary = {
   organizationName: string
   status:
     | 'skipped_token_method'
+    | 'skipped_unknown_method'
     | 'skipped_no_active_link'
     | 'skipped_multi_link_unmapped'
     | 'backfilled_single_link'
@@ -81,7 +82,7 @@ export async function backfillInstallationMembershipCommand(
         summaries.push({
           organizationId: org.organizationId,
           organizationName: org.organizationName,
-          status: 'skipped_token_method',
+          status: 'skipped_unknown_method',
           repositoryCount: 0,
           notes: `Unknown integration method: ${org.method}`,
         })
