@@ -1,7 +1,38 @@
 import { clearOrgCache } from '~/app/services/cache.server'
 import { db } from '~/app/services/db.server'
 import { logGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
+import { createAppOctokit } from '~/app/services/github-octokit.server'
 import type { OrganizationId } from '~/app/types/organization'
+
+/**
+ * Best-effort: delete the installation on GitHub so webhooks stop.
+ * Fire-and-forget — the Upflow-side disconnect has already succeeded.
+ * The subsequent `installation.deleted` webhook is a no-op because
+ * the link is already soft-deleted.
+ */
+function tryDeleteGithubInstallations(installationIds: number[]) {
+  if (installationIds.length === 0) return
+  try {
+    const appOctokit = createAppOctokit()
+    Promise.allSettled(
+      installationIds.map((id) =>
+        appOctokit.rest.apps
+          .deleteInstallation({ installation_id: id })
+          .catch((e) =>
+            console.warn(
+              `[tryDeleteGithubInstallations] Failed to delete installation ${id}:`,
+              e,
+            ),
+          ),
+      ),
+    )
+  } catch (e) {
+    console.warn(
+      '[tryDeleteGithubInstallations] Failed to initialize GitHub App client:',
+      e,
+    )
+  }
+}
 
 /**
  * Soft-delete a single GitHub App installation link.
@@ -60,6 +91,7 @@ export async function disconnectGithubAppLink(
   })
 
   clearOrgCache(organizationId)
+  tryDeleteGithubInstallations([installationId])
 }
 
 /**
@@ -75,15 +107,15 @@ export async function disconnectGithubAppLink(
 export async function disconnectGithubApp(organizationId: OrganizationId) {
   const now = new Date().toISOString()
 
-  await db.transaction().execute(async (trx) => {
-    const links = await trx
+  const links = await db.transaction().execute(async (trx) => {
+    const rows = await trx
       .selectFrom('githubAppLinks')
       .select('installationId')
       .where('organizationId', '=', organizationId)
       .where('deletedAt', 'is', null)
       .execute()
 
-    if (links.length > 0) {
+    if (rows.length > 0) {
       await trx
         .updateTable('githubAppLinks')
         .set({ deletedAt: now, updatedAt: now })
@@ -98,7 +130,7 @@ export async function disconnectGithubApp(organizationId: OrganizationId) {
       .where('organizationId', '=', organizationId)
       .execute()
 
-    for (const link of links) {
+    for (const link of rows) {
       await logGithubAppLinkEvent(
         {
           organizationId,
@@ -111,7 +143,10 @@ export async function disconnectGithubApp(organizationId: OrganizationId) {
         trx,
       )
     }
+
+    return rows
   })
 
   clearOrgCache(organizationId)
+  tryDeleteGithubInstallations(links.map((l) => l.installationId))
 }
