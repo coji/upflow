@@ -15,6 +15,7 @@ import { closeDb, db } from '~/app/services/db.server'
 import { closeAllTenantDbs } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import {
+  initializeMembershipsForInstallation,
   reassignBrokenRepository,
   reassignCanonicalAfterLinkLoss,
 } from './github-app-membership.server'
@@ -690,5 +691,111 @@ describe('reassignBrokenRepository', () => {
       .selectAll()
       .execute()
     expect(events).toHaveLength(0)
+  })
+})
+
+describe('initializeMembershipsForInstallation', () => {
+  const INSTALLATION_ID = 500
+
+  beforeEach(async () => {
+    await db.deleteFrom('githubAppLinkEvents').execute()
+    await db.deleteFrom('githubAppLinks').execute()
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb.deleteFrom('repositoryInstallationMemberships').execute()
+    await tenantDb.deleteFrom('repositories').execute()
+  })
+
+  test('sets github_installation_id for repos with null value', async () => {
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+
+    // Seed a repository without github_installation_id (PAT-era repo)
+    await tenantDb
+      .insertInto('repositories')
+      .values({
+        id: 'repo-pat',
+        integrationId: 'int-1',
+        provider: 'github',
+        owner: 'octo',
+        repo: 'hello',
+        githubInstallationId: null,
+        updatedAt: '2026-04-07T00:00:00Z',
+      })
+      .execute()
+
+    const matched = await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [{ owner: 'octo', name: 'hello' }],
+    })
+
+    expect(matched).toEqual(['repo-pat'])
+
+    // Verify membership was created
+    const memberships = await tenantDb
+      .selectFrom('repositoryInstallationMemberships')
+      .selectAll()
+      .execute()
+    expect(memberships).toHaveLength(1)
+    expect(memberships[0].installationId).toBe(INSTALLATION_ID)
+
+    // Verify github_installation_id was set
+    const repo = await tenantDb
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', 'repo-pat')
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBe(INSTALLATION_ID)
+  })
+
+  test('does not overwrite existing github_installation_id', async () => {
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    const EXISTING_INSTALLATION = 999
+
+    await tenantDb
+      .insertInto('repositories')
+      .values({
+        id: 'repo-existing',
+        integrationId: 'int-1',
+        provider: 'github',
+        owner: 'octo',
+        repo: 'world',
+        githubInstallationId: EXISTING_INSTALLATION,
+        updatedAt: '2026-04-07T00:00:00Z',
+      })
+      .execute()
+
+    await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [{ owner: 'octo', name: 'world' }],
+    })
+
+    const repo = await tenantDb
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', 'repo-existing')
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBe(EXISTING_INSTALLATION)
+  })
+
+  test('empty repositories array is a no-op', async () => {
+    const result = await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [],
+    })
+    expect(result).toEqual([])
+  })
+
+  test('unmatched repositories are silently skipped', async () => {
+    const result = await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [{ owner: 'no-such', name: 'repo' }],
+    })
+    expect(result).toEqual([])
   })
 })
