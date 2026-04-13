@@ -342,22 +342,32 @@ export async function initializeMembershipsForInstallation(input: {
 
   if (matched.length === 0) return []
 
+  const matchedIds = matched.map((r) => r.id)
   const now = new Date().toISOString()
-  await tenantDb
-    .insertInto('repositoryInstallationMemberships')
-    .values(
-      matched.map((repo) => ({
-        repositoryId: repo.id,
-        installationId: input.installationId,
-      })),
-    )
-    .onConflict((oc) =>
-      oc.columns(['repositoryId', 'installationId']).doUpdateSet({
-        deletedAt: null,
-        updatedAt: now,
-      }),
-    )
-    .execute()
+  await tenantDb.transaction().execute(async (tx) => {
+    await tx
+      .insertInto('repositoryInstallationMemberships')
+      .values(
+        matched.map((repo) => ({
+          repositoryId: repo.id,
+          installationId: input.installationId,
+        })),
+      )
+      .onConflict((oc) =>
+        oc.columns(['repositoryId', 'installationId']).doUpdateSet({
+          deletedAt: null,
+          updatedAt: now,
+        }),
+      )
+      .execute()
 
-  return matched.map((r) => r.id)
+    await tx
+      .updateTable('repositories')
+      .set({ githubInstallationId: input.installationId })
+      .where('id', 'in', matchedIds)
+      .where('githubInstallationId', 'is', null)
+      .execute()
+  })
+
+  return matchedIds
 }

@@ -15,6 +15,7 @@ import { closeDb, db } from '~/app/services/db.server'
 import { closeAllTenantDbs } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import {
+  initializeMembershipsForInstallation,
   reassignBrokenRepository,
   reassignCanonicalAfterLinkLoss,
 } from './github-app-membership.server'
@@ -133,17 +134,20 @@ const insertMembership = async (
     .execute()
 }
 
-const seedRepository = async (canonicalInstallationId: number) => {
+const seedRepository = async (
+  canonicalInstallationId: number | null,
+  opts: { id?: string; owner?: string; repo?: string } = {},
+) => {
   const { getTenantDb } = await import('~/app/services/tenant-db.server')
   const tenantDb = getTenantDb(ORG_ID)
   await tenantDb
     .insertInto('repositories')
     .values({
-      id: REPO_ID,
+      id: opts.id ?? REPO_ID,
       integrationId: 'int-1',
       provider: 'github',
-      owner: 'octo',
-      repo: 'hello',
+      owner: opts.owner ?? 'octo',
+      repo: opts.repo ?? 'hello',
       githubInstallationId: canonicalInstallationId,
       updatedAt: '2026-04-07T00:00:00Z',
     })
@@ -690,5 +694,99 @@ describe('reassignBrokenRepository', () => {
       .selectAll()
       .execute()
     expect(events).toHaveLength(0)
+  })
+})
+
+describe('initializeMembershipsForInstallation', () => {
+  const INSTALLATION_ID = 500
+
+  beforeEach(async () => {
+    await db.deleteFrom('githubAppLinkEvents').execute()
+    await db.deleteFrom('githubAppLinks').execute()
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb.deleteFrom('repositoryInstallationMemberships').execute()
+    await tenantDb.deleteFrom('repositories').execute()
+  })
+
+  test('sets github_installation_id for repos with null value', async () => {
+    await seedRepository(null, { id: 'repo-pat' })
+
+    const matched = await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [{ owner: 'octo', name: 'hello' }],
+    })
+
+    expect(matched).toEqual(['repo-pat'])
+
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+
+    const memberships = await tenantDb
+      .selectFrom('repositoryInstallationMemberships')
+      .selectAll()
+      .execute()
+    expect(memberships).toHaveLength(1)
+    expect(memberships[0].installationId).toBe(INSTALLATION_ID)
+
+    const repo = await tenantDb
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', 'repo-pat')
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBe(INSTALLATION_ID)
+  })
+
+  test('does not overwrite existing github_installation_id', async () => {
+    const EXISTING_INSTALLATION = 999
+    await seedRepository(EXISTING_INSTALLATION, {
+      id: 'repo-existing',
+      repo: 'world',
+    })
+
+    await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [{ owner: 'octo', name: 'world' }],
+    })
+
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+
+    const repo = await tenantDb
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', 'repo-existing')
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBe(EXISTING_INSTALLATION)
+
+    const membership = await tenantDb
+      .selectFrom('repositoryInstallationMemberships')
+      .selectAll()
+      .where('repositoryId', '=', 'repo-existing')
+      .where('installationId', '=', INSTALLATION_ID)
+      .executeTakeFirst()
+    expect(membership).toBeDefined()
+    expect(membership?.repositoryId).toBe('repo-existing')
+    expect(membership?.installationId).toBe(INSTALLATION_ID)
+  })
+
+  test('empty repositories array is a no-op', async () => {
+    const result = await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [],
+    })
+    expect(result).toEqual([])
+  })
+
+  test('unmatched repositories are silently skipped', async () => {
+    const result = await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [{ owner: 'no-such', name: 'repo' }],
+    })
+    expect(result).toEqual([])
   })
 })
