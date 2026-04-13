@@ -29,7 +29,7 @@ export const createSheetApi = ({
       spreadsheetId,
       fields: 'sheets.properties',
     })
-    if (!res || !res.data.sheets) {
+    if (!res?.data.sheets) {
       throw new Error('invalid sheet')
     }
 
@@ -56,7 +56,7 @@ export const createSheetApi = ({
           ],
         },
       })
-      if (!res || !res.data.replies) {
+      if (!res?.data.replies) {
         throw new Error('sheet create failed')
       }
 
