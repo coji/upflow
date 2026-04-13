@@ -1024,7 +1024,7 @@ function shapePullRequestNode(
   owner: string,
   repo: string,
 ): ShapedGitHubPullRequest | null {
-  if (!node || !node.databaseId) return null
+  if (!node?.databaseId) return null
 
   const state = node.state === 'OPEN' ? 'open' : ('closed' as 'open' | 'closed')
 
