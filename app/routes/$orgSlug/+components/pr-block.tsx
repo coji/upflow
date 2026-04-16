@@ -293,7 +293,7 @@ export function PRPopoverContent({
           {pr.reviewerStates.map((r) => {
             const style = REVIEW_STATE_STYLE[r.state]
             const when = r.submittedAt
-              ? dayjs.utc(r.submittedAt).format('YYYY/MM/DD HH:mm')
+              ? dayjs.utc(r.submittedAt).fromNow()
               : undefined
             return (
               <div key={r.login} className="flex items-center gap-2 text-xs">
