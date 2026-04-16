@@ -174,8 +174,8 @@ export default function MemberWeeklyPage({
         const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
         if (pa !== pb) return pa - pb
         if (colorMode === 'size') {
-          const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
-          const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
+          const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? -1
+          const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? -1
           return bi - ai
         }
         return a.pullRequestCreatedAt.localeCompare(b.pullRequestCreatedAt)
