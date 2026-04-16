@@ -13,6 +13,7 @@ export interface BlockColor {
   bg: string
   ring: string
   bgFaint: string
+  text: string
 }
 
 export const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
@@ -20,25 +21,39 @@ export const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
     bg: 'bg-slate-400',
     ring: 'ring-slate-400',
     bgFaint: 'bg-slate-400/20',
+    text: 'text-slate-400',
   },
   S: {
     bg: 'bg-emerald-500',
     ring: 'ring-emerald-500',
     bgFaint: 'bg-emerald-500/20',
+    text: 'text-emerald-500',
   },
-  M: { bg: 'bg-blue-500', ring: 'ring-blue-500', bgFaint: 'bg-blue-500/20' },
+  M: {
+    bg: 'bg-blue-500',
+    ring: 'ring-blue-500',
+    bgFaint: 'bg-blue-500/20',
+    text: 'text-blue-500',
+  },
   L: {
     bg: 'bg-amber-500',
     ring: 'ring-amber-500',
     bgFaint: 'bg-amber-500/20',
+    text: 'text-amber-500',
   },
-  XL: { bg: 'bg-red-500', ring: 'ring-red-500', bgFaint: 'bg-red-500/20' },
+  XL: {
+    bg: 'bg-red-500',
+    ring: 'ring-red-500',
+    bgFaint: 'bg-red-500/20',
+    text: 'text-red-500',
+  },
 }
 
 export const UNKNOWN_COLOR: BlockColor = {
   bg: 'bg-gray-300 dark:bg-gray-600',
   ring: 'ring-gray-400',
   bgFaint: 'bg-gray-400/20',
+  text: 'text-gray-400',
 }
 
 export const AGE_THRESHOLDS = [
@@ -47,6 +62,7 @@ export const AGE_THRESHOLDS = [
     bg: 'bg-blue-500',
     ring: 'ring-blue-500',
     bgFaint: 'bg-blue-500/20',
+    text: 'text-blue-500',
     label: '< 1d',
   },
   {
@@ -54,6 +70,7 @@ export const AGE_THRESHOLDS = [
     bg: 'bg-emerald-500',
     ring: 'ring-emerald-500',
     bgFaint: 'bg-emerald-500/20',
+    text: 'text-emerald-500',
     label: '1-3d',
   },
   {
@@ -61,6 +78,7 @@ export const AGE_THRESHOLDS = [
     bg: 'bg-amber-500',
     ring: 'ring-amber-500',
     bgFaint: 'bg-amber-500/20',
+    text: 'text-amber-500',
     label: '3-7d',
   },
   {
@@ -68,6 +86,7 @@ export const AGE_THRESHOLDS = [
     bg: 'bg-red-500',
     ring: 'ring-red-500',
     bgFaint: 'bg-red-500/20',
+    text: 'text-red-500',
     label: '7-14d',
   },
   {
@@ -75,6 +94,7 @@ export const AGE_THRESHOLDS = [
     bg: 'bg-purple-500',
     ring: 'ring-purple-500',
     bgFaint: 'bg-purple-500/20',
+    text: 'text-purple-500',
     label: '14-30d',
   },
   {
@@ -82,6 +102,7 @@ export const AGE_THRESHOLDS = [
     bg: 'bg-neutral-800',
     ring: 'ring-neutral-800',
     bgFaint: 'bg-neutral-800/20',
+    text: 'text-neutral-800',
     label: '31d+',
   },
 ] as const
@@ -94,20 +115,22 @@ function getSizeColor(complexity: string | null): BlockColor {
 function getAgeColor(createdAt: string): BlockColor {
   const days = dayjs().diff(dayjs.utc(createdAt), 'day', true)
   for (const t of AGE_THRESHOLDS) {
-    if (days < t.maxDays) return { bg: t.bg, ring: t.ring, bgFaint: t.bgFaint }
+    if (days < t.maxDays)
+      return { bg: t.bg, ring: t.ring, bgFaint: t.bgFaint, text: t.text }
   }
   const last = AGE_THRESHOLDS[AGE_THRESHOLDS.length - 1]
-  return { bg: last.bg, ring: last.ring, bgFaint: last.bgFaint }
+  return {
+    bg: last.bg,
+    ring: last.ring,
+    bgFaint: last.bgFaint,
+    text: last.text,
+  }
 }
 
 function getBlockColor(pr: PRBlockData, mode: PRBlockColorMode): BlockColor {
   return mode === 'size'
     ? getSizeColor(pr.complexity)
     : getAgeColor(pr.createdAt)
-}
-
-function ringToText(ringClass: string): string {
-  return ringClass.replace(/\bring-/g, 'text-')
 }
 
 export type PRReviewStatus =
@@ -312,7 +335,12 @@ export function PRBlock({
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   dataPrKey?: string
 }) {
-  const { bg, ring, bgFaint } = getBlockColor(pr, colorMode)
+  const {
+    bg,
+    ring,
+    bgFaint,
+    text: blockTextColor,
+  } = getBlockColor(pr, colorMode)
   const statusShape = pr.reviewStatus
     ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
     : undefined
@@ -340,7 +368,7 @@ export function PRBlock({
         >
           {statusShape?.icon && (
             <span
-              className={`text-[8px] leading-none font-bold ${ringToText(ring)}`}
+              className={`text-[8px] leading-none font-bold ${blockTextColor}`}
             >
               {statusShape.icon}
             </span>
