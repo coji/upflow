@@ -436,9 +436,7 @@ function Legend({ mode }: { mode: ColorMode }) {
             className={`flex items-center justify-center ${entry.legendSwatch}`}
           >
             {entry.icon && (
-              <span
-                className={`text-[7px] leading-none font-bold ${entry.iconColor ?? ''}`}
-              >
+              <span className="text-[7px] leading-none font-bold text-gray-500 dark:text-gray-400">
                 {entry.icon}
               </span>
             )}

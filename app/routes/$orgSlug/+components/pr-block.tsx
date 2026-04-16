@@ -106,6 +106,10 @@ function getBlockColor(pr: PRBlockData, mode: PRBlockColorMode): BlockColor {
     : getAgeColor(pr.createdAt)
 }
 
+function ringToText(ringClass: string): string {
+  return ringClass.replace(/\bring-/g, 'text-')
+}
+
 export type PRReviewStatus =
   | 'in-review'
   | 'unassigned'
@@ -148,7 +152,6 @@ interface ReviewStatusShape {
   legendSwatch: string
   /** Small icon rendered inside the block (e.g. ✓ for approved) */
   icon?: string
-  iconColor?: string
 }
 
 export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
@@ -174,7 +177,6 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
     legendSwatch:
       'size-3.5 rounded-full ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
     icon: '✓',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
   },
   'changes-pending': {
     label: 'Changes',
@@ -183,7 +185,6 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
     legendSwatch:
       'size-3.5 rounded-full ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
     icon: '✗',
-    iconColor: 'text-red-500',
   },
 }
 
@@ -339,7 +340,7 @@ export function PRBlock({
         >
           {statusShape?.icon && (
             <span
-              className={`text-[8px] leading-none font-bold ${statusShape.iconColor ?? ''}`}
+              className={`text-[8px] leading-none font-bold ${ringToText(ring)}`}
             >
               {statusShape.icon}
             </span>
