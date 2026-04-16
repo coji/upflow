@@ -161,11 +161,9 @@ function MemberLink({
 function StackRow({
   stack,
   personalLimit,
-  showAuthor,
 }: {
   stack: PersonStack
   personalLimit: number
-  showAuthor?: boolean
 }) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
@@ -209,7 +207,6 @@ function StackRow({
             key={`${pr.repo}:${pr.number}`}
             pr={pr}
             showLimitLine={i === personalLimit && isOver}
-            showAuthor={showAuthor}
           />
         ))}
       </div>
@@ -222,11 +219,9 @@ function StackRow({
 const PRBlock = memo(function PRBlock({
   pr,
   showLimitLine,
-  showAuthor,
 }: {
   pr: StackPR
   showLimitLine: boolean
-  showAuthor?: boolean
 }) {
   const colorMode = useContext(ColorModeContext)
   const setHovered = useContext(SetHoveredContext)
@@ -252,7 +247,6 @@ const PRBlock = memo(function PRBlock({
           reviewerStates: pr.reviewerStates,
         }}
         colorMode={colorMode}
-        showAuthor={showAuthor}
         dataPrKey={prKey}
         onMouseEnter={() => setHovered({ prKey, author: pr.author })}
         onMouseLeave={() => setHovered(null)}
@@ -276,13 +270,11 @@ function StackColumn({
   title,
   stacks,
   personalLimit,
-  showAuthor,
   buckets,
 }: {
   title: string
   stacks: PersonStack[]
   personalLimit: number
-  showAuthor?: boolean
   buckets?: BucketConfig[]
 }) {
   const activeBuckets = buckets?.filter((b) => b.prs.length > 0) ?? []
@@ -313,7 +305,6 @@ function StackColumn({
             key={stack.login}
             stack={stack}
             personalLimit={personalLimit}
-            showAuthor={showAuthor}
           />
         ))}
         {activeBuckets.map((bucket) => (
@@ -377,7 +368,6 @@ function BucketRow({
               key={`${pr.repo}:${pr.number}`}
               pr={pr}
               showLimitLine={false}
-              showAuthor
             />
           ))}
         </div>
@@ -559,7 +549,6 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                       title="Review Queue (pending)"
                       stacks={reviewerStacks}
                       personalLimit={personalLimit}
-                      showAuthor
                       buckets={reviewQueueBuckets}
                     />
                   </div>

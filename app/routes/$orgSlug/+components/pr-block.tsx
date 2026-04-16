@@ -249,11 +249,9 @@ function GitHubAvatar({ login, size }: { login: string; size: number }) {
 
 export function PRPopoverContent({
   pr,
-  showAuthor,
   reviewState,
 }: {
   pr: PRBlockData
-  showAuthor?: boolean
   reviewState?: string
 }) {
   const createdAgo = dayjs.utc(pr.createdAt).fromNow()
@@ -281,7 +279,7 @@ export function PRPopoverContent({
       </div>
       <p className="line-clamp-3 text-xs">{pr.title}</p>
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
-        {showAuthor && pr.author && (
+        {pr.author && (
           <span className="inline-flex items-center gap-1">
             <GitHubAvatar login={pr.author} size={14} />
             {pr.authorDisplayName ?? pr.author}
@@ -325,7 +323,6 @@ export function PRPopoverContent({
 export function PRBlock({
   pr,
   colorMode = 'size',
-  showAuthor,
   onMouseEnter,
   onMouseLeave,
   onClick,
@@ -333,7 +330,6 @@ export function PRBlock({
 }: {
   pr: PRBlockData
   colorMode?: PRBlockColorMode
-  showAuthor?: boolean
   onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void
   onMouseLeave?: () => void
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
@@ -380,7 +376,7 @@ export function PRBlock({
         </button>
       </PopoverTrigger>
       <PopoverContent side="top" className="w-72 p-3">
-        <PRPopoverContent pr={pr} showAuthor={showAuthor} />
+        <PRPopoverContent pr={pr} />
       </PopoverContent>
     </Popover>
   )

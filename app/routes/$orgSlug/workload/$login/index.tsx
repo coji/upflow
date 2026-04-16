@@ -381,7 +381,6 @@ export default function MemberWeeklyPage({
                   reviewStatus: pr.reviewStatus,
                   reviewerStates: pr.reviewerStates,
                 }}
-                showAuthor
               />
             ))}
           </BlockRow>
@@ -510,7 +509,6 @@ export default function MemberWeeklyPage({
                           createdAt: r.pullRequestCreatedAt,
                           complexity: r.complexity,
                         }}
-                        showAuthor
                         reviewState={r.state}
                         reviewCount={r.reviewCount}
                         suffix={REVIEW_STATE_STYLE[r.state]?.icon}
@@ -666,7 +664,6 @@ function CalendarItem({
   suffix,
   complexity,
   prData,
-  showAuthor,
   reviewState,
   reviewCount,
 }: {
@@ -676,7 +673,6 @@ function CalendarItem({
   suffix?: string
   complexity?: string | null
   prData?: PRBlockData
-  showAuthor?: boolean
   reviewState?: string
   reviewCount?: number
 }) {
@@ -722,11 +718,7 @@ function CalendarItem({
     <Popover>
       <PopoverTrigger asChild>{content}</PopoverTrigger>
       <PopoverContent side="top" className="w-72 p-3">
-        <PRPopoverContent
-          pr={prData}
-          showAuthor={showAuthor}
-          reviewState={reviewState}
-        />
+        <PRPopoverContent pr={prData} reviewState={reviewState} />
       </PopoverContent>
     </Popover>
   )
