@@ -252,7 +252,7 @@ export function PRPopoverContent({
   showAuthor?: boolean
   reviewState?: string
 }) {
-  const ageDays = Math.floor(dayjs().diff(dayjs.utc(pr.createdAt), 'day', true))
+  const createdAgo = dayjs.utc(pr.createdAt).fromNow()
   const stateInfo = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
   const statusShape = pr.reviewStatus
     ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
@@ -283,7 +283,7 @@ export function PRPopoverContent({
             {pr.authorDisplayName ?? pr.author}
           </span>
         )}
-        <span>{ageDays}d ago</span>
+        <span>{createdAgo}</span>
         {statusShape && (
           <span className={statusShape.text}>{statusShape.label}</span>
         )}
