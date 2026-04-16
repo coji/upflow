@@ -77,14 +77,20 @@ const SetSelectedContext = createContext<
 >(() => {})
 const ColorModeContext = createContext<ColorMode>('age')
 
+const REVIEW_STATUS_PRIORITY: Record<string, number> = {
+  'approved-awaiting-merge': 0,
+  'changes-pending': 1,
+  unassigned: 2,
+  'in-review': 3,
+}
+
 function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
   const baseSorted = mode === 'size' ? sortBySize(prs) : sortByAge(prs)
-  const assigned: StackPR[] = []
-  const unassigned: StackPR[] = []
-  for (const p of baseSorted) {
-    ;(p.hasReviewer === false ? unassigned : assigned).push(p)
-  }
-  return [...assigned, ...unassigned]
+  return [...baseSorted].sort((a, b) => {
+    const pa = REVIEW_STATUS_PRIORITY[a.reviewStatus ?? 'in-review'] ?? 3
+    const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
+    return pa - pb
+  })
 }
 
 // --- Scroll helper ---
