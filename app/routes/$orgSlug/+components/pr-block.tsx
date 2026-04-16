@@ -153,28 +153,28 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
     label: 'レビュー中',
     text: 'text-muted-foreground',
     shape: 'rounded-full',
-    legendSwatch: 'size-3 rounded-full bg-current',
+    legendSwatch: 'size-3 rounded-full bg-gray-400 dark:bg-gray-500',
   },
   unassigned: {
     label: 'Unassigned',
     text: 'text-amber-600 dark:text-amber-400',
     shape: 'rounded-sm',
     legendSwatch:
-      'size-3 rounded-sm ring-[1.5px] ring-inset ring-current bg-current/20',
+      'size-3 rounded-sm ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
   },
   'approved-awaiting-merge': {
     label: 'Approved',
     text: 'text-emerald-600 dark:text-emerald-400',
     shape: 'rounded-full',
     legendSwatch:
-      'size-3 rounded-full ring-[1.5px] ring-inset ring-current bg-current/20',
+      'size-3 rounded-full ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
   },
   'changes-pending': {
     label: 'Changes',
     text: 'text-amber-600 dark:text-amber-400',
     shape: 'rotate-45 rounded-sm',
     legendSwatch:
-      'size-3 rotate-45 rounded-sm ring-[1.5px] ring-inset ring-current bg-current/20',
+      'size-3 rotate-45 rounded-sm ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
   },
 }
 
