@@ -477,13 +477,6 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
   } = data
   const reviewQueueBuckets: BucketConfig[] = [
     {
-      key: 'unassigned',
-      label: 'Unassigned',
-      prs: unassignedPRs,
-      labelColor: 'text-amber-700 dark:text-amber-400',
-      pillBg: 'bg-amber-100 dark:bg-amber-950',
-    },
-    {
       key: 'approved-awaiting-merge',
       label: 'Approved',
       prs: approvedAwaitingMergePRs,
@@ -496,6 +489,13 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
       prs: changesPendingPRs,
       labelColor: 'text-amber-700 dark:text-amber-400',
       pillBg: 'bg-amber-50 dark:bg-amber-950/50',
+    },
+    {
+      key: 'unassigned',
+      label: 'Unassigned',
+      prs: unassignedPRs,
+      labelColor: 'text-amber-700 dark:text-amber-400',
+      pillBg: 'bg-amber-100 dark:bg-amber-950',
     },
   ]
   const [searchParams, setSearchParams] = useSearchParams()
