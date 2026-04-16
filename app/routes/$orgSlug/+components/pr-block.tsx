@@ -139,29 +139,42 @@ export interface PRBlockData {
   reviewerStates?: PRReviewerStateEntry[]
 }
 
-interface ReviewStatusStyle {
+interface ReviewStatusShape {
   label: string
   text: string
-  ring?: string
+  /** Tailwind classes controlling shape (border-radius, rotation, etc.) */
+  shape: string
+  /** Legend swatch classes — shape + neutral fill for the legend row */
+  legendSwatch: string
 }
 
-const REVIEW_STATUS_STYLE: Partial<Record<PRReviewStatus, ReviewStatusStyle>> =
-  {
-    unassigned: {
-      label: 'レビュアー未アサイン',
-      text: 'text-amber-600 dark:text-amber-400',
-    },
-    'approved-awaiting-merge': {
-      label: 'Approve済み・マージ待ち',
-      text: 'text-emerald-600 dark:text-emerald-400',
-      ring: 'ring-[2px] ring-offset-1 ring-emerald-500',
-    },
-    'changes-pending': {
-      label: '作者対応待ち',
-      text: 'text-amber-600 dark:text-amber-400',
-      ring: 'ring-[2px] ring-offset-1 ring-amber-500',
-    },
-  }
+export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
+  'in-review': {
+    label: 'レビュー中',
+    text: 'text-muted-foreground',
+    shape: 'rounded-full',
+    legendSwatch: 'size-3 rounded-full bg-current',
+  },
+  unassigned: {
+    label: 'Unassigned',
+    text: 'text-amber-600 dark:text-amber-400',
+    shape: 'rounded-full',
+    legendSwatch:
+      'size-3 rounded-full ring-[1.5px] ring-inset ring-current bg-current/20',
+  },
+  'approved-awaiting-merge': {
+    label: 'Approved',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    shape: 'rounded-sm',
+    legendSwatch: 'size-3 rounded-sm bg-current',
+  },
+  'changes-pending': {
+    label: 'Changes',
+    text: 'text-amber-600 dark:text-amber-400',
+    shape: 'rotate-45 rounded-sm',
+    legendSwatch: 'size-3 rotate-45 rounded-sm bg-current',
+  },
+}
 
 export const REVIEW_STATE_STYLE: Record<
   string,
@@ -192,8 +205,8 @@ export function PRPopoverContent({
 }) {
   const ageDays = Math.floor(dayjs().diff(dayjs.utc(pr.createdAt), 'day', true))
   const stateInfo = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
-  const statusStyle = pr.reviewStatus
-    ? REVIEW_STATUS_STYLE[pr.reviewStatus]
+  const statusShape = pr.reviewStatus
+    ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
     : undefined
   return (
     <div className="space-y-1">
@@ -217,8 +230,8 @@ export function PRPopoverContent({
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
         {showAuthor && pr.author && <span>by {pr.author}</span>}
         <span>{ageDays}d ago</span>
-        {statusStyle && (
-          <span className={statusStyle.text}>{statusStyle.label}</span>
+        {statusShape && (
+          <span className={statusShape.text}>{statusShape.label}</span>
         )}
       </div>
       {pr.reviewerStates && pr.reviewerStates.length > 0 && (
@@ -268,18 +281,17 @@ export function PRBlock({
   dataPrKey?: string
 }) {
   const { bg, ring, bgFaint } = getBlockColor(pr, colorMode)
-  const statusStyle = pr.reviewStatus
-    ? REVIEW_STATUS_STYLE[pr.reviewStatus]
+  const statusShape = pr.reviewStatus
+    ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
     : undefined
-  const ariaLabel = statusStyle
-    ? `${pr.repo}#${pr.number} (${statusStyle.label})`
+  const shape = statusShape?.shape ?? 'rounded-full'
+  const ariaLabel = statusShape
+    ? `${pr.repo}#${pr.number} (${statusShape.label})`
     : `${pr.repo}#${pr.number}`
-  const baseClass =
-    pr.hasReviewer === false
+  const fillClass =
+    pr.reviewStatus === 'unassigned'
       ? `ring-[2px] ring-inset ${ring} ${bgFaint}`
-      : statusStyle?.ring
-        ? `${bg} ${statusStyle.ring}`
-        : bg
+      : bg
 
   return (
     <Popover>
@@ -287,7 +299,7 @@ export function PRBlock({
         <button
           type="button"
           data-pr-key={dataPrKey}
-          className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${baseClass}`}
+          className={`size-4 shrink-0 transition-all hover:scale-150 ${shape} ${fillClass}`}
           aria-label={ariaLabel}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}

@@ -21,6 +21,7 @@ import type {
 import {
   AGE_THRESHOLDS,
   PRBlock as PRBlockBase,
+  REVIEW_STATUS_SHAPE,
   SIZE_BLOCK_COLORS,
   UNKNOWN_COLOR,
   type PRBlockColorMode as ColorMode,
@@ -264,10 +265,10 @@ interface BucketConfig {
   key: string
   label: string
   prs: StackPR[]
-  /** Tailwind text color for label */
+  /** Tailwind text color for label pill */
   labelColor: string
-  /** Tailwind border color for top divider */
-  borderColor: string
+  /** Tailwind bg for label pill */
+  pillBg: string
 }
 
 function StackColumn({
@@ -320,7 +321,7 @@ function StackColumn({
             label={bucket.label}
             prs={bucket.prs}
             labelColor={bucket.labelColor}
-            borderColor={bucket.borderColor}
+            pillBg={bucket.pillBg}
           />
         ))}
       </div>
@@ -332,12 +333,12 @@ function BucketRow({
   label,
   prs,
   labelColor,
-  borderColor,
+  pillBg,
 }: {
   label: string
   prs: StackPR[]
   labelColor: string
-  borderColor: string
+  pillBg: string
 }) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
@@ -358,14 +359,16 @@ function BucketRow({
   return (
     <div
       ref={rowRef}
-      className={`mt-3 border-t-2 border-dashed ${borderColor} pt-2 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
+      className={`mt-2 pt-1 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
     >
       <div className="flex items-center gap-3 py-1.5">
-        <span className={`w-28 shrink-0 text-sm font-medium ${labelColor}`}>
+        <span
+          className={`inline-flex w-28 shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium ${pillBg} ${labelColor}`}
+        >
           {label}
-        </span>
-        <span className="text-muted-foreground w-8 shrink-0 text-right font-mono text-sm">
-          {prs.length}
+          <span className="text-muted-foreground ml-1 font-mono">
+            {prs.length}
+          </span>
         </span>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5">
           {sortedPRs.map((pr) => (
@@ -382,9 +385,41 @@ function BucketRow({
   )
 }
 
+const SHAPE_LEGEND_ITEMS: {
+  key: string
+  label: string
+  swatch: string
+  color: string
+}[] = [
+  {
+    key: 'in-review',
+    label: REVIEW_STATUS_SHAPE['in-review'].label,
+    swatch: REVIEW_STATUS_SHAPE['in-review'].legendSwatch,
+    color: 'text-muted-foreground',
+  },
+  {
+    key: 'unassigned',
+    label: REVIEW_STATUS_SHAPE.unassigned.label,
+    swatch: REVIEW_STATUS_SHAPE.unassigned.legendSwatch,
+    color: REVIEW_STATUS_SHAPE.unassigned.text,
+  },
+  {
+    key: 'approved',
+    label: REVIEW_STATUS_SHAPE['approved-awaiting-merge'].label,
+    swatch: REVIEW_STATUS_SHAPE['approved-awaiting-merge'].legendSwatch,
+    color: REVIEW_STATUS_SHAPE['approved-awaiting-merge'].text,
+  },
+  {
+    key: 'changes',
+    label: REVIEW_STATUS_SHAPE['changes-pending'].label,
+    swatch: REVIEW_STATUS_SHAPE['changes-pending'].legendSwatch,
+    color: REVIEW_STATUS_SHAPE['changes-pending'].text,
+  },
+]
+
 function Legend({ mode }: { mode: ColorMode }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-xs">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
       {mode === 'size' ? (
         <>
           {PR_SIZE_LABELS.map((label) => (
@@ -412,6 +447,13 @@ function Legend({ mode }: { mode: ColorMode }) {
         <div className="h-4 w-px border-l-2 border-dashed border-red-400" />
         <span className="text-muted-foreground">Limit</span>
       </div>
+      <div className="text-muted-foreground">|</div>
+      {SHAPE_LEGEND_ITEMS.map((item) => (
+        <div key={item.key} className={`flex items-center gap-1 ${item.color}`}>
+          <div className={item.swatch} />
+          <span>{item.label}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -432,22 +474,22 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
       key: 'unassigned',
       label: 'Unassigned',
       prs: unassignedPRs,
-      labelColor: 'text-amber-600 dark:text-amber-400',
-      borderColor: 'border-amber-400',
+      labelColor: 'text-amber-700 dark:text-amber-400',
+      pillBg: 'bg-amber-100 dark:bg-amber-950',
     },
     {
       key: 'approved-awaiting-merge',
-      label: 'Approved / Merge待ち',
+      label: 'Approved',
       prs: approvedAwaitingMergePRs,
-      labelColor: 'text-emerald-600 dark:text-emerald-400',
-      borderColor: 'border-emerald-400',
+      labelColor: 'text-emerald-700 dark:text-emerald-400',
+      pillBg: 'bg-emerald-100 dark:bg-emerald-950',
     },
     {
       key: 'changes-pending',
-      label: '作者対応待ち',
+      label: 'Changes',
       prs: changesPendingPRs,
-      labelColor: 'text-muted-foreground',
-      borderColor: 'border-muted-foreground/40',
+      labelColor: 'text-amber-700 dark:text-amber-400',
+      pillBg: 'bg-amber-50 dark:bg-amber-950/50',
     },
   ]
   const [searchParams, setSearchParams] = useSearchParams()
