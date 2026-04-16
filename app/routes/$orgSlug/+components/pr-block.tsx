@@ -158,16 +158,16 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
   unassigned: {
     label: 'Unassigned',
     text: 'text-amber-600 dark:text-amber-400',
-    shape: 'rounded-full',
+    shape: 'rounded-sm',
     legendSwatch:
-      'size-3 rounded-full ring-[1.5px] ring-inset ring-current bg-current/20',
+      'size-3 rounded-sm ring-[1.5px] ring-inset ring-current bg-current/20',
   },
   'approved-awaiting-merge': {
     label: 'Approved',
     text: 'text-emerald-600 dark:text-emerald-400',
-    shape: 'rounded-sm',
+    shape: 'rounded-full',
     legendSwatch:
-      'size-3 rounded-sm ring-[1.5px] ring-inset ring-current bg-current/20',
+      'size-3 rounded-full ring-[1.5px] ring-inset ring-current bg-current/20',
   },
   'changes-pending': {
     label: 'Changes',
