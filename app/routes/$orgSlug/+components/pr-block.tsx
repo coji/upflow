@@ -166,13 +166,15 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
     label: 'Approved',
     text: 'text-emerald-600 dark:text-emerald-400',
     shape: 'rounded-sm',
-    legendSwatch: 'size-3 rounded-sm bg-current',
+    legendSwatch:
+      'size-3 rounded-sm ring-[1.5px] ring-inset ring-current bg-current/20',
   },
   'changes-pending': {
     label: 'Changes',
     text: 'text-amber-600 dark:text-amber-400',
     shape: 'rotate-45 rounded-sm',
-    legendSwatch: 'size-3 rotate-45 rounded-sm bg-current',
+    legendSwatch:
+      'size-3 rotate-45 rounded-sm ring-[1.5px] ring-inset ring-current bg-current/20',
   },
 }
 
@@ -288,10 +290,11 @@ export function PRBlock({
   const ariaLabel = statusShape
     ? `${pr.repo}#${pr.number} (${statusShape.label})`
     : `${pr.repo}#${pr.number}`
-  const fillClass =
-    pr.reviewStatus === 'unassigned'
-      ? `ring-[2px] ring-inset ${ring} ${bgFaint}`
-      : bg
+  const isHollow =
+    pr.reviewStatus === 'unassigned' ||
+    pr.reviewStatus === 'approved-awaiting-merge' ||
+    pr.reviewStatus === 'changes-pending'
+  const fillClass = isHollow ? `ring-[2px] ring-inset ${ring} ${bgFaint}` : bg
 
   return (
     <Popover>
