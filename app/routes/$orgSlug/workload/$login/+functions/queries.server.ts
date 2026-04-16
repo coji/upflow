@@ -330,15 +330,5 @@ export const getBacklogDetails = async (
         .execute(),
     ])
 
-  const reviewerSet = new Set<string>()
-  for (const r of reviewerRows) {
-    reviewerSet.add(`${r.repositoryId}:${r.number}`)
-  }
-
-  const openPRs = openPRsRaw.map((pr) => ({
-    ...pr,
-    hasReviewer: reviewerSet.has(`${pr.repositoryId}:${pr.number}`),
-  }))
-
-  return { openPRs, pendingReviews, reviewHistory, reviewerRows }
+  return { openPRs: openPRsRaw, pendingReviews, reviewHistory, reviewerRows }
 }

@@ -172,10 +172,8 @@ describe('aggregateTeamStacks', () => {
     const alice = result.authorStacks[0]
     const pr1 = alice.prs.find((p) => p.number === 1)
     const pr2 = alice.prs.find((p) => p.number === 2)
-    expect(pr1?.hasReviewer).toBe(true)
     expect(pr1?.reviewStatus).toBe('in-review')
     expect(pr1?.reviewerStates?.map((r) => r.login)).toEqual(['bob'])
-    expect(pr2?.hasReviewer).toBe(false)
     expect(pr2?.reviewStatus).toBe('unassigned')
     expect(pr2?.reviewerStates).toBeUndefined()
   })

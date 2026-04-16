@@ -13,7 +13,6 @@ export interface StackPR {
   authorDisplayName?: string
   createdAt: string
   complexity: string | null
-  hasReviewer?: boolean
   reviewStatus?: PRReviewStatus
   reviewerStates?: PRReviewerStateEntry[]
 }
@@ -217,7 +216,6 @@ export function aggregateTeamStacks({
       authorDisplayName: pr.authorDisplayName ?? undefined,
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
-      hasReviewer: hasPendingReviewer,
       reviewStatus,
       reviewerStates,
     }
@@ -277,7 +275,6 @@ export function aggregateTeamStacks({
       authorDisplayName: authorDisplayNameByLogin.get(row.author),
       createdAt: row.pullRequestCreatedAt,
       complexity: row.complexity,
-      hasReviewer: true,
       reviewStatus: 'in-review',
       reviewerStates: reviewerStatesByPR.get(prKey),
     })
