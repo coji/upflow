@@ -144,10 +144,11 @@ export interface PRBlockData {
 interface ReviewStatusShape {
   label: string
   text: string
-  /** Tailwind classes controlling shape (border-radius, rotation, etc.) */
   shape: string
-  /** Legend swatch classes — shape + neutral fill for the legend row */
   legendSwatch: string
+  /** Small icon rendered inside the block (e.g. ✓ for approved) */
+  icon?: string
+  iconColor?: string
 }
 
 export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
@@ -156,13 +157,15 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
     text: 'text-muted-foreground',
     shape: 'rounded-full',
     legendSwatch: 'size-3.5 rounded-full bg-gray-400 dark:bg-gray-500',
+    icon: undefined,
   },
   unassigned: {
     label: 'Unassigned',
     text: 'text-amber-600 dark:text-amber-400',
-    shape: 'rounded-[2px]',
+    shape: 'rounded-full',
     legendSwatch:
-      'size-3.5 rounded-[2px] ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
+      'size-3.5 rounded-full ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
+    icon: undefined,
   },
   'approved-awaiting-merge': {
     label: 'Approved',
@@ -170,13 +173,17 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
     shape: 'rounded-full',
     legendSwatch:
       'size-3.5 rounded-full ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
+    icon: '✓',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
   },
   'changes-pending': {
     label: 'Changes',
     text: 'text-amber-600 dark:text-amber-400',
-    shape: 'rotate-45 rounded-[2px]',
+    shape: 'rounded-full',
     legendSwatch:
-      'size-2.5 rotate-45 rounded-[2px] ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
+      'size-3.5 rounded-full ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
+    icon: '✗',
+    iconColor: 'text-red-500',
   },
 }
 
@@ -324,12 +331,20 @@ export function PRBlock({
         <button
           type="button"
           data-pr-key={dataPrKey}
-          className={`size-4 shrink-0 transition-all hover:scale-150 ${shape} ${fillClass}`}
+          className={`flex size-4 shrink-0 items-center justify-center transition-all hover:scale-150 ${shape} ${fillClass}`}
           aria-label={ariaLabel}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
           onClick={onClick}
-        />
+        >
+          {statusShape?.icon && (
+            <span
+              className={`text-[8px] leading-none font-bold ${statusShape.iconColor ?? ''}`}
+            >
+              {statusShape.icon}
+            </span>
+          )}
+        </button>
       </PopoverTrigger>
       <PopoverContent side="top" className="w-72 p-3">
         <PRPopoverContent pr={pr} showAuthor={showAuthor} />

@@ -392,27 +392,11 @@ function BucketRow({
   )
 }
 
-const SHAPE_LEGEND_ITEMS: { key: string; label: string; swatch: string }[] = [
-  {
-    key: 'in-review',
-    label: REVIEW_STATUS_SHAPE['in-review'].label,
-    swatch: REVIEW_STATUS_SHAPE['in-review'].legendSwatch,
-  },
-  {
-    key: 'approved',
-    label: REVIEW_STATUS_SHAPE['approved-awaiting-merge'].label,
-    swatch: REVIEW_STATUS_SHAPE['approved-awaiting-merge'].legendSwatch,
-  },
-  {
-    key: 'changes',
-    label: REVIEW_STATUS_SHAPE['changes-pending'].label,
-    swatch: REVIEW_STATUS_SHAPE['changes-pending'].legendSwatch,
-  },
-  {
-    key: 'unassigned',
-    label: REVIEW_STATUS_SHAPE.unassigned.label,
-    swatch: REVIEW_STATUS_SHAPE.unassigned.legendSwatch,
-  },
+const SHAPE_LEGEND_ENTRIES = [
+  REVIEW_STATUS_SHAPE['in-review'],
+  REVIEW_STATUS_SHAPE['approved-awaiting-merge'],
+  REVIEW_STATUS_SHAPE['changes-pending'],
+  REVIEW_STATUS_SHAPE.unassigned,
 ]
 
 function Legend({ mode }: { mode: ColorMode }) {
@@ -446,10 +430,20 @@ function Legend({ mode }: { mode: ColorMode }) {
         <span className="text-muted-foreground">Limit</span>
       </div>
       <div className="text-muted-foreground">|</div>
-      {SHAPE_LEGEND_ITEMS.map((item) => (
-        <div key={item.key} className="flex items-center gap-1">
-          <div className={item.swatch} />
-          <span className="text-muted-foreground">{item.label}</span>
+      {SHAPE_LEGEND_ENTRIES.map((entry) => (
+        <div key={entry.label} className="flex items-center gap-1">
+          <div
+            className={`flex items-center justify-center ${entry.legendSwatch}`}
+          >
+            {entry.icon && (
+              <span
+                className={`text-[7px] leading-none font-bold ${entry.iconColor ?? ''}`}
+              >
+                {entry.icon}
+              </span>
+            )}
+          </div>
+          <span className="text-muted-foreground">{entry.label}</span>
         </div>
       ))}
     </div>
