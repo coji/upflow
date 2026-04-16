@@ -1,4 +1,5 @@
 import { SizeBadge } from '~/app/components/size-badge'
+import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import {
   Popover,
   PopoverContent,
@@ -197,6 +198,20 @@ export const REVIEW_STATE_STYLE: Record<
   },
 }
 
+function GitHubAvatar({ login, size }: { login: string; size: number }) {
+  return (
+    <Avatar style={{ width: size, height: size }} className="shrink-0">
+      <AvatarImage src={`https://github.com/${login}.png`} alt={login} />
+      <AvatarFallback
+        className="text-[6px]"
+        style={{ width: size, height: size }}
+      >
+        {login.slice(0, 2)}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
 export function PRPopoverContent({
   pr,
   showAuthor,
@@ -232,7 +247,10 @@ export function PRPopoverContent({
       <p className="text-muted-foreground truncate text-xs">{pr.title}</p>
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
         {showAuthor && pr.author && (
-          <span>by {pr.authorDisplayName ?? pr.author}</span>
+          <span className="inline-flex items-center gap-1">
+            <GitHubAvatar login={pr.author} size={14} />
+            {pr.authorDisplayName ?? pr.author}
+          </span>
         )}
         <span>{ageDays}d ago</span>
         {statusShape && (
@@ -253,6 +271,7 @@ export function PRPopoverContent({
                 >
                   {style.icon} {style.text}
                 </span>
+                <GitHubAvatar login={r.login} size={14} />
                 <span className="truncate">{r.displayName}</span>
                 {when && (
                   <span className="text-muted-foreground ml-auto shrink-0">
