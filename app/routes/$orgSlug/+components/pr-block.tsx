@@ -244,7 +244,7 @@ export function PRPopoverContent({
           </span>
         )}
       </div>
-      <p className="text-muted-foreground line-clamp-3 text-xs">{pr.title}</p>
+      <p className="line-clamp-3 text-xs">{pr.title}</p>
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
         {showAuthor && pr.author && (
           <span className="inline-flex items-center gap-1">
