@@ -20,11 +20,13 @@ import {
   PRBlock,
   PRPopoverContent,
   REVIEW_STATE_STYLE,
+  REVIEW_STATUS_PRIORITY,
   type PRBlockData,
+  type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import {
-  buildReviewerStatesMap,
-  classifyReviewStatus,
+  buildPRReviewerStatesMap,
+  classifyPRReviewStatus,
 } from '~/app/routes/$orgSlug/workload/+functions/aggregate-stacks'
 import {
   getBacklogDetails,
@@ -35,13 +37,6 @@ import {
   getUserProfile,
 } from './+functions/queries.server'
 import type { Route } from './+types/index'
-
-const REVIEW_STATUS_PRIORITY: Record<string, number> = {
-  'approved-awaiting-merge': 0,
-  'changes-pending': 1,
-  unassigned: 2,
-  'in-review': 3,
-}
 
 export const handle = {
   breadcrumb: (data: Awaited<ReturnType<typeof loader>>) => ({
@@ -85,7 +80,7 @@ export const loader = async ({
   }
 
   // Enrich backlog PRs with reviewStatus + reviewerStates
-  const reviewerStatesByPR = buildReviewerStatesMap(
+  const reviewerStatesByPR = buildPRReviewerStatesMap(
     backlog.reviewHistory,
     backlog.reviewerRows,
   )
@@ -96,7 +91,7 @@ export const loader = async ({
   const enrichedOpenPRs = backlog.openPRs.map((pr) => {
     const prKey = `${pr.repositoryId}:${pr.number}`
     const reviewerStates = reviewerStatesByPR.get(prKey)
-    const reviewStatus = classifyReviewStatus(
+    const reviewStatus = classifyPRReviewStatus(
       pendingReviewerPRKeys.has(prKey),
       reviewerStates,
       params.login,
@@ -169,25 +164,22 @@ export default function MemberWeeklyPage({
       T extends {
         complexity: string | null
         pullRequestCreatedAt: string
-        reviewStatus?: string
+        reviewStatus?: PRReviewStatus
       },
     >(
       prs: T[],
     ): T[] => {
-      return [...prs]
-        .sort((a, b) => {
-          if (colorMode === 'size') {
-            const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
-            const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
-            return bi - ai
-          }
-          return a.pullRequestCreatedAt.localeCompare(b.pullRequestCreatedAt)
-        })
-        .sort((a, b) => {
-          const pa = REVIEW_STATUS_PRIORITY[a.reviewStatus ?? 'in-review'] ?? 3
-          const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
-          return pa - pb
-        })
+      return [...prs].sort((a, b) => {
+        const pa = REVIEW_STATUS_PRIORITY[a.reviewStatus ?? 'in-review'] ?? 3
+        const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
+        if (pa !== pb) return pa - pb
+        if (colorMode === 'size') {
+          const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
+          const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
+          return bi - ai
+        }
+        return a.pullRequestCreatedAt.localeCompare(b.pullRequestCreatedAt)
+      })
     }
   }, [colorMode])
 
@@ -366,7 +358,6 @@ export default function MemberWeeklyPage({
                   url: pr.url,
                   createdAt: pr.pullRequestCreatedAt,
                   complexity: pr.complexity,
-                  hasReviewer: pr.hasReviewer,
                   reviewStatus: pr.reviewStatus,
                   reviewerStates: pr.reviewerStates,
                 }}

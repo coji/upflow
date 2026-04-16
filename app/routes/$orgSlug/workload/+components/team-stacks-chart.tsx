@@ -21,10 +21,12 @@ import type {
 import {
   AGE_THRESHOLDS,
   PRBlock as PRBlockBase,
+  REVIEW_STATUS_PRIORITY,
   REVIEW_STATUS_SHAPE,
   SIZE_BLOCK_COLORS,
   UNKNOWN_COLOR,
   type PRBlockColorMode as ColorMode,
+  type PRReviewStatus,
 } from '../../+components/pr-block'
 
 function sortBySize(prs: StackPR[]): StackPR[] {
@@ -76,13 +78,6 @@ const SetSelectedContext = createContext<
   ) => void
 >(() => {})
 const ColorModeContext = createContext<ColorMode>('age')
-
-const REVIEW_STATUS_PRIORITY: Record<string, number> = {
-  'approved-awaiting-merge': 0,
-  'changes-pending': 1,
-  unassigned: 2,
-  'in-review': 3,
-}
 
 function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
   const baseSorted = mode === 'size' ? sortBySize(prs) : sortByAge(prs)
@@ -253,7 +248,6 @@ const PRBlock = memo(function PRBlock({
           authorDisplayName: pr.authorDisplayName,
           createdAt: pr.createdAt,
           complexity: pr.complexity,
-          hasReviewer: pr.hasReviewer,
           reviewStatus: pr.reviewStatus,
           reviewerStates: pr.reviewerStates,
         }}
@@ -269,7 +263,7 @@ const PRBlock = memo(function PRBlock({
 })
 
 interface BucketConfig {
-  key: string
+  key: PRReviewStatus
   label: string
   prs: StackPR[]
   /** Tailwind text color for label pill */

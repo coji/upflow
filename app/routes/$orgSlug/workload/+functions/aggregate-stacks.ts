@@ -4,10 +4,6 @@ import type {
   PRReviewerStateEntry,
 } from '~/app/routes/$orgSlug/+components/pr-block'
 
-export type ReviewStatus = PRReviewStatus
-export type ReviewerState = PRReviewerState
-export type ReviewerStateEntry = PRReviewerStateEntry
-
 export interface StackPR {
   number: number
   repo: string
@@ -18,8 +14,8 @@ export interface StackPR {
   createdAt: string
   complexity: string | null
   hasReviewer?: boolean
-  reviewStatus?: ReviewStatus
-  reviewerStates?: ReviewerStateEntry[]
+  reviewStatus?: PRReviewStatus
+  reviewerStates?: PRReviewerStateEntry[]
 }
 
 export interface PersonStack {
@@ -77,27 +73,27 @@ export const DEFAULT_PERSONAL_LIMIT = 2
 /** approvedAwaitingMerge がこの件数を超えたら auto-merge 有効化サジェストを出す */
 export const AUTO_MERGE_SUGGESTION_THRESHOLD = 3
 
-const REVIEWER_STATE_SORT_ORDER: Record<ReviewerState, number> = {
+const REVIEWER_STATE_SORT_ORDER: Record<PRReviewerState, number> = {
   APPROVED: 0,
   CHANGES_REQUESTED: 1,
   COMMENTED: 2,
   REQUESTED: 3,
 }
 
-const SUBMITTED_REVIEW_STATES = new Set<ReviewerState>([
+const SUBMITTED_REVIEW_STATES = new Set<PRReviewerState>([
   'APPROVED',
   'CHANGES_REQUESTED',
   'COMMENTED',
 ])
 
-export function buildReviewerStatesMap(
+export function buildPRReviewerStatesMap(
   reviews: ReviewRow[],
   pendingReviews: Pick<
     PendingReviewRow,
     'repositoryId' | 'number' | 'reviewer' | 'reviewerDisplayName'
   >[],
-): Map<string, ReviewerStateEntry[]> {
-  const byPR = new Map<string, Map<string, ReviewerStateEntry>>()
+): Map<string, PRReviewerStateEntry[]> {
+  const byPR = new Map<string, Map<string, PRReviewerStateEntry>>()
   const getBucket = (prKey: string) => {
     let bucket = byPR.get(prKey)
     if (!bucket) {
@@ -108,7 +104,7 @@ export function buildReviewerStatesMap(
   }
 
   for (const r of reviews) {
-    const state = r.state as ReviewerState
+    const state = r.state as PRReviewerState
     // GitHub の DISMISSED / PENDING は Popover 表示対象外
     if (!SUBMITTED_REVIEW_STATES.has(state)) continue
     const prKey = `${r.repositoryId}:${r.number}`
@@ -137,7 +133,7 @@ export function buildReviewerStatesMap(
     })
   }
 
-  const result = new Map<string, ReviewerStateEntry[]>()
+  const result = new Map<string, PRReviewerStateEntry[]>()
   for (const [prKey, bucket] of byPR) {
     const entries = [...bucket.values()].sort((a, b) => {
       const d =
@@ -149,11 +145,11 @@ export function buildReviewerStatesMap(
   return result
 }
 
-export function classifyReviewStatus(
+export function classifyPRReviewStatus(
   hasPendingReviewer: boolean,
-  statesForPR: ReviewerStateEntry[] | undefined,
+  statesForPR: PRReviewerStateEntry[] | undefined,
   author: string,
-): ReviewStatus {
+): PRReviewStatus {
   if (hasPendingReviewer) return 'in-review'
   // author 自身のレビュー（COMMENTED 等）はレビューとしてカウントしない
   const authorKey = author.toLowerCase()
@@ -183,7 +179,7 @@ export function aggregateTeamStacks({
   reviewHistory = [],
   personalLimit = DEFAULT_PERSONAL_LIMIT,
 }: AggregateTeamStacksInput): TeamStacksData {
-  const reviewerStatesByPR = buildReviewerStatesMap(
+  const reviewerStatesByPR = buildPRReviewerStatesMap(
     reviewHistory,
     pendingReviews,
   )
@@ -207,7 +203,7 @@ export function aggregateTeamStacks({
     const prKey = `${pr.repositoryId}:${pr.number}`
     const reviewerStates = reviewerStatesByPR.get(prKey)
     const hasPendingReviewer = pendingReviewerPRKeys.has(prKey)
-    const reviewStatus = classifyReviewStatus(
+    const reviewStatus = classifyPRReviewStatus(
       hasPendingReviewer,
       reviewerStates,
       pr.author,

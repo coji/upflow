@@ -161,9 +161,6 @@ export interface PRBlockData {
   authorDisplayName?: string
   createdAt: string
   complexity: string | null
-  /** true = has reviewer, false = no reviewer (ring style), undefined = unknown (solid) */
-  hasReviewer?: boolean
-  reviewers?: string[]
   reviewStatus?: PRReviewStatus
   reviewerStates?: PRReviewerStateEntry[]
 }
@@ -209,6 +206,13 @@ export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
       'size-3.5 rounded-full ring-[1.5px] ring-inset ring-gray-400 bg-gray-400/20 dark:ring-gray-500 dark:bg-gray-500/20',
     icon: '✗',
   },
+}
+
+export const REVIEW_STATUS_PRIORITY: Record<PRReviewStatus, number> = {
+  'approved-awaiting-merge': 0,
+  'changes-pending': 1,
+  unassigned: 2,
+  'in-review': 3,
 }
 
 export const REVIEW_STATE_STYLE: Record<
