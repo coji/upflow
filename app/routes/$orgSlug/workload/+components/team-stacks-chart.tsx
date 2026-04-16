@@ -80,11 +80,16 @@ const SetSelectedContext = createContext<
 const ColorModeContext = createContext<ColorMode>('age')
 
 function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
-  const baseSorted = mode === 'size' ? sortBySize(prs) : sortByAge(prs)
-  return [...baseSorted].sort((a, b) => {
+  return [...prs].sort((a, b) => {
     const pa = REVIEW_STATUS_PRIORITY[a.reviewStatus ?? 'in-review'] ?? 3
     const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
-    return pa - pb
+    if (pa !== pb) return pa - pb
+    if (mode === 'size') {
+      const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
+      const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
+      return bi - ai
+    }
+    return getAgeDays(b) - getAgeDays(a)
   })
 }
 
