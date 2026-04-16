@@ -14,6 +14,7 @@ export interface StackPR {
   title: string
   url: string
   author: string
+  authorDisplayName?: string
   createdAt: string
   complexity: string | null
   hasReviewer?: boolean
@@ -187,6 +188,12 @@ export function aggregateTeamStacks({
   for (const p of pendingReviews) {
     pendingReviewerPRKeys.add(`${p.repositoryId}:${p.number}`)
   }
+  const authorDisplayNameByLogin = new Map<string, string>()
+  for (const pr of openPRs) {
+    if (pr.authorDisplayName) {
+      authorDisplayNameByLogin.set(pr.author, pr.authorDisplayName)
+    }
+  }
 
   const authorMap = new Map<string, PersonStack>()
   const unassignedPRs: StackPR[] = []
@@ -208,6 +215,7 @@ export function aggregateTeamStacks({
       title: pr.title,
       url: pr.url,
       author: pr.author,
+      authorDisplayName: pr.authorDisplayName ?? undefined,
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
       hasReviewer: hasPendingReviewer,
@@ -267,6 +275,7 @@ export function aggregateTeamStacks({
       title: row.title,
       url: row.url,
       author: row.author,
+      authorDisplayName: authorDisplayNameByLogin.get(row.author),
       createdAt: row.pullRequestCreatedAt,
       complexity: row.complexity,
       hasReviewer: true,

@@ -250,6 +250,7 @@ const PRBlock = memo(function PRBlock({
           title: pr.title,
           url: pr.url,
           author: pr.author,
+          authorDisplayName: pr.authorDisplayName,
           createdAt: pr.createdAt,
           complexity: pr.complexity,
           hasReviewer: pr.hasReviewer,

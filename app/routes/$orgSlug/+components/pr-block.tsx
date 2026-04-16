@@ -130,6 +130,7 @@ export interface PRBlockData {
   title: string
   url: string
   author?: string
+  authorDisplayName?: string
   createdAt: string
   complexity: string | null
   /** true = has reviewer, false = no reviewer (ring style), undefined = unknown (solid) */
@@ -230,7 +231,9 @@ export function PRPopoverContent({
       </div>
       <p className="text-muted-foreground truncate text-xs">{pr.title}</p>
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
-        {showAuthor && pr.author && <span>by {pr.author}</span>}
+        {showAuthor && pr.author && (
+          <span>by {pr.authorDisplayName ?? pr.author}</span>
+        )}
         <span>{ageDays}d ago</span>
         {statusShape && (
           <span className={statusShape.text}>{statusShape.label}</span>
