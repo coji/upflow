@@ -165,97 +165,170 @@ export const getBacklogDetails = async (
 
   const loginLower = login.toLowerCase()
 
-  const [openPRsRaw, reviewerRows, pendingReviews] = await Promise.all([
-    tenantDb
-      .selectFrom('pullRequests')
-      .where((eb) =>
-        eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),
-      )
-      .where('mergedAt', 'is', null)
-      .where('closedAt', 'is', null)
-      .select([
-        'number',
-        'repositoryId',
-        'repo',
-        'title',
-        'url',
-        'pullRequestCreatedAt',
-        'complexity',
-      ])
-      .orderBy('pullRequestCreatedAt', 'asc')
-      .execute(),
+  const [openPRsRaw, reviewerRows, pendingReviews, reviewHistory] =
+    await Promise.all([
+      tenantDb
+        .selectFrom('pullRequests')
+        .where((eb) =>
+          eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),
+        )
+        .where('mergedAt', 'is', null)
+        .where('closedAt', 'is', null)
+        .select([
+          'number',
+          'repositoryId',
+          'repo',
+          'title',
+          'url',
+          'pullRequestCreatedAt',
+          'complexity',
+        ])
+        .orderBy('pullRequestCreatedAt', 'asc')
+        .execute(),
 
-    tenantDb
-      .selectFrom('pullRequestReviewers')
-      .innerJoin('pullRequests', (join) =>
-        join
-          .onRef(
-            'pullRequestReviewers.pullRequestNumber',
+      tenantDb
+        .selectFrom('pullRequestReviewers')
+        .innerJoin('pullRequests', (join) =>
+          join
+            .onRef(
+              'pullRequestReviewers.pullRequestNumber',
+              '=',
+              'pullRequests.number',
+            )
+            .onRef(
+              'pullRequestReviewers.repositoryId',
+              '=',
+              'pullRequests.repositoryId',
+            ),
+        )
+        .where((eb) =>
+          eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),
+        )
+        .where('pullRequests.mergedAt', 'is', null)
+        .where('pullRequests.closedAt', 'is', null)
+        .where('pullRequestReviewers.requestedAt', 'is not', null)
+        .leftJoin('companyGithubUsers', (join) =>
+          join.onRef(
+            (eb) => eb.fn('lower', ['pullRequestReviewers.reviewer']),
             '=',
-            'pullRequests.number',
-          )
-          .onRef(
-            'pullRequestReviewers.repositoryId',
-            '=',
-            'pullRequests.repositoryId',
+            (eb) => eb.fn('lower', ['companyGithubUsers.login']),
           ),
-      )
-      .where((eb) =>
-        eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),
-      )
-      .where('pullRequests.mergedAt', 'is', null)
-      .where('pullRequests.closedAt', 'is', null)
-      .where('pullRequestReviewers.requestedAt', 'is not', null)
-      .select([
-        'pullRequestReviewers.pullRequestNumber as number',
-        'pullRequestReviewers.repositoryId',
-      ])
-      .execute(),
+        )
+        .select([
+          'pullRequestReviewers.pullRequestNumber as number',
+          'pullRequestReviewers.repositoryId',
+          'pullRequestReviewers.reviewer',
+          'companyGithubUsers.displayName as reviewerDisplayName',
+        ])
+        .execute(),
 
-    tenantDb
-      .selectFrom('pullRequestReviewers')
-      .innerJoin('pullRequests', (join) =>
-        join
-          .onRef(
-            'pullRequestReviewers.pullRequestNumber',
+      tenantDb
+        .selectFrom('pullRequestReviewers')
+        .innerJoin('pullRequests', (join) =>
+          join
+            .onRef(
+              'pullRequestReviewers.pullRequestNumber',
+              '=',
+              'pullRequests.number',
+            )
+            .onRef(
+              'pullRequestReviewers.repositoryId',
+              '=',
+              'pullRequests.repositoryId',
+            ),
+        )
+        .where((eb) =>
+          eb(
+            eb.fn('lower', ['pullRequestReviewers.reviewer']),
             '=',
-            'pullRequests.number',
-          )
-          .onRef(
-            'pullRequestReviewers.repositoryId',
-            '=',
-            'pullRequests.repositoryId',
+            loginLower,
           ),
-      )
-      .where((eb) =>
-        eb(eb.fn('lower', ['pullRequestReviewers.reviewer']), '=', loginLower),
-      )
-      .where('pullRequestReviewers.requestedAt', 'is not', null)
-      .where('pullRequests.mergedAt', 'is', null)
-      .where('pullRequests.closedAt', 'is', null)
-      .select([
-        'pullRequests.number',
-        'pullRequests.repositoryId',
-        'pullRequests.repo',
-        'pullRequests.title',
-        'pullRequests.url',
-        'pullRequests.pullRequestCreatedAt',
-        'pullRequests.complexity',
-        'pullRequests.author',
-      ])
-      .orderBy('pullRequests.pullRequestCreatedAt', 'asc')
-      .execute(),
-  ])
+        )
+        .where('pullRequestReviewers.requestedAt', 'is not', null)
+        .where('pullRequests.mergedAt', 'is', null)
+        .where('pullRequests.closedAt', 'is', null)
+        .leftJoin('companyGithubUsers as authorUser', (join) =>
+          join.onRef(
+            (eb) => eb.fn('lower', ['pullRequests.author']),
+            '=',
+            (eb) => eb.fn('lower', ['authorUser.login']),
+          ),
+        )
+        .select([
+          'pullRequests.number',
+          'pullRequests.repositoryId',
+          'pullRequests.repo',
+          'pullRequests.title',
+          'pullRequests.url',
+          'pullRequests.pullRequestCreatedAt',
+          'pullRequests.complexity',
+          'pullRequests.author',
+          'authorUser.displayName as authorDisplayName',
+        ])
+        .orderBy('pullRequests.pullRequestCreatedAt', 'asc')
+        .execute(),
 
-  const reviewerSet = new Set<string>()
-  for (const r of reviewerRows) {
-    reviewerSet.add(`${r.repositoryId}:${r.number}`)
-  }
+      tenantDb
+        .selectFrom('pullRequestReviews')
+        .innerJoin('pullRequests', (join) =>
+          join
+            .onRef(
+              'pullRequestReviews.pullRequestNumber',
+              '=',
+              'pullRequests.number',
+            )
+            .onRef(
+              'pullRequestReviews.repositoryId',
+              '=',
+              'pullRequests.repositoryId',
+            ),
+        )
+        .where('pullRequests.mergedAt', 'is', null)
+        .where('pullRequests.closedAt', 'is', null)
+        .where((eb) =>
+          eb.or([
+            eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),
+            eb.exists(
+              eb
+                .selectFrom('pullRequestReviewers')
+                .whereRef(
+                  'pullRequestReviewers.pullRequestNumber',
+                  '=',
+                  'pullRequests.number',
+                )
+                .whereRef(
+                  'pullRequestReviewers.repositoryId',
+                  '=',
+                  'pullRequests.repositoryId',
+                )
+                .where((eb2) =>
+                  eb2(
+                    eb2.fn('lower', ['pullRequestReviewers.reviewer']),
+                    '=',
+                    loginLower,
+                  ),
+                )
+                .select(eb.lit(1).as('v')),
+            ),
+          ]),
+        )
+        .leftJoin('companyGithubUsers', (join) =>
+          join.onRef(
+            (eb) => eb.fn('lower', ['pullRequestReviews.reviewer']),
+            '=',
+            (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+          ),
+        )
+        .select([
+          'pullRequestReviews.pullRequestNumber as number',
+          'pullRequestReviews.repositoryId',
+          'pullRequestReviews.reviewer',
+          'pullRequestReviews.state',
+          'pullRequestReviews.submittedAt',
+          'companyGithubUsers.displayName as reviewerDisplayName',
+        ])
+        .execute(),
+    ])
 
-  const openPRs = openPRsRaw.map((pr) => ({
-    ...pr,
-    hasReviewer: reviewerSet.has(`${pr.repositoryId}:${pr.number}`),
-  }))
-
-  return { openPRs, pendingReviews }
+  return { openPRs: openPRsRaw, pendingReviews, reviewHistory, reviewerRows }
 }

@@ -21,9 +21,12 @@ import type {
 import {
   AGE_THRESHOLDS,
   PRBlock as PRBlockBase,
+  REVIEW_STATUS_PRIORITY,
+  REVIEW_STATUS_SHAPE,
   SIZE_BLOCK_COLORS,
   UNKNOWN_COLOR,
   type PRBlockColorMode as ColorMode,
+  type PRReviewStatus,
 } from '../../+components/pr-block'
 
 function sortBySize(prs: StackPR[]): StackPR[] {
@@ -78,12 +81,11 @@ const ColorModeContext = createContext<ColorMode>('age')
 
 function sortPRs(prs: StackPR[], mode: ColorMode): StackPR[] {
   const baseSorted = mode === 'size' ? sortBySize(prs) : sortByAge(prs)
-  const assigned: StackPR[] = []
-  const unassigned: StackPR[] = []
-  for (const p of baseSorted) {
-    ;(p.hasReviewer === false ? unassigned : assigned).push(p)
-  }
-  return [...assigned, ...unassigned]
+  return [...baseSorted].sort((a, b) => {
+    const pa = REVIEW_STATUS_PRIORITY[a.reviewStatus ?? 'in-review'] ?? 3
+    const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
+    return pa - pb
+  })
 }
 
 // --- Scroll helper ---
@@ -159,11 +161,9 @@ function MemberLink({
 function StackRow({
   stack,
   personalLimit,
-  showAuthor,
 }: {
   stack: PersonStack
   personalLimit: number
-  showAuthor?: boolean
 }) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
@@ -207,7 +207,6 @@ function StackRow({
             key={`${pr.repo}:${pr.number}`}
             pr={pr}
             showLimitLine={i === personalLimit && isOver}
-            showAuthor={showAuthor}
           />
         ))}
       </div>
@@ -220,11 +219,9 @@ function StackRow({
 const PRBlock = memo(function PRBlock({
   pr,
   showLimitLine,
-  showAuthor,
 }: {
   pr: StackPR
   showLimitLine: boolean
-  showAuthor?: boolean
 }) {
   const colorMode = useContext(ColorModeContext)
   const setHovered = useContext(SetHoveredContext)
@@ -243,13 +240,13 @@ const PRBlock = memo(function PRBlock({
           title: pr.title,
           url: pr.url,
           author: pr.author,
+          authorDisplayName: pr.authorDisplayName,
           createdAt: pr.createdAt,
           complexity: pr.complexity,
-          hasReviewer: pr.hasReviewer,
-          reviewers: pr.reviewers,
+          reviewStatus: pr.reviewStatus,
+          reviewerStates: pr.reviewerStates,
         }}
         colorMode={colorMode}
-        showAuthor={showAuthor}
         dataPrKey={prKey}
         onMouseEnter={() => setHovered({ prKey, author: pr.author })}
         onMouseLeave={() => setHovered(null)}
@@ -259,22 +256,31 @@ const PRBlock = memo(function PRBlock({
   )
 })
 
+interface BucketConfig {
+  key: PRReviewStatus
+  label: string
+  prs: StackPR[]
+  /** Tailwind text color for label pill */
+  labelColor: string
+  /** Tailwind bg for label pill */
+  pillBg: string
+}
+
 function StackColumn({
   title,
   stacks,
   personalLimit,
-  showAuthor,
-  unassignedPRs,
+  buckets,
 }: {
   title: string
   stacks: PersonStack[]
   personalLimit: number
-  showAuthor?: boolean
-  unassignedPRs?: StackPR[]
+  buckets?: BucketConfig[]
 }) {
-  const hasUnassigned = unassignedPRs && unassignedPRs.length > 0
+  const activeBuckets = buckets?.filter((b) => b.prs.length > 0) ?? []
+  const hasBuckets = activeBuckets.length > 0
 
-  if (stacks.length === 0 && !hasUnassigned) {
+  if (stacks.length === 0 && !hasBuckets) {
     return (
       <div>
         <h3 className="text-muted-foreground mb-2 text-sm font-medium">
@@ -299,16 +305,33 @@ function StackColumn({
             key={stack.login}
             stack={stack}
             personalLimit={personalLimit}
-            showAuthor={showAuthor}
           />
         ))}
-        {hasUnassigned && <UnassignedRows prs={unassignedPRs} />}
+        {activeBuckets.map((bucket) => (
+          <BucketRow
+            key={bucket.key}
+            label={bucket.label}
+            prs={bucket.prs}
+            labelColor={bucket.labelColor}
+            pillBg={bucket.pillBg}
+          />
+        ))}
       </div>
     </div>
   )
 }
 
-function UnassignedRows({ prs }: { prs: StackPR[] }) {
+function BucketRow({
+  label,
+  prs,
+  labelColor,
+  pillBg,
+}: {
+  label: string
+  prs: StackPR[]
+  labelColor: string
+  pillBg: string
+}) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
   const selected = useContext(SelectedContext)
@@ -328,14 +351,16 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
   return (
     <div
       ref={rowRef}
-      className={`mt-3 border-t-2 border-dashed border-amber-400 pt-2 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
+      className={`mt-2 pt-1 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
     >
       <div className="flex items-center gap-3 py-1.5">
-        <span className="w-28 shrink-0 text-sm font-medium text-amber-600 dark:text-amber-400">
-          No reviewer
-        </span>
-        <span className="text-muted-foreground w-8 shrink-0 text-right font-mono text-sm">
-          {prs.length}
+        <span
+          className={`inline-flex w-28 shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium ${pillBg} ${labelColor}`}
+        >
+          {label}
+          <span className="text-muted-foreground ml-1 font-mono">
+            {prs.length}
+          </span>
         </span>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5">
           {sortedPRs.map((pr) => (
@@ -343,7 +368,6 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
               key={`${pr.repo}:${pr.number}`}
               pr={pr}
               showLimitLine={false}
-              showAuthor
             />
           ))}
         </div>
@@ -352,9 +376,16 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
   )
 }
 
+const SHAPE_LEGEND_ENTRIES = [
+  REVIEW_STATUS_SHAPE['in-review'],
+  REVIEW_STATUS_SHAPE['approved-awaiting-merge'],
+  REVIEW_STATUS_SHAPE['changes-pending'],
+  REVIEW_STATUS_SHAPE.unassigned,
+]
+
 function Legend({ mode }: { mode: ColorMode }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-xs">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
       {mode === 'size' ? (
         <>
           {PR_SIZE_LABELS.map((label) => (
@@ -382,6 +413,21 @@ function Legend({ mode }: { mode: ColorMode }) {
         <div className="h-4 w-px border-l-2 border-dashed border-red-400" />
         <span className="text-muted-foreground">Limit</span>
       </div>
+      <div className="text-muted-foreground">|</div>
+      {SHAPE_LEGEND_ENTRIES.map((entry) => (
+        <div key={entry.label} className="flex items-center gap-1">
+          <div
+            className={`flex items-center justify-center ${entry.legendSwatch}`}
+          >
+            {entry.icon && (
+              <span className="text-[7px] leading-none font-bold text-gray-500 dark:text-gray-400">
+                {entry.icon}
+              </span>
+            )}
+          </div>
+          <span className="text-muted-foreground">{entry.label}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -391,9 +437,35 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
     authorStacks,
     reviewerStacks,
     unassignedPRs,
+    approvedAwaitingMergePRs,
+    changesPendingPRs,
     personalLimit,
     insight,
+    autoMergeSuggestion,
   } = data
+  const reviewQueueBuckets: BucketConfig[] = [
+    {
+      key: 'approved-awaiting-merge',
+      label: 'Approved',
+      prs: approvedAwaitingMergePRs,
+      labelColor: 'text-emerald-700 dark:text-emerald-400',
+      pillBg: 'bg-emerald-100 dark:bg-emerald-950',
+    },
+    {
+      key: 'changes-pending',
+      label: 'Changes',
+      prs: changesPendingPRs,
+      labelColor: 'text-amber-700 dark:text-amber-400',
+      pillBg: 'bg-amber-50 dark:bg-amber-950/50',
+    },
+    {
+      key: 'unassigned',
+      label: 'Unassigned',
+      prs: unassignedPRs,
+      labelColor: 'text-amber-700 dark:text-amber-400',
+      pillBg: 'bg-amber-100 dark:bg-amber-950',
+    },
+  ]
   const [searchParams, setSearchParams] = useSearchParams()
   const colorMode: ColorMode =
     searchParams.get('view') === 'size' ? 'size' : 'age'
@@ -477,8 +549,7 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                       title="Review Queue (pending)"
                       stacks={reviewerStacks}
                       personalLimit={personalLimit}
-                      showAuthor
-                      unassignedPRs={unassignedPRs}
+                      buckets={reviewQueueBuckets}
                     />
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -514,7 +585,9 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                     </p>
                   </div>
                   {insight && (
-                    <p className="text-muted-foreground text-center text-sm">
+                    <p
+                      className={`text-center text-sm ${autoMergeSuggestion ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
+                    >
                       {insight}
                     </p>
                   )}

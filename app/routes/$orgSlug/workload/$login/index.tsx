@@ -20,8 +20,14 @@ import {
   PRBlock,
   PRPopoverContent,
   REVIEW_STATE_STYLE,
+  REVIEW_STATUS_PRIORITY,
   type PRBlockData,
+  type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
+import {
+  buildPRReviewerStatesMap,
+  classifyPRReviewStatus,
+} from '~/app/routes/$orgSlug/workload/+functions/aggregate-stacks'
 import {
   getBacklogDetails,
   getClosedPRs,
@@ -73,13 +79,41 @@ export const loader = async ({
     holidays[dayjs(h.date).tz(timezone).format('YYYY-MM-DD')] = h.name
   }
 
+  // Enrich backlog PRs with reviewStatus + reviewerStates
+  const reviewerStatesByPR = buildPRReviewerStatesMap(
+    backlog.reviewHistory,
+    backlog.reviewerRows,
+  )
+  const pendingReviewerPRKeys = new Set<string>()
+  for (const r of backlog.reviewerRows) {
+    pendingReviewerPRKeys.add(`${r.repositoryId}:${r.number}`)
+  }
+  const enrichedOpenPRs = backlog.openPRs.map((pr) => {
+    const prKey = `${pr.repositoryId}:${pr.number}`
+    const reviewerStates = reviewerStatesByPR.get(prKey)
+    const reviewStatus = classifyPRReviewStatus(
+      pendingReviewerPRKeys.has(prKey),
+      reviewerStates,
+      params.login,
+    )
+    return { ...pr, reviewStatus, reviewerStates }
+  })
+  const enrichedPendingReviews = backlog.pendingReviews.map((pr) => {
+    const prKey = `${pr.repositoryId}:${pr.number}`
+    const reviewerStates = reviewerStatesByPR.get(prKey)
+    return { ...pr, reviewStatus: 'in-review' as const, reviewerStates }
+  })
+
   return {
     user,
     createdPRs,
     mergedPRs,
     closedPRs,
     reviews,
-    backlog,
+    backlog: {
+      openPRs: enrichedOpenPRs,
+      pendingReviews: enrichedPendingReviews,
+    },
     holidays,
     weekStart: weekStart.format('YYYY-MM-DD'),
     weekEnd: weekEnd.format('YYYY-MM-DD'),
@@ -125,29 +159,27 @@ export default function MemberWeeklyPage({
     })
   }
 
-  // Sort backlog PRs by color mode (assigned first, then by age or size)
   const sortBacklog = useMemo(() => {
     return <
       T extends {
         complexity: string | null
         pullRequestCreatedAt: string
-        hasReviewer?: boolean
+        reviewStatus?: PRReviewStatus
       },
     >(
       prs: T[],
     ): T[] => {
-      const sorted = [...prs].sort((a, b) => {
+      return [...prs].sort((a, b) => {
+        const pa = REVIEW_STATUS_PRIORITY[a.reviewStatus ?? 'in-review'] ?? 3
+        const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
+        if (pa !== pb) return pa - pb
         if (colorMode === 'size') {
           const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
           const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
           return bi - ai
         }
-        // Older first (ascending createdAt = descending age)
         return a.pullRequestCreatedAt.localeCompare(b.pullRequestCreatedAt)
       })
-      const assigned = sorted.filter((p) => p.hasReviewer !== false)
-      const unassigned = sorted.filter((p) => p.hasReviewer === false)
-      return [...assigned, ...unassigned]
     }
   }, [colorMode])
 
@@ -326,7 +358,8 @@ export default function MemberWeeklyPage({
                   url: pr.url,
                   createdAt: pr.pullRequestCreatedAt,
                   complexity: pr.complexity,
-                  hasReviewer: pr.hasReviewer,
+                  reviewStatus: pr.reviewStatus,
+                  reviewerStates: pr.reviewerStates,
                 }}
               />
             ))}
@@ -342,10 +375,12 @@ export default function MemberWeeklyPage({
                   title: pr.title,
                   url: pr.url,
                   author: pr.author,
+                  authorDisplayName: pr.authorDisplayName ?? undefined,
                   createdAt: pr.pullRequestCreatedAt,
                   complexity: pr.complexity,
+                  reviewStatus: pr.reviewStatus,
+                  reviewerStates: pr.reviewerStates,
                 }}
-                showAuthor
               />
             ))}
           </BlockRow>
@@ -474,7 +509,6 @@ export default function MemberWeeklyPage({
                           createdAt: r.pullRequestCreatedAt,
                           complexity: r.complexity,
                         }}
-                        showAuthor
                         reviewState={r.state}
                         reviewCount={r.reviewCount}
                         suffix={REVIEW_STATE_STYLE[r.state]?.icon}
@@ -630,7 +664,6 @@ function CalendarItem({
   suffix,
   complexity,
   prData,
-  showAuthor,
   reviewState,
   reviewCount,
 }: {
@@ -640,7 +673,6 @@ function CalendarItem({
   suffix?: string
   complexity?: string | null
   prData?: PRBlockData
-  showAuthor?: boolean
   reviewState?: string
   reviewCount?: number
 }) {
@@ -686,11 +718,7 @@ function CalendarItem({
     <Popover>
       <PopoverTrigger asChild>{content}</PopoverTrigger>
       <PopoverContent side="top" className="w-72 p-3">
-        <PRPopoverContent
-          pr={prData}
-          showAuthor={showAuthor}
-          reviewState={reviewState}
-        />
+        <PRPopoverContent pr={prData} reviewState={reviewState} />
       </PopoverContent>
     </Popover>
   )

@@ -13,6 +13,7 @@ import {
   aggregateTeamStacks,
 } from './+functions/aggregate-stacks'
 import {
+  getOpenPullRequestReviews,
   getOpenPullRequests,
   getPendingReviewAssignments,
 } from './+functions/stacks.server'
@@ -34,14 +35,16 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
       ? Math.max(...teams.map((t) => t.personalLimit))
       : DEFAULT_PERSONAL_LIMIT
 
-  const [openPRs, pendingReviews] = await Promise.all([
+  const [openPRs, pendingReviews, reviewHistory] = await Promise.all([
     getOpenPullRequests(organization.id, teamId),
     getPendingReviewAssignments(organization.id, teamId),
+    getOpenPullRequestReviews(organization.id, teamId),
   ])
 
   return {
     openPRs,
     pendingReviews,
+    reviewHistory,
     personalLimit,
   }
 }
@@ -49,10 +52,16 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
 export const clientLoader = async ({
   serverLoader,
 }: Route.ClientLoaderArgs) => {
-  const { openPRs, pendingReviews, personalLimit } = await serverLoader()
+  const { openPRs, pendingReviews, reviewHistory, personalLimit } =
+    await serverLoader()
 
   return {
-    teamStacks: aggregateTeamStacks(openPRs, pendingReviews, personalLimit),
+    teamStacks: aggregateTeamStacks({
+      openPRs,
+      pendingReviews,
+      reviewHistory,
+      personalLimit,
+    }),
   }
 }
 clientLoader.hydrate = true as const
