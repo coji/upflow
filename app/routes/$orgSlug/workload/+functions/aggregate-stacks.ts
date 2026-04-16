@@ -159,7 +159,10 @@ function classifyReviewStatus(
     ) ?? []
   if (submitted.some((s) => s.state === 'APPROVED'))
     return 'approved-awaiting-merge'
-  if (submitted.length > 0) return 'changes-pending'
+  // CHANGES_REQUESTED が明示的にある場合のみ changes-pending。
+  // COMMENTED のみは実質未レビュー扱いで unassigned に統合。
+  if (submitted.some((s) => s.state === 'CHANGES_REQUESTED'))
+    return 'changes-pending'
   return 'unassigned'
 }
 

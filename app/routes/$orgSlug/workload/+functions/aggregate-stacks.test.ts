@@ -447,7 +447,7 @@ describe('aggregateTeamStacks', () => {
       expect(result.approvedAwaitingMergePRs).toHaveLength(0)
     })
 
-    test('commented only (no approve/changes) → changesPendingPRs', () => {
+    test('commented only (no approve/changes) → unassignedPRs', () => {
       const openPRs = [makePR({ number: 1 })]
       const reviewHistory = [
         makeReviewHistory({ reviewer: 'bob', state: 'COMMENTED' }),
@@ -458,8 +458,9 @@ describe('aggregateTeamStacks', () => {
         reviewHistory,
       })
 
-      expect(result.changesPendingPRs).toHaveLength(1)
-      expect(result.changesPendingPRs[0].reviewStatus).toBe('changes-pending')
+      expect(result.unassignedPRs).toHaveLength(1)
+      expect(result.unassignedPRs[0].reviewStatus).toBe('unassigned')
+      expect(result.changesPendingPRs).toHaveLength(0)
     })
 
     test('approved takes priority over changes_requested', () => {
