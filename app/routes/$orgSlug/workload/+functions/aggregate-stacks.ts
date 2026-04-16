@@ -148,9 +148,15 @@ function buildReviewerStatesMap(
 function classifyReviewStatus(
   hasPendingReviewer: boolean,
   statesForPR: ReviewerStateEntry[] | undefined,
+  author: string,
 ): ReviewStatus {
   if (hasPendingReviewer) return 'in-review'
-  const submitted = statesForPR?.filter((s) => s.state !== 'REQUESTED') ?? []
+  // author 自身のレビュー（COMMENTED 等）はレビューとしてカウントしない
+  const authorKey = author.toLowerCase()
+  const submitted =
+    statesForPR?.filter(
+      (s) => s.state !== 'REQUESTED' && s.login.toLowerCase() !== authorKey,
+    ) ?? []
   if (submitted.some((s) => s.state === 'APPROVED'))
     return 'approved-awaiting-merge'
   if (submitted.length > 0) return 'changes-pending'
@@ -191,6 +197,7 @@ export function aggregateTeamStacks({
     const reviewStatus = classifyReviewStatus(
       hasPendingReviewer,
       reviewerStates,
+      pr.author,
     )
     const stackPR: StackPR = {
       number: pr.number,

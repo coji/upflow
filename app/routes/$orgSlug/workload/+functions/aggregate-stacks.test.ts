@@ -354,6 +354,50 @@ describe('aggregateTeamStacks', () => {
       expect(states).toHaveLength(1)
       expect(states?.[0].state).toBe('APPROVED')
     })
+
+    test('author self-comment only → treated as unassigned', () => {
+      const openPRs = [makePR({ author: 'alice', number: 1 })]
+      const reviewHistory = [
+        makeReviewHistory({
+          reviewer: 'alice',
+          state: 'COMMENTED',
+          submittedAt: '2026-03-02T00:00:00Z',
+        }),
+      ]
+      const result = aggregateTeamStacks({
+        openPRs,
+        pendingReviews: [],
+        reviewHistory,
+      })
+
+      expect(result.unassignedPRs).toHaveLength(1)
+      expect(result.unassignedPRs[0].reviewStatus).toBe('unassigned')
+      expect(result.changesPendingPRs).toHaveLength(0)
+    })
+
+    test('author self-comment + other reviewer → uses other reviewer state', () => {
+      const openPRs = [makePR({ author: 'alice', number: 1 })]
+      const reviewHistory = [
+        makeReviewHistory({
+          reviewer: 'alice',
+          state: 'COMMENTED',
+          submittedAt: '2026-03-02T00:00:00Z',
+        }),
+        makeReviewHistory({
+          reviewer: 'bob',
+          state: 'CHANGES_REQUESTED',
+          submittedAt: '2026-03-03T00:00:00Z',
+        }),
+      ]
+      const result = aggregateTeamStacks({
+        openPRs,
+        pendingReviews: [],
+        reviewHistory,
+      })
+
+      expect(result.changesPendingPRs).toHaveLength(1)
+      expect(result.unassignedPRs).toHaveLength(0)
+    })
   })
 
   describe('review status buckets', () => {
