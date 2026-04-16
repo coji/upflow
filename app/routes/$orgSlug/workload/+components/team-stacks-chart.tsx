@@ -246,7 +246,8 @@ const PRBlock = memo(function PRBlock({
           createdAt: pr.createdAt,
           complexity: pr.complexity,
           hasReviewer: pr.hasReviewer,
-          reviewers: pr.reviewers,
+          reviewStatus: pr.reviewStatus,
+          reviewerStates: pr.reviewerStates,
         }}
         colorMode={colorMode}
         showAuthor={showAuthor}
@@ -259,22 +260,33 @@ const PRBlock = memo(function PRBlock({
   )
 })
 
+interface BucketConfig {
+  key: string
+  label: string
+  prs: StackPR[]
+  /** Tailwind text color for label */
+  labelColor: string
+  /** Tailwind border color for top divider */
+  borderColor: string
+}
+
 function StackColumn({
   title,
   stacks,
   personalLimit,
   showAuthor,
-  unassignedPRs,
+  buckets,
 }: {
   title: string
   stacks: PersonStack[]
   personalLimit: number
   showAuthor?: boolean
-  unassignedPRs?: StackPR[]
+  buckets?: BucketConfig[]
 }) {
-  const hasUnassigned = unassignedPRs && unassignedPRs.length > 0
+  const activeBuckets = buckets?.filter((b) => b.prs.length > 0) ?? []
+  const hasBuckets = activeBuckets.length > 0
 
-  if (stacks.length === 0 && !hasUnassigned) {
+  if (stacks.length === 0 && !hasBuckets) {
     return (
       <div>
         <h3 className="text-muted-foreground mb-2 text-sm font-medium">
@@ -302,13 +314,31 @@ function StackColumn({
             showAuthor={showAuthor}
           />
         ))}
-        {hasUnassigned && <UnassignedRows prs={unassignedPRs} />}
+        {activeBuckets.map((bucket) => (
+          <BucketRow
+            key={bucket.key}
+            label={bucket.label}
+            prs={bucket.prs}
+            labelColor={bucket.labelColor}
+            borderColor={bucket.borderColor}
+          />
+        ))}
       </div>
     </div>
   )
 }
 
-function UnassignedRows({ prs }: { prs: StackPR[] }) {
+function BucketRow({
+  label,
+  prs,
+  labelColor,
+  borderColor,
+}: {
+  label: string
+  prs: StackPR[]
+  labelColor: string
+  borderColor: string
+}) {
   const colorMode = useContext(ColorModeContext)
   const hovered = useContext(HoveredContext)
   const selected = useContext(SelectedContext)
@@ -328,11 +358,11 @@ function UnassignedRows({ prs }: { prs: StackPR[] }) {
   return (
     <div
       ref={rowRef}
-      className={`mt-3 border-t-2 border-dashed border-amber-400 pt-2 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
+      className={`mt-3 border-t-2 border-dashed ${borderColor} pt-2 transition-colors ${isRelated ? 'bg-accent rounded' : ''}`}
     >
       <div className="flex items-center gap-3 py-1.5">
-        <span className="w-28 shrink-0 text-sm font-medium text-amber-600 dark:text-amber-400">
-          No reviewer
+        <span className={`w-28 shrink-0 text-sm font-medium ${labelColor}`}>
+          {label}
         </span>
         <span className="text-muted-foreground w-8 shrink-0 text-right font-mono text-sm">
           {prs.length}
@@ -391,9 +421,35 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
     authorStacks,
     reviewerStacks,
     unassignedPRs,
+    approvedAwaitingMergePRs,
+    changesPendingPRs,
     personalLimit,
     insight,
+    autoMergeSuggestion,
   } = data
+  const reviewQueueBuckets: BucketConfig[] = [
+    {
+      key: 'unassigned',
+      label: 'Unassigned',
+      prs: unassignedPRs,
+      labelColor: 'text-amber-600 dark:text-amber-400',
+      borderColor: 'border-amber-400',
+    },
+    {
+      key: 'approved-awaiting-merge',
+      label: 'Approved / Merge待ち',
+      prs: approvedAwaitingMergePRs,
+      labelColor: 'text-emerald-600 dark:text-emerald-400',
+      borderColor: 'border-emerald-400',
+    },
+    {
+      key: 'changes-pending',
+      label: '作者対応待ち',
+      prs: changesPendingPRs,
+      labelColor: 'text-muted-foreground',
+      borderColor: 'border-muted-foreground/40',
+    },
+  ]
   const [searchParams, setSearchParams] = useSearchParams()
   const colorMode: ColorMode =
     searchParams.get('view') === 'size' ? 'size' : 'age'
@@ -478,7 +534,7 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                       stacks={reviewerStacks}
                       personalLimit={personalLimit}
                       showAuthor
-                      unassignedPRs={unassignedPRs}
+                      buckets={reviewQueueBuckets}
                     />
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -514,7 +570,9 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                     </p>
                   </div>
                   {insight && (
-                    <p className="text-muted-foreground text-center text-sm">
+                    <p
+                      className={`text-center text-sm ${autoMergeSuggestion ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
+                    >
                       {insight}
                     </p>
                   )}

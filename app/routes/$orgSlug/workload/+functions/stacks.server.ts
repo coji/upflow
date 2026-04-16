@@ -1,18 +1,18 @@
-import { sql } from 'kysely'
 import { excludeBots } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 /**
- * オープンPRタイムラインデータ（Team Stacks の Author 側用）
- * hasAnyReviewer: 一度でもレビュアーがアサインされたかどうか
+ * オープンPRの基本情報（Team Stacks の Author 側用）。
+ * レビュー状態は getOpenPullRequestReviews / getPendingReviewAssignments を
+ * 集約層で合流させて分類する。
  */
 export const getOpenPullRequests = async (
   organizationId: OrganizationId,
   teamId?: string | null,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  const rows = await tenantDb
+  return await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .leftJoin('companyGithubUsers', (join) =>
@@ -39,23 +39,7 @@ export const getOpenPullRequests = async (
       'pullRequests.complexity',
       'companyGithubUsers.displayName as authorDisplayName',
     ])
-    .select(
-      sql<number>`exists(
-        select 1 from ${sql.ref('pullRequestReviewers')}
-        where ${sql.ref('pullRequestReviewers.pullRequestNumber')} = ${sql.ref('pullRequests.number')}
-        and ${sql.ref('pullRequestReviewers.repositoryId')} = ${sql.ref('pullRequests.repositoryId')}
-        and lower(${sql.ref('pullRequestReviewers.reviewer')}) not in (
-          select lower(${sql.ref('companyGithubUsers.login')}) from ${sql.ref('companyGithubUsers')}
-          where ${sql.ref('companyGithubUsers.type')} = 'Bot'
-        )
-      )`.as('hasAnyReviewer'),
-    )
     .execute()
-
-  return rows.map((row) => ({
-    ...row,
-    hasAnyReviewer: row.hasAnyReviewer === 1,
-  }))
 }
 
 /**
@@ -106,6 +90,55 @@ export const getPendingReviewAssignments = async (
       'pullRequests.author',
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.complexity',
+      'companyGithubUsers.displayName as reviewerDisplayName',
+    ])
+    .execute()
+}
+
+/**
+ * オープンPRに対して実際に提出されたレビュー履歴（Bot の reviewer は除外）。
+ * Popover で reviewer ごとの state を表示するのと、バケット分類の両方で使う。
+ */
+export const getOpenPullRequestReviews = async (
+  organizationId: OrganizationId,
+  teamId?: string | null,
+) => {
+  const tenantDb = getTenantDb(organizationId)
+  return await tenantDb
+    .selectFrom('pullRequestReviews')
+    .innerJoin('pullRequests', (join) =>
+      join
+        .onRef(
+          'pullRequestReviews.pullRequestNumber',
+          '=',
+          'pullRequests.number',
+        )
+        .onRef(
+          'pullRequestReviews.repositoryId',
+          '=',
+          'pullRequests.repositoryId',
+        ),
+    )
+    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequestReviews.reviewer']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
+    )
+    .where('pullRequests.mergedAt', 'is', null)
+    .where('pullRequests.closedAt', 'is', null)
+    .$if(teamId != null, (qb) =>
+      qb.where('repositories.teamId', '=', teamId as string),
+    )
+    .where(excludeBots)
+    .select([
+      'pullRequestReviews.pullRequestNumber as number',
+      'pullRequestReviews.repositoryId',
+      'pullRequestReviews.reviewer',
+      'pullRequestReviews.state',
+      'pullRequestReviews.submittedAt',
       'companyGithubUsers.displayName as reviewerDisplayName',
     ])
     .execute()

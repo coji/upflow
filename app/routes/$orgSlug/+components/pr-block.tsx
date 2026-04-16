@@ -105,6 +105,25 @@ function getBlockColor(pr: PRBlockData, mode: PRBlockColorMode): BlockColor {
     : getAgeColor(pr.createdAt)
 }
 
+export type PRReviewStatus =
+  | 'in-review'
+  | 'unassigned'
+  | 'approved-awaiting-merge'
+  | 'changes-pending'
+
+export type PRReviewerState =
+  | 'APPROVED'
+  | 'CHANGES_REQUESTED'
+  | 'COMMENTED'
+  | 'REQUESTED'
+
+export interface PRReviewerStateEntry {
+  login: string
+  displayName: string
+  state: PRReviewerState
+  submittedAt?: string
+}
+
 export interface PRBlockData {
   number: number
   repo: string
@@ -116,7 +135,33 @@ export interface PRBlockData {
   /** true = has reviewer, false = no reviewer (ring style), undefined = unknown (solid) */
   hasReviewer?: boolean
   reviewers?: string[]
+  reviewStatus?: PRReviewStatus
+  reviewerStates?: PRReviewerStateEntry[]
 }
+
+interface ReviewStatusStyle {
+  label: string
+  text: string
+  ring?: string
+}
+
+const REVIEW_STATUS_STYLE: Partial<Record<PRReviewStatus, ReviewStatusStyle>> =
+  {
+    unassigned: {
+      label: 'レビュアー未アサイン',
+      text: 'text-amber-600 dark:text-amber-400',
+    },
+    'approved-awaiting-merge': {
+      label: 'Approve済み・マージ待ち',
+      text: 'text-emerald-600 dark:text-emerald-400',
+      ring: 'ring-[2px] ring-offset-1 ring-emerald-500',
+    },
+    'changes-pending': {
+      label: '作者対応待ち',
+      text: 'text-amber-600 dark:text-amber-400',
+      ring: 'ring-[2px] ring-offset-1 ring-amber-500',
+    },
+  }
 
 export const REVIEW_STATE_STYLE: Record<
   string,
@@ -127,6 +172,11 @@ export const REVIEW_STATE_STYLE: Record<
   COMMENTED: {
     icon: '💬',
     text: 'Comment',
+    className: 'text-muted-foreground',
+  },
+  REQUESTED: {
+    icon: '⏳',
+    text: 'Requested',
     className: 'text-muted-foreground',
   },
 }
@@ -142,6 +192,9 @@ export function PRPopoverContent({
 }) {
   const ageDays = Math.floor(dayjs().diff(dayjs.utc(pr.createdAt), 'day', true))
   const stateInfo = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
+  const statusStyle = pr.reviewStatus
+    ? REVIEW_STATUS_STYLE[pr.reviewStatus]
+    : undefined
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
@@ -164,15 +217,35 @@ export function PRPopoverContent({
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
         {showAuthor && pr.author && <span>by {pr.author}</span>}
         <span>{ageDays}d ago</span>
-        {pr.reviewers && pr.reviewers.length > 0 && (
-          <span>→ {pr.reviewers.join(', ')}</span>
-        )}
-        {pr.hasReviewer === false && (
-          <span className="text-amber-600 dark:text-amber-400">
-            no reviewer
-          </span>
+        {statusStyle && (
+          <span className={statusStyle.text}>{statusStyle.label}</span>
         )}
       </div>
+      {pr.reviewerStates && pr.reviewerStates.length > 0 && (
+        <div className="mt-1.5 space-y-0.5 border-t pt-1.5">
+          {pr.reviewerStates.map((r) => {
+            const style = REVIEW_STATE_STYLE[r.state]
+            const when = r.submittedAt
+              ? dayjs.utc(r.submittedAt).format('YYYY/MM/DD HH:mm')
+              : undefined
+            return (
+              <div key={r.login} className="flex items-center gap-2 text-xs">
+                <span
+                  className={`w-20 shrink-0 whitespace-nowrap ${style.className}`}
+                >
+                  {style.icon} {style.text}
+                </span>
+                <span className="truncate">{r.displayName}</span>
+                {when && (
+                  <span className="text-muted-foreground ml-auto shrink-0">
+                    {when}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -195,6 +268,18 @@ export function PRBlock({
   dataPrKey?: string
 }) {
   const { bg, ring, bgFaint } = getBlockColor(pr, colorMode)
+  const statusStyle = pr.reviewStatus
+    ? REVIEW_STATUS_STYLE[pr.reviewStatus]
+    : undefined
+  const ariaLabel = statusStyle
+    ? `${pr.repo}#${pr.number} (${statusStyle.label})`
+    : `${pr.repo}#${pr.number}`
+  const baseClass =
+    pr.hasReviewer === false
+      ? `ring-[2px] ring-inset ${ring} ${bgFaint}`
+      : statusStyle?.ring
+        ? `${bg} ${statusStyle.ring}`
+        : bg
 
   return (
     <Popover>
@@ -202,8 +287,8 @@ export function PRBlock({
         <button
           type="button"
           data-pr-key={dataPrKey}
-          className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${pr.hasReviewer === false ? `ring-[2px] ring-inset ${ring} ${bgFaint}` : bg}`}
-          aria-label={`${pr.repo}#${pr.number}`}
+          className={`size-4 shrink-0 rounded-full transition-all hover:scale-150 ${baseClass}`}
+          aria-label={ariaLabel}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
           onClick={onClick}
