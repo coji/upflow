@@ -23,6 +23,10 @@ import {
   type PRBlockData,
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import {
+  buildReviewerStatesMap,
+  classifyReviewStatus,
+} from '~/app/routes/$orgSlug/workload/+functions/aggregate-stacks'
+import {
   getBacklogDetails,
   getClosedPRs,
   getCreatedPRs,
@@ -31,6 +35,13 @@ import {
   getUserProfile,
 } from './+functions/queries.server'
 import type { Route } from './+types/index'
+
+const REVIEW_STATUS_PRIORITY: Record<string, number> = {
+  'approved-awaiting-merge': 0,
+  'changes-pending': 1,
+  unassigned: 2,
+  'in-review': 3,
+}
 
 export const handle = {
   breadcrumb: (data: Awaited<ReturnType<typeof loader>>) => ({
@@ -73,13 +84,41 @@ export const loader = async ({
     holidays[dayjs(h.date).tz(timezone).format('YYYY-MM-DD')] = h.name
   }
 
+  // Enrich backlog PRs with reviewStatus + reviewerStates
+  const reviewerStatesByPR = buildReviewerStatesMap(
+    backlog.reviewHistory,
+    backlog.reviewerRows,
+  )
+  const pendingReviewerPRKeys = new Set<string>()
+  for (const r of backlog.reviewerRows) {
+    pendingReviewerPRKeys.add(`${r.repositoryId}:${r.number}`)
+  }
+  const enrichedOpenPRs = backlog.openPRs.map((pr) => {
+    const prKey = `${pr.repositoryId}:${pr.number}`
+    const reviewerStates = reviewerStatesByPR.get(prKey)
+    const reviewStatus = classifyReviewStatus(
+      pendingReviewerPRKeys.has(prKey),
+      reviewerStates,
+      params.login,
+    )
+    return { ...pr, reviewStatus, reviewerStates }
+  })
+  const enrichedPendingReviews = backlog.pendingReviews.map((pr) => {
+    const prKey = `${pr.repositoryId}:${pr.number}`
+    const reviewerStates = reviewerStatesByPR.get(prKey)
+    return { ...pr, reviewStatus: 'in-review' as const, reviewerStates }
+  })
+
   return {
     user,
     createdPRs,
     mergedPRs,
     closedPRs,
     reviews,
-    backlog,
+    backlog: {
+      openPRs: enrichedOpenPRs,
+      pendingReviews: enrichedPendingReviews,
+    },
     holidays,
     weekStart: weekStart.format('YYYY-MM-DD'),
     weekEnd: weekEnd.format('YYYY-MM-DD'),
@@ -125,29 +164,30 @@ export default function MemberWeeklyPage({
     })
   }
 
-  // Sort backlog PRs by color mode (assigned first, then by age or size)
   const sortBacklog = useMemo(() => {
     return <
       T extends {
         complexity: string | null
         pullRequestCreatedAt: string
-        hasReviewer?: boolean
+        reviewStatus?: string
       },
     >(
       prs: T[],
     ): T[] => {
-      const sorted = [...prs].sort((a, b) => {
-        if (colorMode === 'size') {
-          const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
-          const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
-          return bi - ai
-        }
-        // Older first (ascending createdAt = descending age)
-        return a.pullRequestCreatedAt.localeCompare(b.pullRequestCreatedAt)
-      })
-      const assigned = sorted.filter((p) => p.hasReviewer !== false)
-      const unassigned = sorted.filter((p) => p.hasReviewer === false)
-      return [...assigned, ...unassigned]
+      return [...prs]
+        .sort((a, b) => {
+          if (colorMode === 'size') {
+            const ai = PR_SIZE_RANK[a.complexity ?? ''] ?? 99
+            const bi = PR_SIZE_RANK[b.complexity ?? ''] ?? 99
+            return bi - ai
+          }
+          return a.pullRequestCreatedAt.localeCompare(b.pullRequestCreatedAt)
+        })
+        .sort((a, b) => {
+          const pa = REVIEW_STATUS_PRIORITY[a.reviewStatus ?? 'in-review'] ?? 3
+          const pb = REVIEW_STATUS_PRIORITY[b.reviewStatus ?? 'in-review'] ?? 3
+          return pa - pb
+        })
     }
   }, [colorMode])
 
@@ -327,6 +367,8 @@ export default function MemberWeeklyPage({
                   createdAt: pr.pullRequestCreatedAt,
                   complexity: pr.complexity,
                   hasReviewer: pr.hasReviewer,
+                  reviewStatus: pr.reviewStatus,
+                  reviewerStates: pr.reviewerStates,
                 }}
               />
             ))}
@@ -342,8 +384,11 @@ export default function MemberWeeklyPage({
                   title: pr.title,
                   url: pr.url,
                   author: pr.author,
+                  authorDisplayName: pr.authorDisplayName ?? undefined,
                   createdAt: pr.pullRequestCreatedAt,
                   complexity: pr.complexity,
+                  reviewStatus: pr.reviewStatus,
+                  reviewerStates: pr.reviewerStates,
                 }}
                 showAuthor
               />

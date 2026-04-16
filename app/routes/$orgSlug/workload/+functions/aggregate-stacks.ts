@@ -90,9 +90,12 @@ const SUBMITTED_REVIEW_STATES = new Set<ReviewerState>([
   'COMMENTED',
 ])
 
-function buildReviewerStatesMap(
+export function buildReviewerStatesMap(
   reviews: ReviewRow[],
-  pendingReviews: PendingReviewRow[],
+  pendingReviews: Pick<
+    PendingReviewRow,
+    'repositoryId' | 'number' | 'reviewer' | 'reviewerDisplayName'
+  >[],
 ): Map<string, ReviewerStateEntry[]> {
   const byPR = new Map<string, Map<string, ReviewerStateEntry>>()
   const getBucket = (prKey: string) => {
@@ -146,7 +149,7 @@ function buildReviewerStatesMap(
   return result
 }
 
-function classifyReviewStatus(
+export function classifyReviewStatus(
   hasPendingReviewer: boolean,
   statesForPR: ReviewerStateEntry[] | undefined,
   author: string,
