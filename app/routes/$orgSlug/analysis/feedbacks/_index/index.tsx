@@ -29,11 +29,14 @@ import {
   TableRow,
 } from '~/app/components/ui/table'
 import { calcSinceDate } from '~/app/libs/date-utils'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
+import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
@@ -61,12 +64,13 @@ const PERIOD_OPTIONS = [
 const VALID_PERIODS = [1, 3, 6, 12]
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
   const teamParam = context.get(teamContext) ?? undefined
   const periodParam = url.searchParams.get('period')
+  const showFiltered = url.searchParams.get('showFiltered') === '1'
   const periodMonths =
     periodParam === 'all'
       ? 'all'
@@ -82,7 +86,12 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sortOrder =
     (url.searchParams.get('sort_order') as 'asc' | 'desc') || 'desc'
 
-  const [feedbackResult, summary] = await Promise.all([
+  const normalizedPatterns = showFiltered
+    ? []
+    : await listEnabledPrTitleFilterPatterns(organization.id)
+  const filterActive = !showFiltered && normalizedPatterns.length > 0
+
+  const [feedbackResult, summary, unfilteredSummary] = await Promise.all([
     listFilteredFeedbacks({
       organizationId: organization.id,
       teamId: teamParam,
@@ -91,24 +100,50 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       pageSize: perPage,
       sortBy,
       sortOrder,
+      normalizedPatterns,
     }),
     getFeedbackSummary({
       organizationId: organization.id,
       teamId: teamParam,
       sinceDate,
+      normalizedPatterns,
     }),
+    filterActive
+      ? getFeedbackSummary({
+          organizationId: organization.id,
+          teamId: teamParam,
+          sinceDate,
+        })
+      : Promise.resolve(null),
   ])
+
+  const excludedCount = filterActive
+    ? (unfilteredSummary?.totalCount ?? 0) - summary.totalCount
+    : 0
 
   return {
     feedbacks: feedbackResult.data,
     pagination: feedbackResult.pagination,
     summary,
     periodMonths,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
 export default function FeedbacksPage({
-  loaderData: { feedbacks, pagination, summary, periodMonths },
+  loaderData: {
+    feedbacks,
+    pagination,
+    summary,
+    periodMonths,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
+  },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
   const { sort, updateSort } = useDataTableState()
@@ -154,6 +189,13 @@ export default function FeedbacksPage({
           </Select>
         </PageHeaderActions>
       </PageHeader>
+
+      <PrTitleFilterBanner
+        excludedCount={excludedCount}
+        filterActive={filterActive}
+        showFiltered={showFiltered}
+        isAdmin={isAdmin}
+      />
 
       <div className="space-y-6">
         <FeedbackSummaryCards summary={summary} />

@@ -15,12 +15,15 @@ import {
 } from '~/app/components/ui/select'
 import { Stack } from '~/app/components/ui/stack'
 import { calcSinceDate } from '~/app/libs/date-utils'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
+import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
 import { getOrgCachedData } from '~/app/services/cache.server'
+import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { QueueTrendChart } from './+components/queue-trend-chart'
 import { WipCycleChart } from './+components/wip-cycle-chart'
@@ -32,6 +35,7 @@ import {
   computeWipLabels,
 } from './+functions/aggregate'
 import {
+  countWipCyclePullRequests,
   getPRSizeDistribution,
   getQueueHistoryRawData,
   getWipCycleRawData,
@@ -51,12 +55,13 @@ const PERIOD_OPTIONS = [
 ] as const
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
   const teamParam = context.get(teamContext)
   const periodParam = url.searchParams.get('period')
+  const showFiltered = url.searchParams.get('showFiltered') === '1'
   const VALID_PERIODS = [1, 3, 6, 12]
   const periodMonths =
     periodParam === 'all'
@@ -67,20 +72,60 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const sinceDate = calcSinceDate(periodMonths, timezone)
 
-  const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}`
+  const normalizedPatterns = showFiltered
+    ? []
+    : await listEnabledPrTitleFilterPatterns(organization.id)
+  const filterActive = !showFiltered && normalizedPatterns.length > 0
+
+  const sf = showFiltered ? 't' : 'f'
+  const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}:sf=${sf}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const [queueHistoryRaw, wipCycleRaw, prSizesRaw] = await getOrgCachedData(
-    organization.id,
-    cacheKey,
-    () =>
-      Promise.all([
-        getQueueHistoryRawData(organization.id, sinceDate, teamParam),
-        getWipCycleRawData(organization.id, sinceDate, teamParam),
-        getPRSizeDistribution(organization.id, sinceDate, teamParam),
-      ]),
-    FIVE_MINUTES,
-  )
+  const [[queueHistoryRaw, wipCycleRaw, prSizesRaw], excludedCount] =
+    await Promise.all([
+      getOrgCachedData(
+        organization.id,
+        cacheKey,
+        () =>
+          Promise.all([
+            getQueueHistoryRawData(
+              organization.id,
+              sinceDate,
+              teamParam,
+              normalizedPatterns,
+            ),
+            getWipCycleRawData(
+              organization.id,
+              sinceDate,
+              teamParam,
+              normalizedPatterns,
+            ),
+            getPRSizeDistribution(
+              organization.id,
+              sinceDate,
+              teamParam,
+              normalizedPatterns,
+            ),
+          ]),
+        FIVE_MINUTES,
+      ),
+      filterActive
+        ? Promise.all([
+            countWipCyclePullRequests(
+              organization.id,
+              sinceDate,
+              teamParam,
+              [],
+            ),
+            countWipCyclePullRequests(
+              organization.id,
+              sinceDate,
+              teamParam,
+              normalizedPatterns,
+            ),
+          ]).then(([unfiltered, filtered]) => unfiltered - filtered)
+        : Promise.resolve(0),
+    ])
 
   return {
     queueHistoryRaw,
@@ -88,14 +133,27 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     prSizesRaw,
     sinceDate,
     periodMonths,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
 export const clientLoader = async ({
   serverLoader,
 }: Route.ClientLoaderArgs) => {
-  const { queueHistoryRaw, wipCycleRaw, prSizesRaw, sinceDate, periodMonths } =
-    await serverLoader()
+  const {
+    queueHistoryRaw,
+    wipCycleRaw,
+    prSizesRaw,
+    sinceDate,
+    periodMonths,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
+  } = await serverLoader()
 
   const wipCounts = computeWipCounts(wipCycleRaw)
 
@@ -111,6 +169,10 @@ export const clientLoader = async ({
     prSizes: aggregatePRSize(prSizesRaw),
     prSizesRaw,
     periodMonths,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
   }
 }
 clientLoader.hydrate = true as const
@@ -136,6 +198,10 @@ export default function ReviewsPage({
     prSizes,
     prSizesRaw,
     periodMonths,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
   },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
@@ -172,6 +238,13 @@ export default function ReviewsPage({
           </Select>
         </PageHeaderActions>
       </PageHeader>
+
+      <PrTitleFilterBanner
+        excludedCount={excludedCount}
+        filterActive={filterActive}
+        showFiltered={showFiltered}
+        isAdmin={isAdmin}
+      />
 
       <div className="space-y-6">
         <QueueTrendChart data={queueTrend} />

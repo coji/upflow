@@ -2,6 +2,7 @@ import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 import { calcPagination } from '~/app/libs/db-utils'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
+import { excludePrTitleFilters } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { DB as TenantDB } from '~/app/services/tenant-type'
 import type { OrganizationId } from '~/app/types/organization'
@@ -13,6 +14,7 @@ function feedbackBaseQuery(
   tenantDb: Kysely<TenantDB>,
   sinceDate: string,
   teamId?: string,
+  normalizedPatterns: readonly string[] = [],
 ) {
   let query = tenantDb
     .selectFrom('pullRequestFeedbacks')
@@ -31,6 +33,7 @@ function feedbackBaseQuery(
     )
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .where('pullRequestFeedbacks.updatedAt', '>=', sinceDate)
+    .where(excludePrTitleFilters(normalizedPatterns))
 
   if (teamId) {
     query = query.where('repositories.teamId', '=', teamId)
@@ -47,6 +50,7 @@ interface ListFilteredFeedbacksArgs {
   pageSize: number
   sortBy?: string
   sortOrder: 'asc' | 'desc'
+  normalizedPatterns?: readonly string[]
 }
 
 export const listFilteredFeedbacks = async ({
@@ -57,9 +61,15 @@ export const listFilteredFeedbacks = async ({
   pageSize,
   sortBy,
   sortOrder,
+  normalizedPatterns = [],
 }: ListFilteredFeedbacksArgs) => {
   const tenantDb = getTenantDb(organizationId)
-  const base = feedbackBaseQuery(tenantDb, sinceDate, teamId)
+  const base = feedbackBaseQuery(
+    tenantDb,
+    sinceDate,
+    teamId,
+    normalizedPatterns,
+  )
 
   const dataQuery = base
     .leftJoin('teams', 'repositories.teamId', 'teams.id')
@@ -123,16 +133,23 @@ interface GetFeedbackSummaryArgs {
   organizationId: OrganizationId
   teamId?: string
   sinceDate: string
+  normalizedPatterns?: readonly string[]
 }
 
 export const getFeedbackSummary = async ({
   organizationId,
   teamId,
   sinceDate,
+  normalizedPatterns = [],
 }: GetFeedbackSummaryArgs) => {
   const tenantDb = getTenantDb(organizationId)
 
-  const rows = await feedbackBaseQuery(tenantDb, sinceDate, teamId)
+  const rows = await feedbackBaseQuery(
+    tenantDb,
+    sinceDate,
+    teamId,
+    normalizedPatterns,
+  )
     .select([
       'pullRequestFeedbacks.originalComplexity',
       'pullRequestFeedbacks.correctedComplexity',

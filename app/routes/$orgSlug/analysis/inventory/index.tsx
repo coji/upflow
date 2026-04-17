@@ -17,15 +17,21 @@ import {
 import { Switch } from '~/app/components/ui/switch'
 import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
+import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
 import { getOrgCachedData } from '~/app/services/cache.server'
+import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
-import { getOpenPRInventoryRawData } from './+functions/queries.server'
+import {
+  countOpenPRInventory,
+  getOpenPRInventoryRawData,
+} from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = {
@@ -42,7 +48,7 @@ const PERIOD_OPTIONS = [
 const VALID_PERIODS = [1, 3, 6, 12] as const
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
@@ -56,28 +62,58 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const excludeBots = url.searchParams.get('excludeBots') !== '0'
   const unreviewedOnly = url.searchParams.get('unreviewedOnly') === '1'
+  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   const sinceDate = calcSinceDate(periodMonths, timezone)
 
   const now = dayjs.utc().toISOString()
 
-  const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}`
+  const normalizedPatterns = showFiltered
+    ? []
+    : await listEnabledPrTitleFilterPatterns(organization.id)
+  const filterActive = !showFiltered && normalizedPatterns.length > 0
+
+  const sf = showFiltered ? 't' : 'f'
+  const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}:sf=${sf}`
 
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const rawRows = await getOrgCachedData(
-    organization.id,
-    cacheKey,
-    () =>
-      getOpenPRInventoryRawData(
-        organization.id,
-        sinceDate,
-        now,
-        teamParam,
-        excludeBots,
-      ),
-    FIVE_MINUTES,
-  )
+  const [rawRows, excludedCount] = await Promise.all([
+    getOrgCachedData(
+      organization.id,
+      cacheKey,
+      () =>
+        getOpenPRInventoryRawData(
+          organization.id,
+          sinceDate,
+          now,
+          teamParam,
+          excludeBots,
+          normalizedPatterns,
+        ),
+      FIVE_MINUTES,
+    ),
+    filterActive
+      ? Promise.all([
+          countOpenPRInventory(
+            organization.id,
+            sinceDate,
+            now,
+            teamParam,
+            excludeBots,
+            [],
+          ),
+          countOpenPRInventory(
+            organization.id,
+            sinceDate,
+            now,
+            teamParam,
+            excludeBots,
+            normalizedPatterns,
+          ),
+        ]).then(([unfiltered, filtered]) => unfiltered - filtered)
+      : Promise.resolve(0),
+  ])
 
   return {
     rawRows,
@@ -87,6 +123,10 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     periodMonths,
     excludeBots,
     unreviewedOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
@@ -101,6 +141,10 @@ export const clientLoader = async ({
     periodMonths,
     excludeBots,
     unreviewedOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
   } = await serverLoader()
 
   return {
@@ -114,6 +158,10 @@ export const clientLoader = async ({
     periodMonths,
     excludeBots,
     unreviewedOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
   }
 }
 clientLoader.hydrate = true as const
@@ -132,7 +180,16 @@ export function HydrateFallback() {
 }
 
 export default function InventoryPage({
-  loaderData: { inventory, periodMonths, excludeBots, unreviewedOnly },
+  loaderData: {
+    inventory,
+    periodMonths,
+    excludeBots,
+    unreviewedOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
+  },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
 
@@ -207,6 +264,13 @@ export default function InventoryPage({
           </HStack>
         </PageHeaderActions>
       </PageHeader>
+
+      <PrTitleFilterBanner
+        excludedCount={excludedCount}
+        filterActive={filterActive}
+        showFiltered={showFiltered}
+        isAdmin={isAdmin}
+      />
 
       <OpenPRInventoryChart data={inventory} />
     </Stack>
