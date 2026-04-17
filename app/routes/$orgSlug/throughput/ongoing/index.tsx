@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
+  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
@@ -21,7 +22,7 @@ import {
 } from '~/app/libs/pr-title-filter.server'
 import { median as calcMedian } from '~/app/libs/stats'
 import { orgContext, teamContext } from '~/app/middleware/context'
-import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
 import {
@@ -114,14 +115,15 @@ export default function OngoingPage({
             Pull requests currently in progress.
           </PageHeaderDescription>
         </PageHeaderHeading>
+        <PageHeaderActions>
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            isAdmin={isAdmin}
+          />
+        </PageHeaderActions>
       </PageHeader>
-
-      <PrTitleFilterBanner
-        excludedCount={excludedCount}
-        filterActive={filterActive}
-        showFiltered={showFiltered}
-        isAdmin={isAdmin}
-      />
 
       <AppDataTable
         columns={columns}

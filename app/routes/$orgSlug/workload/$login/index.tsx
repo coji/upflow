@@ -29,7 +29,7 @@ import {
   type PRBlockData,
   type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
-import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import {
   buildPRReviewerStatesMap,
   classifyPRReviewStatus,
@@ -346,14 +346,13 @@ export default function MemberWeeklyPage({
             ← Review Stacks
           </Link>
         </HStack>
+        <PrTitleFilterStatus
+          excludedCount={excludedCount}
+          filterActive={filterActive}
+          showFiltered={showFiltered}
+          isAdmin={isAdmin}
+        />
       </div>
-
-      <PrTitleFilterBanner
-        excludedCount={excludedCount}
-        filterActive={filterActive}
-        showFiltered={showFiltered}
-        isAdmin={isAdmin}
-      />
 
       <HStack>
         <Avatar className="size-10">

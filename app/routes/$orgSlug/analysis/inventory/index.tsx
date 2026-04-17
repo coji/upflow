@@ -27,7 +27,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
@@ -193,6 +193,12 @@ export default function InventoryPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions className="flex flex-wrap">
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            isAdmin={isAdmin}
+          />
           <Select
             value={String(periodMonths)}
             onValueChange={(value) => {
@@ -253,13 +259,6 @@ export default function InventoryPage({
           </HStack>
         </PageHeaderActions>
       </PageHeader>
-
-      <PrTitleFilterBanner
-        excludedCount={excludedCount}
-        filterActive={filterActive}
-        showFiltered={showFiltered}
-        isAdmin={isAdmin}
-      />
 
       <OpenPRInventoryChart data={inventory} />
     </Stack>

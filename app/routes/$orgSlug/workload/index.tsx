@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   PageHeader,
+  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
@@ -13,8 +14,8 @@ import {
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
 import { PRHideByTitleFilterContext } from '~/app/routes/$orgSlug/+components/pr-block'
-import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
 import { PrTitleFilterSheet } from '~/app/routes/$orgSlug/+components/pr-title-filter-sheet'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
 import {
@@ -149,14 +150,15 @@ export default function ReviewStacksPage({
               Monitor review workload balance across team members.
             </PageHeaderDescription>
           </PageHeaderHeading>
+          <PageHeaderActions>
+            <PrTitleFilterStatus
+              excludedCount={excludedCount}
+              filterActive={filterActive}
+              showFiltered={showFiltered}
+              isAdmin={isAdmin}
+            />
+          </PageHeaderActions>
         </PageHeader>
-
-        <PrTitleFilterBanner
-          excludedCount={excludedCount}
-          filterActive={filterActive}
-          showFiltered={showFiltered}
-          isAdmin={isAdmin}
-        />
 
         <TeamStacksChart data={teamStacks} />
       </Stack>

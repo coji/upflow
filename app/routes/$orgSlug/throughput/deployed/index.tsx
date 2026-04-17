@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
+  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
@@ -26,7 +27,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { DiffBadge } from '../+components/diff-badge'
 import { StatCard } from '../+components/stat-card'
 import { calcStats } from '../+functions/calc-stats'
@@ -154,14 +155,15 @@ export default function DeployedPage({
             Pull requests deployed this week with cycle time metrics.
           </PageHeaderDescription>
         </PageHeaderHeading>
+        <PageHeaderActions>
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            isAdmin={isAdmin}
+          />
+        </PageHeaderActions>
       </PageHeader>
-
-      <PrTitleFilterBanner
-        excludedCount={excludedCount}
-        filterActive={filterActive}
-        showFiltered={showFiltered}
-        isAdmin={isAdmin}
-      />
 
       <AppDataTable
         title={

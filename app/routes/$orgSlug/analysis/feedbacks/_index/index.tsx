@@ -39,7 +39,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
@@ -163,6 +163,12 @@ export default function FeedbacksPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            isAdmin={isAdmin}
+          />
           <Select
             value={String(periodMonths)}
             onValueChange={(value) => {
@@ -186,13 +192,6 @@ export default function FeedbacksPage({
           </Select>
         </PageHeaderActions>
       </PageHeader>
-
-      <PrTitleFilterBanner
-        excludedCount={excludedCount}
-        filterActive={filterActive}
-        showFiltered={showFiltered}
-        isAdmin={isAdmin}
-      />
 
       <div className="space-y-6">
         <FeedbackSummaryCards summary={summary} />
