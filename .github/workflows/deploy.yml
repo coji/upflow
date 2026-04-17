@@ -20,7 +20,7 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         name: Install pnpm
 
       - name: ⎔ Setup node
@@ -41,7 +41,7 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         name: Install pnpm
 
       - name: ⎔ Setup node
@@ -62,7 +62,7 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         name: Install pnpm
 
       - name: ⎔ Setup node
@@ -89,7 +89,7 @@ jobs:
       - name: 🏄 Copy test env vars
         run: cp .env.example .env
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         name: Install pnpm
 
       - name: ⎔ Setup node
@@ -124,16 +124,21 @@ jobs:
     # only build/deploy main branch on pushes
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.app_name.outputs.value }}
     steps:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v6
 
       - name: 👀 Read app name
-        uses: SebRollen/toml-action@v1.2.0
         id: app_name
-        with:
-          file: 'fly.toml'
-          field: 'app'
+        run: |
+          value=$(awk -F'"' '/^app = /{print $2; exit}' fly.toml)
+          if [ -z "$value" ]; then
+            echo "::error file=fly.toml::Could not read app name from fly.toml (expected 'app = \"...\"' line)"
+            exit 1
+          fi
+          echo "value=$value" >> "$GITHUB_OUTPUT"
 
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -172,16 +177,9 @@ jobs:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v6
 
-      - name: 👀 Read app name
-        uses: SebRollen/toml-action@v1.2.0
-        id: app_name
-        with:
-          file: 'fly.toml'
-          field: 'app'
-
       - name: 🚀 Deploy Production
         uses: superfly/flyctl-actions@1.5
         with:
-          args: 'deploy --image registry.fly.io/${{ steps.app_name.outputs.value }}:${{ github.ref_name }}-${{ github.sha }}'
+          args: 'deploy --image registry.fly.io/${{ needs.build.outputs.app_name }}:${{ github.ref_name }}-${{ github.sha }}'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
