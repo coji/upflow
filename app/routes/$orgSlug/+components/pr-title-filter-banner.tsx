@@ -1,7 +1,5 @@
 import { FilterIcon, FilterXIcon } from 'lucide-react'
 import { Link, href, useLocation, useParams } from 'react-router'
-import { Alert, AlertDescription } from '~/app/components/ui/alert'
-import { Button } from '~/app/components/ui/button'
 
 export interface PrFilterBannerState {
   excludedCount: number
@@ -32,19 +30,17 @@ export function PrTitleFilterBanner({
       params.toString() ? `?${params.toString()}` : ''
     }`
     return (
-      <Alert>
-        <FilterXIcon />
-        <AlertDescription>
-          <div className="flex items-center justify-between gap-2">
-            <span>Title filter disabled. Showing all PRs.</span>
-            <Button asChild size="sm" variant="outline">
-              <Link to={restoreHref} replace>
-                Re-enable filter
-              </Link>
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
+      <div className="text-muted-foreground flex items-center gap-2 text-xs">
+        <FilterXIcon size={12} />
+        <span>Title filter disabled. Showing all PRs.</span>
+        <Link
+          to={restoreHref}
+          replace
+          className="text-foreground underline-offset-2 hover:underline"
+        >
+          Re-enable
+        </Link>
+      </div>
     )
   }
 
@@ -60,28 +56,32 @@ export function PrTitleFilterBanner({
     orgSlug != null ? href('/:orgSlug/settings/pr-filters', { orgSlug }) : null
 
   return (
-    <Alert>
-      <FilterIcon />
-      <AlertDescription>
-        <div className="flex items-center justify-between gap-2">
-          <span>
-            {excludedCount} PR{excludedCount === 1 ? '' : 's'} hidden by title
-            filter in this view.
+    <div className="text-muted-foreground flex items-center gap-2 text-xs">
+      <FilterIcon size={12} />
+      <span>
+        {excludedCount} hidden by title filter
+        <span aria-hidden> · </span>
+      </span>
+      <Link
+        to={showAllHref}
+        replace
+        className="text-foreground underline-offset-2 hover:underline"
+      >
+        Show all
+      </Link>
+      {isAdmin && settingsHref != null && (
+        <>
+          <span aria-hidden className="text-muted-foreground">
+            ·
           </span>
-          <div className="flex gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link to={showAllHref} replace>
-                Show all
-              </Link>
-            </Button>
-            {isAdmin && settingsHref != null && (
-              <Button asChild size="sm" variant="outline">
-                <Link to={settingsHref}>Manage filters</Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </AlertDescription>
-    </Alert>
+          <Link
+            to={settingsHref}
+            className="text-foreground underline-offset-2 hover:underline"
+          >
+            Manage
+          </Link>
+        </>
+      )}
+    </div>
   )
 }

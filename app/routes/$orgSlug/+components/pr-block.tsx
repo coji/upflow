@@ -1,7 +1,14 @@
+import { MoreHorizontalIcon } from 'lucide-react'
 import { createContext, useContext } from 'react'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Button } from '~/app/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/app/components/ui/dropdown-menu'
 import {
   Popover,
   PopoverContent,
@@ -287,6 +294,26 @@ export function PRPopoverContent({
             {stateInfo.icon} {stateInfo.text}
           </span>
         )}
+        {onHideByTitle && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="ml-auto size-5"
+                aria-label="More actions"
+              >
+                <MoreHorizontalIcon size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => onHideByTitle(pr.title)}>
+                Hide PRs by title…
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       <p className="line-clamp-3 text-xs">{pr.title}</p>
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
@@ -325,19 +352,6 @@ export function PRPopoverContent({
               </div>
             )
           })}
-        </div>
-      )}
-      {onHideByTitle && (
-        <div className="mt-1.5 border-t pt-1.5">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-6 w-full justify-start text-xs"
-            onClick={() => onHideByTitle(pr.title)}
-          >
-            Hide PRs by title…
-          </Button>
         </div>
       )}
     </div>
