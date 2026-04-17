@@ -45,3 +45,30 @@ export function excludePrTitleFilters(normalizedPatterns: readonly string[]) {
     )
   }
 }
+
+/**
+ * `excludePrTitleFilters` と対になる filtered 件数の集計式。
+ *
+ * `SUM(CASE WHEN <no-match-predicate> THEN 1 ELSE 0 END)` を 1 クエリ内で
+ * 評価することで、unfiltered / filtered の 2 回 scan を 1 回に纏められる。
+ * `countAll()` (unfiltered) と組み合わせて select に並べることで、
+ * バナー用 excludedCount を単一 query で計算できる。
+ *
+ * normalizedPatterns 空の場合は countAll() と同じ値を返す (filtered = unfiltered)。
+ */
+export function filteredPullRequestCount(
+  normalizedPatterns: readonly string[],
+) {
+  return (eb: ExpressionBuilder<TenantDB.DB, 'pullRequests'>) =>
+    eb.fn.coalesce(
+      eb.fn.sum<number>(
+        eb
+          .case()
+          .when(excludePrTitleFilters(normalizedPatterns)(eb))
+          .then(eb.lit(1))
+          .else(eb.lit(0))
+          .end(),
+      ),
+      eb.lit(0),
+    )
+}

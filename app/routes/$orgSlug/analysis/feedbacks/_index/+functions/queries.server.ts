@@ -2,7 +2,11 @@ import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 import { calcPagination } from '~/app/libs/db-utils'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
-import { excludePrTitleFilters } from '~/app/libs/tenant-query.server'
+import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import {
+  excludePrTitleFilters,
+  filteredPullRequestCount,
+} from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { DB as TenantDB } from '~/app/services/tenant-type'
 import type { OrganizationId } from '~/app/types/organization'
@@ -131,7 +135,8 @@ export type FeedbackRow = Awaited<
 
 /**
  * Filter 適用前後の count 比較用に feedback 件数だけを返す軽量 query。
- * バナー excludedCount 算出で summary を 2 回計算するのを避けるために使う。
+ * バナー excludedCount 算出で summary を 2 回計算するのを避ける。
+ * 単一クエリで unfiltered / filtered を SUM(CASE WHEN ...) で同時集計する。
  */
 export const countFeedbacks = async ({
   organizationId,
@@ -143,19 +148,22 @@ export const countFeedbacks = async ({
   teamId?: string
   sinceDate: string
   normalizedPatterns?: readonly string[]
-}): Promise<number> => {
+}): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
-  const row = await feedbackBaseQuery(
-    tenantDb,
-    sinceDate,
-    teamId,
-    normalizedPatterns,
-  )
-    .select((eb) =>
-      eb.fn.count<string>('pullRequestFeedbacks.pullRequestNumber').as('count'),
-    )
-    .executeTakeFirst()
-  return Number(row?.count ?? 0)
+  // base query は excludePrTitleFilters を含むので、unfiltered 側は素の base
+  // (patterns 空) で組み立てて 1 クエリで unfiltered/filtered を集計する。
+  const row = await feedbackBaseQuery(tenantDb, sinceDate, teamId, [])
+    .select((eb) => [
+      eb.fn
+        .count<string>('pullRequestFeedbacks.pullRequestNumber')
+        .as('unfiltered'),
+      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
+    ])
+    .executeTakeFirstOrThrow()
+  return {
+    unfiltered: Number(row.unfiltered),
+    filtered: Number(row.filtered),
+  }
 }
 
 interface GetFeedbackSummaryArgs {

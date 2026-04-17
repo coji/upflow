@@ -28,18 +28,23 @@ export const loadPrFilterState = async (
   }
 }
 
+export interface FilterCountStats {
+  /** フィルタ無視の総件数 */
+  unfiltered: number
+  /** フィルタ適用後に残る件数 */
+  filtered: number
+}
+
 /**
- * Computes the excluded-count banner value by running `counter` twice
- * (unfiltered vs filtered) in parallel. Skips when filter isn't active.
+ * Computes the excluded-count banner value. `counter` は SUM(CASE WHEN ...)
+ * 併用で unfiltered と filtered の両方を 1 クエリで返すこと。Skips when filter
+ * isn't active.
  */
 export const computeExcludedCount = async (
   state: PrFilterLoaderState,
-  counter: (patterns: readonly string[]) => Promise<number>,
+  counter: (patterns: readonly string[]) => Promise<FilterCountStats>,
 ): Promise<number> => {
   if (!state.filterActive) return 0
-  const [unfiltered, filtered] = await Promise.all([
-    counter([]),
-    counter(state.normalizedPatterns),
-  ])
+  const { unfiltered, filtered } = await counter(state.normalizedPatterns)
   return unfiltered - filtered
 }

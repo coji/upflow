@@ -1,6 +1,8 @@
+import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import {
   excludeBots,
   excludePrTitleFilters,
+  filteredPullRequestCount,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -48,14 +50,15 @@ export const getOpenPullRequests = async (
 }
 
 /**
- * Review Stacks バナー用に、open PR の distinct 件数 (author ビュー基準) を返す。
- * normalizedPatterns 空 = unfiltered total, 値入り = filtered total として 2 回呼ぶ想定。
+ * Review Stacks バナー用に、open PR の unfiltered / filtered 件数 (author ビュー基準)
+ * を 1 クエリで返す。SUM(CASE WHEN ...) で filtered 側を同一 scan で集計することで
+ * 2 回 count を避ける。
  */
 export const countOpenPullRequests = async (
   organizationId: OrganizationId,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
-): Promise<number> => {
+): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
     .selectFrom('pullRequests')
@@ -73,10 +76,15 @@ export const countOpenPullRequests = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
-    .where(excludePrTitleFilters(normalizedPatterns))
-    .select((eb) => eb.fn.countAll<number>().as('cnt'))
+    .select((eb) => [
+      eb.fn.countAll<number>().as('unfiltered'),
+      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
+    ])
     .executeTakeFirstOrThrow()
-  return Number(row.cnt)
+  return {
+    unfiltered: Number(row.unfiltered),
+    filtered: Number(row.filtered),
+  }
 }
 
 /**

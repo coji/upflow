@@ -1,4 +1,8 @@
-import { excludePrTitleFilters } from '~/app/libs/tenant-query.server'
+import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import {
+  excludePrTitleFilters,
+  filteredPullRequestCount,
+} from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -30,7 +34,7 @@ export const countCreatedPRs = async (
   from: string,
   to: string,
   normalizedPatterns: readonly string[] = [],
-): Promise<number> => {
+): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
     .selectFrom('pullRequests')
@@ -39,10 +43,15 @@ export const countCreatedPRs = async (
     )
     .where('pullRequestCreatedAt', '>=', from)
     .where('pullRequestCreatedAt', '<=', to)
-    .where(excludePrTitleFilters(normalizedPatterns))
-    .select((eb) => eb.fn.countAll<number>().as('cnt'))
+    .select((eb) => [
+      eb.fn.countAll<number>().as('unfiltered'),
+      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
+    ])
     .executeTakeFirstOrThrow()
-  return Number(row.cnt)
+  return {
+    unfiltered: Number(row.unfiltered),
+    filtered: Number(row.filtered),
+  }
 }
 
 export const getCreatedPRs = async (

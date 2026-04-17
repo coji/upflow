@@ -1,8 +1,10 @@
 import { pipe, sortBy } from 'remeda'
 import { diffInDays } from '~/app/libs/business-hours'
+import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import {
   excludeBots,
   excludePrTitleFilters,
+  filteredPullRequestCount,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -99,7 +101,7 @@ export const countMergedPullRequests = async (
   toDateTime: string | null,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
-): Promise<number> => {
+): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
     .selectFrom('pullRequests')
@@ -119,8 +121,13 @@ export const countMergedPullRequests = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
-    .where(excludePrTitleFilters(normalizedPatterns))
-    .select((eb) => eb.fn.countAll<number>().as('cnt'))
+    .select((eb) => [
+      eb.fn.countAll<number>().as('unfiltered'),
+      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
+    ])
     .executeTakeFirstOrThrow()
-  return Number(row.cnt)
+  return {
+    unfiltered: Number(row.unfiltered),
+    filtered: Number(row.filtered),
+  }
 }

@@ -1,19 +1,14 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { closeTenantDb, getTenantDb } from '~/app/services/tenant-db.server'
 import { type OrganizationId, toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
-import { excludePrTitleFilters } from './tenant-query.server'
+import {
+  excludePrTitleFilters,
+  filteredPullRequestCount,
+} from './tenant-query.server'
 
 const testDir = path.join(tmpdir(), `tenant-query-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -70,10 +65,6 @@ async function seedRepoAndPR(
 
 describe('excludePrTitleFilters', () => {
   let orgId: OrganizationId
-
-  afterAll(() => {
-    vi.unstubAllEnvs()
-  })
 
   beforeEach(() => {
     orgId = createFreshOrg()
@@ -155,5 +146,83 @@ describe('excludePrTitleFilters', () => {
       .execute()
 
     expect(rows.map((r) => r.number)).toEqual([2])
+  })
+})
+
+describe('filteredPullRequestCount', () => {
+  let orgId: OrganizationId
+
+  beforeEach(() => {
+    orgId = createFreshOrg()
+  })
+
+  afterEach(async () => {
+    await closeTenantDb(orgId)
+  })
+
+  test('unfiltered = filtered when patterns empty', async () => {
+    await seedRepoAndPR(orgId, 1, '[DO NOT MERGE] fix')
+    await seedRepoAndPR(orgId, 2, 'regular')
+
+    const row = await getTenantDb(orgId)
+      .selectFrom('pullRequests')
+      .select((eb) => [
+        eb.fn.countAll<number>().as('unfiltered'),
+        filteredPullRequestCount([])(eb).as('filtered'),
+      ])
+      .executeTakeFirstOrThrow()
+
+    expect(Number(row.unfiltered)).toBe(2)
+    expect(Number(row.filtered)).toBe(2)
+  })
+
+  test('filtered excludes matching rows within a single query', async () => {
+    await seedRepoAndPR(orgId, 1, '[DO NOT MERGE] fix')
+    await seedRepoAndPR(orgId, 2, '[EPIC-123] feature')
+    await seedRepoAndPR(orgId, 3, 'regular')
+
+    const row = await getTenantDb(orgId)
+      .selectFrom('pullRequests')
+      .select((eb) => [
+        eb.fn.countAll<number>().as('unfiltered'),
+        filteredPullRequestCount(['[do not merge]', '[epic-'])(eb).as(
+          'filtered',
+        ),
+      ])
+      .executeTakeFirstOrThrow()
+
+    expect(Number(row.unfiltered)).toBe(3)
+    expect(Number(row.filtered)).toBe(1)
+  })
+
+  test('returns 0 filtered when no rows match filter (still a single query)', async () => {
+    await seedRepoAndPR(orgId, 1, 'plain one')
+    await seedRepoAndPR(orgId, 2, 'plain two')
+
+    const row = await getTenantDb(orgId)
+      .selectFrom('pullRequests')
+      .select((eb) => [
+        eb.fn.countAll<number>().as('unfiltered'),
+        filteredPullRequestCount(['zzz-never-matches'])(eb).as('filtered'),
+      ])
+      .executeTakeFirstOrThrow()
+
+    expect(Number(row.unfiltered)).toBe(2)
+    expect(Number(row.filtered)).toBe(2)
+  })
+
+  test('coalesces to 0 when the query selects zero rows', async () => {
+    // 0 rows via where filter
+    const row = await getTenantDb(orgId)
+      .selectFrom('pullRequests')
+      .where('number', '=', 9999)
+      .select((eb) => [
+        eb.fn.countAll<number>().as('unfiltered'),
+        filteredPullRequestCount(['foo'])(eb).as('filtered'),
+      ])
+      .executeTakeFirstOrThrow()
+
+    expect(Number(row.unfiltered)).toBe(0)
+    expect(Number(row.filtered)).toBe(0)
   })
 })
