@@ -5,24 +5,30 @@ import {
   PageHeaderTitle,
 } from '~/app/components/layout/page-header'
 import { Stack } from '~/app/components/ui/stack'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import { orgContext, teamContext } from '~/app/middleware/context'
+import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
 import {
   DEFAULT_PERSONAL_LIMIT,
   aggregateTeamStacks,
 } from './+functions/aggregate-stacks'
 import {
+  countOpenPullRequests,
   getOpenPullRequestReviews,
   getOpenPullRequests,
   getPendingReviewAssignments,
 } from './+functions/stacks.server'
 import type { Route } from './+types/index'
 
-export const loader = async ({ context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+export const loader = async ({ context, request }: Route.LoaderArgs) => {
+  const { organization, membership } = context.get(orgContext)
 
   const teamParam = context.get(teamContext)
+  const url = new URL(request.url)
+  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   const teams = await listTeams(organization.id)
   const selectedTeam = teamParam
@@ -35,25 +41,49 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
       ? Math.max(...teams.map((t) => t.personalLimit))
       : DEFAULT_PERSONAL_LIMIT
 
-  const [openPRs, pendingReviews, reviewHistory] = await Promise.all([
-    getOpenPullRequests(organization.id, teamId),
-    getPendingReviewAssignments(organization.id, teamId),
-    getOpenPullRequestReviews(organization.id, teamId),
-  ])
+  const normalizedPatterns = showFiltered
+    ? []
+    : await listEnabledPrTitleFilterPatterns(organization.id)
+  const filterActive = !showFiltered && normalizedPatterns.length > 0
+
+  const [openPRs, pendingReviews, reviewHistory, excludedCount] =
+    await Promise.all([
+      getOpenPullRequests(organization.id, teamId, normalizedPatterns),
+      getPendingReviewAssignments(organization.id, teamId, normalizedPatterns),
+      getOpenPullRequestReviews(organization.id, teamId, normalizedPatterns),
+      filterActive
+        ? Promise.all([
+            countOpenPullRequests(organization.id, teamId, []),
+            countOpenPullRequests(organization.id, teamId, normalizedPatterns),
+          ]).then(([unfiltered, filtered]) => unfiltered - filtered)
+        : Promise.resolve(0),
+    ])
 
   return {
     openPRs,
     pendingReviews,
     reviewHistory,
     personalLimit,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
 export const clientLoader = async ({
   serverLoader,
 }: Route.ClientLoaderArgs) => {
-  const { openPRs, pendingReviews, reviewHistory, personalLimit } =
-    await serverLoader()
+  const {
+    openPRs,
+    pendingReviews,
+    reviewHistory,
+    personalLimit,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
+  } = await serverLoader()
 
   return {
     teamStacks: aggregateTeamStacks({
@@ -62,6 +92,10 @@ export const clientLoader = async ({
       reviewHistory,
       personalLimit,
     }),
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
   }
 }
 clientLoader.hydrate = true as const
@@ -82,7 +116,13 @@ export function HydrateFallback() {
 }
 
 export default function ReviewStacksPage({
-  loaderData: { teamStacks },
+  loaderData: {
+    teamStacks,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
+  },
 }: Route.ComponentProps) {
   return (
     <Stack>
@@ -94,6 +134,13 @@ export default function ReviewStacksPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
       </PageHeader>
+
+      <PrTitleFilterBanner
+        excludedCount={excludedCount}
+        filterActive={filterActive}
+        showFiltered={showFiltered}
+        isAdmin={isAdmin}
+      />
 
       <TeamStacksChart data={teamStacks} />
     </Stack>
