@@ -31,6 +31,9 @@ export function PrTitleFilterStatus({
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const location = useLocation()
 
+  const settingsHref =
+    orgSlug != null ? href('/:orgSlug/settings/pr-filters', { orgSlug }) : null
+
   if (showFiltered) {
     const params = new URLSearchParams(location.search)
     params.delete('showFiltered')
@@ -38,18 +41,34 @@ export function PrTitleFilterStatus({
       params.toString() ? `?${params.toString()}` : ''
     }`
     return (
-      <Button
-        asChild
-        size="sm"
-        variant="outline"
-        className="h-8 gap-1.5"
-        title="Re-enable title filter"
-      >
-        <Link to={restoreHref} replace aria-label="Re-enable title filter">
-          <FilterXIcon size={14} />
-          Filter off
-        </Link>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-muted-foreground h-8 gap-1.5"
+            aria-label="Title filter is off"
+          >
+            <FilterXIcon size={14} />
+            Filter off
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link to={restoreHref} replace>
+              Re-enable filter
+            </Link>
+          </DropdownMenuItem>
+          {isAdmin && settingsHref != null && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to={settingsHref}>Manage filters…</Link>
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     )
   }
 
@@ -60,9 +79,6 @@ export function PrTitleFilterStatus({
   const params = new URLSearchParams(location.search)
   params.set('showFiltered', '1')
   const showAllHref = `${location.pathname}?${params.toString()}`
-
-  const settingsHref =
-    orgSlug != null ? href('/:orgSlug/settings/pr-filters', { orgSlug }) : null
 
   return (
     <DropdownMenu>
