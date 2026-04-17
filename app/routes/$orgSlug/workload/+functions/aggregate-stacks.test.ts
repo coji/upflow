@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  AUTO_MERGE_SUGGESTION_THRESHOLD,
-  DEFAULT_PERSONAL_LIMIT,
-  aggregateTeamStacks,
-} from './aggregate-stacks'
+import { DEFAULT_PERSONAL_LIMIT, aggregateTeamStacks } from './aggregate-stacks'
 
 function makePR(
   overrides: Partial<{
@@ -83,7 +79,7 @@ function makeReview(
 }
 
 describe('aggregateTeamStacks', () => {
-  test('empty data returns empty stacks and no insight', () => {
+  test('empty data returns empty stacks', () => {
     const result = aggregateTeamStacks({ openPRs: [], pendingReviews: [] })
     expect(result).toEqual({
       authorStacks: [],
@@ -92,8 +88,6 @@ describe('aggregateTeamStacks', () => {
       approvedAwaitingMergePRs: [],
       changesPendingPRs: [],
       personalLimit: DEFAULT_PERSONAL_LIMIT,
-      insight: null,
-      autoMergeSuggestion: false,
     })
   })
 
@@ -522,146 +516,6 @@ describe('aggregateTeamStacks', () => {
       expect(alice.prs.find((p) => p.number === 2)?.reviewStatus).toBe(
         'unassigned',
       )
-    })
-  })
-
-  describe('insight generation', () => {
-    test('generates insight when authors exceed personal limit', () => {
-      const openPRs = [
-        makePR({ author: 'alice', number: 1 }),
-        makePR({ author: 'alice', number: 2 }),
-        makePR({ author: 'alice', number: 3 }),
-      ]
-      const pendingReviews = [
-        makeReview({ reviewer: 'bob', number: 1 }),
-        makeReview({ reviewer: 'bob', number: 2 }),
-        makeReview({ reviewer: 'bob', number: 3 }),
-      ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews,
-        personalLimit: 2,
-      })
-
-      expect(result.insight).toContain('1人が目安（2件）を超過中')
-    })
-
-    test('generates insight when reviewer has concentrated reviews', () => {
-      const openPRs = [
-        makePR({ author: 'alice', number: 1 }),
-        makePR({ author: 'alice', number: 2 }),
-        makePR({ author: 'alice', number: 3 }),
-      ]
-      const pendingReviews = [
-        makeReview({ reviewer: 'bob', number: 1 }),
-        makeReview({ reviewer: 'bob', number: 2 }),
-        makeReview({ reviewer: 'bob', number: 3 }),
-      ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews,
-        personalLimit: 2,
-      })
-
-      expect(result.insight).toContain('bobに3件のレビューが集中')
-    })
-
-    test('generates insight for truly unassigned PRs', () => {
-      const openPRs = [makePR({ author: 'alice', number: 1 })]
-      const result = aggregateTeamStacks({ openPRs, pendingReviews: [] })
-
-      expect(result.insight).toContain('1件のPRがレビュアー未アサイン')
-    })
-
-    test('generates insight for approved-awaiting-merge PRs', () => {
-      const openPRs = [makePR({ number: 1 })]
-      const reviewHistory = [
-        makeReviewHistory({ reviewer: 'bob', state: 'APPROVED' }),
-      ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews: [],
-        reviewHistory,
-      })
-
-      expect(result.insight).toContain('1件がApprove済みマージ待ち')
-    })
-
-    test('generates insight for changes-pending PRs', () => {
-      const openPRs = [makePR({ number: 1 })]
-      const reviewHistory = [
-        makeReviewHistory({ reviewer: 'bob', state: 'CHANGES_REQUESTED' }),
-      ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews: [],
-        reviewHistory,
-      })
-
-      expect(result.insight).toContain('1件が作者対応待ち')
-    })
-
-    test('autoMergeSuggestion false when approvedAwaitingMerge below threshold', () => {
-      const openPRs = Array.from(
-        { length: AUTO_MERGE_SUGGESTION_THRESHOLD - 1 },
-        (_, i) => makePR({ number: i + 1 }),
-      )
-      const reviewHistory = openPRs.map((pr) =>
-        makeReviewHistory({
-          number: pr.number,
-          reviewer: 'bob',
-          state: 'APPROVED',
-        }),
-      )
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews: [],
-        reviewHistory,
-      })
-
-      expect(result.autoMergeSuggestion).toBe(false)
-      expect(result.insight ?? '').not.toContain('auto-merge')
-    })
-
-    test('autoMergeSuggestion true when approvedAwaitingMerge at/above threshold', () => {
-      const openPRs = Array.from(
-        { length: AUTO_MERGE_SUGGESTION_THRESHOLD },
-        (_, i) => makePR({ number: i + 1 }),
-      )
-      const reviewHistory = openPRs.map((pr) =>
-        makeReviewHistory({
-          number: pr.number,
-          reviewer: 'bob',
-          state: 'APPROVED',
-        }),
-      )
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews: [],
-        reviewHistory,
-      })
-
-      expect(result.autoMergeSuggestion).toBe(true)
-      expect(result.insight).toContain('auto-merge-on-approved')
-    })
-
-    test('no insight when all within limit and all in-review', () => {
-      const openPRs = [
-        makePR({ author: 'alice', number: 1 }),
-        makePR({ author: 'bob', number: 2 }),
-      ]
-      const pendingReviews = [
-        makeReview({ reviewer: 'carol', number: 1 }),
-        makeReview({ reviewer: 'carol', number: 2 }),
-      ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews,
-        personalLimit: 5,
-      })
-
-      expect(result.insight).toBeNull()
-      expect(result.autoMergeSuggestion).toBe(false)
     })
   })
 

@@ -429,8 +429,6 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
     approvedAwaitingMergePRs,
     changesPendingPRs,
     personalLimit,
-    insight,
-    autoMergeSuggestion,
   } = data
   const reviewQueueBuckets: BucketConfig[] = [
     {
@@ -573,13 +571,6 @@ export function TeamStacksChart({ data }: { data: TeamStacksData }) {
                       ).
                     </p>
                   </div>
-                  {insight && (
-                    <p
-                      className={`text-center text-sm ${autoMergeSuggestion ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
-                    >
-                      {insight}
-                    </p>
-                  )}
                 </div>
               </SelectedSourceColumnContext>
             </ColorModeContext>
