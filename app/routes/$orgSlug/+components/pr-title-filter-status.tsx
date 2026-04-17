@@ -43,7 +43,6 @@ export function PrTitleFilterStatus({
       ? href('/:orgSlug/settings/pr-filters', { orgSlug })
       : null
 
-  // `showFiltered=1` かつ DB にパターン 0 件のときは Re-enable しても意味が無いので button を出さない
   if (showFiltered && hasAnyEnabledPattern) {
     return (
       <StatusDropdown

@@ -1,4 +1,7 @@
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
+import {
+  hasAnyEnabledPrTitleFilter,
+  listEnabledPrTitleFilterPatterns,
+} from '~/app/services/pr-title-filter-queries.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 export interface PrFilterLoaderState {
@@ -14,8 +17,8 @@ export interface PrFilterLoaderState {
 
 /**
  * Resolves `?showFiltered=1` URL param against enabled DB patterns.
- * `showFiltered=1` bypasses the filter (returns empty patterns) so the
- * "Show all" toggle reveals the underlying dataset without touching the DB.
+ * `showFiltered=1` では patterns 本体は matching に使わないので、
+ * 軽量な存在チェックだけ実施して DB 往復を減らす。
  */
 export const loadPrFilterState = async (
   request: Request,
@@ -23,11 +26,21 @@ export const loadPrFilterState = async (
 ): Promise<PrFilterLoaderState> => {
   const showFiltered =
     new URL(request.url).searchParams.get('showFiltered') === '1'
+  if (showFiltered) {
+    const hasAnyEnabledPattern =
+      await hasAnyEnabledPrTitleFilter(organizationId)
+    return {
+      showFiltered: true,
+      normalizedPatterns: [],
+      filterActive: false,
+      hasAnyEnabledPattern,
+    }
+  }
   const enabled = await listEnabledPrTitleFilterPatterns(organizationId)
   return {
-    showFiltered,
-    normalizedPatterns: showFiltered ? [] : enabled,
-    filterActive: !showFiltered && enabled.length > 0,
+    showFiltered: false,
+    normalizedPatterns: enabled,
+    filterActive: enabled.length > 0,
     hasAnyEnabledPattern: enabled.length > 0,
   }
 }

@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/app/components/ui/sheet'
+import { extractFormError } from '~/app/libs/form-error'
 import {
   extractPatternCandidates,
   matchesPattern,
@@ -45,8 +46,6 @@ export function PrTitleFilterSheet({
 }: PrTitleFilterSheetProps) {
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const titlesFetcher = useFetcher<{ titles: RecentTitleRow[]; days: number }>()
-  // lastResult は Conform の SubmissionResult 形状 (error['']?.[0] に formErrors)。
-  // UNIQUE 違反等のサーバー側エラーを Sheet 内に表示するために参照する。
   const submitFetcher = useFetcher<{
     ok?: boolean
     lastResult?: { error?: Record<string, string[] | undefined> | null } | null
@@ -125,7 +124,7 @@ export function PrTitleFilterSheet({
 
   const submitError =
     submitFetcher.data?.ok === false
-      ? (submitFetcher.data.lastResult?.error?.[''] ?? [])[0]
+      ? extractFormError(submitFetcher.data)
       : undefined
 
   const handleSubmit = () => {
