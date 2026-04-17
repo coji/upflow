@@ -14,11 +14,17 @@ import {
 } from '~/app/components/ui/dropdown-menu'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import { median as calcMedian } from '~/app/libs/stats'
 import { orgContext, teamContext } from '~/app/middleware/context'
+import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
-import { getOngoingPullRequestReport } from './+functions/queries.server'
+import {
+  countOngoingPullRequests,
+  getOngoingPullRequestReport,
+} from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = {
@@ -32,30 +38,74 @@ export type PullRequest = Awaited<
 >[0]
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
 
   const url = new URL(request.url)
   const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
+  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
-  const pullRequests = await getOngoingPullRequestReport(
-    organization.id,
-    null,
-    dayjs().utc().toISOString(),
-    teamParam || undefined,
-    businessDaysOnly,
-  )
+  const toIso = dayjs().utc().toISOString()
+  const normalizedPatterns = showFiltered
+    ? []
+    : await listEnabledPrTitleFilterPatterns(organization.id)
+  const filterActive = !showFiltered && normalizedPatterns.length > 0
+
+  const [pullRequests, excludedCount] = await Promise.all([
+    getOngoingPullRequestReport(
+      organization.id,
+      null,
+      toIso,
+      teamParam || undefined,
+      businessDaysOnly,
+      normalizedPatterns,
+    ),
+    filterActive
+      ? Promise.all([
+          countOngoingPullRequests(
+            organization.id,
+            null,
+            toIso,
+            teamParam || undefined,
+            [],
+          ),
+          countOngoingPullRequests(
+            organization.id,
+            null,
+            toIso,
+            teamParam || undefined,
+            normalizedPatterns,
+          ),
+        ]).then(([unfiltered, filtered]) => unfiltered - filtered)
+      : Promise.resolve(0),
+  ])
 
   const ages = pullRequests
     .map((pr) => pr.createAndNowDiff)
     .filter((v): v is number => v !== null)
   const median = calcMedian(ages)
 
-  return { pullRequests, median, businessDaysOnly }
+  return {
+    pullRequests,
+    median,
+    businessDaysOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin: isOrgAdmin(membership.role),
+  }
 }
 
 export default function OngoingPage({
-  loaderData: { pullRequests, median, businessDaysOnly },
+  loaderData: {
+    pullRequests,
+    median,
+    businessDaysOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
+  },
   params: { orgSlug },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
@@ -75,6 +125,13 @@ export default function OngoingPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
       </PageHeader>
+
+      <PrTitleFilterBanner
+        excludedCount={excludedCount}
+        filterActive={filterActive}
+        showFiltered={showFiltered}
+        isAdmin={isAdmin}
+      />
 
       <AppDataTable
         columns={columns}

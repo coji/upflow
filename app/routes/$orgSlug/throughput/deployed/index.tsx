@@ -16,16 +16,22 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
+import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { DiffBadge } from '../+components/diff-badge'
 import { StatCard } from '../+components/stat-card'
 import { calcStats } from '../+functions/calc-stats'
 import { createColumns } from './+columns'
-import { getDeployedPullRequestReport } from './+functions/queries.server'
+import {
+  countDeployedPullRequests,
+  getDeployedPullRequestReport,
+} from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = {
@@ -37,7 +43,7 @@ export type PullRequest = Awaited<
 >[0]
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const objective = 3.0
   const timezone = context.get(timezoneContext)
 
@@ -46,6 +52,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const toParam = url.searchParams.get('to')
   const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
+  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   let from: dayjs.Dayjs
   let to: dayjs.Dayjs
@@ -60,14 +67,23 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const prevFrom = from.subtract(7, 'day')
   const prevTo = to.subtract(7, 'day')
 
-  const [pullRequests, prevPullRequests] = await Promise.all([
+  const normalizedPatterns = showFiltered
+    ? []
+    : await listEnabledPrTitleFilterPatterns(organization.id)
+  const filterActive = !showFiltered && normalizedPatterns.length > 0
+
+  const fromIso = from.utc().toISOString()
+  const toIso = to.utc().toISOString()
+
+  const [pullRequests, prevPullRequests, excludedCount] = await Promise.all([
     getDeployedPullRequestReport(
       organization.id,
-      from.utc().toISOString(),
-      to.utc().toISOString(),
+      fromIso,
+      toIso,
       objective,
       teamParam || undefined,
       businessDaysOnly,
+      normalizedPatterns,
     ),
     getDeployedPullRequestReport(
       organization.id,
@@ -76,7 +92,26 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       objective,
       teamParam || undefined,
       businessDaysOnly,
+      normalizedPatterns,
     ),
+    filterActive
+      ? Promise.all([
+          countDeployedPullRequests(
+            organization.id,
+            fromIso,
+            toIso,
+            teamParam || undefined,
+            [],
+          ),
+          countDeployedPullRequests(
+            organization.id,
+            fromIso,
+            toIso,
+            teamParam || undefined,
+            normalizedPatterns,
+          ),
+        ]).then(([unfiltered, filtered]) => unfiltered - filtered)
+      : Promise.resolve(0),
   ])
 
   const stats = calcStats(pullRequests, (pr) => pr.createAndDeployDiff)
@@ -89,6 +124,10 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     ...stats,
     prev,
     businessDaysOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
@@ -102,6 +141,10 @@ export default function DeployedPage({
     median,
     prev,
     businessDaysOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    isAdmin,
   },
   params: { orgSlug },
 }: Route.ComponentProps) {
@@ -122,6 +165,13 @@ export default function DeployedPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
       </PageHeader>
+
+      <PrTitleFilterBanner
+        excludedCount={excludedCount}
+        filterActive={filterActive}
+        showFiltered={showFiltered}
+        isAdmin={isAdmin}
+      />
 
       <AppDataTable
         title={

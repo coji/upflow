@@ -1,7 +1,10 @@
 import { pipe, sortBy } from 'remeda'
 import { diffInDays } from '~/app/libs/business-hours'
 import dayjs from '~/app/libs/dayjs'
-import { excludeBots } from '~/app/libs/tenant-query.server'
+import {
+  excludeBots,
+  excludePrTitleFilters,
+} from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -11,6 +14,7 @@ export const getOngoingPullRequestReport = async (
   toDateTime: string | null,
   teamId?: string | null,
   businessDaysOnly = true,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const pullrequests = await tenantDb
@@ -35,6 +39,7 @@ export const getOngoingPullRequestReport = async (
     .where('mergedAt', 'is', null)
     .where('state', '=', 'open')
     .where(excludeBots)
+    .where(excludePrTitleFilters(normalizedPatterns))
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(
@@ -83,4 +88,40 @@ export const getOngoingPullRequestReport = async (
     }),
     sortBy((pr) => (pr.createAndNowDiff ? -pr.createAndNowDiff : 0)),
   )
+}
+
+export const countOngoingPullRequests = async (
+  organizationId: OrganizationId,
+  fromDateTime: string | null,
+  toDateTime: string | null,
+  teamId?: string | null,
+  normalizedPatterns: readonly string[] = [],
+): Promise<number> => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('pullRequests')
+    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequests.author']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
+    )
+    .$if(fromDateTime !== null, (qb) =>
+      qb.where('pullRequestCreatedAt', '>=', fromDateTime),
+    )
+    .$if(toDateTime !== null, (qb) =>
+      qb.where('pullRequestCreatedAt', '<=', toDateTime),
+    )
+    .$if(teamId != null, (qb) =>
+      qb.where('repositories.teamId', '=', teamId as string),
+    )
+    .where('mergedAt', 'is', null)
+    .where('state', '=', 'open')
+    .where(excludeBots)
+    .where(excludePrTitleFilters(normalizedPatterns))
+    .select((eb) => eb.fn.countAll<number>().as('cnt'))
+    .executeTakeFirstOrThrow()
+  return Number(row.cnt)
 }
