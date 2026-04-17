@@ -1,11 +1,21 @@
+import { createContext, useContext } from 'react'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
+import { Button } from '~/app/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
 import dayjs from '~/app/libs/dayjs'
+
+/**
+ * PRPopoverContent 内で「タイトルパターンで除外」ボタンを出すための context。
+ * null (provide されない) / null 値の場合はボタン非表示。admin のみ表示する親ページが value を設定する。
+ */
+export const PRHideByTitleFilterContext = createContext<
+  ((title: string) => void) | null
+>(null)
 
 export type PRBlockColorMode = 'size' | 'age'
 
@@ -259,6 +269,7 @@ export function PRPopoverContent({
   const statusShape = pr.reviewStatus
     ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
     : undefined
+  const onHideByTitle = useContext(PRHideByTitleFilterContext)
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
@@ -314,6 +325,19 @@ export function PRPopoverContent({
               </div>
             )
           })}
+        </div>
+      )}
+      {onHideByTitle && (
+        <div className="mt-1.5 border-t pt-1.5">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-6 w-full justify-start text-xs"
+            onClick={() => onHideByTitle(pr.title)}
+          >
+            Hide PRs by title…
+          </Button>
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   PageHeader,
   PageHeaderDescription,
@@ -7,7 +8,9 @@ import {
 import { Stack } from '~/app/components/ui/stack'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import { orgContext, teamContext } from '~/app/middleware/context'
+import { PRHideByTitleFilterContext } from '~/app/routes/$orgSlug/+components/pr-block'
 import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
+import { PrTitleFilterSheet } from '~/app/routes/$orgSlug/+components/pr-title-filter-sheet'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
@@ -124,25 +127,43 @@ export default function ReviewStacksPage({
     isAdmin,
   },
 }: Route.ComponentProps) {
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetTitle, setSheetTitle] = useState<string | null>(null)
+  const openSheet = isAdmin
+    ? (title: string) => {
+        setSheetTitle(title)
+        setSheetOpen(true)
+      }
+    : null
+
   return (
-    <Stack>
-      <PageHeader>
-        <PageHeaderHeading>
-          <PageHeaderTitle>Review Stacks</PageHeaderTitle>
-          <PageHeaderDescription>
-            Monitor review workload balance across team members.
-          </PageHeaderDescription>
-        </PageHeaderHeading>
-      </PageHeader>
+    <PRHideByTitleFilterContext.Provider value={openSheet}>
+      <Stack>
+        <PageHeader>
+          <PageHeaderHeading>
+            <PageHeaderTitle>Review Stacks</PageHeaderTitle>
+            <PageHeaderDescription>
+              Monitor review workload balance across team members.
+            </PageHeaderDescription>
+          </PageHeaderHeading>
+        </PageHeader>
 
-      <PrTitleFilterBanner
-        excludedCount={excludedCount}
-        filterActive={filterActive}
-        showFiltered={showFiltered}
-        isAdmin={isAdmin}
-      />
+        <PrTitleFilterBanner
+          excludedCount={excludedCount}
+          filterActive={filterActive}
+          showFiltered={showFiltered}
+          isAdmin={isAdmin}
+        />
 
-      <TeamStacksChart data={teamStacks} />
-    </Stack>
+        <TeamStacksChart data={teamStacks} />
+      </Stack>
+      {isAdmin && (
+        <PrTitleFilterSheet
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          pullRequestTitle={sheetTitle}
+        />
+      )}
+    </PRHideByTitleFilterContext.Provider>
   )
 }
