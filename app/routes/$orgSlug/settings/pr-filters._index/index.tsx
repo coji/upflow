@@ -16,7 +16,10 @@ import {
   TableRow,
 } from '~/app/components/ui/table'
 import { getErrorMessage } from '~/app/libs/error-message'
-import { prTitleFilterPatternSchema } from '~/app/libs/pr-title-filter'
+import {
+  prTitleFilterPatternSchema,
+  translatePrTitleFilterError,
+} from '~/app/libs/pr-title-filter'
 import { orgContext } from '~/app/middleware/context'
 import {
   createPrTitleFilter,
@@ -85,7 +88,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         })
       } catch (e) {
         console.error('Failed to create pr-title-filter:', e)
-        const message = getErrorMessage(e)
+        const message = translatePrTitleFilterError(getErrorMessage(e))
         return dataWithError(
           {
             ok: false,
@@ -107,7 +110,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         })
       } catch (e) {
         console.error('Failed to toggle pr-title-filter:', e)
-        const message = getErrorMessage(e)
+        const message = translatePrTitleFilterError(getErrorMessage(e))
         return dataWithError(
           {
             ok: false,
@@ -129,10 +132,11 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         await deletePrTitleFilter(organization.id, id)
       } catch (e) {
         console.error('Failed to delete pr-title-filter:', e)
+        const message = translatePrTitleFilterError(getErrorMessage(e))
         return data(
           {
             ok: false,
-            lastResult: submission.reply({ formErrors: [getErrorMessage(e)] }),
+            lastResult: submission.reply({ formErrors: [message] }),
             shouldConfirm: true,
           },
           { status: 400 },

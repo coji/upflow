@@ -57,13 +57,19 @@ export function PrTitleFilterSheet({
     }
   }, [open, orgSlug, titlesFetcher])
 
-  // submit 成功後は close + state リセット
+  // submit 成功後は close
   useEffect(() => {
     if (submitFetcher.state === 'idle' && submitFetcher.data?.ok === true) {
       onOpenChange(false)
-      setPattern('')
     }
   }, [submitFetcher.state, submitFetcher.data, onOpenChange])
+
+  // close するたびに pattern 入力をリセット (別 PR 行で開いたとき前の入力が残らないように)
+  useEffect(() => {
+    if (!open) {
+      setPattern('')
+    }
+  }, [open])
 
   const candidates = useMemo(
     () => (pullRequestTitle ? extractPatternCandidates(pullRequestTitle) : []),

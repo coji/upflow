@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '~/app/components/ui/dropdown-menu'
 
-export interface PrFilterBannerState {
+export interface PrFilterStatusState {
   excludedCount: number
   filterActive: boolean
   showFiltered: boolean
@@ -28,7 +28,7 @@ export function PrTitleFilterStatus({
   filterActive,
   showFiltered,
   isAdmin,
-}: PrFilterBannerState) {
+}: PrFilterStatusState) {
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const location = useLocation()
 

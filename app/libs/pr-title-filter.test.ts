@@ -4,11 +4,20 @@ import {
   matchesPattern,
   normalizePattern,
   prTitleFilterPatternSchema,
+  translatePrTitleFilterError,
 } from './pr-title-filter'
 
 describe('normalizePattern', () => {
   it('trims and lowercases', () => {
     expect(normalizePattern('  [WIP]  ')).toBe('[wip]')
+  })
+
+  it('NFC-normalizes so combining vs precomposed forms collapse to one key', () => {
+    // 'é' precomposed (U+00E9) vs 'e' + combining acute (U+0065 U+0301)
+    const precomposed = 'Caf\u00e9'
+    const decomposed = 'Cafe\u0301'
+    expect(precomposed).not.toBe(decomposed)
+    expect(normalizePattern(precomposed)).toBe(normalizePattern(decomposed))
   })
 })
 
@@ -104,5 +113,21 @@ describe('extractPatternCandidates', () => {
   it('returns empty array when no candidates match', () => {
     const candidates = extractPatternCandidates('plain title without markers')
     expect(candidates).toEqual([])
+  })
+})
+
+describe('translatePrTitleFilterError', () => {
+  it('translates SQLite UNIQUE constraint violation', () => {
+    expect(
+      translatePrTitleFilterError(
+        'SQLITE_CONSTRAINT: UNIQUE constraint failed: pr_title_filters.normalized_pattern',
+      ),
+    ).toBe('This pattern is already registered.')
+  })
+
+  it('passes through unrelated errors unchanged', () => {
+    expect(translatePrTitleFilterError('some other error')).toBe(
+      'some other error',
+    )
   })
 })
