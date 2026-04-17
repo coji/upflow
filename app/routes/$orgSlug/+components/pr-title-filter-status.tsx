@@ -38,10 +38,16 @@ export function PrTitleFilterStatus({
       params.toString() ? `?${params.toString()}` : ''
     }`
     return (
-      <Button asChild size="sm" variant="outline" className="h-8 gap-1.5">
-        <Link to={restoreHref} replace>
+      <Button
+        asChild
+        size="sm"
+        variant="outline"
+        className="h-8 gap-1.5"
+        title="Re-enable title filter"
+      >
+        <Link to={restoreHref} replace aria-label="Re-enable title filter">
           <FilterXIcon size={14} />
-          Filter off · Re-enable
+          Filter off
         </Link>
       </Button>
     )
