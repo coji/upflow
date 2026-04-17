@@ -118,6 +118,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     excludedCount,
     filterActive: filter.filterActive,
     showFiltered: filter.showFiltered,
+    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -135,6 +136,7 @@ export default function OrganizationIndex({
     excludedCount,
     filterActive,
     showFiltered,
+    hasAnyEnabledPattern,
     isAdmin,
   },
   params: { orgSlug },
@@ -160,6 +162,7 @@ export default function OrganizationIndex({
             excludedCount={excludedCount}
             filterActive={filterActive}
             showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
             isAdmin={isAdmin}
           />
         </PageHeaderActions>

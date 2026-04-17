@@ -1,6 +1,8 @@
+import { AlertCircleIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { href, useFetcher, useParams } from 'react-router'
 import { Badge, Button, Input, Label, Stack } from '~/app/components/ui'
+import { Alert, AlertDescription } from '~/app/components/ui/alert'
 import {
   Sheet,
   SheetContent,
@@ -43,7 +45,12 @@ export function PrTitleFilterSheet({
 }: PrTitleFilterSheetProps) {
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const titlesFetcher = useFetcher<{ titles: RecentTitleRow[]; days: number }>()
-  const submitFetcher = useFetcher<{ ok?: boolean }>()
+  // lastResult は Conform の SubmissionResult 形状 (error['']?.[0] に formErrors)。
+  // UNIQUE 違反等のサーバー側エラーを Sheet 内に表示するために参照する。
+  const submitFetcher = useFetcher<{
+    ok?: boolean
+    lastResult?: { error?: Record<string, string[] | undefined> | null } | null
+  }>()
 
   const [pattern, setPattern] = useState('')
 
@@ -115,6 +122,11 @@ export function PrTitleFilterSheet({
     () => countMatches(trimmedPattern),
     [countMatches, trimmedPattern],
   )
+
+  const submitError =
+    submitFetcher.data?.ok === false
+      ? (submitFetcher.data.lastResult?.error?.[''] ?? [])[0]
+      : undefined
 
   const handleSubmit = () => {
     if (!orgSlug || !canSubmit) return
@@ -195,6 +207,13 @@ export function PrTitleFilterSheet({
                 ))}
               </ul>
             </Stack>
+          )}
+
+          {submitError && (
+            <Alert variant="destructive">
+              <AlertCircleIcon />
+              <AlertDescription>{submitError}</AlertDescription>
+            </Alert>
           )}
         </Stack>
 

@@ -15,6 +15,11 @@ export interface PrFilterStatusState {
   filterActive: boolean
   showFiltered: boolean
   isAdmin: boolean
+  /**
+   * DB に有効パターンが 1 件以上あるか。`showFiltered=1` が URL に残ったまま
+   * パターンが全削除されたケースで、"Filter off" button を非表示にするために使う。
+   */
+  hasAnyEnabledPattern: boolean
 }
 
 /**
@@ -28,6 +33,7 @@ export function PrTitleFilterStatus({
   filterActive,
   showFiltered,
   isAdmin,
+  hasAnyEnabledPattern,
 }: PrFilterStatusState) {
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const location = useLocation()
@@ -37,7 +43,8 @@ export function PrTitleFilterStatus({
       ? href('/:orgSlug/settings/pr-filters', { orgSlug })
       : null
 
-  if (showFiltered) {
+  // `showFiltered=1` かつ DB にパターン 0 件のときは Re-enable しても意味が無いので button を出さない
+  if (showFiltered && hasAnyEnabledPattern) {
     return (
       <StatusDropdown
         Icon={FilterXIcon}

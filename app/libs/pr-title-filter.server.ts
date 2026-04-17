@@ -5,6 +5,11 @@ export interface PrFilterLoaderState {
   showFiltered: boolean
   normalizedPatterns: readonly string[]
   filterActive: boolean
+  /**
+   * DB に有効パターンが 1 件以上あるか。`showFiltered=1` でも DB 状態は保持するため、
+   * バナー状態 UI が「showFiltered を解除しても意味がないケース (0 件)」を判別できる。
+   */
+  hasAnyEnabledPattern: boolean
 }
 
 /**
@@ -18,13 +23,12 @@ export const loadPrFilterState = async (
 ): Promise<PrFilterLoaderState> => {
   const showFiltered =
     new URL(request.url).searchParams.get('showFiltered') === '1'
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organizationId)
+  const enabled = await listEnabledPrTitleFilterPatterns(organizationId)
   return {
     showFiltered,
-    normalizedPatterns,
-    filterActive: !showFiltered && normalizedPatterns.length > 0,
+    normalizedPatterns: showFiltered ? [] : enabled,
+    filterActive: !showFiltered && enabled.length > 0,
+    hasAnyEnabledPattern: enabled.length > 0,
   }
 }
 

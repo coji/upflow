@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
@@ -13,9 +13,7 @@ import {
 
 const testDir = path.join(tmpdir(), `pr-filter-server-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
-const testDbPath = path.join(testDir, 'data.db')
-writeFileSync(testDbPath, '')
-vi.stubEnv('UPFLOW_DATA_DIR', path.dirname(testDbPath))
+vi.stubEnv('UPFLOW_DATA_DIR', testDir)
 
 let testCounter = 0
 function createFreshOrg(): OrganizationId {
@@ -40,12 +38,13 @@ describe('loadPrFilterState', () => {
     await closeTenantDb(orgId)
   })
 
-  test('returns filterActive=false with empty patterns when DB has no filters', async () => {
+  test('returns filterActive=false and hasAnyEnabledPattern=false when DB is empty', async () => {
     const state = await loadPrFilterState(makeRequest(''), orgId)
     expect(state).toEqual({
       showFiltered: false,
       normalizedPatterns: [],
       filterActive: false,
+      hasAnyEnabledPattern: false,
     })
   })
 
@@ -76,7 +75,7 @@ describe('loadPrFilterState', () => {
     expect(state.normalizedPatterns).toEqual(['[wip]'])
   })
 
-  test('showFiltered=1 bypasses patterns and sets filterActive=false', async () => {
+  test('showFiltered=1 bypasses patterns but keeps hasAnyEnabledPattern flag', async () => {
     await createPrTitleFilter(orgId, { pattern: '[WIP]', userId: 'u' })
 
     const state = await loadPrFilterState(makeRequest('?showFiltered=1'), orgId)
@@ -84,7 +83,19 @@ describe('loadPrFilterState', () => {
       showFiltered: true,
       normalizedPatterns: [],
       filterActive: false,
+      hasAnyEnabledPattern: true,
     })
+  })
+
+  test('hasAnyEnabledPattern=false when only disabled filters exist', async () => {
+    await createPrTitleFilter(orgId, {
+      pattern: '[WIP]',
+      userId: 'u',
+      isEnabled: false,
+    })
+
+    const state = await loadPrFilterState(makeRequest('?showFiltered=1'), orgId)
+    expect(state.hasAnyEnabledPattern).toBe(false)
   })
 
   test('any other value of showFiltered is not treated as truthy', async () => {
@@ -103,7 +114,12 @@ describe('computeExcludedCount', () => {
   test('returns 0 when filter is not active (no DB query)', async () => {
     const counter = vi.fn()
     const result = await computeExcludedCount(
-      { showFiltered: false, normalizedPatterns: [], filterActive: false },
+      {
+        showFiltered: false,
+        normalizedPatterns: [],
+        filterActive: false,
+        hasAnyEnabledPattern: false,
+      },
       counter,
     )
     expect(result).toBe(0)
@@ -117,6 +133,7 @@ describe('computeExcludedCount', () => {
         showFiltered: false,
         normalizedPatterns: ['[wip]'],
         filterActive: true,
+        hasAnyEnabledPattern: true,
       },
       counter,
     )
@@ -133,6 +150,7 @@ describe('computeExcludedCount', () => {
         showFiltered: false,
         normalizedPatterns: patterns,
         filterActive: true,
+        hasAnyEnabledPattern: true,
       },
       counter,
     )

@@ -126,6 +126,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     excludedCount,
     filterActive: filter.filterActive,
     showFiltered: filter.showFiltered,
+    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -139,6 +140,7 @@ export default function FeedbacksPage({
     excludedCount,
     filterActive,
     showFiltered,
+    hasAnyEnabledPattern,
     isAdmin,
   },
 }: Route.ComponentProps) {
@@ -167,6 +169,7 @@ export default function FeedbacksPage({
             excludedCount={excludedCount}
             filterActive={filterActive}
             showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
             isAdmin={isAdmin}
           />
           <Select

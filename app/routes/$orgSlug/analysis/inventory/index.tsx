@@ -115,6 +115,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     excludedCount,
     filterActive: filter.filterActive,
     showFiltered: filter.showFiltered,
+    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -133,6 +134,7 @@ export const clientLoader = async ({
     excludedCount,
     filterActive,
     showFiltered,
+    hasAnyEnabledPattern,
     isAdmin,
   } = await serverLoader()
 
@@ -150,6 +152,7 @@ export const clientLoader = async ({
     excludedCount,
     filterActive,
     showFiltered,
+    hasAnyEnabledPattern,
     isAdmin,
   }
 }
@@ -177,6 +180,7 @@ export default function InventoryPage({
     excludedCount,
     filterActive,
     showFiltered,
+    hasAnyEnabledPattern,
     isAdmin,
   },
 }: Route.ComponentProps) {
@@ -197,6 +201,7 @@ export default function InventoryPage({
             excludedCount={excludedCount}
             filterActive={filterActive}
             showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
             isAdmin={isAdmin}
           />
           <Select

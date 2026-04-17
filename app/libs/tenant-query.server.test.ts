@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
@@ -12,10 +12,7 @@ import {
 
 const testDir = path.join(tmpdir(), `tenant-query-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
-const testDbPath = path.join(testDir, 'data.db')
-writeFileSync(testDbPath, '')
-
-vi.stubEnv('UPFLOW_DATA_DIR', path.dirname(testDbPath))
+vi.stubEnv('UPFLOW_DATA_DIR', testDir)
 
 let testCounter = 0
 function createFreshOrg(): OrganizationId {
