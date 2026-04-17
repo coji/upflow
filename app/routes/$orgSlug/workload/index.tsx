@@ -7,12 +7,15 @@ import {
 } from '~/app/components/layout/page-header'
 import { Stack } from '~/app/components/ui/stack'
 import { isOrgAdmin } from '~/app/libs/member-role'
+import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
 import { PRHideByTitleFilterContext } from '~/app/routes/$orgSlug/+components/pr-block'
 import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
 import { PrTitleFilterSheet } from '~/app/routes/$orgSlug/+components/pr-title-filter-sheet'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
 import {
   DEFAULT_PERSONAL_LIMIT,
@@ -30,8 +33,6 @@ export const loader = async ({ context, request }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
 
   const teamParam = context.get(teamContext)
-  const url = new URL(request.url)
-  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   const teams = await listTeams(organization.id)
   const selectedTeam = teamParam
@@ -44,22 +45,24 @@ export const loader = async ({ context, request }: Route.LoaderArgs) => {
       ? Math.max(...teams.map((t) => t.personalLimit))
       : DEFAULT_PERSONAL_LIMIT
 
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organization.id)
-  const filterActive = !showFiltered && normalizedPatterns.length > 0
+  const filter = await loadPrFilterState(request, organization.id)
 
   const [openPRs, pendingReviews, reviewHistory, excludedCount] =
     await Promise.all([
-      getOpenPullRequests(organization.id, teamId, normalizedPatterns),
-      getPendingReviewAssignments(organization.id, teamId, normalizedPatterns),
-      getOpenPullRequestReviews(organization.id, teamId, normalizedPatterns),
-      filterActive
-        ? Promise.all([
-            countOpenPullRequests(organization.id, teamId, []),
-            countOpenPullRequests(organization.id, teamId, normalizedPatterns),
-          ]).then(([unfiltered, filtered]) => unfiltered - filtered)
-        : Promise.resolve(0),
+      getOpenPullRequests(organization.id, teamId, filter.normalizedPatterns),
+      getPendingReviewAssignments(
+        organization.id,
+        teamId,
+        filter.normalizedPatterns,
+      ),
+      getOpenPullRequestReviews(
+        organization.id,
+        teamId,
+        filter.normalizedPatterns,
+      ),
+      computeExcludedCount(filter, (patterns) =>
+        countOpenPullRequests(organization.id, teamId, patterns),
+      ),
     ])
 
   return {
@@ -68,8 +71,8 @@ export const loader = async ({ context, request }: Route.LoaderArgs) => {
     reviewHistory,
     personalLimit,
     excludedCount,
-    filterActive,
-    showFiltered,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
     isAdmin: isOrgAdmin(membership.role),
   }
 }

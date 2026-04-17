@@ -24,6 +24,27 @@ export const getUserProfile = async (
   }
 }
 
+export const countCreatedPRs = async (
+  organizationId: OrganizationId,
+  login: string,
+  from: string,
+  to: string,
+  normalizedPatterns: readonly string[] = [],
+): Promise<number> => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('pullRequests')
+    .where((eb) =>
+      eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
+    )
+    .where('pullRequestCreatedAt', '>=', from)
+    .where('pullRequestCreatedAt', '<=', to)
+    .where(excludePrTitleFilters(normalizedPatterns))
+    .select((eb) => eb.fn.countAll<number>().as('cnt'))
+    .executeTakeFirstOrThrow()
+  return Number(row.cnt)
+}
+
 export const getCreatedPRs = async (
   organizationId: OrganizationId,
   login: string,

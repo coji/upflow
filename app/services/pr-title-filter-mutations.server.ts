@@ -4,13 +4,7 @@ import { clearOrgCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
-const nowIso = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
-
 /**
- * Insert a new pr_title_filter row. `normalizedPattern` is derived server-side
- * from `pattern`. UNIQUE(normalized_pattern) guards duplicates; conflicts
- * propagate as SQLite errors for the caller to translate into a form error.
- *
  * Every mutation ends with `clearOrgCache(organizationId)` so cached analysis
  * loaders reflect the new filter state immediately.
  */
@@ -20,7 +14,7 @@ export const createPrTitleFilter = async (
 ): Promise<{ id: string }> => {
   const tenantDb = getTenantDb(organizationId)
   const id = nanoid()
-  const now = nowIso()
+  const now = new Date().toISOString()
   const normalized = normalizePattern(input.pattern)
   await tenantDb
     .insertInto('prTitleFilters')
@@ -45,7 +39,7 @@ export const updatePrTitleFilter = async (
   input: { pattern?: string; isEnabled?: boolean; userId: string },
 ): Promise<void> => {
   const tenantDb = getTenantDb(organizationId)
-  const now = nowIso()
+  const now = new Date().toISOString()
   const values: Record<string, string | number> = {
     updatedBy: input.userId,
     updatedAt: now,

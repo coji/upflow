@@ -129,6 +129,35 @@ export type FeedbackRow = Awaited<
   ReturnType<typeof listFilteredFeedbacks>
 >['data'][number]
 
+/**
+ * Filter 適用前後の count 比較用に feedback 件数だけを返す軽量 query。
+ * バナー excludedCount 算出で summary を 2 回計算するのを避けるために使う。
+ */
+export const countFeedbacks = async ({
+  organizationId,
+  teamId,
+  sinceDate,
+  normalizedPatterns = [],
+}: {
+  organizationId: OrganizationId
+  teamId?: string
+  sinceDate: string
+  normalizedPatterns?: readonly string[]
+}): Promise<number> => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await feedbackBaseQuery(
+    tenantDb,
+    sinceDate,
+    teamId,
+    normalizedPatterns,
+  )
+    .select((eb) =>
+      eb.fn.count<string>('pullRequestFeedbacks.pullRequestNumber').as('count'),
+    )
+    .executeTakeFirst()
+  return Number(row?.count ?? 0)
+}
+
 interface GetFeedbackSummaryArgs {
   organizationId: OrganizationId
   teamId?: string

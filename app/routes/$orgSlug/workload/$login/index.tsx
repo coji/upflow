@@ -16,6 +16,10 @@ import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
+import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import {
   PRBlock,
@@ -30,8 +34,8 @@ import {
   buildPRReviewerStatesMap,
   classifyPRReviewStatus,
 } from '~/app/routes/$orgSlug/workload/+functions/aggregate-stacks'
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import {
+  countCreatedPRs,
   getBacklogDetails,
   getClosedPRs,
   getCreatedPRs,
@@ -57,7 +61,6 @@ export const loader = async ({
 
   const url = new URL(request.url)
   const weekParam = url.searchParams.get('week')
-  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   const parsed = weekParam ? dayjs(weekParam, 'YYYY-MM-DD') : null
   const weekStart = parsed?.isValid()
@@ -67,46 +70,52 @@ export const loader = async ({
   const from = weekStart.utc().toISOString()
   const to = weekEnd.utc().toISOString()
 
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organization.id)
-  const filterActive = !showFiltered && normalizedPatterns.length > 0
+  const filter = await loadPrFilterState(request, organization.id)
 
-  const [user, createdPRs, mergedPRs, closedPRs, reviews, backlog] =
-    await Promise.all([
-      getUserProfile(organization.id, params.login),
-      getCreatedPRs(
-        organization.id,
-        params.login,
-        from,
-        to,
-        normalizedPatterns,
-      ),
-      getMergedPRs(organization.id, params.login, from, to, normalizedPatterns),
-      getClosedPRs(organization.id, params.login, from, to, normalizedPatterns),
-      getReviewsSubmitted(
-        organization.id,
-        params.login,
-        from,
-        to,
-        normalizedPatterns,
-      ),
-      getBacklogDetails(organization.id, params.login, normalizedPatterns),
-    ])
-
-  // excludedCount: unfiltered created PR count - filtered created PR count
-  // (週のサマリーとして created PR 数を母集団とする)
-  let excludedCount = 0
-  if (filterActive) {
-    const unfilteredCreated = await getCreatedPRs(
+  // 週のサマリーとして created PR 数を母集団とする
+  const [
+    user,
+    createdPRs,
+    mergedPRs,
+    closedPRs,
+    reviews,
+    backlog,
+    excludedCount,
+  ] = await Promise.all([
+    getUserProfile(organization.id, params.login),
+    getCreatedPRs(
       organization.id,
       params.login,
       from,
       to,
-      [],
-    )
-    excludedCount = unfilteredCreated.length - createdPRs.length
-  }
+      filter.normalizedPatterns,
+    ),
+    getMergedPRs(
+      organization.id,
+      params.login,
+      from,
+      to,
+      filter.normalizedPatterns,
+    ),
+    getClosedPRs(
+      organization.id,
+      params.login,
+      from,
+      to,
+      filter.normalizedPatterns,
+    ),
+    getReviewsSubmitted(
+      organization.id,
+      params.login,
+      from,
+      to,
+      filter.normalizedPatterns,
+    ),
+    getBacklogDetails(organization.id, params.login, filter.normalizedPatterns),
+    computeExcludedCount(filter, (patterns) =>
+      countCreatedPRs(organization.id, params.login, from, to, patterns),
+    ),
+  ])
 
   // Build holiday map for the week
   const holidays: Record<string, string> = {}
@@ -153,8 +162,8 @@ export const loader = async ({
     weekStart: weekStart.format('YYYY-MM-DD'),
     weekEnd: weekEnd.format('YYYY-MM-DD'),
     excludedCount,
-    filterActive,
-    showFiltered,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
     isAdmin: isOrgAdmin(membership.role),
   }
 }

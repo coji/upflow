@@ -19,13 +19,16 @@ import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
+import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
 import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
 import { getOrgCachedData } from '~/app/services/cache.server'
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
 import {
@@ -62,18 +65,14 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const excludeBots = url.searchParams.get('excludeBots') !== '0'
   const unreviewedOnly = url.searchParams.get('unreviewedOnly') === '1'
-  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   const sinceDate = calcSinceDate(periodMonths, timezone)
 
   const now = dayjs.utc().toISOString()
 
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organization.id)
-  const filterActive = !showFiltered && normalizedPatterns.length > 0
+  const filter = await loadPrFilterState(request, organization.id)
 
-  const sf = showFiltered ? 't' : 'f'
+  const sf = filter.showFiltered ? 't' : 'f'
   const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}:sf=${sf}`
 
   const FIVE_MINUTES = 5 * 60 * 1000
@@ -89,30 +88,20 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
           now,
           teamParam,
           excludeBots,
-          normalizedPatterns,
+          filter.normalizedPatterns,
         ),
       FIVE_MINUTES,
     ),
-    filterActive
-      ? Promise.all([
-          countOpenPRInventory(
-            organization.id,
-            sinceDate,
-            now,
-            teamParam,
-            excludeBots,
-            [],
-          ),
-          countOpenPRInventory(
-            organization.id,
-            sinceDate,
-            now,
-            teamParam,
-            excludeBots,
-            normalizedPatterns,
-          ),
-        ]).then(([unfiltered, filtered]) => unfiltered - filtered)
-      : Promise.resolve(0),
+    computeExcludedCount(filter, (patterns) =>
+      countOpenPRInventory(
+        organization.id,
+        sinceDate,
+        now,
+        teamParam,
+        excludeBots,
+        patterns,
+      ),
+    ),
   ])
 
   return {
@@ -124,8 +113,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     excludeBots,
     unreviewedOnly,
     excludedCount,
-    filterActive,
-    showFiltered,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
     isAdmin: isOrgAdmin(membership.role),
   }
 }

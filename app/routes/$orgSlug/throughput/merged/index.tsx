@@ -18,12 +18,15 @@ import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
+import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
 import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { DiffBadge } from '../+components/diff-badge'
 import { StatCard } from '../+components/stat-card'
 import { calcStats } from '../+functions/calc-stats'
@@ -52,7 +55,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const toParam = url.searchParams.get('to')
   const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
-  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   let from: dayjs.Dayjs
   let to: dayjs.Dayjs
@@ -67,10 +69,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const prevFrom = from.subtract(7, 'day')
   const prevTo = to.subtract(7, 'day')
 
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organization.id)
-  const filterActive = !showFiltered && normalizedPatterns.length > 0
+  const filter = await loadPrFilterState(request, organization.id)
 
   const fromIso = from.utc().toISOString()
   const toIso = to.utc().toISOString()
@@ -83,7 +82,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       objective,
       teamParam || undefined,
       businessDaysOnly,
-      normalizedPatterns,
+      filter.normalizedPatterns,
     ),
     getMergedPullRequestReport(
       organization.id,
@@ -92,26 +91,17 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       objective,
       teamParam || undefined,
       businessDaysOnly,
-      normalizedPatterns,
+      filter.normalizedPatterns,
     ),
-    filterActive
-      ? Promise.all([
-          countMergedPullRequests(
-            organization.id,
-            fromIso,
-            toIso,
-            teamParam || undefined,
-            [],
-          ),
-          countMergedPullRequests(
-            organization.id,
-            fromIso,
-            toIso,
-            teamParam || undefined,
-            normalizedPatterns,
-          ),
-        ]).then(([unfiltered, filtered]) => unfiltered - filtered)
-      : Promise.resolve(0),
+    computeExcludedCount(filter, (patterns) =>
+      countMergedPullRequests(
+        organization.id,
+        fromIso,
+        toIso,
+        teamParam || undefined,
+        patterns,
+      ),
+    ),
   ])
 
   const stats = calcStats(pullRequests, (pr) => pr.createAndMergeDiff)
@@ -125,8 +115,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     prev,
     businessDaysOnly,
     excludedCount,
-    filterActive,
-    showFiltered,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
     isAdmin: isOrgAdmin(membership.role),
   }
 }

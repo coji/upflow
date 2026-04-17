@@ -47,7 +47,12 @@ export const listEnabledPrTitleFilterPatterns = async (
   return rows.map((row) => row.normalizedPattern)
 }
 
-/** Sheet プレビュー用の直近 PR タイトル一覧 */
+/**
+ * Sheet プレビュー用の直近 PR タイトル一覧。
+ * LIMIT で payload を抑える (Sheet プレビューは上位 20 件しか表示しないが、
+ * マッチ件数はこのリスト全体に対して計算するため少し余裕を持って 1000 件にする)。
+ */
+export const RECENT_PR_TITLES_LIMIT = 1000
 export const listRecentPullRequestTitles = async (
   organizationId: OrganizationId,
   sinceDays = 90,
@@ -61,5 +66,6 @@ export const listRecentPullRequestTitles = async (
     .select(['repositoryId', 'number', 'title'])
     .where('pullRequestCreatedAt', '>=', cutoff)
     .orderBy('pullRequestCreatedAt', 'desc')
+    .limit(RECENT_PR_TITLES_LIMIT)
     .execute()
 }

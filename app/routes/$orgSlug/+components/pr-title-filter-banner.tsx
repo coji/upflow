@@ -3,7 +3,7 @@ import { Link, href, useLocation, useParams } from 'react-router'
 import { Alert, AlertDescription } from '~/app/components/ui/alert'
 import { Button } from '~/app/components/ui/button'
 
-interface PrTitleFilterBannerProps {
+export interface PrFilterBannerState {
   excludedCount: number
   filterActive: boolean
   showFiltered: boolean
@@ -21,7 +21,7 @@ export function PrTitleFilterBanner({
   filterActive,
   showFiltered,
   isAdmin,
-}: PrTitleFilterBannerProps) {
+}: PrFilterBannerState) {
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const location = useLocation()
 

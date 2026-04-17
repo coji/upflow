@@ -31,16 +31,20 @@ import {
 import { calcSinceDate } from '~/app/libs/date-utils'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
+import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
 import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
 import {
+  countFeedbacks,
   getFeedbackSummary,
   listFilteredFeedbacks,
 } from './+functions/queries.server'
@@ -70,7 +74,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const teamParam = context.get(teamContext) ?? undefined
   const periodParam = url.searchParams.get('period')
-  const showFiltered = url.searchParams.get('showFiltered') === '1'
   const periodMonths =
     periodParam === 'all'
       ? 'all'
@@ -86,12 +89,9 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sortOrder =
     (url.searchParams.get('sort_order') as 'asc' | 'desc') || 'desc'
 
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organization.id)
-  const filterActive = !showFiltered && normalizedPatterns.length > 0
+  const filter = await loadPrFilterState(request, organization.id)
 
-  const [feedbackResult, summary, unfilteredSummary] = await Promise.all([
+  const [feedbackResult, summary, excludedCount] = await Promise.all([
     listFilteredFeedbacks({
       organizationId: organization.id,
       teamId: teamParam,
@@ -100,26 +100,23 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       pageSize: perPage,
       sortBy,
       sortOrder,
-      normalizedPatterns,
+      normalizedPatterns: filter.normalizedPatterns,
     }),
     getFeedbackSummary({
       organizationId: organization.id,
       teamId: teamParam,
       sinceDate,
-      normalizedPatterns,
+      normalizedPatterns: filter.normalizedPatterns,
     }),
-    filterActive
-      ? getFeedbackSummary({
-          organizationId: organization.id,
-          teamId: teamParam,
-          sinceDate,
-        })
-      : Promise.resolve(null),
+    computeExcludedCount(filter, (patterns) =>
+      countFeedbacks({
+        organizationId: organization.id,
+        teamId: teamParam,
+        sinceDate,
+        normalizedPatterns: patterns,
+      }),
+    ),
   ])
-
-  const excludedCount = filterActive
-    ? (unfilteredSummary?.totalCount ?? 0) - summary.totalCount
-    : 0
 
   return {
     feedbacks: feedbackResult.data,
@@ -127,8 +124,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     summary,
     periodMonths,
     excludedCount,
-    filterActive,
-    showFiltered,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
     isAdmin: isOrgAdmin(membership.role),
   }
 }

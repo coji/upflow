@@ -17,13 +17,16 @@ import { Stack } from '~/app/components/ui/stack'
 import { calcSinceDate } from '~/app/libs/date-utils'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
+import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
 import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
 import { getOrgCachedData } from '~/app/services/cache.server'
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { QueueTrendChart } from './+components/queue-trend-chart'
 import { WipCycleChart } from './+components/wip-cycle-chart'
@@ -61,7 +64,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const teamParam = context.get(teamContext)
   const periodParam = url.searchParams.get('period')
-  const showFiltered = url.searchParams.get('showFiltered') === '1'
   const VALID_PERIODS = [1, 3, 6, 12]
   const periodMonths =
     periodParam === 'all'
@@ -72,12 +74,9 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const sinceDate = calcSinceDate(periodMonths, timezone)
 
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organization.id)
-  const filterActive = !showFiltered && normalizedPatterns.length > 0
+  const filter = await loadPrFilterState(request, organization.id)
 
-  const sf = showFiltered ? 't' : 'f'
+  const sf = filter.showFiltered ? 't' : 'f'
   const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}:sf=${sf}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
@@ -92,39 +91,31 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
               organization.id,
               sinceDate,
               teamParam,
-              normalizedPatterns,
+              filter.normalizedPatterns,
             ),
             getWipCycleRawData(
               organization.id,
               sinceDate,
               teamParam,
-              normalizedPatterns,
+              filter.normalizedPatterns,
             ),
             getPRSizeDistribution(
               organization.id,
               sinceDate,
               teamParam,
-              normalizedPatterns,
+              filter.normalizedPatterns,
             ),
           ]),
         FIVE_MINUTES,
       ),
-      filterActive
-        ? Promise.all([
-            countWipCyclePullRequests(
-              organization.id,
-              sinceDate,
-              teamParam,
-              [],
-            ),
-            countWipCyclePullRequests(
-              organization.id,
-              sinceDate,
-              teamParam,
-              normalizedPatterns,
-            ),
-          ]).then(([unfiltered, filtered]) => unfiltered - filtered)
-        : Promise.resolve(0),
+      computeExcludedCount(filter, (patterns) =>
+        countWipCyclePullRequests(
+          organization.id,
+          sinceDate,
+          teamParam,
+          patterns,
+        ),
+      ),
     ])
 
   return {
@@ -134,8 +125,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     sinceDate,
     periodMonths,
     excludedCount,
-    filterActive,
-    showFiltered,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
     isAdmin: isOrgAdmin(membership.role),
   }
 }

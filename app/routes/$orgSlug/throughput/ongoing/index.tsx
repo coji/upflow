@@ -15,10 +15,13 @@ import {
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
+import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
 import { median as calcMedian } from '~/app/libs/stats'
 import { orgContext, teamContext } from '~/app/middleware/context'
 import { PrTitleFilterBanner } from '~/app/routes/$orgSlug/+components/pr-title-filter-banner'
-import { listEnabledPrTitleFilterPatterns } from '~/app/services/pr-title-filter-queries.server'
 import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
 import {
@@ -43,13 +46,9 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
-  const showFiltered = url.searchParams.get('showFiltered') === '1'
 
   const toIso = dayjs().utc().toISOString()
-  const normalizedPatterns = showFiltered
-    ? []
-    : await listEnabledPrTitleFilterPatterns(organization.id)
-  const filterActive = !showFiltered && normalizedPatterns.length > 0
+  const filter = await loadPrFilterState(request, organization.id)
 
   const [pullRequests, excludedCount] = await Promise.all([
     getOngoingPullRequestReport(
@@ -58,26 +57,17 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       toIso,
       teamParam || undefined,
       businessDaysOnly,
-      normalizedPatterns,
+      filter.normalizedPatterns,
     ),
-    filterActive
-      ? Promise.all([
-          countOngoingPullRequests(
-            organization.id,
-            null,
-            toIso,
-            teamParam || undefined,
-            [],
-          ),
-          countOngoingPullRequests(
-            organization.id,
-            null,
-            toIso,
-            teamParam || undefined,
-            normalizedPatterns,
-          ),
-        ]).then(([unfiltered, filtered]) => unfiltered - filtered)
-      : Promise.resolve(0),
+    computeExcludedCount(filter, (patterns) =>
+      countOngoingPullRequests(
+        organization.id,
+        null,
+        toIso,
+        teamParam || undefined,
+        patterns,
+      ),
+    ),
   ])
 
   const ages = pullRequests
@@ -90,8 +80,8 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     median,
     businessDaysOnly,
     excludedCount,
-    filterActive,
-    showFiltered,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
