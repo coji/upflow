@@ -1,0 +1,89 @@
+import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { OrganizationId } from '~/app/types/organization'
+
+export type PrTitleFilterRow = {
+  id: string
+  pattern: string
+  normalizedPattern: string
+  isEnabled: boolean
+  createdBy: string
+  updatedBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** 設定画面用の一覧 (enabled / disabled 両方、created_at 昇順) */
+export const listPrTitleFilters = async (
+  organizationId: OrganizationId,
+): Promise<PrTitleFilterRow[]> => {
+  const tenantDb = getTenantDb(organizationId)
+  const rows = await tenantDb
+    .selectFrom('prTitleFilters')
+    .select([
+      'id',
+      'pattern',
+      'normalizedPattern',
+      'isEnabled',
+      'createdBy',
+      'updatedBy',
+      'createdAt',
+      'updatedAt',
+    ])
+    .orderBy('createdAt', 'asc')
+    .execute()
+  return rows.map((row) => ({ ...row, isEnabled: Boolean(row.isEnabled) }))
+}
+
+/** loader が query 組み込みで使う enabled パターンの normalizedPattern 配列 */
+export const listEnabledPrTitleFilterPatterns = async (
+  organizationId: OrganizationId,
+): Promise<string[]> => {
+  const tenantDb = getTenantDb(organizationId)
+  const rows = await tenantDb
+    .selectFrom('prTitleFilters')
+    .select('normalizedPattern')
+    .where('isEnabled', '=', 1)
+    .execute()
+  return rows.map((row) => row.normalizedPattern)
+}
+
+/**
+ * `showFiltered=1` で patterns 本体は不要だが、status UI の「Filter off」
+ * button 表示判定だけに有効フィルタ有無が必要なケース用。
+ * `pr_title_filters_is_enabled_idx` を使った 1 行 lookup で済ませる。
+ */
+export const hasAnyEnabledPrTitleFilter = async (
+  organizationId: OrganizationId,
+): Promise<boolean> => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('prTitleFilters')
+    .select('id')
+    .where('isEnabled', '=', 1)
+    .limit(1)
+    .executeTakeFirst()
+  return row != null
+}
+
+/**
+ * Sheet プレビュー用の直近 PR タイトル一覧。
+ * LIMIT で payload を抑える (Sheet プレビューは上位 20 件しか表示しないが、
+ * マッチ件数はこのリスト全体に対して計算するため少し余裕を持って 1000 件にする)。
+ */
+export const RECENT_PR_TITLES_LIMIT = 1000
+export const listRecentPullRequestTitles = async (
+  organizationId: OrganizationId,
+  sinceDays = 90,
+): Promise<{ repositoryId: string; number: number; title: string }[]> => {
+  const tenantDb = getTenantDb(organizationId)
+  const cutoff = new Date(
+    Date.now() - sinceDays * 24 * 60 * 60 * 1000,
+  ).toISOString()
+  return await tenantDb
+    .selectFrom('pullRequests')
+    .select(['repositoryId', 'number', 'title'])
+    .where('pullRequestCreatedAt', '>=', cutoff)
+    .orderBy('pullRequestCreatedAt', 'desc')
+    .limit(RECENT_PR_TITLES_LIMIT)
+    .execute()
+}

@@ -1,11 +1,28 @@
+import { MoreHorizontalIcon } from 'lucide-react'
+import { createContext, useContext } from 'react'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
+import { Button } from '~/app/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/app/components/ui/dropdown-menu'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
 import dayjs from '~/app/libs/dayjs'
+
+/**
+ * PRPopoverContent 内で「タイトルパターンで除外」ボタンを出すための context。
+ * null (provide されない) / null 値の場合はボタン非表示。admin のみ表示する親ページが value を設定する。
+ */
+export const PRHideByTitleFilterContext = createContext<
+  ((title: string) => void) | null
+>(null)
 
 export type PRBlockColorMode = 'size' | 'age'
 
@@ -259,6 +276,7 @@ export function PRPopoverContent({
   const statusShape = pr.reviewStatus
     ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
     : undefined
+  const onHideByTitle = useContext(PRHideByTitleFilterContext)
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
@@ -275,6 +293,26 @@ export function PRPopoverContent({
           <span className={`text-xs font-medium ${stateInfo.className}`}>
             {stateInfo.icon} {stateInfo.text}
           </span>
+        )}
+        {onHideByTitle && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="ml-auto size-5"
+                aria-label="More actions"
+              >
+                <MoreHorizontalIcon size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => onHideByTitle(pr.title)}>
+                Hide PRs by title…
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
       <p className="line-clamp-3 text-xs">{pr.title}</p>

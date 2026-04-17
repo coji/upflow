@@ -29,15 +29,22 @@ import {
   TableRow,
 } from '~/app/components/ui/table'
 import { calcSinceDate } from '~/app/libs/date-utils'
+import { isOrgAdmin } from '~/app/libs/member-role'
+import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
 import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { feedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
 import {
+  countFeedbacks,
   getFeedbackSummary,
   listFilteredFeedbacks,
 } from './+functions/queries.server'
@@ -61,7 +68,7 @@ const PERIOD_OPTIONS = [
 const VALID_PERIODS = [1, 3, 6, 12]
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
@@ -82,7 +89,9 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sortOrder =
     (url.searchParams.get('sort_order') as 'asc' | 'desc') || 'desc'
 
-  const [feedbackResult, summary] = await Promise.all([
+  const filter = await loadPrFilterState(request, organization.id)
+
+  const [feedbackResult, summary, excludedCount] = await Promise.all([
     listFilteredFeedbacks({
       organizationId: organization.id,
       teamId: teamParam,
@@ -91,12 +100,22 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       pageSize: perPage,
       sortBy,
       sortOrder,
+      normalizedPatterns: filter.normalizedPatterns,
     }),
     getFeedbackSummary({
       organizationId: organization.id,
       teamId: teamParam,
       sinceDate,
+      normalizedPatterns: filter.normalizedPatterns,
     }),
+    computeExcludedCount(filter, (patterns) =>
+      countFeedbacks({
+        organizationId: organization.id,
+        teamId: teamParam,
+        sinceDate,
+        normalizedPatterns: patterns,
+      }),
+    ),
   ])
 
   return {
@@ -104,11 +123,26 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     pagination: feedbackResult.pagination,
     summary,
     periodMonths,
+    excludedCount,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
+    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
 export default function FeedbacksPage({
-  loaderData: { feedbacks, pagination, summary, periodMonths },
+  loaderData: {
+    feedbacks,
+    pagination,
+    summary,
+    periodMonths,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    hasAnyEnabledPattern,
+    isAdmin,
+  },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
   const { sort, updateSort } = useDataTableState()
@@ -131,6 +165,13 @@ export default function FeedbacksPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
+            isAdmin={isAdmin}
+          />
           <Select
             value={String(periodMonths)}
             onValueChange={(value) => {

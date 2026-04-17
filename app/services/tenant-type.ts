@@ -73,6 +73,17 @@ export interface OrganizationSettings {
   updatedAt: string;
 }
 
+export interface PrTitleFilters {
+  createdAt: Generated<string>;
+  createdBy: string;
+  id: string;
+  isEnabled: Generated<number>;
+  normalizedPattern: string;
+  pattern: string;
+  updatedAt: Generated<string>;
+  updatedBy: string;
+}
+
 export interface PullRequestFeedbacks {
   correctedComplexity: string;
   createdAt: Generated<string>;
@@ -172,6 +183,7 @@ export interface DB {
   githubRawData: GithubRawData;
   githubRawTags: GithubRawTags;
   organizationSettings: OrganizationSettings;
+  prTitleFilters: PrTitleFilters;
   pullRequestFeedbacks: PullRequestFeedbacks;
   pullRequestReviewers: PullRequestReviewers;
   pullRequestReviews: PullRequestReviews;

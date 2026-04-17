@@ -17,15 +17,24 @@ import {
 import { Switch } from '~/app/components/ui/switch'
 import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { isOrgAdmin } from '~/app/libs/member-role'
+import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
 import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
-import { getOpenPRInventoryRawData } from './+functions/queries.server'
+import {
+  countOpenPRInventory,
+  getOpenPRInventoryRawData,
+} from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = {
@@ -42,7 +51,7 @@ const PERIOD_OPTIONS = [
 const VALID_PERIODS = [1, 3, 6, 12] as const
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
@@ -61,23 +70,39 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const now = dayjs.utc().toISOString()
 
-  const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}`
+  const filter = await loadPrFilterState(request, organization.id)
+
+  const sf = filter.showFiltered ? 't' : 'f'
+  const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}:sf=${sf}`
 
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const rawRows = await getOrgCachedData(
-    organization.id,
-    cacheKey,
-    () =>
-      getOpenPRInventoryRawData(
+  const [rawRows, excludedCount] = await Promise.all([
+    getOrgCachedData(
+      organization.id,
+      cacheKey,
+      () =>
+        getOpenPRInventoryRawData(
+          organization.id,
+          sinceDate,
+          now,
+          teamParam,
+          excludeBots,
+          filter.normalizedPatterns,
+        ),
+      FIVE_MINUTES,
+    ),
+    computeExcludedCount(filter, (patterns) =>
+      countOpenPRInventory(
         organization.id,
         sinceDate,
         now,
         teamParam,
         excludeBots,
+        patterns,
       ),
-    FIVE_MINUTES,
-  )
+    ),
+  ])
 
   return {
     rawRows,
@@ -87,6 +112,11 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     periodMonths,
     excludeBots,
     unreviewedOnly,
+    excludedCount,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
+    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
@@ -101,6 +131,11 @@ export const clientLoader = async ({
     periodMonths,
     excludeBots,
     unreviewedOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    hasAnyEnabledPattern,
+    isAdmin,
   } = await serverLoader()
 
   return {
@@ -114,6 +149,11 @@ export const clientLoader = async ({
     periodMonths,
     excludeBots,
     unreviewedOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    hasAnyEnabledPattern,
+    isAdmin,
   }
 }
 clientLoader.hydrate = true as const
@@ -132,7 +172,17 @@ export function HydrateFallback() {
 }
 
 export default function InventoryPage({
-  loaderData: { inventory, periodMonths, excludeBots, unreviewedOnly },
+  loaderData: {
+    inventory,
+    periodMonths,
+    excludeBots,
+    unreviewedOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    hasAnyEnabledPattern,
+    isAdmin,
+  },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
 
@@ -147,6 +197,13 @@ export default function InventoryPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions className="flex flex-wrap">
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
+            isAdmin={isAdmin}
+          />
           <Select
             value={String(periodMonths)}
             onValueChange={(value) => {

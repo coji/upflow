@@ -30,8 +30,6 @@ export interface TeamStacksData {
   approvedAwaitingMergePRs: StackPR[]
   changesPendingPRs: StackPR[]
   personalLimit: number
-  insight: string | null
-  autoMergeSuggestion: boolean
 }
 
 interface OpenPRRow {
@@ -69,9 +67,6 @@ interface ReviewRow {
 }
 
 export const DEFAULT_PERSONAL_LIMIT = 2
-/** approvedAwaitingMerge がこの件数を超えたら auto-merge 有効化サジェストを出す */
-export const AUTO_MERGE_SUGGESTION_THRESHOLD = 3
-
 const REVIEWER_STATE_SORT_ORDER: Record<PRReviewerState, number> = {
   APPROVED: 0,
   CHANGES_REQUESTED: 1,
@@ -283,41 +278,6 @@ export function aggregateTeamStacks({
     (a, b) => b.prs.length - a.prs.length,
   )
 
-  const overLimitAuthors = authorStacks.filter(
-    (s) => s.prs.length > personalLimit,
-  ).length
-  const overLimitReviewers = reviewerStacks.filter(
-    (s) => s.prs.length > personalLimit,
-  ).length
-
-  const autoMergeSuggestion =
-    approvedAwaitingMergePRs.length >= AUTO_MERGE_SUGGESTION_THRESHOLD
-
-  const parts: string[] = []
-  if (overLimitAuthors > 0) {
-    parts.push(`${overLimitAuthors}人が目安（${personalLimit}件）を超過中`)
-  }
-  if (overLimitReviewers > 0) {
-    const maxReviewer = reviewerStacks[0]
-    parts.push(
-      `${maxReviewer.displayName}に${maxReviewer.prs.length}件のレビューが集中`,
-    )
-  }
-  if (unassignedPRs.length > 0) {
-    parts.push(`${unassignedPRs.length}件のPRがレビュアー未アサイン`)
-  }
-  if (approvedAwaitingMergePRs.length > 0) {
-    parts.push(`${approvedAwaitingMergePRs.length}件がApprove済みマージ待ち`)
-  }
-  if (changesPendingPRs.length > 0) {
-    parts.push(`${changesPendingPRs.length}件が作者対応待ち`)
-  }
-  if (autoMergeSuggestion) {
-    parts.push('auto-merge-on-approved の有効化を検討してください')
-  }
-
-  const insight = parts.length > 0 ? `${parts.join('。')}。` : null
-
   return {
     authorStacks,
     reviewerStacks,
@@ -325,7 +285,5 @@ export function aggregateTeamStacks({
     approvedAwaitingMergePRs,
     changesPendingPRs,
     personalLimit,
-    insight,
-    autoMergeSuggestion,
   }
 }

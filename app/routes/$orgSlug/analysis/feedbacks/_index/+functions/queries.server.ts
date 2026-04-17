@@ -2,6 +2,11 @@ import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 import { calcPagination } from '~/app/libs/db-utils'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
+import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import {
+  excludePrTitleFilters,
+  filteredPullRequestCount,
+} from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { DB as TenantDB } from '~/app/services/tenant-type'
 import type { OrganizationId } from '~/app/types/organization'
@@ -13,6 +18,7 @@ function feedbackBaseQuery(
   tenantDb: Kysely<TenantDB>,
   sinceDate: string,
   teamId?: string,
+  normalizedPatterns: readonly string[] = [],
 ) {
   let query = tenantDb
     .selectFrom('pullRequestFeedbacks')
@@ -31,6 +37,7 @@ function feedbackBaseQuery(
     )
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .where('pullRequestFeedbacks.updatedAt', '>=', sinceDate)
+    .where(excludePrTitleFilters(normalizedPatterns))
 
   if (teamId) {
     query = query.where('repositories.teamId', '=', teamId)
@@ -47,6 +54,7 @@ interface ListFilteredFeedbacksArgs {
   pageSize: number
   sortBy?: string
   sortOrder: 'asc' | 'desc'
+  normalizedPatterns?: readonly string[]
 }
 
 export const listFilteredFeedbacks = async ({
@@ -57,9 +65,15 @@ export const listFilteredFeedbacks = async ({
   pageSize,
   sortBy,
   sortOrder,
+  normalizedPatterns = [],
 }: ListFilteredFeedbacksArgs) => {
   const tenantDb = getTenantDb(organizationId)
-  const base = feedbackBaseQuery(tenantDb, sinceDate, teamId)
+  const base = feedbackBaseQuery(
+    tenantDb,
+    sinceDate,
+    teamId,
+    normalizedPatterns,
+  )
 
   const dataQuery = base
     .leftJoin('teams', 'repositories.teamId', 'teams.id')
@@ -119,20 +133,60 @@ export type FeedbackRow = Awaited<
   ReturnType<typeof listFilteredFeedbacks>
 >['data'][number]
 
+/**
+ * Filter 適用前後の count 比較用に feedback 件数だけを返す軽量 query。
+ * バナー excludedCount 算出で summary を 2 回計算するのを避ける。
+ * 単一クエリで unfiltered / filtered を SUM(CASE WHEN ...) で同時集計する。
+ */
+export const countFeedbacks = async ({
+  organizationId,
+  teamId,
+  sinceDate,
+  normalizedPatterns = [],
+}: {
+  organizationId: OrganizationId
+  teamId?: string
+  sinceDate: string
+  normalizedPatterns?: readonly string[]
+}): Promise<FilterCountStats> => {
+  const tenantDb = getTenantDb(organizationId)
+  // base query は excludePrTitleFilters を含むので、unfiltered 側は素の base
+  // (patterns 空) で組み立てて 1 クエリで unfiltered/filtered を集計する。
+  const row = await feedbackBaseQuery(tenantDb, sinceDate, teamId, [])
+    .select((eb) => [
+      eb.fn
+        .count<string>('pullRequestFeedbacks.pullRequestNumber')
+        .as('unfiltered'),
+      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
+    ])
+    .executeTakeFirstOrThrow()
+  return {
+    unfiltered: Number(row.unfiltered),
+    filtered: Number(row.filtered),
+  }
+}
+
 interface GetFeedbackSummaryArgs {
   organizationId: OrganizationId
   teamId?: string
   sinceDate: string
+  normalizedPatterns?: readonly string[]
 }
 
 export const getFeedbackSummary = async ({
   organizationId,
   teamId,
   sinceDate,
+  normalizedPatterns = [],
 }: GetFeedbackSummaryArgs) => {
   const tenantDb = getTenantDb(organizationId)
 
-  const rows = await feedbackBaseQuery(tenantDb, sinceDate, teamId)
+  const rows = await feedbackBaseQuery(
+    tenantDb,
+    sinceDate,
+    teamId,
+    normalizedPatterns,
+  )
     .select([
       'pullRequestFeedbacks.originalComplexity',
       'pullRequestFeedbacks.correctedComplexity',

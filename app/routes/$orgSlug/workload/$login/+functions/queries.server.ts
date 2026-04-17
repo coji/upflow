@@ -1,3 +1,8 @@
+import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import {
+  excludePrTitleFilters,
+  filteredPullRequestCount,
+} from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -23,11 +28,38 @@ export const getUserProfile = async (
   }
 }
 
+export const countCreatedPRs = async (
+  organizationId: OrganizationId,
+  login: string,
+  from: string,
+  to: string,
+  normalizedPatterns: readonly string[] = [],
+): Promise<FilterCountStats> => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('pullRequests')
+    .where((eb) =>
+      eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
+    )
+    .where('pullRequestCreatedAt', '>=', from)
+    .where('pullRequestCreatedAt', '<=', to)
+    .select((eb) => [
+      eb.fn.countAll<number>().as('unfiltered'),
+      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
+    ])
+    .executeTakeFirstOrThrow()
+  return {
+    unfiltered: Number(row.unfiltered),
+    filtered: Number(row.filtered),
+  }
+}
+
 export const getCreatedPRs = async (
   organizationId: OrganizationId,
   login: string,
   from: string,
   to: string,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -37,6 +69,7 @@ export const getCreatedPRs = async (
     )
     .where('pullRequestCreatedAt', '>=', from)
     .where('pullRequestCreatedAt', '<=', to)
+    .where(excludePrTitleFilters(normalizedPatterns))
     .select([
       'number',
       'repositoryId',
@@ -55,6 +88,7 @@ export const getMergedPRs = async (
   login: string,
   from: string,
   to: string,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -64,6 +98,7 @@ export const getMergedPRs = async (
     )
     .where('mergedAt', '>=', from)
     .where('mergedAt', '<=', to)
+    .where(excludePrTitleFilters(normalizedPatterns))
     .select([
       'number',
       'repositoryId',
@@ -84,6 +119,7 @@ export const getClosedPRs = async (
   login: string,
   from: string,
   to: string,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -94,6 +130,7 @@ export const getClosedPRs = async (
     .where('closedAt', '>=', from)
     .where('closedAt', '<=', to)
     .where('mergedAt', 'is', null)
+    .where(excludePrTitleFilters(normalizedPatterns))
     .select([
       'number',
       'repositoryId',
@@ -115,6 +152,7 @@ export const getReviewsSubmitted = async (
   login: string,
   from: string,
   to: string,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -141,6 +179,7 @@ export const getReviewsSubmitted = async (
     )
     .where('pullRequestReviews.submittedAt', '>=', from)
     .where('pullRequestReviews.submittedAt', '<=', to)
+    .where(excludePrTitleFilters(normalizedPatterns))
     .select([
       'pullRequestReviews.pullRequestNumber as number',
       'pullRequestReviews.repositoryId',
@@ -160,6 +199,7 @@ export const getReviewsSubmitted = async (
 export const getBacklogDetails = async (
   organizationId: OrganizationId,
   login: string,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
 
@@ -174,6 +214,7 @@ export const getBacklogDetails = async (
         )
         .where('mergedAt', 'is', null)
         .where('closedAt', 'is', null)
+        .where(excludePrTitleFilters(normalizedPatterns))
         .select([
           'number',
           'repositoryId',
@@ -207,6 +248,7 @@ export const getBacklogDetails = async (
         .where('pullRequests.mergedAt', 'is', null)
         .where('pullRequests.closedAt', 'is', null)
         .where('pullRequestReviewers.requestedAt', 'is not', null)
+        .where(excludePrTitleFilters(normalizedPatterns))
         .leftJoin('companyGithubUsers', (join) =>
           join.onRef(
             (eb) => eb.fn('lower', ['pullRequestReviewers.reviewer']),
@@ -247,6 +289,7 @@ export const getBacklogDetails = async (
         .where('pullRequestReviewers.requestedAt', 'is not', null)
         .where('pullRequests.mergedAt', 'is', null)
         .where('pullRequests.closedAt', 'is', null)
+        .where(excludePrTitleFilters(normalizedPatterns))
         .leftJoin('companyGithubUsers as authorUser', (join) =>
           join.onRef(
             (eb) => eb.fn('lower', ['pullRequests.author']),
@@ -285,6 +328,7 @@ export const getBacklogDetails = async (
         )
         .where('pullRequests.mergedAt', 'is', null)
         .where('pullRequests.closedAt', 'is', null)
+        .where(excludePrTitleFilters(normalizedPatterns))
         .where((eb) =>
           eb.or([
             eb(eb.fn('lower', ['pullRequests.author']), '=', loginLower),

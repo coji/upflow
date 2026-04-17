@@ -1,5 +1,10 @@
 import { sql } from 'kysely'
-import { excludeBots } from '~/app/libs/tenant-query.server'
+import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import {
+  excludeBots,
+  excludePrTitleFilters,
+  filteredPullRequestCount,
+} from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -12,6 +17,7 @@ export const getQueueHistoryRawData = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -88,6 +94,7 @@ export const getQueueHistoryRawData = async (
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
+    .where(excludePrTitleFilters(normalizedPatterns))
     .select([
       'pullRequestReviewers.requestedAt',
       'resolvedReview.firstResolvedAt as resolvedAt',
@@ -105,6 +112,7 @@ export const getWipCycleRawData = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -124,6 +132,7 @@ export const getWipCycleRawData = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
+    .where(excludePrTitleFilters(normalizedPatterns))
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(
@@ -165,6 +174,7 @@ export const getPRSizeDistribution = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
+  normalizedPatterns: readonly string[] = [],
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -185,6 +195,7 @@ export const getPRSizeDistribution = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
+    .where(excludePrTitleFilters(normalizedPatterns))
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(
@@ -216,4 +227,43 @@ export const getPRSizeDistribution = async (
       'pullRequestFeedbacks.correctedComplexity',
     ])
     .execute()
+}
+
+/**
+ * バナー用 excludedCount 算出のため、wipCycleRaw の distinct PR 件数だけを数える。
+ * RDD で analysis/reviews の母集団は wipCycleRaw の distinct PR 数で統一している。
+ */
+export const countWipCyclePullRequests = async (
+  organizationId: OrganizationId,
+  sinceDate: string,
+  teamId?: string | null,
+  normalizedPatterns: readonly string[] = [],
+): Promise<FilterCountStats> => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('pullRequests')
+    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequests.author']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
+    )
+    .where('pullRequests.mergedAt', 'is not', null)
+    .where('pullRequests.reviewTime', 'is not', null)
+    .where('pullRequests.mergedAt', '>=', sinceDate)
+    .$if(teamId != null, (qb) =>
+      qb.where('repositories.teamId', '=', teamId as string),
+    )
+    .where(excludeBots)
+    .select((eb) => [
+      eb.fn.countAll<number>().as('unfiltered'),
+      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
+    ])
+    .executeTakeFirstOrThrow()
+  return {
+    unfiltered: Number(row.unfiltered),
+    filtered: Number(row.filtered),
+  }
 }

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { AppDataTable } from '~/app/components'
 import {
   PageHeader,
+  PageHeaderActions,
   PageHeaderDescription,
   PageHeaderHeading,
   PageHeaderTitle,
@@ -16,16 +17,25 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { isOrgAdmin } from '~/app/libs/member-role'
+import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
 import {
   orgContext,
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { DiffBadge } from '../+components/diff-badge'
 import { StatCard } from '../+components/stat-card'
 import { calcStats } from '../+functions/calc-stats'
 import { createColumns } from './+columns'
-import { getDeployedPullRequestReport } from './+functions/queries.server'
+import {
+  countDeployedPullRequests,
+  getDeployedPullRequestReport,
+} from './+functions/queries.server'
 import type { Route } from './+types/index'
 
 export const handle = {
@@ -37,7 +47,7 @@ export type PullRequest = Awaited<
 >[0]
 
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const objective = 3.0
   const timezone = context.get(timezoneContext)
 
@@ -60,14 +70,20 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const prevFrom = from.subtract(7, 'day')
   const prevTo = to.subtract(7, 'day')
 
-  const [pullRequests, prevPullRequests] = await Promise.all([
+  const filter = await loadPrFilterState(request, organization.id)
+
+  const fromIso = from.utc().toISOString()
+  const toIso = to.utc().toISOString()
+
+  const [pullRequests, prevPullRequests, excludedCount] = await Promise.all([
     getDeployedPullRequestReport(
       organization.id,
-      from.utc().toISOString(),
-      to.utc().toISOString(),
+      fromIso,
+      toIso,
       objective,
       teamParam || undefined,
       businessDaysOnly,
+      filter.normalizedPatterns,
     ),
     getDeployedPullRequestReport(
       organization.id,
@@ -76,6 +92,16 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
       objective,
       teamParam || undefined,
       businessDaysOnly,
+      filter.normalizedPatterns,
+    ),
+    computeExcludedCount(filter, (patterns) =>
+      countDeployedPullRequests(
+        organization.id,
+        fromIso,
+        toIso,
+        teamParam || undefined,
+        patterns,
+      ),
     ),
   ])
 
@@ -89,6 +115,11 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     ...stats,
     prev,
     businessDaysOnly,
+    excludedCount,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
+    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
@@ -102,6 +133,11 @@ export default function DeployedPage({
     median,
     prev,
     businessDaysOnly,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    hasAnyEnabledPattern,
+    isAdmin,
   },
   params: { orgSlug },
 }: Route.ComponentProps) {
@@ -121,6 +157,15 @@ export default function DeployedPage({
             Pull requests deployed this week with cycle time metrics.
           </PageHeaderDescription>
         </PageHeaderHeading>
+        <PageHeaderActions>
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
+            isAdmin={isAdmin}
+          />
+        </PageHeaderActions>
       </PageHeader>
 
       <AppDataTable

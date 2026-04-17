@@ -14,7 +14,12 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
+import {
+  computeExcludedCount,
+  loadPrFilterState,
+} from '~/app/libs/pr-title-filter.server'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import {
   PRBlock,
@@ -24,11 +29,13 @@ import {
   type PRBlockData,
   type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
+import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import {
   buildPRReviewerStatesMap,
   classifyPRReviewStatus,
 } from '~/app/routes/$orgSlug/workload/+functions/aggregate-stacks'
 import {
+  countCreatedPRs,
   getBacklogDetails,
   getClosedPRs,
   getCreatedPRs,
@@ -49,7 +56,7 @@ export const loader = async ({
   params,
   context,
 }: Route.LoaderArgs) => {
-  const { organization } = context.get(orgContext)
+  const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
   const url = new URL(request.url)
@@ -63,15 +70,52 @@ export const loader = async ({
   const from = weekStart.utc().toISOString()
   const to = weekEnd.utc().toISOString()
 
-  const [user, createdPRs, mergedPRs, closedPRs, reviews, backlog] =
-    await Promise.all([
-      getUserProfile(organization.id, params.login),
-      getCreatedPRs(organization.id, params.login, from, to),
-      getMergedPRs(organization.id, params.login, from, to),
-      getClosedPRs(organization.id, params.login, from, to),
-      getReviewsSubmitted(organization.id, params.login, from, to),
-      getBacklogDetails(organization.id, params.login),
-    ])
+  const filter = await loadPrFilterState(request, organization.id)
+
+  // 週のサマリーとして created PR 数を母集団とする
+  const [
+    user,
+    createdPRs,
+    mergedPRs,
+    closedPRs,
+    reviews,
+    backlog,
+    excludedCount,
+  ] = await Promise.all([
+    getUserProfile(organization.id, params.login),
+    getCreatedPRs(
+      organization.id,
+      params.login,
+      from,
+      to,
+      filter.normalizedPatterns,
+    ),
+    getMergedPRs(
+      organization.id,
+      params.login,
+      from,
+      to,
+      filter.normalizedPatterns,
+    ),
+    getClosedPRs(
+      organization.id,
+      params.login,
+      from,
+      to,
+      filter.normalizedPatterns,
+    ),
+    getReviewsSubmitted(
+      organization.id,
+      params.login,
+      from,
+      to,
+      filter.normalizedPatterns,
+    ),
+    getBacklogDetails(organization.id, params.login, filter.normalizedPatterns),
+    computeExcludedCount(filter, (patterns) =>
+      countCreatedPRs(organization.id, params.login, from, to, patterns),
+    ),
+  ])
 
   // Build holiday map for the week
   const holidays: Record<string, string> = {}
@@ -117,6 +161,11 @@ export const loader = async ({
     holidays,
     weekStart: weekStart.format('YYYY-MM-DD'),
     weekEnd: weekEnd.format('YYYY-MM-DD'),
+    excludedCount,
+    filterActive: filter.filterActive,
+    showFiltered: filter.showFiltered,
+    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
@@ -130,6 +179,11 @@ export default function MemberWeeklyPage({
     backlog,
     holidays,
     weekStart,
+    excludedCount,
+    filterActive,
+    showFiltered,
+    hasAnyEnabledPattern,
+    isAdmin,
   },
   params,
 }: Route.ComponentProps) {
@@ -294,6 +348,13 @@ export default function MemberWeeklyPage({
             ← Review Stacks
           </Link>
         </HStack>
+        <PrTitleFilterStatus
+          excludedCount={excludedCount}
+          filterActive={filterActive}
+          showFiltered={showFiltered}
+          hasAnyEnabledPattern={hasAnyEnabledPattern}
+          isAdmin={isAdmin}
+        />
       </div>
 
       <HStack>
