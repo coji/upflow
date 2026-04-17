@@ -46,3 +46,4 @@ Implemented in #301, #305, #309, #312, #316
 ## 一覧
 
 - [issue-283: 1 org に複数の GitHub App installation を紐づける](./issue-283-multiple-github-accounts.md)
+- [issue-307: PR タイトルパターンによる表示フィルター](./issue-307-pr-title-filter.md)
