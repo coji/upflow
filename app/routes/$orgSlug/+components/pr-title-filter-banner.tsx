@@ -1,5 +1,5 @@
 import { FilterIcon, FilterXIcon } from 'lucide-react'
-import { Link, useLocation, useParams } from 'react-router'
+import { Link, href, useLocation, useParams } from 'react-router'
 import { Alert, AlertDescription } from '~/app/components/ui/alert'
 import { Button } from '~/app/components/ui/button'
 
@@ -56,9 +56,8 @@ export function PrTitleFilterBanner({
   params.set('showFiltered', '1')
   const showAllHref = `${location.pathname}?${params.toString()}`
 
-  // Route が Phase 3 で追加されるまでは plain string を使う。
   const settingsHref =
-    orgSlug != null ? `/${orgSlug}/settings/pr-filters` : null
+    orgSlug != null ? href('/:orgSlug/settings/pr-filters', { orgSlug }) : null
 
   return (
     <Alert>

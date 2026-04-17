@@ -2,6 +2,7 @@ import {
   AlertTriangleIcon,
   DatabaseIcon,
   FileSpreadsheetIcon,
+  FilterIcon,
   GitPullRequestIcon,
   GroupIcon,
   PlugIcon,
@@ -79,6 +80,11 @@ export default function SettingsLayout({
         </svg>
       ),
       href: href('/:orgSlug/settings/github-users', { orgSlug }),
+    },
+    {
+      title: 'PR Filters',
+      icon: <FilterIcon size={18} />,
+      href: href('/:orgSlug/settings/pr-filters', { orgSlug }),
     },
     {
       title: 'Export',
