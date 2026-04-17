@@ -1,4 +1,5 @@
-import { FilterIcon, FilterXIcon } from 'lucide-react'
+import { FilterIcon, FilterXIcon, type LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Link, href, useLocation, useParams } from 'react-router'
 import { Button } from '~/app/components/ui/button'
 import {
@@ -32,43 +33,23 @@ export function PrTitleFilterStatus({
   const location = useLocation()
 
   const settingsHref =
-    orgSlug != null ? href('/:orgSlug/settings/pr-filters', { orgSlug }) : null
+    isAdmin && orgSlug != null
+      ? href('/:orgSlug/settings/pr-filters', { orgSlug })
+      : null
 
   if (showFiltered) {
-    const params = new URLSearchParams(location.search)
-    params.delete('showFiltered')
-    const restoreHref = `${location.pathname}${
-      params.toString() ? `?${params.toString()}` : ''
-    }`
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-muted-foreground h-8 gap-1.5"
-            aria-label="Title filter is off"
-          >
-            <FilterXIcon size={14} />
-            Filter off
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link to={restoreHref} replace>
-              Re-enable filter
-            </Link>
-          </DropdownMenuItem>
-          {isAdmin && settingsHref != null && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to={settingsHref}>Manage filters…</Link>
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <StatusDropdown
+        Icon={FilterXIcon}
+        label="Filter off"
+        buttonClassName="text-muted-foreground"
+        ariaLabel="Title filter is off"
+        primaryAction={{
+          href: buildHref(location, (p) => p.delete('showFiltered')),
+          label: 'Re-enable filter',
+        }}
+        settingsHref={settingsHref}
+      />
     )
   }
 
@@ -76,30 +57,55 @@ export function PrTitleFilterStatus({
     return null
   }
 
-  const params = new URLSearchParams(location.search)
-  params.set('showFiltered', '1')
-  const showAllHref = `${location.pathname}?${params.toString()}`
+  return (
+    <StatusDropdown
+      Icon={FilterIcon}
+      label={`${excludedCount} hidden`}
+      ariaLabel={`${excludedCount} PRs hidden by title filter`}
+      primaryAction={{
+        href: buildHref(location, (p) => p.set('showFiltered', '1')),
+        label: 'Show all PRs',
+      }}
+      settingsHref={settingsHref}
+    />
+  )
+}
 
+function StatusDropdown({
+  Icon,
+  label,
+  buttonClassName,
+  ariaLabel,
+  primaryAction,
+  settingsHref,
+}: {
+  Icon: LucideIcon
+  label: ReactNode
+  buttonClassName?: string
+  ariaLabel: string
+  primaryAction: { href: string; label: string }
+  settingsHref: string | null
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           size="sm"
           variant="outline"
-          className="h-8 gap-1.5"
-          aria-label={`${excludedCount} PRs hidden by title filter`}
+          className={`h-8 gap-1.5 ${buttonClassName ?? ''}`}
+          aria-label={ariaLabel}
         >
-          <FilterIcon size={14} />
-          {excludedCount} hidden
+          <Icon size={14} />
+          {label}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
-          <Link to={showAllHref} replace>
-            Show all PRs
+          <Link to={primaryAction.href} replace>
+            {primaryAction.label}
           </Link>
         </DropdownMenuItem>
-        {isAdmin && settingsHref != null && (
+        {settingsHref != null && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
@@ -110,4 +116,14 @@ export function PrTitleFilterStatus({
       </DropdownMenuContent>
     </DropdownMenu>
   )
+}
+
+function buildHref(
+  location: { pathname: string; search: string },
+  mutate: (params: URLSearchParams) => void,
+): string {
+  const params = new URLSearchParams(location.search)
+  mutate(params)
+  const query = params.toString()
+  return `${location.pathname}${query ? `?${query}` : ''}`
 }
