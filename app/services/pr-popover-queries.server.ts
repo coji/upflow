@@ -1,3 +1,4 @@
+import { excludeBots } from '~/app/libs/tenant-query.server'
 import type {
   PRPopoverData,
   PRReviewStatus,
@@ -53,6 +54,7 @@ export async function getPullRequestForPopover(
       )
       .where('pullRequestReviews.repositoryId', '=', repositoryId)
       .where('pullRequestReviews.pullRequestNumber', '=', number)
+      .where(excludeBots)
       .select([
         'pullRequestReviews.pullRequestNumber as number',
         'pullRequestReviews.repositoryId',
@@ -74,6 +76,7 @@ export async function getPullRequestForPopover(
       .where('pullRequestReviewers.repositoryId', '=', repositoryId)
       .where('pullRequestReviewers.pullRequestNumber', '=', number)
       .where('pullRequestReviewers.requestedAt', 'is not', null)
+      .where(excludeBots)
       .select([
         'pullRequestReviewers.pullRequestNumber as number',
         'pullRequestReviewers.repositoryId',

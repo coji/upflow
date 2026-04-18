@@ -1,6 +1,6 @@
 import { MoreHorizontalIcon } from 'lucide-react'
 import { Popover as PopoverPrimitive } from 'radix-ui'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useRef, useState } from 'react'
 import { href, useFetcher, useParams } from 'react-router'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
@@ -377,22 +377,22 @@ export function PRPopoverContent({
         >
           {pr.repo}#{pr.number}
         </a>
-        <SizeBadge complexity={pr.complexity} />
+        <SizeBadge
+          complexity={pr.complexity}
+          className="px-1.5 py-0 text-[10px]"
+        />
         <HidePRsByTitleMenu title={pr.title} />
       </div>
       <p className="line-clamp-3 text-xs">{pr.title}</p>
-      <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
+      <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
         <span className="inline-flex items-center gap-1">
           <GitHubAvatar login={pr.author} size={14} />
           {pr.authorDisplayName ?? pr.author}
         </span>
         <span>{createdAgo}</span>
-      </div>
-      <div className="space-y-0.5">
-        <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
-          現在の PR status
-        </div>
-        <div className={`text-xs ${statusShape.text}`}>{statusShape.label}</div>
+        <span className={`ml-auto ${statusShape.text}`}>
+          {statusShape.label}
+        </span>
       </div>
       {stateInfo && (
         <div className="space-y-0.5">
@@ -459,6 +459,8 @@ export function PRPopover({
   const fetcher = useFetcher<PRPopoverLoaderData>({
     key: `pr-popover:${orgSlug}:${prKey.repositoryId}:${prKey.number}`,
   })
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [side, setSide] = useState<'top' | 'bottom'>('top')
 
   const resourceHref = orgSlug
     ? href('/:orgSlug/resources/pr-popover/:repositoryId/:number', {
@@ -492,15 +494,20 @@ export function PRPopover({
   return (
     <Popover
       onOpenChange={(open) => {
-        // HTTP cache (max-age=30) handles repeat-open within window;
-        // skip refetch when we already have a result to avoid abort race.
-        if (open && resourceHref && !fetcher.data) {
+        if (!open) return
+        const rect = triggerRef.current?.getBoundingClientRect()
+        if (rect) {
+          setSide(rect.top > window.innerHeight / 2 ? 'top' : 'bottom')
+        }
+        if (resourceHref && !fetcher.data) {
           void fetcher.load(resourceHref)
         }
       }}
     >
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent side="top" className="w-72 p-3">
+      <PopoverTrigger ref={triggerRef} asChild>
+        {children}
+      </PopoverTrigger>
+      <PopoverContent side={side} avoidCollisions={false} className="w-72 p-3">
         {renderBody()}
         <PopoverPrimitive.Arrow className="bg-popover fill-popover border-border size-2.5 -translate-y-1/2 rotate-45 border-r border-b" />
       </PopoverContent>

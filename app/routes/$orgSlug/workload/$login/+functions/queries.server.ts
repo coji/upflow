@@ -1,5 +1,6 @@
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import {
+  excludeBots,
   excludePrTitleFilters,
   filteredPullRequestCount,
 } from '~/app/libs/tenant-query.server'
@@ -256,6 +257,7 @@ export const getBacklogDetails = async (
             (eb) => eb.fn('lower', ['companyGithubUsers.login']),
           ),
         )
+        .where(excludeBots)
         .select([
           'pullRequestReviewers.pullRequestNumber as number',
           'pullRequestReviewers.repositoryId',
@@ -363,6 +365,7 @@ export const getBacklogDetails = async (
             (eb) => eb.fn('lower', ['companyGithubUsers.login']),
           ),
         )
+        .where(excludeBots)
         .select([
           'pullRequestReviews.pullRequestNumber as number',
           'pullRequestReviews.repositoryId',

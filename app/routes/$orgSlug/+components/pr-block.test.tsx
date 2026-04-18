@@ -93,7 +93,7 @@ describe('PRPopover', () => {
     )
     await user.click(screen.getByRole('button', { name: 'open' }))
     const panel = screen.getByRole('dialog')
-    expect(panel.querySelector('.h-\\[120px\\]')).toBeTruthy()
+    expect(panel.querySelectorAll('[data-slot="skeleton"]').length).toBe(3)
   })
 
   test('(b) not_found message', async () => {
@@ -133,7 +133,7 @@ describe('PRPopover', () => {
     )
   })
 
-  test('(d) three labeled sections when reviewState, reviewStatus, reviewerStates set', () => {
+  test('(d) PR status badge inline + this-day review + reviewer states sections', () => {
     const pr: PRPopoverData = {
       ...samplePr,
       reviewStatus: 'approved-awaiting-merge',
@@ -147,7 +147,7 @@ describe('PRPopover', () => {
       ],
     }
     render(<PRPopoverContent pr={pr} reviewState="APPROVED" />)
-    expect(screen.getByText('現在の PR status')).toBeTruthy()
+    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
     expect(screen.getByText('この日の review')).toBeTruthy()
     expect(screen.getByText('現在の reviewer states')).toBeTruthy()
   })
