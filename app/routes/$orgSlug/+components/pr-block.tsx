@@ -16,6 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
+import { Skeleton } from '~/app/components/ui/skeleton'
 import dayjs from '~/app/libs/dayjs'
 
 /**
@@ -179,9 +180,9 @@ export interface PRPopoverData {
   url: string
   createdAt: string
   complexity: string | null
-  author: string | null
+  author: string
   authorDisplayName: string | null
-  reviewStatus: PRReviewStatus | null
+  reviewStatus: PRReviewStatus
   reviewerStates: PRReviewerStateEntry[]
 }
 
@@ -286,23 +287,45 @@ function GitHubAvatar({ login, size }: { login: string; size: number }) {
 function PRPopoverSkeleton() {
   return (
     <div className="flex h-[120px] flex-col justify-center gap-2">
-      <div className="bg-muted h-3 w-3/4 rounded" />
-      <div className="bg-muted h-3 w-full rounded" />
-      <div className="bg-muted h-3 w-5/6 rounded" />
+      <Skeleton className="h-3 w-3/4" />
+      <Skeleton className="h-3 w-full" />
+      <Skeleton className="h-3 w-5/6" />
     </div>
+  )
+}
+
+function HidePRsByTitleMenu({ title }: { title: string }) {
+  const onHideByTitle = useContext(PRHideByTitleFilterContext)
+  if (!onHideByTitle) return null
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="ml-auto size-5"
+          aria-label="More actions"
+        >
+          <MoreHorizontalIcon size={14} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => onHideByTitle(title)}>
+          Hide PRs by title…
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
 function PRPopoverDegraded({
   prKey,
   fallback,
-  hideTitleForFilter,
 }: {
   prKey: { repositoryId: string; number: number }
   fallback?: { title?: string; url?: string; repo?: string }
-  hideTitleForFilter?: string
 }) {
-  const onHideByTitle = useContext(PRHideByTitleFilterContext)
   const linkLabel = fallback?.repo
     ? `${fallback.repo}#${prKey.number}`
     : `${prKey.repositoryId}#${prKey.number}`
@@ -323,28 +346,7 @@ function PRPopoverDegraded({
         ) : (
           <span className="font-medium">{linkLabel}</span>
         )}
-        {onHideByTitle && hideTitleForFilter && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="ml-auto size-5"
-                aria-label="More actions"
-              >
-                <MoreHorizontalIcon size={14} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onSelect={() => onHideByTitle(hideTitleForFilter)}
-              >
-                Hide PRs by title…
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {fallback?.title && <HidePRsByTitleMenu title={fallback.title} />}
       </div>
       {fallback?.title && (
         <p className="text-muted-foreground line-clamp-3">{fallback.title}</p>
@@ -362,10 +364,7 @@ export function PRPopoverContent({
 }) {
   const createdAgo = dayjs.utc(pr.createdAt).fromNow()
   const stateInfo = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
-  const statusShape =
-    pr.reviewStatus != null ? REVIEW_STATUS_SHAPE[pr.reviewStatus] : undefined
-  const onHideByTitle = useContext(PRHideByTitleFilterContext)
-  const hideTitle = pr.title
+  const statusShape = REVIEW_STATUS_SHAPE[pr.reviewStatus]
 
   return (
     <div className="space-y-2">
@@ -379,47 +378,22 @@ export function PRPopoverContent({
           {pr.repo}#{pr.number}
         </a>
         <SizeBadge complexity={pr.complexity} />
-        {onHideByTitle && hideTitle && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="ml-auto size-5"
-                aria-label="More actions"
-              >
-                <MoreHorizontalIcon size={14} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => onHideByTitle(hideTitle)}>
-                Hide PRs by title…
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <HidePRsByTitleMenu title={pr.title} />
       </div>
       <p className="line-clamp-3 text-xs">{pr.title}</p>
       <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
-        {pr.author && (
-          <span className="inline-flex items-center gap-1">
-            <GitHubAvatar login={pr.author} size={14} />
-            {pr.authorDisplayName ?? pr.author}
-          </span>
-        )}
+        <span className="inline-flex items-center gap-1">
+          <GitHubAvatar login={pr.author} size={14} />
+          {pr.authorDisplayName ?? pr.author}
+        </span>
         <span>{createdAgo}</span>
       </div>
-      {statusShape && (
-        <div className="space-y-0.5">
-          <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
-            現在の PR status
-          </div>
-          <div className={`text-xs ${statusShape.text}`}>
-            {statusShape.label}
-          </div>
+      <div className="space-y-0.5">
+        <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
+          現在の PR status
         </div>
-      )}
+        <div className={`text-xs ${statusShape.text}`}>{statusShape.label}</div>
+      </div>
       {stateInfo && (
         <div className="space-y-0.5">
           <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
@@ -465,6 +439,11 @@ export function PRPopoverContent({
   )
 }
 
+const ERROR_MESSAGES = {
+  not_found: 'PR が見つかりませんでした',
+  fetch_failed: 'PR の情報を取得できませんでした',
+} as const
+
 export function PRPopover({
   prKey,
   reviewState,
@@ -476,55 +455,36 @@ export function PRPopover({
   fallback?: { title?: string; url?: string; repo?: string }
   children: React.ReactNode
 }) {
-  const { orgSlug = '' } = useParams()
+  const { orgSlug } = useParams<{ orgSlug: string }>()
   const fetcher = useFetcher<PRPopoverLoaderData>({
     key: `pr-popover:${orgSlug}:${prKey.repositoryId}:${prKey.number}`,
   })
 
-  const resourceHref =
-    orgSlug &&
-    href('/:orgSlug/resources/pr-popover/:repositoryId/:number', {
-      orgSlug,
-      repositoryId: prKey.repositoryId,
-      number: String(prKey.number),
-    })
+  const resourceHref = orgSlug
+    ? href('/:orgSlug/resources/pr-popover/:repositoryId/:number', {
+        orgSlug,
+        repositoryId: prKey.repositoryId,
+        number: String(prKey.number),
+      })
+    : null
 
   const renderBody = () => {
     const d = fetcher.data
-    const loading = fetcher.state === 'loading'
 
     if (d?.pr) {
       return <PRPopoverContent pr={d.pr} reviewState={reviewState} />
     }
-    if (d?.error === 'not_found') {
+    if (d?.error) {
       return (
         <div className="space-y-2">
           <p className="text-muted-foreground text-xs">
-            PR が見つかりませんでした
+            {ERROR_MESSAGES[d.error]}
           </p>
-          <PRPopoverDegraded
-            prKey={prKey}
-            fallback={fallback}
-            hideTitleForFilter={fallback?.title}
-          />
+          <PRPopoverDegraded prKey={prKey} fallback={fallback} />
         </div>
       )
     }
-    if (d?.error === 'fetch_failed') {
-      return (
-        <div className="space-y-2">
-          <p className="text-muted-foreground text-xs">
-            PR の情報を取得できませんでした
-          </p>
-          <PRPopoverDegraded
-            prKey={prKey}
-            fallback={fallback}
-            hideTitleForFilter={fallback?.title}
-          />
-        </div>
-      )
-    }
-    if (loading && d === undefined) {
+    if (fetcher.state === 'loading') {
       return <PRPopoverSkeleton />
     }
     return null
@@ -533,7 +493,9 @@ export function PRPopover({
   return (
     <Popover
       onOpenChange={(open) => {
-        if (open && resourceHref) {
+        // HTTP cache (max-age=30) handles repeat-open within window;
+        // skip refetch when we already have a result to avoid abort race.
+        if (open && resourceHref && !fetcher.data) {
           void fetcher.load(resourceHref)
         }
       }}
