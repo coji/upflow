@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, href, useMatches } from 'react-router'
 import { AppSidebar } from '~/app/components/layout/app-sidebar'
 import { Header } from '~/app/components/layout/header'
@@ -5,6 +6,7 @@ import { Main } from '~/app/components/layout/main'
 import { SidebarProvider } from '~/app/components/ui/sidebar'
 import { useBreadcrumbs } from '~/app/hooks/use-breadcrumbs'
 import { getUserOrganizations } from '~/app/libs/auth.server'
+import { isOrgAdmin } from '~/app/libs/member-role'
 import { cn } from '~/app/libs/utils'
 import {
   orgContext,
@@ -12,6 +14,8 @@ import {
   timezoneContext,
 } from '~/app/middleware/context'
 import { orgMemberMiddleware } from '~/app/middleware/org-member'
+import { PRHideByTitleFilterContext } from '~/app/routes/$orgSlug/+components/pr-block'
+import { PrTitleFilterSheet } from '~/app/routes/$orgSlug/+components/pr-title-filter-sheet'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { Route } from './+types/_layout'
 
@@ -64,6 +68,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     timezone,
     teams,
     selectedTeamId,
+    isAdmin: isOrgAdmin(membership.role),
   }
 }
 
@@ -76,6 +81,7 @@ export default function OrgLayout({
     defaultOpen,
     teams,
     selectedTeamId,
+    isAdmin,
   },
 }: Route.ComponentProps) {
   const { Breadcrumbs } = useBreadcrumbs()
@@ -84,6 +90,15 @@ export default function OrgLayout({
     if (m.handle && typeof m.handle === 'object') Object.assign(acc, m.handle)
     return acc
   }, {}) as RouteHandle
+
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetTitle, setSheetTitle] = useState<string | null>(null)
+  const openSheet = isAdmin
+    ? (title: string) => {
+        setSheetTitle(title)
+        setSheetOpen(true)
+      }
+    : null
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
@@ -109,7 +124,16 @@ export default function OrgLayout({
           <Breadcrumbs />
         </Header>
         <Main fixed={handle.mainFixed}>
-          <Outlet />
+          <PRHideByTitleFilterContext.Provider value={openSheet}>
+            <Outlet />
+            {isAdmin && (
+              <PrTitleFilterSheet
+                open={sheetOpen}
+                onOpenChange={setSheetOpen}
+                pullRequestTitle={sheetTitle}
+              />
+            )}
+          </PRHideByTitleFilterContext.Provider>
         </Main>
       </div>
     </SidebarProvider>

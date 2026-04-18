@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   PageHeader,
   PageHeaderActions,
@@ -13,8 +12,6 @@ import {
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
-import { PRHideByTitleFilterContext } from '~/app/routes/$orgSlug/+components/pr-block'
-import { PrTitleFilterSheet } from '~/app/routes/$orgSlug/+components/pr-title-filter-sheet'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
@@ -135,45 +132,27 @@ export default function ReviewStacksPage({
     isAdmin,
   },
 }: Route.ComponentProps) {
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [sheetTitle, setSheetTitle] = useState<string | null>(null)
-  const openSheet = isAdmin
-    ? (title: string) => {
-        setSheetTitle(title)
-        setSheetOpen(true)
-      }
-    : null
-
   return (
-    <PRHideByTitleFilterContext.Provider value={openSheet}>
-      <Stack>
-        <PageHeader>
-          <PageHeaderHeading>
-            <PageHeaderTitle>Review Stacks</PageHeaderTitle>
-            <PageHeaderDescription>
-              Monitor review workload balance across team members.
-            </PageHeaderDescription>
-          </PageHeaderHeading>
-          <PageHeaderActions>
-            <PrTitleFilterStatus
-              excludedCount={excludedCount}
-              filterActive={filterActive}
-              showFiltered={showFiltered}
-              hasAnyEnabledPattern={hasAnyEnabledPattern}
-              isAdmin={isAdmin}
-            />
-          </PageHeaderActions>
-        </PageHeader>
+    <Stack>
+      <PageHeader>
+        <PageHeaderHeading>
+          <PageHeaderTitle>Review Stacks</PageHeaderTitle>
+          <PageHeaderDescription>
+            Monitor review workload balance across team members.
+          </PageHeaderDescription>
+        </PageHeaderHeading>
+        <PageHeaderActions>
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
+            isAdmin={isAdmin}
+          />
+        </PageHeaderActions>
+      </PageHeader>
 
-        <TeamStacksChart data={teamStacks} />
-      </Stack>
-      {isAdmin && (
-        <PrTitleFilterSheet
-          open={sheetOpen}
-          onOpenChange={setSheetOpen}
-          pullRequestTitle={sheetTitle}
-        />
-      )}
-    </PRHideByTitleFilterContext.Provider>
+      <TeamStacksChart data={teamStacks} />
+    </Stack>
   )
 }

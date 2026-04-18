@@ -4,13 +4,15 @@ import { SizeBadgePopover } from '~/app/components/size-badge-popover'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
 import { complexitySortingFn } from '~/app/libs/pr-classify'
+import { HidePRsByTitleMenu } from '~/app/routes/$orgSlug/+components/pr-block'
 import type { PullRequest } from './index'
 
 export function createColumns(
   timezone: string,
   orgSlug: string,
+  isAdmin: boolean,
 ): ColumnDef<PullRequest>[] {
-  return [
+  const columns: ColumnDef<PullRequest>[] = [
     {
       accessorKey: 'author',
       header: ({ column }) => (
@@ -146,4 +148,19 @@ export function createColumns(
       enableHiding: false,
     },
   ]
+
+  if (isAdmin) {
+    columns.push({
+      id: 'actions',
+      header: '',
+      cell: ({ row }) =>
+        row.original.title ? (
+          <HidePRsByTitleMenu title={row.original.title} />
+        ) : null,
+      enableHiding: false,
+      enableSorting: false,
+    })
+  }
+
+  return columns
 }

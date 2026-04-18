@@ -296,7 +296,7 @@ function PRPopoverSkeleton() {
   )
 }
 
-function HidePRsByTitleMenu({
+export function HidePRsByTitleMenu({
   title,
   className,
 }: {

@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from '~/app/components/ui/sheet'
 import { parseRiskAreas } from '~/app/libs/pr-classify'
+import { HidePRsByTitleMenu } from '~/app/routes/$orgSlug/+components/pr-block'
 
 export interface DrillDownPR {
   number: number
@@ -89,6 +90,14 @@ export function PRDrillDownSheet({
                       {formatHours(pr.reviewTime * 24)}
                     </span>
                   )}
+                  <HidePRsByTitleMenu
+                    title={pr.title}
+                    className={
+                      pr.reviewTime != null && pr.reviewTime > 0
+                        ? ''
+                        : 'ml-auto'
+                    }
+                  />
                 </div>
                 <a
                   href={pr.url}
