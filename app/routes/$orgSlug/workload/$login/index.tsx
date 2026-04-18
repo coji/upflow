@@ -1,13 +1,8 @@
 import holiday_jp from '@holiday-jp/holiday_jp'
 import { useMemo } from 'react'
-import { Link, href, useSearchParams } from 'react-router'
+import { href, Link, useSearchParams } from 'react-router'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/app/components/ui/popover'
 import { HStack, Stack } from '~/app/components/ui/stack'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import WeeklyCalendar from '~/app/components/week-calendar'
@@ -23,10 +18,11 @@ import {
 import { orgContext, timezoneContext } from '~/app/middleware/context'
 import {
   PRBlock,
-  PRPopoverContent,
+  PRPopover,
   REVIEW_STATE_STYLE,
   REVIEW_STATUS_PRIORITY,
   type PRBlockData,
+  type PRReviewerStateEntry,
   type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
@@ -40,6 +36,7 @@ import {
   getClosedPRs,
   getCreatedPRs,
   getMergedPRs,
+  getPRPopoverEnrichment,
   getReviewsSubmitted,
   getUserProfile,
 } from './+functions/queries.server'
@@ -148,6 +145,54 @@ export const loader = async ({
     return { ...pr, reviewStatus: 'in-review' as const, reviewerStates }
   })
 
+  // Calendar PRs need the same enrichment as Review Stacks so the shared
+  // PRPopover shows author + reviewer states.
+  const calendarPRKeyMap = new Map<
+    string,
+    { repositoryId: string; number: number }
+  >()
+  for (const pr of [...createdPRs, ...mergedPRs, ...closedPRs, ...reviews]) {
+    calendarPRKeyMap.set(`${pr.repositoryId}:${pr.number}`, {
+      repositoryId: pr.repositoryId,
+      number: pr.number,
+    })
+  }
+  const enrichment = await getPRPopoverEnrichment(organization.id, [
+    ...calendarPRKeyMap.values(),
+  ])
+  const calendarReviewerStatesByPR = buildPRReviewerStatesMap(
+    enrichment.reviewHistory,
+    enrichment.reviewerRows,
+  )
+  const calendarPendingReviewerPRKeys = new Set<string>()
+  for (const r of enrichment.reviewerRows) {
+    calendarPendingReviewerPRKeys.add(`${r.repositoryId}:${r.number}`)
+  }
+  const calendarPRDataByKey = new Map<
+    string,
+    {
+      author: string
+      authorDisplayName: string | undefined
+      reviewStatus: PRReviewStatus
+      reviewerStates: PRReviewerStateEntry[]
+    }
+  >()
+  for (const a of enrichment.authors) {
+    const prKey = `${a.repositoryId}:${a.number}`
+    const reviewerStates = calendarReviewerStatesByPR.get(prKey)
+    const reviewStatus = classifyPRReviewStatus(
+      calendarPendingReviewerPRKeys.has(prKey),
+      reviewerStates,
+      a.author,
+    )
+    calendarPRDataByKey.set(prKey, {
+      author: a.author,
+      authorDisplayName: a.authorDisplayName ?? undefined,
+      reviewStatus,
+      reviewerStates: reviewerStates ?? [],
+    })
+  }
+
   return {
     user,
     createdPRs,
@@ -158,6 +203,7 @@ export const loader = async ({
       openPRs: enrichedOpenPRs,
       pendingReviews: enrichedPendingReviews,
     },
+    calendarPRDataByKey: Object.fromEntries(calendarPRDataByKey),
     holidays,
     weekStart: weekStart.format('YYYY-MM-DD'),
     weekEnd: weekEnd.format('YYYY-MM-DD'),
@@ -177,6 +223,7 @@ export default function MemberWeeklyPage({
     closedPRs,
     reviews,
     backlog,
+    calendarPRDataByKey,
     holidays,
     weekStart,
     excludedCount,
@@ -212,6 +259,24 @@ export default function MemberWeeklyPage({
       return prev
     })
   }
+
+  const buildCalendarPrData = (pr: {
+    number: number
+    repo: string
+    title: string
+    url: string
+    pullRequestCreatedAt: string
+    complexity: string | null
+    repositoryId: string
+  }): PRBlockData => ({
+    number: pr.number,
+    repo: pr.repo,
+    title: pr.title,
+    url: pr.url,
+    createdAt: pr.pullRequestCreatedAt,
+    complexity: pr.complexity,
+    ...calendarPRDataByKey[`${pr.repositoryId}:${pr.number}`],
+  })
 
   const sortBacklog = useMemo(() => {
     return <
@@ -527,14 +592,7 @@ export default function MemberWeeklyPage({
                         label={`#${pr.number}`}
                         title={pr.title}
                         complexity={pr.complexity}
-                        prData={{
-                          number: pr.number,
-                          repo: pr.repo,
-                          title: pr.title,
-                          url: pr.url,
-                          createdAt: pr.pullRequestCreatedAt,
-                          complexity: pr.complexity,
-                        }}
+                        prData={buildCalendarPrData(pr)}
                       />
                     ))}
                     {day.merged.map((pr) => (
@@ -544,14 +602,7 @@ export default function MemberWeeklyPage({
                         label={`#${pr.number}`}
                         title={pr.title}
                         complexity={pr.complexity}
-                        prData={{
-                          number: pr.number,
-                          repo: pr.repo,
-                          title: pr.title,
-                          url: pr.url,
-                          createdAt: pr.pullRequestCreatedAt,
-                          complexity: pr.complexity,
-                        }}
+                        prData={buildCalendarPrData(pr)}
                       />
                     ))}
                     {day.reviewed.map((r) => (
@@ -561,15 +612,7 @@ export default function MemberWeeklyPage({
                         label={`#${r.number}`}
                         title={r.title}
                         complexity={r.complexity}
-                        prData={{
-                          number: r.number,
-                          repo: r.repo,
-                          title: r.title,
-                          url: r.url,
-                          author: r.author,
-                          createdAt: r.pullRequestCreatedAt,
-                          complexity: r.complexity,
-                        }}
+                        prData={buildCalendarPrData(r)}
                         reviewState={r.state}
                         reviewCount={r.reviewCount}
                         suffix={REVIEW_STATE_STYLE[r.state]?.icon}
@@ -582,14 +625,7 @@ export default function MemberWeeklyPage({
                         label={`#${pr.number}`}
                         title={pr.title}
                         complexity={pr.complexity}
-                        prData={{
-                          number: pr.number,
-                          repo: pr.repo,
-                          title: pr.title,
-                          url: pr.url,
-                          createdAt: pr.pullRequestCreatedAt,
-                          complexity: pr.complexity,
-                        }}
+                        prData={buildCalendarPrData(pr)}
                       />
                     ))}
                   </div>
@@ -776,12 +812,9 @@ function CalendarItem({
   if (!prData) return content
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>{content}</PopoverTrigger>
-      <PopoverContent side="top" className="w-72 p-3">
-        <PRPopoverContent pr={prData} reviewState={reviewState} />
-      </PopoverContent>
-    </Popover>
+    <PRPopover pr={prData} reviewState={reviewState}>
+      {content}
+    </PRPopover>
   )
 }
 

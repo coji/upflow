@@ -376,3 +376,125 @@ export const getBacklogDetails = async (
 
   return { openPRs: openPRsRaw, pendingReviews, reviewHistory, reviewerRows }
 }
+
+export interface PRKey {
+  repositoryId: string
+  number: number
+}
+
+export const getPRPopoverEnrichment = async (
+  organizationId: OrganizationId,
+  prKeys: PRKey[],
+) => {
+  if (prKeys.length === 0) {
+    return {
+      authors: [] as {
+        repositoryId: string
+        number: number
+        author: string
+        authorDisplayName: string | null
+      }[],
+      reviewHistory: [] as {
+        repositoryId: string
+        number: number
+        reviewer: string
+        state: string
+        submittedAt: string
+        reviewerDisplayName: string | null
+      }[],
+      reviewerRows: [] as {
+        repositoryId: string
+        number: number
+        reviewer: string
+        reviewerDisplayName: string | null
+      }[],
+    }
+  }
+  const tenantDb = getTenantDb(organizationId)
+
+  const [authors, reviewHistory, reviewerRows] = await Promise.all([
+    tenantDb
+      .selectFrom('pullRequests')
+      .leftJoin('companyGithubUsers as authorUser', (join) =>
+        join.onRef(
+          (eb) => eb.fn('lower', ['pullRequests.author']),
+          '=',
+          (eb) => eb.fn('lower', ['authorUser.login']),
+        ),
+      )
+      .where((eb) =>
+        eb.or(
+          prKeys.map((k) =>
+            eb.and([
+              eb('pullRequests.repositoryId', '=', k.repositoryId),
+              eb('pullRequests.number', '=', k.number),
+            ]),
+          ),
+        ),
+      )
+      .select([
+        'pullRequests.repositoryId',
+        'pullRequests.number',
+        'pullRequests.author',
+        'authorUser.displayName as authorDisplayName',
+      ])
+      .execute(),
+    tenantDb
+      .selectFrom('pullRequestReviews')
+      .leftJoin('companyGithubUsers', (join) =>
+        join.onRef(
+          (eb) => eb.fn('lower', ['pullRequestReviews.reviewer']),
+          '=',
+          (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+        ),
+      )
+      .where((eb) =>
+        eb.or(
+          prKeys.map((k) =>
+            eb.and([
+              eb('pullRequestReviews.repositoryId', '=', k.repositoryId),
+              eb('pullRequestReviews.pullRequestNumber', '=', k.number),
+            ]),
+          ),
+        ),
+      )
+      .select([
+        'pullRequestReviews.repositoryId',
+        'pullRequestReviews.pullRequestNumber as number',
+        'pullRequestReviews.reviewer',
+        'pullRequestReviews.state',
+        'pullRequestReviews.submittedAt',
+        'companyGithubUsers.displayName as reviewerDisplayName',
+      ])
+      .execute(),
+    tenantDb
+      .selectFrom('pullRequestReviewers')
+      .leftJoin('companyGithubUsers', (join) =>
+        join.onRef(
+          (eb) => eb.fn('lower', ['pullRequestReviewers.reviewer']),
+          '=',
+          (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+        ),
+      )
+      .where((eb) =>
+        eb.or(
+          prKeys.map((k) =>
+            eb.and([
+              eb('pullRequestReviewers.repositoryId', '=', k.repositoryId),
+              eb('pullRequestReviewers.pullRequestNumber', '=', k.number),
+            ]),
+          ),
+        ),
+      )
+      .where('pullRequestReviewers.requestedAt', 'is not', null)
+      .select([
+        'pullRequestReviewers.repositoryId',
+        'pullRequestReviewers.pullRequestNumber as number',
+        'pullRequestReviewers.reviewer',
+        'companyGithubUsers.displayName as reviewerDisplayName',
+      ])
+      .execute(),
+  ])
+
+  return { authors, reviewHistory, reviewerRows }
+}

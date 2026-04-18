@@ -1,4 +1,5 @@
 import { MoreHorizontalIcon } from 'lucide-react'
+import { Popover as PopoverPrimitive } from 'radix-ui'
 import { createContext, useContext } from 'react'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
@@ -358,6 +359,26 @@ export function PRPopoverContent({
   )
 }
 
+export function PRPopover({
+  pr,
+  reviewState,
+  children,
+}: {
+  pr: PRBlockData
+  reviewState?: string
+  children: React.ReactNode
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent side="top" className="w-72 p-3">
+        <PRPopoverContent pr={pr} reviewState={reviewState} />
+        <PopoverPrimitive.Arrow className="bg-popover fill-popover border-border size-2.5 -translate-y-1/2 rotate-45 border-r border-b" />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 export function PRBlock({
   pr,
   colorMode = 'size',
@@ -393,29 +414,24 @@ export function PRBlock({
   const fillClass = isHollow ? `ring-[2px] ring-inset ${ring} ${bgFaint}` : bg
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          data-pr-key={dataPrKey}
-          className={`flex size-4 shrink-0 items-center justify-center transition-all hover:scale-150 ${shape} ${fillClass}`}
-          aria-label={ariaLabel}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-          onClick={onClick}
-        >
-          {statusShape?.icon && (
-            <span
-              className={`text-[8px] leading-none font-bold ${blockTextColor}`}
-            >
-              {statusShape.icon}
-            </span>
-          )}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent side="top" className="w-72 p-3">
-        <PRPopoverContent pr={pr} />
-      </PopoverContent>
-    </Popover>
+    <PRPopover pr={pr}>
+      <button
+        type="button"
+        data-pr-key={dataPrKey}
+        className={`flex size-4 shrink-0 items-center justify-center transition-all hover:scale-150 ${shape} ${fillClass}`}
+        aria-label={ariaLabel}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onClick={onClick}
+      >
+        {statusShape?.icon && (
+          <span
+            className={`text-[8px] leading-none font-bold ${blockTextColor}`}
+          >
+            {statusShape.icon}
+          </span>
+        )}
+      </button>
+    </PRPopover>
   )
 }
