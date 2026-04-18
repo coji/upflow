@@ -114,6 +114,41 @@ describe('extractPatternCandidates', () => {
     const candidates = extractPatternCandidates('plain title without markers')
     expect(candidates).toEqual([])
   })
+
+  it('extracts Japanese bracket prefix', () => {
+    const candidates = extractPatternCandidates(
+      '[機能追加-001] ログイン画面の修正',
+    )
+    const values = candidates.map((c) => c.value)
+    expect(values).toContain('[機能追加-001]')
+    expect(values).toContain('[機能追加-')
+  })
+
+  it('extracts Japanese colon prefix', () => {
+    const candidates = extractPatternCandidates('機能追加: ログイン画面')
+    expect(candidates.map((c) => c.value)).toContain('機能追加:')
+  })
+
+  it('extracts accented bracket prefix', () => {
+    const candidates = extractPatternCandidates('[Café-42] update')
+    const values = candidates.map((c) => c.value)
+    expect(values).toContain('[Café-42]')
+    expect(values).toContain('[Café-')
+  })
+
+  it('extracts prefix with mixed ASCII and CJK letters', () => {
+    const candidates = extractPatternCandidates('[EPIC機能-001] refactor')
+    const values = candidates.map((c) => c.value)
+    expect(values).toContain('[EPIC機能-001]')
+    expect(values).toContain('[EPIC機能-')
+  })
+
+  it('does not extract prefix starting with emoji', () => {
+    const candidates = extractPatternCandidates('[🚀 release] deploy')
+    const values = candidates.map((c) => c.value)
+    expect(values).toContain('[🚀 release]')
+    expect(values.some((v) => v.endsWith('-'))).toBe(false)
+  })
 })
 
 describe('translatePrTitleFilterError', () => {

@@ -51,8 +51,8 @@ export interface PatternCandidate {
 }
 
 const BRACKET_RE = /\[([^\]]+)\]/g
-const BRACKET_PREFIX_RE = /^\[([A-Za-z]+)[-_]/
-const COLON_PREFIX_RE = /^([A-Za-z]+):/
+const BRACKET_PREFIX_RE = /^\[(\p{L}+)[-_]/u
+const COLON_PREFIX_RE = /^(\p{L}+):/u
 
 export const extractPatternCandidates = (title: string): PatternCandidate[] => {
   const candidates: PatternCandidate[] = []
