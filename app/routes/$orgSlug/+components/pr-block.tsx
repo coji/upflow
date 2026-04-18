@@ -1,4 +1,5 @@
 import { MoreHorizontalIcon } from 'lucide-react'
+import { Popover as PopoverPrimitive } from 'radix-ui'
 import { createContext, useContext } from 'react'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
@@ -415,6 +416,7 @@ export function PRBlock({
       </PopoverTrigger>
       <PopoverContent side="top" className="w-72 p-3">
         <PRPopoverContent pr={pr} />
+        <PopoverPrimitive.Arrow className="bg-popover fill-popover border-border size-2.5 -translate-y-1/2 rotate-45 border-r border-b" />
       </PopoverContent>
     </Popover>
   )
