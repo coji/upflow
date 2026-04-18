@@ -104,8 +104,8 @@ export default function OngoingPage({
   const [, setSearchParams] = useSearchParams()
   const timezone = useTimezone()
   const columns = useMemo(
-    () => createColumns(timezone, orgSlug),
-    [timezone, orgSlug],
+    () => createColumns(timezone, orgSlug, isAdmin),
+    [timezone, orgSlug, isAdmin],
   )
 
   return (

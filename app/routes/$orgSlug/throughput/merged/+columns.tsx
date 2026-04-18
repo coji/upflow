@@ -5,11 +5,13 @@ import { Badge, HStack } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
 import { complexitySortingFn } from '~/app/libs/pr-classify'
+import { hidePrActionsColumn } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 import type { PullRequest } from './index'
 
 export function createColumns(
   timezone: string,
   orgSlug: string,
+  isAdmin: boolean,
 ): ColumnDef<PullRequest>[] {
   return [
     {
@@ -161,5 +163,6 @@ export function createColumns(
       ),
       enableHiding: false,
     },
+    ...hidePrActionsColumn<PullRequest>(isAdmin, (r) => r.title),
   ]
 }

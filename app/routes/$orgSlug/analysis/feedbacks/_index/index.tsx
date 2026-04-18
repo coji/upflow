@@ -4,6 +4,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import {
   PageHeader,
@@ -41,7 +42,7 @@ import {
 } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { DataTablePagination } from './+components/data-table-pagination'
-import { feedbackColumns } from './+components/feedback-columns'
+import { createFeedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
 import {
   countFeedbacks,
@@ -147,9 +148,10 @@ export default function FeedbacksPage({
   const [, setSearchParams] = useSearchParams()
   const { sort, updateSort } = useDataTableState()
 
+  const columns = useMemo(() => createFeedbackColumns(isAdmin), [isAdmin])
   const table = useReactTable({
     data: feedbacks,
-    columns: feedbackColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
     manualPagination: true,
@@ -276,7 +278,7 @@ export default function FeedbacksPage({
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={feedbackColumns.length}
+                      colSpan={columns.length}
                       className="h-24 text-center"
                     >
                       No feedbacks found.

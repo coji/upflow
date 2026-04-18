@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from '~/app/components/ui/sheet'
 import { parseRiskAreas } from '~/app/libs/pr-classify'
+import { HidePRsByTitleMenu } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 
 export interface DrillDownPR {
   number: number
@@ -84,11 +85,14 @@ export function PRDrillDownSheet({
                     </Avatar>
                     {pr.authorDisplayName ?? pr.author}
                   </span>
-                  {pr.reviewTime != null && pr.reviewTime > 0 && (
-                    <span className="text-muted-foreground ml-auto text-xs">
-                      {formatHours(pr.reviewTime * 24)}
-                    </span>
-                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    {pr.reviewTime != null && pr.reviewTime > 0 && (
+                      <span className="text-muted-foreground text-xs">
+                        {formatHours(pr.reviewTime * 24)}
+                      </span>
+                    )}
+                    <HidePRsByTitleMenu title={pr.title} />
+                  </div>
                 </div>
                 <a
                   href={pr.url}

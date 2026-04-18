@@ -1,17 +1,9 @@
-import { MoreHorizontalIcon } from 'lucide-react'
 import { Popover as PopoverPrimitive } from 'radix-ui'
-import { createContext, useContext, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { href, useFetcher, useParams } from 'react-router'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Badge } from '~/app/components/ui/badge'
-import { Button } from '~/app/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '~/app/components/ui/dropdown-menu'
 import {
   Popover,
   PopoverContent,
@@ -19,15 +11,7 @@ import {
 } from '~/app/components/ui/popover'
 import { Skeleton } from '~/app/components/ui/skeleton'
 import dayjs from '~/app/libs/dayjs'
-import { cn } from '~/app/libs/utils'
-
-/**
- * PRPopoverContent 内で「タイトルパターンで除外」ボタンを出すための context。
- * null (provide されない) / null 値の場合はボタン非表示。admin のみ表示する親ページが value を設定する。
- */
-export const PRHideByTitleFilterContext = createContext<
-  ((title: string) => void) | null
->(null)
+import { HidePRsByTitleMenu } from './hide-prs-by-title-menu'
 
 export type PRBlockColorMode = 'size' | 'age'
 
@@ -293,37 +277,6 @@ function PRPopoverSkeleton() {
       <Skeleton className="h-3 w-full" />
       <Skeleton className="h-3 w-5/6" />
     </div>
-  )
-}
-
-function HidePRsByTitleMenu({
-  title,
-  className,
-}: {
-  title: string
-  className?: string
-}) {
-  const onHideByTitle = useContext(PRHideByTitleFilterContext)
-  if (!onHideByTitle) return null
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className={cn('size-5', className)}
-          aria-label="More actions"
-        >
-          <MoreHorizontalIcon size={14} />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => onHideByTitle(title)}>
-          Hide PRs by title…
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 
