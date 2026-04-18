@@ -6,8 +6,13 @@ import type { Route } from './+types/pr-popover.$repositoryId.$number'
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const repositoryId = params.repositoryId?.trim() ?? ''
-  const number = Number(params.number)
-  if (!repositoryId || !Number.isFinite(number)) {
+  const numberParam = params.number ?? ''
+  const number = Number(numberParam)
+  if (
+    !repositoryId ||
+    !/^[1-9]\d*$/.test(numberParam) ||
+    !Number.isSafeInteger(number)
+  ) {
     return data(
       { pr: null, error: 'not_found' as const },
       { status: 200, headers: { 'Cache-Control': 'no-store' } },

@@ -249,11 +249,11 @@ UI 表現の指針:
 5. `PRPopover` の `reviewState?: string` prop は維持する。`reviewState` は **この calendar item が表すレビュー submit イベントの state** であり、「閲覧者の最新レビュー」ではない (詳細は設計判断 8)。
    5b. popover 内の **3 つの review 関連表示** を明示的にラベル付けして並置し、矛盾表示を避ける:
    - `reviewState` (this calendar entry's review event): 「この日の review」セクション。calendar item が表す特定の submit イベントの state
-   - `reviewStatus` (current PR-level status): 「現在の PR status」セクション。resource route 由来の最新 PR-level status
-   - `reviewerStates` (current per-reviewer snapshot): 「現在の reviewer states」セクション。各 reviewer の現時点での state。**reviewState と同じ閲覧者の行が並ぶ場合でも、historical (reviewState) と current (reviewerStates 内の自分の行) が異なる可能性があることを UI 上明確にする**
+   - `reviewStatus` (current PR-level status): メタ行右端の outlined Badge (border-current で text 色追従)。resource route 由来の最新 PR-level status
+   - `reviewerStates` (current per-reviewer snapshot): 「Reviewers」セクション (border-t で区切り)。各 reviewer の現時点での state。**reviewState と同じ閲覧者の行が並ぶ場合でも、historical (reviewState) と current (reviewerStates 内の自分の行) が異なる可能性があることを UI 上明確にする**
 6. fetch 中で `fetcher.data` が無いときは popover 内に skeleton (固定高) を表示する。`error === 'not_found'` と `error === 'fetch_failed'` は **別々のメッセージ** で popover 内に表示する: 前者は「PR が見つかりませんでした」、後者は「PR の情報を取得できませんでした」。
    6b. **「ページ全体のエラー UI に切り替わらない」保証は loader 内例外までに限定される**。loader が catch して構造化 JSON で返す経路は popover-local で完結するが、**transport failure (ネットワーク断 / fetch reject / route discovery 失敗)** は `setFetcherError` 経路に乗りページ全体の ErrorBoundary がバブルする可能性がある。本 issue ではこのケースは緩和しない (deploy skew リスクと同じ許容レベル、リスクセクション参照)。
-   6c. **degraded fallback**: fetch 失敗 (`fetch_failed`) または transport failure で popover 内表示が成立しない場合でも、`prKey` から組み立てた最低限の情報 (PR `repo#number` リンク、`title` がある場合はタイトル、admin 用 `Hide PRs by title…` メニュー) を popover 内に表示し、ユーザーが PR ページに最短遷移できる導線を残す。これは `PRBlockData` の `title?` / `url?` を fallback 引数として `PRPopover` に渡せるようにすることで実現する (要件 7 に追加)。
+   6c. **degraded fallback**: loader が構造化 JSON で返す `fetch_failed` (HTTP 500) のときに、`prKey` から組み立てた最低限の情報 (PR `repo#number` リンク、`title` がある場合はタイトル、admin 用 `Hide PRs by title…` メニュー) を popover 内に表示し、ユーザーが PR ページに最短遷移できる導線を残す。これは `PRBlockData` の `title?` / `url?` を fallback 引数として `PRPopover` に渡せるようにすることで実現する (要件 7 に追加)。**transport failure (ネットワーク断 / fetch reject / route discovery 失敗) は対象外** — popover 自体が ErrorBoundary 経路に乗るため popover 内表示は成立しない (要件 6b)。
 7. `PRBlock` は `pr: PRBlockData` を受け取り続ける。`PRBlockData` には `repositoryId` を必須で含め、`title` / `url` は optional として残す (block 自体は使わないが、`PRPopover` の degraded fallback 表示で利用するため、呼び出し側が持っているなら渡す)。`PRPopover` は `prKey` に加えて optional な `fallback?: { title?: string; url?: string }` も受け取り、fetch 失敗時の degraded 表示で使う。
 8. `aggregate-stacks.ts` の `StackPR` は `repositoryId` を必須で持つ。`reviewerStates` は popover が fetch するので削除する。`reviewStatus` はブロックの shape 判定に必要なので残す。**`author` / `authorDisplayName` は team-stacks-chart の hover 時 row highlighting / selected scroll で参照されているため残す** (popover 表示には使わなくなるが、別目的で必要)。
 9. `workload/$login/index.tsx` の loader から `getPRPopoverEnrichment` の呼び出しと `calendarPRDataByKey` 構築 (lines 147-194) を削除する。
@@ -342,15 +342,15 @@ UI 表現の指針:
 
 ## UI 変更
 
-- ポップオーバーのレイアウトは現行 `PRPopoverContent` を踏襲しつつ、要件 5b の「3 セクション分離」を満たすため表示領域を以下に再構成する:
-  - ヘッダ行: PR ID / size / actions (現行通り)
-  - メタ行: author / 作成からの経過時間 (現行通り)
-  - 「現在の PR status」セクション: `reviewStatus` を表示
+- ポップオーバーのレイアウトは現行 `PRPopoverContent` を踏襲しつつ、要件 5b の「3 表示の分離」を満たすため表示領域を以下に再構成する:
+  - ヘッダ行: PR ID リンク / SizeBadge (右寄せ・小型化) / `...` actions メニュー (admin) (現行通り)
+  - title 行: PR title (GitHub PR への外部リンク化)
+  - メタ行: author / 作成からの経過時間 / **`reviewStatus` outlined Badge (右寄せ、border-current で text 色追従)**
   - 「この日の review」セクション: `reviewState` がある calendar item 起動時のみ表示
-  - 「現在の reviewer states」セクション: `reviewerStates` リスト。**セクション見出しを必ず付け**、historical な「この日の review」と混同させない
-  - 現行は `reviewState` がヘッダ行のインライン badge、`reviewStatus` がメタ行の一要素、`reviewerStates` が見出しなしリストとして並んでおり、historical / current の境界が曖昧
+  - 「Reviewers」セクション (border-t で区切り): `reviewerStates` リスト
 - 追加: skeleton (固定高 ~120px、3 行のグレーバー)、「PR が見つかりませんでした」、「PR の情報を取得できませんでした」のエラーメッセージ
 - 既存の `PopoverPrimitive.Arrow` 矢印 (PR #313 で追加) はそのまま維持
+- popover の `side` は viewport 位置から決定 (`avoidCollisions={false}`)。コンテンツサイズ変化での auto-flip flicker を回避
 
 ## 移行方針
 
@@ -410,7 +410,7 @@ UI 表現の指針:
 
 16. `pnpm validate` が通る。
 17. `getPullRequestForPopover` のユニットテストがある (PR が存在する場合 / null 返却ケース)。
-18. `PRPopover` の表示テストがあり、(a) loading skeleton (data 未定義時)、(b) `error === 'not_found'` 時の「PR が見つかりませんでした」、(c) `error === 'fetch_failed'` 時の「PR の情報を取得できませんでした」、(d) `reviewState` / `reviewStatus` / `reviewerStates` の 3 つすべてが設定されているときに 3 セクションが別ラベル (「この日の review」/ 「現在の PR status」/ 「現在の reviewer states」) で並置されること、(e) `reviewState='APPROVED'` の calendar item で開いた popover の `reviewerStates` 内に同じ閲覧者の `state='CHANGES_REQUESTED'` 行があるとき、両方が別セクションで矛盾なく表示されること、の 5 ケースを検証する。
+18. `PRPopover` の表示テストがあり、(a) loading skeleton (data 未定義時)、(b) `error === 'not_found'` 時の「PR が見つかりませんでした」、(c) `error === 'fetch_failed'` 時の「PR の情報を取得できませんでした」、(d) `reviewStatus` がメタ行右端の outlined Badge として表示され、`reviewState` がある場合は「この日の review」、`reviewerStates` が 1 件以上ある場合は「Reviewers」セクションが並置されること、(e) `reviewState='APPROVED'` の calendar item で開いた popover の `reviewerStates` 内に同じ閲覧者の `state='CHANGES_REQUESTED'` 行があるとき、両方が別セクションで矛盾なく表示されること、の 5 ケースを検証する。
 19. `PRPopover` の tenant 切替テストがあり、org A で `(repositoryId, number)` を fetch した後、URL を org B に切り替えて同じ `(repositoryId, number)` の popover を開いたとき、org A の `fetcher.data` が再表示されず org B 用の fetch が走ることを検証する。
 20. `team-stacks-chart` の hover/selection テストがあり、`StackPR.author` を介して同じ author の row 全体が highlight され、selected 時に対応 row へスクロールすることを検証する。
 21. resource route (`pr-popover.$repositoryId.$number.ts`) の統合テストがあり、以下の **ステータス / body / Cache-Control ヘッダ** を厳密に検証する:
@@ -420,7 +420,7 @@ UI 表現の指針:
 - fetch_failed (DB 例外を強制発火させたケース): `500` + `{ pr: null, error: 'fetch_failed' }` + `Cache-Control: no-store`、かつ loader が throw せず構造化 JSON で返ること
 
 22. fetch_failed catch 経路で **Sentry に例外が送信される** ことを検証する。送信内容には `organizationId` / `repositoryId` / `number` が `extra` として含まれる。silent failure を防ぐ運用要件。
-23. degraded fallback テスト: `PRPopover` に `fallback={{ title, url }}` を渡し、`fetch_failed` または network error 時に、popover 内に PR `repo#number` リンク (url 付き)、title (あれば)、admin context では `Hide PRs by title…` メニューが表示されることを検証する。
+23. degraded fallback テスト: `PRPopover` に `fallback={{ title, url }}` を渡し、loader が構造化 JSON で返す `fetch_failed` のときに、popover 内に PR `repo#number` リンク (url 付き)、title (あれば)、admin context では `Hide PRs by title…` メニューが表示されることを検証する (transport failure は対象外、要件 6c)。
 
 ## リスク・補足
 

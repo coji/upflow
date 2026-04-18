@@ -519,7 +519,7 @@ export function PRPopover({
         if (rect) {
           setSide(rect.top > window.innerHeight / 2 ? 'top' : 'bottom')
         }
-        if (resourceHref && !fetcher.data) {
+        if (resourceHref && fetcher.state === 'idle') {
           void fetcher.load(resourceHref)
         }
       }}
