@@ -149,7 +149,7 @@ describe('PRPopover', () => {
     render(<PRPopoverContent pr={pr} reviewState="APPROVED" />)
     expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
     expect(screen.getByText('この日の review')).toBeTruthy()
-    expect(screen.getByText('現在の reviewer states')).toBeTruthy()
+    expect(screen.getByText('Reviewers')).toBeTruthy()
   })
 
   test('(e) APPROVED reviewState coexists with CHANGES_REQUESTED reviewer row', () => {
@@ -172,9 +172,7 @@ describe('PRPopover', () => {
     expect(daySection).not.toBeNull()
     expect(within(daySection as HTMLElement).getByText(/Approved/)).toBeTruthy()
 
-    const reviewerSection = screen.getByText(
-      '現在の reviewer states',
-    ).parentElement
+    const reviewerSection = screen.getByText('Reviewers').parentElement
     expect(reviewerSection).not.toBeNull()
     expect(
       within(reviewerSection as HTMLElement).getByText(/Changes/),

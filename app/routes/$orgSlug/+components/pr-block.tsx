@@ -393,7 +393,14 @@ export function PRPopoverContent({
         />
         <HidePRsByTitleMenu title={pr.title} />
       </div>
-      <p className="line-clamp-3 text-xs">{pr.title}</p>
+      <a
+        href={pr.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="line-clamp-3 text-xs hover:underline"
+      >
+        {pr.title}
+      </a>
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
         <span className="inline-flex items-center gap-1">
           <GitHubAvatar login={pr.author} size={14} />
@@ -418,9 +425,9 @@ export function PRPopoverContent({
         </div>
       )}
       {pr.reviewerStates.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1 border-t pt-2">
           <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
-            現在の reviewer states
+            Reviewers
           </div>
           <div className="space-y-0.5">
             {pr.reviewerStates.map((r) => {
