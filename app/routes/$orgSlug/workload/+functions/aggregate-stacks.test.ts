@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { DEFAULT_PERSONAL_LIMIT, aggregateTeamStacks } from './aggregate-stacks'
+import {
+  DEFAULT_PERSONAL_LIMIT,
+  aggregateTeamStacks,
+  buildPRReviewerStatesMap,
+} from './aggregate-stacks'
 
 function makePR(
   overrides: Partial<{
@@ -167,9 +171,7 @@ describe('aggregateTeamStacks', () => {
     const pr1 = alice.prs.find((p) => p.number === 1)
     const pr2 = alice.prs.find((p) => p.number === 2)
     expect(pr1?.reviewStatus).toBe('in-review')
-    expect(pr1?.reviewerStates?.map((r) => r.login)).toEqual(['bob'])
     expect(pr2?.reviewStatus).toBe('unassigned')
-    expect(pr2?.reviewerStates).toBeUndefined()
   })
 
   test('collects multiple reviewers for same PR', () => {
@@ -181,15 +183,13 @@ describe('aggregateTeamStacks', () => {
     const result = aggregateTeamStacks({ openPRs, pendingReviews })
 
     const pr = result.authorStacks[0].prs[0]
-    const logins = pr.reviewerStates?.map((r) => r.login)
-    expect(logins).toHaveLength(2)
-    expect(logins).toContain('bob')
-    expect(logins).toContain('carol')
+    expect(pr.reviewStatus).toBe('in-review')
   })
 
-  describe('reviewerStates (per-reviewer state for popover)', () => {
+  describe('buildPRReviewerStatesMap', () => {
+    const prKey = 'repo-1:1'
+
     test('attaches latest state per reviewer from review history', () => {
-      const openPRs = [makePR({ author: 'alice', number: 1 })]
       const pendingReviews = [makeReview({ reviewer: 'bob', number: 1 })]
       const reviewHistory = [
         makeReviewHistory({
@@ -203,15 +203,10 @@ describe('aggregateTeamStacks', () => {
           submittedAt: '2026-03-05T00:00:00Z',
         }),
       ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews,
-        reviewHistory,
-      })
-
-      const pr = result.authorStacks[0].prs[0]
-      expect(pr.reviewerStates).toHaveLength(1)
-      expect(pr.reviewerStates?.[0]).toMatchObject({
+      const map = buildPRReviewerStatesMap(reviewHistory, pendingReviews)
+      const states = map.get(prKey)
+      expect(states).toHaveLength(1)
+      expect(states?.[0]).toMatchObject({
         login: 'bob',
         state: 'APPROVED',
         submittedAt: '2026-03-05T00:00:00Z',
@@ -219,12 +214,9 @@ describe('aggregateTeamStacks', () => {
     })
 
     test('REQUESTED reviewer (no submitted review) appears without submittedAt', () => {
-      const openPRs = [makePR({ author: 'alice', number: 1 })]
       const pendingReviews = [makeReview({ reviewer: 'carol', number: 1 })]
-      const result = aggregateTeamStacks({ openPRs, pendingReviews })
-
-      const pr = result.authorStacks[0].prs[0]
-      expect(pr.reviewerStates).toEqual([
+      const map = buildPRReviewerStatesMap([], pendingReviews)
+      expect(map.get(prKey)).toEqual([
         {
           login: 'carol',
           displayName: 'carol',
@@ -234,7 +226,6 @@ describe('aggregateTeamStacks', () => {
     })
 
     test('reviewer with submitted review overrides REQUESTED from pending list', () => {
-      const openPRs = [makePR({ author: 'alice', number: 1 })]
       const pendingReviews = [makeReview({ reviewer: 'bob', number: 1 })]
       const reviewHistory = [
         makeReviewHistory({
@@ -243,19 +234,13 @@ describe('aggregateTeamStacks', () => {
           submittedAt: '2026-03-03T00:00:00Z',
         }),
       ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews,
-        reviewHistory,
-      })
-
-      const pr = result.authorStacks[0].prs[0]
-      expect(pr.reviewerStates).toHaveLength(1)
-      expect(pr.reviewerStates?.[0].state).toBe('CHANGES_REQUESTED')
+      const map = buildPRReviewerStatesMap(reviewHistory, pendingReviews)
+      const states = map.get(prKey)
+      expect(states).toHaveLength(1)
+      expect(states?.[0].state).toBe('CHANGES_REQUESTED')
     })
 
     test('multiple reviewers sorted by state priority', () => {
-      const openPRs = [makePR({ author: 'alice', number: 1 })]
       const pendingReviews = [makeReview({ reviewer: 'dave', number: 1 })]
       const reviewHistory = [
         makeReviewHistory({
@@ -274,15 +259,8 @@ describe('aggregateTeamStacks', () => {
           submittedAt: '2026-03-05T00:00:00Z',
         }),
       ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews,
-        reviewHistory,
-      })
-
-      const states = result.authorStacks[0].prs[0].reviewerStates?.map(
-        (r) => r.state,
-      )
+      const map = buildPRReviewerStatesMap(reviewHistory, pendingReviews)
+      const states = map.get(prKey)?.map((r) => r.state)
       expect(states).toEqual([
         'APPROVED',
         'CHANGES_REQUESTED',
@@ -292,22 +270,15 @@ describe('aggregateTeamStacks', () => {
     })
 
     test('DISMISSED / PENDING review states are filtered out', () => {
-      const openPRs = [makePR({ author: 'alice', number: 1 })]
       const reviewHistory = [
         makeReviewHistory({ reviewer: 'bob', state: 'DISMISSED' }),
         makeReviewHistory({ reviewer: 'carol', state: 'PENDING' }),
       ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews: [],
-        reviewHistory,
-      })
-
-      expect(result.authorStacks[0].prs[0].reviewerStates).toBeUndefined()
+      const map = buildPRReviewerStatesMap(reviewHistory, [])
+      expect(map.get(prKey)).toBeUndefined()
     })
 
-    test('bucket PRs also carry reviewerStates', () => {
-      const openPRs = [makePR({ number: 1 })]
+    test('approved bucket still derives from review history', () => {
       const reviewHistory = [
         makeReviewHistory({
           reviewer: 'bob',
@@ -315,19 +286,11 @@ describe('aggregateTeamStacks', () => {
           submittedAt: '2026-03-05T00:00:00Z',
         }),
       ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews: [],
-        reviewHistory,
-      })
-
-      expect(result.approvedAwaitingMergePRs[0].reviewerStates?.[0].state).toBe(
-        'APPROVED',
-      )
+      const map = buildPRReviewerStatesMap(reviewHistory, [])
+      expect(map.get(prKey)?.[0].state).toBe('APPROVED')
     })
 
     test('case-insensitive reviewer matching', () => {
-      const openPRs = [makePR({ author: 'alice', number: 1 })]
       const pendingReviews = [makeReview({ reviewer: 'Bob', number: 1 })]
       const reviewHistory = [
         makeReviewHistory({
@@ -336,17 +299,14 @@ describe('aggregateTeamStacks', () => {
           submittedAt: '2026-03-05T00:00:00Z',
         }),
       ]
-      const result = aggregateTeamStacks({
-        openPRs,
-        pendingReviews,
-        reviewHistory,
-      })
-
-      const states = result.authorStacks[0].prs[0].reviewerStates
+      const map = buildPRReviewerStatesMap(reviewHistory, pendingReviews)
+      const states = map.get(prKey)
       expect(states).toHaveLength(1)
       expect(states?.[0].state).toBe('APPROVED')
     })
+  })
 
+  describe('author self-review edge cases', () => {
     test('author self-comment only → treated as unassigned', () => {
       const openPRs = [makePR({ author: 'alice', number: 1 })]
       const reviewHistory = [
@@ -366,7 +326,9 @@ describe('aggregateTeamStacks', () => {
       expect(result.unassignedPRs[0].reviewStatus).toBe('unassigned')
       expect(result.changesPendingPRs).toHaveLength(0)
     })
+  })
 
+  describe('review status buckets', () => {
     test('author self-comment + other reviewer → uses other reviewer state', () => {
       const openPRs = [makePR({ author: 'alice', number: 1 })]
       const reviewHistory = [
@@ -390,9 +352,7 @@ describe('aggregateTeamStacks', () => {
       expect(result.changesPendingPRs).toHaveLength(1)
       expect(result.unassignedPRs).toHaveLength(0)
     })
-  })
 
-  describe('review status buckets', () => {
     test('truly unassigned → unassignedPRs', () => {
       const openPRs = [makePR({ number: 1 })]
       const result = aggregateTeamStacks({ openPRs, pendingReviews: [] })

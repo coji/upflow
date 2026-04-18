@@ -225,15 +225,13 @@ const PRBlock = memo(function PRBlock({
       <PRBlockBase
         pr={{
           number: pr.number,
+          repositoryId: pr.repositoryId,
           repo: pr.repo,
           title: pr.title,
           url: pr.url,
-          author: pr.author,
-          authorDisplayName: pr.authorDisplayName,
           createdAt: pr.createdAt,
           complexity: pr.complexity,
           reviewStatus: pr.reviewStatus,
-          reviewerStates: pr.reviewerStates,
         }}
         colorMode={colorMode}
         dataPrKey={prKey}
