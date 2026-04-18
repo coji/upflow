@@ -145,9 +145,10 @@ describe('extractPatternCandidates', () => {
 
   it('does not extract prefix starting with emoji', () => {
     const candidates = extractPatternCandidates('[🚀 release] deploy')
-    const values = candidates.map((c) => c.value)
-    expect(values).toContain('[🚀 release]')
-    expect(values.some((v) => v.endsWith('-'))).toBe(false)
+    expect(candidates.map((c) => c.value)).toContain('[🚀 release]')
+    const kinds = candidates.map((c) => c.kind)
+    expect(kinds).not.toContain('bracket-prefix')
+    expect(kinds).not.toContain('colon-prefix')
   })
 })
 
