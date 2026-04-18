@@ -4,6 +4,7 @@ import { createContext, useContext, useRef, useState } from 'react'
 import { href, useFetcher, useParams } from 'react-router'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
+import { Badge } from '~/app/components/ui/badge'
 import { Button } from '~/app/components/ui/button'
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ import {
 } from '~/app/components/ui/popover'
 import { Skeleton } from '~/app/components/ui/skeleton'
 import dayjs from '~/app/libs/dayjs'
+import { cn } from '~/app/libs/utils'
 
 /**
  * PRPopoverContent 内で「タイトルパターンで除外」ボタンを出すための context。
@@ -213,7 +215,7 @@ interface ReviewStatusShape {
 
 export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
   'in-review': {
-    label: 'レビュー中',
+    label: 'In review',
     text: 'text-muted-foreground',
     shape: 'rounded-full',
     legendSwatch: 'size-3.5 rounded-full bg-gray-400 dark:bg-gray-500',
@@ -294,7 +296,13 @@ function PRPopoverSkeleton() {
   )
 }
 
-function HidePRsByTitleMenu({ title }: { title: string }) {
+function HidePRsByTitleMenu({
+  title,
+  className,
+}: {
+  title: string
+  className?: string
+}) {
   const onHideByTitle = useContext(PRHideByTitleFilterContext)
   if (!onHideByTitle) return null
   return (
@@ -304,7 +312,7 @@ function HidePRsByTitleMenu({ title }: { title: string }) {
           type="button"
           size="icon"
           variant="ghost"
-          className="ml-auto size-5"
+          className={cn('size-5', className)}
           aria-label="More actions"
         >
           <MoreHorizontalIcon size={14} />
@@ -346,7 +354,9 @@ function PRPopoverDegraded({
         ) : (
           <span className="font-medium">{linkLabel}</span>
         )}
-        {fallback?.title && <HidePRsByTitleMenu title={fallback.title} />}
+        {fallback?.title && (
+          <HidePRsByTitleMenu title={fallback.title} className="ml-auto" />
+        )}
       </div>
       {fallback?.title && (
         <p className="text-muted-foreground line-clamp-3">{fallback.title}</p>
@@ -379,7 +389,7 @@ export function PRPopoverContent({
         </a>
         <SizeBadge
           complexity={pr.complexity}
-          className="px-1.5 py-0 text-[10px]"
+          className="ml-auto px-1.5 py-0 text-[10px]"
         />
         <HidePRsByTitleMenu title={pr.title} />
       </div>
@@ -390,9 +400,12 @@ export function PRPopoverContent({
           {pr.authorDisplayName ?? pr.author}
         </span>
         <span>{createdAgo}</span>
-        <span className={`ml-auto ${statusShape.text}`}>
+        <Badge
+          variant="outline"
+          className={`ml-auto border-current px-1.5 py-0 text-[10px] font-normal ${statusShape.text}`}
+        >
           {statusShape.label}
-        </span>
+        </Badge>
       </div>
       {stateInfo && (
         <div className="space-y-0.5">

@@ -93,7 +93,7 @@ describe('TeamStacksChart', () => {
         if (this.classList.contains('overflow-y-auto')) {
           return new DOMRect(0, 0, 100, 100)
         }
-        if (this.querySelector('[aria-label="acme/widget#1 (レビュー中)"]')) {
+        if (this.querySelector('[aria-label="acme/widget#1 (In review)"]')) {
           return new DOMRect(0, 150, 100, 40)
         }
         return new DOMRect(0, 0, 0, 0)
