@@ -6,6 +6,7 @@ import type {
 
 export interface StackPR {
   number: number
+  repositoryId: string
   repo: string
   title: string
   url: string
@@ -14,7 +15,6 @@ export interface StackPR {
   createdAt: string
   complexity: string | null
   reviewStatus?: PRReviewStatus
-  reviewerStates?: PRReviewerStateEntry[]
 }
 
 export interface PersonStack {
@@ -204,6 +204,7 @@ export function aggregateTeamStacks({
     )
     const stackPR: StackPR = {
       number: pr.number,
+      repositoryId: pr.repositoryId,
       repo: pr.repo,
       title: pr.title,
       url: pr.url,
@@ -212,7 +213,6 @@ export function aggregateTeamStacks({
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
       reviewStatus,
-      reviewerStates,
     }
 
     let stack = authorMap.get(pr.author)
@@ -263,6 +263,7 @@ export function aggregateTeamStacks({
     }
     stack.prs.push({
       number: row.number,
+      repositoryId: row.repositoryId,
       repo: row.repo,
       title: row.title,
       url: row.url,
@@ -271,7 +272,6 @@ export function aggregateTeamStacks({
       createdAt: row.pullRequestCreatedAt,
       complexity: row.complexity,
       reviewStatus: 'in-review',
-      reviewerStates: reviewerStatesByPR.get(prKey),
     })
   }
   const reviewerStacks = [...reviewerMap.values()].sort(

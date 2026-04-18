@@ -21,8 +21,6 @@ import {
   PRPopover,
   REVIEW_STATE_STYLE,
   REVIEW_STATUS_PRIORITY,
-  type PRBlockData,
-  type PRReviewerStateEntry,
   type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
@@ -36,7 +34,6 @@ import {
   getClosedPRs,
   getCreatedPRs,
   getMergedPRs,
-  getPRPopoverEnrichment,
   getReviewsSubmitted,
   getUserProfile,
 } from './+functions/queries.server'
@@ -137,61 +134,11 @@ export const loader = async ({
       reviewerStates,
       params.login,
     )
-    return { ...pr, reviewStatus, reviewerStates }
+    return { ...pr, reviewStatus }
   })
   const enrichedPendingReviews = backlog.pendingReviews.map((pr) => {
-    const prKey = `${pr.repositoryId}:${pr.number}`
-    const reviewerStates = reviewerStatesByPR.get(prKey)
-    return { ...pr, reviewStatus: 'in-review' as const, reviewerStates }
+    return { ...pr, reviewStatus: 'in-review' as const }
   })
-
-  // Calendar PRs need the same enrichment as Review Stacks so the shared
-  // PRPopover shows author + reviewer states.
-  const calendarPRKeyMap = new Map<
-    string,
-    { repositoryId: string; number: number }
-  >()
-  for (const pr of [...createdPRs, ...mergedPRs, ...closedPRs, ...reviews]) {
-    calendarPRKeyMap.set(`${pr.repositoryId}:${pr.number}`, {
-      repositoryId: pr.repositoryId,
-      number: pr.number,
-    })
-  }
-  const enrichment = await getPRPopoverEnrichment(organization.id, [
-    ...calendarPRKeyMap.values(),
-  ])
-  const calendarReviewerStatesByPR = buildPRReviewerStatesMap(
-    enrichment.reviewHistory,
-    enrichment.reviewerRows,
-  )
-  const calendarPendingReviewerPRKeys = new Set<string>()
-  for (const r of enrichment.reviewerRows) {
-    calendarPendingReviewerPRKeys.add(`${r.repositoryId}:${r.number}`)
-  }
-  const calendarPRDataByKey = new Map<
-    string,
-    {
-      author: string
-      authorDisplayName: string | undefined
-      reviewStatus: PRReviewStatus
-      reviewerStates: PRReviewerStateEntry[]
-    }
-  >()
-  for (const a of enrichment.authors) {
-    const prKey = `${a.repositoryId}:${a.number}`
-    const reviewerStates = calendarReviewerStatesByPR.get(prKey)
-    const reviewStatus = classifyPRReviewStatus(
-      calendarPendingReviewerPRKeys.has(prKey),
-      reviewerStates,
-      a.author,
-    )
-    calendarPRDataByKey.set(prKey, {
-      author: a.author,
-      authorDisplayName: a.authorDisplayName ?? undefined,
-      reviewStatus,
-      reviewerStates: reviewerStates ?? [],
-    })
-  }
 
   return {
     user,
@@ -203,7 +150,6 @@ export const loader = async ({
       openPRs: enrichedOpenPRs,
       pendingReviews: enrichedPendingReviews,
     },
-    calendarPRDataByKey: Object.fromEntries(calendarPRDataByKey),
     holidays,
     weekStart: weekStart.format('YYYY-MM-DD'),
     weekEnd: weekEnd.format('YYYY-MM-DD'),
@@ -223,7 +169,6 @@ export default function MemberWeeklyPage({
     closedPRs,
     reviews,
     backlog,
-    calendarPRDataByKey,
     holidays,
     weekStart,
     excludedCount,
@@ -259,24 +204,6 @@ export default function MemberWeeklyPage({
       return prev
     })
   }
-
-  const buildCalendarPrData = (pr: {
-    number: number
-    repo: string
-    title: string
-    url: string
-    pullRequestCreatedAt: string
-    complexity: string | null
-    repositoryId: string
-  }): PRBlockData => ({
-    number: pr.number,
-    repo: pr.repo,
-    title: pr.title,
-    url: pr.url,
-    createdAt: pr.pullRequestCreatedAt,
-    complexity: pr.complexity,
-    ...calendarPRDataByKey[`${pr.repositoryId}:${pr.number}`],
-  })
 
   const sortBacklog = useMemo(() => {
     return <
@@ -479,13 +406,13 @@ export default function MemberWeeklyPage({
                 colorMode={colorMode}
                 pr={{
                   number: pr.number,
+                  repositoryId: pr.repositoryId,
                   repo: pr.repo,
                   title: pr.title,
                   url: pr.url,
                   createdAt: pr.pullRequestCreatedAt,
                   complexity: pr.complexity,
                   reviewStatus: pr.reviewStatus,
-                  reviewerStates: pr.reviewerStates,
                 }}
               />
             ))}
@@ -497,15 +424,13 @@ export default function MemberWeeklyPage({
                 colorMode={colorMode}
                 pr={{
                   number: pr.number,
+                  repositoryId: pr.repositoryId,
                   repo: pr.repo,
                   title: pr.title,
                   url: pr.url,
-                  author: pr.author,
-                  authorDisplayName: pr.authorDisplayName ?? undefined,
                   createdAt: pr.pullRequestCreatedAt,
                   complexity: pr.complexity,
                   reviewStatus: pr.reviewStatus,
-                  reviewerStates: pr.reviewerStates,
                 }}
               />
             ))}
@@ -592,7 +517,15 @@ export default function MemberWeeklyPage({
                         label={`#${pr.number}`}
                         title={pr.title}
                         complexity={pr.complexity}
-                        prData={buildCalendarPrData(pr)}
+                        prKey={{
+                          repositoryId: pr.repositoryId,
+                          number: pr.number,
+                        }}
+                        fallback={{
+                          title: pr.title,
+                          url: pr.url,
+                          repo: pr.repo,
+                        }}
                       />
                     ))}
                     {day.merged.map((pr) => (
@@ -602,7 +535,15 @@ export default function MemberWeeklyPage({
                         label={`#${pr.number}`}
                         title={pr.title}
                         complexity={pr.complexity}
-                        prData={buildCalendarPrData(pr)}
+                        prKey={{
+                          repositoryId: pr.repositoryId,
+                          number: pr.number,
+                        }}
+                        fallback={{
+                          title: pr.title,
+                          url: pr.url,
+                          repo: pr.repo,
+                        }}
                       />
                     ))}
                     {day.reviewed.map((r) => (
@@ -612,7 +553,15 @@ export default function MemberWeeklyPage({
                         label={`#${r.number}`}
                         title={r.title}
                         complexity={r.complexity}
-                        prData={buildCalendarPrData(r)}
+                        prKey={{
+                          repositoryId: r.repositoryId,
+                          number: r.number,
+                        }}
+                        fallback={{
+                          title: r.title,
+                          url: r.url,
+                          repo: r.repo,
+                        }}
                         reviewState={r.state}
                         reviewCount={r.reviewCount}
                         suffix={REVIEW_STATE_STYLE[r.state]?.icon}
@@ -625,7 +574,15 @@ export default function MemberWeeklyPage({
                         label={`#${pr.number}`}
                         title={pr.title}
                         complexity={pr.complexity}
-                        prData={buildCalendarPrData(pr)}
+                        prKey={{
+                          repositoryId: pr.repositoryId,
+                          number: pr.number,
+                        }}
+                        fallback={{
+                          title: pr.title,
+                          url: pr.url,
+                          repo: pr.repo,
+                        }}
                       />
                     ))}
                   </div>
@@ -760,7 +717,8 @@ function CalendarItem({
   title,
   suffix,
   complexity,
-  prData,
+  prKey,
+  fallback,
   reviewState,
   reviewCount,
 }: {
@@ -769,7 +727,8 @@ function CalendarItem({
   title: string
   suffix?: string
   complexity?: string | null
-  prData?: PRBlockData
+  prKey?: { repositoryId: string; number: number }
+  fallback?: { title?: string; url?: string; repo?: string }
   reviewState?: string
   reviewCount?: number
 }) {
@@ -809,10 +768,10 @@ function CalendarItem({
     </button>
   )
 
-  if (!prData) return content
+  if (!prKey) return content
 
   return (
-    <PRPopover pr={prData} reviewState={reviewState}>
+    <PRPopover prKey={prKey} reviewState={reviewState} fallback={fallback}>
       {content}
     </PRPopover>
   )

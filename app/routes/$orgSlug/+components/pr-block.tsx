@@ -1,8 +1,10 @@
 import { MoreHorizontalIcon } from 'lucide-react'
 import { Popover as PopoverPrimitive } from 'radix-ui'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useRef, useState } from 'react'
+import { href, useFetcher, useParams } from 'react-router'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
+import { Badge } from '~/app/components/ui/badge'
 import { Button } from '~/app/components/ui/button'
 import {
   DropdownMenu,
@@ -15,7 +17,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/app/components/ui/popover'
+import { Skeleton } from '~/app/components/ui/skeleton'
 import dayjs from '~/app/libs/dayjs'
+import { cn } from '~/app/libs/utils'
 
 /**
  * PRPopoverContent 内で「タイトルパターンで除外」ボタンを出すための context。
@@ -170,17 +174,34 @@ export interface PRReviewerStateEntry {
   submittedAt?: string
 }
 
-export interface PRBlockData {
+/** Popover enrichment from `resources/pr-popover` (and `getPullRequestForPopover`). */
+export interface PRPopoverData {
   number: number
   repo: string
   title: string
   url: string
-  author?: string
-  authorDisplayName?: string
+  createdAt: string
+  complexity: string | null
+  author: string
+  authorDisplayName: string | null
+  reviewStatus: PRReviewStatus
+  reviewerStates: PRReviewerStateEntry[]
+}
+
+export type PRPopoverLoaderData = {
+  pr: PRPopoverData | null
+  error?: 'not_found' | 'fetch_failed'
+}
+
+export interface PRBlockData {
+  number: number
+  repo: string
+  repositoryId: string
+  title?: string
+  url?: string
   createdAt: string
   complexity: string | null
   reviewStatus?: PRReviewStatus
-  reviewerStates?: PRReviewerStateEntry[]
 }
 
 interface ReviewStatusShape {
@@ -194,7 +215,7 @@ interface ReviewStatusShape {
 
 export const REVIEW_STATUS_SHAPE: Record<PRReviewStatus, ReviewStatusShape> = {
   'in-review': {
-    label: 'レビュー中',
+    label: 'In review',
     text: 'text-muted-foreground',
     shape: 'rounded-full',
     legendSwatch: 'size-3.5 rounded-full bg-gray-400 dark:bg-gray-500',
@@ -265,21 +286,98 @@ function GitHubAvatar({ login, size }: { login: string; size: number }) {
   )
 }
 
+function PRPopoverSkeleton() {
+  return (
+    <div className="flex h-[120px] flex-col justify-center gap-2">
+      <Skeleton className="h-3 w-3/4" />
+      <Skeleton className="h-3 w-full" />
+      <Skeleton className="h-3 w-5/6" />
+    </div>
+  )
+}
+
+function HidePRsByTitleMenu({
+  title,
+  className,
+}: {
+  title: string
+  className?: string
+}) {
+  const onHideByTitle = useContext(PRHideByTitleFilterContext)
+  if (!onHideByTitle) return null
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className={cn('size-5', className)}
+          aria-label="More actions"
+        >
+          <MoreHorizontalIcon size={14} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => onHideByTitle(title)}>
+          Hide PRs by title…
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function PRPopoverDegraded({
+  prKey,
+  fallback,
+}: {
+  prKey: { repositoryId: string; number: number }
+  fallback?: { title?: string; url?: string; repo?: string }
+}) {
+  const linkLabel = fallback?.repo
+    ? `${fallback.repo}#${prKey.number}`
+    : `${prKey.repositoryId}#${prKey.number}`
+  const linkHref = fallback?.url
+
+  return (
+    <div className="space-y-1 text-xs">
+      <div className="flex items-center gap-2">
+        {linkHref ? (
+          <a
+            href={linkHref}
+            className="font-medium hover:underline"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            {linkLabel}
+          </a>
+        ) : (
+          <span className="font-medium">{linkLabel}</span>
+        )}
+        {fallback?.title && (
+          <HidePRsByTitleMenu title={fallback.title} className="ml-auto" />
+        )}
+      </div>
+      {fallback?.title && (
+        <p className="text-muted-foreground line-clamp-3">{fallback.title}</p>
+      )}
+    </div>
+  )
+}
+
 export function PRPopoverContent({
   pr,
   reviewState,
 }: {
-  pr: PRBlockData
+  pr: PRPopoverData
   reviewState?: string
 }) {
   const createdAgo = dayjs.utc(pr.createdAt).fromNow()
   const stateInfo = reviewState ? REVIEW_STATE_STYLE[reviewState] : null
-  const statusShape = pr.reviewStatus
-    ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
-    : undefined
-  const onHideByTitle = useContext(PRHideByTitleFilterContext)
+  const statusShape = REVIEW_STATUS_SHAPE[pr.reviewStatus]
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <div className="flex items-center gap-2">
         <a
           href={pr.url}
@@ -289,90 +387,148 @@ export function PRPopoverContent({
         >
           {pr.repo}#{pr.number}
         </a>
-        <SizeBadge complexity={pr.complexity} />
-        {stateInfo && (
-          <span className={`text-xs font-medium ${stateInfo.className}`}>
-            {stateInfo.icon} {stateInfo.text}
-          </span>
-        )}
-        {onHideByTitle && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="ml-auto size-5"
-                aria-label="More actions"
-              >
-                <MoreHorizontalIcon size={14} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => onHideByTitle(pr.title)}>
-                Hide PRs by title…
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <SizeBadge
+          complexity={pr.complexity}
+          className="ml-auto px-1.5 py-0 text-[10px]"
+        />
+        <HidePRsByTitleMenu title={pr.title} />
       </div>
-      <p className="line-clamp-3 text-xs">{pr.title}</p>
-      <div className="text-muted-foreground flex flex-wrap gap-x-2 text-xs">
-        {pr.author && (
-          <span className="inline-flex items-center gap-1">
-            <GitHubAvatar login={pr.author} size={14} />
-            {pr.authorDisplayName ?? pr.author}
-          </span>
-        )}
+      <a
+        href={pr.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="line-clamp-3 text-xs hover:underline"
+      >
+        {pr.title}
+      </a>
+      <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
+        <span className="inline-flex items-center gap-1">
+          <GitHubAvatar login={pr.author} size={14} />
+          {pr.authorDisplayName ?? pr.author}
+        </span>
         <span>{createdAgo}</span>
-        {statusShape && (
-          <span className={statusShape.text}>{statusShape.label}</span>
-        )}
+        <Badge
+          variant="outline"
+          className={`ml-auto border-current px-1.5 py-0 text-[10px] font-normal ${statusShape.text}`}
+        >
+          {statusShape.label}
+        </Badge>
       </div>
-      {pr.reviewerStates && pr.reviewerStates.length > 0 && (
-        <div className="mt-1.5 space-y-0.5 border-t pt-1.5">
-          {pr.reviewerStates.map((r) => {
-            const style = REVIEW_STATE_STYLE[r.state]
-            const when = r.submittedAt
-              ? dayjs.utc(r.submittedAt).fromNow()
-              : undefined
-            return (
-              <div key={r.login} className="flex items-center gap-2 text-xs">
-                <span
-                  className={`w-20 shrink-0 whitespace-nowrap ${style.className}`}
-                >
-                  {style.icon} {style.text}
-                </span>
-                <GitHubAvatar login={r.login} size={14} />
-                <span className="truncate">{r.displayName}</span>
-                {when && (
-                  <span className="text-muted-foreground ml-auto shrink-0">
-                    {when}
+      {stateInfo && (
+        <div className="space-y-0.5">
+          <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
+            この日の review
+          </div>
+          <div className={`text-xs font-medium ${stateInfo.className}`}>
+            {stateInfo.icon} {stateInfo.text}
+          </div>
+        </div>
+      )}
+      {pr.reviewerStates.length > 0 && (
+        <div className="space-y-1 border-t pt-2">
+          <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
+            Reviewers
+          </div>
+          <div className="space-y-0.5">
+            {pr.reviewerStates.map((r) => {
+              const style = REVIEW_STATE_STYLE[r.state]
+              const when = r.submittedAt
+                ? dayjs.utc(r.submittedAt).fromNow()
+                : undefined
+              return (
+                <div key={r.login} className="flex items-center gap-2 text-xs">
+                  <span
+                    className={`w-20 shrink-0 whitespace-nowrap ${style.className}`}
+                  >
+                    {style.icon} {style.text}
                   </span>
-                )}
-              </div>
-            )
-          })}
+                  <GitHubAvatar login={r.login} size={14} />
+                  <span className="truncate">{r.displayName}</span>
+                  {when && (
+                    <span className="text-muted-foreground ml-auto shrink-0">
+                      {when}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
   )
 }
 
+const ERROR_MESSAGES = {
+  not_found: 'PR が見つかりませんでした',
+  fetch_failed: 'PR の情報を取得できませんでした',
+} as const
+
 export function PRPopover({
-  pr,
+  prKey,
   reviewState,
+  fallback,
   children,
 }: {
-  pr: PRBlockData
+  prKey: { repositoryId: string; number: number }
   reviewState?: string
+  fallback?: { title?: string; url?: string; repo?: string }
   children: React.ReactNode
 }) {
+  const { orgSlug } = useParams<{ orgSlug: string }>()
+  const fetcher = useFetcher<PRPopoverLoaderData>({
+    key: `pr-popover:${orgSlug}:${prKey.repositoryId}:${prKey.number}`,
+  })
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [side, setSide] = useState<'top' | 'bottom'>('top')
+
+  const resourceHref = orgSlug
+    ? href('/:orgSlug/resources/pr-popover/:repositoryId/:number', {
+        orgSlug,
+        repositoryId: prKey.repositoryId,
+        number: String(prKey.number),
+      })
+    : null
+
+  const renderBody = () => {
+    const d = fetcher.data
+
+    if (d?.pr) {
+      return <PRPopoverContent pr={d.pr} reviewState={reviewState} />
+    }
+    if (d?.error) {
+      return (
+        <div className="space-y-2">
+          <p className="text-muted-foreground text-xs">
+            {ERROR_MESSAGES[d.error]}
+          </p>
+          <PRPopoverDegraded prKey={prKey} fallback={fallback} />
+        </div>
+      )
+    }
+    // Default to skeleton on first paint to keep popover height stable
+    // before fetcher.state flips to 'loading' on the next tick.
+    return <PRPopoverSkeleton />
+  }
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent side="top" className="w-72 p-3">
-        <PRPopoverContent pr={pr} reviewState={reviewState} />
+    <Popover
+      onOpenChange={(open) => {
+        if (!open) return
+        const rect = triggerRef.current?.getBoundingClientRect()
+        if (rect) {
+          setSide(rect.top > window.innerHeight / 2 ? 'top' : 'bottom')
+        }
+        if (resourceHref && fetcher.state === 'idle') {
+          void fetcher.load(resourceHref)
+        }
+      }}
+    >
+      <PopoverTrigger ref={triggerRef} asChild>
+        {children}
+      </PopoverTrigger>
+      <PopoverContent side={side} avoidCollisions={false} className="w-72 p-3">
+        {renderBody()}
         <PopoverPrimitive.Arrow className="bg-popover fill-popover border-border size-2.5 -translate-y-1/2 rotate-45 border-r border-b" />
       </PopoverContent>
     </Popover>
@@ -414,7 +570,10 @@ export function PRBlock({
   const fillClass = isHollow ? `ring-[2px] ring-inset ${ring} ${bgFaint}` : bg
 
   return (
-    <PRPopover pr={pr}>
+    <PRPopover
+      prKey={{ repositoryId: pr.repositoryId, number: pr.number }}
+      fallback={{ title: pr.title, url: pr.url, repo: pr.repo }}
+    >
       <button
         type="button"
         data-pr-key={dataPrKey}
