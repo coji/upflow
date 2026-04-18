@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Outlet, href, useMatches } from 'react-router'
 import { AppSidebar } from '~/app/components/layout/app-sidebar'
 import { Header } from '~/app/components/layout/header'
@@ -93,12 +93,11 @@ export default function OrgLayout({
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetTitle, setSheetTitle] = useState<string | null>(null)
-  const openSheet = isAdmin
-    ? (title: string) => {
-        setSheetTitle(title)
-        setSheetOpen(true)
-      }
-    : null
+  const openSheetImpl = useCallback((title: string) => {
+    setSheetTitle(title)
+    setSheetOpen(true)
+  }, [])
+  const openSheet = isAdmin ? openSheetImpl : null
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
