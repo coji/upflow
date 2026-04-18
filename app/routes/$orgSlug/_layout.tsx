@@ -14,7 +14,7 @@ import {
   timezoneContext,
 } from '~/app/middleware/context'
 import { orgMemberMiddleware } from '~/app/middleware/org-member'
-import { PRHideByTitleFilterContext } from '~/app/routes/$orgSlug/+components/pr-block'
+import { PRHideByTitleFilterContext } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 import { PrTitleFilterSheet } from '~/app/routes/$orgSlug/+components/pr-title-filter-sheet'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { Route } from './+types/_layout'

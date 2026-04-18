@@ -13,7 +13,7 @@ import {
   type PRSizeLabel,
 } from '~/app/libs/pr-classify'
 import { cn } from '~/app/libs/utils'
-import { HidePRsByTitleMenu } from '~/app/routes/$orgSlug/+components/pr-block'
+import { hidePrActionsColumn } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 import type { FeedbackRow } from '../+functions/queries.server'
 
 function SizeBadgeInline({ size }: { size: string | null }) {
@@ -48,7 +48,7 @@ const columnHelper = createColumnHelper<FeedbackRow>()
 export function createFeedbackColumns(
   isAdmin: boolean,
 ): ColumnDef<FeedbackRow, unknown>[] {
-  const columns: ColumnDef<FeedbackRow, unknown>[] = [
+  return [
     columnHelper.accessor('repoName', {
       header: 'Repository',
       cell: (info) => (
@@ -141,20 +141,6 @@ export function createFeedbackColumns(
       ),
       enableSorting: true,
     }),
+    ...hidePrActionsColumn<FeedbackRow>(isAdmin, (r) => r.prTitle),
   ]
-
-  if (isAdmin) {
-    columns.push(
-      columnHelper.display({
-        id: 'actions',
-        header: '',
-        cell: (info) =>
-          info.row.original.prTitle ? (
-            <HidePRsByTitleMenu title={info.row.original.prTitle} />
-          ) : null,
-      }),
-    )
-  }
-
-  return columns
 }

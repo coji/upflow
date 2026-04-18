@@ -4,7 +4,7 @@ import { SizeBadgePopover } from '~/app/components/size-badge-popover'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
 import { complexitySortingFn } from '~/app/libs/pr-classify'
-import { HidePRsByTitleMenu } from '~/app/routes/$orgSlug/+components/pr-block'
+import { hidePrActionsColumn } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 import type { PullRequest } from './index'
 
 export function createColumns(
@@ -12,7 +12,7 @@ export function createColumns(
   orgSlug: string,
   isAdmin: boolean,
 ): ColumnDef<PullRequest>[] {
-  const columns: ColumnDef<PullRequest>[] = [
+  return [
     {
       accessorKey: 'author',
       header: ({ column }) => (
@@ -147,20 +147,6 @@ export function createColumns(
       ),
       enableHiding: false,
     },
+    ...hidePrActionsColumn<PullRequest>(isAdmin, (r) => r.title),
   ]
-
-  if (isAdmin) {
-    columns.push({
-      id: 'actions',
-      header: '',
-      cell: ({ row }) =>
-        row.original.title ? (
-          <HidePRsByTitleMenu title={row.original.title} />
-        ) : null,
-      enableHiding: false,
-      enableSorting: false,
-    })
-  }
-
-  return columns
 }

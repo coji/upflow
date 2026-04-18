@@ -10,8 +10,8 @@ import {
   vi,
   type Mock,
 } from 'vitest'
+import { PRHideByTitleFilterContext } from './hide-prs-by-title-menu'
 import {
-  PRHideByTitleFilterContext,
   PRPopover,
   PRPopoverContent,
   type PRPopoverData,
