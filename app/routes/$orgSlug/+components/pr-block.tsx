@@ -484,10 +484,9 @@ export function PRPopover({
         </div>
       )
     }
-    if (fetcher.state === 'loading') {
-      return <PRPopoverSkeleton />
-    }
-    return null
+    // Default to skeleton on first paint to keep popover height stable
+    // before fetcher.state flips to 'loading' on the next tick.
+    return <PRPopoverSkeleton />
   }
 
   return (
