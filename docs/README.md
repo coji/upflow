@@ -14,6 +14,19 @@
 - [future-ideas.md](./future-ideas.md)
   直近ではやらないが、方向性として残しておく機能案
 
+## 機能ガイド・計画
+
+- [pr-size-classification-guide.md](./pr-size-classification-guide.md)
+  PR サイズ分類（XS〜XL）の運用ガイド。開発マネージャー向け
+- [pr-size-feedback-loop.md](./pr-size-feedback-loop.md)
+  LLM 分類を人間の暗黙知で補正するフィードバックループ計画
+
+## 設計記録（RDD）
+
+実装着手前に判断を固めた設計ドキュメント。完了済みも参照用に残す。
+
+- [rdd/](./rdd/) — 一覧は [rdd/README.md](./rdd/README.md)
+
 ## 参照メモ
 
 - [guides/gemini-prompting.md](./guides/gemini-prompting.md)
@@ -22,6 +35,6 @@
 ## 整理方針
 
 - 計画は `roadmap.md` に集約する
-- 各機能ドキュメントには「目的・依存・最小スコープ」だけ残す
-- 実装済みの移行メモや、重複したフェーズ計画は残さない
+- 設計判断は `rdd/` に残す（完了時は `## Status` を追加）
+- 実装が完了した段階的な移行メモ・作業計画は削除する（git history に残る）
 - 直近のジョブ基盤は Node + Durably を前提にする

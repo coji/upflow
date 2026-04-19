@@ -431,3 +431,7 @@ UI 表現の指針:
 5. **Drop-in を本当に達成するための条件**: 新画面で `<PRPopover prKey={{ repositoryId, number }}>` を使うには、その画面の loader が `repositoryId` と `number` を持っていれば十分。`PRBlock` 経由ではなく直接 `<PRPopover>` を使う場合 (CalendarItem のような textual trigger) も同じ条件で動く。
 6. **`reviewStatus` の整合性**: `reviewStatus` は popover (resource route 由来 = current snapshot, 30 秒 TTL) と Backlog ブロックの shape (loader 由来 = ページ表示時点 snapshot) の 2 経路で計算される。両者が同じ PR について異なる値を出す可能性がある (loader からの初回表示後、別ユーザーがレビューを submit → popover を開くと current が更新されているが、ブロックの shape は古いまま)。これは triage 用途では「ブロック shape は概算、popover が authoritative」という UI 慣習で許容する。受け入れ条件 18 で popover 側の `reviewStatus` 表示が authoritative であることを担保する。
 7. **Sticky failure の防止**: 設計判断 5 で `pr === null` を `no-store` にしたことで、transient miss が固定化されるリスクは排除した。残るのは正のヒット中にデータが変化した場合の 30 秒遅延だが、これは表示用途の stale tolerance 範囲内として許容する。
+
+## Status
+
+Implemented in #315
