@@ -95,6 +95,26 @@ Upflow の直近の優先順位をまとめた実行計画。
 1. `reviews dashboard`
 2. `personal dashboard`
 
+## GitHub App 移行の残タスク
+
+Phase 0-2 および multi-installation 対応（issue #283）は完了済み。以下は残った運用・クリーンアップ項目。
+
+### 運用上の補強
+
+- `installation_repositories` イベントで個別リポのアクセス状態を反映する
+- `repositories` テーブルに `is_accessible` 相当のフラグを追加する
+- `GET /app/installations` と `github_app_links` の定期 reconciliation バッチを追加する
+
+### クライアント移行が終わったらやること
+
+- PAT 方式のコードパスを整理する（新規 org セットアップも GitHub App を前提にするなら削除可）
+- `requireOrgOwner` によるリポ操作制限を解除し、admin に開放する
+- 個人 PAT を GitHub から revoke する
+- integrations データ移行スクリプトを削除する
+  - `db/migrate-integrations-to-shared.ts`
+  - `start.sh` の呼び出し
+  - `package.json` のスクリプトエントリ
+
 ## 補足のアーキテクチャ原則
 
 - Source 層は GitHub API に近い形で冪等保存する

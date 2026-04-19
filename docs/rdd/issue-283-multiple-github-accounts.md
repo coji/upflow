@@ -782,3 +782,7 @@ Issue 本文の「batch 側の crawl パイプライン（org -> 単一 Octokit 
 2. 同一 `owner/repo` が複数 installation から見える場合、本 RDD は tenant 上の repository row を 1 件に保ち、`github_installation_id` を canonical installation として持つ前提です。候補が複数あるときは自動 reassignment せず manual reselection が必要です。
 3. `installation.created` を org 紐付けの主経路にはできません。GitHub webhook payload には Upflow org を特定する `state` が無いためです。初回紐付けの正本は setup callback のままです。
 4. personal account UI 分岐には `github_account_type` 保存が前提です。setup callback と installation webhook のどちらかだけを更新すると、既存 row で設定リンクと文言が崩れます。
+
+## Status
+
+Implemented in #288, #290, #291, #292, #293, #294, #296

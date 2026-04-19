@@ -556,3 +556,7 @@ Phase ごとの安全に DROP 可能な条件:
 5. `UNIQUE (normalized_pattern)` により表記ゆれ含めた重複は防げるが、上位概念 (`[EPIC-`) と下位具体 (`[EPIC-123]`) の共存は防げない。UI 側で「より広いパターンが既にあります」の warning は出すが、DB 制約にはしない。
 6. `clearOrgCache` は org 全体のキャッシュを一括削除するため、フィルタ変更直後は他の loader も含めて再計算が走る。フィルタ編集頻度が低い前提なので許容する。
 7. 監査要件が強化された場合 (誰がいつどのパターンを削除したかの時系列追跡など) は `github_app_link_events` と同様の append-only event log table を後続 issue で追加する。本 issue では `created_by` / `updated_by` のみ。
+
+## Status
+
+Implemented in #308, #316, #317
