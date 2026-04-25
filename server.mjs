@@ -77,7 +77,12 @@ function shutdown() {
 process.on('SIGINT', shutdown)
 process.on('SIGTERM', shutdown)
 
-if (process.env.NODE_ENV === 'production') {
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.DISABLE_JOB_SCHEDULER !== '1'
+) {
   const { startScheduler } = createJobScheduler()
   startScheduler()
+} else if (process.env.DISABLE_JOB_SCHEDULER === '1') {
+  consola.info('job scheduler disabled by DISABLE_JOB_SCHEDULER=1')
 }
