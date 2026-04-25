@@ -9,9 +9,17 @@ retention:
   enabled: false
 
 dbs:
-  # Shared DB: organizations / members / integrations / githubAppLinks. Low write
-  # rate, user-facing data. Tight RPO.
-  - path: ${UPFLOW_DATA_DIR}/data.db
+  # Shared DB: organizations / members / integrations / githubAppLinks. Low
+  # write rate, user-facing data. Tight RPO.
+  #
+  # Using the dir+pattern form (rather than `path:`) so the replica resolves
+  # to ${LITESTREAM_REPLICA_PREFIX}/data.db/, matching the layout used for
+  # tenant DBs and the original *.db pattern that existed before the
+  # durably.db exclusion. The single-db `path:` form does not auto-append the
+  # database filename to the replica path, which would diverge from the
+  # existing R2 prefix and orphan prior backups.
+  - dir: ${UPFLOW_DATA_DIR}
+    pattern: 'data.db'
     replica:
       type: s3
       bucket: upflow-backups
