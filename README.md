@@ -121,9 +121,10 @@ For local development and smoke tests, UpFlow can point GitHub REST API and
 Octokit calls at the [`emulate`](https://github.com/vercel-labs/emulate) GitHub
 emulator instead of the real GitHub API.
 
-Start the emulator in one terminal:
+Create a local emulator config, then start the emulator in one terminal:
 
 ```bash
+cp emulate.config.example.yaml emulate.config.yaml
 pnpm emulate:github
 ```
 
@@ -131,9 +132,12 @@ Then set `GITHUB_API_BASE_URL=http://localhost:4000` when running the app or
 tests. `.env.emulate.example` contains the matching local values:
 
 ```bash
-cp .env.emulate.example .env
+cp -i .env.emulate.example .env
 pnpm dev
 ```
+
+If `.env` already exists, review or back it up before copying the emulate
+example over it.
 
 The seeded token `test_token_user1` maps to the seeded GitHub user `octocat`.
 To verify the local emulator wiring:

@@ -72,6 +72,15 @@ describe('createOctokit', () => {
     const o = createOctokit({ method: 'github_app', installationId: 99 })
     expect(o).toBeDefined()
   })
+
+  test('github_app method uses GITHUB_API_BASE_URL when set', () => {
+    stubGithubAppEnv()
+    vi.stubEnv('GITHUB_API_BASE_URL', 'http://localhost:4000')
+
+    const o = createOctokit({ method: 'github_app', installationId: 99 })
+
+    expect(o.request.endpoint.DEFAULTS.baseUrl).toBe('http://localhost:4000')
+  })
 })
 
 describe('resolveOctokitForInstallation', () => {

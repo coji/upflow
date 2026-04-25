@@ -9,5 +9,5 @@ export function getGithubApiBaseUrl(): string {
 
 export function githubApiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return new URL(normalizedPath, `${getGithubApiBaseUrl()}/`).toString()
+  return `${getGithubApiBaseUrl()}${normalizedPath}`
 }

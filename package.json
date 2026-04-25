@@ -35,7 +35,7 @@
     "test:e2e:run": "playwright test",
     "typecheck": "react-router typegen && tsc -b",
     "validate": "run-s lint format typecheck build test",
-    "emulate:github": "emulate --service github --seed emulate.config.example.yaml",
+    "emulate:github": "emulate --service github --seed emulate.config.yaml",
     "ops": "tsx ops/cli.ts",
     "lab:fetch": "pnpm tsx lab/fetch.ts",
     "lab:serve": "python3 -m http.server 8787 -d lab/output"

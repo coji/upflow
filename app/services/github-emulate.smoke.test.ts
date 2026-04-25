@@ -3,8 +3,19 @@ import { getRepositoriesByOwnerAndKeyword } from '~/app/routes/$orgSlug/settings
 import { getUniqueOwners } from '~/app/routes/$orgSlug/settings/repositories.add/+functions/get-unique-owners'
 import { createOctokit } from './github-octokit.server'
 
-const run =
-  process.env.RUN_GITHUB_EMULATE_TESTS === '1' ? describe : describe.skip
+const githubApiBaseUrl = process.env.GITHUB_API_BASE_URL
+const shouldRun =
+  process.env.RUN_GITHUB_EMULATE_TESTS === '1' &&
+  !!githubApiBaseUrl &&
+  githubApiBaseUrl.includes('localhost')
+
+if (process.env.RUN_GITHUB_EMULATE_TESTS === '1' && !shouldRun) {
+  console.warn(
+    'Skipping GitHub emulate smoke test: set GITHUB_API_BASE_URL to a localhost emulator URL.',
+  )
+}
+
+const run = shouldRun ? describe : describe.skip
 const token = 'test_token_user1'
 
 run('GitHub emulate smoke test', () => {
