@@ -97,20 +97,25 @@ production/litestream/data.db/
 production/litestream/tenant_iris.db/
 ```
 
-A `production/litestream/durably.db/` prefix may exist as a remnant from earlier runs that replicated `durably.db`. It is no longer updated and is cleaned up manually as a one-off operator action (see "Stale durably.db Cleanup" below). Production credentials lack Delete permission by design, so this cleanup is performed with operator-level access, not by the running app.
+A `production/litestream/durably.db/` prefix may exist as a remnant from earlier runs that replicated `durably.db`. It is no longer updated and is cleaned up by the lifecycle rule documented below.
 
-## Stale durably.db Cleanup
+## R2 Storage Management
 
-If R2 contains a `production/litestream/durably.db/` prefix from before durably was excluded, delete it once via the Cloudflare Dashboard:
+Litestream's config in this repo sets `retention.enabled: false` so the running app does not need Delete permission on R2. With retention disabled, Litestream never deletes from R2 — compaction merges level-0 LTX files into higher levels but only deletes the merged-away files **locally** (the `l0 retention enforced` lines in the logs, with `system=store`); the originals on R2 stay forever. Compaction therefore bounds Class A PUT volume and live object count but **R2 storage grows monotonically**.
 
-1. R2 → `upflow-backups` → navigate into `production/litestream/durably.db/`
-2. Select all objects (or the whole folder) and Delete
+Manage retention with an R2 lifecycle rule instead. Cloudflare Dashboard → R2 → `upflow-backups` → Settings → Object lifecycle rules:
 
-## R2 Storage Growth
+- Prefix: `production/litestream/`
+- Action: **Delete objects** after `30 days` (adjust per RPO needs; longer = larger restore window, more storage)
 
-Litestream's config in this repo sets `retention.enabled: false` so the running app does not need Delete permission on R2. Compaction still runs and merges level-0 LTX files into higher levels, but with retention disabled it only deletes the merged-away files **locally** (the `l0 retention enforced` lines in the logs); the originals on R2 are never removed. Compaction therefore keeps Class A PUT volume and live object count bounded, but R2 storage grows monotonically.
+This single rule covers both:
 
-At current write volume the growth is on the order of tens of MB per month for `data.db` + `tenant_*.db` combined, so the 10 GB free tier is not a near-term concern. When R2 storage approaches the limit, set up an R2 lifecycle rule to expire objects under `production/litestream/` past some retention horizon (e.g. 30 or 90 days) — the same operator-side action used for the one-off durably cleanup above, just made recurring.
+- **Ongoing retention** for actively-replicated DBs (`data.db`, `tenant_*.db`). Snapshots are taken every 24h, so a 30-day rule keeps ~30 daily snapshots plus the LTX chains between them.
+- **Stale `production/litestream/durably.db/` prefix** from before `durably.db` was excluded. Those objects age out and disappear within the retention window — no separate one-off cleanup is required (though a manual prefix delete via the Dashboard works if immediate removal is preferred).
+
+### Restore window
+
+After the lifecycle rule activates, point-in-time restore is bounded by the retention horizon. Restoring to a point older than the rule's retention is not possible (snapshots and LTX files have expired). For most incident-recovery scenarios 30 days is generous; do not set retention shorter than the typical incident detection time.
 
 ## Restore Smoke Test
 
