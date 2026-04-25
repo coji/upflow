@@ -6,13 +6,12 @@ upflow backs up SQLite databases to Cloudflare R2 with Litestream.
 
 Litestream is enabled only when `LITESTREAM_ENABLED=1`.
 
-The production config watches `${UPFLOW_DATA_DIR}` and replicates every SQLite database matching `*.db`, including:
+The production config replicates two classes of SQLite database:
 
-- `data.db`
-- `durably.db`
-- `tenant_*.db`
+- `data.db` — shared DB (organizations, members, integrations, githubAppLinks). Low write rate, tight RPO.
+- `tenant_*.db` — per-org analytics. Picked up dynamically via directory watch when new orgs are added.
 
-New tenant databases are picked up by Litestream directory watch.
+`durably.db` is **intentionally excluded** from replication. It holds in-flight `@coji/durably` job orchestration state, which Litestream would persist as roughly one level-0 LTX file per transaction — at hourly crawl cadence that accounts for about half of all R2 Class A operations. The data is regenerable: GitHub is the source of truth, and the next hourly crawl re-derives state via idempotent upserts. Worst-case loss on restore is whatever job was in flight at the moment of disaster, which the scheduler picks up on its next tick. Skipping durably keeps R2 PUT volume comfortably inside the free tier with headroom for organization growth.
 
 ## R2 Bucket
 
@@ -91,13 +90,32 @@ Look for Litestream startup and database discovery logs. Confirm R2 has objects 
 upflow-backups/production/litestream/
 ```
 
-The directory replica appends each database filename under the prefix, for example:
+Each replicated database appears as its own subprefix, for example:
 
 ```text
 production/litestream/data.db/
-production/litestream/durably.db/
 production/litestream/tenant_iris.db/
 ```
+
+A `production/litestream/durably.db/` prefix may exist as a remnant from earlier runs that replicated `durably.db`. It is no longer updated and is cleaned up by the lifecycle rule documented below.
+
+## R2 Storage Management
+
+Litestream's config in this repo sets `retention.enabled: false` so the running app does not need Delete permission on R2. With retention disabled, Litestream never deletes from R2 — compaction merges level-0 LTX files into higher levels but only deletes the merged-away files **locally** (the `l0 retention enforced` lines in the logs, with `system=store`); the originals on R2 stay forever. Compaction therefore bounds Class A PUT volume and live object count but **R2 storage grows monotonically**.
+
+Manage retention with an R2 lifecycle rule instead. Cloudflare Dashboard → R2 → `upflow-backups` → Settings → Object lifecycle rules:
+
+- Prefix: `production/litestream/`
+- Action: **Delete objects** after `30 days` (adjust per RPO needs; longer = larger restore window, more storage)
+
+This single rule covers both:
+
+- **Ongoing retention** for actively-replicated DBs (`data.db`, `tenant_*.db`). Snapshots are taken every 24h, so a 30-day rule keeps ~30 daily snapshots plus the LTX chains between them.
+- **Stale `production/litestream/durably.db/` prefix** from before `durably.db` was excluded. Those objects age out and disappear within the retention window — no separate one-off cleanup is required (though a manual prefix delete via the Dashboard works if immediate removal is preferred).
+
+### Restore window
+
+After the lifecycle rule activates, point-in-time restore is bounded by the retention horizon. Restoring to a point older than the rule's retention is not possible (snapshots and LTX files have expired). For most incident-recovery scenarios 30 days is generous; do not set retention shorter than the typical incident detection time.
 
 ## Restore Smoke Test
 
