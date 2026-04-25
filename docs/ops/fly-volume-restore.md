@@ -5,6 +5,8 @@ restore path for the `upflow` Fly app.
 
 ## Current State
 
+As of 2026-04-25:
+
 - App: `upflow`
 - Region: `nrt`
 - Production volume: `vol_vlpd30e1ey731zg4`
@@ -16,6 +18,10 @@ restore path for the `upflow` Fly app.
 
 The retention was changed from the Fly default of `5` days to `30` days on
 2026-04-25.
+
+These values are time-sensitive. Before using this runbook during an incident,
+verify the current app, volume, machine, snapshot, and retention state with the
+Fly commands below.
 
 ## Snapshot Checks
 
@@ -41,6 +47,10 @@ fly volumes snapshots create vol_vlpd30e1ey731zg4 -a upflow
 
 Snapshot restore was rehearsed on 2026-04-25 by creating a temporary volume
 from snapshot `vs_KxRlzkJ2epvcyNxb6ykb6gm`.
+
+The snapshot and temporary volume IDs in this section are historical values from
+the 2026-04-25 rehearsal. Do not reuse them without checking the current Fly
+state.
 
 Command used:
 
@@ -116,3 +126,26 @@ Minimum checks for the full drill:
 
 Do not destroy the original production volume until the restored app has been
 verified.
+
+Example command templates. Replace placeholders and re-check live Fly state
+before execution.
+
+```bash
+# Confirm current production volume state and retention.
+fly volumes show vol_vlpd30e1ey731zg4 -a upflow
+
+# List snapshots for the production volume.
+fly volumes snapshots list vol_vlpd30e1ey731zg4 -a upflow
+
+# Create a restored data volume from the selected snapshot.
+fly volumes create data \
+  -a upflow \
+  -r nrt \
+  -s 2 \
+  --snapshot-id <SNAPSHOT_ID> \
+  --yes
+
+# Deploy or create the replacement machine in the same app and region.
+# Choose the exact command based on the current Fly machine/app state.
+fly deploy -a upflow --region nrt
+```
