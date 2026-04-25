@@ -25,15 +25,19 @@ RUN apt-get update \
   && curl -sSf https://atlasgo.sh | sh \
   && rm -rf /var/lib/apt/lists/*
 
+# SHA256 digests are pinned to LITESTREAM_VERSION above.
+# When bumping LITESTREAM_VERSION, refresh these from the corresponding GitHub release:
+#   curl -sSL https://api.github.com/repos/benbjohnson/litestream/releases/tags/v<version>
 RUN set -eux; \
   arch="$(dpkg --print-architecture)"; \
   case "$arch" in \
-    amd64) litestream_arch="x86_64" ;; \
-    arm64) litestream_arch="arm64" ;; \
-    armhf) litestream_arch="armv7" ;; \
+    amd64) litestream_arch="x86_64";  litestream_sha256="f9139fb9796a4c6e61bd160e1309450e954686584d91350dec849a4b6c638e54" ;; \
+    arm64) litestream_arch="arm64";   litestream_sha256="7f023f620183aee439202430758a3e8b6b31d7302fd2ba6ff486bb4c3a4a32d5" ;; \
+    armhf) litestream_arch="armv7";   litestream_sha256="5259f3bb55ae90e1e490dde7a524fc52dbc883ef1545b43996cb3129c404e88e" ;; \
     *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
   esac; \
   curl -fsSL -o /tmp/litestream.deb "https://github.com/benbjohnson/litestream/releases/download/v${LITESTREAM_VERSION}/litestream-${LITESTREAM_VERSION}-linux-${litestream_arch}.deb"; \
+  echo "${litestream_sha256}  /tmp/litestream.deb" | sha256sum -c -; \
   dpkg -i /tmp/litestream.deb; \
   rm /tmp/litestream.deb
 
