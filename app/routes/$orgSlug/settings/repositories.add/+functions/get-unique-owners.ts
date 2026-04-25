@@ -1,3 +1,5 @@
+import { githubApiUrl } from '~/app/libs/github-api.server'
+
 /**
  * REST API GET /user/repos でアクセス可能なリポジトリの
  * ユニークなオーナー一覧を取得する。
@@ -9,15 +11,20 @@ export async function getUniqueOwners(token: string): Promise<string[]> {
   let page = 1
 
   while (true) {
-    const res = await fetch(
-      `https://api.github.com/user/repos?per_page=100&page=${page}&affiliation=owner,collaborator,organization_member`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json',
-        },
-      },
+    const url = new URL(githubApiUrl('/user/repos'))
+    url.searchParams.set('per_page', '100')
+    url.searchParams.set('page', String(page))
+    url.searchParams.set(
+      'affiliation',
+      'owner,collaborator,organization_member',
     )
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+      },
+    })
     if (!res.ok) break
     const repos: { owner: { login: string } }[] = await res.json()
     if (repos.length === 0) break

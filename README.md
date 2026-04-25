@@ -115,6 +115,42 @@ pnpm db:setup
 pnpm dev
 ```
 
+## GitHub API Emulator
+
+For local development and smoke tests, UpFlow can point GitHub REST API and
+Octokit calls at the [`emulate`](https://github.com/vercel-labs/emulate) GitHub
+emulator instead of the real GitHub API.
+
+Create a local emulator config, then start the emulator in one terminal:
+
+```bash
+cp emulate.config.example.yaml emulate.config.yaml
+pnpm emulate:github
+```
+
+Then set `GITHUB_API_BASE_URL=http://localhost:4000` when running the app or
+tests. `.env.emulate.example` contains the matching local values:
+
+```bash
+cp -i .env.emulate.example .env
+pnpm dev
+```
+
+If `.env` already exists, review or back it up before copying the emulate
+example over it.
+
+The seeded token `test_token_user1` maps to the seeded GitHub user `octocat`.
+To verify the local emulator wiring:
+
+```bash
+pnpm test:emulate:github
+```
+
+This smoke test exercises the repository owner lookup, repository search, and
+Octokit authenticated user call against the emulator. GitHub OAuth authorize and
+token exchange still use the configured GitHub OAuth provider; only GitHub REST
+API calls are redirected.
+
 ## Fetching PR Data
 
 UpFlow needs to fetch PR data from GitHub to display metrics. After adding a repository in the dashboard, run:

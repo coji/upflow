@@ -3,6 +3,7 @@ import { admin } from 'better-auth/plugins/admin'
 import { organization } from 'better-auth/plugins/organization'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
+import { githubApiUrl } from '~/app/libs/github-api.server'
 import { db, dialect } from '~/app/services/db.server'
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -23,7 +24,7 @@ export const auth = betterAuth({
           console.error('[GitHub OAuth] No access token')
           return null
         }
-        const res = await fetch('https://api.github.com/user', {
+        const res = await fetch(githubApiUrl('/user'), {
           headers: {
             'User-Agent': 'upflow',
             Authorization: `Bearer ${token.accessToken}`,
@@ -95,7 +96,7 @@ export const auth = betterAuth({
           }
         }
 
-        const emailsRes = await fetch('https://api.github.com/user/emails', {
+        const emailsRes = await fetch(githubApiUrl('/user/emails'), {
           headers: {
             'User-Agent': 'upflow',
             Authorization: `Bearer ${token.accessToken}`,

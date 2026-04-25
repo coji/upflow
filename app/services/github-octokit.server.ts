@@ -1,6 +1,11 @@
 import { createAppAuth } from '@octokit/auth-app'
 import { Octokit } from 'octokit'
 import invariant from 'tiny-invariant'
+import { getGithubApiBaseUrl } from '~/app/libs/github-api.server'
+
+const octokitOptions = () => ({
+  baseUrl: getGithubApiBaseUrl(),
+})
 
 function getAppCredentials(): { appId: number; privateKey: string } {
   const appId = process.env.GITHUB_APP_ID
@@ -20,6 +25,7 @@ function getAppCredentials(): { appId: number; privateKey: string } {
  */
 export function createAppOctokit(): Octokit {
   return new Octokit({
+    ...octokitOptions(),
     authStrategy: createAppAuth,
     auth: getAppCredentials(),
   })
@@ -65,11 +71,12 @@ export type RepositoryForOctokit = {
 
 export function createOctokit(auth: IntegrationAuth): Octokit {
   if (auth.method === 'token') {
-    return new Octokit({ auth: auth.privateToken })
+    return new Octokit({ ...octokitOptions(), auth: auth.privateToken })
   }
 
   const credentials = getAppCredentials()
   return new Octokit({
+    ...octokitOptions(),
     authStrategy: createAppAuth,
     auth: { ...credentials, installationId: auth.installationId },
   })

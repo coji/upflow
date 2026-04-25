@@ -6,6 +6,7 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   GITHUB_CLIENT_ID: z.string(),
   GITHUB_CLIENT_SECRET: z.string(),
+  GITHUB_API_BASE_URL: z.string().url().optional(),
 })
 envSchema.parse(process.env)
 
