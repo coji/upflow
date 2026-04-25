@@ -80,6 +80,108 @@ This rehearsal confirms that Fly can create a new volume from the production
 volume snapshots. It does not validate attaching the restored volume to a
 replacement machine or booting the app from it.
 
+## Full Restore Drill Result
+
+The full restore drill was run on 2026-04-25 in a separate Fly app.
+
+Resources used:
+
+- Restore-test app: `upflow-restore-test`
+- Restore-test machine: `d891226a334338`
+- Production snapshot: `vs_N1poYn20AVyI0ZkeY1mZ209`
+- Restored volume: `vol_vp2zzkllzx6zn824`
+- Restored volume app: `upflow-restore-test`
+- Restored volume name: `data`
+- Restored volume region: `nrt`
+- Restored volume size: `2GB`
+- Restore-test URL: `https://upflow-restore-test.fly.dev`
+
+Commands used:
+
+```bash
+fly apps create upflow-restore-test --org personal
+
+fly volumes snapshots create vol_vlpd30e1ey731zg4 -a upflow
+
+fly volumes create data \
+  -a upflow-restore-test \
+  -r nrt \
+  -s 2 \
+  --snapshot-id vs_N1poYn20AVyI0ZkeY1mZ209 \
+  --snapshot-retention 1 \
+  --yes
+
+fly secrets set -a upflow-restore-test --stage \
+  BETTER_AUTH_URL=https://upflow-restore-test.fly.dev \
+  BETTER_AUTH_SECRET=<production value> \
+  GITHUB_CLIENT_ID=<production value> \
+  GITHUB_CLIENT_SECRET=<production value> \
+  DISABLE_JOB_SCHEDULER=1
+
+fly deploy -a upflow-restore-test --primary-region nrt --ha=false --now
+```
+
+Validated:
+
+- The restore-test app booted from the restored volume.
+- `start.sh` ran against the restored DB copy.
+- Shared DB migration completed.
+- Tenant DB migration completed with `0 applied, 3 skipped`.
+- `/healthcheck` returned `OK`.
+- GitHub OAuth login worked after adding the restore-test callback URL to the
+  GitHub OAuth app used by `GITHUB_CLIENT_ID`.
+- The main app screen could read restored data after login.
+- `DISABLE_JOB_SCHEDULER=1` prevented the hourly crawl scheduler from starting.
+- Logs showed no crawl cycle, webhook, export, or Google Sheets write activity
+  during the drill.
+
+DB checks:
+
+```text
+data.db
+durably.db
+tenant_aScaf_RvvFiOJWD3m8X32.db
+tenant_iris.db
+tenant_o-7OumR2NCGWpqsDgT--k.db
+```
+
+Shared DB counts:
+
+```text
+organizations|3
+members|13
+integrations|3
+```
+
+Tenant DB counts:
+
+```text
+tenant_aScaf_RvvFiOJWD3m8X32.db
+organization_settings|1
+repositories|12
+pull_requests|751
+
+tenant_iris.db
+organization_settings|1
+repositories|36
+pull_requests|4204
+
+tenant_o-7OumR2NCGWpqsDgT--k.db
+organization_settings|1
+repositories|2
+pull_requests|8909
+```
+
+Cleanup:
+
+- `fly apps destroy upflow-restore-test --yes` was run after the drill.
+- `fly status -a upflow-restore-test` and
+  `fly volumes list -a upflow-restore-test` both returned `Could not find App`,
+  confirming the restore-test app, machine, volume, and Fly secrets were
+  removed.
+- The restore-test callback URL was removed from the GitHub OAuth app:
+  `https://upflow-restore-test.fly.dev/api/auth/callback/github`
+
 ## Full Restore Drill Plan
 
 Issue: <https://github.com/coji/upflow/issues/319>
@@ -100,6 +202,8 @@ Important constraints:
 - Writes and external side effects must be disabled before booting the restored
   app: scheduler, crawl/classify/process jobs, webhooks, exports, and Google
   Sheets writes.
+- Set `DISABLE_JOB_SCHEDULER=1` on the restore-test app before booting it. This
+  prevents the production hourly crawl scheduler from starting.
 - Run the normal startup migration path against the restored copy. The restored
   volume is disposable; the production volume must not be modified.
 - Recovery point objective is the latest available Fly snapshot, so settings,
@@ -113,7 +217,7 @@ Minimum checks for the full drill:
 3. Add the restore-test callback URL to the GitHub App if it is not already
    present.
 4. Set restore-test secrets, including `BETTER_AUTH_URL`, `GITHUB_CLIENT_ID`,
-   and `GITHUB_CLIENT_SECRET`.
+   `GITHUB_CLIENT_SECRET`, and `DISABLE_JOB_SCHEDULER=1`.
 5. Boot the app with side effects disabled.
 6. Verify `/healthcheck`.
 7. Log in through GitHub OAuth with an account that exists as an active GitHub
