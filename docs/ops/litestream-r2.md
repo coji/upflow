@@ -103,27 +103,25 @@ production/litestream/tenant_iris.db/
 
 Run restore tests into a temporary directory. Never restore over `/upflow/data` on production.
 
-Inside a machine with Litestream and the R2 credentials available:
+For directory-replication configs (this repo's setup), pass the replica URL directly. Litestream reads the R2 credentials from `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_ENDPOINT_URL_S3` / `AWS_REGION`, so `-config` is not needed and the runbook works on any machine with those env vars set:
 
 ```bash
 mkdir -p /tmp/upflow-litestream-restore
 
 litestream restore \
-  -config /etc/litestream.yml \
   -o /tmp/upflow-litestream-restore/data.db \
-  /upflow/data/data.db
+  s3://upflow-backups/production/litestream/data.db
 
 sqlite3 /tmp/upflow-litestream-restore/data.db \
   "select count(*) from organizations; select count(*) from members; select count(*) from integrations;"
 ```
 
-For tenant DBs, replace the source and output filename:
+For tenant DBs, replace the replica path and output filename:
 
 ```bash
 litestream restore \
-  -config /etc/litestream.yml \
   -o /tmp/upflow-litestream-restore/tenant_iris.db \
-  /upflow/data/tenant_iris.db
+  s3://upflow-backups/production/litestream/tenant_iris.db
 
 sqlite3 /tmp/upflow-litestream-restore/tenant_iris.db \
   "select count(*) from organization_settings; select count(*) from repositories; select count(*) from pull_requests;"
