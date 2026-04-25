@@ -36,8 +36,6 @@
     "typecheck": "react-router typegen && tsc -b",
     "validate": "run-s lint format typecheck build test",
     "emulate:github": "emulate --service github --seed emulate.config.yaml",
-    "r2:bucket:create": "wrangler r2 bucket create upflow-backups",
-    "r2:bucket:list": "wrangler r2 bucket list",
     "ops": "tsx ops/cli.ts",
     "lab:fetch": "pnpm tsx lab/fetch.ts",
     "lab:serve": "python3 -m http.server 8787 -d lab/output"
@@ -135,8 +133,7 @@
     "typescript": "6.0.3",
     "vite": "8.0.8",
     "vite-plugin-devtools-json": "1.0.0",
-    "vitest": "4.1.4",
-    "wrangler": "4.85.0"
+    "vitest": "4.1.4"
   },
   "packageManager": "pnpm@10.32.1",
   "pnpm": {

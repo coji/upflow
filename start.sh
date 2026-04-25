@@ -28,7 +28,7 @@ if [ "${LITESTREAM_ENABLED:-0}" = "1" ]; then
   : "${AWS_REGION:?AWS_REGION is required when LITESTREAM_ENABLED=1}"
   : "${LITESTREAM_REPLICA_PREFIX:?LITESTREAM_REPLICA_PREFIX is required when LITESTREAM_ENABLED=1}"
 
-  exec litestream replicate -config "${LITESTREAM_CONFIG:-/etc/litestream.yml}" -exec "node server.mjs"
+  exec litestream replicate -config /etc/litestream.yml -exec "node server.mjs"
 fi
 
 exec node server.mjs

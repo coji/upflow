@@ -3,6 +3,10 @@
 This note records the current production volume backup posture and the tested
 restore path for the `upflow` Fly app.
 
+Continuous SQLite replication to Cloudflare R2 is documented separately in
+[Litestream R2 Backup](./litestream-r2.md). Fly volume snapshots remain the
+volume-level fallback for this runbook.
+
 ## Current State
 
 As of 2026-04-25:

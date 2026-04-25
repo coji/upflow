@@ -30,12 +30,12 @@ production/litestream
 
 The bucket is private. Do not enable public access.
 
-Create and confirm the bucket from the repo:
+Create and confirm the bucket via wrangler. `pnpm dlx` fetches wrangler on demand so it does not need to live in `devDependencies`:
 
 ```bash
-pnpm wrangler login
-pnpm r2:bucket:create
-pnpm r2:bucket:list
+pnpm dlx wrangler login
+pnpm dlx wrangler r2 bucket create upflow-backups
+pnpm dlx wrangler r2 bucket list
 ```
 
 ## R2 Credentials
@@ -133,7 +133,7 @@ The restore command refuses to overwrite an existing output file. Delete the tem
 
 ## Restore-Test App
 
-For a fuller drill, create a temporary Fly app and volume as in the Fly volume restore runbook, but set:
+For a fuller drill, create a temporary Fly app and volume as in the [Fly volume restore runbook](./fly-volume-restore.md), but set:
 
 ```bash
 fly secrets set \
