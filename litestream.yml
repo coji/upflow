@@ -9,8 +9,21 @@ retention:
   enabled: false
 
 dbs:
+  # Shared DB: organizations / members / integrations / githubAppLinks. Low write
+  # rate, user-facing data. Tight RPO.
+  - path: ${UPFLOW_DATA_DIR}/data.db
+    replica:
+      type: s3
+      bucket: upflow-backups
+      path: ${LITESTREAM_REPLICA_PREFIX}
+      endpoint: ${AWS_ENDPOINT_URL_S3}
+      region: ${AWS_REGION}
+      sync-interval: 30s
+
+  # Tenant DBs: per-org analytics (repositories, pull_requests, etc.). Created
+  # dynamically as orgs are added — directory watch picks new files up.
   - dir: ${UPFLOW_DATA_DIR}
-    pattern: '*.db'
+    pattern: 'tenant_*.db'
     watch: true
     replica:
       type: s3
@@ -19,3 +32,14 @@ dbs:
       endpoint: ${AWS_ENDPOINT_URL_S3}
       region: ${AWS_REGION}
       sync-interval: 30s
+
+  # durably.db is intentionally NOT replicated:
+  # - It holds in-flight @coji/durably job orchestration state (per-step
+  #   transactions), generating one level-0 LTX file per commit. At hourly crawl
+  #   cadence this would account for roughly half of all R2 PUT operations.
+  # - The data is regenerable: GitHub is the source of truth, and the next
+  #   hourly crawl re-derives state via idempotent upserts. Worst-case loss on
+  #   restore is the in-flight job at the moment of disaster, which the
+  #   scheduler picks up on its next tick.
+  # - This keeps R2 Class A operations comfortably inside the free tier with
+  #   headroom for organization growth.

@@ -6,13 +6,12 @@ upflow backs up SQLite databases to Cloudflare R2 with Litestream.
 
 Litestream is enabled only when `LITESTREAM_ENABLED=1`.
 
-The production config watches `${UPFLOW_DATA_DIR}` and replicates every SQLite database matching `*.db`, including:
+The production config replicates two classes of SQLite database:
 
-- `data.db`
-- `durably.db`
-- `tenant_*.db`
+- `data.db` — shared DB (organizations, members, integrations, githubAppLinks). Low write rate, tight RPO.
+- `tenant_*.db` — per-org analytics. Picked up dynamically via directory watch when new orgs are added.
 
-New tenant databases are picked up by Litestream directory watch.
+`durably.db` is **intentionally excluded** from replication. It holds in-flight `@coji/durably` job orchestration state, which Litestream would persist as roughly one level-0 LTX file per transaction — at hourly crawl cadence that accounts for about half of all R2 Class A operations. The data is regenerable: GitHub is the source of truth, and the next hourly crawl re-derives state via idempotent upserts. Worst-case loss on restore is whatever job was in flight at the moment of disaster, which the scheduler picks up on its next tick. Skipping durably keeps R2 PUT volume comfortably inside the free tier with headroom for organization growth.
 
 ## R2 Bucket
 
@@ -91,13 +90,23 @@ Look for Litestream startup and database discovery logs. Confirm R2 has objects 
 upflow-backups/production/litestream/
 ```
 
-The directory replica appends each database filename under the prefix, for example:
+Each replicated database appears as its own subprefix, for example:
 
 ```text
 production/litestream/data.db/
-production/litestream/durably.db/
 production/litestream/tenant_iris.db/
 ```
+
+A `production/litestream/durably.db/` prefix may exist as a remnant from earlier runs that replicated `durably.db`. It is no longer updated and can be cleaned up with an R2 lifecycle rule (see "Stale durably.db Cleanup" below) — credentials in production lack Delete permission by design, so the rule, not Litestream, is responsible for removal.
+
+## Stale durably.db Cleanup
+
+If R2 contains a `production/litestream/durably.db/` prefix from before durably was excluded, set up a lifecycle rule to expire it. Cloudflare Dashboard → R2 → `upflow-backups` → Settings → Object lifecycle rules:
+
+- Prefix: `production/litestream/durably.db/`
+- Action: **Delete objects** after `7 days` (or any short retention; the prefix is stale and will not get new writes)
+
+The rest of the bucket is left untouched — Litestream manages its own LTX retention via compaction levels for the active databases.
 
 ## Restore Smoke Test
 
