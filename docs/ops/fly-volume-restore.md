@@ -89,10 +89,14 @@ avoid attaching restored production data to the live app.
 
 Important constraints:
 
-- GitHub OAuth login is out of scope for the separate app drill because the
-  current GitHub OAuth app has a single callback URL.
-- The drill should validate database restore, migrations, and read access
-  without normal user login.
+- GitHub OAuth login can be included in the separate app drill when the GitHub
+  App user authorization callback URL includes the restore-test callback, for
+  example `https://upflow-restore-test.fly.dev/api/auth/callback/github`.
+- The restore-test app must set `BETTER_AUTH_URL` to the same origin as the
+  registered callback URL, for example `https://upflow-restore-test.fly.dev`.
+- Use the same GitHub App `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as
+  production only for the duration of the drill. Remove temporary app secrets or
+  the temporary callback URL after the drill if they are no longer needed.
 - Writes and external side effects must be disabled before booting the restored
   app: scheduler, crawl/classify/process jobs, webhooks, exports, and Google
   Sheets writes.
@@ -106,14 +110,23 @@ Minimum checks for the full drill:
 
 1. Create a restore-test Fly app.
 2. Create a volume from a production snapshot and mount it at `/upflow/data`.
-3. Boot the app with side effects disabled.
-4. Verify `/healthcheck`.
-5. Confirm shared DB tables can be read, especially `organizations`, `members`,
+3. Add the restore-test callback URL to the GitHub App if it is not already
+   present.
+4. Set restore-test secrets, including `BETTER_AUTH_URL`, `GITHUB_CLIENT_ID`,
+   and `GITHUB_CLIENT_SECRET`.
+5. Boot the app with side effects disabled.
+6. Verify `/healthcheck`.
+7. Log in through GitHub OAuth with an account that exists as an active GitHub
+   user in the restored tenant data.
+8. Confirm the main app screen can read restored data after login.
+9. Confirm shared DB tables can be read, especially `organizations`, `members`,
    and `integrations`.
-6. Confirm tenant DB tables can be read, especially `organization_settings`,
-   `repositories`, and `pull_requests`.
-7. Confirm background jobs and external write paths are not running.
-8. Delete the temporary app and restored volume, or record why they were kept.
+10. Confirm tenant DB tables can be read, especially `organization_settings`,
+    `repositories`, and `pull_requests`.
+11. Confirm background jobs and external write paths are not running.
+12. Delete the temporary app and restored volume, or record why they were kept.
+13. Remove the restore-test callback URL from the GitHub App when the drill is
+    complete, unless it is intentionally retained for future drills.
 
 ## Emergency Restore Outline
 
