@@ -97,16 +97,16 @@ production/litestream/data.db/
 production/litestream/tenant_iris.db/
 ```
 
-A `production/litestream/durably.db/` prefix may exist as a remnant from earlier runs that replicated `durably.db`. It is no longer updated and can be cleaned up with an R2 lifecycle rule (see "Stale durably.db Cleanup" below) — credentials in production lack Delete permission by design, so the rule, not Litestream, is responsible for removal.
+A `production/litestream/durably.db/` prefix may exist as a remnant from earlier runs that replicated `durably.db`. It is no longer updated and is cleaned up manually as a one-off operator action (see "Stale durably.db Cleanup" below). Production credentials lack Delete permission by design, so this cleanup is performed with operator-level access, not by the running app.
 
 ## Stale durably.db Cleanup
 
-If R2 contains a `production/litestream/durably.db/` prefix from before durably was excluded, set up a lifecycle rule to expire it. Cloudflare Dashboard → R2 → `upflow-backups` → Settings → Object lifecycle rules:
+If R2 contains a `production/litestream/durably.db/` prefix from before durably was excluded, delete it once via the Cloudflare Dashboard:
 
-- Prefix: `production/litestream/durably.db/`
-- Action: **Delete objects** after `7 days` (or any short retention; the prefix is stale and will not get new writes)
+1. R2 → `upflow-backups` → navigate into `production/litestream/durably.db/`
+2. Select all objects (or the whole folder) and Delete
 
-The rest of the bucket is left untouched — Litestream manages its own LTX retention via compaction levels for the active databases.
+Litestream manages its own LTX retention via compaction levels for the actively-replicated databases (`data.db`, `tenant_*.db`), so no recurring lifecycle rule is needed.
 
 ## Restore Smoke Test
 
