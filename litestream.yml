@@ -1,0 +1,21 @@
+logging:
+  level: info
+  type: text
+  stderr: true
+
+# Keep R2 credentials limited to object read/write by letting R2 lifecycle rules,
+# not Litestream, handle long-term deletion.
+retention:
+  enabled: false
+
+dbs:
+  - dir: ${UPFLOW_DATA_DIR}
+    pattern: '*.db'
+    watch: true
+    replica:
+      type: s3
+      bucket: upflow-backups
+      path: ${LITESTREAM_REPLICA_PREFIX}
+      endpoint: ${AWS_ENDPOINT_URL_S3}
+      region: ${AWS_REGION}
+      sync-interval: 30s

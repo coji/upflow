@@ -1,8 +1,10 @@
 ARG NODE_VERSION=24.14.0
 ARG PNPM_VERSION=10.32.1
+ARG LITESTREAM_VERSION=0.5.11
 
 # --- Build base: includes native build tools for better-sqlite3 ---
 FROM node:${NODE_VERSION}-slim AS build-base
+ARG PNPM_VERSION
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y openssl curl ca-certificates build-essential python3 \
@@ -13,6 +15,8 @@ RUN apt-get update \
 
 # --- Runtime base: minimal packages for production ---
 FROM node:${NODE_VERSION}-slim AS runtime-base
+ARG PNPM_VERSION
+ARG LITESTREAM_VERSION
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y openssl openssh-client sqlite3 procps curl ca-certificates unzip vim \
@@ -20,6 +24,18 @@ RUN apt-get update \
   && npm i -g pnpm@${PNPM_VERSION} \
   && curl -sSf https://atlasgo.sh | sh \
   && rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+  arch="$(dpkg --print-architecture)"; \
+  case "$arch" in \
+    amd64) litestream_arch="x86_64" ;; \
+    arm64) litestream_arch="arm64" ;; \
+    armhf) litestream_arch="armv7" ;; \
+    *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
+  esac; \
+  curl -fsSL -o /tmp/litestream.deb "https://github.com/benbjohnson/litestream/releases/download/v${LITESTREAM_VERSION}/litestream-${LITESTREAM_VERSION}-linux-${litestream_arch}.deb"; \
+  dpkg -i /tmp/litestream.deb; \
+  rm /tmp/litestream.deb
 
 
 # --- Install all node_modules (dev + prod) ---
@@ -86,6 +102,7 @@ COPY --from=build /upflow/build /upflow/build
 COPY --from=build /upflow/public /upflow/public
 COPY --from=build /upflow/db /upflow/db
 COPY --from=build /upflow/atlas.hcl /upflow/atlas.hcl
+COPY --from=build /upflow/litestream.yml /etc/litestream.yml
 COPY --from=build /upflow/package.json /upflow/package.json
 COPY --from=build /upflow/tsconfig.json /upflow/tsconfig.json
 COPY --from=build /upflow/start.sh /upflow/start.sh
