@@ -47,6 +47,14 @@ describe('createOctokit', () => {
     expect(o).toBeDefined()
   })
 
+  test('token method uses GITHUB_API_BASE_URL when set', () => {
+    vi.stubEnv('GITHUB_API_BASE_URL', 'http://localhost:4000')
+
+    const o = createOctokit({ method: 'token', privateToken: 'ghp_test' })
+
+    expect(o.request.endpoint.DEFAULTS.baseUrl).toBe('http://localhost:4000')
+  })
+
   test('github_app method requires env vars', () => {
     vi.stubEnv('GITHUB_APP_ID', '')
     vi.stubEnv('GITHUB_APP_PRIVATE_KEY', '')

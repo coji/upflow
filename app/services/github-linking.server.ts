@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { githubApiUrl } from '~/app/libs/github-api.server'
 import { db } from '~/app/services/db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -23,7 +24,7 @@ export async function linkGithubUserToCompanyUsers(
     return
   }
 
-  const res = await fetch('https://api.github.com/user', {
+  const res = await fetch(githubApiUrl('/user'), {
     headers: {
       Authorization: `Bearer ${githubAccount.accessToken}`,
       'User-Agent': 'upflow',

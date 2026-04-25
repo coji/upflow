@@ -1,3 +1,5 @@
+import { githubApiUrl } from '~/app/libs/github-api.server'
+
 export interface Repository {
   id: string
   name: string
@@ -43,7 +45,7 @@ export const getRepositoriesByOwnerAndKeyword = async ({
   const page = cursor ? Number.parseInt(cursor, 10) : 1
   const perPage = 10
 
-  const url = new URL('https://api.github.com/search/repositories')
+  const url = new URL(githubApiUrl('/search/repositories'))
   url.searchParams.set('q', q)
   url.searchParams.set('per_page', String(perPage))
   url.searchParams.set('page', String(page))

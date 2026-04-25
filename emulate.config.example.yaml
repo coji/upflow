@@ -1,0 +1,33 @@
+tokens:
+  test_token_user1:
+    login: octocat
+    scopes:
+      - repo
+      - user
+github:
+  users:
+    - login: octocat
+      name: The Octocat
+      email: octocat@example.com
+      bio: Local development user
+  orgs:
+    - login: upflow-dev
+      name: Upflow Dev
+      description: Local development organization
+  repos:
+    - owner: octocat
+      name: personal-repo
+      description: Local personal repository
+      language: TypeScript
+      auto_init: true
+    - owner: upflow-dev
+      name: product-repo
+      description: Local organization repository
+      language: TypeScript
+      auto_init: true
+  oauth_apps:
+    - client_id: Iv1.upflow_local
+      client_secret: upflow_local_secret
+      name: Upflow Local
+      redirect_uris:
+        - http://localhost:5173/api/auth/callback/github
