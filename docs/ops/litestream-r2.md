@@ -106,7 +106,11 @@ If R2 contains a `production/litestream/durably.db/` prefix from before durably 
 1. R2 → `upflow-backups` → navigate into `production/litestream/durably.db/`
 2. Select all objects (or the whole folder) and Delete
 
-Litestream manages its own LTX retention via compaction levels for the actively-replicated databases (`data.db`, `tenant_*.db`), so no recurring lifecycle rule is needed.
+## R2 Storage Growth
+
+Litestream's config in this repo sets `retention.enabled: false` so the running app does not need Delete permission on R2. Compaction still runs and merges level-0 LTX files into higher levels, but with retention disabled it only deletes the merged-away files **locally** (the `l0 retention enforced` lines in the logs); the originals on R2 are never removed. Compaction therefore keeps Class A PUT volume and live object count bounded, but R2 storage grows monotonically.
+
+At current write volume the growth is on the order of tens of MB per month for `data.db` + `tenant_*.db` combined, so the 10 GB free tier is not a near-term concern. When R2 storage approaches the limit, set up an R2 lifecycle rule to expire objects under `production/litestream/` past some retention horizon (e.g. 30 or 90 days) — the same operator-side action used for the one-off durably cleanup above, just made recurring.
 
 ## Restore Smoke Test
 
