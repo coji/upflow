@@ -1,4 +1,5 @@
 import { ChevronRightIcon } from 'lucide-react'
+import { AuthorBadge } from '~/app/components/author-badge'
 import { Badge } from '~/app/components/ui/badge'
 import {
   Card,
@@ -18,7 +19,6 @@ import {
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import type { LongestPrRow } from '../+functions/aggregate'
-import { AuthorBadge } from './author-badge'
 import { STAGE_COLOR_VAR, STAGE_LABEL, formatDays } from './stage-config'
 
 interface LongestPrsTableProps {
@@ -57,72 +57,76 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row) => (
-                  <TableRow
-                    key={`${row.repositoryId}:${row.number}`}
-                    onClick={() =>
-                      window.open(row.url, '_blank', 'noopener,noreferrer')
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        window.open(row.url, '_blank', 'noopener,noreferrer')
-                      }
-                    }}
-                    role="link"
-                    tabIndex={0}
-                    aria-label={`Open pull request #${row.number}: ${row.title}`}
-                    className="hover:bg-muted/50 focus-visible:bg-muted/50 cursor-pointer focus-visible:outline-none"
-                  >
-                    <TableCell className="max-w-[320px]">
-                      <span className="text-primary group-hover:underline">
-                        <span className="text-muted-foreground mr-1">
-                          #{row.number}
+                {rows.map((row) => {
+                  const open = () =>
+                    window.open(row.url, '_blank', 'noopener,noreferrer')
+                  return (
+                    <TableRow
+                      key={`${row.repositoryId}:${row.number}`}
+                      onClick={open}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          open()
+                        }
+                      }}
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`Open pull request #${row.number}: ${row.title}`}
+                      className="hover:bg-muted/50 focus-visible:bg-muted/50 cursor-pointer focus-visible:outline-none"
+                    >
+                      <TableCell className="max-w-[320px]">
+                        <span className="text-primary">
+                          <span className="text-muted-foreground mr-1">
+                            #{row.number}
+                          </span>
+                          <span className="line-clamp-1">{row.title}</span>
                         </span>
-                        <span className="line-clamp-1">{row.title}</span>
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground tabular-nums">
-                      {row.repo}
-                    </TableCell>
-                    <TableCell>
-                      <AuthorBadge
-                        login={row.author}
-                        displayName={row.authorDisplayName}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {row.bottleneck ? (
-                        <Badge
-                          variant="outline"
-                          className="font-normal"
-                          style={{
-                            borderColor: STAGE_COLOR_VAR[row.bottleneck],
-                            color: STAGE_COLOR_VAR[row.bottleneck],
-                          }}
-                        >
-                          {STAGE_LABEL[row.bottleneck]}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground tabular-nums">
+                        {row.repo}
+                      </TableCell>
+                      <TableCell>
+                        <AuthorBadge
+                          login={row.author}
+                          displayName={row.authorDisplayName}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {row.bottleneck ? (
+                          <Badge
+                            variant="outline"
+                            className="font-normal"
+                            style={{
+                              borderColor: STAGE_COLOR_VAR[row.bottleneck],
+                              color: STAGE_COLOR_VAR[row.bottleneck],
+                            }}
+                          >
+                            {STAGE_LABEL[row.bottleneck]}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">
+                            —
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize">
+                          {row.state}
                         </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="capitalize">
-                        {row.state}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold tabular-nums">
-                      {formatDays(row.totalTime)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm tabular-nums">
-                      {dayjs.utc(row.updatedAt).tz(timezone).format('MMM D')}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <ChevronRightIcon className="size-4" />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">
+                        {formatDays(row.totalTime)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm tabular-nums">
+                        {dayjs.utc(row.updatedAt).tz(timezone).format('MMM D')}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <ChevronRightIcon className="size-4" />
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>

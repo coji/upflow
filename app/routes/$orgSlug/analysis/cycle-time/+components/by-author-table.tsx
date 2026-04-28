@@ -1,4 +1,5 @@
 import { ArrowDownIcon, ArrowUpIcon, MinusIcon } from 'lucide-react'
+import { AuthorBadge } from '~/app/components/author-badge'
 import { Badge } from '~/app/components/ui/badge'
 import {
   Card,
@@ -21,7 +22,6 @@ import type {
   CycleTimeDelta,
   MetricMode,
 } from '../+functions/aggregate'
-import { AuthorBadge } from './author-badge'
 import {
   STAGE_COLOR_VAR,
   STAGE_LABEL,
