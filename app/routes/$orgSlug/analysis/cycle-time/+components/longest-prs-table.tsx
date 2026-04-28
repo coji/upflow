@@ -34,7 +34,7 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
       <CardHeader>
         <CardTitle>Longest Cycle Time PRs</CardTitle>
         <CardDescription>
-          Released PRs ranked by total time. Click a row to open the pull
+          Released PRs ranked by total time. Click the PR title to open the pull
           request in a new tab.
         </CardDescription>
       </CardHeader>
@@ -59,78 +59,69 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row) => {
-                  const open = () =>
-                    window.open(row.url, '_blank', 'noopener,noreferrer')
-                  return (
-                    <TableRow
-                      key={`${row.repositoryId}:${row.number}`}
-                      onClick={open}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          open()
-                        }
-                      }}
-                      role="link"
-                      tabIndex={0}
-                      aria-label={`Open pull request #${row.number}: ${row.title}`}
-                      className="hover:bg-muted/50 focus-visible:bg-muted/50 cursor-pointer focus-visible:outline-none"
-                    >
-                      <TableCell className="max-w-[320px]">
+                {rows.map((row) => (
+                  <TableRow
+                    key={`${row.repositoryId}:${row.number}`}
+                    className="hover:bg-muted/50"
+                  >
+                    <TableCell className="max-w-[320px]">
+                      <a
+                        href={row.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline focus-visible:underline focus-visible:outline-none"
+                      >
                         <div className="text-muted-foreground text-xs tabular-nums">
                           {formatPrIdentifier(row.repo, row.number)}
                         </div>
                         <div className="text-primary line-clamp-1">
                           {row.title}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <AuthorBadge
-                          login={row.author}
-                          displayName={row.authorDisplayName}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <CompositionBar
-                          composition={compositionFromStageTimes(row)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {row.bottleneck ? (
-                          <Badge
-                            variant="outline"
-                            className="font-normal"
-                            style={{
-                              borderColor: STAGE_COLOR_VAR[row.bottleneck],
-                              color: STAGE_COLOR_VAR[row.bottleneck],
-                            }}
-                          >
-                            {STAGE_LABEL[row.bottleneck]}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">
-                            —
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize">
-                          {row.state}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      <AuthorBadge
+                        login={row.author}
+                        displayName={row.authorDisplayName}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <CompositionBar
+                        composition={compositionFromStageTimes(row)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {row.bottleneck ? (
+                        <Badge
+                          variant="outline"
+                          className="font-normal"
+                          style={{
+                            borderColor: STAGE_COLOR_VAR[row.bottleneck],
+                            color: STAGE_COLOR_VAR[row.bottleneck],
+                          }}
+                        >
+                          {STAGE_LABEL[row.bottleneck]}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold tabular-nums">
-                        {formatDays(row.totalTime)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm tabular-nums">
-                        {dayjs.utc(row.updatedAt).tz(timezone).format('MMM D')}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <ChevronRightIcon className="size-4" />
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="capitalize">
+                        {row.state}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {formatDays(row.totalTime)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm tabular-nums">
+                      {dayjs.utc(row.updatedAt).tz(timezone).format('MMM D')}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <ChevronRightIcon className="size-4" />
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>

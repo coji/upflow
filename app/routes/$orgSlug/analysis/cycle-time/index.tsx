@@ -110,12 +110,6 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const filter = await loadPrFilterState(request, organization.id)
 
-  const sf = filter.showFiltered ? 't' : 'f'
-  // metricMode is intentionally NOT in the cache key — raw rows are mode-
-  // agnostic, the median/average choice is applied in clientLoader.
-  const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryParam ?? 'all'}:${periodMonths}:sf=${sf}`
-  const FIVE_MINUTES = 5 * 60 * 1000
-
   const repositories = await listCycleTimeRepositories(
     organization.id,
     teamParam,
@@ -125,6 +119,18 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const repositoryId = repositories.some((r) => r.id === repositoryParam)
     ? repositoryParam
     : null
+
+  const sf = filter.showFiltered ? 't' : 'f'
+  // Pattern signature must invalidate the cache when patterns change so users
+  // don't see stale rows for ~5 min after editing the filter list.
+  const patternSignature =
+    filter.normalizedPatterns.length === 0
+      ? 'none'
+      : [...filter.normalizedPatterns].sort().join('|')
+  // metricMode is intentionally NOT in the cache key — raw rows are mode-
+  // agnostic, the median/average choice is applied in clientLoader.
+  const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryId ?? 'all'}:${periodMonths}:sf=${sf}:patterns=${patternSignature}`
+  const FIVE_MINUTES = 5 * 60 * 1000
 
   const [[currentRows, previousRows], excludedCount] = await Promise.all([
     getOrgCachedData(
@@ -213,7 +219,6 @@ export const clientLoader = async ({
 
   return {
     currentRows: data.currentRows,
-    previousRows: data.previousRows,
     timezone: data.timezone,
     kpi,
     weekly,
@@ -250,7 +255,6 @@ export function HydrateFallback() {
 export default function CycleTimePage({
   loaderData: {
     currentRows,
-    previousRows,
     timezone,
     kpi,
     weekly,
@@ -287,18 +291,16 @@ export default function CycleTimePage({
       effectiveSelectedWeek,
       timezone,
     )
-    const prevWeekRows = filterRowsByWeek(
-      previousRows,
-      effectiveSelectedWeek,
-      timezone,
-    )
+    // No previous-period rows: the "same week" of the prior period isn't a
+    // meaningful comparison axis when drilling into a single week, so the
+    // vs-prev column is intentionally blank during drill-down.
     return {
       mix: computeBottleneckMix(weekRows, metricMode),
-      authors: computeAuthorRows(weekRows, prevWeekRows, metricMode),
+      authors: computeAuthorRows(weekRows, [], metricMode),
       longest: computeLongestPrs(weekRows, 10),
       prCount: weekRows.length,
     }
-  }, [effectiveSelectedWeek, currentRows, previousRows, timezone, metricMode])
+  }, [effectiveSelectedWeek, currentRows, timezone, metricMode])
 
   const drilldown = weekDrilldown ?? {
     mix,

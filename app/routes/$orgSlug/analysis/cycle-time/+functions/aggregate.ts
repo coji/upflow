@@ -446,9 +446,13 @@ export function computeAuthorRows(
   prevRows: CycleTimeRawRow[],
   mode: MetricMode,
 ): AuthorRow[] {
+  // Group by lower-cased login: GitHub treats logins case-insensitively and
+  // the tenant DB joins on `lower(author) = lower(login)`. Without this,
+  // PRs whose author column happens to differ in casing across rows split
+  // the same person into multiple table rows.
   const groupCurrent = new Map<string, CycleTimeRawRow[]>()
   for (const r of rows) {
-    const key = r.author
+    const key = r.author.toLowerCase()
     const list = groupCurrent.get(key)
     if (list) list.push(r)
     else groupCurrent.set(key, [r])
@@ -456,14 +460,14 @@ export function computeAuthorRows(
 
   const groupPrev = new Map<string, CycleTimeRawRow[]>()
   for (const r of prevRows) {
-    const key = r.author
+    const key = r.author.toLowerCase()
     const list = groupPrev.get(key)
     if (list) list.push(r)
     else groupPrev.set(key, [r])
   }
 
   const out: AuthorRow[] = []
-  for (const [author, authorRows] of groupCurrent) {
+  for (const [authorKey, authorRows] of groupCurrent) {
     const buckets = partitionStageValues(authorRows)
     const stageValues = STAGES.map((stage) => ({
       stage,
@@ -488,11 +492,11 @@ export function computeAuthorRows(
     const total = aggregateValue(nonNullTotalValues(authorRows), mode)
     const reviewP75 = percentile(buckets.review, 0.75)
 
-    const prevList = groupPrev.get(author) ?? []
+    const prevList = groupPrev.get(authorKey) ?? []
     const prevTotal = aggregateValue(nonNullTotalValues(prevList), mode)
 
     out.push({
-      author,
+      author: authorRows[0].author,
       displayName: authorDisplay(authorRows[0]),
       prCount: authorRows.length,
       composition,

@@ -328,6 +328,40 @@ describe('computeAuthorRows', () => {
     const out = computeAuthorRows(rows, [], 'median')
     expect(out[0].displayName).toBe('delta')
   })
+
+  test('groups authors case-insensitively (login casing varies across PRs)', () => {
+    const rows = [
+      baseRow({
+        author: 'Alpha',
+        authorDisplayName: 'Alpha',
+        number: 1,
+        totalTime: 5,
+      }),
+      baseRow({
+        author: 'alpha',
+        authorDisplayName: 'Alpha',
+        number: 2,
+        totalTime: 7,
+      }),
+      baseRow({
+        author: 'ALPHA',
+        authorDisplayName: 'Alpha',
+        number: 3,
+        totalTime: 9,
+      }),
+    ]
+    const prev = [
+      baseRow({ author: 'Alpha', number: 11, totalTime: 10 }),
+      baseRow({ author: 'alpha', number: 12, totalTime: 12 }),
+    ]
+    const out = computeAuthorRows(rows, prev, 'median')
+    expect(out).toHaveLength(1)
+    expect(out[0].prCount).toBe(3)
+    expect(out[0].total).toBe(7)
+    // Previous-period rows with the same login (different casing) must be
+    // matched and produce a non-null delta.
+    expect(out[0].changeVsPrev.diff).not.toBeNull()
+  })
 })
 
 describe('computeLongestPrs', () => {
