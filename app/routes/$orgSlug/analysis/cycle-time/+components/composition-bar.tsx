@@ -1,10 +1,5 @@
-import type { CycleStage } from '../+functions/aggregate'
+import { STAGES, type StageRatio } from '../+functions/aggregate'
 import { STAGE_COLOR_VAR, STAGE_LABEL } from './stage-config'
-
-interface StageRatio {
-  stage: CycleStage
-  ratio: number
-}
 
 interface CompositionBarProps {
   composition: StageRatio[]
@@ -49,20 +44,22 @@ interface StageTimes {
   deployTime: number | null
 }
 
+const STAGE_TIME_KEY = {
+  coding: 'codingTime',
+  pickup: 'pickupTime',
+  review: 'reviewTime',
+  deploy: 'deployTime',
+} as const satisfies Record<StageRatio['stage'], keyof StageTimes>
+
 /**
  * Compute per-PR stage composition ratios from a row's raw stage times.
  * Null stages count as zero; when all stages are null/zero, every ratio is 0.
  */
 export function compositionFromStageTimes(times: StageTimes): StageRatio[] {
-  const c = times.codingTime ?? 0
-  const p = times.pickupTime ?? 0
-  const r = times.reviewTime ?? 0
-  const d = times.deployTime ?? 0
-  const sum = c + p + r + d
-  return [
-    { stage: 'coding', ratio: sum > 0 ? c / sum : 0 },
-    { stage: 'pickup', ratio: sum > 0 ? p / sum : 0 },
-    { stage: 'review', ratio: sum > 0 ? r / sum : 0 },
-    { stage: 'deploy', ratio: sum > 0 ? d / sum : 0 },
-  ]
+  const values = STAGES.map((stage) => times[STAGE_TIME_KEY[stage]] ?? 0)
+  const sum = values.reduce((s, v) => s + v, 0)
+  return STAGES.map((stage, i) => ({
+    stage,
+    ratio: sum > 0 ? values[i] / sum : 0,
+  }))
 }

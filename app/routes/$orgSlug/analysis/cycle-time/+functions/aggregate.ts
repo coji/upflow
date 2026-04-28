@@ -421,11 +421,16 @@ export function computeInsights(args: {
 
 // --- By Author ---
 
+export interface StageRatio {
+  stage: CycleStage
+  ratio: number
+}
+
 export interface AuthorRow {
   author: string
   displayName: string
   prCount: number
-  composition: { stage: CycleStage; ratio: number }[]
+  composition: StageRatio[]
   total: number | null
   mainDriver: CycleStage | null
   reviewP75: number | null
@@ -468,7 +473,7 @@ export function computeAuthorRows(
 
     let mainDriver: CycleStage | null = null
     let mainDriverValue = -Infinity
-    const composition: AuthorRow['composition'] = []
+    const composition: StageRatio[] = []
     for (const sv of stageValues) {
       composition.push({
         stage: sv.stage,

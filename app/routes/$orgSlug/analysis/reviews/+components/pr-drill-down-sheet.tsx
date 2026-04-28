@@ -9,6 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/app/components/ui/sheet'
+import { formatPrIdentifier } from '~/app/libs/format-pr'
 import { parseRiskAreas } from '~/app/libs/pr-classify'
 import { HidePRsByTitleMenu } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 
@@ -59,7 +60,7 @@ export function PRDrillDownSheet({
           <div className="divide-y">
             {prs.map((pr) => (
               <div
-                key={`${pr.repo}#${pr.number}`}
+                key={formatPrIdentifier(pr.repo, pr.number)}
                 className="flex flex-col gap-1 py-3"
               >
                 <div className="flex items-center gap-2">
@@ -69,7 +70,7 @@ export function PRDrillDownSheet({
                     target="_blank"
                     rel="noreferrer noopener"
                   >
-                    {pr.repo}#{pr.number}
+                    {formatPrIdentifier(pr.repo, pr.number)}
                     <ExternalLinkIcon className="ml-0.5 inline-block h-3 w-3" />
                   </a>
                   <SizeBadge complexity={pr.size ?? null} />

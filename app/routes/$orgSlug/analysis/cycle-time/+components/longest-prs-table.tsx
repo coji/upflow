@@ -18,6 +18,7 @@ import {
 } from '~/app/components/ui/table'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
+import { formatPrIdentifier } from '~/app/libs/format-pr'
 import type { LongestPrRow } from '../+functions/aggregate'
 import { CompositionBar, compositionFromStageTimes } from './composition-bar'
 import { STAGE_COLOR_VAR, STAGE_LABEL, formatDays } from './stage-config'
@@ -49,7 +50,7 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                 <TableRow>
                   <TableHead>PR</TableHead>
                   <TableHead>Author</TableHead>
-                  <TableHead className="min-w-[140px]">Composition</TableHead>
+                  <TableHead className="min-w-[160px]">Composition</TableHead>
                   <TableHead>Bottleneck</TableHead>
                   <TableHead>State</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -78,11 +79,11 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                     >
                       <TableCell className="max-w-[320px]">
                         <div className="text-muted-foreground text-xs tabular-nums">
-                          {row.repo}#{row.number}
+                          {formatPrIdentifier(row.repo, row.number)}
                         </div>
-                        <span className="text-primary line-clamp-1">
+                        <div className="text-primary line-clamp-1">
                           {row.title}
-                        </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <AuthorBadge

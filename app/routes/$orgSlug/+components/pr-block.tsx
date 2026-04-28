@@ -11,6 +11,7 @@ import {
 } from '~/app/components/ui/popover'
 import { Skeleton } from '~/app/components/ui/skeleton'
 import dayjs from '~/app/libs/dayjs'
+import { formatPrIdentifier } from '~/app/libs/format-pr'
 import { HidePRsByTitleMenu } from './hide-prs-by-title-menu'
 
 export type PRBlockColorMode = 'size' | 'age'
@@ -288,8 +289,8 @@ function PRPopoverDegraded({
   fallback?: { title?: string; url?: string; repo?: string }
 }) {
   const linkLabel = fallback?.repo
-    ? `${fallback.repo}#${prKey.number}`
-    : `${prKey.repositoryId}#${prKey.number}`
+    ? formatPrIdentifier(fallback.repo, prKey.number)
+    : formatPrIdentifier(prKey.repositoryId, prKey.number)
   const linkHref = fallback?.url
 
   return (
@@ -338,7 +339,7 @@ export function PRPopoverContent({
           target="_blank"
           rel="noreferrer noopener"
         >
-          {pr.repo}#{pr.number}
+          {formatPrIdentifier(pr.repo, pr.number)}
         </a>
         <SizeBadge
           complexity={pr.complexity}
@@ -513,9 +514,8 @@ export function PRBlock({
     ? REVIEW_STATUS_SHAPE[pr.reviewStatus]
     : undefined
   const shape = statusShape?.shape ?? 'rounded-full'
-  const ariaLabel = statusShape
-    ? `${pr.repo}#${pr.number} (${statusShape.label})`
-    : `${pr.repo}#${pr.number}`
+  const prId = formatPrIdentifier(pr.repo, pr.number)
+  const ariaLabel = statusShape ? `${prId} (${statusShape.label})` : prId
   const isHollow =
     pr.reviewStatus === 'unassigned' ||
     pr.reviewStatus === 'approved-awaiting-merge' ||

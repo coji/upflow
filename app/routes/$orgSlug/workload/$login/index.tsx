@@ -9,6 +9,7 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { formatPrIdentifier } from '~/app/libs/format-pr'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
 import {
@@ -832,7 +833,7 @@ function PRRow({
           target="_blank"
           rel="noreferrer noopener"
         >
-          {repo}#{number}
+          {formatPrIdentifier(repo, number)}
         </a>
         <div className="flex shrink-0 items-center gap-2 lg:min-w-0">
           <SizeBadge complexity={complexity} />
