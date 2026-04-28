@@ -21,6 +21,7 @@ import type {
   CycleTimeDelta,
   MetricMode,
 } from '../+functions/aggregate'
+import { AuthorBadge } from './author-badge'
 import {
   STAGE_COLOR_VAR,
   STAGE_LABEL,
@@ -68,7 +69,10 @@ export function ByAuthorTable({ rows, mode }: ByAuthorTableProps) {
                 {rows.map((row) => (
                   <TableRow key={row.author}>
                     <TableCell className="font-medium">
-                      {row.displayName}
+                      <AuthorBadge
+                        login={row.author}
+                        displayName={row.displayName}
+                      />
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {row.prCount}

@@ -18,6 +18,7 @@ import {
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import type { LongestPrRow } from '../+functions/aggregate'
+import { AuthorBadge } from './author-badge'
 import { STAGE_COLOR_VAR, STAGE_LABEL, formatDays } from './stage-config'
 
 interface LongestPrsTableProps {
@@ -85,7 +86,10 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                       {row.repo}
                     </TableCell>
                     <TableCell>
-                      {row.authorDisplayName?.trim() || row.author}
+                      <AuthorBadge
+                        login={row.author}
+                        displayName={row.authorDisplayName}
+                      />
                     </TableCell>
                     <TableCell>
                       {row.bottleneck ? (
