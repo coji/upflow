@@ -32,7 +32,7 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
         <CardTitle>Longest Cycle Time PRs</CardTitle>
         <CardDescription>
           Released PRs ranked by total time. Click a row to open the pull
-          request.
+          request in a new tab.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,19 +57,29 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
               </TableHeader>
               <TableBody>
                 {rows.map((row) => (
-                  <TableRow key={`${row.repositoryId}:${row.number}`}>
+                  <TableRow
+                    key={`${row.repositoryId}:${row.number}`}
+                    onClick={() =>
+                      window.open(row.url, '_blank', 'noopener,noreferrer')
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        window.open(row.url, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`Open pull request #${row.number}: ${row.title}`}
+                    className="hover:bg-muted/50 focus-visible:bg-muted/50 cursor-pointer focus-visible:outline-none"
+                  >
                     <TableCell className="max-w-[320px]">
-                      <a
-                        href={row.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
+                      <span className="text-primary group-hover:underline">
                         <span className="text-muted-foreground mr-1">
                           #{row.number}
                         </span>
                         <span className="line-clamp-1">{row.title}</span>
-                      </a>
+                      </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground tabular-nums">
                       {row.repo}
