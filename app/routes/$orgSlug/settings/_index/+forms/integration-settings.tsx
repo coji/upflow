@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import type { z } from 'zod'
 import type { ConfirmDialogData } from '~/app/components/confirm-dialog'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
+import { ExternalLink } from '~/app/components/external-link'
 import Github from '~/app/components/icons/Github'
 import {
   Alert,
@@ -105,10 +106,10 @@ function InstallationCard({ link }: { link: GithubAppLinkSummary }) {
       <HStack className="flex-wrap">
         {settingsUrl && (
           <Button variant="outline" size="sm" asChild>
-            <a href={settingsUrl} target="_blank" rel="noreferrer">
+            <ExternalLink href={settingsUrl}>
               <ExternalLinkIcon className="mr-1 h-4 w-4" />
               GitHub App settings
-            </a>
+            </ExternalLink>
           </Button>
         )}
         <Button

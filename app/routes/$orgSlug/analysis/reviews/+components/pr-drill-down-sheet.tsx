@@ -1,4 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
+import { ExternalLink } from '~/app/components/external-link'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Badge } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
@@ -64,15 +65,13 @@ export function PRDrillDownSheet({
                 className="flex flex-col gap-1 py-3"
               >
                 <div className="flex items-center gap-2">
-                  <a
+                  <ExternalLink
                     href={pr.url}
                     className="text-muted-foreground shrink-0 text-xs hover:underline"
-                    target="_blank"
-                    rel="noreferrer noopener"
                   >
                     {formatPrIdentifier(pr.repo, pr.number)}
                     <ExternalLinkIcon className="ml-0.5 inline-block h-3 w-3" />
-                  </a>
+                  </ExternalLink>
                   <SizeBadge complexity={pr.size ?? null} />
                   <span className="text-muted-foreground flex items-center gap-1 text-xs">
                     <Avatar className="size-4">
@@ -95,14 +94,12 @@ export function PRDrillDownSheet({
                     <HidePRsByTitleMenu title={pr.title} />
                   </div>
                 </div>
-                <a
+                <ExternalLink
                   href={pr.url}
                   className="truncate text-sm hover:underline"
-                  target="_blank"
-                  rel="noreferrer noopener"
                 >
                   {pr.title}
-                </a>
+                </ExternalLink>
                 {(pr.complexityReason || pr.riskAreas) && (
                   <div className="space-y-0.5 text-xs">
                     {pr.complexityReason && (

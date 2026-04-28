@@ -1,5 +1,6 @@
 import { ChevronRightIcon } from 'lucide-react'
 import { AuthorBadge } from '~/app/components/author-badge'
+import { ExternalLink } from '~/app/components/external-link'
 import { Badge } from '~/app/components/ui/badge'
 import {
   Card,
@@ -65,10 +66,9 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                     className="hover:bg-muted/50"
                   >
                     <TableCell className="max-w-[320px]">
-                      <a
+                      <ExternalLink
                         href={row.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        aria-label={`Open ${formatPrIdentifier(row.repo, row.number)}: ${row.title}`}
                         className="hover:underline focus-visible:underline focus-visible:outline-none"
                       >
                         <div className="text-muted-foreground text-xs tabular-nums">
@@ -77,7 +77,7 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                         <div className="text-primary line-clamp-1">
                           {row.title}
                         </div>
-                      </a>
+                      </ExternalLink>
                     </TableCell>
                     <TableCell>
                       <AuthorBadge

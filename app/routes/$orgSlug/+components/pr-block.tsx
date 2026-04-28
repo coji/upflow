@@ -1,6 +1,7 @@
 import { Popover as PopoverPrimitive } from 'radix-ui'
 import { useRef, useState } from 'react'
 import { href, useFetcher, useParams } from 'react-router'
+import { ExternalLink } from '~/app/components/external-link'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Badge } from '~/app/components/ui/badge'
@@ -297,14 +298,9 @@ function PRPopoverDegraded({
     <div className="space-y-1 text-xs">
       <div className="flex items-center gap-2">
         {linkHref ? (
-          <a
-            href={linkHref}
-            className="font-medium hover:underline"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
+          <ExternalLink href={linkHref} className="font-medium hover:underline">
             {linkLabel}
-          </a>
+          </ExternalLink>
         ) : (
           <span className="font-medium">{linkLabel}</span>
         )}
@@ -333,28 +329,24 @@ export function PRPopoverContent({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <a
+        <ExternalLink
           href={pr.url}
           className="text-xs font-medium hover:underline"
-          target="_blank"
-          rel="noreferrer noopener"
         >
           {formatPrIdentifier(pr.repo, pr.number)}
-        </a>
+        </ExternalLink>
         <SizeBadge
           complexity={pr.complexity}
           className="ml-auto px-1.5 py-0 text-[10px]"
         />
         <HidePRsByTitleMenu title={pr.title} />
       </div>
-      <a
+      <ExternalLink
         href={pr.url}
-        target="_blank"
-        rel="noreferrer noopener"
         className="line-clamp-3 text-xs hover:underline"
       >
         {pr.title}
-      </a>
+      </ExternalLink>
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
         <span className="inline-flex items-center gap-1">
           <GitHubAvatar login={pr.author} size={14} />

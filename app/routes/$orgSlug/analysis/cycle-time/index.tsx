@@ -121,12 +121,10 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     : null
 
   const sf = filter.showFiltered ? 't' : 'f'
-  // Pattern signature must invalidate the cache when patterns change so users
-  // don't see stale rows for ~5 min after editing the filter list.
-  const patternSignature =
-    filter.normalizedPatterns.length === 0
-      ? 'none'
-      : [...filter.normalizedPatterns].sort().join('|')
+  // Pattern signature must invalidate the cache when patterns change. Use
+  // JSON.stringify so a pattern that legitimately contains the separator
+  // character can't collide with a different list.
+  const patternSignature = JSON.stringify([...filter.normalizedPatterns].sort())
   // metricMode is intentionally NOT in the cache key — raw rows are mode-
   // agnostic, the median/average choice is applied in clientLoader.
   const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryId ?? 'all'}:${periodMonths}:sf=${sf}:patterns=${patternSignature}`

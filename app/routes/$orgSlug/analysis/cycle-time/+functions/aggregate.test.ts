@@ -358,6 +358,10 @@ describe('computeAuthorRows', () => {
     expect(out).toHaveLength(1)
     expect(out[0].prCount).toBe(3)
     expect(out[0].total).toBe(7)
+    // Output `author` keeps the casing of the first row in the group so the
+    // canonical login is preserved.
+    expect(out[0].author.toLowerCase()).toBe('alpha')
+    expect(out[0].author).toBe('Alpha')
     // Previous-period rows with the same login (different casing) must be
     // matched and produce a non-null delta.
     expect(out[0].changeVsPrev.diff).not.toBeNull()

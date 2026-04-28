@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
 import { AuthorBadge } from '~/app/components/author-badge'
+import { ExternalLink } from '~/app/components/external-link'
 import { SizeBadgePopover } from '~/app/components/size-badge-popover'
 import dayjs from '~/app/libs/dayjs'
 import { complexitySortingFn } from '~/app/libs/pr-classify'
@@ -46,14 +47,12 @@ export function createColumns(
         <AppSortableHeader column={column} title="title" />
       ),
       cell: ({ row }) => (
-        <a
+        <ExternalLink
           href={row.original.url}
           className="block w-96 truncate text-blue-500 hover:underline"
-          target="_blank"
-          rel="noreferrer noopener"
         >
           <span>{row.original.title}</span>
-        </a>
+        </ExternalLink>
       ),
       enableHiding: false,
     },

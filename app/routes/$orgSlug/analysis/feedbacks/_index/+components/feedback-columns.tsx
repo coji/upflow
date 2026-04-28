@@ -1,5 +1,6 @@
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table'
 import { ArrowDownIcon, ArrowUpIcon, MinusIcon } from 'lucide-react'
+import { ExternalLink } from '~/app/components/external-link'
 import { Badge } from '~/app/components/ui/badge'
 import {
   Tooltip,
@@ -62,17 +63,15 @@ export function createFeedbackColumns(
     columnHelper.accessor('prTitle', {
       header: 'PR',
       cell: (info) => (
-        <a
+        <ExternalLink
           href={info.row.original.prUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           className="hover:underline"
         >
           <span className="text-muted-foreground mr-1">
             #{info.row.original.pullRequestNumber}
           </span>
           <span className="line-clamp-1">{info.getValue()}</span>
-        </a>
+        </ExternalLink>
       ),
       enableSorting: false,
     }),

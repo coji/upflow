@@ -1,7 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangleIcon, ExternalLinkIcon } from 'lucide-react'
-import { Link, useFetcher } from 'react-router'
+import { useFetcher } from 'react-router'
 import { match } from 'ts-pattern'
+import { ExternalLink } from '~/app/components/external-link'
 import {
   Select,
   SelectContent,
@@ -133,15 +134,13 @@ export const createColumns = (
       const isBroken = isRepositoryBroken(row.original, integrationMethod)
       return (
         <span className="inline-flex items-center gap-1">
-          <Link
-            to={repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <ExternalLink
+            href={repoUrl}
             className="inline-flex items-center gap-1 font-medium hover:underline"
           >
             {owner}/{repo}
             <ExternalLinkIcon className="h-3 w-3" />
-          </Link>
+          </ExternalLink>
           {isBroken && <NeedsReconnectionBadge repositoryId={id} />}
         </span>
       )
