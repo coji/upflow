@@ -1,5 +1,6 @@
+import { startOfWeekMonday } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
-import { median } from '~/app/libs/stats'
+import { average, median, percentile } from '~/app/libs/stats'
 
 export type MetricMode = 'median' | 'average'
 
@@ -33,12 +34,6 @@ export interface CycleTimeRawRow {
 
 // --- helpers ---
 
-function startOfWeekMonday(d: dayjs.Dayjs): dayjs.Dayjs {
-  const day = d.day()
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  return d.startOf('day').add(diffToMonday, 'day')
-}
-
 /**
  * Filter raw rows to those released within the week starting at `weekStart`
  * (Monday) in the given timezone. `weekStart` is the `YYYY-MM-DD` key produced
@@ -56,62 +51,60 @@ export function filterRowsByWeek(
   })
 }
 
-function average(values: number[]): number | null {
-  if (values.length === 0) return null
-  let sum = 0
-  for (const v of values) sum += v
-  return sum / values.length
-}
-
 function aggregateValue(values: number[], mode: MetricMode): number | null {
-  if (mode === 'median') return median(values)
-  return average(values)
+  return mode === 'median' ? median(values) : average(values)
 }
 
-function percentile(values: number[], p: number): number | null {
-  if (values.length === 0) return null
-  const sorted = [...values].sort((a, b) => a - b)
-  const rank = (sorted.length - 1) * p
-  const lower = Math.floor(rank)
-  const upper = Math.ceil(rank)
-  if (lower === upper) return sorted[lower]
-  const weight = rank - lower
-  return sorted[lower] * (1 - weight) + sorted[upper] * weight
+type StageValues = Record<CycleStage, number[]>
+
+const STAGE_KEY: Record<
+  CycleStage,
+  'codingTime' | 'pickupTime' | 'reviewTime' | 'deployTime'
+> = {
+  coding: 'codingTime',
+  pickup: 'pickupTime',
+  review: 'reviewTime',
+  deploy: 'deployTime',
 }
 
-function nonNullStageValues(
-  rows: CycleTimeRawRow[],
-  stage: CycleStage,
-): number[] {
-  const key = stageKey(stage)
-  const out: number[] = []
+/**
+ * Single O(n) pass that splits rows into the four stage value arrays. Used
+ * by every aggregator so we don't scan rows once per stage.
+ */
+function partitionStageValues(rows: CycleTimeRawRow[]): StageValues {
+  const out: StageValues = { coding: [], pickup: [], review: [], deploy: [] }
   for (const r of rows) {
-    const v = r[key]
-    if (v !== null) out.push(v)
+    if (r.codingTime !== null) out.coding.push(r.codingTime)
+    if (r.pickupTime !== null) out.pickup.push(r.pickupTime)
+    if (r.reviewTime !== null) out.review.push(r.reviewTime)
+    if (r.deployTime !== null) out.deploy.push(r.deployTime)
   }
   return out
 }
 
-function stageKey(
-  stage: CycleStage,
-): 'codingTime' | 'pickupTime' | 'reviewTime' | 'deployTime' {
-  switch (stage) {
-    case 'coding':
-      return 'codingTime'
-    case 'pickup':
-      return 'pickupTime'
-    case 'review':
-      return 'reviewTime'
-    case 'deploy':
-      return 'deployTime'
+function aggregateStages(
+  buckets: StageValues,
+  mode: MetricMode,
+): Record<CycleStage, number | null> {
+  return {
+    coding: aggregateValue(buckets.coding, mode),
+    pickup: aggregateValue(buckets.pickup, mode),
+    review: aggregateValue(buckets.review, mode),
+    deploy: aggregateValue(buckets.deploy, mode),
   }
+}
+
+function nonNullTotalValues(rows: CycleTimeRawRow[]): number[] {
+  const out: number[] = []
+  for (const r of rows) if (r.totalTime !== null) out.push(r.totalTime)
+  return out
 }
 
 function bottleneckStage(row: CycleTimeRawRow): CycleStage | null {
   let best: CycleStage | null = null
   let bestVal = -Infinity
   for (const s of STAGES) {
-    const v = row[stageKey(s)]
+    const v = row[STAGE_KEY[s]]
     if (v === null) continue
     if (v > bestVal) {
       bestVal = v
@@ -160,38 +153,24 @@ export function computeKpi(
   prevRows: CycleTimeRawRow[],
   mode: MetricMode,
 ): CycleTimeKpi {
-  const total = aggregateValue(
-    rows.map((r) => r.totalTime).filter((v): v is number => v !== null),
-    mode,
-  )
-  const prevTotal = aggregateValue(
-    prevRows.map((r) => r.totalTime).filter((v): v is number => v !== null),
-    mode,
-  )
-  const review = aggregateValue(nonNullStageValues(rows, 'review'), mode)
-  const prevReview = aggregateValue(
-    nonNullStageValues(prevRows, 'review'),
-    mode,
-  )
-  const deploy = aggregateValue(nonNullStageValues(rows, 'deploy'), mode)
-  const prevDeploy = aggregateValue(
-    nonNullStageValues(prevRows, 'deploy'),
-    mode,
-  )
+  const cur = aggregateStages(partitionStageValues(rows), mode)
+  const prev = aggregateStages(partitionStageValues(prevRows), mode)
+  const total = aggregateValue(nonNullTotalValues(rows), mode)
+  const prevTotal = aggregateValue(nonNullTotalValues(prevRows), mode)
 
   return {
     total,
     prCount: rows.length,
-    review,
-    deploy,
+    review: cur.review,
+    deploy: cur.deploy,
     prevTotal,
     prevPrCount: prevRows.length,
-    prevReview,
-    prevDeploy,
+    prevReview: prev.review,
+    prevDeploy: prev.deploy,
     totalDelta: makeDelta(total, prevTotal),
     prCountDelta: makeDelta(rows.length, prevRows.length),
-    reviewDelta: makeDelta(review, prevReview),
-    deployDelta: makeDelta(deploy, prevDeploy),
+    reviewDelta: makeDelta(cur.review, prev.review),
+    deployDelta: makeDelta(cur.deploy, prev.deploy),
   }
 }
 
@@ -243,26 +222,25 @@ export function computeWeeklyTrend(
 
   return weekKeys.map((key) => {
     const bucket = buckets.get(key) ?? []
-    const coding = aggregateValue(nonNullStageValues(bucket, 'coding'), mode)
-    const pickup = aggregateValue(nonNullStageValues(bucket, 'pickup'), mode)
-    const review = aggregateValue(nonNullStageValues(bucket, 'review'), mode)
-    const deploy = aggregateValue(nonNullStageValues(bucket, 'deploy'), mode)
-    const stageValues = [coding, pickup, review, deploy]
+    const stages = aggregateStages(partitionStageValues(bucket), mode)
+    const stageVals = [
+      stages.coding,
+      stages.pickup,
+      stages.review,
+      stages.deploy,
+    ]
     // Total = sum of stage aggregates so the line matches the stacked bar
     // height and tooltip components in both median and average modes. (Median
     // of totalTime ≠ sum of stage medians, which previously caused the line
     // to disagree with the breakdown.)
-    const total = stageValues.every((v) => v === null)
+    const total = stageVals.every((v) => v === null)
       ? null
-      : stageValues.reduce<number>((s, v) => s + (v ?? 0), 0)
+      : stageVals.reduce<number>((s, v) => s + (v ?? 0), 0)
     return {
       weekStart: key,
       weekLabel: dayjs(key).format('MMM D'),
       prCount: bucket.length,
-      coding,
-      pickup,
-      review,
-      deploy,
+      ...stages,
       total,
     }
   })
@@ -287,9 +265,10 @@ export function computeBottleneckMix(
   rows: CycleTimeRawRow[],
   mode: MetricMode,
 ): BottleneckMix {
+  const stages = aggregateStages(partitionStageValues(rows), mode)
   const values = STAGES.map((stage) => ({
     stage,
-    value: aggregateValue(nonNullStageValues(rows, stage), mode) ?? 0,
+    value: stages[stage] ?? 0,
   }))
   const sum = values.reduce((s, v) => s + v.value, 0)
   return {
@@ -334,6 +313,16 @@ function formatPct(p: number): string {
   return `${sign}${(p * 100).toFixed(0)}%`
 }
 
+function directionVsPrev(
+  current: number,
+  prev: number | null,
+): 'up' | 'down' | 'steady' {
+  if (prev === null) return 'steady'
+  if (current < prev) return 'down'
+  if (current > prev) return 'up'
+  return 'steady'
+}
+
 export function computeInsights(args: {
   current: CycleTimeRawRow[]
   previous: CycleTimeRawRow[]
@@ -347,6 +336,9 @@ export function computeInsights(args: {
 
   if (current.length === 0) return insights
 
+  const curStages = aggregateStages(partitionStageValues(current), mode)
+  const prevStages = aggregateStages(partitionStageValues(previous), mode)
+
   const ranked = [...mix.slices].sort((a, b) => b.ratio - a.ratio)
   const dominant = ranked[0]
 
@@ -354,14 +346,8 @@ export function computeInsights(args: {
   if (dominant && dominant.ratio >= DOMINANT_THRESHOLD) {
     const stageLabel = STAGE_LABEL_NICE[dominant.stage]
     const pctText = `${(dominant.ratio * 100).toFixed(0)}%`
-    const cur = aggregateValue(
-      nonNullStageValues(current, dominant.stage),
-      mode,
-    )
-    const prv = aggregateValue(
-      nonNullStageValues(previous, dominant.stage),
-      mode,
-    )
+    const cur = curStages[dominant.stage]
+    const prv = prevStages[dominant.stage]
     if (cur !== null && prv !== null && prv > 0) {
       const diff = cur - prv
       const pctDelta = cur / prv - 1
@@ -388,8 +374,8 @@ export function computeInsights(args: {
   // 2. Notable improvement on a non-dominant stage (>=15% drop vs prev).
   for (const stage of STAGES) {
     if (dominant && stage === dominant.stage) continue
-    const cur = aggregateValue(nonNullStageValues(current, stage), mode)
-    const prv = aggregateValue(nonNullStageValues(previous, stage), mode)
+    const cur = curStages[stage]
+    const prv = prevStages[stage]
     if (cur === null || prv === null || prv <= 0) continue
     if (cur < prv * STAGE_IMPROVEMENT_THRESHOLD) {
       const pctDelta = cur / prv - 1
@@ -424,12 +410,7 @@ export function computeInsights(args: {
   // isn't empty.
   if (insights.length === 0 && dominant && dominant.ratio > 0) {
     const prevSlice = prevMix.slices.find((s) => s.stage === dominant.stage)
-    const direction =
-      prevSlice && dominant.value < prevSlice.value
-        ? 'down'
-        : prevSlice && dominant.value > prevSlice.value
-          ? 'up'
-          : 'steady'
+    const direction = directionVsPrev(dominant.value, prevSlice?.value ?? null)
     insights.push(
       `${STAGE_LABEL_NICE[dominant.stage]} accounts for ${(dominant.ratio * 100).toFixed(0)}% of cycle time and is ${direction} vs previous period.`,
     )
@@ -478,37 +459,32 @@ export function computeAuthorRows(
 
   const out: AuthorRow[] = []
   for (const [author, authorRows] of groupCurrent) {
+    const buckets = partitionStageValues(authorRows)
     const stageValues = STAGES.map((stage) => ({
       stage,
-      value: aggregateValue(nonNullStageValues(authorRows, stage), mode) ?? 0,
+      value: aggregateValue(buckets[stage], mode) ?? 0,
     }))
     const sum = stageValues.reduce((s, v) => s + v.value, 0)
-    const composition = stageValues.map(({ stage, value }) => ({
-      stage,
-      ratio: sum > 0 ? value / sum : 0,
-    }))
-
-    const total = aggregateValue(
-      authorRows.map((r) => r.totalTime).filter((v): v is number => v !== null),
-      mode,
-    )
 
     let mainDriver: CycleStage | null = null
     let mainDriverValue = -Infinity
+    const composition: AuthorRow['composition'] = []
     for (const sv of stageValues) {
+      composition.push({
+        stage: sv.stage,
+        ratio: sum > 0 ? sv.value / sum : 0,
+      })
       if (sv.value > 0 && sv.value > mainDriverValue) {
         mainDriverValue = sv.value
         mainDriver = sv.stage
       }
     }
 
-    const reviewP75 = percentile(nonNullStageValues(authorRows, 'review'), 0.75)
+    const total = aggregateValue(nonNullTotalValues(authorRows), mode)
+    const reviewP75 = percentile(buckets.review, 0.75)
 
     const prevList = groupPrev.get(author) ?? []
-    const prevTotal = aggregateValue(
-      prevList.map((r) => r.totalTime).filter((v): v is number => v !== null),
-      mode,
-    )
+    const prevTotal = aggregateValue(nonNullTotalValues(prevList), mode)
 
     out.push({
       author,

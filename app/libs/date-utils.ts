@@ -23,6 +23,17 @@ export const parseDate = (date: string | null, timeZone: string) => {
   return dt.tz(timeZone).startOf('day')
 }
 
+/**
+ * Start-of-week (Monday, 00:00) for a dayjs instance, preserving its
+ * existing timezone. Useful when you already have a tz-anchored dayjs
+ * and want to bucket by week without re-applying the timezone.
+ */
+export function startOfWeekMonday(d: dayjs.Dayjs): dayjs.Dayjs {
+  const day = d.day()
+  const diffToMonday = day === 0 ? -6 : 1 - day
+  return d.startOf('day').add(diffToMonday, 'day')
+}
+
 export function getStartOfWeek(now = new Date(), timezone: string) {
   const tzNow = dayjs(now).tz(timezone)
 

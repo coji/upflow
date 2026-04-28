@@ -111,7 +111,9 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const filter = await loadPrFilterState(request, organization.id)
 
   const sf = filter.showFiltered ? 't' : 'f'
-  const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryParam ?? 'all'}:${periodMonths}:${metricMode}:sf=${sf}`
+  // metricMode is intentionally NOT in the cache key — raw rows are mode-
+  // agnostic, the median/average choice is applied in clientLoader.
+  const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryParam ?? 'all'}:${periodMonths}:sf=${sf}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
   const repositories = await listCycleTimeRepositories(
@@ -278,10 +280,8 @@ export default function CycleTimePage({
     selectedWeek !== null && weekly.some((w) => w.weekStart === selectedWeek)
   const effectiveSelectedWeek = selectedWeekValid ? selectedWeek : null
 
-  const drilldown = useMemo(() => {
-    if (effectiveSelectedWeek === null) {
-      return { mix, authors, longest, prCount: kpi.prCount }
-    }
+  const weekDrilldown = useMemo(() => {
+    if (effectiveSelectedWeek === null) return null
     const weekRows = filterRowsByWeek(
       currentRows,
       effectiveSelectedWeek,
@@ -298,17 +298,14 @@ export default function CycleTimePage({
       longest: computeLongestPrs(weekRows, 10),
       prCount: weekRows.length,
     }
-  }, [
-    effectiveSelectedWeek,
-    currentRows,
-    previousRows,
-    timezone,
-    metricMode,
+  }, [effectiveSelectedWeek, currentRows, previousRows, timezone, metricMode])
+
+  const drilldown = weekDrilldown ?? {
     mix,
     authors,
     longest,
-    kpi.prCount,
-  ])
+    prCount: kpi.prCount,
+  }
 
   const selectedWeekPoint = effectiveSelectedWeek
     ? weekly.find((w) => w.weekStart === effectiveSelectedWeek)
@@ -420,7 +417,7 @@ export default function CycleTimePage({
         </div>
       </div>
 
-      {selectedWeekPoint !== null && selectedWeekPoint !== undefined && (
+      {selectedWeekPoint && (
         <DrilldownBanner
           weekLabel={selectedWeekPoint.weekLabel}
           prCount={drilldown.prCount}
