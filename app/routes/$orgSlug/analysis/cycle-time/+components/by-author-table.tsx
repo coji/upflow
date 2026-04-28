@@ -22,6 +22,7 @@ import type {
   CycleTimeDelta,
   MetricMode,
 } from '../+functions/aggregate'
+import { CompositionBar } from './composition-bar'
 import {
   STAGE_COLOR_VAR,
   STAGE_LABEL,
@@ -100,37 +101,6 @@ export function ByAuthorTable({ rows, mode }: ByAuthorTableProps) {
         )}
       </CardContent>
     </Card>
-  )
-}
-
-function CompositionBar({
-  composition,
-}: {
-  composition: AuthorRow['composition']
-}) {
-  const hasAny = composition.some((c) => c.ratio > 0)
-  if (!hasAny) {
-    return <div className="bg-muted h-2 w-full rounded" aria-hidden />
-  }
-  return (
-    <div
-      className="bg-muted/40 flex h-2 w-full overflow-hidden rounded"
-      role="img"
-      aria-label="Stage composition"
-    >
-      {composition.map((c) => (
-        <div
-          key={c.stage}
-          className="h-full"
-          style={{
-            width: `${(c.ratio * 100).toFixed(2)}%`,
-            backgroundColor: STAGE_COLOR_VAR[c.stage],
-            opacity: 0.7,
-          }}
-          title={`${STAGE_LABEL[c.stage]} ${(c.ratio * 100).toFixed(0)}%`}
-        />
-      ))}
-    </div>
   )
 }
 

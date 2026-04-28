@@ -19,6 +19,7 @@ import {
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import type { LongestPrRow } from '../+functions/aggregate'
+import { CompositionBar, compositionFromStageTimes } from './composition-bar'
 import { STAGE_COLOR_VAR, STAGE_LABEL, formatDays } from './stage-config'
 
 interface LongestPrsTableProps {
@@ -47,8 +48,8 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>PR</TableHead>
-                  <TableHead>Repo</TableHead>
                   <TableHead>Author</TableHead>
+                  <TableHead className="min-w-[140px]">Composition</TableHead>
                   <TableHead>Bottleneck</TableHead>
                   <TableHead>State</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -76,20 +77,22 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                       className="hover:bg-muted/50 focus-visible:bg-muted/50 cursor-pointer focus-visible:outline-none"
                     >
                       <TableCell className="max-w-[320px]">
-                        <span className="text-primary">
-                          <span className="text-muted-foreground mr-1">
-                            #{row.number}
-                          </span>
-                          <span className="line-clamp-1">{row.title}</span>
+                        <div className="text-muted-foreground text-xs tabular-nums">
+                          {row.repo}#{row.number}
+                        </div>
+                        <span className="text-primary line-clamp-1">
+                          {row.title}
                         </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground tabular-nums">
-                        {row.repo}
                       </TableCell>
                       <TableCell>
                         <AuthorBadge
                           login={row.author}
                           displayName={row.authorDisplayName}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <CompositionBar
+                          composition={compositionFromStageTimes(row)}
                         />
                       </TableCell>
                       <TableCell>
