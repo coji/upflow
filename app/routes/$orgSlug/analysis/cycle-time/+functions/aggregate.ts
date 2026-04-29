@@ -4,13 +4,17 @@ import { average, median, percentile } from '~/app/libs/stats'
 
 export type MetricMode = 'median' | 'average'
 
-export type CycleStage = 'coding' | 'pickup' | 'review' | 'deploy'
+/**
+ * Cycle stages tracked by this dashboard. Deploy is intentionally excluded:
+ * the dashboard now bucket-by and total over `mergedAt`, so cycle time is
+ * "first commit → merge". Deploy lag is a separate concern (#328 pending).
+ */
+export type CycleStage = 'coding' | 'pickup' | 'review'
 
 export const STAGES: readonly CycleStage[] = [
   'coding',
   'pickup',
   'review',
-  'deploy',
 ] as const
 
 export interface CycleTimeRawRow {
@@ -24,18 +28,15 @@ export interface CycleTimeRawRow {
   state: 'open' | 'closed' | 'merged'
   pullRequestCreatedAt: string
   mergedAt: string | null
-  releasedAt: string | null
   codingTime: number | null
   pickupTime: number | null
   reviewTime: number | null
-  deployTime: number | null
-  totalTime: number | null
 }
 
 // --- helpers ---
 
 /**
- * Filter raw rows to those released within the week starting at `weekStart`
+ * Filter raw rows to those merged within the week starting at `weekStart`
  * (Monday) in the given timezone. `weekStart` is the `YYYY-MM-DD` key produced
  * by `computeWeeklyTrend`.
  */
@@ -45,8 +46,8 @@ export function filterRowsByWeek(
   timezone: string,
 ): CycleTimeRawRow[] {
   return rows.filter((row) => {
-    if (row.releasedAt === null) return false
-    const wk = startOfWeekMonday(dayjs.utc(row.releasedAt).tz(timezone))
+    if (row.mergedAt === null) return false
+    const wk = startOfWeekMonday(dayjs.utc(row.mergedAt).tz(timezone))
     return wk.format('YYYY-MM-DD') === weekStart
   })
 }
@@ -59,25 +60,23 @@ type StageValues = Record<CycleStage, number[]>
 
 const STAGE_KEY: Record<
   CycleStage,
-  'codingTime' | 'pickupTime' | 'reviewTime' | 'deployTime'
+  'codingTime' | 'pickupTime' | 'reviewTime'
 > = {
   coding: 'codingTime',
   pickup: 'pickupTime',
   review: 'reviewTime',
-  deploy: 'deployTime',
 }
 
 /**
- * Single O(n) pass that splits rows into the four stage value arrays. Used
+ * Single O(n) pass that splits rows into the three stage value arrays. Used
  * by every aggregator so we don't scan rows once per stage.
  */
 function partitionStageValues(rows: CycleTimeRawRow[]): StageValues {
-  const out: StageValues = { coding: [], pickup: [], review: [], deploy: [] }
+  const out: StageValues = { coding: [], pickup: [], review: [] }
   for (const r of rows) {
     if (r.codingTime !== null) out.coding.push(r.codingTime)
     if (r.pickupTime !== null) out.pickup.push(r.pickupTime)
     if (r.reviewTime !== null) out.review.push(r.reviewTime)
-    if (r.deployTime !== null) out.deploy.push(r.deployTime)
   }
   return out
 }
@@ -90,13 +89,31 @@ function aggregateStages(
     coding: aggregateValue(buckets.coding, mode),
     pickup: aggregateValue(buckets.pickup, mode),
     review: aggregateValue(buckets.review, mode),
-    deploy: aggregateValue(buckets.deploy, mode),
   }
 }
 
-function nonNullTotalValues(rows: CycleTimeRawRow[]): number[] {
+/**
+ * Per-PR merge-cycle total: `coding + pickup + review` (= first commit → merge).
+ * Returns null when every stage is null; otherwise treats null stages as 0
+ * so a PR with no review (auto-merged) still contributes a meaningful total.
+ */
+function rowMergeTotal(row: CycleTimeRawRow): number | null {
+  if (
+    row.codingTime === null &&
+    row.pickupTime === null &&
+    row.reviewTime === null
+  ) {
+    return null
+  }
+  return (row.codingTime ?? 0) + (row.pickupTime ?? 0) + (row.reviewTime ?? 0)
+}
+
+function nonNullMergeTotals(rows: CycleTimeRawRow[]): number[] {
   const out: number[] = []
-  for (const r of rows) if (r.totalTime !== null) out.push(r.totalTime)
+  for (const r of rows) {
+    const t = rowMergeTotal(r)
+    if (t !== null) out.push(t)
+  }
   return out
 }
 
@@ -127,15 +144,12 @@ export interface CycleTimeKpi {
   total: number | null
   prCount: number
   review: number | null
-  deploy: number | null
   prevTotal: number | null
   prevPrCount: number
   prevReview: number | null
-  prevDeploy: number | null
   totalDelta: CycleTimeDelta
   prCountDelta: CycleTimeDelta
   reviewDelta: CycleTimeDelta
-  deployDelta: CycleTimeDelta
 }
 
 function makeDelta(
@@ -155,22 +169,19 @@ export function computeKpi(
 ): CycleTimeKpi {
   const cur = aggregateStages(partitionStageValues(rows), mode)
   const prev = aggregateStages(partitionStageValues(prevRows), mode)
-  const total = aggregateValue(nonNullTotalValues(rows), mode)
-  const prevTotal = aggregateValue(nonNullTotalValues(prevRows), mode)
+  const total = aggregateValue(nonNullMergeTotals(rows), mode)
+  const prevTotal = aggregateValue(nonNullMergeTotals(prevRows), mode)
 
   return {
     total,
     prCount: rows.length,
     review: cur.review,
-    deploy: cur.deploy,
     prevTotal,
     prevPrCount: prevRows.length,
     prevReview: prev.review,
-    prevDeploy: prev.deploy,
     totalDelta: makeDelta(total, prevTotal),
     prCountDelta: makeDelta(rows.length, prevRows.length),
     reviewDelta: makeDelta(cur.review, prev.review),
-    deployDelta: makeDelta(cur.deploy, prev.deploy),
   }
 }
 
@@ -183,7 +194,6 @@ export interface WeeklyTrendPoint {
   coding: number | null
   pickup: number | null
   review: number | null
-  deploy: number | null
   total: number | null
 }
 
@@ -213,8 +223,8 @@ export function computeWeeklyTrend(
   }
 
   for (const row of rows) {
-    if (row.releasedAt === null) continue
-    const wk = startOfWeekMonday(dayjs.utc(row.releasedAt).tz(timezone))
+    if (row.mergedAt === null) continue
+    const wk = startOfWeekMonday(dayjs.utc(row.mergedAt).tz(timezone))
     const key = wk.format('YYYY-MM-DD')
     const bucket = buckets.get(key)
     if (bucket) bucket.push(row)
@@ -223,16 +233,12 @@ export function computeWeeklyTrend(
   return weekKeys.map((key) => {
     const bucket = buckets.get(key) ?? []
     const stages = aggregateStages(partitionStageValues(bucket), mode)
-    const stageVals = [
-      stages.coding,
-      stages.pickup,
-      stages.review,
-      stages.deploy,
-    ]
+    const stageVals = [stages.coding, stages.pickup, stages.review]
     // Total = sum of stage aggregates so the line matches the stacked bar
     // height and tooltip components in both median and average modes. (Median
-    // of totalTime ≠ sum of stage medians, which previously caused the line
-    // to disagree with the breakdown.)
+    // of per-PR sums ≠ sum of stage medians, so we keep the chart Total
+    // self-consistent and let the KPI Total card show the median-of-totals
+    // for the typical end-to-end perspective.)
     const total = stageVals.every((v) => v === null)
       ? null
       : stageVals.reduce<number>((s, v) => s + (v ?? 0), 0)
@@ -285,13 +291,11 @@ export function computeBottleneckMix(
 
 const DOMINANT_THRESHOLD = 0.3
 const STAGE_IMPROVEMENT_THRESHOLD = 0.85
-const DEPLOY_VARIANCE_RATIO = 2
 
 const STAGE_LABEL_NICE: Record<CycleStage, string> = {
   coding: 'Coding',
   pickup: 'Pickup',
   review: 'Review',
-  deploy: 'Deploy',
 }
 
 /**
@@ -326,12 +330,11 @@ function directionVsPrev(
 export function computeInsights(args: {
   current: CycleTimeRawRow[]
   previous: CycleTimeRawRow[]
-  weekly: WeeklyTrendPoint[]
   mix: BottleneckMix
   prevMix: BottleneckMix
   mode: MetricMode
 }): string[] {
-  const { current, previous, weekly, mix, prevMix, mode } = args
+  const { current, previous, mix, prevMix, mode } = args
   const insights: string[] = []
 
   if (current.length === 0) return insights
@@ -387,25 +390,7 @@ export function computeInsights(args: {
     }
   }
 
-  // 3. Deploy variance across the period (skip when deploy is dominant —
-  // the level message above already covers it).
-  if (!dominant || dominant.stage !== 'deploy') {
-    const deployValues = weekly
-      .map((w) => w.deploy)
-      .filter((v): v is number => v !== null && v > 0)
-    if (deployValues.length >= 3) {
-      const sortedDeploy = [...deployValues].sort((a, b) => a - b)
-      const med = sortedDeploy[Math.floor(sortedDeploy.length / 2)]
-      const max = sortedDeploy[sortedDeploy.length - 1]
-      if (med > 0 && max >= med * DEPLOY_VARIANCE_RATIO) {
-        insights.push(
-          `Deploy time variance is high. Some weeks exceed ${formatDays(max)}.`,
-        )
-      }
-    }
-  }
-
-  // 4. Fallback: dominant stage exists but didn't reach the threshold (no
+  // 3. Fallback: dominant stage exists but didn't reach the threshold (no
   // previous data, or below 30%). Report direction vs prev so the panel
   // isn't empty.
   if (insights.length === 0 && dominant && dominant.ratio > 0) {
@@ -489,11 +474,11 @@ export function computeAuthorRows(
       }
     }
 
-    const total = aggregateValue(nonNullTotalValues(authorRows), mode)
+    const total = aggregateValue(nonNullMergeTotals(authorRows), mode)
     const reviewP75 = percentile(buckets.review, 0.75)
 
     const prevList = groupPrev.get(authorKey) ?? []
-    const prevTotal = aggregateValue(nonNullTotalValues(prevList), mode)
+    const prevTotal = aggregateValue(nonNullMergeTotals(prevList), mode)
 
     out.push({
       author: authorRows[0].author,
@@ -526,25 +511,30 @@ export interface LongestPrRow {
   author: string
   authorDisplayName: string | null
   state: 'open' | 'closed' | 'merged'
+  /** first commit → merge, computed as coding + pickup + review (null stages count as 0). */
   totalTime: number
   codingTime: number | null
   pickupTime: number | null
   reviewTime: number | null
-  deployTime: number | null
   bottleneck: CycleStage | null
-  updatedAt: string
+  /** mergedAt — when the PR closed as merged. */
+  mergedAt: string
 }
 
 export function computeLongestPrs(
   rows: CycleTimeRawRow[],
   limit = 10,
 ): LongestPrRow[] {
-  const filtered = rows.filter(
-    (r): r is CycleTimeRawRow & { totalTime: number; releasedAt: string } =>
-      r.totalTime !== null && r.releasedAt !== null,
-  )
-  filtered.sort((a, b) => b.totalTime - a.totalTime)
-  return filtered.slice(0, limit).map((r) => ({
+  type Decorated = CycleTimeRawRow & { mergedAt: string; mergeTotal: number }
+  const decorated: Decorated[] = []
+  for (const r of rows) {
+    if (r.mergedAt === null) continue
+    const t = rowMergeTotal(r)
+    if (t === null) continue
+    decorated.push({ ...r, mergedAt: r.mergedAt, mergeTotal: t })
+  }
+  decorated.sort((a, b) => b.mergeTotal - a.mergeTotal)
+  return decorated.slice(0, limit).map((r) => ({
     repositoryId: r.repositoryId,
     repo: r.repo,
     number: r.number,
@@ -553,12 +543,11 @@ export function computeLongestPrs(
     author: r.author,
     authorDisplayName: r.authorDisplayName,
     state: r.state,
-    totalTime: r.totalTime,
+    totalTime: r.mergeTotal,
     codingTime: r.codingTime,
     pickupTime: r.pickupTime,
     reviewTime: r.reviewTime,
-    deployTime: r.deployTime,
     bottleneck: bottleneckStage(r),
-    updatedAt: r.releasedAt,
+    mergedAt: r.mergedAt,
   }))
 }

@@ -55,7 +55,7 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                   <TableHead>Bottleneck</TableHead>
                   <TableHead>State</TableHead>
                   <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Released</TableHead>
+                  <TableHead>Merged</TableHead>
                   <TableHead className="w-8" aria-hidden />
                 </TableRow>
               </TableHeader>
@@ -115,7 +115,7 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
                       {formatDays(row.totalTime)}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm tabular-nums">
-                      {dayjs.utc(row.updatedAt).tz(timezone).format('MMM D')}
+                      {dayjs.utc(row.mergedAt).tz(timezone).format('MMM D')}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       <ChevronRightIcon className="size-4" />

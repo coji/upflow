@@ -29,11 +29,10 @@ const chartConfig = {
   coding: { label: STAGE_LABEL.coding, color: STAGE_COLOR_VAR.coding },
   pickup: { label: STAGE_LABEL.pickup, color: STAGE_COLOR_VAR.pickup },
   review: { label: STAGE_LABEL.review, color: STAGE_COLOR_VAR.review },
-  deploy: { label: STAGE_LABEL.deploy, color: STAGE_COLOR_VAR.deploy },
   total: { label: 'Total (stages sum)', color: 'var(--color-foreground)' },
 } satisfies ChartConfig
 
-const STAGES = ['coding', 'pickup', 'review', 'deploy'] as const
+const STAGES = ['coding', 'pickup', 'review'] as const
 
 interface WeeklyTrendChartProps {
   weeks: WeeklyTrendPoint[]
