@@ -2,6 +2,7 @@ import type { Table } from '@tanstack/react-table'
 import { ExternalLinkIcon, LoaderIcon, PlusIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useSearchParams } from 'react-router'
+import { ExternalLink } from '~/app/components/external-link'
 import { SearchInput } from '~/app/components/search-input'
 import {
   Select,
@@ -209,15 +210,13 @@ export function DataTableToolbar<TData>({
                             </span>
                           )}
                         </div>
-                        <a
+                        <ExternalLink
                           href={`https://github.com/${user.login}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className="text-muted-foreground hover:text-foreground ml-2 shrink-0"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLinkIcon className="h-3.5 w-3.5" />
-                        </a>
+                        </ExternalLink>
                       </ComboboxItem>
                     )}
                   </ComboboxCollection>

@@ -1,6 +1,7 @@
 import holiday_jp from '@holiday-jp/holiday_jp'
 import { useMemo } from 'react'
 import { href, Link, useSearchParams } from 'react-router'
+import { ExternalLink } from '~/app/components/external-link'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { HStack, Stack } from '~/app/components/ui/stack'
@@ -9,6 +10,7 @@ import WeeklyCalendar from '~/app/components/week-calendar'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import { getEndOfWeek, getStartOfWeek } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
+import { formatPrIdentifier } from '~/app/libs/format-pr'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
 import {
@@ -826,14 +828,12 @@ function PRRow({
   return (
     <div className="flex flex-col gap-1 py-1 text-sm lg:grid lg:grid-cols-[max-content_max-content_minmax(0,1fr)_auto] lg:items-center lg:gap-x-4 lg:gap-y-0">
       <div className="flex min-w-0 items-start justify-between gap-2 lg:contents">
-        <a
+        <ExternalLink
           href={url}
           className="min-w-0 truncate text-blue-500 hover:underline lg:block"
-          target="_blank"
-          rel="noreferrer noopener"
         >
-          {repo}#{number}
-        </a>
+          {formatPrIdentifier(repo, number)}
+        </ExternalLink>
         <div className="flex shrink-0 items-center gap-2 lg:min-w-0">
           <SizeBadge complexity={complexity} />
           {stateStyle && (

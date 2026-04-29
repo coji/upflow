@@ -7,6 +7,7 @@ import {
   NotebookPenIcon,
   RocketIcon,
   SettingsIcon,
+  TimerIcon,
 } from 'lucide-react'
 import { href } from 'react-router'
 import type { NavGroupProps } from './types'
@@ -46,6 +47,11 @@ export function getNavConfig(orgSlug: string): NavGroupProps[] {
     {
       title: 'Analysis',
       items: [
+        {
+          title: 'Cycle Time',
+          url: href('/:orgSlug/analysis/cycle-time', { orgSlug }),
+          icon: TimerIcon,
+        },
         {
           title: 'Review Bottleneck',
           url: href('/:orgSlug/analysis/reviews', { orgSlug }),

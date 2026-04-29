@@ -1,3 +1,4 @@
+import { startOfWeekMonday } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 
 export interface OpenPRInventoryRawRow {
@@ -23,12 +24,6 @@ export interface InventoryWeekPoint {
 
 export interface OpenPRInventoryAggregation {
   weeks: InventoryWeekPoint[]
-}
-
-function startOfWeekMonday(d: dayjs.Dayjs): dayjs.Dayjs {
-  const day = d.day()
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  return d.startOf('day').add(diffToMonday, 'day')
 }
 
 export function isOpenAtSnapshot(

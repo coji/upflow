@@ -1,9 +1,10 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLinkIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { useFetcher } from 'react-router'
 import { ConfirmDialog } from '~/app/components/confirm-dialog'
 import { EditableCell } from '~/app/components/editable-cell'
+import { ExternalLink } from '~/app/components/external-link'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Badge } from '~/app/components/ui/badge'
 import {
@@ -142,15 +143,13 @@ export function createColumns(timezone: string): ColumnDef<GithubUserRow>[] {
                 {login.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <Link
-              to={`https://github.com/${login}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <ExternalLink
+              href={`https://github.com/${login}`}
               className="inline-flex items-center gap-1 font-medium hover:underline"
             >
               {login}
               <ExternalLinkIcon className="h-3 w-3" />
-            </Link>
+            </ExternalLink>
           </div>
         )
       },

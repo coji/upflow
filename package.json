@@ -139,10 +139,14 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@biomejs/biome",
+      "@sentry/cli",
       "@tailwindcss/oxide",
       "better-sqlite3",
       "esbuild",
-      "msw"
+      "msw",
+      "protobufjs",
+      "sharp",
+      "workerd"
     ]
   }
 }

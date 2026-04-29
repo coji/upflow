@@ -1,4 +1,5 @@
 import { ExternalLinkIcon } from 'lucide-react'
+import { ExternalLink } from '~/app/components/external-link'
 import { SizeBadge } from '~/app/components/size-badge'
 import { Badge } from '~/app/components/ui'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
@@ -9,6 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/app/components/ui/sheet'
+import { formatPrIdentifier } from '~/app/libs/format-pr'
 import { parseRiskAreas } from '~/app/libs/pr-classify'
 import { HidePRsByTitleMenu } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 
@@ -59,19 +61,17 @@ export function PRDrillDownSheet({
           <div className="divide-y">
             {prs.map((pr) => (
               <div
-                key={`${pr.repo}#${pr.number}`}
+                key={formatPrIdentifier(pr.repo, pr.number)}
                 className="flex flex-col gap-1 py-3"
               >
                 <div className="flex items-center gap-2">
-                  <a
+                  <ExternalLink
                     href={pr.url}
                     className="text-muted-foreground shrink-0 text-xs hover:underline"
-                    target="_blank"
-                    rel="noreferrer noopener"
                   >
-                    {pr.repo}#{pr.number}
+                    {formatPrIdentifier(pr.repo, pr.number)}
                     <ExternalLinkIcon className="ml-0.5 inline-block h-3 w-3" />
-                  </a>
+                  </ExternalLink>
                   <SizeBadge complexity={pr.size ?? null} />
                   <span className="text-muted-foreground flex items-center gap-1 text-xs">
                     <Avatar className="size-4">
@@ -94,14 +94,12 @@ export function PRDrillDownSheet({
                     <HidePRsByTitleMenu title={pr.title} />
                   </div>
                 </div>
-                <a
+                <ExternalLink
                   href={pr.url}
                   className="truncate text-sm hover:underline"
-                  target="_blank"
-                  rel="noreferrer noopener"
                 >
                   {pr.title}
-                </a>
+                </ExternalLink>
                 {(pr.complexityReason || pr.riskAreas) && (
                   <div className="space-y-0.5 text-xs">
                     {pr.complexityReason && (

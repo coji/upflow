@@ -1,7 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { AppSortableHeader } from '~/app/components'
+import { AuthorBadge } from '~/app/components/author-badge'
+import { ExternalLink } from '~/app/components/external-link'
 import { SizeBadgePopover } from '~/app/components/size-badge-popover'
-import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import dayjs from '~/app/libs/dayjs'
 import { complexitySortingFn } from '~/app/libs/pr-classify'
 import { hidePrActionsColumn } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
@@ -18,23 +19,12 @@ export function createColumns(
       header: ({ column }) => (
         <AppSortableHeader column={column} title="author" />
       ),
-      cell: ({ row }) => {
-        const login = row.original.author
-        return (
-          <div className="flex items-center gap-2">
-            <Avatar className="size-6">
-              <AvatarImage
-                src={`https://github.com/${login}.png?size=48`}
-                alt={login}
-              />
-              <AvatarFallback className="text-xs">
-                {login.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span>{row.original.authorDisplayName || login}</span>
-          </div>
-        )
-      },
+      cell: ({ row }) => (
+        <AuthorBadge
+          login={row.original.author}
+          displayName={row.original.authorDisplayName}
+        />
+      ),
       enableHiding: false,
     },
     {
@@ -57,14 +47,12 @@ export function createColumns(
         <AppSortableHeader column={column} title="title" />
       ),
       cell: ({ row }) => (
-        <a
+        <ExternalLink
           href={row.original.url}
           className="block w-96 truncate text-blue-500 hover:underline"
-          target="_blank"
-          rel="noreferrer noopener"
         >
           <span>{row.original.title}</span>
-        </a>
+        </ExternalLink>
       ),
       enableHiding: false,
     },
