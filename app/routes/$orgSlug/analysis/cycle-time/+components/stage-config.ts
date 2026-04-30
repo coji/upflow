@@ -4,7 +4,6 @@ export const STAGE_LABEL: Record<CycleStage, string> = {
   coding: 'Coding',
   pickup: 'Pickup',
   review: 'Review',
-  deploy: 'Deploy',
 }
 
 /**
@@ -15,7 +14,6 @@ export const STAGE_COLOR_VAR: Record<CycleStage, string> = {
   coding: 'var(--color-chart-2)',
   pickup: 'var(--color-chart-4)',
   review: 'var(--color-chart-1)',
-  deploy: 'var(--color-chart-3)',
 }
 
 /**
