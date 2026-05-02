@@ -164,7 +164,9 @@
 - **`~/` import エイリアス** — `CLAUDE.md:146-151` — `app/` 配下 import は `~/app/...` を使う。`../../` 以上の relative path はサイドリーフを跨ぎがちで refactor 不安定
   Vitest structural test (`tests/structural/tilde-alias-import.test.ts`), shipped in #347. 既存違反 11 箇所（`app/routes/$orgSlug/settings/...` および `workload/+components/team-stacks-chart.tsx`）は同 PR で `~/app/...` に置換済み
 - **batch では `.format(...)` 禁止 (helper を除く)** — `CLAUDE.md:137` — GitHub API の ISO 8601 をそのまま DB に保存し、独自フォーマット変換をかけない。レポート / スプレッドシート出力用には `batch/helper/timeformat.ts` の `timeFormatTz` を使う
-  Vitest structural test (`tests/structural/no-format-in-batch.test.ts`), shipped in this PR. 既存違反なし（`batch/helper/timeformat.ts` のみ legit、exempt list に登録済み）
+  Vitest structural test (`tests/structural/no-format-in-batch.test.ts`), shipped in #350. 既存違反なし（`batch/helper/timeformat.ts` のみ legit、exempt list に登録済み）
+- **`.server.ts` 隔離** — `CLAUDE.md:155-159` — `.server.ts` モジュールはクライアント束に出てはいけない。`app/components/`、`app/hooks/`、`app/types/`、それと `app/libs/` / `app/services/` の non-server ファイルからは import 禁止。型のみインポート（`import type { ... }`）はビルド時に消えるため許容
+  dependency-cruiser (`.dependency-cruiser.cjs` の `no-server-from-client-module` rule)、`pnpm lint:deps` で実行。`pnpm validate` の前段に組み込み済み。shipped in this PR. 既存違反なし
 
 ### Pending
 
