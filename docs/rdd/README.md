@@ -49,3 +49,4 @@ Implemented in #301, #305, #309, #312, #316
 - [issue-307: PR タイトルパターンによる表示フィルター](./issue-307-pr-title-filter.md)
 - [issue-314: PR ポップオーバーを resource route 化して drop-in に使う](./issue-314-pr-popover-resource-route.md)
 - [issue-327: テナント内 Cycle Time ダッシュボード](./issue-327-cycle-time-dashboard.md)
+- [issue-336: ルールインベントリ（CLAUDE / AGENTS / RDD / facets）](./issue-336-rule-inventory.md)
