@@ -1,5 +1,5 @@
 name: spec-implement-accept
-description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Supervision'
+description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Simplify -> Supervision'
 max_steps: 30
 initial_step: spec-draft
 
@@ -7,11 +7,13 @@ initial_step: spec-draft
 personas:
   spec-author: ../facets/personas/spec-author.md
   acceptor: ../facets/personas/acceptor.md
+  simplifier: ../facets/personas/simplifier.md
   supervisor: ../facets/personas/supervisor.md
 instructions:
   spec-draft: ../facets/instructions/spec-draft.md
   spec-review: ../facets/instructions/spec-review.md
   acceptance: ../facets/instructions/acceptance.md
+  simplify: ../facets/instructions/simplify.md
   supervise: ../facets/instructions/supervise.md
 knowledge:
   implementation-plan: ../facets/knowledge/implementation-plan.md
@@ -188,11 +190,26 @@ steps:
           format: acceptance-report
     rules:
       - condition: All completion criteria met, validation passes
-        next: supervise
+        next: simplify
       - condition: Completion criteria not met or issues found
         next: fix
 
-  # 6. Fix
+  # 6. Simplify (Claude Code /simplify skill)
+  - name: simplify
+    edit: true
+    persona: simplifier
+    policy: step-implementation
+    knowledge: implementation-plan
+    instruction: simplify
+    required_permission_mode: edit
+    pass_previous_response: false
+    rules:
+      - condition: Simplification complete (or nothing to simplify), validation passes
+        next: supervise
+      - condition: Simplification breaks tests or validation fails
+        next: fix
+
+  # 7. Fix
   - name: fix
     edit: true
     persona: coder
@@ -224,7 +241,7 @@ steps:
       - condition: Cannot fix
         next: supervise
 
-  # 7. Final verification
+  # 8. Final verification
   - name: supervise
     edit: false
     persona: supervisor
