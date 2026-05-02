@@ -54,16 +54,19 @@ interface Violation {
 const DROP_TABLE_REGEX =
   /(^|\n)\s*DROP\s+TABLE\s+(?!IF\s+EXISTS\s+)`?([A-Za-z_][A-Za-z0-9_]*)`?\s*;/gi
 
-function findUnsafeDropTables(absFilePath: string): Violation[] {
-  const text = readFileSync(absFilePath, 'utf8')
+function detectUnsafeDropsInText(text: string, filePath: string): Violation[] {
   const violations: Violation[] = []
-  const relPath = path.relative(ROOT, absFilePath)
 
   for (const match of text.matchAll(DROP_TABLE_REGEX)) {
     const table = match[2]
     const matchIndex = match.index ?? 0
     const before = text.slice(0, matchIndex)
-    const line = before.split('\n').length
+    // The regex captures a leading `\n` as part of the match (group 1), but
+    // `before` stops just before that `\n`. Include it when present so the
+    // reported line number points to the line where DROP TABLE actually sits.
+    const beforeWithCapturedNewline =
+      text[matchIndex] === '\n' ? `${before}\n` : before
+    const line = beforeWithCapturedNewline.split('\n').length
 
     // Atlas-style table rebuild: an INSERT INTO `new_<table>` ... FROM `<table>`
     // before this DROP TABLE in the same file. The Atlas pattern always uses
@@ -75,10 +78,15 @@ function findUnsafeDropTables(absFilePath: string): Violation[] {
     )
     if (rebuildPattern.test(before)) continue
 
-    violations.push({ file: relPath, line, table })
+    violations.push({ file: filePath, line, table })
   }
 
   return violations
+}
+
+function findUnsafeDropTables(absFilePath: string): Violation[] {
+  const text = readFileSync(absFilePath, 'utf8')
+  return detectUnsafeDropsInText(text, path.relative(ROOT, absFilePath))
 }
 
 describe('Manual DROP TABLE statements must include IF EXISTS', () => {
@@ -97,46 +105,25 @@ describe('Manual DROP TABLE statements must include IF EXISTS', () => {
   })
 
   it('catches a synthetic violation (manual DROP without IF EXISTS)', () => {
-    // Hand-rolled mini-runner against an in-memory SQL string: same regex,
-    // same rebuild check, no INSERT before the DROP.
     const text = ['-- some manual cleanup', 'DROP TABLE `legacy_users`;'].join(
       '\n',
     )
-
-    const violations: Violation[] = []
-    for (const match of text.matchAll(DROP_TABLE_REGEX)) {
-      const table = match[2]
-      const before = text.slice(0, match.index ?? 0)
-      const rebuildPattern = new RegExp(
-        `INSERT\\s+INTO\\s+\`new_${table}\`[\\s\\S]*?FROM\\s+\`${table}\``,
-        'i',
-      )
-      if (rebuildPattern.test(before)) continue
-      violations.push({ file: 'synthetic', line: 0, table })
-    }
+    const violations = detectUnsafeDropsInText(text, 'synthetic.sql')
     expect(violations).toHaveLength(1)
+    expect(violations[0]).toMatchObject({
+      file: 'synthetic.sql',
+      line: 2,
+      table: 'legacy_users',
+    })
   })
 
   it('does not flag the Atlas-style rebuild pattern', () => {
-    // Same regex, but with an INSERT INTO new_X ... FROM X before the DROP.
     const text = [
       'CREATE TABLE `new_users` (...);',
       'INSERT INTO `new_users` (id) SELECT id FROM `users`;',
       'DROP TABLE `users`;',
       'ALTER TABLE `new_users` RENAME TO `users`;',
     ].join('\n')
-
-    const violations: Violation[] = []
-    for (const match of text.matchAll(DROP_TABLE_REGEX)) {
-      const table = match[2]
-      const before = text.slice(0, match.index ?? 0)
-      const rebuildPattern = new RegExp(
-        `INSERT\\s+INTO\\s+\`new_${table}\`[\\s\\S]*?FROM\\s+\`${table}\``,
-        'i',
-      )
-      if (rebuildPattern.test(before)) continue
-      violations.push({ file: 'synthetic', line: 0, table })
-    }
-    expect(violations).toEqual([])
+    expect(detectUnsafeDropsInText(text, 'synthetic.sql')).toEqual([])
   })
 })
