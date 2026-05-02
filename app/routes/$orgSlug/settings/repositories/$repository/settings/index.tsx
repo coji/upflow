@@ -35,8 +35,8 @@ import {
 import { isOrgOwner, requireOrgOwner } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
+import ContentSection from '~/app/routes/$orgSlug/settings/+components/content-section'
 import { getIntegration } from '~/app/services/github-integration-queries.server'
-import ContentSection from '../../../+components/content-section'
 import { getRepository } from '../queries.server'
 import {
   deleteRepository,

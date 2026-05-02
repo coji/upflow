@@ -31,8 +31,8 @@ import {
   buildInstallationSettingsUrl,
   getAccountKind,
 } from '~/app/libs/github-account'
+import type { action } from '~/app/routes/$orgSlug/settings/integration/index'
 import { INTENTS, integrationSettingsSchema as schema } from '../+schema'
-import type { action } from '../../integration/index'
 
 export type GithubAppLinkSummary = {
   installationId: number

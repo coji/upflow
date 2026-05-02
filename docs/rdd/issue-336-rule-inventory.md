@@ -160,7 +160,9 @@
 - **DG-314-POPOVER** — `issue-314-pr-popover-resource-route.md:103` — PRPopover の `useFetcher` key に `orgSlug` を含める
   Vitest structural test (`tests/structural/popover-fetcher-key.test.ts`), shipped in #344
 - **`String(e)` 禁止 / `getErrorMessage[ForLog]` 強制** — `CLAUDE.md:219` (inventory row 38) — `String(err)` は `[object Error]` になるので使わない
-  Vitest structural test (`tests/structural/no-string-error.test.ts`), shipped in this PR. 既存違反 4 箇所 (`run-in-worker.ts`、`classify-pull-requests.ts`、`llm-classify.ts`) は同 PR で `getErrorMessageForLog` に置換済み
+  Vitest structural test (`tests/structural/no-string-error.test.ts`), shipped in #346. 既存違反 4 箇所 (`run-in-worker.ts`、`classify-pull-requests.ts`、`llm-classify.ts`) は同 PR で `getErrorMessageForLog` に置換済み
+- **`~/` import エイリアス** — `CLAUDE.md:146-151` — `app/` 配下 import は `~/app/...` を使う。`../../` 以上の relative path はサイドリーフを跨ぎがちで refactor 不安定
+  Vitest structural test (`tests/structural/tilde-alias-import.test.ts`), shipped in this PR. 既存違反 11 箇所（`app/routes/$orgSlug/settings/...` および `workload/+components/team-stacks-chart.tsx`）は同 PR で `~/app/...` に置換済み
 
 ### Pending
 

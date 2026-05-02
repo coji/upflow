@@ -3,8 +3,8 @@ import { Link, href } from 'react-router'
 import { SearchInput } from '~/app/components/search-input'
 import { TeamFilter } from '~/app/components/team-filter'
 import { Button } from '~/app/components/ui/button'
+import type { TeamRow } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { useDataTableState } from '../+hooks/use-data-table-state'
-import type { TeamRow } from '../../teams._index/queries.server'
 
 interface DataTableToolbarProps {
   teams: TeamRow[]

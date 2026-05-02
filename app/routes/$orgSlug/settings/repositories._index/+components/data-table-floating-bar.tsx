@@ -11,7 +11,7 @@ import {
 } from '~/app/components/ui'
 import { Button } from '~/app/components/ui/button'
 import { Separator } from '~/app/components/ui/separator'
-import type { TeamRow } from '../../teams._index/queries.server'
+import type { TeamRow } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { RepositoryRow } from '../queries.server'
 
 interface DataTableFloatingBarProps {
