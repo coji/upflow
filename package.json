@@ -4,6 +4,9 @@
   "license": "SEE LICENSE IN LICENSE",
   "sideEffects": false,
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "build": "run-s build:react-router build:job build:workers build:db-scripts",
     "build:job": "esbuild --platform=node --format=esm ./batch/job-scheduler.ts --outdir=build --bundle --packages=external",

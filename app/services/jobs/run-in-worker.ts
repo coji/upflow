@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { Worker, type WorkerOptions } from 'node:worker_threads'
+import { getErrorMessageForLog } from '~/app/libs/error-message'
 import { logger } from '~/batch/helper/logger'
 
 interface AnalyzeWorkerInput {
@@ -135,7 +136,7 @@ function runWorkerOnce<T>(
 }
 
 function isSqliteBusyError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error)
+  const message = getErrorMessageForLog(error)
   return (
     message.includes('SQLITE_BUSY') || message.includes('database is locked')
   )
@@ -157,7 +158,7 @@ function createBusyEvent(
     organizationId: getWorkerOrganizationId(workerData),
     attempt,
     delayMs,
-    errorMessage: error instanceof Error ? error.message : String(error),
+    errorMessage: getErrorMessageForLog(error),
     gaveUp: delayMs === 0,
   }
 }

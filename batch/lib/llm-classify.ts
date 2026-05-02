@@ -8,6 +8,7 @@
  */
 
 import { GoogleGenAI, Type } from '@google/genai'
+import { getErrorMessageForLog } from '~/app/libs/error-message'
 import { escapeXml } from '~/app/libs/escape-xml'
 import {
   buildOutputLanguageSection,
@@ -260,7 +261,7 @@ export async function batchClassifyPRs(
           successCount++
           return
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err)
+          const msg = getErrorMessageForLog(err)
           if (attempt < maxRetries) {
             const delay = 1000 * 2 ** attempt // 1s, 2s, 4s
             logger.warn(

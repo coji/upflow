@@ -1,3 +1,4 @@
+import { getErrorMessageForLog } from '~/app/libs/error-message'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import type { ShapedGitHubPullRequest } from '~/batch/github/model'
@@ -91,7 +92,7 @@ export async function classifyPullRequests(
       ]
     } catch (err) {
       logger.warn(
-        `Skipping PR #${pr.number} in ${pr.repositoryId}: invalid rawPullRequest (${err instanceof Error ? err.message : String(err)})`,
+        `Skipping PR #${pr.number} in ${pr.repositoryId}: invalid rawPullRequest (${getErrorMessageForLog(err)})`,
       )
       return []
     }
