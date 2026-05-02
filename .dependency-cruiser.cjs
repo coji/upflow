@@ -22,9 +22,11 @@ module.exports = {
       },
       to: {
         path: '\\.server\\.tsx?$',
-        // Type-only imports (`import type { ... }`) are erased at compile
-        // time and never reach the client bundle, so they're safe.
-        dependencyTypesNot: ['type-only'],
+        // Type-only imports are erased at compile time and never reach the
+        // client bundle, so they're safe. Cover both forms:
+        //   - `import type { X } from 'mod'`            -> `type-only`
+        //   - `const x: import('mod').T` (annotation)   -> `type-import`
+        dependencyTypesNot: ['type-only', 'type-import'],
       },
     },
   ],
