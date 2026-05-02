@@ -5,6 +5,7 @@ initial_step: spec-draft
 
 # Custom facets
 personas:
+  spec-author: ../facets/personas/spec-author.md
   acceptor: ../facets/personas/acceptor.md
   supervisor: ../facets/personas/supervisor.md
 instructions:
@@ -76,7 +77,7 @@ steps:
   # 1. Spec draft generation
   - name: spec-draft
     edit: true
-    persona: architecture-reviewer
+    persona: spec-author
     knowledge: implementation-plan
     instruction: spec-draft
     required_permission_mode: edit
@@ -107,7 +108,7 @@ steps:
   # 3. Spec revision
   - name: spec-revise
     edit: true
-    persona: architecture-reviewer
+    persona: spec-author
     policy: spec-revision
     knowledge: implementation-plan
     required_permission_mode: edit
@@ -195,7 +196,6 @@ steps:
   - name: fix
     edit: true
     persona: coder
-    provider: claude
     policy:
       - coding
       - step-implementation
@@ -203,15 +203,6 @@ steps:
     session: refresh
     required_permission_mode: edit
     pass_previous_response: false
-    provider_options:
-      claude:
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - Edit
-          - Write
-          - Bash
     instruction: |
       Fix the issues raised in the acceptance testing.
 
