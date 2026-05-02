@@ -42,7 +42,7 @@ provider_profiles:
   codex:
     default_permission_mode: full
   claude:
-    default_permission_mode: edit
+    default_permission_mode: full
 
 # Pipeline mode (`takt --pipeline`) — used by CI for non-interactive runs.
 # Templates only apply when --pipeline is set; regular `takt run` ignores them.
