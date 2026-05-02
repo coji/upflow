@@ -23,7 +23,7 @@ interface KpiCardsProps {
 export function KpiCards({ kpi, mode, periodLabel }: KpiCardsProps) {
   const totalLabel = mode === 'median' ? 'Median Total' : 'Avg Total'
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <KpiCard
         label={totalLabel}
         value={formatDays(kpi.total)}
@@ -42,13 +42,6 @@ export function KpiCards({ kpi, mode, periodLabel }: KpiCardsProps) {
         label={mode === 'median' ? 'Review (median)' : 'Review (avg)'}
         value={formatDays(kpi.review)}
         delta={kpi.reviewDelta}
-        deltaInversed
-        periodLabel={periodLabel}
-      />
-      <KpiCard
-        label={mode === 'median' ? 'Deploy (median)' : 'Deploy (avg)'}
-        value={formatDays(kpi.deploy)}
-        delta={kpi.deployDelta}
         deltaInversed
         periodLabel={periodLabel}
       />

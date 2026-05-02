@@ -8,8 +8,11 @@ import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 /**
- * Cycle time raw rows for released PRs in [sinceDate, untilDate).
+ * Cycle time raw rows for merged PRs in [sinceDate, untilDate).
  * `untilDate` を null にすると上限なしで取得する（current period 用）。
+ *
+ * 母集団は `mergedAt is not null` の PR。released か否かは問わない。
+ * Deploy time / releasedAt は本ダッシュボードで使わない。
  */
 export const getCycleTimeRawData = async (
   organizationId: OrganizationId,
@@ -30,11 +33,10 @@ export const getCycleTimeRawData = async (
         (eb) => eb.fn('lower', ['companyGithubUsers.login']),
       ),
     )
-    .where('pullRequests.releasedAt', 'is not', null)
-    .where('pullRequests.totalTime', 'is not', null)
-    .where('pullRequests.releasedAt', '>=', sinceDate)
+    .where('pullRequests.mergedAt', 'is not', null)
+    .where('pullRequests.mergedAt', '>=', sinceDate)
     .$if(untilDate !== null, (qb) =>
-      qb.where('pullRequests.releasedAt', '<', untilDate as string),
+      qb.where('pullRequests.mergedAt', '<', untilDate as string),
     )
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
@@ -55,12 +57,9 @@ export const getCycleTimeRawData = async (
       'pullRequests.state',
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.mergedAt',
-      'pullRequests.releasedAt',
       'pullRequests.codingTime',
       'pullRequests.pickupTime',
       'pullRequests.reviewTime',
-      'pullRequests.deployTime',
-      'pullRequests.totalTime',
     ])
     .execute()
 }
@@ -86,9 +85,8 @@ export const countCycleTimePullRequests = async (
         (eb) => eb.fn('lower', ['companyGithubUsers.login']),
       ),
     )
-    .where('pullRequests.releasedAt', 'is not', null)
-    .where('pullRequests.totalTime', 'is not', null)
-    .where('pullRequests.releasedAt', '>=', sinceDate)
+    .where('pullRequests.mergedAt', 'is not', null)
+    .where('pullRequests.mergedAt', '>=', sinceDate)
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )

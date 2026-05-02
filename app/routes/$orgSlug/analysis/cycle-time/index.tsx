@@ -203,7 +203,6 @@ export const clientLoader = async ({
   const insights = computeInsights({
     current: data.currentRows,
     previous: data.previousRows,
-    weekly,
     mix,
     prevMix,
     mode: data.metricMode,
@@ -317,7 +316,8 @@ export default function CycleTimePage({
         <PageHeaderHeading>
           <PageHeaderTitle>Cycle Time</PageHeaderTitle>
           <PageHeaderDescription>
-            {periodLabel} trend of PR delivery speed and bottlenecks.
+            {periodLabel} trend of PR cycle time (first commit → merge) and
+            bottlenecks. Deploy lag is tracked separately.
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions className="flex flex-wrap">

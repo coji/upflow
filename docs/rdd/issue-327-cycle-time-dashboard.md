@@ -92,20 +92,22 @@ org 配下の route は [`app/routes/$orgSlug/_layout.tsx`](../../app/routes/$or
 - 既存の Review Bottleneck / Inventory と同じ Analysis 配下に置くと情報設計が自然
 - テナント内全員が見られる画面なので settings や admin 配下には置かない
 
-### 2. 初期スコープは released PR を基準にした 3 か月の週次集計にする
+### 2. 初期スコープは merged PR を基準にした 3 か月の週次集計にする
 
-結論: デフォルトでは `released_at IS NOT NULL` の PR を、組織 timezone 基準の直近 3 か月で集計する。期間判定は `released_at >= sinceDate` を基準にする。
+結論: デフォルトでは `merged_at IS NOT NULL` の PR を、組織 timezone 基準の直近 3 か月で集計する。期間判定・週バケット・filterRowsByWeek すべて `merged_at` を基準にする。Cycle time は first commit → merge (= coding + pickup + review)、Deploy stage はこのダッシュボードでは扱わない。
 
 理由:
 
-- `total_time` は first commit から release までの値であり、release 済み PR を母集団にするのが最も整合する
-- `deploy_time` を含めた end-to-end のサイクルタイムを見たい画面なので、merged 基準にすると deploy が未確定の PR が混ざる
-- 既存 `throughput/deployed` も deployed/released PR をサイクルタイム表示の中心にしている
+- `released_at` は `repositories.release_detection_method` 依存の派生値で、monorepo (#328) や release stream の仕様が決まりきっていない現状では精度が出ない (release branch を main に取り込むタイミングで PR がまとめて同一 `released_at` に揃ってしまうアーティファクトが #329 で確認された)
+- engineering team がコントロールできる範囲のサイクルタイム (= merge までの時間) を主役にすることで、外部要因 (App Store 審査、deploy schedule の business decision) の揺れを排除できる
+- 「PR が完成した」という developer experience の感覚と一致する
+- DORA 系の lead-time-to-merge 定義に近い
 
 補足:
 
-- open / merged but not released の滞留はこの画面では主対象にしない。Open PR Inventory / Review Bottleneck 側で扱う
-- 将来 `merged` 基準の toggle を追加する余地はあるが、初期実装には含めない
+- Deploy time は意味のある指標だが、本ダッシュボードではなく **将来の独立 KPI / 独立画面 (Deploy Lag)** として扱う。#328 (release stream) 完了後に再構成する
+- open / merged but not released の滞留は本画面では主対象にしない。Open PR Inventory / Review Bottleneck 側で扱う
+- 当初の released_at-based 設計から #333 で切り替えた。詳細は issue 参照
 
 ### 3. 週次 bucket は組織 timezone の週始まりで作り、ラベルだけ client 側で整形する
 
@@ -485,7 +487,11 @@ Phase 1 implemented.
 - raw query: `+functions/queries.server.ts`
 - aggregate: `+functions/aggregate.ts` (unit test 同居)
 - UI: `+components/` (KPI, Weekly Trend, Bottleneck Mix, Insights, By Author, Longest PRs)
-- 週 bucket: `releasedAt` を組織 timezone で Monday-start に変換し、`untilDate` は exclusive として扱う
+- 週 bucket: `mergedAt` を組織 timezone で Monday-start に変換し、`untilDate` は exclusive として扱う (#333 で `releasedAt` 基準から切り替え)
+- 母集団: `mergedAt is not null` の PR (released か否かを問わない)
+- 工程: Coding / Pickup / Review の 3 stage。Deploy は本ダッシュボードでは扱わない (#333)
+- KPI: Median/Avg Total / PRs / Review の 3 枚
 - previous period: 同じ長さの直前期間 (`prevSinceDate = calcSinceDate(periodMonths * 2, timezone)`, `prevUntilDate = sinceDate`)
 - repository filter: team filter で絞り込んだ repositories list を `Select` で表示し、URL `?repository=<id>` に保存
 - business days toggle / drawer / 詳細 mini timeline は Phase 1 では未実装。GitHub の PR ページへのリンクと chevron で代用
+- follow-ups: #328 (monorepo release stream) / #330 (chart keyboard a11y) / #332 (constraint reframe)

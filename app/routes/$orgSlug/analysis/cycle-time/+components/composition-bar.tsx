@@ -41,14 +41,12 @@ interface StageTimes {
   codingTime: number | null
   pickupTime: number | null
   reviewTime: number | null
-  deployTime: number | null
 }
 
 const STAGE_TIME_KEY = {
   coding: 'codingTime',
   pickup: 'pickupTime',
   review: 'reviewTime',
-  deploy: 'deployTime',
 } as const satisfies Record<StageRatio['stage'], keyof StageTimes>
 
 /**

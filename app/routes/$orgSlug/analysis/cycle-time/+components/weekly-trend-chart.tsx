@@ -29,11 +29,10 @@ const chartConfig = {
   coding: { label: STAGE_LABEL.coding, color: STAGE_COLOR_VAR.coding },
   pickup: { label: STAGE_LABEL.pickup, color: STAGE_COLOR_VAR.pickup },
   review: { label: STAGE_LABEL.review, color: STAGE_COLOR_VAR.review },
-  deploy: { label: STAGE_LABEL.deploy, color: STAGE_COLOR_VAR.deploy },
-  total: { label: 'Total (stages sum)', color: 'var(--color-foreground)' },
+  prCount: { label: 'PRs merged', color: 'var(--color-foreground)' },
 } satisfies ChartConfig
 
-const STAGES = ['coding', 'pickup', 'review', 'deploy'] as const
+const STAGES = ['coding', 'pickup', 'review'] as const
 
 interface WeeklyTrendChartProps {
   weeks: WeeklyTrendPoint[]
@@ -56,7 +55,7 @@ export function WeeklyTrendChart({
         <CardHeader>
           <CardTitle>Weekly Cycle Time Trend</CardTitle>
           <CardDescription>
-            No released pull requests in this period.
+            No merged pull requests in this period.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -78,9 +77,8 @@ export function WeeklyTrendChart({
       <CardHeader>
         <CardTitle>Weekly Cycle Time Trend</CardTitle>
         <CardDescription>
-          Stacked stage breakdown ({titleSuffix} days). The total line is the
-          sum of stage {titleSuffix}s — see the KPI card for the {titleSuffix}{' '}
-          of total cycle time. Click a week to drill down.
+          Stacked stage breakdown ({titleSuffix} days). The line shows weekly
+          merged PR count (right axis). Click a week to drill down.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -100,8 +98,16 @@ export function WeeklyTrendChart({
               minTickGap={16}
             />
             <YAxis
+              yAxisId="left"
               tickFormatter={(v: number) => `${v.toFixed(0)}d`}
               width={40}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              allowDecimals={false}
+              tickFormatter={(v: number) => `${v}`}
+              width={32}
             />
             <ChartTooltip
               content={
@@ -122,11 +128,16 @@ export function WeeklyTrendChart({
                         ? (chartConfig[name as keyof typeof chartConfig]
                             ?.label ?? name)
                         : name
+                    const formatted = !Number.isFinite(numeric)
+                      ? '—'
+                      : name === 'prCount'
+                        ? `${numeric}`
+                        : formatDays(numeric)
                     return (
                       <div className="flex flex-1 justify-between gap-4">
                         <span className="text-muted-foreground">{label}</span>
                         <span className="font-mono tabular-nums">
-                          {Number.isFinite(numeric) ? formatDays(numeric) : '—'}
+                          {formatted}
                         </span>
                       </div>
                     )
@@ -140,6 +151,7 @@ export function WeeklyTrendChart({
             {STAGES.map((stage, i) => (
               <Bar
                 key={stage}
+                yAxisId="left"
                 dataKey={stage}
                 stackId="cycle"
                 fill={`var(--color-${stage})`}
@@ -162,12 +174,12 @@ export function WeeklyTrendChart({
               </Bar>
             ))}
             <Line
+              yAxisId="right"
               type="monotone"
-              dataKey="total"
-              stroke="var(--color-total)"
+              dataKey="prCount"
+              stroke="var(--color-prCount)"
               strokeWidth={2}
               dot={{ r: 3 }}
-              connectNulls
             />
           </ComposedChart>
         </ChartContainer>
