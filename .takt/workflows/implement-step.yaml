@@ -3,6 +3,10 @@ description: 'Implement a single step from a plan: setup -> implement -> review 
 max_steps: 20
 initial_step: setup
 
+# Custom facets
+personas:
+  bootstrapper: ../facets/personas/bootstrapper.md
+
 loop_monitors:
   - cycle:
       - reviewers
@@ -35,6 +39,7 @@ steps:
   #    Run once at the start so later steps can trust node_modules / data / typecheck state.
   - name: setup
     edit: true
+    persona: bootstrapper
     required_permission_mode: edit
     pass_previous_response: false
     instruction: |

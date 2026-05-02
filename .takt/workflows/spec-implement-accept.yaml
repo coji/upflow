@@ -5,6 +5,7 @@ initial_step: setup
 
 # Custom facets
 personas:
+  bootstrapper: ../facets/personas/bootstrapper.md
   spec-author: ../facets/personas/spec-author.md
   spec-reviser: ../facets/personas/spec-author.md
   acceptor: ../facets/personas/acceptor.md
@@ -81,6 +82,7 @@ steps:
   #    Run once at the start so later steps can trust node_modules / data / typecheck state.
   - name: setup
     edit: true
+    persona: bootstrapper
     required_permission_mode: edit
     pass_previous_response: false
     instruction: |

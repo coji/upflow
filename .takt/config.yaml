@@ -11,6 +11,9 @@ draft_pr: false
 # Codex Plus is the thinnest pool; keep it on spec-author only (low volume, never parallel)
 # to avoid the 2026-03-31 failure mode where parallel reviewers exhausted Codex quota.
 persona_providers:
+  bootstrapper:
+    provider: claude
+    model: claude-opus-4-7
   coder:
     provider: cursor
     model: composer-2-fast
