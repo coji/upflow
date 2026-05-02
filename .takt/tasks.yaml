@@ -1,7 +1,7 @@
 tasks:
-  - worktree: false
+  - worktree: true
     branch: feat/webhook-realtime-pr-update
-    piece: implement-step
+    workflow: implement-step
     issue: 255
     auto_pr: false
     draft_pr: false
@@ -14,8 +14,8 @@ tasks:
     completed_at: 2026-03-31T12:09:48.132Z
     owner_pid: null
     failure:
-      movement: fix
-      error: "Movement execution failed: All parallel sub-movements failed:
+      step: fix
+      error: "Step execution failed: All parallel sub-steps failed:
         arch-review: Report phase failed for architect-review.md: You've hit
         your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro),
         visit https://chatgpt.com/codex/settings/usage to purchase more credits

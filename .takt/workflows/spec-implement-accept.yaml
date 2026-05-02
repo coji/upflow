@@ -1,16 +1,20 @@
 name: spec-implement-accept
-description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Supervision'
-max_movements: 30
-initial_movement: spec-draft
+description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Simplify -> Supervision'
+max_steps: 30
+initial_step: spec-draft
 
 # Custom facets
 personas:
+  spec-author: ../facets/personas/spec-author.md
+  spec-reviser: ../facets/personas/spec-author.md
   acceptor: ../facets/personas/acceptor.md
+  simplifier: ../facets/personas/simplifier.md
   supervisor: ../facets/personas/supervisor.md
 instructions:
   spec-draft: ../facets/instructions/spec-draft.md
   spec-review: ../facets/instructions/spec-review.md
   acceptance: ../facets/instructions/acceptance.md
+  simplify: ../facets/instructions/simplify.md
   supervise: ../facets/instructions/supervise.md
 knowledge:
   implementation-plan: ../facets/knowledge/implementation-plan.md
@@ -72,11 +76,11 @@ loop_monitors:
         - condition: Unproductive (same issues repeating)
           next: supervise
 
-movements:
+steps:
   # 1. Spec draft generation
   - name: spec-draft
     edit: true
-    persona: architecture-reviewer
+    persona: spec-author
     knowledge: implementation-plan
     instruction: spec-draft
     required_permission_mode: edit
@@ -107,7 +111,7 @@ movements:
   # 3. Spec revision
   - name: spec-revise
     edit: true
-    persona: architecture-reviewer
+    persona: spec-reviser
     policy: spec-revision
     knowledge: implementation-plan
     required_permission_mode: edit
@@ -187,15 +191,29 @@ movements:
           format: acceptance-report
     rules:
       - condition: All completion criteria met, validation passes
-        next: supervise
+        next: simplify
       - condition: Completion criteria not met or issues found
         next: fix
 
-  # 6. Fix
+  # 6. Simplify (Claude Code /simplify skill)
+  - name: simplify
+    edit: true
+    persona: simplifier
+    policy: step-implementation
+    knowledge: implementation-plan
+    instruction: simplify
+    required_permission_mode: edit
+    pass_previous_response: false
+    rules:
+      - condition: Simplification complete (or nothing to simplify), validation passes
+        next: supervise
+      - condition: Simplification breaks tests or validation fails
+        next: fix
+
+  # 7. Fix
   - name: fix
     edit: true
     persona: coder
-    provider: claude
     policy:
       - coding
       - step-implementation
@@ -203,15 +221,6 @@ movements:
     session: refresh
     required_permission_mode: edit
     pass_previous_response: false
-    provider_options:
-      claude:
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - Edit
-          - Write
-          - Bash
     instruction: |
       Fix the issues raised in the acceptance testing.
 
@@ -233,7 +242,7 @@ movements:
       - condition: Cannot fix
         next: supervise
 
-  # 7. Final verification
+  # 8. Final verification
   - name: supervise
     edit: false
     persona: supervisor

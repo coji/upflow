@@ -1,27 +1,42 @@
 provider: claude
-model: claude-opus-4-6
+model: claude-opus-4-7
 
 auto_pr: false
 draft_pr: false
 
+# Persona routing (Claude Max 20x / Codex Plus / Cursor Pro):
+#   - Requirements authoring → Codex gpt-5.5    (Claude leaks code into requirements docs)
+#   - Review / acceptance / judgment → Claude Opus 4.7 (Max 20x absorbs the volume)
+#   - Code edits → Cursor composer-2-fast
+# Codex Plus is the thinnest pool; keep it on spec-author only (low volume, never parallel)
+# to avoid the 2026-03-31 failure mode where parallel reviewers exhausted Codex quota.
 persona_providers:
   coder:
     provider: cursor
     model: composer-2-fast
+  spec-author:
+    provider: codex
+    model: gpt-5.5
+  spec-reviser:
+    provider: claude
+    model: claude-opus-4-7
   architecture-reviewer:
     provider: codex
-    model: gpt-5.4
+    model: gpt-5.5
   acceptor:
     provider: codex
-    model: gpt-5.4
+    model: gpt-5.5
+  simplifier:
+    provider: claude
+    model: claude-opus-4-7
   supervisor:
-    provider: codex
-    model: gpt-5.4
+    provider: claude
+    model: claude-opus-4-7
 
 provider_profiles:
   cursor:
     default_permission_mode: full
   codex:
-    default_permission_mode: edit
+    default_permission_mode: full
   claude:
     default_permission_mode: edit
