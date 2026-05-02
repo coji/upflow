@@ -50,7 +50,7 @@ export function ByAuthorTable({ rows, mode }: ByAuthorTableProps) {
       <CardContent>
         {rows.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            No released pull requests in this period.
+            No merged pull requests in this period.
           </p>
         ) : (
           <div className="overflow-x-auto">

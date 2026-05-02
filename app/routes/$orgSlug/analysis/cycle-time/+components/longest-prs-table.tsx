@@ -35,14 +35,14 @@ export function LongestPrsTable({ rows }: LongestPrsTableProps) {
       <CardHeader>
         <CardTitle>Longest Cycle Time PRs</CardTitle>
         <CardDescription>
-          Released PRs ranked by total time. Click the PR title to open the pull
+          Merged PRs ranked by total time. Click the PR title to open the pull
           request in a new tab.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            No released pull requests in this period.
+            No merged pull requests in this period.
           </p>
         ) : (
           <div className="overflow-x-auto">

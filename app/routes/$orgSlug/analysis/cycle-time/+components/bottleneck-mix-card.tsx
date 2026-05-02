@@ -20,7 +20,7 @@ export function BottleneckMixCard({ mix, mode }: BottleneckMixCardProps) {
       <CardHeader>
         <CardTitle>Bottleneck Mix</CardTitle>
         <CardDescription>
-          Stage share by {mode} time across released PRs in this period.
+          Stage share by {mode} time across merged PRs in this period.
         </CardDescription>
       </CardHeader>
       <CardContent>

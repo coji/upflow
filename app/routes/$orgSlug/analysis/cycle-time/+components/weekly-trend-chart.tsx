@@ -55,7 +55,7 @@ export function WeeklyTrendChart({
         <CardHeader>
           <CardTitle>Weekly Cycle Time Trend</CardTitle>
           <CardDescription>
-            No released pull requests in this period.
+            No merged pull requests in this period.
           </CardDescription>
         </CardHeader>
       </Card>
