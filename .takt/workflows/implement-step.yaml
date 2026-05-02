@@ -1,7 +1,7 @@
 name: implement-step
-description: 'Implement a single step from a plan: implement -> review -> fix loop'
+description: 'Implement a single step from a plan: setup -> implement -> review -> fix loop'
 max_steps: 20
-initial_step: implement
+initial_step: setup
 
 loop_monitors:
   - cycle:
@@ -31,6 +31,31 @@ loop_monitors:
           next: ABORT
 
 steps:
+  # 0. Bootstrap (Symphony's before_run equivalent)
+  #    Run once at the start so later steps can trust node_modules / data / typecheck state.
+  - name: setup
+    edit: true
+    required_permission_mode: edit
+    pass_previous_response: false
+    instruction: |
+      Bootstrap the worktree environment so subsequent steps can rely on it.
+
+      **Steps:**
+      1. `pnpm install` — ensure node_modules is in sync with pnpm-lock.yaml
+      2. `pnpm db:setup` — initialize SQLite data files (data.db / tenant_seed.db)
+      3. `pnpm typecheck` — confirm the worktree compiles cleanly
+
+      **Rules:**
+      - Do NOT modify source files in this step (env setup only)
+      - Lint / format / build / test are deferred to later steps
+      - Report any non-zero exit code; do not paper over failures
+    rules:
+      - condition: All three commands exited 0
+        next: implement
+      - condition: Any command failed
+        next: ABORT
+
+  # 1. Implement
   - name: implement
     edit: true
     persona: coder
