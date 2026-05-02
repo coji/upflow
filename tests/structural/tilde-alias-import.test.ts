@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs'
+import { type Dirent, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { Project, SyntaxKind } from 'ts-morph'
 import { describe, expect, it } from 'vitest'
@@ -20,7 +20,7 @@ function isTestFile(filename: string): boolean {
   return /\.(test|spec)\.tsx?$/.test(filename)
 }
 
-function readEntries(dir: string): ReturnType<typeof readdirSync> {
+function readEntries(dir: string): Dirent<string>[] {
   try {
     return readdirSync(dir, { withFileTypes: true })
   } catch {
