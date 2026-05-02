@@ -166,7 +166,9 @@
 - **batch では `.format(...)` 禁止 (helper を除く)** — `CLAUDE.md:137` — GitHub API の ISO 8601 をそのまま DB に保存し、独自フォーマット変換をかけない。レポート / スプレッドシート出力用には `batch/helper/timeformat.ts` の `timeFormatTz` を使う
   Vitest structural test (`tests/structural/no-format-in-batch.test.ts`), shipped in #350. 既存違反なし（`batch/helper/timeformat.ts` のみ legit、exempt list に登録済み）
 - **`.server.ts` 隔離** — `CLAUDE.md:155-159` — `.server.ts` モジュールはクライアント束に出てはいけない。`app/components/`、`app/hooks/`、`app/types/`、それと `app/libs/` / `app/services/` の non-server ファイルからは import 禁止。型のみインポート（`import type { ... }`）はビルド時に消えるため許容
-  dependency-cruiser (`.dependency-cruiser.cjs` の `no-server-from-client-module` rule)、`pnpm lint:deps` で実行。`pnpm validate` の前段に組み込み済み。shipped in this PR. 既存違反なし
+  dependency-cruiser (`.dependency-cruiser.cjs` の `no-server-from-client-module` rule)、`pnpm lint:deps` で実行。`pnpm validate` の前段に組み込み済み。shipped in #352. 既存違反なし
+- **DG-MIGRATION-ATLAS** — `CLAUDE.md:127` + `step-implementation.md:20-27` — マイグレーション内の手動 `DROP TABLE` には `IF EXISTS` を付ける。Atlas が生成するテーブル再作成中の `DROP TABLE`（直前の `INSERT INTO new_X SELECT ... FROM X` で安全が担保されているもの）は対象外
+  Vitest structural test (`tests/structural/sql-drop-table-safety.test.ts`), shipped in this PR. SQL ファイルを正規表現で走査し、`DROP TABLE`（`IF EXISTS` 無し）について **直前に `INSERT INTO \`new\_<table>\` ... FROM \`<table>\`` があるか** を確認、無ければ違反とする。既存違反なし
 
 ### Pending
 
