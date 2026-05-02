@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
-import type { TeamRow } from '../../teams._index/queries.server'
+import type { TeamRow } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { RepositoryRow } from '../queries.server'
 import { DataTableFloatingBar } from './data-table-floating-bar'
 import {

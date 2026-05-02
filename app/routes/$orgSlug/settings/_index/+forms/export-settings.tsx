@@ -16,8 +16,8 @@ import {
   Stack,
   Textarea,
 } from '~/app/components/ui'
+import type { action } from '~/app/routes/$orgSlug/settings/export/index'
 import { INTENTS, exportSettingsSchema as schema } from '../+schema'
-import type { action } from '../../export/index'
 
 interface ExportSettingsProps {
   exportSetting?: {

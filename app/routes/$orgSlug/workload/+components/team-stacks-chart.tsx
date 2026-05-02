@@ -13,11 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { ToggleGroup, ToggleGroupItem } from '~/app/components/ui/toggle-group'
 import dayjs from '~/app/libs/dayjs'
 import { PR_SIZE_LABELS, PR_SIZE_RANK } from '~/app/libs/pr-classify'
-import type {
-  PersonStack,
-  StackPR,
-  TeamStacksData,
-} from '../+functions/aggregate-stacks'
 import {
   AGE_THRESHOLDS,
   PRBlock as PRBlockBase,
@@ -27,7 +22,12 @@ import {
   UNKNOWN_COLOR,
   type PRBlockColorMode as ColorMode,
   type PRReviewStatus,
-} from '../../+components/pr-block'
+} from '~/app/routes/$orgSlug/+components/pr-block'
+import type {
+  PersonStack,
+  StackPR,
+  TeamStacksData,
+} from '../+functions/aggregate-stacks'
 
 function getAgeDays(pr: StackPR): number {
   return dayjs().diff(dayjs.utc(pr.createdAt), 'day', true)

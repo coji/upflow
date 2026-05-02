@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '~/app/components/ui'
 import { orgContext } from '~/app/middleware/context'
-import ContentSection from '../../../+components/content-section'
+import ContentSection from '~/app/routes/$orgSlug/settings/+components/content-section'
 import type { Route } from './+types/index'
 import { listPullRequests } from './queries.server'
 

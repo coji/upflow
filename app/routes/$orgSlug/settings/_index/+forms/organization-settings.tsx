@@ -24,8 +24,8 @@ import {
   Switch,
 } from '~/app/components/ui'
 import { DEFAULT_TIMEZONE } from '~/app/libs/constants'
+import type { action } from '~/app/routes/$orgSlug/settings/_index/index'
 import { INTENTS, organizationSettingsSchema as schema } from '../+schema'
-import type { action } from '../../_index/index'
 
 const timezones = Intl.supportedValuesOf('timeZone')
 

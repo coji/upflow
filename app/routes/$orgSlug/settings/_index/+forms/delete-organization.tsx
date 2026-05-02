@@ -4,8 +4,8 @@ import { Form, Link, useActionData, useNavigation } from 'react-router'
 import { Button, HStack, Input, Label, Stack } from '~/app/components/ui'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
+import type { action } from '~/app/routes/$orgSlug/settings/danger/index'
 import { INTENTS, deleteOrganizationSchema as schema } from '../+schema'
-import type { action } from '../../danger/index'
 
 interface DeleteOrganizationProps {
   organization: {
