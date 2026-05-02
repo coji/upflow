@@ -27,7 +27,7 @@ import type {
   PersonStack,
   StackPR,
   TeamStacksData,
-} from '../+functions/aggregate-stacks'
+} from '~/app/routes/$orgSlug/workload/+functions/aggregate-stacks'
 
 function getAgeDays(pr: StackPR): number {
   return dayjs().diff(dayjs.utc(pr.createdAt), 'day', true)
