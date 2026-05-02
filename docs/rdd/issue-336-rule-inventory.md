@@ -151,6 +151,19 @@
 
 逆に、(b) のコミュニケーション規範・設計トレードオフの説明・「やらない理由を言い切る」類は自動化が効きにくいため、ペルソナまたは人間レビューに残す。
 
+## Mechanization Progress
+
+機械化が完了したルールを実装手段とリンクで追跡する。すべての (a) が enforced になり CI で長期間 green が続いた段階で、`arch-review persona instruction 改訂提案` に従ってペルソナ instruction から該当項目を外す。
+
+### Enforced
+
+- **DG-314-POPOVER** — `issue-314-pr-popover-resource-route.md:103` — PRPopover の `useFetcher` key に `orgSlug` を含める
+  Vitest structural test (`tests/structural/popover-fetcher-key.test.ts`), shipped in #344
+
+### Pending
+
+残る (a) machine-checkable ルールは未着手。`機械化対象の優先順位` セクションの推奨実装順に従って順次対応する。
+
 ## Scan notes（走査方法のメモ）
 
 - 英文シグナル（`must` / `do not` / `never` 等）と日本語シグナル（`必ず` / `禁止` / `〜すること` 等）を手動走査し、設計の背景説明のみの文は (b) に寄せた。
