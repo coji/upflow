@@ -15,6 +15,7 @@ Instructions for AI coding agents working with this codebase.
 - If the user questions a factual claim, do not double down from memory. Check the code, docs, or other primary evidence before answering.
 - Do not use vague hedge words to leave yourself escape hatches. State what is confirmed, state what is unconfirmed, and make the condition explicit when an answer depends on one.
 - When blocked by environment limits, state the limit plainly and move to the best available workaround.
+- Do not drop English jargon, niche acronyms, or freshly invented terms (such as a name you just coined for a tool you are proposing) into prose without defining them. The first time such a term appears, expand it inline in plain Japanese, even if you have used it earlier in the same task. Stable shared vocabulary already in this repo (`takt`, `persona`, `facet`, `inventory`, `structural test`, etc.) is fine to use without re-definition.
 
 ## Git Workflow Safety
 
