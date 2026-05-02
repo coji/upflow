@@ -21,8 +21,8 @@ persona_providers:
     provider: claude
     model: claude-opus-4-7
   acceptor:
-    provider: claude
-    model: claude-opus-4-7
+    provider: codex
+    model: gpt-5.5
   supervisor:
     provider: claude
     model: claude-opus-4-7
