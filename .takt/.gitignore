@@ -1,7 +1,25 @@
-# Runtime data (not version-controlled)
-runs/
-tasks/
-clone-meta/
-worktree-sessions/
-session-state.json
-persona_sessions.json
+# Ignore everything by default; only the items explicitly whitelisted below
+# are version-controlled. This matches the takt official template
+# (`builtins/project/dotgitignore` in nrslib/takt).
+*
+
+# This file itself
+!.gitignore
+
+# Project configuration
+!config.yaml
+
+# Workflows and facets (version-controlled)
+!workflows/
+!workflows/**
+!facets/
+!facets/personas/
+!facets/personas/**
+!facets/policies/
+!facets/policies/**
+!facets/knowledge/
+!facets/knowledge/**
+!facets/instructions/
+!facets/instructions/**
+!facets/output-contracts/
+!facets/output-contracts/**
