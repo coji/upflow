@@ -6,6 +6,7 @@ initial_step: spec-draft
 # Custom facets
 personas:
   spec-author: ../facets/personas/spec-author.md
+  spec-reviser: ../facets/personas/spec-author.md
   acceptor: ../facets/personas/acceptor.md
   simplifier: ../facets/personas/simplifier.md
   supervisor: ../facets/personas/supervisor.md
@@ -110,7 +111,7 @@ steps:
   # 3. Spec revision
   - name: spec-revise
     edit: true
-    persona: spec-author
+    persona: spec-reviser
     policy: spec-revision
     knowledge: implementation-plan
     required_permission_mode: edit
