@@ -131,6 +131,7 @@
     "prettier-plugin-tailwindcss": "0.7.2",
     "react-router-auto-routes": "0.8.4",
     "tailwindcss": "4.2.2",
+    "ts-morph": "28.0.0",
     "tsx": "4.21.0",
     "typescript": "6.0.3",
     "vite": "8.0.8",
