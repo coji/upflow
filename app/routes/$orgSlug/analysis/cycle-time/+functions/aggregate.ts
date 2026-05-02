@@ -194,7 +194,6 @@ export interface WeeklyTrendPoint {
   coding: number | null
   pickup: number | null
   review: number | null
-  total: number | null
 }
 
 export function computeWeeklyTrend(
@@ -233,21 +232,11 @@ export function computeWeeklyTrend(
   return weekKeys.map((key) => {
     const bucket = buckets.get(key) ?? []
     const stages = aggregateStages(partitionStageValues(bucket), mode)
-    const stageVals = [stages.coding, stages.pickup, stages.review]
-    // Total = sum of stage aggregates so the line matches the stacked bar
-    // height and tooltip components in both median and average modes. (Median
-    // of per-PR sums ≠ sum of stage medians, so we keep the chart Total
-    // self-consistent and let the KPI Total card show the median-of-totals
-    // for the typical end-to-end perspective.)
-    const total = stageVals.every((v) => v === null)
-      ? null
-      : stageVals.reduce<number>((s, v) => s + (v ?? 0), 0)
     return {
       weekStart: key,
       weekLabel: dayjs(key).format('MMM D'),
       prCount: bucket.length,
       ...stages,
-      total,
     }
   })
 }

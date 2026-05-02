@@ -118,50 +118,9 @@ describe('computeWeeklyTrend', () => {
     const trend = computeWeeklyTrend(rows, since, until, 'UTC', 'median')
     expect(trend).toHaveLength(3)
     expect(trend[0].prCount).toBe(2)
-    // Sum of stage medians (1+1+1) — matches the stacked bar height
-    expect(trend[0].total).toBe(3)
     expect(trend[1].prCount).toBe(1)
-    expect(trend[1].total).toBe(3)
     expect(trend[2].prCount).toBe(0)
-    expect(trend[2].total).toBeNull()
-  })
-
-  test('total equals sum of stage medians', () => {
-    const rows = [
-      baseRow({
-        number: 1,
-        mergedAt: '2026-03-03T00:00:00.000Z',
-        codingTime: 1,
-        pickupTime: 1,
-        reviewTime: 1,
-      }),
-      baseRow({
-        number: 2,
-        mergedAt: '2026-03-04T00:00:00.000Z',
-        codingTime: 2,
-        pickupTime: 2,
-        reviewTime: 2,
-      }),
-      baseRow({
-        number: 3,
-        mergedAt: '2026-03-05T00:00:00.000Z',
-        codingTime: 5,
-        pickupTime: 5,
-        reviewTime: 5,
-      }),
-    ]
-    const trend = computeWeeklyTrend(
-      rows,
-      '2026-03-02T00:00:00.000Z',
-      '2026-03-09T00:00:00.000Z',
-      'UTC',
-      'median',
-    )
-    expect(trend).toHaveLength(1)
-    expect(trend[0].coding).toBe(2)
-    expect(trend[0].pickup).toBe(2)
-    expect(trend[0].review).toBe(2)
-    expect(trend[0].total).toBe(6)
+    expect(trend[2].coding).toBeNull()
   })
 
   test('week start follows Asia/Tokyo when timezone shifts the day', () => {
@@ -172,7 +131,7 @@ describe('computeWeeklyTrend', () => {
     const trend = computeWeeklyTrend(rows, since, until, 'Asia/Tokyo', 'median')
     expect(trend.length).toBeGreaterThan(0)
     expect(trend[0].prCount).toBe(1)
-    expect(trend[0].total).toBe(3)
+    expect(trend[0].coding).toBe(1)
   })
 
   test('returns [] when since is not before until', () => {
