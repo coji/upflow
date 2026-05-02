@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+import { logger } from '~/batch/helper/logger'
 import type { ShapedGitHubPullRequest } from '../model'
 import {
   buildBranchReleaseLookup,
@@ -232,6 +233,7 @@ describe('buildTagReleaseList', () => {
   })
 
   test('無効な正規表現では空配列を返す', async () => {
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
     const result = await buildTagReleaseList(
       {
         tags: async () => [
@@ -242,9 +244,14 @@ describe('buildTagReleaseList', () => {
     )
 
     expect(result).toEqual([])
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Invalid tag regex pattern'),
+    )
+    errorSpy.mockRestore()
   })
 
   test('長すぎるパターンでは空配列を返す', async () => {
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
     const result = await buildTagReleaseList(
       {
         tags: async () => [
@@ -255,6 +262,10 @@ describe('buildTagReleaseList', () => {
     )
 
     expect(result).toEqual([])
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Tag regex pattern too long'),
+    )
+    errorSpy.mockRestore()
   })
 })
 
