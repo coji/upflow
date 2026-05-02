@@ -1,7 +1,7 @@
 name: spec-implement-accept
 description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Supervision'
-max_movements: 30
-initial_movement: spec-draft
+max_steps: 30
+initial_step: spec-draft
 
 # Custom facets
 personas:
@@ -72,7 +72,7 @@ loop_monitors:
         - condition: Unproductive (same issues repeating)
           next: supervise
 
-movements:
+steps:
   # 1. Spec draft generation
   - name: spec-draft
     edit: true

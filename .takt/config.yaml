@@ -1,22 +1,24 @@
 provider: claude
-model: claude-opus-4-6
+model: opus
 
 auto_pr: false
 draft_pr: false
 
+# Route review/supervise personas to Claude so that a Codex usage-limit hit doesn't take
+# down the whole parallel review step. Swap provider/model below to put them back on Codex.
 persona_providers:
   coder:
     provider: cursor
     model: composer-2-fast
   architecture-reviewer:
-    provider: codex
-    model: gpt-5.4
+    provider: claude
+    model: sonnet
   acceptor:
-    provider: codex
-    model: gpt-5.4
+    provider: claude
+    model: sonnet
   supervisor:
-    provider: codex
-    model: gpt-5.4
+    provider: claude
+    model: sonnet
 
 provider_profiles:
   cursor:

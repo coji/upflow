@@ -1,7 +1,7 @@
 name: implement-step
 description: 'Implement a single step from a plan: implement -> review -> fix loop'
-max_movements: 20
-initial_movement: implement
+max_steps: 20
+initial_step: implement
 
 loop_monitors:
   - cycle:
@@ -30,7 +30,7 @@ loop_monitors:
         - condition: unproductive (same findings repeating)
           next: ABORT
 
-movements:
+steps:
   - name: implement
     edit: true
     persona: coder
