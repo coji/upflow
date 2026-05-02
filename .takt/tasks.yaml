@@ -93,7 +93,8 @@ tasks:
     status: completed
     slug: add-docs-takt-labels-md-descri
     run_slug: 20260502-103615-add-docs-takt-labels-md-descri
-    summary: "Add docs/takt/labels.md describing the issue label conventions used by
+    summary:
+      "Add docs/takt/labels.md describing the issue label conventions used by
       takt: 'ta"
     worktree_path: /Users/coji/progs/takt-worktrees/20260502T1037-add-docs-takt-labels-md-descri
     pr_url: https://github.com/coji/upflow/pull/338
