@@ -1,10 +1,11 @@
 name: spec-implement-accept
-description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Simplify -> Supervision'
+description: 'Bootstrap -> Spec generation -> Spec refinement -> Implementation -> Acceptance -> Simplify -> Supervision'
 max_steps: 30
-initial_step: spec-draft
+initial_step: setup
 
 # Custom facets
 personas:
+  bootstrapper: ../facets/personas/bootstrapper.md
   spec-author: ../facets/personas/spec-author.md
   spec-reviser: ../facets/personas/spec-author.md
   acceptor: ../facets/personas/acceptor.md
@@ -77,6 +78,31 @@ loop_monitors:
           next: supervise
 
 steps:
+  # 0. Bootstrap (Symphony's before_run equivalent)
+  #    Run once at the start so later steps can trust node_modules / data / typecheck state.
+  - name: setup
+    edit: true
+    persona: bootstrapper
+    required_permission_mode: edit
+    pass_previous_response: false
+    instruction: |
+      Bootstrap the worktree environment so subsequent steps can rely on it.
+
+      **Steps:**
+      1. `pnpm install` — ensure node_modules is in sync with pnpm-lock.yaml
+      2. `pnpm db:setup` — initialize SQLite data files (data.db / tenant_seed.db)
+      3. `pnpm typecheck` — confirm the worktree compiles cleanly
+
+      **Rules:**
+      - Do NOT modify source files in this step (env setup only)
+      - Lint / format / build / test are deferred to later steps
+      - Report any non-zero exit code; do not paper over failures
+    rules:
+      - condition: All three commands exited 0
+        next: spec-draft
+      - condition: Any command failed
+        next: ABORT
+
   # 1. Spec draft generation
   - name: spec-draft
     edit: true
