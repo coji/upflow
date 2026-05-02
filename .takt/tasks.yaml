@@ -1,7 +1,6 @@
 tasks:
   - worktree: true
     branch: feat/webhook-realtime-pr-update
-    workflow: implement-step
     issue: 255
     auto_pr: false
     draft_pr: false
@@ -15,13 +14,13 @@ tasks:
     owner_pid: null
     failure:
       step: fix
-      error: "Step execution failed: All parallel sub-steps failed:
-        arch-review: Report phase failed for architect-review.md: You've hit
-        your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro),
-        visit https://chatgpt.com/codex/settings/usage to purchase more credits
-        or try again at Apr 3rd, 2026 11:33 PM.; supervise: Report phase failed
-        for supervisor-validation.md: You've hit your usage limit. Upgrade to
-        Pro (https://chatgpt.com/explore/pro), visit
+      error: "Step execution failed: All parallel sub-steps failed: arch-review:
+        Report phase failed for architect-review.md: You've hit your usage
+        limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit
+        https://chatgpt.com/codex/settings/usage to purchase more credits or try
+        again at Apr 3rd, 2026 11:33 PM.; supervise: Report phase failed for
+        supervisor-validation.md: You've hit your usage limit. Upgrade to Pro
+        (https://chatgpt.com/explore/pro), visit
         https://chatgpt.com/codex/settings/usage to purchase more credits or try
         again at Apr 3rd, 2026 11:33 PM."
       last_message: >-
@@ -85,3 +84,22 @@ tasks:
 
 
         `pnpm validate` は問題なく完了しています（テスト 310 件）。
+    workflow: implement-step
+  - worktree: true
+    branch: takt/20260502T1037-add-docs-takt-labels-md-descri
+    auto_pr: true
+    draft_pr: true
+    name: add-docs-takt-labels-md-descri
+    status: completed
+    slug: add-docs-takt-labels-md-descri
+    run_slug: 20260502-103615-add-docs-takt-labels-md-descri
+    summary: "Add docs/takt/labels.md describing the issue label conventions used by
+      takt: 'ta"
+    worktree_path: /Users/coji/progs/takt-worktrees/20260502T1037-add-docs-takt-labels-md-descri
+    pr_url: https://github.com/coji/upflow/pull/338
+    task_dir: .takt/tasks/20260502-103615-add-docs-takt-labels-md-descri
+    created_at: 2026-05-02T10:36:15.840Z
+    started_at: 2026-05-02T10:37:20.997Z
+    completed_at: 2026-05-02T11:49:58.371Z
+    owner_pid: null
+    workflow: spec-implement-accept

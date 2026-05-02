@@ -40,3 +40,19 @@ provider_profiles:
     default_permission_mode: full
   claude:
     default_permission_mode: edit
+
+# Pipeline mode (`takt --pipeline`) — used by CI for non-interactive runs.
+# Templates only apply when --pipeline is set; regular `takt run` ignores them.
+pipeline:
+  default_branch_prefix: "takt/"
+  commit_message_template: "{title}"
+  pr_body_template: |
+    ## Summary
+
+    {issue_body}
+
+    ## Execution Report
+
+    {report}
+
+    Refs #{issue}
