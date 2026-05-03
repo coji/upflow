@@ -168,13 +168,35 @@
 - **`.server.ts` 隔離** — `CLAUDE.md:155-159` — `.server.ts` モジュールはクライアント束に出てはいけない。`app/components/`、`app/hooks/`、`app/types/`、それと `app/libs/` / `app/services/` の non-server ファイルからは import 禁止。型のみインポート（`import type { ... }`）はビルド時に消えるため許容
   dependency-cruiser (`.dependency-cruiser.cjs` の `no-server-from-client-module` rule)、`pnpm lint:deps` で実行。`pnpm validate` の前段に組み込み済み。shipped in #352. 既存違反なし
 - **DG-MIGRATION-ATLAS** — `CLAUDE.md:127` + `step-implementation.md:20-27` — マイグレーション内の手動 `DROP TABLE` には `IF EXISTS` を付ける。Atlas が生成するテーブル再作成中の `DROP TABLE`（直前の `INSERT INTO new_X SELECT ... FROM X` で安全が担保されているもの）は対象外
-  Vitest structural test (`tests/structural/sql-drop-table-safety.test.ts`), shipped in this PR. SQL ファイルを正規表現で走査し、`DROP TABLE`（`IF EXISTS` 無し）について **直前に `INSERT INTO \`new\_<table>\` ... FROM \`<table>\`` があるか** を確認、無ければ違反とする。既存違反なし
+  Vitest structural test (`tests/structural/sql-drop-table-safety.test.ts`), shipped in #354. SQL ファイルを正規表現で走査し、`DROP TABLE`（`IF EXISTS` 無し）について **直前に `INSERT INTO \`new\_<table>\` ... FROM \`<table>\`` があるか** を確認、無ければ違反とする。既存違反なし
+- **CamelCasePlugin と `sql` テンプレート** — `CLAUDE.md:129` — kysely の `sql\`...\``テンプレ内のリテラル SQL テキストに **camelCase の`tableName.columnName`** を直書きしない。CamelCasePlugin はテンプレ内テキストを変換しないので、スキーマ上の snake_case と齟齬する。カラム参照は `${sql.ref('tableName.columnName')}` 経由にする
+  Vitest structural test (`tests/structural/sql-template-camelcase-ref.test.ts`), shipped in #355. ts-morph で `sql` タグ付きテンプレ式を AST 走査し、リテラル部分（`${...}`を除く）にある`\b<word>.<word>\b` のうち **どちらかが camelCase**（`/[a-z][A-Z]/`）のものを検出。`sql<SqlBool>\`...\`` の typed tag にも対応。既存違反なし
+- **Repository-bound GitHub API 呼び出しの `installationId` 必須**（旧 #11） — `issue-283-multiple-github-accounts.md:531` — repository row を引いて GitHub API を叩く経路は、`githubInstallationId` を必ず select 済みでなければ呼べない。**真の不変条件は「`Octokit` の構築は gatekeeper モジュール 1 箇所に集約」**: `app/services/github-octokit.server.ts` の `resolveOctokitForRepository` は引数型 `RepositoryForOctokit = { githubInstallationId: number | null }` を要求するため、TypeScript の型システムが「installation_id を select してない repository row では octokit を作れない」を end-to-end で強制する。bypass を防ぐには `Octokit` の value-import を gatekeeper 1 ファイルに限定すれば十分（type-only import は OK、PAT 経路を含む全ての非 repo-bound 経路も同モジュール経由で集約）
+  dependency-cruiser rule `no-direct-octokit-construction` (`.dependency-cruiser.cjs`), shipped in #356. 当初想定していた「4 ファイル名指しの structural test で select 列に `githubInstallationId` を含めることを検査」よりも本質的な機械化。型 + 依存制約で end-to-end に守られる。既存違反なし。実装メモ: dep-cruiser の `to.path` は import specifier (`octokit`) ではなく resolved 後の実パス (`node_modules/.../octokit/...`) にマッチするので、pnpm/npm 両方をカバーする `/node_modules/octokit/` のセグメントで anchor している。あわせて、`exclude` 正規表現から `node_modules` を外して外部 npm への依存 edge を出力に残るようにした (旧設定では excluded されてルールが発火しなかった)
+- **main 直接 push 禁止**（旧 #9） — `CLAUDE.md:301-304`、`AGENTS.md:21-23` — main へ直接 push せず、ブランチを切って PR 経由でマージする
+  GitHub branch protection で部分担保。確認結果 (2026-05-03 時点、`gh api repos/coji/upflow/branches/main/protection` 出力):
+  - `required_pull_request_reviews` enabled (`required_approving_review_count: 0` — solo dev なので 0 でも PR ルートを必ず通る)
+  - `enforce_admins: false` — リポジトリ admin (= coji) は技術的に bypass 可能。残るのは self-discipline と `AGENTS.md` のエージェント向け追約束 (人間以外は admin であっても直接 push しない)
+  - `allow_force_pushes: true` — solo dev のため許容、main への force push は規約で禁止 (`CLAUDE.md`)
+    これ以上の機械化 (例: enforce_admins=true 化) はチーム成長まで待つ。Inventory 上は「branch protection + 規約 + エージェント向け追約束」の組み合わせで Enforced 扱い
+- **app を bypass する DB 書き込み後は cache 破棄**（旧 #10、再定式化） — `issue-307-pr-title-filter.md:469` — 本来 issue-307 が `pr_title_filters` の緊急無効化に紐付けて書いたルールだが、調査で `pr-title-filter-mutations.server.ts` の通常 mutation 経路は既に `clearOrgCache(organizationId)` を呼んでおり、**通常運用では問題が起きない**ことが判明した。問題が残るのは「app を経由せず raw SQL を本番 DB に流すケース」のみで、これは pr_title_filters 固有ではなく `getOrgCachedData()` を使うすべてのテーブルに共通する **アーキテクチャ上の制約**（process-local Map cache は cross-process 通知できない）。pr_title_filters 固有 runbook は当初 PR #357 に書きかけたが、契約が住む場所 (`cache.server.ts`) からズレているため取り下げ
+  `app/services/cache.server.ts` の冒頭コメントとして「mutations は `clearOrgCache()` を呼ぶ・bypass 経路は process restart」を一般則として記述し、shipped in #357。この general comment + `issue-307-pr-title-filter.md:469` の既存記述で Enforced 扱い。本番 SQL 操作は code 側で観測不能なため lint / 構造テストの対象外。なお、ルールを「pr_title_filters 緊急無効化後の restart」と狭く捉えていた当初判断は再検討の結果、より本質的な「cache を持つテーブル全般、bypass 書き込み時の restart」に格上げ
 
 ### Pending
 
-残る (a) machine-checkable ルールは未着手。`機械化対象の優先順位` セクションの推奨実装順に従って順次対応する。
+(a) machine-checkable のうち Easy / Medium はすべて対応済み。残るのは Hard 群と、Easy から Hard へ再分類した DB 保存日時 ISO 8601。
 
 なお、当初 `Easy` に分類された **`CLAUDE.md:133` (DB 保存日時 ISO 8601)** は、追加調査で宣言スキーマに `DEFAULT (CURRENT_TIMESTAMP)` を使った既存テーブルが 12 箇所以上残っていることが判明したため、**Hard へ再分類** した。Atlas マイグレーション再生成と既存データの形式変換が伴うため、専用 RDD を切ってから着手する。
+
+### Hard 群の方針
+
+Hard 12 件は inventory 起票時から「構造テスト + レビュー併用」と分類されている。次の段階では **1 件ずつ「構造テストの一部だけでも効くか」を再吟味して、可能なら Medium に降ろす** ラウンドを設ける（別 PR）。具体的に降ろせる候補:
+
+- **#16 `dayjs.utc` 強制** — `dayjs(<DB-derived>)` の検出は型情報なしには無理だが、「`dayjs(` 直呼びが `app/services/*.server.ts` の特定 query 関数の戻り値を引数にしてる箇所」を ts-morph + 型チェックで限定的に検出する余地はある
+- **#22 resource loader は throw せず構造化 JSON** — resource route の loader 関数を AST で取り、try/catch で囲まれているか or sentry 呼び出しがあるかを検査する余地はある
+- **#12 auth guard 順序** — action 関数の最初の式が `requireOrg*` 系か `parseWithZod` か、を ts-morph で順序判定する余地はある（false positive 多発しうる）
+
+これらは別の RDD で扱う。
 
 ## Scan notes（走査方法のメモ）
 
