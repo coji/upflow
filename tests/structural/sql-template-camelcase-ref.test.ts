@@ -1,4 +1,4 @@
-import { type Dirent, readdirSync } from 'node:fs'
+import { type Dirent, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { Project, type SourceFile, SyntaxKind } from 'ts-morph'
 import { describe, expect, it } from 'vitest'
@@ -155,8 +155,20 @@ describe('No camelCase `table.column` in `sql` template literal text', () => {
       skipFileDependencyResolution: true,
     })
 
+    // ts-morph parsing is the dominant cost. Files that don't even mention
+    // a kysely-shape `sql` tag (`sql\`...\`` or `sql<T>\`...\``) can't
+    // contain a violation, so skip them before parsing.
+    const sqlTagPrefilter = /\bsql[<`]/
+    const candidateFiles = matchedFiles.filter((abs) => {
+      try {
+        return sqlTagPrefilter.test(readFileSync(abs, 'utf8'))
+      } catch {
+        return false
+      }
+    })
+
     const allViolations: Violation[] = []
-    for (const abs of matchedFiles) {
+    for (const abs of candidateFiles) {
       const sf = project.addSourceFileAtPath(abs)
       allViolations.push(
         ...findViolationsInSourceFile(sf, path.relative(ROOT, abs)),
