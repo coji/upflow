@@ -3,6 +3,13 @@ description: 'Bootstrap -> Spec generation -> Spec refinement -> Implementation 
 max_steps: 30
 initial_step: setup
 
+# Pre-select "quiet" in the interactive mode menu so the operator only needs
+# Enter to confirm. Full TUI bypass requires takt >= 0.40 (issue nrslib/takt#605
+# closed 2026-05-02, not yet released as of takt 0.39.0). Revisit and switch to
+# `interactive_mode: none` + `skip_interactive_mode_selection: true` once
+# released — see issue #365.
+interactive_mode: quiet
+
 # Custom facets
 personas:
   bootstrapper: ../facets/personas/bootstrapper.md
