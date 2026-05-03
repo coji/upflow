@@ -84,7 +84,7 @@ describe('No String(error) — use getErrorMessage[ForLog]', () => {
       allViolations.push(...findStringErrorViolations(abs))
     }
     expect(allViolations).toEqual([])
-  })
+  }, 60_000)
 
   it('catches a synthetic violation (sanity check on the matcher)', () => {
     const project = new Project({

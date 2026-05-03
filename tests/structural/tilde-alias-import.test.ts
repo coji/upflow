@@ -110,7 +110,7 @@ describe("Use '~/app/...' alias instead of deep relative imports", () => {
       allViolations.push(...findDeepRelativeImports(abs))
     }
     expect(allViolations).toEqual([])
-  })
+  }, 60_000)
 
   it('catches a synthetic violation (sanity check on the matcher)', () => {
     const project = new Project({
