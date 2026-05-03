@@ -46,6 +46,13 @@ pnpm db:setup
 pnpm test:e2e
 ```
 
+First-time Playwright: `pnpm exec playwright install chromium`.
+
+### E2E test-login flag (`ENABLE_E2E_LOGIN`)
+
+- **Purpose**: Local / dev-only. Together with `NODE_ENV !== 'production'`, enables the gated `GET /test-login` route used by Playwright to build `storageState`. Invoked via `pnpm run start:e2e` (do not use production `pnpm start` for e2e — it fixes `NODE_ENV=production`).
+- **Never** pass `ENABLE_E2E_LOGIN` in production, in the `Dockerfile`, or in `.github/workflows/deploy.yml`. Doing so can expose unauthenticated session creation for the allowlisted seed admin email (authentication bypass).
+
 ## Architecture
 
 ### Tech Stack

@@ -42,6 +42,7 @@ dist
 /test-results/
 /playwright-report/
 /playwright/.cache/
+/test/playwright/.auth/
 
 .react-router
 tsconfig.tsbuildinfo
@@ -68,3 +69,4 @@ data.db-wal
 # Claude Code
 .claude
 
+/order.md

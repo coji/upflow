@@ -115,6 +115,27 @@ pnpm db:setup
 pnpm dev
 ```
 
+### End-to-end tests (Playwright)
+
+First-time browser download:
+
+```bash
+pnpm exec playwright install chromium
+```
+
+Use the same `.env` as local dev (`BETTER_AUTH_SECRET`, `GITHUB_*`, `UPFLOW_DATA_DIR`, etc.). The e2e server runs via `pnpm run start:e2e` (`NODE_ENV=test`, `ENABLE_E2E_LOGIN=1`, `PORT=8811`, `BETTER_AUTH_URL=http://localhost:8811`).
+
+Playwright uses `/test-login?email=admin@example.com`, so the shared DB must contain that user. Default seed uses `admin@example.com` when `SEED_ADMIN_EMAIL` is unset; if `.env` sets `SEED_ADMIN_EMAIL` to something else, point the seed at the default admin for one run before e2e:
+
+```bash
+SEED_ADMIN_EMAIL=admin@example.com UPFLOW_DATA_DIR=./data pnpm db:setup
+UPFLOW_DATA_DIR=./data pnpm test:e2e
+```
+
+(`UPFLOW_DATA_DIR` can be omitted when already set in `.env`.)
+
+Playwright writes `test/playwright/.auth/admin.json` (gitignored). **Do not** set `ENABLE_E2E_LOGIN` in production, Docker image builds, or deploy workflows — it can allow bypassing normal GitHub OAuth for the allowlisted e2e admin email.
+
 ## GitHub API Emulator
 
 For local development and smoke tests, UpFlow can point GitHub REST API and
