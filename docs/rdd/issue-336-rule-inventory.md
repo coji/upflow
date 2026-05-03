@@ -179,8 +179,8 @@
   - `enforce_admins: false` — リポジトリ admin (= coji) は技術的に bypass 可能。残るのは self-discipline と `AGENTS.md` のエージェント向け追約束 (人間以外は admin であっても直接 push しない)
   - `allow_force_pushes: true` — solo dev のため許容、main への force push は規約で禁止 (`CLAUDE.md`)
     これ以上の機械化 (例: enforce_admins=true 化) はチーム成長まで待つ。Inventory 上は「branch protection + 規約 + エージェント向け追約束」の組み合わせで Enforced 扱い
-- **PR タイトルフィルタ緊急無効化後の cache 破棄**（旧 #10） — `issue-307-pr-title-filter.md:469` — `UPDATE pr_title_filters SET is_enabled = 0` を本番で流したら **必ず** プロセス再起動か `clearAllCache()` 相当を実行する（`getOrgCachedData` は process-local Map で 5 分 TTL を持つため、SQL だけでは最大 5 分間 filtered 結果が残る）
-  Runbook 文書化: `docs/ops/pr-title-filter-emergency-disable.md`, shipped in this PR。本番に対する SQL 操作は code 側に現れないため lint / 構造テストでは強制不可。`arch-review` ペルソナや CI ではなく **runbook として人間に渡す** のが正しい機械化先と判断
+- **app を bypass する DB 書き込み後は cache 破棄**（旧 #10、再定式化） — `issue-307-pr-title-filter.md:469` — 本来 issue-307 が `pr_title_filters` の緊急無効化に紐付けて書いたルールだが、調査で `pr-title-filter-mutations.server.ts` の通常 mutation 経路は既に `clearOrgCache(organizationId)` を呼んでおり、**通常運用では問題が起きない**ことが判明した。問題が残るのは「app を経由せず raw SQL を本番 DB に流すケース」のみで、これは pr_title_filters 固有ではなく `getOrgCachedData()` を使うすべてのテーブルに共通する **アーキテクチャ上の制約**（process-local Map cache は cross-process 通知できない）。pr_title_filters 固有 runbook は当初 PR #357 に書きかけたが、契約が住む場所 (`cache.server.ts`) からズレているため取り下げ
+  `app/services/cache.server.ts` の冒頭コメントとして「mutations は `clearOrgCache()` を呼ぶ・bypass 経路は process restart」を一般則として記述し、shipped in #357。この general comment + `issue-307-pr-title-filter.md:469` の既存記述で Enforced 扱い。本番 SQL 操作は code 側で観測不能なため lint / 構造テストの対象外。なお、ルールを「pr_title_filters 緊急無効化後の restart」と狭く捉えていた当初判断は再検討の結果、より本質的な「cache を持つテーブル全般、bypass 書き込み時の restart」に格上げ
 
 ### Pending
 

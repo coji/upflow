@@ -1,3 +1,20 @@
+// Process-local org-scoped cache. The store is a `Map` in process memory:
+// it survives across requests within a single Node process but is invisible
+// to other processes / restarts. Mutations that go through this codebase
+// must call `clearOrgCache(orgId)` after the write so the next read sees
+// the fresh state — see existing call sites in `pr-title-filter-mutations`,
+// `github-app-mutations`, `api.github.setup`, `github-webhook.server`,
+// and the `crawl` / `shared-steps` jobs.
+//
+// Cross-process / bypass-the-app caveat: a raw SQL write to a tenant DB
+// (e.g. `fly ssh` + `sqlite3` for an emergency disable) cannot invalidate
+// this Map, so cached results stay live for up to the TTL (default 5 min).
+// If you bypass the app to write, also restart the process or call
+// `clearAllCache()` on app start. This is the architectural cost of using
+// process-local caching; documented in
+// `docs/rdd/issue-307-pr-title-filter.md:469` for the pr_title_filters
+// emergency-disable case but the rule is general to every cached table.
+
 // biome-ignore lint/suspicious/noExplicitAny: simple in-memory cache implementation
 type CacheEntry = { data: any; expires: number }
 
