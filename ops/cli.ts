@@ -1,6 +1,8 @@
 import { cli, command } from 'cleye'
+import consola from 'consola'
 import { pullDbCommand } from './commands/pull-db'
 import { restoreDbCommand } from './commands/restore-db'
+import { restoreVerifyCommand } from './commands/restore-verify'
 
 const pullDb = command(
   {
@@ -53,9 +55,30 @@ const restoreDb = command(
   },
 )
 
+const restoreVerify = command(
+  {
+    name: 'restore-verify',
+    help: {
+      description:
+        'Verify Litestream backups by restoring data.db and all tenant_*.db replicas from R2 into a temp directory and counting key tables. ' +
+        'Uses repo-root litestream.yml for bucket/replica path (LITESTREAM_REPLICA_PREFIX) and AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINT_URL_S3, AWS_REGION (see docs/ops/litestream-r2.md).',
+    },
+  },
+  () => {
+    void restoreVerifyCommand()
+      .then((code) => {
+        process.exit(code)
+      })
+      .catch((e) => {
+        consola.error(e)
+        process.exit(1)
+      })
+  },
+)
+
 const argv = cli({
   name: 'ops',
-  commands: [pullDb, restoreDb],
+  commands: [pullDb, restoreDb, restoreVerify],
 })
 
 if (!argv.command) {
