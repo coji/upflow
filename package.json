@@ -19,7 +19,7 @@
     "format:fix": "prettier --cache -w . --experimental-cli",
     "lint": "biome lint .",
     "lint:deps": "dependency-cruiser --validate -- app batch",
-    "prepare": "lefthook install",
+    "prepare": "lefthook install || true",
     "db:setup": "mkdir -p data && run-s db:apply db:seed",
     "db:migrate-integrations-to-shared": "tsx db/migrate-integrations-to-shared.ts",
     "db:seed": "tsx db/seed.ts",
