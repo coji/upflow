@@ -96,8 +96,8 @@ sprite exec -- bash -lc 'cursor-agent --version'
 > ⚠ いずれも device-flow / OAuth でブラウザ操作が必要。一度 auth すれば `~/.claude` `~/.codex` `~/.cursor` に persistent fs として残るので再認証は不要。
 
 ```bash
-# Claude Code (Claude Max subscription を使うなら setup-token、API key 直なら ANTHROPIC_API_KEY env)
-sprite exec --tty -- bash -lc 'claude setup-token'
+# Claude Code (Claude Max subscription)
+sprite exec --tty -- bash -lc 'claude auth login --claudeai'
 
 # Codex (Codex Plus / API key)
 sprite exec --tty -- bash -lc 'codex login'
@@ -109,11 +109,13 @@ sprite exec --tty -- bash -lc 'cursor-agent login'
 sprite exec --tty -- bash -lc 'gh auth login'
 ```
 
-認証情報の保存先 (確認用):
+認証成功確認 (各 CLI のステータス):
 
 ```bash
-sprite exec -- bash -lc 'ls ~/.claude/.credentials.json ~/.codex/auth.json ~/.cursor/auth.json && gh auth status'
+sprite exec -- bash -lc 'claude auth status; ls ~/.codex/auth.json ~/.config/cursor/auth.json; gh auth status'
 ```
+
+> Claude Code 2.1.x は credential を file ではなく内部に保管するので `claude auth status` で確認する。`setup-token` は long-lived API token 生成用で subscription 認証ではない。
 
 ## 8. リポジトリを clone
 
