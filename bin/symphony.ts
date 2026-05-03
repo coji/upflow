@@ -193,12 +193,23 @@ function classifyTakt(args: {
       elapsedMs,
     }
   }
-  // completed
+  // completed: require an explicit "no issues" marker in the supervise
+  // report. An empty / unparseable report means we cannot confirm success
+  // and is classified as transient — better to retry than to silently flip
+  // a bad run to in-review.
   const remaining = superviseReport.match(
     /Remaining Issues[^\n]*\n+([\s\S]*?)(\n## |$)/i,
   )
-  const tail = remaining?.[1]?.trim() ?? ''
-  if (tail === '' || /^なし。?$/.test(tail) || /^none\.?$/i.test(tail)) {
+  const tail = remaining?.[1]?.trim()
+  if (tail === undefined || tail === '') {
+    return {
+      outcome: 'failure_transient',
+      reason:
+        'takt meta.status=completed but the supervise report had no parseable Remaining Issues section',
+      elapsedMs,
+    }
+  }
+  if (/^なし。?$/.test(tail) || /^none\.?$/i.test(tail)) {
     return {
       outcome: 'success',
       reason: 'takt completed and supervise reports no remaining issues',
@@ -294,7 +305,13 @@ async function runTaktInSprite(
   // best-effort exit code. Either way, we follow up with a meta.json poll.
   await spriteExec(taktCmd, { stream: true })
 
+  // Sprite is sometimes slow to flush the just-written meta.json after
+  // takt's setup step. Retry briefly before declaring startup failure.
   let meta = await readLatestRunMeta(startIso)
+  for (let i = 0; i < 5 && meta === null; i++) {
+    await sleep(5_000)
+    meta = await readLatestRunMeta(startIso)
+  }
   if (meta === null) {
     return {
       superviseReport: '',
@@ -306,11 +323,15 @@ async function runTaktInSprite(
   const POLL_INTERVAL_MS = 30_000
   while (meta.status === 'running') {
     if (Date.now() - startMs >= budgetRemainingMs) {
+      // Stop the takt run inside the sprite before reporting; otherwise the
+      // process keeps consuming sprite resources until natural termination.
+      await stopTaktInSprite(issueNumber)
+      const final = await readLatestRunMeta(startIso)
       return {
         superviseReport: '',
         elapsedMs: Date.now() - startMs,
         metaStatus: 'budget_exceeded',
-        iterations: meta.iterations,
+        iterations: final?.iterations ?? meta.iterations,
       }
     }
     console.log(
@@ -329,6 +350,19 @@ async function runTaktInSprite(
     elapsedMs: Date.now() - startMs,
     metaStatus: meta.status,
     iterations: meta.iterations,
+  }
+}
+
+async function stopTaktInSprite(issueNumber: number): Promise<void> {
+  // Best-effort: takt --pipeline launches with the issue number in argv,
+  // so pkill -f matches the active process. Ignore exit codes — pkill
+  // returns 1 if no match, which is fine when the process already died.
+  try {
+    await spriteExec(
+      `pkill -TERM -f 'takt --pipeline -i ${issueNumber}' 2>/dev/null; sleep 5; pkill -KILL -f 'takt --pipeline -i ${issueNumber}' 2>/dev/null; true`,
+    )
+  } catch (e) {
+    console.warn('[stop] pkill failed:', e instanceof Error ? e.message : e)
   }
 }
 
