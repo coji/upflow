@@ -96,8 +96,8 @@ describe('e2e test-login guard (structural)', () => {
       path.join(REPO_ROOT, 'app/routes/_auth/test-login.ts'),
       'utf8',
     )
-    // Tolerate quote style and whitespace variation around the comparison.
-    expect(src).toMatch(/NODE_ENV\s*!==?\s*['"]production['"]/)
+    // Tolerate quote style and whitespace, but require strict !== (not !=).
+    expect(src).toMatch(/NODE_ENV\s*!==\s*['"]production['"]/)
   })
 
   it('Dockerfile does not set ENABLE_E2E_LOGIN', () => {

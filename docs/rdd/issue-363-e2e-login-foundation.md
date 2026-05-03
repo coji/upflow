@@ -46,4 +46,4 @@ better-auth の `auth.api` には「既存ユーザーを指定して cookie 付
 
 ## Status
 
-実装中（issue #363）
+実装完了（issue #363, PR #364）
