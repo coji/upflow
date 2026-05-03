@@ -90,6 +90,8 @@ Look for Litestream startup and database discovery logs. Confirm R2 has objects 
 upflow-backups/production/litestream/
 ```
 
+For an automated restore + read check without a full manual drill, see [Programmatic restore verification](#programmatic-restore-verification).
+
 Each replicated database appears as its own subprefix, for example:
 
 ```text
@@ -116,6 +118,32 @@ This single rule covers both:
 ### Restore window
 
 After the lifecycle rule activates, point-in-time restore is bounded by the retention horizon. Restoring to a point older than the rule's retention is not possible (snapshots and LTX files have expired). For most incident-recovery scenarios 30 days is generous; do not set retention shorter than the typical incident detection time.
+
+## Programmatic restore verification
+
+`pnpm ops restore-verify` restores `data.db` and every `tenant_*.db` discovered under the Litestream replica prefix in R2 (paginated list with `/` delimiter), then runs `select count(*)` on the same tables as the smoke test below. It **complements** the manual steps: use it for a quick periodic check and keep the manual `litestream restore` + `sqlite3` drill when you need hands-on inspection or a new operator walkthrough.
+
+**Prerequisites**
+
+- `litestream` CLI installed locally (`brew install benbjohnson/litestream/litestream`).
+- Same R2 env vars as production Litestream, from a machine allowed to read the bucket: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, and `LITESTREAM_REPLICA_PREFIX` (see [R2 Credentials](#r2-credentials)). Bucket and path template are read from committed `litestream.yml`.
+
+**Run**
+
+```bash
+pnpm ops restore-verify
+```
+
+**Cadence**
+
+- At least **monthly** as a manual check.
+- Also before **major backup/restore or Litestream config changes**, and during **incident drills** when you need confidence replicas are restorable.
+
+**Success and failure**
+
+- Exit code **0**: all restores and table counts succeeded; temp dir under `/tmp/upflow-restore-verify-*` was removed.
+- **Non-zero**: inspect logs for the failing step (tenant discovery, a specific `s3://…` restore URL, or `database / table` on count). `durably.db` is never restored or verified.
+- **`SIGINT` / `SIGTERM`**: temp dir is still removed; exit codes **130** / **143** respectively. Cleanup errors are logged but do not mask an earlier failure code.
 
 ## Restore Smoke Test
 
