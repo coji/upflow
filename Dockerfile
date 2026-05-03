@@ -75,17 +75,19 @@ COPY . .
 
 # Sentry (optional). DSN is baked into the client bundle at build time; server reads SENTRY_DSN at runtime.
 # SENTRY_PUBLISH_RELEASE=1 enables source map upload (requires SENTRY_AUTH_TOKEN).
+# SENTRY_AUTH_TOKEN is a real secret — passed via BuildKit secret mount so it
+# never lands in image layer history. Other Sentry vars are public/config.
 ARG SENTRY_DSN
-ARG SENTRY_AUTH_TOKEN
 ARG SENTRY_TRACES_SAMPLE_RATE
 ARG SENTRY_PUBLISH_RELEASE
 
-RUN SENTRY_DSN="$SENTRY_DSN" \
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_DSN="$SENTRY_DSN" \
     VITE_SENTRY_DSN="$SENTRY_DSN" \
     SENTRY_TRACES_SAMPLE_RATE="$SENTRY_TRACES_SAMPLE_RATE" \
     VITE_SENTRY_TRACES_SAMPLE_RATE="$SENTRY_TRACES_SAMPLE_RATE" \
-    SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" \
     SENTRY_PUBLISH_RELEASE="$SENTRY_PUBLISH_RELEASE" \
+    SENTRY_AUTH_TOKEN="$([ -f /run/secrets/sentry_auth_token ] && cat /run/secrets/sentry_auth_token)" \
     pnpm run build
 
 
