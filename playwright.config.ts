@@ -1,7 +1,7 @@
-import type { PlaywrightTestConfig } from '@playwright/test'
-import { devices } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test'
+import { adminStorageStatePath } from './test/playwright/fixtures/auth'
 
-const config: PlaywrightTestConfig = {
+export default defineConfig({
   testDir: './test/playwright',
   testMatch: '**/?(*.)+(playwright-test).[tj]s?(x)',
   timeout: 30 * 1000,
@@ -13,9 +13,20 @@ const config: PlaywrightTestConfig = {
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'setup', testMatch: '**/auth.setup.playwright-test.ts' },
+    {
+      name: 'chromium',
+      dependencies: ['setup'],
+      testIgnore: '**/auth.setup.playwright-test.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: adminStorageStatePath,
+      },
+    },
+  ],
   webServer: {
-    command: 'PORT=8811 pnpm run start',
+    command: 'pnpm run start:e2e',
     port: 8811,
     reuseExistingServer: !process.env.CI,
   },
@@ -25,6 +36,4 @@ const config: PlaywrightTestConfig = {
     trace: 'on-first-retry',
     video: 'on-first-retry',
   },
-}
-
-export default config
+})
