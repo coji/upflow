@@ -1,8 +1,11 @@
 provider: claude
 model: claude-opus-4-7
 
-auto_pr: false
-draft_pr: false
+# Trial: auto_pr enabled with draft_pr so takt opens a draft PR after
+# supervise. If auto-PR behavior is acceptable after a few runs, leave
+# enabled; otherwise flip back. See issue #365.
+auto_pr: true
+draft_pr: true
 
 # Persona routing (Claude Max 20x / Codex Plus / Cursor Pro):
 #   - Requirements authoring → Codex gpt-5.5    (Claude leaks code into requirements docs)
