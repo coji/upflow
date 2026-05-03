@@ -20,6 +20,16 @@ takt -i <issue#> -w spec-implement-accept
 
 **完全 bypass**: upstream の [nrslib/takt#605](https://github.com/nrslib/takt/issues/605) (closed 2026-05-02) で `interactive_mode: none` と `skip_interactive_mode_selection` が追加された。0.39.0 にはまだ含まれない。**0.40.0 リリース後**にこのファイルと workflow YAML を更新する。
 
+### 単発ワークフロー (issue 紐付けなし) のサクッと実行
+
+issue を伴わずワークフローだけ動かしたい場合は `-t` に 1 文字渡すと `passthrough` モードが選択肢に入り、menu 1 ステップ + 即実行で済む:
+
+```bash
+takt -w <ワークフロー名> -t y
+```
+
+**ただし `-i` を併用すると `-t` は無視される** (`routing.js` で `directTask = undefined` にリセットされるため)。issue 経路ではこの近道は使えず、上記の `interactive_mode: quiet` プリセレクトが現状最善。
+
 ## worktree
 
 ### 「対話 → 実行 (execute)」では worktree が作られない
