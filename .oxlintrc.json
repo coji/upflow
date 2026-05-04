@@ -6,10 +6,24 @@
   "rules": {
     "no-redeclare": "off",
     "no-unused-vars": "off",
-    "require-await": "off",
+    "require-await": "error",
     "unicorn/prefer-string-starts-ends-with": "off",
     "unicorn/no-useless-length-check": "off"
   },
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/__tests__/**"
+      ],
+      "rules": {
+        "require-await": "off"
+      }
+    }
+  ],
   "ignorePatterns": [
     "app/components/ui/**",
     "app/styles/globals.css",
