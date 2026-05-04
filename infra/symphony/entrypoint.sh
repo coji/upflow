@@ -41,7 +41,7 @@ if [ ! -f "$HOME/.config/gh/hosts.yml" ]; then
   echo "[entrypoint] flyctl ssh console into this machine and run:"
   echo "[entrypoint]   gh auth login"
   echo "[entrypoint]   claude auth login --claudeai"
-  echo "[entrypoint]   codex login"
+  echo "[entrypoint]   codex login --device-auth"
   echo "[entrypoint]   cursor-agent login"
   echo "[entrypoint] then 'flyctl machine restart' to drop into the server."
   echo "[entrypoint] sleeping so the machine stays up for ssh access..."
