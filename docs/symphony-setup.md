@@ -141,7 +141,46 @@ sprite exec -- bash -lc 'cd ~/upflow && cursor-agent -p --force "say only: hello
 
 それぞれ `hello` を返せば認証 + 動作完了。
 
-## 10. メンテナンス
+## 10. Symphony Runner Service の登録
+
+長時間 takt を `sprite exec` 越しに動かすと HTTP/WebSocket 接続が切れる (issue #378 参照)。
+そこで `bin/symphony-runner.ts` を sprite 内の Service として常駐させ、外向き poll で sprite を起動させたまま GitHub から `symphony:ready` issue を拾わせる。
+
+### Service の登録
+
+```bash
+sprite api -X PUT /v1/sprites/symphony-worker/services/symphony-runner \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "cmd": "bash",
+    "args": ["-lc", "cd ~/upflow && git pull --ff-only --quiet && pnpm install --frozen-lockfile --silent && pnpm symphony:run"]
+  }'
+```
+
+### 起動
+
+```bash
+sprite api -X POST /v1/sprites/symphony-worker/services/symphony-runner/start
+```
+
+### ログ確認
+
+```bash
+sprite api /v1/sprites/symphony-worker/services/symphony-runner/logs?lines=200
+```
+
+### 停止
+
+```bash
+sprite api -X POST /v1/sprites/symphony-worker/services/symphony-runner/stop
+```
+
+### Service が落ちた場合
+
+Service は sprite が wake する際に auto-restart される (sprites.dev の Service 仕様)。
+manual restart したい場合は上記 `start` を再実行。
+
+## 11. メンテナンス
 
 ### CLI の更新
 

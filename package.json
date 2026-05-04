@@ -17,6 +17,7 @@
     "start": "NODE_ENV=production NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     "start:e2e": "NODE_ENV=test ENABLE_E2E_LOGIN=1 PORT=8811 BETTER_AUTH_URL=http://localhost:8811 NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     "symphony:tick": "tsx bin/symphony.ts tick",
+    "symphony:run": "tsx bin/symphony-runner.ts",
     "format": "prettier --cache -c . --experimental-cli",
     "format:fix": "prettier --cache -w . --experimental-cli",
     "lint": "biome lint .",
