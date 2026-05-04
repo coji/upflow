@@ -20,9 +20,11 @@ ARG CODEX_VERSION
 # - curl + ca-certificates: cursor-agent installer + general HTTPS
 # - openssl: needed by gh / git over https
 # - procps: ps / pkill used by symphony for child cleanup
+# - gosu: lets entrypoint chown the Volume as root then drop to the
+#         service user, so SSH'd-as-root auth files self-heal each boot
 RUN apt-get update \
   && apt-get install --no-install-recommends -y \
-       git curl ca-certificates openssl procps tini gnupg \
+       git curl ca-certificates openssl procps tini gnupg gosu \
   && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
        | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
@@ -52,10 +54,23 @@ RUN mkdir -p /tmp/cursor-install \
 
 # Run the server as a non-root user. /data is the Volume mount and is
 # owned by symphony so the persisted auth/repo state can be read+written.
+# `--no-create-home` because HOME is forced to /data/home everywhere
+# (Dockerfile ENV, /etc/profile.d/symphony-home.sh, entrypoint.sh) — a
+# physical /home/symphony directory is dead weight.
 RUN groupadd --system --gid 1001 symphony \
-  && useradd --system --uid 1001 --gid symphony --create-home --home-dir /home/symphony symphony \
+  && useradd --system --uid 1001 --gid symphony --no-create-home --home-dir /home/symphony symphony \
   && mkdir -p /app /data \
   && chown -R symphony:symphony /app /data
+
+# `flyctl ssh console` opens an interactive login shell (default: root). Without
+# this, HOME stays at /root for root sessions and /home/symphony for `-u symphony`,
+# so any `gh auth login` etc. lands on the ephemeral image rootfs and is lost on
+# restart. Forcing HOME=/data/home here keeps every interactive auth on the Volume.
+RUN printf '%s\n' \
+      'export HOME=/data/home' \
+      'mkdir -p "$HOME" 2>/dev/null || true' \
+    > /etc/profile.d/symphony-home.sh \
+  && chmod +x /etc/profile.d/symphony-home.sh
 
 WORKDIR /app
 COPY --chown=symphony:symphony infra/symphony/entrypoint.sh /app/entrypoint.sh
@@ -63,7 +78,10 @@ RUN chmod +x /app/entrypoint.sh
 
 ENV HOME=/data/home
 
-USER symphony
+# Entrypoint starts as root so it can chown the Volume contents (auth files
+# created from a SSH'd-as-root session belong to root and would otherwise
+# block the unprivileged service user). After fixing ownership, the script
+# re-execs itself under `gosu symphony`. There is no `USER symphony` here.
 
 # Fly proxy hits port 8080. The HTTP server in bin/symphony-serve.ts
 # listens on 0.0.0.0:8080.
