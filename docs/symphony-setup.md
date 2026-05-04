@@ -1,8 +1,14 @@
-# Symphony — Fly machine setup runbook (運用手順書)
+# Symphony — Fly machine setup runbook
 
-issue #370 で設計した Symphony port の実行基盤を **Fly machine** (Fly.io 上に立てる単発 VM) 上に構築する。**GitHub Actions cron** (定期実行ジョブ、ここでは 15 分おき) が **`/tick`** (起動兼処理依頼の HTTP endpoint、port 8080) を叩き、machine が **`symphony:ready` ラベル** (Symphony が処理してよい印) 付きの GitHub issue を 1 件、takt で消化する。**idle** (処理待ちで何もしてない状態) が続けば machine は自分で停止し、**Volume** (永続ディスク領域) のみ課金が残る。
+issue #370 で設計した Symphony port の実行基盤を Fly.io 上の単発 VM (Fly machine) に構築する。GitHub Actions の cron が 15 分おきに HTTP endpoint `/tick` を叩いて machine を起こし、machine は `symphony:ready` ラベルが付いた issue を 1 件 takt で消化する。なにも処理しない状態が 5 分続けば machine は自己終了し、Fly volume の固定課金だけが残る。
 
-過去に sprites.dev で同じことを試みた記録は [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) に残してある (sprites の hibernation 仕様で D2 案が成立しなかった、その経緯)。
+用語の対応:
+
+- **Fly machine** — Fly.io が提供する単発 VM。`flyctl machine` 系で操作する
+- **`/tick`** — Fly machine 内 HTTP server (port 8080) が公開するエントリポイント。`POST /tick` で 1 サイクル処理 + return
+- **`symphony:ready` ラベル** — GitHub issue に付けると Symphony が拾って takt にかけてよいという意思表示
+
+過去に sprites.dev で同じことを試みた記録は [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) に残してある (sprites の hibernation 仕様で D2 案が成立しなかった経緯)。
 
 ## 前提
 
