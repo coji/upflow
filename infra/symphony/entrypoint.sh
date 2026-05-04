@@ -7,7 +7,12 @@
 set -euo pipefail
 
 REPO_DIR="${SYMPHONY_REPO_DIR:-/data/upflow}"
-HOME_DIR="${HOME:-/data/home}"
+# Force HOME to the Volume unconditionally. The Dockerfile sets
+# `ENV HOME=/data/home`, but we re-exec across `gosu symphony` and the
+# child saw a different HOME in practice (auth check failed even though
+# /data/home/.config/gh/hosts.yml was on disk). Hard-coding here, plus
+# explicit `env HOME=...` on the gosu line below, removes the ambiguity.
+HOME_DIR=/data/home
 
 # Root path: fix Volume ownership and re-exec self as symphony (uid 1001).
 # `flyctl ssh console` defaults to root, so any `gh auth login` from SSH
@@ -18,7 +23,7 @@ HOME_DIR="${HOME:-/data/home}"
 if [ "$(id -u)" = "0" ]; then
   mkdir -p "$HOME_DIR"
   chown -R 1001:1001 /data
-  exec gosu symphony "$0" "$@"
+  exec gosu symphony env HOME="$HOME_DIR" "$0" "$@"
 fi
 
 mkdir -p "$HOME_DIR"
