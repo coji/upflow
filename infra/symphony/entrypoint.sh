@@ -22,16 +22,19 @@ HOME_DIR=/data/home
 # instead of a stuck state.
 if [ "$(id -u)" = "0" ]; then
   mkdir -p "$HOME_DIR"
-  chown -R 1001:1001 /data
+  chown -R symphony:symphony /data
   exec gosu symphony env HOME="$HOME_DIR" "$0" "$@"
 fi
 
 mkdir -p "$HOME_DIR"
 export HOME="$HOME_DIR"
 
-# Persist sprite-style auth + git config under the Volume so first-boot
-# `gh auth login` / `claude auth login` etc. via SSH stay valid across
-# machine restarts and image redeploys.
+# HOME=/data/home is locked in via three independent paths — drop any one
+# and the auth-check below silently looks at the wrong directory:
+#   1. /etc/profile.d/symphony-home.sh — for `flyctl ssh console` sessions
+#   2. HOME_DIR=/data/home above       — for this script's own logic
+#   3. `env HOME=...` on the gosu line — for the root → symphony hand-off
+# All three are intentional belt-and-suspenders; see PR #386 for context.
 
 if [ ! -f "$HOME/.config/gh/hosts.yml" ]; then
   echo "[entrypoint] gh is not authenticated yet."

@@ -54,8 +54,11 @@ RUN mkdir -p /tmp/cursor-install \
 
 # Run the server as a non-root user. /data is the Volume mount and is
 # owned by symphony so the persisted auth/repo state can be read+written.
+# `--no-create-home` because HOME is forced to /data/home everywhere
+# (Dockerfile ENV, /etc/profile.d/symphony-home.sh, entrypoint.sh) — a
+# physical /home/symphony directory is dead weight.
 RUN groupadd --system --gid 1001 symphony \
-  && useradd --system --uid 1001 --gid symphony --create-home --home-dir /home/symphony symphony \
+  && useradd --system --uid 1001 --gid symphony --no-create-home --home-dir /home/symphony symphony \
   && mkdir -p /app /data \
   && chown -R symphony:symphony /app /data
 
@@ -66,7 +69,6 @@ RUN groupadd --system --gid 1001 symphony \
 RUN printf '%s\n' \
       'export HOME=/data/home' \
       'mkdir -p "$HOME" 2>/dev/null || true' \
-      'cd "$HOME" 2>/dev/null || true' \
     > /etc/profile.d/symphony-home.sh \
   && chmod +x /etc/profile.d/symphony-home.sh
 

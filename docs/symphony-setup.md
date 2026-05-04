@@ -68,7 +68,7 @@ exit
 
 `-u symphony` で SSH すると、container 内のサービスユーザー (uid 1001) として log in する。同じ uid で auth ファイルを書くので、`pnpm symphony:serve` がそのまま読める。`/etc/profile.d/symphony-home.sh` が SSH session の `HOME` を `/data/home` に固定しているので、保存先は自動的に Volume 配下になり、machine restart や image rebuild を跨いで永続化する。`codex login` は browser-redirect 形式で remote machine だと完了しないので、必ず `--device-auth` を付ける。
 
-`-u symphony` を忘れて root として SSH してしまっても、entrypoint.sh が次回起動時に `chown -R 1001:1001 /data` で所有権を直すので最終的には動く。ただ毎回 `-u symphony` を付けておけば余計な restart を 1 回省ける。
+root として SSH してしまうと auth ファイルが `/root` 配下に書かれて Volume に永続化されない可能性がある (`fly ssh console` がどのモードで shell を起動するかに依存する)。必ず `-u symphony` を付ける。
 
 ## 5. 再起動して通常動作モードへ
 
