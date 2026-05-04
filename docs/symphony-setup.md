@@ -1,6 +1,6 @@
 # Symphony — Fly machine setup runbook (運用手順書)
 
-issue #370 で設計した Symphony port の実行基盤を **Fly machine** (Fly.io 上に立てる単発 VM) 上に構築する。GitHub Actions cron が一定間隔で Fly machine の `/tick` (起動兼ポーリング呼び出し用 HTTP endpoint) を叩き、machine が `symphony:ready` ラベル付き issue を 1 件 takt で消化する。**idle** (処理待ちで何もしてない状態) が続けば machine は自分で停止し、**Volume** (永続ディスク領域) のみ課金が残る。
+issue #370 で設計した Symphony port の実行基盤を **Fly machine** (Fly.io 上に立てる単発 VM) 上に構築する。**GitHub Actions cron** (定期実行ジョブ、ここでは 15 分おき) が **`/tick`** (起動兼処理依頼の HTTP endpoint、port 8080) を叩き、machine が **`symphony:ready` ラベル** (Symphony が処理してよい印) 付きの GitHub issue を 1 件、takt で消化する。**idle** (処理待ちで何もしてない状態) が続けば machine は自分で停止し、**Volume** (永続ディスク領域) のみ課金が残る。
 
 過去に sprites.dev で同じことを試みた記録は [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) に残してある (sprites の hibernation 仕様で D2 案が成立しなかった、その経緯)。
 
@@ -120,15 +120,18 @@ Volume の `/data` は image 再ビルドを跨いで保持される。auth stat
 
 ### CLI 群の更新
 
+`infra/symphony/Dockerfile` 冒頭の ARG (`TAKT_VERSION` / `CLAUDE_CODE_VERSION` / `CODEX_VERSION` / `PNPM_VERSION` / `NODE_VERSION`) を新しいバージョンに書き換えて `flyctl deploy` する、を**唯一の更新フロー**にする:
+
 ```bash
-flyctl ssh console --app upflow-symphony
-# 中で
-npm update -g pnpm takt @anthropic-ai/claude-code @openai/codex
-curl https://cursor.com/install -fsSL | bash    # cursor-agent 上書き
-exit
+# 1. infra/symphony/Dockerfile の ARG を編集
+# 2. deploy
+flyctl deploy \
+  --app upflow-symphony \
+  -c infra/symphony/fly.toml \
+  --dockerfile infra/symphony/Dockerfile
 ```
 
-または Dockerfile の version pin を上げて `flyctl deploy`。
+`flyctl ssh console` で `npm update -g` などを直接叩くと image と実環境がドリフトして再現性が崩れるので**避ける**。cursor-agent は upstream 側にバージョン pin される配布物がまだないので、更新したい時は Dockerfile の `cursor-agent install` ブロックを更新 (or 完全に再ビルド) して deploy する。
 
 ### 認証の再取得 (token expire 時)
 
