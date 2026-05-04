@@ -57,12 +57,17 @@ interface Violation {
   specifier: string
 }
 
+// Shared Project across the scan: ts-morph caches each parsed source
+// file inside the Project, so reusing the same instance avoids paying
+// the ~5MB+ initialization cost per file. Without this the scan blows
+// past the 5s default vitest timeout once the scanned tree grows.
+const sharedProject = new Project({
+  skipAddingFilesFromTsConfig: true,
+  skipFileDependencyResolution: true,
+})
+
 function findDeepRelativeImports(absFilePath: string): Violation[] {
-  const project = new Project({
-    skipAddingFilesFromTsConfig: true,
-    skipFileDependencyResolution: true,
-  })
-  const sf = project.addSourceFileAtPath(absFilePath)
+  const sf = sharedProject.addSourceFileAtPath(absFilePath)
   const violations: Violation[] = []
   const relPath = path.relative(ROOT, absFilePath)
 
