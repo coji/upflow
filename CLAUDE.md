@@ -305,6 +305,28 @@ LLM に投げるプロンプト（system instruction 等）を作成・編集す
 5. 凝集度が高いか: 関数・モジュールが単一の責務に集中しているか。複数の関心事が混在していたら分割する
 6. 結合度が低いか: 依存を引数で受け取れるようにしてテスト可能にする。ロジックの重複は共通化する
 
+### PR を出す前の self-review
+
+happy path だけ書いて push、レビューで指摘を受けて直す、という流れを減らすために `git push` の前に **必ず一度** 以下を声に出して確認する。CodeRabbit / 人間レビューが拾うパターンを先回りで潰すための関門。
+
+1. **既存の output contract / type / facet を full read で参照したか**
+   - 出力フォーマットを heuristic で grep する前に、契約ファイル (`.takt/facets/output-contracts/*.md`、`*.d.ts`、schema) を全部読んで構造マーカーを使う。例: takt の supervise 出力なら `## Judgment: COMPLETE | FIX | SPEC_REVIEW` を直接読む。Remaining Issues セクションを正規表現で拾うのは最後の手段
+2. **failure / cleanup path を 1 周なぞる**
+   - signal handler (SIGTERM/SIGINT) が必要な subprocess を spawn したか? 該当する場合、子プロセスへの伝播 + grace timeout + SIGKILL fallback を仕込んだか
+   - 長時間 stream を扱うとき stdout/stderr を全量バッファしていないか (`captureOutput: false` 相当の逃げ道があるか)
+   - ファイルや lock の cleanup、tmp dir の削除、http connection の close
+3. **transient vs deterministic を分けたか**
+   - 「empty / parse 失敗 / 一時的に存在しない」を success に倒していないか。**確証が取れない曖昧ケースは failure_transient**。retry した方が安全
+   - 1 回目 read miss は backoff retry してから fail にしているか
+4. **入力 validation の strictness**
+   - regex は意図通り厳密か (例: `!==?` は `!=` も通す。`!==` を要求するなら `!==` と書く)
+   - allow list / enum 比較は完全一致か、prefix 一致で済ませて事故らないか
+5. **やったこと / やらなかったこと を PR 説明に書いたか**
+   - 「scope 外で skip した観察」「heuristic で済ませた箇所」「次の PR に持ち越す改善」を明示
+   - 「やらない」理由は「APIコスト倍増で実益がない」のように具体的に (「スコープ外」だけは禁則)
+
+このチェックリストに引っかかった項目を先に直してから commit + push する。「self-review で N 項目修正した」と PR description にも書くと、レビュー側が二度手間にならない。
+
 ### Git ワークフロー
 
 - **main に直接 push 禁止**: コミットは必ずブランチを切って PR 経由でマージする。`git push origin main` は絶対にやらない
