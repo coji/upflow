@@ -1,233 +1,157 @@
-# Symphony worker sprite — setup runbook
+# Symphony — Fly machine setup runbook
 
-issue #370 で設計した Symphony port の実行基盤。1 つの sprites.dev sprite に各 coding agent CLI と takt を入れて auth 済みの状態にし、ローカルや Routine から `sprite exec` で takt を回す。
+issue #370 で設計した Symphony port の実行基盤を Fly machine 上に立てる手順。GitHub Actions cron が定期的に Fly machine の `/tick` を叩き、machine が `symphony:ready` ラベル付き issue を 1 件 takt で消化する。idle が続けば machine は自分で停止し、Volume だけ課金される。
 
-本ドキュメントは新規 sprite を 0 から構築する手順。既存 worker が壊れた場合の再構築 runbook としても使う。
+過去に sprites.dev で同じことを試みた記録は [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) に残してある (sprites の hibernation 仕様で D2 案が成立しなかった、その経緯)。
 
 ## 前提
 
-- sprites.dev アカウント (Fly.io OAuth 経由で作成)
-- 利用可能な subscriptions: Claude Max / Codex Plus / Cursor Pro (provider 利用に必要)
+- Fly.io アカウント (upflow 本体が既に Fly 上にあるなら同じアカウント)
+- 利用可能な subscriptions: Claude Max / Codex Plus / Cursor Pro
 - GitHub アカウント (push 権限のあるリポジトリ)
-- ローカル環境: macOS/Linux、`mise` (sprite CLI を mise 管理に乗せる場合)
+- ローカル環境: `flyctl` (upflow 本体の deploy で既に install 済みのはず)
 
-## 1. Sprite CLI を入れる
-
-mise には未登録なので公式インストーラを使う。スクリプトは `~/.local/bin/sprite` にバイナリを置くだけ:
+## 1. Fly app と Volume を作る
 
 ```bash
-curl -fsSL https://sprites.dev/install.sh | sh
-sprite --version
+# 設定ファイルは infra/symphony/fly.toml に置いてある
+flyctl apps create upflow-symphony
+flyctl volumes create symphony_data \
+  --app upflow-symphony \
+  --region nrt \
+  --size 5
 ```
 
-`~/.local/bin` が PATH に入っていることを確認 (zsh/bash の rc に `export PATH="$HOME/.local/bin:$PATH"` 必要なら追加)。
+`5GB` で repo + node_modules + agent token + 過去 run のログを十分賄える。後から拡張可。
 
-## 2. Fly.io にログインして組織を選択
+## 2. Tick token を生成して両側に登録
 
 ```bash
-sprite login
+TOKEN=$(openssl rand -hex 32)
+flyctl secrets set SYMPHONY_TICK_TOKEN="$TOKEN" --app upflow-symphony
+gh secret set SYMPHONY_TICK_TOKEN --body "$TOKEN"
+gh secret set SYMPHONY_URL --body "https://upflow-symphony.fly.dev"
 ```
 
-ブラウザで Fly.io OAuth が開く。完了後、組織用 API トークンが CLI 内に保存される (`~/.config/sprite/` 等、CLI 管理)。
+Fly secrets と GitHub Actions secrets の両方に同じ値を入れる。GitHub Actions cron がこの token で Fly machine を叩く。
+
+## 3. 初回 deploy (auth 前なので機能しないが、SSH 用に machine を起こす目的)
 
 ```bash
-sprite list
-# (空) もしくは既存 sprite が表示される
+flyctl deploy \
+  --app upflow-symphony \
+  -c infra/symphony/fly.toml \
+  --dockerfile infra/symphony/Dockerfile
 ```
 
-## 3. Sprite を作る
+container は `gh auth` 未設定を検知して `sleep infinity` に入る (`infra/symphony/entrypoint.sh` 参照)。エラーログが出ていても正常。
+
+## 4. SSH で interactive auth を一回だけ
 
 ```bash
-sprite create symphony-worker
-sprite use symphony-worker        # current dir のデフォルト sprite に設定
+flyctl ssh console --app upflow-symphony
+# 以下、container 内
+mkdir -p /data/home && export HOME=/data/home
+
+gh auth login                        # GitHub device flow
+claude auth login --claudeai          # Claude Max
+codex login                           # Codex Plus
+cursor-agent login                    # Cursor Pro
+
+# 全部成功してることを確認
+gh auth status
+claude auth status
+ls /data/home/.codex/auth.json /data/home/.config/cursor/auth.json
+exit
 ```
 
-スペック (デフォルト): Ubuntu 25.04, x86_64, 8 CPU / 7.8 GB RAM / 99 GB disk。
+token はすべて Volume (`/data/home`) 配下に書かれる。machine restart や image rebuild を跨いで永続化する。
 
-## 4. 環境を確認
+## 5. 再起動して通常動作モードへ
 
 ```bash
-sprite exec -- bash -lc 'uname -a && nproc && df -h /home && which node python3 go git curl'
+flyctl machine restart --app upflow-symphony
+flyctl logs --app upflow-symphony
 ```
 
-`/.sprite/bin/` 配下に node / python / go / git / curl / gh / corepack 等が preinstall されている。`/etc/profile.d/languages_env` で `NVM_DIR` 等が設定済み。
+`[ready] listening on 0.0.0.0:8080` が出ていれば成功。auth 検出 → repo clone → pnpm install → HTTP server 起動、まで自動で進む。
 
-## 5. PATH 永続化 (重要)
-
-`npm install -g` の出力先 (`/.sprite/languages/node/nvm/versions/node/<ver>/bin`) は **デフォルトで PATH に入らない**。`bash -lc` で login shell 化したときに見えるよう `~/.profile` に export を書く:
+## 6. tick エンドポイントの動作確認
 
 ```bash
-sprite exec -- bash -lc 'NPM_BIN=$(npm config get prefix)/bin
-echo "export PATH=\"$NPM_BIN:\$PATH\"" >> ~/.profile
-echo "export PATH=\"$NPM_BIN:\$PATH\"" >> ~/.bashrc'
+curl -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  https://upflow-symphony.fly.dev/tick
 ```
 
-以降の `sprite exec -- bash -lc '...'` でグローバル npm 製コマンドが見える。
+レスポンス例:
 
-## 6. CLI 群をインストール
+- `{"state":"idle"}` — `symphony:ready` の issue 無し
+- `{"state":"busy", ...}` — 既に処理中 (concurrency=1)
+- `{"state":"processed", "issue":N, "outcome":"success"}` — 1 件処理した
 
-### pnpm + takt
+GitHub Actions cron が 15 分ごとにこれを叩く。idle 5 分 (`SYMPHONY_IDLE_SHUTDOWN_MS`) で machine 自己終了 → 次 tick で auto-start。
+
+## 7. ステータス確認
 
 ```bash
-sprite exec -- bash -lc 'npm install -g pnpm takt'
-sprite exec -- bash -lc 'pnpm --version && takt --version'
+curl -H "Authorization: Bearer $TOKEN" \
+  https://upflow-symphony.fly.dev/status
 ```
 
-### Claude Code + Codex CLI
+machine が起きていれば現在の job 情報、寝ていれば auto-start 後に同情報が返る。
+
+## メンテナンス
+
+### コード更新の反映
+
+`main` に push があれば、次の tick で entrypoint.sh が `git fetch && git reset --hard` で更新を pulldown する。`pnpm install` も毎回走るので依存変更も追従する。
+
+Dockerfile / fly.toml / 各 CLI バイナリの変更は image rebuild が必要なので `flyctl deploy` を実行する:
 
 ```bash
-sprite exec -- bash -lc 'npm install -g @anthropic-ai/claude-code @openai/codex'
-sprite exec -- bash -lc 'claude --version && codex --version'
+flyctl deploy \
+  --app upflow-symphony \
+  -c infra/symphony/fly.toml \
+  --dockerfile infra/symphony/Dockerfile
 ```
 
-### cursor-agent
+Volume の `/data` は image 再ビルドを跨いで保持される。auth state を失わない。
 
-公式インストーラ (`~/.local/share/cursor-agent/versions/<ver>/` に置かれて `~/.local/bin/cursor-agent` から symlink される):
+### CLI 群の更新
 
 ```bash
-sprite exec --tty -- bash -lc 'curl https://cursor.com/install -fsSL | bash'
-sprite exec -- bash -lc 'cursor-agent --version'
+flyctl ssh console --app upflow-symphony
+# 中で
+npm update -g pnpm takt @anthropic-ai/claude-code @openai/codex
+curl https://cursor.com/install -fsSL | bash    # cursor-agent 上書き
+exit
 ```
 
-## 7. 各 agent の認証 (interactive)
+または Dockerfile の version pin を上げて `flyctl deploy`。
 
-すべて TTY 経由で対話認証する。`sprite exec --tty -- ...` で sprite 内シェルに繋がる。
-
-> ⚠ いずれも device-flow / OAuth でブラウザ操作が必要。一度 auth すれば `~/.claude` `~/.codex` `~/.cursor` に persistent fs として残るので再認証は不要。
+### 認証の再取得 (token expire 時)
 
 ```bash
-# Claude Code (Claude Max subscription)
-sprite exec --tty -- bash -lc 'claude auth login --claudeai'
-
-# Codex (Codex Plus / API key)
-sprite exec --tty -- bash -lc 'codex login'
-
-# Cursor agent
-sprite exec --tty -- bash -lc 'cursor-agent login'
-
-# GitHub (web browser device flow)
-sprite exec --tty -- bash -lc 'gh auth login'
+flyctl ssh console --app upflow-symphony
+# 中で該当 CLI の login を再実行 (上記 §4 と同じ)
 ```
 
-認証成功確認 (各 CLI のステータス):
+### machine が起きない
+
+`flyctl logs --app upflow-symphony` でエラー確認。entrypoint.sh が `gh auth` 未設定を検知している場合は §4 を再実施。
+
+### コスト確認
 
 ```bash
-sprite exec -- bash -lc 'claude auth status; ls ~/.codex/auth.json ~/.config/cursor/auth.json; gh auth status'
+flyctl billing --app upflow-symphony
 ```
 
-> Claude Code 2.1.x は credential を file ではなく内部に保管するので `claude auth status` で確認する。`setup-token` は long-lived API token 生成用で subscription 認証ではない。
-
-## 8. リポジトリを clone
-
-```bash
-sprite exec -- bash -lc 'gh repo clone coji/upflow ~/upflow && cd ~/upflow && pnpm install --frozen-lockfile'
-```
-
-`pnpm install` で 20-30 秒程度。lefthook の警告は無視で OK (`pnpm approve-builds` を求めてくるが、sprite 内では git hook 不要)。
-
-## 9. 動作確認 — takt がワークフローを読めるか
-
-```bash
-sprite exec -- bash -lc 'cd ~/upflow && takt prompt spec-implement-accept | head -20'
-```
-
-`Workflow Prompt Preview: spec-implement-accept` ヘッダ + steps 1〜9 の prompt が出れば OK。
-
-各 agent CLI の headless 疎通も確認:
-
-```bash
-sprite exec -- bash -lc 'cd ~/upflow && claude --print "say only: hello"'
-sprite exec -- bash -lc 'cd ~/upflow && codex exec "say only: hello"'
-sprite exec -- bash -lc 'cd ~/upflow && cursor-agent -p --force "say only: hello"'
-```
-
-それぞれ `hello` を返せば認証 + 動作完了。
-
-## 10. Symphony Runner Service の登録
-
-長時間 takt を `sprite exec` 越しに動かすと HTTP/WebSocket 接続が切れる (issue #378 参照)。
-そこで `bin/symphony-runner.ts` を sprite 内の Service として常駐させ、外向き poll で sprite を起動させたまま GitHub から `symphony:ready` issue を拾わせる。
-
-### 前提
-
-Service は GitHub 操作を sprite 内の `gh` CLI 経由で行う。**§7 の `gh auth login` が済んでいて `~/.config/gh/hosts.yml` に token が保存されていること**が前提。
-`GH_TOKEN` / `GITHUB_TOKEN` env を Service に渡す必要はない (`gh` が自動で credential を読む)。
-別 PAT で動かしたいときだけ Service spec の `env` で渡す。
-
-### Service の登録
-
-```bash
-sprite api -X PUT /v1/sprites/symphony-worker/services/symphony-runner \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "cmd": "bash",
-    "args": ["-lc", "cd ~/upflow && git pull --ff-only --quiet && pnpm install --frozen-lockfile --silent && pnpm symphony:run"]
-  }'
-```
-
-### 起動
-
-```bash
-sprite api -X POST /v1/sprites/symphony-worker/services/symphony-runner/start
-```
-
-### ログ確認
-
-```bash
-sprite api /v1/sprites/symphony-worker/services/symphony-runner/logs?lines=200
-```
-
-### 停止
-
-```bash
-sprite api -X POST /v1/sprites/symphony-worker/services/symphony-runner/stop
-```
-
-### Service が落ちた場合
-
-Service は sprite が wake する際に auto-restart される (sprites.dev の Service 仕様)。
-manual restart したい場合は上記 `start` を再実行。
-
-## 11. メンテナンス
-
-### CLI の更新
-
-```bash
-sprite exec -- bash -lc 'npm update -g pnpm takt @anthropic-ai/claude-code @openai/codex'
-sprite exec --tty -- bash -lc 'curl https://cursor.com/install -fsSL | bash'    # cursor-agent は再 install 上書き
-```
-
-### 認証の再取得 (subscription token expire 時)
-
-該当 CLI の login コマンドを再実行 (上記 §7 と同じ)。
-
-### sprite を一旦 idle に
-
-何も叩かないでいると自動で pause、課金は filesystem 分のみ (~$0.000683/GB-時間)。`sprite list` で状態確認可。
-
-### sprite を破棄して作り直す
-
-```bash
-sprite destroy -s symphony-worker
-# 上記 §3〜9 を再実行
-```
-
-## 検証済み環境 (2026-05 時点)
-
-| 項目         | バージョン          |
-| ------------ | ------------------- |
-| sprite CLI   | v0.0.1-rc43         |
-| node         | v22.20.0 (NVM 経由) |
-| pnpm         | 10.33.2             |
-| takt         | 0.39.0              |
-| Claude Code  | 2.1.92+             |
-| Codex CLI    | 0.118.0+            |
-| cursor-agent | 2026.05.01-eea359f  |
-| gh           | 2.79.0              |
+shared-cpu-1x + 1GB memory + 5GB volume を仮定して、1 日 1 時間程度の稼働なら月 $1 前後 (volume 固定 ~$0.75/月 + machine 稼働分)。
 
 ## 関連
 
 - issue #370 (Symphony port 親 issue)
-- issue #371 (この runbook の作成 issue = M1a)
-- [sprites.dev docs](https://docs.sprites.dev/)
-- [Symphony SPEC.md](https://github.com/openai/symphony/blob/main/SPEC.md)
+- [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) — 旧 sprites.dev 案 (deprecated、ナラティブ用に archive)
+- [Fly machine docs](https://fly.io/docs/machines/)
+- [Symphony SPEC.md (OpenAI)](https://github.com/openai/symphony/blob/main/SPEC.md)
