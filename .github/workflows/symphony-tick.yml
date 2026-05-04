@@ -1,0 +1,47 @@
+name: 🎼 Symphony tick
+
+# Hits the symphony Fly machine on a schedule. The first request of an idle
+# period auto-starts the machine; the symphony server then either picks up
+# one ready issue (long-running takt run) or returns idle and the machine
+# self-shuts after its idle window.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: symphony-tick
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: 🎼 POST /tick
+        env:
+          TICK_TOKEN: ${{ secrets.SYMPHONY_TICK_TOKEN }}
+          SYMPHONY_URL: ${{ secrets.SYMPHONY_URL }}
+        run: |
+          if [ -z "$SYMPHONY_URL" ] || [ -z "$TICK_TOKEN" ]; then
+            echo "::warning::SYMPHONY_URL or SYMPHONY_TICK_TOKEN not configured; skipping tick"
+            exit 0
+          fi
+          # --max-time 5400s = 90 min budget per issue. Fly's HTTP edge
+          # holds long requests as long as bytes flow; the symphony
+          # server streams nothing until the takt run completes, so the
+          # connection stays in a quiet wait state. If Fly's edge proxy
+          # drops the request before takt finishes the symphony server
+          # still completes the run and posts the GitHub comment from
+          # inside the machine.
+          curl --fail-with-body \
+               --max-time 5400 \
+               -sS \
+               -X POST \
+               -H "Authorization: Bearer ${TICK_TOKEN}" \
+               -H 'Content-Type: application/json' \
+               "${SYMPHONY_URL%/}/tick"
