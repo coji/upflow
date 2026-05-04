@@ -1,6 +1,6 @@
-# Symphony — Fly machine setup runbook
+# Symphony — Fly machine setup runbook (運用手順書)
 
-issue #370 で設計した Symphony port の実行基盤を Fly machine 上に立てる手順。GitHub Actions cron が定期的に Fly machine の `/tick` を叩き、machine が `symphony:ready` ラベル付き issue を 1 件 takt で消化する。idle が続けば machine は自分で停止し、Volume だけ課金される。
+issue #370 で設計した Symphony port の実行基盤を **Fly machine** (Fly.io 上に立てる単発 VM) 上に構築する。GitHub Actions cron が一定間隔で Fly machine の `/tick` (起動兼ポーリング呼び出し用 HTTP endpoint) を叩き、machine が `symphony:ready` ラベル付き issue を 1 件 takt で消化する。**idle** (処理待ちで何もしてない状態) が続けば machine は自分で停止し、**Volume** (永続ディスク領域) のみ課金が残る。
 
 過去に sprites.dev で同じことを試みた記録は [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) に残してある (sprites の hibernation 仕様で D2 案が成立しなかった、その経緯)。
 

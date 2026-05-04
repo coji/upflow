@@ -30,6 +30,7 @@ import {
 } from 'node:http'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { getErrorMessageForLog } from '~/app/libs/error-message'
 import {
   BUDGET_MS,
   type IssueRef,
@@ -135,11 +136,16 @@ interface TaktChildResult {
 
 async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   const startMs = Date.now()
+  // Reset to a pristine main BEFORE pull. The previous run might have left
+  // a `takt/...` branch checked out with uncommitted lockfile changes;
+  // without `git reset --hard` the subsequent `git pull --ff-only` aborts
+  // (we hit this exact failure mode with the sprite-era runner).
   const cmd = [
     `cd ${REPO_DIR}`,
-    'git fetch --quiet',
-    'git checkout main',
-    'git pull --ff-only --quiet',
+    'git fetch --quiet origin main',
+    'git checkout main --quiet',
+    'git reset --hard origin/main --quiet',
+    'git clean -fd --quiet',
     'pnpm install --frozen-lockfile --silent',
     `takt --pipeline -i ${issueNumber} -w ${TAKT_WORKFLOW}`,
   ].join(' && ')
@@ -179,74 +185,77 @@ async function processOneIssue(): Promise<{
   activeJob = { issueNumber: issue.number, startedAt, child: null }
   console.log(`[pick] #${issue.number} ${issue.title}`)
 
-  const used = await usedBudgetMs(issue.number)
-  const remainingMs = BUDGET_MS - used
-  if (remainingMs <= 0) {
+  // try/finally so activeJob always clears even when a gh / takt call
+  // throws mid-processing. Without this, a partial failure would leave
+  // the runner permanently "busy" and ignore every subsequent /tick.
+  try {
+    const used = await usedBudgetMs(issue.number)
+    const remainingMs = BUDGET_MS - used
+    if (remainingMs <= 0) {
+      await ghComment(
+        issue.number,
+        [
+          '🤖 symphony: budget exceeded, marking as failed',
+          `- used: ${Math.round(used / 60000)} min / ${BUDGET_MS / 60000} min`,
+          '- re-add `symphony:ready` after addressing the underlying issue to retry',
+        ].join('\n'),
+      )
+      await ghRemoveLabel(issue.number, LABEL.ready)
+      await ghAddLabel(issue.number, LABEL.failed)
+      return {
+        state: 'processed',
+        issue: issue.number,
+        outcome: 'failure_deterministic',
+      }
+    }
+
+    await ghRemoveLabel(issue.number, LABEL.ready)
+    await ghAddLabel(issue.number, LABEL.running)
     await ghComment(
       issue.number,
       [
-        '🤖 symphony: budget exceeded, marking as failed',
-        `- used: ${Math.round(used / 60000)} min / ${BUDGET_MS / 60000} min`,
-        '- re-add `symphony:ready` after addressing the underlying issue to retry',
+        `🤖 symphony attempt starting at ${startedAt}`,
+        `- workflow: ${TAKT_WORKFLOW}`,
+        `- runner: fly machine`,
+        `- budget remaining: ${Math.round(remainingMs / 60000)} min`,
       ].join('\n'),
     )
-    await ghRemoveLabel(issue.number, LABEL.ready)
-    await ghAddLabel(issue.number, LABEL.failed)
-    activeJob = null
-    return {
-      state: 'processed',
-      issue: issue.number,
-      outcome: 'failure_deterministic',
+
+    let taktResult: TaktChildResult
+    try {
+      taktResult = await runTakt(issue.number)
+    } catch (e) {
+      console.error('[error] takt subprocess threw:', getErrorMessageForLog(e))
+      taktResult = {
+        metaStatus: 'failed',
+        superviseReport: '',
+        elapsedMs: Date.now() - dayjs(startedAt).valueOf(),
+      }
     }
-  }
 
-  await ghRemoveLabel(issue.number, LABEL.ready)
-  await ghAddLabel(issue.number, LABEL.running)
-  await ghComment(
-    issue.number,
-    [
-      `🤖 symphony attempt starting at ${startedAt}`,
-      `- workflow: ${TAKT_WORKFLOW}`,
-      `- runner: fly machine`,
-      `- budget remaining: ${Math.round(remainingMs / 60000)} min`,
-    ].join('\n'),
-  )
-
-  let taktResult: TaktChildResult
-  try {
-    taktResult = await runTakt(issue.number)
-  } catch (e) {
-    console.error(
-      '[error] takt subprocess threw:',
-      e instanceof Error ? e.message : e,
+    const result = classifyTakt(taktResult)
+    const finishedAt = dayjs.utc().toISOString()
+    const nextLabel =
+      result.outcome === 'success' ? LABEL.inReview : LABEL.failed
+    await ghRemoveLabel(issue.number, LABEL.running)
+    await ghAddLabel(issue.number, nextLabel)
+    await ghComment(
+      issue.number,
+      [
+        `🤖 symphony attempt complete at ${finishedAt}`,
+        `- outcome: ${result.outcome}`,
+        `- elapsed: ${Math.round(result.elapsedMs / 60000)} min`,
+        `- next label: ${nextLabel}`,
+        `- reason: ${result.reason}`,
+        '',
+        elapsedMarker(result.elapsedMs),
+      ].join('\n'),
     )
-    taktResult = {
-      metaStatus: 'failed',
-      superviseReport: '',
-      elapsedMs: Date.now() - dayjs(startedAt).valueOf(),
-    }
+    console.log(`[done] #${issue.number} → ${nextLabel} (${result.outcome})`)
+    return { state: 'processed', issue: issue.number, outcome: result.outcome }
+  } finally {
+    activeJob = null
   }
-
-  const result = classifyTakt(taktResult)
-  const finishedAt = dayjs.utc().toISOString()
-  const nextLabel = result.outcome === 'success' ? LABEL.inReview : LABEL.failed
-  await ghRemoveLabel(issue.number, LABEL.running)
-  await ghAddLabel(issue.number, nextLabel)
-  await ghComment(
-    issue.number,
-    [
-      `🤖 symphony attempt complete at ${finishedAt}`,
-      `- outcome: ${result.outcome}`,
-      `- elapsed: ${Math.round(result.elapsedMs / 60000)} min`,
-      `- next label: ${nextLabel}`,
-      `- reason: ${result.reason}`,
-      '',
-      elapsedMarker(result.elapsedMs),
-    ].join('\n'),
-  )
-  console.log(`[done] #${issue.number} → ${nextLabel} (${result.outcome})`)
-  activeJob = null
-  return { state: 'processed', issue: issue.number, outcome: result.outcome }
 }
 
 /**
@@ -298,15 +307,12 @@ async function handleTick(res: ServerResponse): Promise<void> {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(result))
   } catch (e) {
-    console.error(
-      '[error] tick handler failed:',
-      e instanceof Error ? e.message : e,
-    )
+    console.error('[error] tick handler failed:', getErrorMessageForLog(e))
     res.writeHead(500, { 'Content-Type': 'application/json' })
     res.end(
       JSON.stringify({
         error: 'tick_failed',
-        message: e instanceof Error ? e.message : String(e),
+        message: getErrorMessageForLog(e),
       }),
     )
   } finally {
