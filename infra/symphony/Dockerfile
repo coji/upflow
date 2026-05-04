@@ -20,9 +20,11 @@ ARG CODEX_VERSION
 # - curl + ca-certificates: cursor-agent installer + general HTTPS
 # - openssl: needed by gh / git over https
 # - procps: ps / pkill used by symphony for child cleanup
+# - gosu: lets entrypoint chown the Volume as root then drop to the
+#         service user, so SSH'd-as-root auth files self-heal each boot
 RUN apt-get update \
   && apt-get install --no-install-recommends -y \
-       git curl ca-certificates openssl procps tini gnupg \
+       git curl ca-certificates openssl procps tini gnupg gosu \
   && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
        | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
@@ -74,7 +76,10 @@ RUN chmod +x /app/entrypoint.sh
 
 ENV HOME=/data/home
 
-USER symphony
+# Entrypoint starts as root so it can chown the Volume contents (auth files
+# created from a SSH'd-as-root session belong to root and would otherwise
+# block the unprivileged service user). After fixing ownership, the script
+# re-execs itself under `gosu symphony`. There is no `USER symphony` here.
 
 # Fly proxy hits port 8080. The HTTP server in bin/symphony-serve.ts
 # listens on 0.0.0.0:8080.

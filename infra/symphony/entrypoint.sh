@@ -9,6 +9,18 @@ set -euo pipefail
 REPO_DIR="${SYMPHONY_REPO_DIR:-/data/upflow}"
 HOME_DIR="${HOME:-/data/home}"
 
+# Root path: fix Volume ownership and re-exec self as symphony (uid 1001).
+# `flyctl ssh console` defaults to root, so any `gh auth login` from SSH
+# writes auth files under /data/home owned by root. Without this chown,
+# the symphony user can't read them and the server crash-loops on every
+# boot. Fixing perms here makes the wrong SSH user a transient mistake
+# instead of a stuck state.
+if [ "$(id -u)" = "0" ]; then
+  mkdir -p "$HOME_DIR"
+  chown -R 1001:1001 /data
+  exec gosu symphony "$0" "$@"
+fi
+
 mkdir -p "$HOME_DIR"
 export HOME="$HOME_DIR"
 

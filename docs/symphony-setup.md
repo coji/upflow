@@ -51,7 +51,7 @@ container は `gh auth` 未設定を検知して `sleep infinity` に入る (`in
 ## 4. SSH で interactive auth を一回だけ
 
 ```bash
-flyctl ssh console --app upflow-symphony
+flyctl ssh console --app upflow-symphony -u symphony
 # 以下、container 内 (HOME は /data/home に自動設定済み)
 
 gh auth login                        # GitHub device flow
@@ -66,7 +66,9 @@ ls $HOME/.codex/auth.json $HOME/.config/cursor/auth.json
 exit
 ```
 
-`/etc/profile.d/symphony-home.sh` で SSH session の `HOME` を `/data/home` に固定しているので、上記コマンドの保存先は自動的に Volume 配下になる。machine restart や image rebuild を跨いで永続化する。`codex login` は browser-redirect 形式で remote machine だと完了しないので、必ず `--device-auth` を付ける。
+`-u symphony` で SSH すると、container 内のサービスユーザー (uid 1001) として log in する。同じ uid で auth ファイルを書くので、`pnpm symphony:serve` がそのまま読める。`/etc/profile.d/symphony-home.sh` が SSH session の `HOME` を `/data/home` に固定しているので、保存先は自動的に Volume 配下になり、machine restart や image rebuild を跨いで永続化する。`codex login` は browser-redirect 形式で remote machine だと完了しないので、必ず `--device-auth` を付ける。
+
+`-u symphony` を忘れて root として SSH してしまっても、entrypoint.sh が次回起動時に `chown -R 1001:1001 /data` で所有権を直すので最終的には動く。ただ毎回 `-u symphony` を付けておけば余計な restart を 1 回省ける。
 
 ## 5. 再起動して通常動作モードへ
 
