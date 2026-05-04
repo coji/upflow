@@ -1,12 +1,10 @@
 # Symphony — Fly machine setup runbook
 
-issue #370 で設計した Symphony port の実行基盤として、Fly.io 上に単発の VM を 1 台立てる。Fly ではこの単発 VM を Fly machine と呼んでいて、`flyctl machine` 系のコマンドで起動・停止・ssh ができる。
-
-machine の中では HTTP server がひとつ常駐していて、port 8080 で `/tick` というエントリポイントを公開している。GitHub Actions の cron は 15 分おきにこの `/tick` に POST を投げる。リクエストを受け取った machine は、GitHub から `symphony:ready` ラベルが付いている issue を一番古い 1 件だけ取得し、その内容を takt の `spec-implement-accept` ワークフローにかけて draft PR まで作る。`symphony:ready` ラベルは「この issue は Symphony に任せてよい」という人間からの合図で、人間がラベルを貼ったときだけ machine が動く。
+issue #370 で設計した Symphony port の実行基盤を、Fly.io 上の小さな VM 1 台に載せる。Fly ではこの単発 VM を machine と呼ぶ。machine 内には HTTP server が常駐し、port 8080 で `/tick` という起動兼処理依頼の窓口を公開する。GitHub Actions の cron は 15 分おきに `/tick` に POST を投げ、受けた machine は `symphony:ready` ラベルが付いた issue を 1 件取って takt の `spec-implement-accept` ワークフローにかけ、draft PR まで作る。`symphony:ready` は「この issue は Symphony に任せてよい」という人間からの合図で、人間が貼ったときだけ machine が動く。
 
 なにも処理しない状態が 5 分続けば machine は自分で停止し、以降は Fly volume の固定課金だけが残る。次に cron が `/tick` を投げると Fly が再び machine を起動して同じサイクルが回る。
 
-過去に sprites.dev で同じ仕組みを試みた記録は [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) に残してある (sprites の hibernation 仕様で D2 案が成立しなかった経緯)。
+過去に sprites.dev で同じ仕組みを試みた記録は [docs/symphony-setup-sprite.md](./symphony-setup-sprite.md) に残してある。sprites のアイドル hibernation 仕様で D2 案が成立しなかった経緯が書いてある。
 
 ## 前提
 
