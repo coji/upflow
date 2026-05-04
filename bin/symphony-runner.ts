@@ -16,6 +16,7 @@
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
+import type { ChildProcess } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -108,8 +109,18 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   ].join(' ')
 
   // Stream stdout/stderr to the Service's log so it shows up in
-  // `sprite api .../services/symphony-runner/logs`.
-  const r = await run('bash', ['-lc', cmd], { streamPrefix: '[takt] ' })
+  // `sprite api .../services/symphony-runner/logs`. Don't keep them in
+  // memory — a long takt run can produce many MB of output.
+  const r = await run('bash', ['-lc', cmd], {
+    streamPrefix: '[takt] ',
+    captureOutput: false,
+    onChild: (child) => {
+      activeChild = child
+      child.on('exit', () => {
+        if (activeChild === child) activeChild = null
+      })
+    },
+  })
   const elapsedMs = Date.now() - startMs
 
   const runDir = findLatestRunDir(startMs)
@@ -218,6 +229,7 @@ async function reconcileOrphans(): Promise<void> {
 }
 
 let stopRequested = false
+let activeChild: ChildProcess | null = null
 
 async function loop(): Promise<void> {
   console.log(`[boot] symphony-runner starting at ${dayjs.utc().toISOString()}`)
@@ -245,10 +257,25 @@ async function loop(): Promise<void> {
   console.log('[shutdown] loop exited')
 }
 
+const FORWARD_GRACE_MS = 10_000
+
 for (const sig of ['SIGTERM', 'SIGINT'] as const) {
   process.on(sig, () => {
     console.log(`[signal] received ${sig}, requesting shutdown`)
     stopRequested = true
+    const child = activeChild
+    if (child !== null && child.exitCode === null) {
+      console.log(`[signal] forwarding SIGTERM to takt child pid=${child.pid}`)
+      child.kill('SIGTERM')
+      setTimeout(() => {
+        if (child.exitCode === null) {
+          console.log(
+            `[signal] takt child still alive after ${FORWARD_GRACE_MS / 1000}s, sending SIGKILL`,
+          )
+          child.kill('SIGKILL')
+        }
+      }, FORWARD_GRACE_MS).unref()
+    }
   })
 }
 

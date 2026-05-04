@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { type ChildProcess, spawn } from 'node:child_process'
 
 export const REPO = 'coji/upflow'
 export const TAKT_WORKFLOW = 'spec-implement-accept'
@@ -24,23 +24,50 @@ export interface RunResult {
   stderr: string
 }
 
+export interface RunOptions {
+  input?: string
+  streamPrefix?: string
+  /**
+   * When false, do not buffer stdout/stderr in memory. Returned strings
+   * are empty. Useful for long-running children whose output is large
+   * and only needed live (already streaming via streamPrefix).
+   * Default true for backward compatibility.
+   */
+  captureOutput?: boolean
+  /**
+   * Invoked once with the live child handle right after spawn. Lets the
+   * caller forward signals (e.g. propagate SIGTERM during shutdown) or
+   * inspect the PID. Errors thrown here are swallowed so they cannot
+   * abort the run.
+   */
+  onChild?: (child: ChildProcess) => void
+}
+
 export async function run(
   cmd: string,
   args: readonly string[],
-  opts: { input?: string; streamPrefix?: string } = {},
+  opts: RunOptions = {},
 ): Promise<RunResult> {
+  const capture = opts.captureOutput !== false
   return await new Promise<RunResult>((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'] })
+    if (opts.onChild) {
+      try {
+        opts.onChild(child)
+      } catch {
+        // Caller-side bookkeeping shouldn't block the run.
+      }
+    }
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', (chunk: Buffer) => {
       const s = chunk.toString('utf-8')
-      stdout += s
+      if (capture) stdout += s
       if (opts.streamPrefix) process.stdout.write(`${opts.streamPrefix}${s}`)
     })
     child.stderr.on('data', (chunk: Buffer) => {
       const s = chunk.toString('utf-8')
-      stderr += s
+      if (capture) stderr += s
       if (opts.streamPrefix) process.stderr.write(`${opts.streamPrefix}${s}`)
     })
     child.on('error', (err) => reject(err))
@@ -190,28 +217,37 @@ export function classifyTakt(args: {
       elapsedMs,
     }
   }
-  const remaining = superviseReport.match(
-    /Remaining Issues[^\n]*\n+([\s\S]*?)(\n## |$)/i,
-  )
-  const tail = remaining?.[1]?.trim()
-  if (tail === undefined || tail === '') {
+  // Use takt's own structured judgment marker. The supervise-report
+  // contract (`.takt/facets/output-contracts/supervise-report.md`)
+  // requires `## Judgment: COMPLETE | FIX | SPEC_REVIEW`. Anything else
+  // means we can't trust the report; treat as transient and let a retry
+  // produce a clean one.
+  const judgment = superviseReport.match(
+    /^##\s*Judgment:\s*(COMPLETE|FIX|SPEC_REVIEW)\b/im,
+  )?.[1]
+  if (judgment === undefined) {
     return {
       outcome: 'failure_transient',
       reason:
-        'takt meta.status=completed but the supervise report had no parseable Remaining Issues section',
+        'takt meta.status=completed but supervise report had no `## Judgment:` marker',
       elapsedMs,
     }
   }
-  if (/^なし。?$/.test(tail) || /^none\.?$/i.test(tail)) {
+  if (judgment === 'COMPLETE') {
     return {
       outcome: 'success',
-      reason: 'takt completed and supervise reports no remaining issues',
+      reason: 'takt supervise judgment: COMPLETE',
       elapsedMs,
     }
   }
+  // FIX / SPEC_REVIEW — capture the Remaining Issues section for context
+  const remaining = superviseReport.match(
+    /Remaining Issues[^\n]*\n+([\s\S]*?)(\n## |$)/i,
+  )
+  const tail = remaining?.[1]?.trim() ?? ''
   return {
     outcome: 'failure_deterministic',
-    reason: `takt completed but supervise lists remaining issues: ${tail.slice(0, 200)}`,
+    reason: `takt supervise judgment: ${judgment}${tail ? ` — ${tail.slice(0, 200)}` : ''}`,
     elapsedMs,
   }
 }

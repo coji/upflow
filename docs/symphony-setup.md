@@ -146,6 +146,12 @@ sprite exec -- bash -lc 'cd ~/upflow && cursor-agent -p --force "say only: hello
 長時間 takt を `sprite exec` 越しに動かすと HTTP/WebSocket 接続が切れる (issue #378 参照)。
 そこで `bin/symphony-runner.ts` を sprite 内の Service として常駐させ、外向き poll で sprite を起動させたまま GitHub から `symphony:ready` issue を拾わせる。
 
+### 前提
+
+Service は GitHub 操作を sprite 内の `gh` CLI 経由で行う。**§7 の `gh auth login` が済んでいて `~/.config/gh/hosts.yml` に token が保存されていること**が前提。
+`GH_TOKEN` / `GITHUB_TOKEN` env を Service に渡す必要はない (`gh` が自動で credential を読む)。
+別 PAT で動かしたいときだけ Service spec の `env` で渡す。
+
 ### Service の登録
 
 ```bash
