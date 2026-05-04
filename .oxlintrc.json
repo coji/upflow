@@ -1,0 +1,20 @@
+{
+  "$schema": "https://oxc.rs/schema/oxlintrc.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "no-redeclare": "off",
+    "no-unused-vars": "off",
+    "require-await": "off",
+    "unicorn/prefer-string-starts-ends-with": "off",
+    "unicorn/no-useless-length-check": "off"
+  },
+  "ignorePatterns": [
+    "app/components/ui/**",
+    "app/styles/globals.css",
+    "lab/**",
+    "batch/github/graphql-env.d.ts",
+    "batch/github/schema.graphql"
+  ]
+}

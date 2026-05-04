@@ -1,6 +1,0 @@
-.claude/
-pnpm-lock.yaml
-app/services/type.ts
-app/services/tenant-type.ts
-batch/github/schema.graphql
-batch/github/graphql-env.d.ts
