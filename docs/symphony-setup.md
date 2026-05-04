@@ -52,22 +52,21 @@ container は `gh auth` 未設定を検知して `sleep infinity` に入る (`in
 
 ```bash
 flyctl ssh console --app upflow-symphony
-# 以下、container 内
-mkdir -p /data/home && export HOME=/data/home
+# 以下、container 内 (HOME は /data/home に自動設定済み)
 
 gh auth login                        # GitHub device flow
 claude auth login --claudeai          # Claude Max
-codex login                           # Codex Plus
+codex login --device-auth             # Codex Plus (remote: device flow)
 cursor-agent login                    # Cursor Pro
 
-# 全部成功してることを確認
+# 全部成功してることを確認 (すべて /data/home 配下に保存されているはず)
 gh auth status
 claude auth status
-ls /data/home/.codex/auth.json /data/home/.config/cursor/auth.json
+ls $HOME/.codex/auth.json $HOME/.config/cursor/auth.json
 exit
 ```
 
-token はすべて Volume (`/data/home`) 配下に書かれる。machine restart や image rebuild を跨いで永続化する。
+`/etc/profile.d/symphony-home.sh` で SSH session の `HOME` を `/data/home` に固定しているので、上記コマンドの保存先は自動的に Volume 配下になる。machine restart や image rebuild を跨いで永続化する。`codex login` は browser-redirect 形式で remote machine だと完了しないので、必ず `--device-auth` を付ける。
 
 ## 5. 再起動して通常動作モードへ
 

@@ -57,6 +57,17 @@ RUN groupadd --system --gid 1001 symphony \
   && mkdir -p /app /data \
   && chown -R symphony:symphony /app /data
 
+# `flyctl ssh console` opens an interactive login shell (default: root). Without
+# this, HOME stays at /root for root sessions and /home/symphony for `-u symphony`,
+# so any `gh auth login` etc. lands on the ephemeral image rootfs and is lost on
+# restart. Forcing HOME=/data/home here keeps every interactive auth on the Volume.
+RUN printf '%s\n' \
+      'export HOME=/data/home' \
+      'mkdir -p "$HOME" 2>/dev/null || true' \
+      'cd "$HOME" 2>/dev/null || true' \
+    > /etc/profile.d/symphony-home.sh \
+  && chmod +x /etc/profile.d/symphony-home.sh
+
 WORKDIR /app
 COPY --chown=symphony:symphony infra/symphony/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
