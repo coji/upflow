@@ -8,6 +8,14 @@ primary_region = "nrt"
 kill_signal = "SIGTERM"
 kill_timeout = "30s"
 
+# Backstop for memory spikes during agent runs. takt was OOM-killed on a
+# nested `pnpm install --silent` at ~745MB anon-rss with only 1GB RAM,
+# so we both bumped memory below and added swap as a safety net for
+# transient spikes (claude-code / codex / cursor-agent processes can
+# briefly balloon during inference). Swap is free; the real change is
+# the 2GB memory bump in [[vm]].
+swap_size_mb = 1024
+
 [build]
   dockerfile = "Dockerfile"
 
@@ -44,4 +52,4 @@ kill_timeout = "30s"
 [[vm]]
   cpu_kind = "shared"
   cpus = 1
-  memory = "1gb"
+  memory = "2gb"
