@@ -37,10 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🚀 flyctl deploy
-        uses: superfly/flyctl-actions@1.5
+        uses: superfly/flyctl-actions@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
         with:
           args: >-
             deploy
