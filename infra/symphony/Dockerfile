@@ -9,12 +9,19 @@ ARG CLAUDE_CODE_VERSION=2.1.126
 ARG CODEX_VERSION=0.128.0
 ARG ATLAS_VERSION=1.2.0
 
+# Atlas only ships an official binary via its Docker image (no GitHub
+# Release artifacts / checksums), so we COPY the binary out of the
+# upstream image. ARG expansion in `COPY --from=<external image>:${ARG}`
+# is unreliable in BuildKit — capture the image as a named build stage
+# here so the variable expands at FROM time, then reference the stage
+# by name in the COPY below.
+FROM arigaio/atlas:${ATLAS_VERSION}-distroless AS atlas
+
 FROM node:${NODE_VERSION}-bookworm-slim
 ARG PNPM_VERSION
 ARG TAKT_VERSION
 ARG CLAUDE_CODE_VERSION
 ARG CODEX_VERSION
-ARG ATLAS_VERSION
 
 # System deps takt and the agent CLIs need at runtime.
 # - git: takt operates on a checked-out repo
@@ -46,14 +53,10 @@ RUN npm install -g \
 # atlas: SQLite migration tool used by `pnpm db:setup` (db:apply /
 # db:migrate). Without it the preflight stage `pnpm db:setup` fails
 # with `sh: atlas: not found`, which we observed on the first
-# preflight-driven Symphony run (issue #399).
-#
-# Multi-stage COPY from the official Atlas image rather than the curl|sh
-# installer: Atlas's GitHub Releases ship no binary assets / checksums /
-# signatures, so `arigaio/atlas:<version>-distroless` is the only upstream
-# with a verifiable provenance (image digest pinnable). atlasgo.io
-# explicitly recommends the official image for Docker contexts.
-COPY --from=arigaio/atlas:${ATLAS_VERSION}-distroless /atlas /usr/local/bin/atlas
+# preflight-driven Symphony run (issue #399). Pulled from the named
+# `atlas` stage above (see the FROM line for the version + integrity
+# rationale).
+COPY --from=atlas /atlas /usr/local/bin/atlas
 
 # cursor-agent installs into the invoker's HOME, so we run the script in
 # a throwaway HOME and copy the binary into a system path. The official
