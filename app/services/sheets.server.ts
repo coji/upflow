@@ -20,12 +20,12 @@ export const createSheetApi = ({
     })
     await jwt.authorize()
 
-    const sheet = sheets({
+    const sheetApi = sheets({
       version: 'v4',
       auth: jwt,
     })
 
-    const res = await sheet.spreadsheets.get({
+    const res = await sheetApi.spreadsheets.get({
       spreadsheetId,
       fields: 'sheets.properties',
     })
@@ -42,7 +42,7 @@ export const createSheetApi = ({
       .at(0)
 
     if (!destSheet) {
-      const res = await sheet.spreadsheets.batchUpdate({
+      const batchRes = await sheetApi.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {
           requests: [
@@ -56,18 +56,19 @@ export const createSheetApi = ({
           ],
         },
       })
-      const sheetId = res?.data?.replies?.[0]?.addSheet?.properties?.sheetId
-      const title = res?.data?.replies?.[0]?.addSheet?.properties?.title
+      const sheetId =
+        batchRes?.data?.replies?.[0]?.addSheet?.properties?.sheetId
+      const title = batchRes?.data?.replies?.[0]?.addSheet?.properties?.title
       if (sheetId == null || title == null) {
         throw new Error(
-          `batchUpdate AddSheetResponse missing sheetId/title: ${JSON.stringify(res?.data)}`,
+          `batchUpdate AddSheetResponse missing sheetId/title: ${JSON.stringify(batchRes?.data)}`,
         )
       }
 
       destSheet = { sheetId, title }
     }
 
-    await sheet.spreadsheets.batchUpdate({
+    await sheetApi.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
         requests: [

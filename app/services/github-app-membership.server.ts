@@ -250,11 +250,11 @@ export async function reassignCanonicalAfterLinkLoss(input: {
     group.push(repositoryId)
   }
 
-  for (const [nextCanonical, repositoryIds] of reassignBuckets) {
+  for (const [nextCanonical, groupedRepositoryIds] of reassignBuckets) {
     await tenantDb
       .updateTable('repositories')
       .set({ githubInstallationId: nextCanonical })
-      .where('id', 'in', repositoryIds)
+      .where('id', 'in', groupedRepositoryIds)
       .execute()
   }
 

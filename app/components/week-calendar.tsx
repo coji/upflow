@@ -178,6 +178,8 @@ const WeeklyCalendar = ({
   // Bind weekInterval to the module-scope WeekDayButton via a stable wrapper.
   // Re-creates only when weekInterval changes (user navigates weeks).
   const BoundWeekDayButton = useMemo(() => {
+    // Shared name: keeps devtools / stack traces consistent.
+    // oxlint-disable-next-line no-shadow
     return function BoundWeekDayButton(
       props: React.ComponentProps<typeof DayButton>,
     ) {

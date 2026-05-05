@@ -13,7 +13,7 @@ vi.mock('~/app/services/github-octokit.server', () => ({
 
 vi.mock('~/app/libs/github-app-state.server', () => ({
   consumeInstallState: vi.fn(),
-  InstallStateError: class InstallStateError extends Error {
+  InstallStateError: class extends Error {
     override name = 'InstallStateError'
   },
 }))
