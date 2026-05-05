@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyTakt } from './symphony-shared'
+import { classifyTakt, run } from './symphony-shared'
 
 const baseArgs = { elapsedMs: 1000 }
 
@@ -110,5 +110,50 @@ describe('classifyTakt', () => {
       expect(r.reason).toContain('meta.status=completed')
       expect(r.reason).toContain('no `## Judgment:` marker')
     })
+  })
+})
+
+describe('run() onStdoutLine', () => {
+  it('emits each newline-terminated stdout line exactly once', async () => {
+    const lines: string[] = []
+    const r = await run('bash', ['-lc', 'printf "alpha\\nbeta\\ngamma\\n"'], {
+      captureOutput: false,
+      onStdoutLine: (line) => lines.push(line),
+    })
+    expect(r.code).toBe(0)
+    expect(lines).toEqual(['alpha', 'beta', 'gamma'])
+  })
+
+  it('flushes a trailing partial line on close', async () => {
+    const lines: string[] = []
+    const r = await run('bash', ['-lc', 'printf "first\\nno-newline-tail"'], {
+      captureOutput: false,
+      onStdoutLine: (line) => lines.push(line),
+    })
+    expect(r.code).toBe(0)
+    expect(lines).toEqual(['first', 'no-newline-tail'])
+  })
+
+  it('handles a single chunk that contains multiple lines', async () => {
+    const lines: string[] = []
+    const r = await run('bash', ['-lc', 'printf "one\\ntwo\\nthree\\n"'], {
+      captureOutput: false,
+      onStdoutLine: (line) => lines.push(line),
+    })
+    expect(r.code).toBe(0)
+    expect(lines).toEqual(['one', 'two', 'three'])
+  })
+
+  it('does not break when onStdoutLine throws', async () => {
+    const calls: string[] = []
+    const r = await run('bash', ['-lc', 'printf "a\\nb\\nc\\n"'], {
+      captureOutput: false,
+      onStdoutLine: (line) => {
+        calls.push(line)
+        throw new Error('boom')
+      },
+    })
+    expect(r.code).toBe(0)
+    expect(calls).toEqual(['a', 'b', 'c'])
   })
 })

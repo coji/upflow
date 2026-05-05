@@ -41,6 +41,14 @@ export interface RunOptions {
    * abort the run.
    */
   onChild?: (child: ChildProcess) => void
+  /**
+   * Invoked once per complete stdout line (newline-terminated; the line
+   * passed in does not include the trailing `\n`). A trailing partial
+   * line gets flushed on child close. Used by `bin/symphony-serve.ts`
+   * to surface the takt subprocess's most recent output line on
+   * `/status` for live progress visibility.
+   */
+  onStdoutLine?: (line: string) => void
 }
 
 export async function run(
@@ -60,10 +68,27 @@ export async function run(
     }
     let stdout = ''
     let stderr = ''
+    let lineBuf = ''
+    const emitLines = (chunk: string) => {
+      if (!opts.onStdoutLine) return
+      lineBuf += chunk
+      let nl = lineBuf.indexOf('\n')
+      while (nl !== -1) {
+        const line = lineBuf.slice(0, nl)
+        lineBuf = lineBuf.slice(nl + 1)
+        try {
+          opts.onStdoutLine(line)
+        } catch {
+          // Caller-side bookkeeping shouldn't block the run.
+        }
+        nl = lineBuf.indexOf('\n')
+      }
+    }
     child.stdout.on('data', (chunk: Buffer) => {
       const s = chunk.toString('utf-8')
       if (capture) stdout += s
       if (opts.streamPrefix) process.stdout.write(`${opts.streamPrefix}${s}`)
+      emitLines(s)
     })
     child.stderr.on('data', (chunk: Buffer) => {
       const s = chunk.toString('utf-8')
@@ -71,7 +96,17 @@ export async function run(
       if (opts.streamPrefix) process.stderr.write(`${opts.streamPrefix}${s}`)
     })
     child.on('error', (err) => reject(err))
-    child.on('close', (code) => resolve({ code: code ?? -1, stdout, stderr }))
+    child.on('close', (code) => {
+      // Flush any trailing stdout that ended without a final newline so
+      // the very last log line still reaches /status before the job ends.
+      if (opts.onStdoutLine && lineBuf.length > 0) {
+        try {
+          opts.onStdoutLine(lineBuf)
+        } catch {}
+        lineBuf = ''
+      }
+      resolve({ code: code ?? -1, stdout, stderr })
+    })
     if (opts.input !== undefined) {
       child.stdin.end(opts.input)
     } else {
