@@ -83,7 +83,10 @@ describe('No String(error) — use getErrorMessage[ForLog]', () => {
     expect(matchedFiles.length).toBeGreaterThan(0)
   })
 
-  it('has no String(error-name) violations', () => {
+  // 30s timeout: standalone this test runs in <1s thanks to the shared
+  // Project (introduced in PR #377), but under the full vitest worker load
+  // ts-morph's initial source-file ingestion can blow past the 5s default.
+  it('has no String(error-name) violations', { timeout: 30_000 }, () => {
     const allViolations: Violation[] = []
     for (const abs of matchedFiles) {
       allViolations.push(...findStringErrorViolations(abs))

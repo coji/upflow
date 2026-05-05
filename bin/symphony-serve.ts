@@ -132,24 +132,63 @@ interface TaktChildResult {
   superviseReport: string
   elapsedMs: number
   iterations?: number
+  /** Names the failing preflight stage when metaStatus === 'preflight_failed'. */
+  preflightFailedAt?: string
 }
 
 async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   const startMs = Date.now()
-  // Reset to a pristine main BEFORE pull. The previous run might have left
-  // a `takt/...` branch checked out with uncommitted lockfile changes;
-  // without `git reset --hard` the subsequent `git pull --ff-only` aborts
-  // (we hit this exact failure mode with the sprite-era runner).
-  const cmd = [
-    `cd ${REPO_DIR}`,
-    'git fetch --quiet origin main',
-    'git checkout main --quiet',
-    'git reset --hard origin/main --quiet',
-    'git clean -fd --quiet',
-    'pnpm install --frozen-lockfile --silent',
-    `takt --pipeline -i ${issueNumber} -w ${TAKT_WORKFLOW}`,
-  ].join(' && ')
-  const r = await run('bash', ['-lc', cmd], {
+  // Preflight: pristine main + deterministic env setup. We used to delegate
+  // this to a takt `bootstrapper` persona that ran the same three commands
+  // through claude-opus, but the LLM's per-turn thinking gaps reliably
+  // tripped Claude CLI's stream-idle timeout (issue #394). Running it as
+  // straight bash here is faster, cheaper, and removes a class of failures.
+  // Splitting preflight from the takt invocation also lets us return a
+  // distinct `preflight_failed` metaStatus instead of the generic
+  // `startup_failed` so the post-mortem comment names the real cause.
+  //
+  // Each preflight stage is its own bash invocation so we can name the
+  // failing stage in the post-mortem comment instead of forcing operators
+  // to grep Fly logs to find which command broke. The 4 spawn overhead
+  // (~50-100ms each) is negligible vs the actual command runtime.
+  const preflightStages: Array<[string, string]> = [
+    [
+      'git sync',
+      [
+        `cd ${REPO_DIR}`,
+        'git fetch --quiet origin main',
+        'git checkout main --quiet',
+        'git reset --hard origin/main --quiet',
+        'git clean -fd --quiet',
+      ].join(' && '),
+    ],
+    [
+      'pnpm install',
+      `cd ${REPO_DIR} && pnpm install --frozen-lockfile --silent`,
+    ],
+    ['pnpm db:setup', `cd ${REPO_DIR} && pnpm db:setup`],
+    ['pnpm typecheck', `cd ${REPO_DIR} && pnpm typecheck`],
+  ]
+  for (const [stage, cmd] of preflightStages) {
+    const r = await run('bash', ['-lc', cmd], {
+      streamPrefix: `[preflight:${stage}] `,
+      captureOutput: false,
+      onChild: (child) => {
+        if (activeJob !== null) activeJob.child = child
+      },
+    })
+    if (r.code !== 0) {
+      return {
+        metaStatus: 'preflight_failed',
+        superviseReport: '',
+        elapsedMs: Date.now() - startMs,
+        preflightFailedAt: stage,
+      }
+    }
+  }
+
+  const taktCmd = `cd ${REPO_DIR} && takt --pipeline -i ${issueNumber} -w ${TAKT_WORKFLOW}`
+  const r = await run('bash', ['-lc', taktCmd], {
     streamPrefix: '[takt] ',
     captureOutput: false,
     onChild: (child) => {

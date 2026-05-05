@@ -1,7 +1,7 @@
 name: spec-implement-accept
-description: 'Bootstrap -> Spec generation -> Spec refinement -> Implementation -> Acceptance -> Simplify -> Supervision'
+description: 'Spec generation -> Spec refinement -> Implementation -> Acceptance -> Simplify -> Supervision (env preflight runs upstream in symphony)'
 max_steps: 30
-initial_step: setup
+initial_step: spec-draft
 
 # Pre-select "quiet" in the interactive mode menu so the operator only needs
 # Enter to confirm. Full TUI bypass requires takt >= 0.40 (issue nrslib/takt#605
@@ -12,7 +12,6 @@ interactive_mode: quiet
 
 # Custom facets
 personas:
-  bootstrapper: ../facets/personas/bootstrapper.md
   spec-author: ../facets/personas/spec-author.md
   spec-reviser: ../facets/personas/spec-author.md
   acceptor: ../facets/personas/acceptor.md
@@ -85,30 +84,10 @@ loop_monitors:
           next: supervise
 
 steps:
-  # 0. Bootstrap (Symphony's before_run equivalent)
-  #    Run once at the start so later steps can trust node_modules / data / typecheck state.
-  - name: setup
-    edit: true
-    persona: bootstrapper
-    required_permission_mode: edit
-    pass_previous_response: false
-    instruction: |
-      Bootstrap the worktree environment so subsequent steps can rely on it.
-
-      **Steps:**
-      1. `pnpm install` — ensure node_modules is in sync with pnpm-lock.yaml
-      2. `pnpm db:setup` — initialize SQLite data files (data.db / tenant_seed.db)
-      3. `pnpm typecheck` — confirm the worktree compiles cleanly
-
-      **Rules:**
-      - Do NOT modify source files in this step (env setup only)
-      - Lint / format / build / test are deferred to later steps
-      - Report any non-zero exit code; do not paper over failures
-    rules:
-      - condition: All three commands exited 0
-        next: spec-draft
-      - condition: Any command failed
-        next: ABORT
+  # Bootstrap (pnpm install / db:setup / typecheck) runs upstream of takt
+  # in `bin/symphony-serve.ts` (`runTakt` preflight). Wrapping it in a
+  # claude-opus persona reliably tripped Claude CLI's stream-idle timeout
+  # for purely deterministic shell work — see issue #394.
 
   # 1. Spec draft generation
   - name: spec-draft
