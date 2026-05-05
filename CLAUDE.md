@@ -27,10 +27,10 @@ pnpm vitest run <path/to/test.ts>
 # Type checking
 pnpm typecheck
 
-# Linting (Biome)
+# Linting (oxlint via vp)
 pnpm lint
 
-# Format check (Prettier)
+# Format check (oxfmt via vp)
 pnpm format
 
 # Format fix
@@ -62,7 +62,7 @@ First-time Playwright: `pnpm exec playwright install chromium`.
 - **Auth**: better-auth with GitHub OAuth, supporting organizations
 - **UI**: shadcn/ui components (new-york style) with Tailwind CSS v4
 - **Testing**: Vitest (unit), Playwright (E2E)
-- **Linting**: Biome (lint), Prettier (format)
+- **Linting / Formatting**: Vite+ (`vp lint` = oxlint, `vp fmt` = oxfmt with built-in Tailwind class sorting)
 
 ### Project Structure
 

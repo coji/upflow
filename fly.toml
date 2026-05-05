@@ -10,42 +10,42 @@ kill_timeout = "3s"
 swap_size_mb = 512
 
 [experimental]
-  auto_rollback = true
+auto_rollback = true
 
 [build]
 
 [[mounts]]
-  source = "data"
-  destination = "/upflow/data"
-  processes = ["app"]
+source = "data"
+destination = "/upflow/data"
+processes = ["app"]
 
 [[services]]
-  protocol = "tcp"
-  internal_port = 8080
-  processes = ["app"]
+protocol = "tcp"
+internal_port = 8080
+processes = ["app"]
 
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
-    force_https = true
+[[services.ports]]
+port = 80
+handlers = ["http"]
+force_https = true
 
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 25
-    soft_limit = 20
+[[services.ports]]
+port = 443
+handlers = ["tls", "http"]
+[services.concurrency]
+type = "connections"
+hard_limit = 25
+soft_limit = 20
 
-  [[services.tcp_checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "5s"
+[[services.tcp_checks]]
+interval = "30s"
+timeout = "5s"
+grace_period = "5s"
 
-  [[services.http_checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "30s"
-    method = "get"
-    path = "/healthcheck"
-    protocol = "http"
+[[services.http_checks]]
+interval = "30s"
+timeout = "5s"
+grace_period = "30s"
+method = "get"
+path = "/healthcheck"
+protocol = "http"

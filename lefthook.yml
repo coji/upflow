@@ -1,8 +1,8 @@
 pre-commit:
   commands:
     format:
-      glob: '*.{js,jsx,ts,tsx,mjs,cjs,json,css,md,yml,yaml,html}'
-      run: npx prettier --cache --write {staged_files} && git add {staged_files}
+      glob: '*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css,md,mdx,yml,yaml,html,toml}'
+      run: pnpm exec vp fmt -c .oxfmtrc.json {staged_files} && git add {staged_files}
     lint:
       glob: '*.{js,jsx,ts,tsx,mjs,cjs}'
-      run: npx biome lint --no-errors-on-unmatched --write {staged_files} && git add {staged_files}
+      run: pnpm exec vp lint -c .oxlintrc.json --fix {staged_files} && git add {staged_files}

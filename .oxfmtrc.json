@@ -1,0 +1,19 @@
+{
+  "$schema": "https://oxc.rs/schema/oxfmtrc.json",
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "sortTailwindcss": {
+    "functions": ["twMerge"]
+  },
+  "ignorePatterns": [
+    ".claude/",
+    "pnpm-lock.yaml",
+    "app/services/type.ts",
+    "app/services/tenant-type.ts",
+    "batch/github/schema.graphql",
+    "batch/github/graphql-env.d.ts"
+  ]
+}
