@@ -1,4 +1,13 @@
 import { type ChildProcess, spawn } from 'node:child_process'
+import {
+  closeSync,
+  fstatSync,
+  openSync,
+  readSync,
+  readdirSync,
+  statSync,
+} from 'node:fs'
+import { join } from 'node:path'
 
 export const REPO = 'coji/upflow'
 export const TAKT_WORKFLOW = 'spec-implement-accept'
@@ -41,6 +50,14 @@ export interface RunOptions {
    * abort the run.
    */
   onChild?: (child: ChildProcess) => void
+  /**
+   * Invoked once per complete stdout line (newline-terminated; the line
+   * passed in does not include the trailing `\n`). A trailing partial
+   * line gets flushed on child close. Used by `bin/symphony-serve.ts`
+   * to surface the takt subprocess's most recent output line on
+   * `/status` for live progress visibility.
+   */
+  onStdoutLine?: (line: string) => void
 }
 
 export async function run(
@@ -60,10 +77,35 @@ export async function run(
     }
     let stdout = ''
     let stderr = ''
+    let lineBuf = ''
+    // Cap the partial-line buffer so a stuck child that never emits a
+    // newline (broken pipe, single mega-line, hung pty) can't grow this
+    // unboundedly inside a long-lived server. 1 MB is generous for any
+    // realistic log line; if we hit it we drop the prefix and start over.
+    const LINE_BUF_CAP = 1024 * 1024
+    const emitLines = (chunk: string) => {
+      if (!opts.onStdoutLine) return
+      lineBuf += chunk
+      let nl = lineBuf.indexOf('\n')
+      while (nl !== -1) {
+        const line = lineBuf.slice(0, nl)
+        lineBuf = lineBuf.slice(nl + 1)
+        try {
+          opts.onStdoutLine(line)
+        } catch {
+          // Caller-side bookkeeping shouldn't block the run.
+        }
+        nl = lineBuf.indexOf('\n')
+      }
+      if (lineBuf.length > LINE_BUF_CAP) {
+        lineBuf = lineBuf.slice(-LINE_BUF_CAP)
+      }
+    }
     child.stdout.on('data', (chunk: Buffer) => {
       const s = chunk.toString('utf-8')
       if (capture) stdout += s
       if (opts.streamPrefix) process.stdout.write(`${opts.streamPrefix}${s}`)
+      emitLines(s)
     })
     child.stderr.on('data', (chunk: Buffer) => {
       const s = chunk.toString('utf-8')
@@ -71,7 +113,17 @@ export async function run(
       if (opts.streamPrefix) process.stderr.write(`${opts.streamPrefix}${s}`)
     })
     child.on('error', (err) => reject(err))
-    child.on('close', (code) => resolve({ code: code ?? -1, stdout, stderr }))
+    child.on('close', (code) => {
+      // Flush any trailing stdout that ended without a final newline so
+      // the very last log line still reaches /status before the job ends.
+      if (opts.onStdoutLine && lineBuf.length > 0) {
+        try {
+          opts.onStdoutLine(lineBuf)
+        } catch {}
+        lineBuf = ''
+      }
+      resolve({ code: code ?? -1, stdout, stderr })
+    })
     if (opts.input !== undefined) {
       child.stdin.end(opts.input)
     } else {
@@ -279,4 +331,110 @@ export function elapsedMarker(elapsedMs: number): string {
 
 export function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Parse a numeric env var with bounds validation. Returns the fallback
+ * (and warns to stderr) when the value is unset, non-numeric, or out of
+ * the allowed range. Critical for env vars that drive `setInterval` /
+ * `setTimeout` — bare `Number(process.env.X)` returns NaN for malformed
+ * input, which Node clamps to 1 ms and turns into a busy loop.
+ */
+export function parseFiniteNumberEnv(
+  name: string,
+  opts: { fallback: number; min?: number; max?: number },
+): number {
+  const raw = process.env[name]
+  if (raw === undefined) return opts.fallback
+  const parsed = Number(raw)
+  const inRange =
+    Number.isFinite(parsed) &&
+    (opts.min === undefined || parsed >= opts.min) &&
+    (opts.max === undefined || parsed <= opts.max)
+  if (!inRange) {
+    const range = `${opts.min ?? '-∞'}..${opts.max ?? '∞'}`
+    console.warn(
+      `[env] ignoring ${name}=${raw} (must be a finite number in ${range}); falling back to ${opts.fallback}`,
+    )
+    return opts.fallback
+  }
+  return parsed
+}
+
+/**
+ * From a directory, pick the file with the most recent mtime whose name
+ * matches `nameMatches`. Returns the absolute path or null when nothing
+ * matches / the directory is missing / a transient FS race throws. Used
+ * by `readLatestJsonlEvent` to find the active takt session log.
+ */
+function pickLatestFile(
+  dir: string,
+  nameMatches: (name: string) => boolean,
+): string | null {
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return null
+  }
+  const candidates: Array<{ full: string; mtime: number }> = []
+  for (const e of entries) {
+    if (!e.isFile() || !nameMatches(e.name)) continue
+    const full = join(dir, e.name)
+    try {
+      candidates.push({ full, mtime: statSync(full).mtimeMs })
+    } catch {
+      continue
+    }
+  }
+  candidates.sort((a, b) => b.mtime - a.mtime)
+  return candidates[0]?.full ?? null
+}
+
+interface JsonlEvent {
+  type?: string
+  timestamp?: string
+  endTime?: string
+}
+
+export interface LatestJsonlEvent {
+  type: string | null
+  timestamp: string | null
+}
+
+/**
+ * Tail the most recently modified `<runDir>/logs/*.jsonl` and return the
+ * last complete JSON line's `type` + timestamp. Reads at most the trailing
+ * 64 KB so it stays cheap even for long sessions; takt embeds the full
+ * issue body in some events (notably `workflow_start` and `phase_start`),
+ * which can each weigh several KB, so the smaller 4 KB tail used in the
+ * first cut would have missed them whenever they happened to be last.
+ */
+export function readLatestJsonlEvent(runDir: string): LatestJsonlEvent | null {
+  const logsDir = join(runDir, 'logs')
+  const latestPath = pickLatestFile(logsDir, (n) => n.endsWith('.jsonl'))
+  if (latestPath === null) return null
+  let fd: number
+  try {
+    fd = openSync(latestPath, 'r')
+  } catch {
+    return null
+  }
+  try {
+    const stat = fstatSync(fd)
+    const len = Math.min(stat.size, 64 * 1024)
+    if (len === 0) return null
+    const buf = Buffer.alloc(len)
+    readSync(fd, buf, 0, len, stat.size - len)
+    const tail = buf.toString('utf-8')
+    const lines = tail.split('\n').filter((l) => l.length > 0)
+    const last = lines[lines.length - 1]
+    if (last === undefined) return null
+    const j = JSON.parse(last) as JsonlEvent
+    return { type: j.type ?? null, timestamp: j.timestamp ?? j.endTime ?? null }
+  } catch {
+    return null
+  } finally {
+    closeSync(fd)
+  }
 }

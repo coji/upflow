@@ -44,32 +44,65 @@ import {
   ghComment,
   ghIssueList,
   ghRemoveLabel,
+  parseFiniteNumberEnv,
+  readLatestJsonlEvent,
   run,
   usedBudgetMs,
 } from './symphony-shared'
 
 dayjs.extend(utc)
 
-const PORT = Number(process.env.PORT ?? 8080)
+const PORT = parseFiniteNumberEnv('PORT', {
+  fallback: 8080,
+  min: 1,
+  max: 65535,
+})
 const REPO_DIR = process.env.SYMPHONY_REPO_DIR ?? join(homedir(), 'upflow')
 const TICK_TOKEN = process.env.SYMPHONY_TICK_TOKEN
-const IDLE_SHUTDOWN_MS = Number(
-  process.env.SYMPHONY_IDLE_SHUTDOWN_MS ?? 5 * 60 * 1000,
-)
+const IDLE_SHUTDOWN_MS = parseFiniteNumberEnv('SYMPHONY_IDLE_SHUTDOWN_MS', {
+  fallback: 5 * 60 * 1000,
+  min: 1000,
+})
 
 if (!TICK_TOKEN) {
   console.error('[fatal] SYMPHONY_TICK_TOKEN env is required')
   process.exit(1)
 }
 
+interface JobProgress {
+  /** Filled in once the takt subprocess has created its `.takt/runs/...` dir. */
+  taktRunDir: string | null
+  /** Most recent stdout line from the active subprocess (preflight or takt). */
+  lastStdoutLine: string | null
+  /** When this server received `lastStdoutLine` (our clock, ISO 8601 UTC). */
+  lastStdoutAt: string | null
+  /** Most recent event type from the takt session jsonl, polled periodically. */
+  lastEventType: string | null
+  /** Timestamp recorded INSIDE the jsonl event by takt (not poll time). */
+  lastEventAt: string | null
+}
+
 interface JobState {
   issueNumber: number
   startedAt: string
   child: ChildProcess | null
+  progress: JobProgress
 }
 
 let activeJob: JobState | null = null
 let idleTimer: NodeJS.Timeout | null = null
+let progressPoller: NodeJS.Timeout | null = null
+
+const PROGRESS_POLL_MS = parseFiniteNumberEnv('SYMPHONY_PROGRESS_POLL_MS', {
+  fallback: 30 * 1000,
+  min: 1000,
+})
+
+function updateActiveJobLine(line: string): void {
+  if (activeJob === null) return
+  activeJob.progress.lastStdoutLine = line
+  activeJob.progress.lastStdoutAt = dayjs.utc().toISOString()
+}
 
 function scheduleIdleShutdown(): void {
   if (idleTimer !== null) clearTimeout(idleTimer)
@@ -127,6 +160,38 @@ function readSuperviseReport(runDir: string): string {
   return readFileSync(path, 'utf-8')
 }
 
+function pollProgress(): void {
+  if (activeJob === null) return
+  try {
+    const startMs = dayjs.utc(activeJob.startedAt).valueOf()
+    if (activeJob.progress.taktRunDir === null) {
+      activeJob.progress.taktRunDir = findLatestRunDir(startMs)
+    }
+    const runDir = activeJob.progress.taktRunDir
+    if (runDir === null) return
+    const ev = readLatestJsonlEvent(runDir)
+    if (ev === null) return
+    activeJob.progress.lastEventType = ev.type
+    activeJob.progress.lastEventAt = ev.timestamp
+  } catch (e) {
+    // Don't let a transient FS race (takt rotated logs, Volume hiccup,
+    // malformed JSON line) take down the interval loop. Next tick retries.
+    console.warn('[progress] poll failed:', getErrorMessageForLog(e))
+  }
+}
+
+function startProgressPoller(): void {
+  if (progressPoller !== null) return
+  progressPoller = setInterval(pollProgress, PROGRESS_POLL_MS)
+  progressPoller.unref()
+}
+
+function stopProgressPoller(): void {
+  if (progressPoller === null) return
+  clearInterval(progressPoller)
+  progressPoller = null
+}
+
 interface TaktChildResult {
   metaStatus: TaktMetaStatus
   superviseReport: string
@@ -176,6 +241,7 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
       onChild: (child) => {
         if (activeJob !== null) activeJob.child = child
       },
+      onStdoutLine: updateActiveJobLine,
     })
     if (r.code !== 0) {
       return {
@@ -194,6 +260,7 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
     onChild: (child) => {
       if (activeJob !== null) activeJob.child = child
     },
+    onStdoutLine: updateActiveJobLine,
   })
   const elapsedMs = Date.now() - startMs
   const runDir = findLatestRunDir(startMs)
@@ -221,7 +288,19 @@ async function processOneIssue(): Promise<{
   const issue: IssueRef = ready[0]
 
   const startedAt = dayjs.utc().toISOString()
-  activeJob = { issueNumber: issue.number, startedAt, child: null }
+  activeJob = {
+    issueNumber: issue.number,
+    startedAt,
+    child: null,
+    progress: {
+      taktRunDir: null,
+      lastStdoutLine: null,
+      lastStdoutAt: null,
+      lastEventType: null,
+      lastEventAt: null,
+    },
+  }
+  startProgressPoller()
   console.log(`[pick] #${issue.number} ${issue.title}`)
 
   // try/finally so activeJob always clears even when a gh / takt call
@@ -268,7 +347,7 @@ async function processOneIssue(): Promise<{
       taktResult = {
         metaStatus: 'failed',
         superviseReport: '',
-        elapsedMs: Date.now() - dayjs(startedAt).valueOf(),
+        elapsedMs: Date.now() - dayjs.utc(startedAt).valueOf(),
       }
     }
 
@@ -293,6 +372,7 @@ async function processOneIssue(): Promise<{
     console.log(`[done] #${issue.number} → ${nextLabel} (${result.outcome})`)
     return { state: 'processed', issue: issue.number, outcome: result.outcome }
   } finally {
+    stopProgressPoller()
     activeJob = null
   }
 }
@@ -360,11 +440,28 @@ async function handleTick(res: ServerResponse): Promise<void> {
 }
 
 function handleStatus(res: ServerResponse): void {
+  // Build a serialisable view of activeJob explicitly. Returning the raw
+  // JobState would dump the underlying ChildProcess into the response.
+  const job = activeJob
+  const safeJob =
+    job === null
+      ? null
+      : {
+          issueNumber: job.issueNumber,
+          startedAt: job.startedAt,
+          elapsedMs: Date.now() - dayjs.utc(job.startedAt).valueOf(),
+          pid: job.child?.pid ?? null,
+          taktRunDir: job.progress.taktRunDir,
+          lastStdoutLine: job.progress.lastStdoutLine,
+          lastStdoutAt: job.progress.lastStdoutAt,
+          lastEventType: job.progress.lastEventType,
+          lastEventAt: job.progress.lastEventAt,
+        }
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(
     JSON.stringify({
-      state: activeJob === null ? 'idle' : 'busy',
-      activeJob,
+      state: job === null ? 'idle' : 'busy',
+      activeJob: safeJob,
       bootAt: BOOT_AT,
     }),
   )
