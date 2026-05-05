@@ -24,7 +24,7 @@ export const createOrganization = async ({
 
   // 1. Create organization + member in shared DB
   const { organization } = await db.transaction().execute(async (tsx) => {
-    const organization = await tsx
+    const createdOrg = await tsx
       .insertInto('organizations')
       .values({
         id: nanoid(),
@@ -38,14 +38,14 @@ export const createOrganization = async ({
       .insertInto('members')
       .values({
         id: nanoid(),
-        organizationId: organization.id,
+        organizationId: createdOrg.id,
         userId: creatorUserId,
         role: 'owner',
         createdAt: new Date().toISOString(),
       })
       .execute()
 
-    return { organization }
+    return { organization: createdOrg }
   })
 
   // 2. Create tenant DB file + apply migrations + default settings

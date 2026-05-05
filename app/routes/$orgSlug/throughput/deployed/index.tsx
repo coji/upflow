@@ -57,23 +57,23 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
 
-  let from: dayjs.Dayjs
-  let to: dayjs.Dayjs
+  let fromDate: dayjs.Dayjs
+  let toDate: dayjs.Dayjs
   if (fromParam && toParam) {
-    from = parseDate(fromParam, timezone)
-    to = parseDate(toParam, timezone).add(1, 'day').subtract(1, 'second')
+    fromDate = parseDate(fromParam, timezone)
+    toDate = parseDate(toParam, timezone).add(1, 'day').subtract(1, 'second')
   } else {
-    from = getStartOfWeek(undefined, timezone)
-    to = getEndOfWeek(undefined, timezone)
+    fromDate = getStartOfWeek(undefined, timezone)
+    toDate = getEndOfWeek(undefined, timezone)
   }
 
-  const prevFrom = from.subtract(7, 'day')
-  const prevTo = to.subtract(7, 'day')
+  const prevFrom = fromDate.subtract(7, 'day')
+  const prevTo = toDate.subtract(7, 'day')
 
   const filter = await loadPrFilterState(request, organization.id)
 
-  const fromIso = from.utc().toISOString()
-  const toIso = to.utc().toISOString()
+  const fromIso = fromDate.utc().toISOString()
+  const toIso = toDate.utc().toISOString()
 
   const [pullRequests, prevPullRequests, excludedCount] = await Promise.all([
     getDeployedPullRequestReport(
@@ -106,14 +106,14 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   ])
 
   const stats = calcStats(pullRequests, (pr) => pr.createAndDeployDiff)
-  const prev = calcStats(prevPullRequests, (pr) => pr.createAndDeployDiff)
+  const prevStats = calcStats(prevPullRequests, (pr) => pr.createAndDeployDiff)
 
   return {
     pullRequests,
-    from: from.toISOString(),
+    from: fromDate.toISOString(),
     objective,
     ...stats,
-    prev,
+    prev: prevStats,
     businessDaysOnly,
     excludedCount,
     filterActive: filter.filterActive,
@@ -173,13 +173,16 @@ export default function DeployedPage({
           <WeeklyCalendar
             value={from}
             onWeekChange={(start) => {
-              setSearchParams((prev) => {
-                prev.set('from', dayjs(start).tz(timezone).format('YYYY-MM-DD'))
-                prev.set(
+              setSearchParams((params) => {
+                params.set(
+                  'from',
+                  dayjs(start).tz(timezone).format('YYYY-MM-DD'),
+                )
+                params.set(
                   'to',
                   dayjs(start).tz(timezone).add(6, 'day').format('YYYY-MM-DD'),
                 )
-                return prev
+                return params
               })
             }}
           />
@@ -193,13 +196,13 @@ export default function DeployedPage({
             <DropdownMenuCheckboxItem
               checked={businessDaysOnly}
               onCheckedChange={(checked) => {
-                setSearchParams((prev) => {
+                setSearchParams((params) => {
                   if (checked) {
-                    prev.delete('businessDays')
+                    params.delete('businessDays')
                   } else {
-                    prev.set('businessDays', '0')
+                    params.set('businessDays', '0')
                   }
-                  return prev
+                  return params
                 })
               }}
             >

@@ -34,15 +34,15 @@ export const createSheetApi = ({
     }
 
     let destSheet = res.data.sheets
-      .map((sheet) => ({
-        sheetId: sheet.properties?.sheetId,
-        title: sheet.properties?.title,
+      .map((s) => ({
+        sheetId: s.properties?.sheetId,
+        title: s.properties?.title,
       }))
-      .filter((sheet) => sheet.title === sheetTitle)
+      .filter((s) => s.title === sheetTitle)
       .at(0)
 
     if (!destSheet) {
-      const res = await sheet.spreadsheets.batchUpdate({
+      const batchRes = await sheet.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {
           requests: [
@@ -56,11 +56,12 @@ export const createSheetApi = ({
           ],
         },
       })
-      const sheetId = res?.data?.replies?.[0]?.addSheet?.properties?.sheetId
-      const title = res?.data?.replies?.[0]?.addSheet?.properties?.title
+      const sheetId =
+        batchRes?.data?.replies?.[0]?.addSheet?.properties?.sheetId
+      const title = batchRes?.data?.replies?.[0]?.addSheet?.properties?.title
       if (sheetId == null || title == null) {
         throw new Error(
-          `batchUpdate AddSheetResponse missing sheetId/title: ${JSON.stringify(res?.data)}`,
+          `batchUpdate AddSheetResponse missing sheetId/title: ${JSON.stringify(batchRes?.data)}`,
         )
       }
 

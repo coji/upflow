@@ -26,8 +26,8 @@ export const meta: Route.MetaFunction = () => [
 ]
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { toast, headers } = await getToast(request)
-  return data({ toastData: toast }, { headers })
+  const { toast: toastData, headers } = await getToast(request)
+  return data({ toastData }, { headers })
 }
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {

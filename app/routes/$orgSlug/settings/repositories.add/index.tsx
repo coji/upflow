@@ -84,9 +84,9 @@ type AddRepositoriesLoaderData = {
 async function loadReposForToken(
   integration: IntegrationWithRepositories,
   organizationId: OrganizationId,
-  owner: string | undefined,
+  selectedOwner: string | undefined,
   cursor: string | undefined,
-  query: string,
+  keyword: string,
 ): Promise<AddRepositoriesLoaderData> {
   const token = integration.privateToken
   if (!token) {
@@ -104,19 +104,19 @@ async function loadReposForToken(
   const owners = [...new Set([...apiOwners, ...registeredOwners])].sort(
     (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }),
   )
-  if (owner && !owners.includes(owner)) {
+  if (selectedOwner && !owners.includes(selectedOwner)) {
     throw new Error('invalid owner')
   }
 
   const { pageInfo, repos } = await getOrgCachedData(
     organizationId,
-    `repos-${owner}-${cursor}-${query}`,
+    `repos-${selectedOwner}-${cursor}-${keyword}`,
     () =>
       getRepositoriesByOwnerAndKeyword({
         token,
         cursor,
-        owner,
-        keyword: query,
+        owner: selectedOwner,
+        keyword,
       }),
     300000,
   )
@@ -124,8 +124,8 @@ async function loadReposForToken(
   return {
     registeredRepos: integration.repositories,
     pageInfo,
-    query,
-    owner,
+    query: keyword,
+    owner: selectedOwner,
     owners,
     repos,
     isGithubAppRepos: false,
@@ -138,8 +138,8 @@ async function loadReposForToken(
 async function loadReposForApp(
   integration: IntegrationWithRepositories,
   organizationId: OrganizationId,
-  owner: string | undefined,
-  query: string,
+  selectedOwner: string | undefined,
+  keyword: string,
 ): Promise<AddRepositoriesLoaderData> {
   const installationOptions = await getActiveInstallationOptions(organizationId)
   if (installationOptions.length === 0) {
@@ -198,11 +198,15 @@ async function loadReposForApp(
   // resolved successfully. If any installation failed, the owner may
   // legitimately belong to the missing set — degrade gracefully instead
   // of crashing the page.
-  if (owner && !owners.includes(owner) && failedInstallationIds.length === 0) {
+  if (
+    selectedOwner &&
+    !owners.includes(selectedOwner) &&
+    failedInstallationIds.length === 0
+  ) {
     throw new Error('invalid owner')
   }
 
-  const repos = filterInstallationRepos(allTagged, owner, query)
+  const repos = filterInstallationRepos(allTagged, selectedOwner, keyword)
   const selectedInstallationCount = installationOptions.filter(
     (l) => l.appRepositorySelection === 'selected',
   ).length
@@ -210,8 +214,8 @@ async function loadReposForApp(
   return {
     registeredRepos: integration.repositories,
     pageInfo: { hasNextPage: false as const, endCursor: null as null },
-    query,
-    owner,
+    query: keyword,
+    owner: selectedOwner,
     owners,
     repos,
     isGithubAppRepos: true,
@@ -228,7 +232,12 @@ export const loader = async ({
 }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   requireOrgOwner(membership, organization.slug)
-  const { owner, cursor, query, refresh } = zx.parseQuery(request, {
+  const {
+    owner: selectedOwner,
+    cursor,
+    query: keyword,
+    refresh,
+  } = zx.parseQuery(request, {
     owner: z.string().optional(),
     cursor: z.string().optional(),
     query: z.string().optional().default(''),
@@ -250,10 +259,16 @@ export const loader = async ({
   }
 
   if (integration.method === 'github_app') {
-    return loadReposForApp(integration, organization.id, owner, query)
+    return loadReposForApp(integration, organization.id, selectedOwner, keyword)
   }
 
-  return loadReposForToken(integration, organization.id, owner, cursor, query)
+  return loadReposForToken(
+    integration,
+    organization.id,
+    selectedOwner,
+    cursor,
+    keyword,
+  )
 }
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
@@ -484,9 +499,9 @@ export default function AddRepositoryPage({
                 <SelectValue placeholder="Select organization..." />
               </SelectTrigger>
               <SelectContent>
-                {owners.map((owner) => (
-                  <SelectItem key={owner} value={owner}>
-                    {owner}
+                {owners.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -515,13 +530,13 @@ export default function AddRepositoryPage({
           onSubmit={(event) => {
             event.preventDefault()
             const formData = new FormData(event.currentTarget)
-            const query = formData.get('query') as string
+            const nextKeyword = formData.get('query') as string
             setSearchParams(
-              (prev) => {
-                prev.set('query', query)
-                prev.delete('cursor')
-                prev.delete('refresh')
-                return prev
+              (params) => {
+                params.set('query', nextKeyword)
+                params.delete('cursor')
+                params.delete('refresh')
+                return params
               },
               {
                 preventScrollReset: true,

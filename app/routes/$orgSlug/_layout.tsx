@@ -86,7 +86,7 @@ export default function OrgLayout({
 }: Route.ComponentProps) {
   const { Breadcrumbs } = useBreadcrumbs()
   const matches = useMatches()
-  const handle = matches.reduce<Record<string, unknown>>((acc, m) => {
+  const mergedHandle = matches.reduce<Record<string, unknown>>((acc, m) => {
     if (m.handle && typeof m.handle === 'object') Object.assign(acc, m.handle)
     return acc
   }, {}) as RouteHandle
@@ -119,10 +119,10 @@ export default function OrgLayout({
           'flex h-svh flex-col',
         )}
       >
-        <Header fixed={handle.headerFixed}>
+        <Header fixed={mergedHandle.headerFixed}>
           <Breadcrumbs />
         </Header>
-        <Main fixed={handle.mainFixed}>
+        <Main fixed={mergedHandle.mainFixed}>
           <PRHideByTitleFilterContext.Provider value={openSheet}>
             <Outlet />
             {isAdmin && (

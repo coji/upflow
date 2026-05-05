@@ -261,11 +261,11 @@ export default function DataManagementPage({
   const [actionError, setActionError] = useState<string | null>(null)
 
   const wrapAction =
-    (action: (runId: string) => Promise<unknown>) => (runId: string) => {
+    (actionFn: (runId: string) => Promise<unknown>) => (runId: string) => {
       setActionError(null)
       startTransition(async () => {
         try {
-          await action(runId)
+          await actionFn(runId)
         } catch (e) {
           setActionError(getErrorMessage(e))
         }
