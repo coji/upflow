@@ -1,7 +1,6 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import {
   closeSync,
-  existsSync,
   fstatSync,
   openSync,
   readSync,
@@ -79,6 +78,11 @@ export async function run(
     let stdout = ''
     let stderr = ''
     let lineBuf = ''
+    // Cap the partial-line buffer so a stuck child that never emits a
+    // newline (broken pipe, single mega-line, hung pty) can't grow this
+    // unboundedly inside a long-lived server. 1 MB is generous for any
+    // realistic log line; if we hit it we drop the prefix and start over.
+    const LINE_BUF_CAP = 1024 * 1024
     const emitLines = (chunk: string) => {
       if (!opts.onStdoutLine) return
       lineBuf += chunk
@@ -92,6 +96,9 @@ export async function run(
           // Caller-side bookkeeping shouldn't block the run.
         }
         nl = lineBuf.indexOf('\n')
+      }
+      if (lineBuf.length > LINE_BUF_CAP) {
+        lineBuf = lineBuf.slice(-LINE_BUF_CAP)
       }
     }
     child.stdout.on('data', (chunk: Buffer) => {
@@ -326,6 +333,64 @@ export function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, ms))
 }
 
+/**
+ * Parse a numeric env var with bounds validation. Returns the fallback
+ * (and warns to stderr) when the value is unset, non-numeric, or out of
+ * the allowed range. Critical for env vars that drive `setInterval` /
+ * `setTimeout` — bare `Number(process.env.X)` returns NaN for malformed
+ * input, which Node clamps to 1 ms and turns into a busy loop.
+ */
+export function parseFiniteNumberEnv(
+  name: string,
+  opts: { fallback: number; min?: number; max?: number },
+): number {
+  const raw = process.env[name]
+  if (raw === undefined) return opts.fallback
+  const parsed = Number(raw)
+  const inRange =
+    Number.isFinite(parsed) &&
+    (opts.min === undefined || parsed >= opts.min) &&
+    (opts.max === undefined || parsed <= opts.max)
+  if (!inRange) {
+    const range = `${opts.min ?? '-∞'}..${opts.max ?? '∞'}`
+    console.warn(
+      `[env] ignoring ${name}=${raw} (must be a finite number in ${range}); falling back to ${opts.fallback}`,
+    )
+    return opts.fallback
+  }
+  return parsed
+}
+
+/**
+ * From a directory, pick the file with the most recent mtime whose name
+ * matches `nameMatches`. Returns the absolute path or null when nothing
+ * matches / the directory is missing / a transient FS race throws. Used
+ * by `readLatestJsonlEvent` to find the active takt session log.
+ */
+function pickLatestFile(
+  dir: string,
+  nameMatches: (name: string) => boolean,
+): string | null {
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return null
+  }
+  const candidates: Array<{ full: string; mtime: number }> = []
+  for (const e of entries) {
+    if (!e.isFile() || !nameMatches(e.name)) continue
+    const full = join(dir, e.name)
+    try {
+      candidates.push({ full, mtime: statSync(full).mtimeMs })
+    } catch {
+      continue
+    }
+  }
+  candidates.sort((a, b) => b.mtime - a.mtime)
+  return candidates[0]?.full ?? null
+}
+
 interface JsonlEvent {
   type?: string
   timestamp?: string
@@ -347,17 +412,14 @@ export interface LatestJsonlEvent {
  */
 export function readLatestJsonlEvent(runDir: string): LatestJsonlEvent | null {
   const logsDir = join(runDir, 'logs')
-  if (!existsSync(logsDir)) return null
-  const files = readdirSync(logsDir, { withFileTypes: true })
-    .filter((d) => d.isFile() && d.name.endsWith('.jsonl'))
-    .map((d) => {
-      const full = join(logsDir, d.name)
-      return { full, mtime: statSync(full).mtimeMs }
-    })
-    .sort((a, b) => b.mtime - a.mtime)
-  const latest = files[0]
-  if (!latest) return null
-  const fd = openSync(latest.full, 'r')
+  const latestPath = pickLatestFile(logsDir, (n) => n.endsWith('.jsonl'))
+  if (latestPath === null) return null
+  let fd: number
+  try {
+    fd = openSync(latestPath, 'r')
+  } catch {
+    return null
+  }
   try {
     const stat = fstatSync(fd)
     const len = Math.min(stat.size, 64 * 1024)

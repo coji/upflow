@@ -44,6 +44,7 @@ import {
   ghComment,
   ghIssueList,
   ghRemoveLabel,
+  parseFiniteNumberEnv,
   readLatestJsonlEvent,
   run,
   usedBudgetMs,
@@ -51,12 +52,17 @@ import {
 
 dayjs.extend(utc)
 
-const PORT = Number(process.env.PORT ?? 8080)
+const PORT = parseFiniteNumberEnv('PORT', {
+  fallback: 8080,
+  min: 1,
+  max: 65535,
+})
 const REPO_DIR = process.env.SYMPHONY_REPO_DIR ?? join(homedir(), 'upflow')
 const TICK_TOKEN = process.env.SYMPHONY_TICK_TOKEN
-const IDLE_SHUTDOWN_MS = Number(
-  process.env.SYMPHONY_IDLE_SHUTDOWN_MS ?? 5 * 60 * 1000,
-)
+const IDLE_SHUTDOWN_MS = parseFiniteNumberEnv('SYMPHONY_IDLE_SHUTDOWN_MS', {
+  fallback: 5 * 60 * 1000,
+  min: 1000,
+})
 
 if (!TICK_TOKEN) {
   console.error('[fatal] SYMPHONY_TICK_TOKEN env is required')
@@ -87,20 +93,10 @@ let activeJob: JobState | null = null
 let idleTimer: NodeJS.Timeout | null = null
 let progressPoller: NodeJS.Timeout | null = null
 
-// Validate the env override so a malformed value (NaN, 0, negative) can't
-// turn the poller into a 1ms busy loop. Clamp to >= 1000ms.
-const PROGRESS_POLL_MS = (() => {
-  const raw = process.env.SYMPHONY_PROGRESS_POLL_MS
-  if (raw === undefined) return 30 * 1000
-  const parsed = Number(raw)
-  if (!Number.isFinite(parsed) || parsed < 1000) {
-    console.warn(
-      `[progress] ignoring SYMPHONY_PROGRESS_POLL_MS=${raw} (must be a finite number >= 1000); falling back to 30000`,
-    )
-    return 30 * 1000
-  }
-  return parsed
-})()
+const PROGRESS_POLL_MS = parseFiniteNumberEnv('SYMPHONY_PROGRESS_POLL_MS', {
+  fallback: 30 * 1000,
+  min: 1000,
+})
 
 function updateActiveJobLine(line: string): void {
   if (activeJob === null) return
@@ -167,7 +163,7 @@ function readSuperviseReport(runDir: string): string {
 function pollProgress(): void {
   if (activeJob === null) return
   try {
-    const startMs = dayjs(activeJob.startedAt).valueOf()
+    const startMs = dayjs.utc(activeJob.startedAt).valueOf()
     if (activeJob.progress.taktRunDir === null) {
       activeJob.progress.taktRunDir = findLatestRunDir(startMs)
     }
@@ -351,7 +347,7 @@ async function processOneIssue(): Promise<{
       taktResult = {
         metaStatus: 'failed',
         superviseReport: '',
-        elapsedMs: Date.now() - dayjs(startedAt).valueOf(),
+        elapsedMs: Date.now() - dayjs.utc(startedAt).valueOf(),
       }
     }
 
@@ -453,7 +449,7 @@ function handleStatus(res: ServerResponse): void {
       : {
           issueNumber: job.issueNumber,
           startedAt: job.startedAt,
-          elapsedMs: Date.now() - dayjs(job.startedAt).valueOf(),
+          elapsedMs: Date.now() - dayjs.utc(job.startedAt).valueOf(),
           pid: job.child?.pid ?? null,
           taktRunDir: job.progress.taktRunDir,
           lastStdoutLine: job.progress.lastStdoutLine,

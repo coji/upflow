@@ -7,8 +7,13 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { classifyTakt, readLatestJsonlEvent, run } from './symphony-shared'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  classifyTakt,
+  parseFiniteNumberEnv,
+  readLatestJsonlEvent,
+  run,
+} from './symphony-shared'
 
 const baseArgs = { elapsedMs: 1000 }
 
@@ -272,5 +277,64 @@ describe('readLatestJsonlEvent', () => {
       type: 'newer',
       timestamp: '2026-05-05T00:01:00Z',
     })
+  })
+})
+
+describe('parseFiniteNumberEnv', () => {
+  const KEY = '__SYMPHONY_TEST_NUMBER_ENV__'
+
+  beforeEach(() => {
+    delete process.env[KEY]
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+  afterEach(() => {
+    delete process.env[KEY]
+    vi.restoreAllMocks()
+  })
+
+  it('returns the fallback when the env var is unset (no warning)', () => {
+    expect(parseFiniteNumberEnv(KEY, { fallback: 42 })).toBe(42)
+    expect(console.warn).not.toHaveBeenCalled()
+  })
+
+  it('parses a valid numeric string', () => {
+    process.env[KEY] = '1500'
+    expect(parseFiniteNumberEnv(KEY, { fallback: 30000, min: 1000 })).toBe(1500)
+  })
+
+  it('falls back and warns on a non-numeric value (NaN guard)', () => {
+    process.env[KEY] = 'abc'
+    expect(parseFiniteNumberEnv(KEY, { fallback: 30000, min: 1000 })).toBe(
+      30000,
+    )
+    expect(console.warn).toHaveBeenCalledOnce()
+  })
+
+  it('falls back and warns on a value below `min` (busy-loop guard)', () => {
+    process.env[KEY] = '0'
+    expect(parseFiniteNumberEnv(KEY, { fallback: 30000, min: 1000 })).toBe(
+      30000,
+    )
+    expect(console.warn).toHaveBeenCalledOnce()
+  })
+
+  it('falls back and warns on a value above `max`', () => {
+    process.env[KEY] = '99999'
+    expect(
+      parseFiniteNumberEnv(KEY, { fallback: 8080, min: 1, max: 65535 }),
+    ).toBe(8080)
+    expect(console.warn).toHaveBeenCalledOnce()
+  })
+
+  it('falls back and warns on Infinity', () => {
+    process.env[KEY] = 'Infinity'
+    expect(parseFiniteNumberEnv(KEY, { fallback: 42 })).toBe(42)
+    expect(console.warn).toHaveBeenCalledOnce()
+  })
+
+  it('accepts the boundary values inclusively', () => {
+    process.env[KEY] = '1000'
+    expect(parseFiniteNumberEnv(KEY, { fallback: 30000, min: 1000 })).toBe(1000)
+    expect(console.warn).not.toHaveBeenCalled()
   })
 })
