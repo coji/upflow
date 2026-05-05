@@ -23,6 +23,11 @@ dockerfile = "Dockerfile"
 HOME = "/data/home"
 SYMPHONY_REPO_DIR = "/data/upflow"
 PORT = "8080"
+# Required by db/data-dir.ts (resolveDataDir). Both `pnpm db:setup` in
+# the preflight and any takt-driven test that touches the DB read this.
+# Volume-backed so DB state survives machine restarts; matches the
+# symphony repo dir layout (`/data/upflow/...`).
+UPFLOW_DATA_DIR = "/data/upflow/data"
 
 [[mounts]]
 source = "symphony_data"
