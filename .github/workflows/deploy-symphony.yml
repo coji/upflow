@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: 🚀 flyctl deploy
-        uses: superfly/flyctl-actions@1.5
+        uses: superfly/flyctl-actions@1.6
         with:
           args: >-
             deploy
