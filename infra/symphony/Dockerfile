@@ -7,6 +7,15 @@ ARG PNPM_VERSION=10.32.1
 ARG TAKT_VERSION=0.39.0
 ARG CLAUDE_CODE_VERSION=2.1.126
 ARG CODEX_VERSION=0.128.0
+ARG ATLAS_VERSION=1.2.0
+
+# Atlas only ships an official binary via its Docker image (no GitHub
+# Release artifacts / checksums), so we COPY the binary out of the
+# upstream image. ARG expansion in `COPY --from=<external image>:${ARG}`
+# is unreliable in BuildKit — capture the image as a named build stage
+# here so the variable expands at FROM time, then reference the stage
+# by name in the COPY below.
+FROM arigaio/atlas:${ATLAS_VERSION}-distroless AS atlas
 
 FROM node:${NODE_VERSION}-bookworm-slim
 ARG PNPM_VERSION
@@ -40,6 +49,14 @@ RUN npm install -g \
        takt@${TAKT_VERSION} \
        @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} \
        @openai/codex@${CODEX_VERSION}
+
+# atlas: SQLite migration tool used by `pnpm db:setup` (db:apply /
+# db:migrate). Without it the preflight stage `pnpm db:setup` fails
+# with `sh: atlas: not found`, which we observed on the first
+# preflight-driven Symphony run (issue #399). Pulled from the named
+# `atlas` stage above (see the FROM line for the version + integrity
+# rationale).
+COPY --from=atlas /atlas /usr/local/bin/atlas
 
 # cursor-agent installs into the invoker's HOME, so we run the script in
 # a throwaway HOME and copy the binary into a system path. The official
