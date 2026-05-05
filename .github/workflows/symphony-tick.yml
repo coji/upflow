@@ -44,14 +44,22 @@ jobs:
           # + container init + pnpm install can take 60-90s. Fly's edge
           # times out at ~50s and returns 502, so without retries the
           # very first cron tick of an idle period silently no-ops.
-          # `--retry-all-errors` is required because the default retry
-          # logic ignores HTTP error responses (it only retries
-          # transport-level failures).
+          # curl's default `--retry` already treats 5xx (incl. 500/502)
+          # as transient, which is exactly the cold-boot signal we need
+          # to retry on; no `--retry-all-errors` (that flag would also
+          # retry 4xx like an auth failure, which we don't want).
+          #
+          # A 500 from `handleTick` itself (e.g. GitHub API failure
+          # while transitioning labels) gets retried too, which can mask
+          # the failure on the second attempt if the issue is left in
+          # the `symphony:running` state. The boot-time orphan check
+          # in `bin/symphony-serve.ts` (`reconcileOrphans`) catches this
+          # on the next cold start and marks such issues `failed`, so
+          # the worst-case visibility loss is one cron cycle.
           curl --fail-with-body \
                --max-time 5400 \
                --retry 5 \
                --retry-delay 30 \
-               --retry-all-errors \
                -sS \
                -X POST \
                -H "Authorization: Bearer ${TICK_TOKEN}" \
