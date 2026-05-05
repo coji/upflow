@@ -38,8 +38,20 @@ jobs:
           # drops the request before takt finishes the symphony server
           # still completes the run and posts the GitHub comment from
           # inside the machine.
+          #
+          # Retry on cold-boot races: when the machine is stopped, the
+          # first /tick triggers Fly's auto_start_machines but image pull
+          # + container init + pnpm install can take 60-90s. Fly's edge
+          # times out at ~50s and returns 502, so without retries the
+          # very first cron tick of an idle period silently no-ops.
+          # `--retry-all-errors` is required because the default retry
+          # logic ignores HTTP error responses (it only retries
+          # transport-level failures).
           curl --fail-with-body \
                --max-time 5400 \
+               --retry 5 \
+               --retry-delay 30 \
+               --retry-all-errors \
                -sS \
                -X POST \
                -H "Authorization: Bearer ${TICK_TOKEN}" \
