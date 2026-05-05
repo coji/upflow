@@ -103,13 +103,20 @@ describe('No `.format(...)` outside batch/helper/timeformat.ts', () => {
     expect(matchedFiles.length).toBeGreaterThan(0)
   })
 
-  it('has no `.format(...)` calls outside the timeformat helper', () => {
-    const allViolations: Violation[] = []
-    for (const abs of matchedFiles) {
-      allViolations.push(...findFormatCalls(abs))
-    }
-    expect(allViolations).toEqual([])
-  })
+  // 30s timeout: standalone this test runs in <1s thanks to the shared
+  // Project (introduced in PR #377), but under the full vitest worker load
+  // ts-morph's initial source-file ingestion can blow past the 5s default.
+  it(
+    'has no `.format(...)` calls outside the timeformat helper',
+    { timeout: 30_000 },
+    () => {
+      const allViolations: Violation[] = []
+      for (const abs of matchedFiles) {
+        allViolations.push(...findFormatCalls(abs))
+      }
+      expect(allViolations).toEqual([])
+    },
+  )
 
   it('catches a synthetic violation (sanity check on the matcher)', () => {
     const project = new Project({

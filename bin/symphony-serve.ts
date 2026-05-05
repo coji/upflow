@@ -132,6 +132,8 @@ interface TaktChildResult {
   superviseReport: string
   elapsedMs: number
   iterations?: number
+  /** Names the failing preflight stage when metaStatus === 'preflight_failed'. */
+  preflightFailedAt?: string
 }
 
 async function runTakt(issueNumber: number): Promise<TaktChildResult> {
@@ -144,25 +146,44 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   // Splitting preflight from the takt invocation also lets us return a
   // distinct `preflight_failed` metaStatus instead of the generic
   // `startup_failed` so the post-mortem comment names the real cause.
-  const preflightCmd = [
-    `cd ${REPO_DIR}`,
-    'git fetch --quiet origin main',
-    'git checkout main --quiet',
-    'git reset --hard origin/main --quiet',
-    'git clean -fd --quiet',
-    'pnpm install --frozen-lockfile --silent',
-    'pnpm db:setup',
-    'pnpm typecheck',
-  ].join(' && ')
-  const pre = await run('bash', ['-lc', preflightCmd], {
-    streamPrefix: '[preflight] ',
-    captureOutput: false,
-  })
-  if (pre.code !== 0) {
-    return {
-      metaStatus: 'preflight_failed',
-      superviseReport: '',
-      elapsedMs: Date.now() - startMs,
+  //
+  // Each preflight stage is its own bash invocation so we can name the
+  // failing stage in the post-mortem comment instead of forcing operators
+  // to grep Fly logs to find which command broke. The 4 spawn overhead
+  // (~50-100ms each) is negligible vs the actual command runtime.
+  const preflightStages: Array<[string, string]> = [
+    [
+      'git sync',
+      [
+        `cd ${REPO_DIR}`,
+        'git fetch --quiet origin main',
+        'git checkout main --quiet',
+        'git reset --hard origin/main --quiet',
+        'git clean -fd --quiet',
+      ].join(' && '),
+    ],
+    [
+      'pnpm install',
+      `cd ${REPO_DIR} && pnpm install --frozen-lockfile --silent`,
+    ],
+    ['pnpm db:setup', `cd ${REPO_DIR} && pnpm db:setup`],
+    ['pnpm typecheck', `cd ${REPO_DIR} && pnpm typecheck`],
+  ]
+  for (const [stage, cmd] of preflightStages) {
+    const r = await run('bash', ['-lc', cmd], {
+      streamPrefix: `[preflight:${stage}] `,
+      captureOutput: false,
+      onChild: (child) => {
+        if (activeJob !== null) activeJob.child = child
+      },
+    })
+    if (r.code !== 0) {
+      return {
+        metaStatus: 'preflight_failed',
+        superviseReport: '',
+        elapsedMs: Date.now() - startMs,
+        preflightFailedAt: stage,
+      }
     }
   }
 

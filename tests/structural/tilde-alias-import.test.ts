@@ -109,7 +109,10 @@ describe("Use '~/app/...' alias instead of deep relative imports", () => {
     expect(matchedFiles.length).toBeGreaterThan(0)
   })
 
-  it('has no `../../` (or deeper) imports', () => {
+  // 30s timeout: standalone this test runs in <1s thanks to the shared
+  // Project (introduced in PR #377), but under the full vitest worker load
+  // ts-morph's initial source-file ingestion can blow past the 5s default.
+  it('has no `../../` (or deeper) imports', { timeout: 30_000 }, () => {
     const allViolations: Violation[] = []
     for (const abs of matchedFiles) {
       allViolations.push(...findDeepRelativeImports(abs))

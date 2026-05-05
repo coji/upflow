@@ -196,13 +196,21 @@ export function classifyTakt(args: {
   superviseReport: string
   elapsedMs: number
   iterations?: number
+  preflightFailedAt?: string
 }): TaktOutcome {
-  const { metaStatus, superviseReport, elapsedMs, iterations } = args
+  const {
+    metaStatus,
+    superviseReport,
+    elapsedMs,
+    iterations,
+    preflightFailedAt,
+  } = args
   if (metaStatus === 'preflight_failed') {
     return {
       outcome: 'failure_transient',
-      reason:
-        'symphony preflight (install / db:setup / typecheck) failed before takt was invoked',
+      reason: preflightFailedAt
+        ? `symphony preflight failed at: ${preflightFailedAt}`
+        : 'symphony preflight failed before takt was invoked',
       elapsedMs,
     }
   }
