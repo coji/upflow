@@ -7,12 +7,14 @@ ARG PNPM_VERSION=10.32.1
 ARG TAKT_VERSION=0.39.0
 ARG CLAUDE_CODE_VERSION=2.1.126
 ARG CODEX_VERSION=0.128.0
+ARG ATLAS_VERSION=v1.2.1
 
 FROM node:${NODE_VERSION}-bookworm-slim
 ARG PNPM_VERSION
 ARG TAKT_VERSION
 ARG CLAUDE_CODE_VERSION
 ARG CODEX_VERSION
+ARG ATLAS_VERSION
 
 # System deps takt and the agent CLIs need at runtime.
 # - git: takt operates on a checked-out repo
@@ -40,6 +42,15 @@ RUN npm install -g \
        takt@${TAKT_VERSION} \
        @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} \
        @openai/codex@${CODEX_VERSION}
+
+# atlas: SQLite migration tool used by `pnpm db:setup` (db:apply / db:migrate).
+# Without it the symphony preflight stage `pnpm db:setup` fails with
+# `sh: atlas: not found`, which we observed on the first preflight-driven
+# Symphony run (issue #399). Pin via ATLAS_VERSION; the official install
+# script reads that env var, downloads the matching binary, and drops it
+# into /usr/local/bin. Container build is already root so no sudo prompt.
+RUN curl -sSf https://atlasgo.sh \
+      | env ATLAS_VERSION=${ATLAS_VERSION} sh
 
 # cursor-agent installs into the invoker's HOME, so we run the script in
 # a throwaway HOME and copy the binary into a system path. The official
