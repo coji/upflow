@@ -1,0 +1,20 @@
+# Auto-bump SHA-pinned GitHub Actions. We pin every third-party action
+# to a full commit SHA (see deploy.yml / deploy-symphony.yml) for
+# supply-chain hardening; without Dependabot the pins drift stale.
+# Monthly cadence keeps PR noise low while still surfacing security
+# updates within ~30 days.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: 'ci:'
+    labels:
+      - dependencies
