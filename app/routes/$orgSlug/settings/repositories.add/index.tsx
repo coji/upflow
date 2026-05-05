@@ -532,11 +532,11 @@ export default function AddRepositoryPage({
             const formData = new FormData(event.currentTarget)
             const nextKeyword = formData.get('query') as string
             setSearchParams(
-              (params) => {
-                params.set('query', nextKeyword)
-                params.delete('cursor')
-                params.delete('refresh')
-                return params
+              (prev) => {
+                prev.set('query', nextKeyword)
+                prev.delete('cursor')
+                prev.delete('refresh')
+                return prev
               },
               {
                 preventScrollReset: true,

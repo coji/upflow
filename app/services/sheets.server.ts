@@ -20,12 +20,12 @@ export const createSheetApi = ({
     })
     await jwt.authorize()
 
-    const sheet = sheets({
+    const sheetApi = sheets({
       version: 'v4',
       auth: jwt,
     })
 
-    const res = await sheet.spreadsheets.get({
+    const res = await sheetApi.spreadsheets.get({
       spreadsheetId,
       fields: 'sheets.properties',
     })
@@ -34,15 +34,15 @@ export const createSheetApi = ({
     }
 
     let destSheet = res.data.sheets
-      .map((s) => ({
-        sheetId: s.properties?.sheetId,
-        title: s.properties?.title,
+      .map((sheet) => ({
+        sheetId: sheet.properties?.sheetId,
+        title: sheet.properties?.title,
       }))
-      .filter((s) => s.title === sheetTitle)
+      .filter((sheet) => sheet.title === sheetTitle)
       .at(0)
 
     if (!destSheet) {
-      const batchRes = await sheet.spreadsheets.batchUpdate({
+      const batchRes = await sheetApi.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {
           requests: [
@@ -68,7 +68,7 @@ export const createSheetApi = ({
       destSheet = { sheetId, title }
     }
 
-    await sheet.spreadsheets.batchUpdate({
+    await sheetApi.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
         requests: [

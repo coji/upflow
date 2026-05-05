@@ -173,16 +173,16 @@ export default function OrganizationIndex({
           <WeeklyCalendar
             value={from}
             onWeekChange={(start) => {
-              setSearchParams((params) => {
-                params.set(
+              setSearchParams((prevParams) => {
+                prevParams.set(
                   'from',
                   dayjs(start).tz(timezone).format('YYYY-MM-DD'),
                 )
-                params.set(
+                prevParams.set(
                   'to',
                   dayjs(start).tz(timezone).add(6, 'day').format('YYYY-MM-DD'),
                 )
-                return params
+                return prevParams
               })
             }}
           />
@@ -196,13 +196,13 @@ export default function OrganizationIndex({
             <DropdownMenuCheckboxItem
               checked={businessDaysOnly}
               onCheckedChange={(checked) => {
-                setSearchParams((params) => {
+                setSearchParams((prevParams) => {
                   if (checked) {
-                    params.delete('businessDays')
+                    prevParams.delete('businessDays')
                   } else {
-                    params.set('businessDays', '0')
+                    prevParams.set('businessDays', '0')
                   }
-                  return params
+                  return prevParams
                 })
               }}
             >
