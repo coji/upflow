@@ -7,7 +7,7 @@ ARG PNPM_VERSION=10.32.1
 ARG TAKT_VERSION=0.39.0
 ARG CLAUDE_CODE_VERSION=2.1.126
 ARG CODEX_VERSION=0.128.0
-ARG ATLAS_VERSION=v1.2.1
+ARG ATLAS_VERSION=1.2.0
 
 FROM node:${NODE_VERSION}-bookworm-slim
 ARG PNPM_VERSION
@@ -43,14 +43,17 @@ RUN npm install -g \
        @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} \
        @openai/codex@${CODEX_VERSION}
 
-# atlas: SQLite migration tool used by `pnpm db:setup` (db:apply / db:migrate).
-# Without it the symphony preflight stage `pnpm db:setup` fails with
-# `sh: atlas: not found`, which we observed on the first preflight-driven
-# Symphony run (issue #399). Pin via ATLAS_VERSION; the official install
-# script reads that env var, downloads the matching binary, and drops it
-# into /usr/local/bin. Container build is already root so no sudo prompt.
-RUN curl -sSf https://atlasgo.sh \
-      | env ATLAS_VERSION=${ATLAS_VERSION} sh
+# atlas: SQLite migration tool used by `pnpm db:setup` (db:apply /
+# db:migrate). Without it the preflight stage `pnpm db:setup` fails
+# with `sh: atlas: not found`, which we observed on the first
+# preflight-driven Symphony run (issue #399).
+#
+# Multi-stage COPY from the official Atlas image rather than the curl|sh
+# installer: Atlas's GitHub Releases ship no binary assets / checksums /
+# signatures, so `arigaio/atlas:<version>-distroless` is the only upstream
+# with a verifiable provenance (image digest pinnable). atlasgo.io
+# explicitly recommends the official image for Docker contexts.
+COPY --from=arigaio/atlas:${ATLAS_VERSION}-distroless /atlas /usr/local/bin/atlas
 
 # cursor-agent installs into the invoker's HOME, so we run the script in
 # a throwaway HOME and copy the binary into a system path. The official
