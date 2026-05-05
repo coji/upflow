@@ -17,6 +17,13 @@ on:
 
 # 同時 deploy で takt 実行中の machine を巻き込まないよう、cancel じゃなく
 # キューイング。前 deploy が終わるまで次は待つ。
+#
+# ただし concurrency は deploy 同士の話で、deploy が takt 子プロセス
+# (90 分まで走り得る) を巻き込むのは別問題。新 image up で旧 machine が
+# SIGTERM (kill_timeout=30s) されるため、takt 中盤で deploy がかかると
+# その issue は強制 kill → 次 boot 時に reconcileOrphans が拾って
+# `symphony:failed` に倒れる。実害は次回 retry で解消するが、PR / issue
+# が「なぜ失敗?」となった時の手がかりとしてここに記載しておく。
 concurrency:
   group: deploy-symphony
   cancel-in-progress: false
