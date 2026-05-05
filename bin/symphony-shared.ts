@@ -1,4 +1,14 @@
 import { type ChildProcess, spawn } from 'node:child_process'
+import {
+  closeSync,
+  existsSync,
+  fstatSync,
+  openSync,
+  readSync,
+  readdirSync,
+  statSync,
+} from 'node:fs'
+import { join } from 'node:path'
 
 export const REPO = 'coji/upflow'
 export const TAKT_WORKFLOW = 'spec-implement-accept'
@@ -314,4 +324,55 @@ export function elapsedMarker(elapsedMs: number): string {
 
 export function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
+
+interface JsonlEvent {
+  type?: string
+  timestamp?: string
+  endTime?: string
+}
+
+export interface LatestJsonlEvent {
+  type: string | null
+  timestamp: string | null
+}
+
+/**
+ * Tail the most recently modified `<runDir>/logs/*.jsonl` and return the
+ * last complete JSON line's `type` + timestamp. Reads at most the trailing
+ * 64 KB so it stays cheap even for long sessions; takt embeds the full
+ * issue body in some events (notably `workflow_start` and `phase_start`),
+ * which can each weigh several KB, so the smaller 4 KB tail used in the
+ * first cut would have missed them whenever they happened to be last.
+ */
+export function readLatestJsonlEvent(runDir: string): LatestJsonlEvent | null {
+  const logsDir = join(runDir, 'logs')
+  if (!existsSync(logsDir)) return null
+  const files = readdirSync(logsDir, { withFileTypes: true })
+    .filter((d) => d.isFile() && d.name.endsWith('.jsonl'))
+    .map((d) => {
+      const full = join(logsDir, d.name)
+      return { full, mtime: statSync(full).mtimeMs }
+    })
+    .sort((a, b) => b.mtime - a.mtime)
+  const latest = files[0]
+  if (!latest) return null
+  const fd = openSync(latest.full, 'r')
+  try {
+    const stat = fstatSync(fd)
+    const len = Math.min(stat.size, 64 * 1024)
+    if (len === 0) return null
+    const buf = Buffer.alloc(len)
+    readSync(fd, buf, 0, len, stat.size - len)
+    const tail = buf.toString('utf-8')
+    const lines = tail.split('\n').filter((l) => l.length > 0)
+    const last = lines[lines.length - 1]
+    if (last === undefined) return null
+    const j = JSON.parse(last) as JsonlEvent
+    return { type: j.type ?? null, timestamp: j.timestamp ?? j.endTime ?? null }
+  } catch {
+    return null
+  } finally {
+    closeSync(fd)
+  }
 }

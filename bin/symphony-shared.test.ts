@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest'
-import { classifyTakt, run } from './symphony-shared'
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { classifyTakt, readLatestJsonlEvent, run } from './symphony-shared'
 
 const baseArgs = { elapsedMs: 1000 }
 
@@ -155,5 +164,113 @@ describe('run() onStdoutLine', () => {
     })
     expect(r.code).toBe(0)
     expect(calls).toEqual(['a', 'b', 'c'])
+  })
+})
+
+describe('readLatestJsonlEvent', () => {
+  let runDir: string
+
+  beforeEach(() => {
+    runDir = mkdtempSync(join(tmpdir(), 'symphony-jsonl-'))
+    mkdirSync(join(runDir, 'logs'), { recursive: true })
+  })
+  afterEach(() => {
+    rmSync(runDir, { recursive: true, force: true })
+  })
+
+  function writeJsonl(name: string, lines: string[]): void {
+    writeFileSync(join(runDir, 'logs', name), `${lines.join('\n')}\n`)
+  }
+
+  it('returns null when the logs directory is missing', () => {
+    rmSync(join(runDir, 'logs'), { recursive: true })
+    expect(readLatestJsonlEvent(runDir)).toBeNull()
+  })
+
+  it('returns null when no jsonl files exist', () => {
+    expect(readLatestJsonlEvent(runDir)).toBeNull()
+  })
+
+  it('returns null on an empty jsonl file', () => {
+    writeFileSync(join(runDir, 'logs', 'empty.jsonl'), '')
+    expect(readLatestJsonlEvent(runDir)).toBeNull()
+  })
+
+  it('parses the last line of a small jsonl file', () => {
+    writeJsonl('a.jsonl', [
+      JSON.stringify({
+        type: 'workflow_start',
+        timestamp: '2026-05-05T00:00:00Z',
+      }),
+      JSON.stringify({ type: 'step_start', timestamp: '2026-05-05T00:00:10Z' }),
+      JSON.stringify({
+        type: 'step_complete',
+        timestamp: '2026-05-05T00:00:20Z',
+      }),
+    ])
+    expect(readLatestJsonlEvent(runDir)).toEqual({
+      type: 'step_complete',
+      timestamp: '2026-05-05T00:00:20Z',
+    })
+  })
+
+  it('falls back to endTime when timestamp is absent', () => {
+    writeJsonl('a.jsonl', [
+      JSON.stringify({
+        type: 'workflow_abort',
+        endTime: '2026-05-05T01:00:00Z',
+      }),
+    ])
+    expect(readLatestJsonlEvent(runDir)).toEqual({
+      type: 'workflow_abort',
+      timestamp: '2026-05-05T01:00:00Z',
+    })
+  })
+
+  it('handles a giant first line followed by a small last line (>4 KB tail safety)', () => {
+    // workflow_start often embeds the full issue body; this used to break a
+    // 4 KB tail when the LAST event was small enough to fit but the file
+    // overall didn't. With the 64 KB tail it works as long as the LAST
+    // event itself is < 64 KB.
+    const huge = JSON.stringify({
+      type: 'workflow_start',
+      task: 'x'.repeat(20_000),
+    })
+    writeJsonl('a.jsonl', [
+      huge,
+      JSON.stringify({
+        type: 'step_complete',
+        timestamp: '2026-05-05T02:00:00Z',
+      }),
+    ])
+    expect(readLatestJsonlEvent(runDir)).toEqual({
+      type: 'step_complete',
+      timestamp: '2026-05-05T02:00:00Z',
+    })
+  })
+
+  it('returns null when the last line is malformed JSON (does not throw)', () => {
+    writeFileSync(
+      join(runDir, 'logs', 'a.jsonl'),
+      `${JSON.stringify({ type: 'ok' })}\nnot-json\n`,
+    )
+    expect(readLatestJsonlEvent(runDir)).toBeNull()
+  })
+
+  it('picks the most recently modified jsonl when multiple exist', () => {
+    writeJsonl('older.jsonl', [
+      JSON.stringify({ type: 'older', timestamp: '2026-05-05T00:00:00Z' }),
+    ])
+    // Force older mtime well into the past so the sort is unambiguous.
+    const olderPath = join(runDir, 'logs', 'older.jsonl')
+    const past = (Date.now() - 60_000) / 1000
+    utimesSync(olderPath, past, past)
+    writeJsonl('newer.jsonl', [
+      JSON.stringify({ type: 'newer', timestamp: '2026-05-05T00:01:00Z' }),
+    ])
+    expect(readLatestJsonlEvent(runDir)).toEqual({
+      type: 'newer',
+      timestamp: '2026-05-05T00:01:00Z',
+    })
   })
 })

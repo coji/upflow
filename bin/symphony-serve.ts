@@ -22,16 +22,7 @@
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import type { ChildProcess } from 'node:child_process'
-import {
-  closeSync,
-  existsSync,
-  fstatSync,
-  openSync,
-  readFileSync,
-  readSync,
-  readdirSync,
-  statSync,
-} from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import {
   type IncomingMessage,
   type ServerResponse,
@@ -53,6 +44,7 @@ import {
   ghComment,
   ghIssueList,
   ghRemoveLabel,
+  readLatestJsonlEvent,
   run,
   usedBudgetMs,
 } from './symphony-shared'
@@ -76,9 +68,11 @@ interface JobProgress {
   taktRunDir: string | null
   /** Most recent stdout line from the active subprocess (preflight or takt). */
   lastStdoutLine: string | null
+  /** When this server received `lastStdoutLine` (our clock, ISO 8601 UTC). */
   lastStdoutAt: string | null
   /** Most recent event type from the takt session jsonl, polled periodically. */
   lastEventType: string | null
+  /** Timestamp recorded INSIDE the jsonl event by takt (not poll time). */
   lastEventAt: string | null
 }
 
@@ -93,9 +87,20 @@ let activeJob: JobState | null = null
 let idleTimer: NodeJS.Timeout | null = null
 let progressPoller: NodeJS.Timeout | null = null
 
-const PROGRESS_POLL_MS = Number(
-  process.env.SYMPHONY_PROGRESS_POLL_MS ?? 30 * 1000,
-)
+// Validate the env override so a malformed value (NaN, 0, negative) can't
+// turn the poller into a 1ms busy loop. Clamp to >= 1000ms.
+const PROGRESS_POLL_MS = (() => {
+  const raw = process.env.SYMPHONY_PROGRESS_POLL_MS
+  if (raw === undefined) return 30 * 1000
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed < 1000) {
+    console.warn(
+      `[progress] ignoring SYMPHONY_PROGRESS_POLL_MS=${raw} (must be a finite number >= 1000); falling back to 30000`,
+    )
+    return 30 * 1000
+  }
+  return parsed
+})()
 
 function updateActiveJobLine(line: string): void {
   if (activeJob === null) return
@@ -159,63 +164,24 @@ function readSuperviseReport(runDir: string): string {
   return readFileSync(path, 'utf-8')
 }
 
-interface JsonlEvent {
-  type?: string
-  timestamp?: string
-  endTime?: string
-}
-
-/**
- * Tail the most recently modified `<runDir>/logs/*.jsonl` and return the
- * last complete JSON line's `type` + timestamp. Reads at most the trailing
- * 4 KB so it stays cheap even for long sessions.
- */
-function readLatestJsonlEvent(
-  runDir: string,
-): { type: string | null; timestamp: string | null } | null {
-  const logsDir = join(runDir, 'logs')
-  if (!existsSync(logsDir)) return null
-  const files = readdirSync(logsDir, { withFileTypes: true })
-    .filter((d) => d.isFile() && d.name.endsWith('.jsonl'))
-    .map((d) => {
-      const full = join(logsDir, d.name)
-      return { full, mtime: statSync(full).mtimeMs }
-    })
-    .sort((a, b) => b.mtime - a.mtime)
-  const latest = files[0]
-  if (!latest) return null
-  const fd = openSync(latest.full, 'r')
-  try {
-    const stat = fstatSync(fd)
-    const len = Math.min(stat.size, 4096)
-    if (len === 0) return null
-    const buf = Buffer.alloc(len)
-    readSync(fd, buf, 0, len, stat.size - len)
-    const tail = buf.toString('utf-8')
-    const lines = tail.split('\n').filter((l) => l.length > 0)
-    const last = lines[lines.length - 1]
-    if (!last) return null
-    const j = JSON.parse(last) as JsonlEvent
-    return { type: j.type ?? null, timestamp: j.timestamp ?? j.endTime ?? null }
-  } catch {
-    return null
-  } finally {
-    closeSync(fd)
-  }
-}
-
 function pollProgress(): void {
   if (activeJob === null) return
-  const startMs = dayjs(activeJob.startedAt).valueOf()
-  if (activeJob.progress.taktRunDir === null) {
-    activeJob.progress.taktRunDir = findLatestRunDir(startMs)
+  try {
+    const startMs = dayjs(activeJob.startedAt).valueOf()
+    if (activeJob.progress.taktRunDir === null) {
+      activeJob.progress.taktRunDir = findLatestRunDir(startMs)
+    }
+    const runDir = activeJob.progress.taktRunDir
+    if (runDir === null) return
+    const ev = readLatestJsonlEvent(runDir)
+    if (ev === null) return
+    activeJob.progress.lastEventType = ev.type
+    activeJob.progress.lastEventAt = ev.timestamp
+  } catch (e) {
+    // Don't let a transient FS race (takt rotated logs, Volume hiccup,
+    // malformed JSON line) take down the interval loop. Next tick retries.
+    console.warn('[progress] poll failed:', getErrorMessageForLog(e))
   }
-  const runDir = activeJob.progress.taktRunDir
-  if (runDir === null) return
-  const ev = readLatestJsonlEvent(runDir)
-  if (ev === null) return
-  activeJob.progress.lastEventType = ev.type
-  activeJob.progress.lastEventAt = ev.timestamp
 }
 
 function startProgressPoller(): void {
