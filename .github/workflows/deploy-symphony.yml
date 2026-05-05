@@ -1,0 +1,44 @@
+name: 🎼 Deploy Symphony
+
+# Symphony は本体 upflow と別 Fly app (`upflow-symphony`) で動いてるので
+# deploy も独立。`bin/symphony*.ts` は machine boot 時の `git fetch &&
+# git reset --hard origin/main` で勝手に追従するので redeploy 不要。
+# image に焼き込むファイル (Dockerfile / fly.toml / entrypoint.sh) を
+# 触ったときだけ flyctl deploy する。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/symphony/**'
+      - '.github/workflows/deploy-symphony.yml'
+  # 緊急時 / 設定変更なしで再 deploy したいとき用
+  workflow_dispatch:
+
+# 同時 deploy で takt 実行中の machine を巻き込まないよう、cancel じゃなく
+# キューイング。前 deploy が終わるまで次は待つ。
+concurrency:
+  group: deploy-symphony
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: 🚀 Deploy Symphony
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v6
+
+      - name: 🚀 flyctl deploy
+        uses: superfly/flyctl-actions@1.5
+        with:
+          args: >-
+            deploy
+            --app upflow-symphony
+            -c infra/symphony/fly.toml
+            --dockerfile infra/symphony/Dockerfile
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
