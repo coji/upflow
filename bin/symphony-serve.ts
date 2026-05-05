@@ -136,20 +136,38 @@ interface TaktChildResult {
 
 async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   const startMs = Date.now()
-  // Reset to a pristine main BEFORE pull. The previous run might have left
-  // a `takt/...` branch checked out with uncommitted lockfile changes;
-  // without `git reset --hard` the subsequent `git pull --ff-only` aborts
-  // (we hit this exact failure mode with the sprite-era runner).
-  const cmd = [
+  // Preflight: pristine main + deterministic env setup. We used to delegate
+  // this to a takt `bootstrapper` persona that ran the same three commands
+  // through claude-opus, but the LLM's per-turn thinking gaps reliably
+  // tripped Claude CLI's stream-idle timeout (issue #394). Running it as
+  // straight bash here is faster, cheaper, and removes a class of failures.
+  // Splitting preflight from the takt invocation also lets us return a
+  // distinct `preflight_failed` metaStatus instead of the generic
+  // `startup_failed` so the post-mortem comment names the real cause.
+  const preflightCmd = [
     `cd ${REPO_DIR}`,
     'git fetch --quiet origin main',
     'git checkout main --quiet',
     'git reset --hard origin/main --quiet',
     'git clean -fd --quiet',
     'pnpm install --frozen-lockfile --silent',
-    `takt --pipeline -i ${issueNumber} -w ${TAKT_WORKFLOW}`,
+    'pnpm db:setup',
+    'pnpm typecheck',
   ].join(' && ')
-  const r = await run('bash', ['-lc', cmd], {
+  const pre = await run('bash', ['-lc', preflightCmd], {
+    streamPrefix: '[preflight] ',
+    captureOutput: false,
+  })
+  if (pre.code !== 0) {
+    return {
+      metaStatus: 'preflight_failed',
+      superviseReport: '',
+      elapsedMs: Date.now() - startMs,
+    }
+  }
+
+  const taktCmd = `cd ${REPO_DIR} && takt --pipeline -i ${issueNumber} -w ${TAKT_WORKFLOW}`
+  const r = await run('bash', ['-lc', taktCmd], {
     streamPrefix: '[takt] ',
     captureOutput: false,
     onChild: (child) => {

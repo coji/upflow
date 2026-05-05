@@ -180,8 +180,10 @@ export type TaktMetaStatus =
   | 'completed'
   | 'failed'
   | 'running'
+  | 'aborted'
   | 'startup_failed'
   | 'budget_exceeded'
+  | 'preflight_failed'
 
 /**
  * Heuristic outcome classification; M0 will replace this once takt's
@@ -196,6 +198,14 @@ export function classifyTakt(args: {
   iterations?: number
 }): TaktOutcome {
   const { metaStatus, superviseReport, elapsedMs, iterations } = args
+  if (metaStatus === 'preflight_failed') {
+    return {
+      outcome: 'failure_transient',
+      reason:
+        'symphony preflight (install / db:setup / typecheck) failed before takt was invoked',
+      elapsedMs,
+    }
+  }
   if (metaStatus === 'startup_failed') {
     return {
       outcome: 'failure_transient',
@@ -210,7 +220,11 @@ export function classifyTakt(args: {
       elapsedMs,
     }
   }
-  if (metaStatus === 'failed' || metaStatus === 'running') {
+  if (
+    metaStatus === 'failed' ||
+    metaStatus === 'running' ||
+    metaStatus === 'aborted'
+  ) {
     return {
       outcome: 'failure_transient',
       reason: `takt meta.status=${metaStatus} after polling (iterations=${iterations ?? '?'})`,
@@ -228,8 +242,7 @@ export function classifyTakt(args: {
   if (judgment === undefined) {
     return {
       outcome: 'failure_transient',
-      reason:
-        'takt meta.status=completed but supervise report had no `## Judgment:` marker',
+      reason: `takt meta.status=${metaStatus} but supervise report had no \`## Judgment:\` marker`,
       elapsedMs,
     }
   }
