@@ -160,7 +160,13 @@ steps:
       - step-implementation
     knowledge: implementation-plan
     session: refresh
-    required_permission_mode: edit
+    # `full` (not `edit`) because takt's cursor-agent invocation only
+    # passes `--force` (the auto-approve-everything flag) when
+    # permissionMode === 'full'; `edit` mode passes nothing, and
+    # cursor-agent then blocks on file-edit / command-exec permission
+    # prompts in headless mode (observed: 80-min hang on issue #399).
+    # cursor-agent has no edit-only flag, so all-or-nothing here.
+    required_permission_mode: full
     instruction: |
       Implement according to the task spec (order.md).
 
@@ -231,7 +237,8 @@ steps:
       - step-implementation
     knowledge: implementation-plan
     session: refresh
-    required_permission_mode: edit
+    # See `implement` step for why coder uses `full`, not `edit`.
+    required_permission_mode: full
     pass_previous_response: false
     instruction: |
       Fix the issues raised in the acceptance testing.
