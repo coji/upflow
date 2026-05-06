@@ -355,11 +355,18 @@ function extractImplementJudgment(
 }
 
 function extractImplementWhy(report: string): string {
-  // The contract puts the blocker in `## Why (if BLOCKED)`. Match that
+  // The contract puts the blocker in `## Why (if BLOCKED)`. Match the
   // section header (with or without the parenthetical) and grab the
-  // body up to the next `##` heading or EOF.
-  const m = report.match(/^##\s*Why[^\n]*\n+([\s\S]*?)(\n##\s|$)/im)
-  return m?.[1]?.trim() ?? ''
+  // body up to the next `##` heading or end-of-file.
+  //
+  // Done as locate-heading + slice (not a single regex with `$`) because
+  // `$` under /m matches at every line boundary, so a lazy regex stops
+  // at the first newline and silently truncates multi-line Why bodies.
+  const heading = report.match(/^##\s*Why\b[^\n]*\n+/im)
+  if (heading?.index === undefined) return ''
+  const after = report.slice(heading.index + heading[0].length)
+  const next = after.match(/\n##\s/)
+  return (next?.index === undefined ? after : after.slice(0, next.index)).trim()
 }
 
 export function elapsedMarker(elapsedMs: number): string {

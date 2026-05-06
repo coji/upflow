@@ -161,10 +161,13 @@ function readSuperviseReport(runDir: string): string {
 }
 
 function readImplementReport(runDir: string): string {
-  // Both the implement and fix steps write to the same file name; the
-  // last write wins. classifyTakt only consults this report when the
-  // workflow aborted before reaching supervise, so the most recent
-  // implement/fix attempt is exactly what we want.
+  // Both the implement and fix steps declare `name: implement-report.md`
+  // in their output_contracts. takt's report-phase-runner backs up any
+  // existing file at this name to `<name>.<timestamp>` before writing
+  // (see `backupExistingReport` in report-phase-runner.ts), so the base
+  // name always holds the most recent attempt. classifyTakt only
+  // consults this report on aborted runs, where the latest implement /
+  // fix attempt is exactly what we want.
   const path = join(runDir, 'reports', 'implement-report.md')
   if (!existsSync(path)) return ''
   return readFileSync(path, 'utf-8')
