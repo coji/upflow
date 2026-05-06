@@ -160,6 +160,16 @@ function readSuperviseReport(runDir: string): string {
   return readFileSync(path, 'utf-8')
 }
 
+function readImplementReport(runDir: string): string {
+  // Both the implement and fix steps write to the same file name; the
+  // last write wins. classifyTakt only consults this report when the
+  // workflow aborted before reaching supervise, so the most recent
+  // implement/fix attempt is exactly what we want.
+  const path = join(runDir, 'reports', 'implement-report.md')
+  if (!existsSync(path)) return ''
+  return readFileSync(path, 'utf-8')
+}
+
 function pollProgress(): void {
   if (activeJob === null) return
   try {
@@ -195,6 +205,7 @@ function stopProgressPoller(): void {
 interface TaktChildResult {
   metaStatus: TaktMetaStatus
   superviseReport: string
+  implementReport: string
   elapsedMs: number
   iterations?: number
   /** Names the failing preflight stage when metaStatus === 'preflight_failed'. */
@@ -251,6 +262,7 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
       return {
         metaStatus: 'preflight_failed',
         superviseReport: '',
+        implementReport: '',
         elapsedMs: Date.now() - startMs,
         preflightFailedAt: stage,
       }
@@ -269,7 +281,12 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   const elapsedMs = Date.now() - startMs
   const runDir = findLatestRunDir(startMs)
   if (runDir === null) {
-    return { metaStatus: 'startup_failed', superviseReport: '', elapsedMs }
+    return {
+      metaStatus: 'startup_failed',
+      superviseReport: '',
+      implementReport: '',
+      elapsedMs,
+    }
   }
   const meta = readMeta(runDir)
   const status: TaktMetaStatus =
@@ -277,6 +294,9 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   return {
     metaStatus: status,
     superviseReport: status === 'completed' ? readSuperviseReport(runDir) : '',
+    // Always read the implement report — classifyTakt uses it to
+    // distinguish a BLOCKED abort from a generic one.
+    implementReport: readImplementReport(runDir),
     elapsedMs,
     iterations: meta?.iterations,
   }
@@ -351,6 +371,7 @@ async function processOneIssue(): Promise<{
       taktResult = {
         metaStatus: 'failed',
         superviseReport: '',
+        implementReport: '',
         elapsedMs: Date.now() - dayjs.utc(startedAt).valueOf(),
       }
     }

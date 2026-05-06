@@ -238,14 +238,19 @@ export type TaktMetaStatus =
   | 'preflight_failed'
 
 /**
- * Heuristic outcome classification; M0 will replace this once takt's
- * supervise step emits a structured outcome field. Today we look at the
- * takt-reported `meta.status` and the "Remaining Issues" section of the
- * supervise report.
+ * Outcome classification driven by takt's structured judgment markers.
+ * The supervise step emits `## Judgment: COMPLETE | FIX | SPEC_REVIEW`
+ * (`.takt/facets/output-contracts/supervise-report.md`); the implement
+ * and fix steps emit `## Implement: COMPLETED | BLOCKED`
+ * (`.takt/facets/output-contracts/implement-report.md`). The implement
+ * marker is what disambiguates an "ABORT because the agent declared
+ * BLOCKED" (deterministic, surface the Why) from a generic abort
+ * (transient, retry).
  */
 export function classifyTakt(args: {
   metaStatus: TaktMetaStatus
   superviseReport: string
+  implementReport?: string
   elapsedMs: number
   iterations?: number
   preflightFailedAt?: string
@@ -253,6 +258,7 @@ export function classifyTakt(args: {
   const {
     metaStatus,
     superviseReport,
+    implementReport,
     elapsedMs,
     iterations,
     preflightFailedAt,
@@ -285,6 +291,22 @@ export function classifyTakt(args: {
     metaStatus === 'running' ||
     metaStatus === 'aborted'
   ) {
+    // If the implement/fix step explicitly emitted BLOCKED, that's a
+    // deterministic "human needed" signal — not the same as a generic
+    // aborted-by-judge. Surface the Why so the post-mortem comment
+    // tells the operator what to clarify, instead of just naming the
+    // status code.
+    const implementMarker = implementReport
+      ? extractImplementJudgment(implementReport)
+      : undefined
+    if (implementMarker === 'BLOCKED') {
+      const why = extractImplementWhy(implementReport ?? '')
+      return {
+        outcome: 'failure_deterministic',
+        reason: `takt implement judgment: BLOCKED${why ? ` — ${why.slice(0, 200)}` : ''}`,
+        elapsedMs,
+      }
+    }
     return {
       outcome: 'failure_transient',
       reason: `takt meta.status=${metaStatus} after polling (iterations=${iterations ?? '?'})`,
@@ -323,6 +345,21 @@ export function classifyTakt(args: {
     reason: `takt supervise judgment: ${judgment}${tail ? ` — ${tail.slice(0, 200)}` : ''}`,
     elapsedMs,
   }
+}
+
+function extractImplementJudgment(
+  report: string,
+): 'COMPLETED' | 'BLOCKED' | undefined {
+  const m = report.match(/^##\s*Implement:\s*(COMPLETED|BLOCKED)\b/im)
+  return m?.[1] as 'COMPLETED' | 'BLOCKED' | undefined
+}
+
+function extractImplementWhy(report: string): string {
+  // The contract puts the blocker in `## Why (if BLOCKED)`. Match that
+  // section header (with or without the parenthetical) and grab the
+  // body up to the next `##` heading or EOF.
+  const m = report.match(/^##\s*Why[^\n]*\n+([\s\S]*?)(\n##\s|$)/im)
+  return m?.[1]?.trim() ?? ''
 }
 
 export function elapsedMarker(elapsedMs: number): string {

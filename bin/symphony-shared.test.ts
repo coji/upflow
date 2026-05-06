@@ -75,6 +75,81 @@ describe('classifyTakt', () => {
     })
   }
 
+  describe('aborted with implement report', () => {
+    it('returns failure_deterministic with the Why when implement is BLOCKED', () => {
+      const report = [
+        '# Implementation Result',
+        '',
+        '## Implement: BLOCKED',
+        '',
+        '## Why',
+        '',
+        'order.md does not specify the API endpoint shape and the',
+        'caller does not exist in the repo yet.',
+      ].join('\n')
+      const r = classifyTakt({
+        ...baseArgs,
+        metaStatus: 'aborted',
+        superviseReport: '',
+        implementReport: report,
+      })
+      expect(r.outcome).toBe('failure_deterministic')
+      expect(r.reason).toContain('takt implement judgment: BLOCKED')
+      expect(r.reason).toContain('does not specify the API endpoint')
+    })
+
+    it('still returns failure_deterministic when BLOCKED has no Why section', () => {
+      const r = classifyTakt({
+        ...baseArgs,
+        metaStatus: 'aborted',
+        superviseReport: '',
+        implementReport: '## Implement: BLOCKED\n',
+      })
+      expect(r.outcome).toBe('failure_deterministic')
+      expect(r.reason).toBe('takt implement judgment: BLOCKED')
+    })
+
+    it('falls back to transient when implement marker says COMPLETED but workflow aborted elsewhere', () => {
+      // e.g. fix step succeeded but supervise ABORTed for spec-level
+      // reasons; the COMPLETED marker is stale and shouldn't fake a
+      // human-needed signal.
+      const r = classifyTakt({
+        ...baseArgs,
+        metaStatus: 'aborted',
+        superviseReport: '',
+        implementReport: '## Implement: COMPLETED\n',
+        iterations: 2,
+      })
+      expect(r.outcome).toBe('failure_transient')
+      expect(r.reason).toContain('meta.status=aborted')
+    })
+
+    it('falls back to transient when implement report has no marker', () => {
+      const r = classifyTakt({
+        ...baseArgs,
+        metaStatus: 'aborted',
+        superviseReport: '',
+        implementReport: 'random text without marker',
+        iterations: 1,
+      })
+      expect(r.outcome).toBe('failure_transient')
+      expect(r.reason).toContain('meta.status=aborted')
+    })
+
+    it('truncates very long Why text to keep the post-mortem comment readable', () => {
+      const why = 'x'.repeat(500)
+      const r = classifyTakt({
+        ...baseArgs,
+        metaStatus: 'aborted',
+        superviseReport: '',
+        implementReport: `## Implement: BLOCKED\n\n## Why\n\n${why}`,
+      })
+      expect(r.outcome).toBe('failure_deterministic')
+      // 200-char cap matches the supervise FIX path
+      expect(r.reason.length).toBeLessThan(300)
+    })
+  })
+
   describe('completed', () => {
     it('returns success on Judgment: COMPLETE', () => {
       const r = classifyTakt({
