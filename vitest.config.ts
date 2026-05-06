@@ -10,6 +10,7 @@ export default defineConfig(async (configEnv) =>
       },
       test: {
         exclude: [...configDefaults.exclude, 'opensrc/**', '.react-router/**'],
+        setupFiles: ['./tests/setup.ts'],
         watch: false,
       },
     }),
