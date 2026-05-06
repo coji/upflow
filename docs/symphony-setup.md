@@ -37,6 +37,15 @@ gh secret set SYMPHONY_URL --body "https://upflow-symphony.fly.dev"
 
 Fly secrets と GitHub Actions secrets の両方に同じ値を入れる。GitHub Actions cron がこの token で Fly machine を叩く。
 
+ついでに dotenv 検証用のスタブシークレットも入れる。symphony 自体は OAuth に出ないが、`app/libs/dotenv.server.ts` がスキーマ検証で `*_SECRET` 系の存在を要求するので、ダミー値で埋める必要がある。**コミット済 fly.toml ではなく `flyctl secrets` 側に置く**: 平文の `*_SECRET` をソース管理に混ぜると、将来本物のシークレットを誤コミットする習慣が芽生えるので分離する:
+
+```bash
+flyctl secrets set \
+  BETTER_AUTH_SECRET="symphony-preflight-dummy-secret-32+chars-not-a-real-secret" \
+  GITHUB_CLIENT_SECRET="symphony-dummy" \
+  --app upflow-symphony
+```
+
 ## 3. 初回 deploy (auth 前なので機能しないが、SSH 用に machine を起こす目的)
 
 ```bash
@@ -105,6 +114,20 @@ curl -H "Authorization: Bearer $TOKEN" \
 machine が起きていれば現在の job 情報、寝ていれば auto-start 後に同情報が返る。
 
 ## メンテナンス
+
+### 変更前にローカルで preflight 確認
+
+`infra/symphony/**` (Dockerfile / fly.toml / entrypoint.sh / preflight-local.sh) を触ったら、push 前に手元で前処理が通るか確認する:
+
+```bash
+pnpm symphony:preflight:check
+```
+
+中身: `infra/symphony/preflight-local.sh` を `bash` で実行。symphony image をローカルでビルドし、その image 内で `pnpm install` → `pnpm db:setup` → `pnpm typecheck` の 3 段を、fly.toml と同じ環境変数を渡して走らせる。
+
+これで「環境変数の漏れ」「image にバイナリが入ってない」「`pnpm db:setup` が壊れた」といった事故を `flyctl deploy` 前に検出できる (過去に #400 / #405 で同パターンで踏んだ)。
+
+要件: docker (OrbStack 等)、git。所要時間: image 初回ビルド込みで 2-5 分、再実行は 1-2 分。
 
 ### コード更新の反映
 

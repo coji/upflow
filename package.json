@@ -18,6 +18,7 @@
     "start:e2e": "NODE_ENV=test ENABLE_E2E_LOGIN=1 PORT=8811 BETTER_AUTH_URL=http://localhost:8811 NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     "symphony:tick": "tsx bin/symphony.ts tick",
     "symphony:serve": "tsx bin/symphony-serve.ts",
+    "symphony:preflight:check": "bash infra/symphony/preflight-local.sh",
     "format": "vp fmt -c .oxfmtrc.json --check",
     "format:fix": "vp fmt -c .oxfmtrc.json",
     "lint": "vp lint -c .oxlintrc.json",

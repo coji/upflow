@@ -216,6 +216,10 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   // failing stage in the post-mortem comment instead of forcing operators
   // to grep Fly logs to find which command broke. The 4 spawn overhead
   // (~50-100ms each) is negligible vs the actual command runtime.
+  //
+  // Stages MUST stay in lockstep with `infra/symphony/preflight-local.sh`,
+  // which runs the same chain locally for pre-deploy verification. There's
+  // no shared definition yet — keep the two arrays manually in sync.
   const preflightStages: Array<[string, string]> = [
     [
       'git sync',
