@@ -72,5 +72,11 @@ handlers = ["tls", "http"]
 
 [[vm]]
 cpu_kind = "shared"
-cpus = 1
-memory = "2gb"
+# Bumped from 1 vCPU to 4 vCPU after issue #399 cursor-coder traced to
+# `react-router typegen` taking 2.6 min per invocation on shared-cpu-1x
+# (cursor would retry typegen in test-fix loops, eating the 90-min budget).
+# Memory bumped 2→4 GB because cursor + typegen + tsc + vitest can run
+# concurrently during the implement step. Idle shutdown still keeps the
+# real cost dominated by actual run time, not provisioned size.
+cpus = 4
+memory = "4gb"
