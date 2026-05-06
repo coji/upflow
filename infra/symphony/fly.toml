@@ -19,6 +19,10 @@ swap_size_mb = 1024
 [build]
 dockerfile = "Dockerfile"
 
+# Anything required at app boot (validated by app/libs/dotenv.server.ts
+# or used by db scripts) needs both an entry here AND a mirror in
+# `infra/symphony/preflight-local.sh` `ENV_ARGS`. The local preflight
+# check lives or dies by that mirror staying in sync.
 [env]
 HOME = "/data/home"
 SYMPHONY_REPO_DIR = "/data/upflow"

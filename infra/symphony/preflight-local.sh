@@ -17,8 +17,7 @@ set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 IMAGE_TAG="upflow-symphony-preflight:latest"
-TMP="$(mktemp -d -t symphony-preflight-XXXXXX)"
-trap 'rm -rf "$TMP"' EXIT
+PNPM_STORE_VOLUME="upflow-symphony-preflight-pnpm-store"
 
 echo "[host] building image $IMAGE_TAG"
 docker build \
@@ -27,8 +26,18 @@ docker build \
   -t "$IMAGE_TAG" \
   "$REPO_ROOT"
 
-echo "[host] exporting clean HEAD checkout to $TMP"
-git -C "$REPO_ROOT" archive HEAD | tar -x -C "$TMP"
+# Cache the clean HEAD checkout under $TMPDIR so repeat runs at the same
+# SHA skip the re-export. Only invalidate when the SHA changes.
+HEAD_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+CACHE_ROOT="${TMPDIR:-/tmp}/symphony-preflight-cache"
+CHECKOUT="$CACHE_ROOT/$HEAD_SHA"
+if [ ! -d "$CHECKOUT" ]; then
+  echo "[host] exporting clean HEAD checkout ($HEAD_SHA) to $CHECKOUT"
+  mkdir -p "$CHECKOUT"
+  git -C "$REPO_ROOT" archive HEAD | tar -x -C "$CHECKOUT"
+else
+  echo "[host] reusing cached checkout $CHECKOUT"
+fi
 
 # Mirror infra/symphony/fly.toml [env] block. Keep this list in sync —
 # anything that's required at app boot (validated by
@@ -46,10 +55,19 @@ ENV_ARGS=(
 # entrypoint.sh treats trailing args as the SSH-prep cue and goes to
 # `sleep infinity` if gh isn't authenticated, which traps the run
 # forever. We only want the preflight commands, not the server bring-up.
+#
+# Persist the pnpm content-addressed store in a named volume so repeat
+# runs hit the cache instead of re-fetching every package. First run
+# is unchanged (~1-2 min), subsequent runs drop to ~10s on install.
+#
+# Stage commands below MUST stay in lockstep with `bin/symphony-serve.ts`
+# `runTakt` `preflightStages`. There's no shared definition yet — see
+# the cross-reference comment there.
 echo "[host] running preflight stages inside $IMAGE_TAG"
 docker run --rm \
   --entrypoint bash \
-  -v "$TMP:/data/upflow" \
+  -v "$CHECKOUT:/data/upflow" \
+  --mount "type=volume,src=$PNPM_STORE_VOLUME,dst=/data/home/.local/share/pnpm/store" \
   "${ENV_ARGS[@]}" \
   "$IMAGE_TAG" \
   -c '
