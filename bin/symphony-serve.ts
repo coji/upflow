@@ -234,7 +234,27 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   // Stages MUST stay in lockstep with `infra/symphony/preflight-local.sh`,
   // which runs the same chain locally for pre-deploy verification. There's
   // no shared definition yet — keep the two arrays manually in sync.
+  // Exception: `cursor state reset` only matters on the persistent fly
+  // volume, not in the throwaway local preflight container, so it lives
+  // here only.
   const preflightStages: Array<[string, string]> = [
+    // cursor-agent's composer model retrieves prompts from its
+    // persistent project memory under `/data/home/.cursor/` when
+    // composing subagent tasks. Sessions left over from prior symphony
+    // runs or manual SSH testing leak in as subagent prompts and cause
+    // out-of-scope edits — observed on issue #399 where a stale
+    // `cleanup-install-versions 2026.05.05-84a231c` prompt from a
+    // 14-hour-old SSH test became the rogue subagent's task during a
+    // login UI fix, so cursor edited Dockerfile and docs as "related"
+    // work. Cursor exposes no CLI flag or config option to disable
+    // subagent project memory (verified against cursor.com/docs/cli
+    // and cursor.com/docs/subagents), so wipe the state file tree
+    // ourselves before each takt run. Side effect: any ongoing manual
+    // SSH cursor session loses its scratch state when a tick fires.
+    [
+      'cursor state reset',
+      'rm -rf /data/home/.cursor/chats/* /data/home/.cursor/projects/*/agent-transcripts/* 2>/dev/null; true',
+    ],
     [
       'git sync',
       [

@@ -63,6 +63,13 @@ ENV_ARGS=(
 # Stage commands below MUST stay in lockstep with `bin/symphony-serve.ts`
 # `runTakt` `preflightStages`. There's no shared definition yet — see
 # the cross-reference comment there.
+#
+# Intentional asymmetry: the production preflight has a `cursor state
+# reset` stage that wipes `/data/home/.cursor/`. We do NOT mirror it
+# here because the local preflight uses a throwaway docker container
+# with no persistent /data/home — there's no leftover cursor state to
+# clean. Adding it would just be a no-op rm that masks the actual
+# coverage gap.
 echo "[host] running preflight stages inside $IMAGE_TAG"
 docker run --rm \
   --entrypoint bash \
