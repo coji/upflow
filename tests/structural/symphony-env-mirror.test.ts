@@ -24,6 +24,16 @@ const FLY_ONLY_KEYS = new Set([
   'PORT', // server bind port; preflight runs no server
 ])
 
+// Keys whose values come from `flyctl secrets set` in production (see
+// docs/symphony-setup.md §2) instead of fly.toml. They're stubbed in
+// the local preflight script with dummy values so the env presence
+// check passes there too. Kept out of fly.toml to avoid normalising
+// secret-named plaintext in committed config.
+const SECRET_VIA_FLY_SECRETS = new Set([
+  'BETTER_AUTH_SECRET',
+  'GITHUB_CLIENT_SECRET',
+])
+
 function readFlyTomlEnvKeys(): Set<string> {
   const content = readFileSync(
     path.join(ROOT, 'infra/symphony/fly.toml'),
@@ -80,11 +90,23 @@ describe('symphony fly.toml [env] mirrors preflight-local.sh ENV_ARGS', () => {
     ).toEqual([])
   })
 
-  it('every preflight-local.sh ENV_ARGS key is also in fly.toml [env]', () => {
-    const missing = [...scriptKeys].filter((k) => !flyKeys.has(k))
+  it('every preflight-local.sh ENV_ARGS key is either in fly.toml [env] or in fly secrets', () => {
+    const missing = [...scriptKeys]
+      .filter((k) => !flyKeys.has(k))
+      .filter((k) => !SECRET_VIA_FLY_SECRETS.has(k))
     expect(
       missing,
-      `Missing from fly.toml [env]: ${missing.join(', ')}`,
+      `Missing from fly.toml [env] (and not in SECRET_VIA_FLY_SECRETS): ${missing.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('every fly secrets-bound key is stubbed in preflight-local.sh', () => {
+    const missing = [...SECRET_VIA_FLY_SECRETS].filter(
+      (k) => !scriptKeys.has(k),
+    )
+    expect(
+      missing,
+      `Missing from preflight-local.sh ENV_ARGS: ${missing.join(', ')}`,
     ).toEqual([])
   })
 })

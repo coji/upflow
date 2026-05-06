@@ -23,6 +23,12 @@ dockerfile = "Dockerfile"
 # or used by db scripts) needs both an entry here AND a mirror in
 # `infra/symphony/preflight-local.sh` `ENV_ARGS`. The local preflight
 # check lives or dies by that mirror staying in sync.
+#
+# Secret-named vars (`*_SECRET`) live in `fly secrets` even when the
+# value is only a dummy — keeping committed config free of any secret-
+# patterned plaintext avoids normalising "edit fly.toml when you need a
+# new credential" as a habit. See `docs/symphony-setup.md` for the
+# `flyctl secrets set` command operators run once after first deploy.
 [env]
 HOME = "/data/home"
 SYMPHONY_REPO_DIR = "/data/upflow"
@@ -32,16 +38,12 @@ PORT = "8080"
 # Volume-backed so DB state survives machine restarts; matches the
 # symphony repo dir layout (`/data/upflow/...`).
 UPFLOW_DATA_DIR = "/data/upflow/data"
-# Dummy values to satisfy app/libs/dotenv.server.ts schema validation.
-# Symphony itself never makes outbound OAuth calls; these only exist so
-# that takt steps that import server modules (vitest, pnpm build, etc.)
-# pass the env-var presence check. Real OAuth secrets stay in Fly
-# secrets for the upflow production app, NOT here. CI does the same
-# trick via `cp .env.example .env`.
+# Non-secret stubs that satisfy app/libs/dotenv.server.ts schema
+# validation. Symphony itself never makes outbound OAuth calls; these
+# only exist so takt steps that import server modules (vitest, pnpm
+# build, etc.) pass the env-var presence check.
 BETTER_AUTH_URL = "http://localhost:8080"
-BETTER_AUTH_SECRET = "symphony-preflight-dummy-secret-32+chars-not-a-real-secret"
 GITHUB_CLIENT_ID = "symphony-dummy"
-GITHUB_CLIENT_SECRET = "symphony-dummy"
 
 [[mounts]]
 source = "symphony_data"

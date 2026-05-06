@@ -37,6 +37,15 @@ gh secret set SYMPHONY_URL --body "https://upflow-symphony.fly.dev"
 
 Fly secrets と GitHub Actions secrets の両方に同じ値を入れる。GitHub Actions cron がこの token で Fly machine を叩く。
 
+ついでに dotenv 検証用のスタブシークレットも入れる。symphony 自体は OAuth に出ないが、`app/libs/dotenv.server.ts` がスキーマ検証で `*_SECRET` 系の存在を要求するので、ダミー値で埋める必要がある。**コミット済 fly.toml ではなく `flyctl secrets` 側に置く**: 平文の `*_SECRET` をソース管理に混ぜると、将来本物のシークレットを誤コミットする習慣が芽生えるので分離する:
+
+```bash
+flyctl secrets set \
+  BETTER_AUTH_SECRET="symphony-preflight-dummy-secret-32+chars-not-a-real-secret" \
+  GITHUB_CLIENT_SECRET="symphony-dummy" \
+  --app upflow-symphony
+```
+
 ## 3. 初回 deploy (auth 前なので機能しないが、SSH 用に machine を起こす目的)
 
 ```bash
