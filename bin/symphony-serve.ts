@@ -248,12 +248,28 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
     // login UI fix, so cursor edited Dockerfile and docs as "related"
     // work. Cursor exposes no CLI flag or config option to disable
     // subagent project memory (verified against cursor.com/docs/cli
-    // and cursor.com/docs/subagents), so wipe the state file tree
-    // ourselves before each takt run. Side effect: any ongoing manual
-    // SSH cursor session loses its scratch state when a tick fires.
+    // and cursor.com/docs/subagents), so we have to manage the state
+    // file tree ourselves before each takt run.
+    //
+    // Archive (not delete) the active dirs into a timestamped sibling
+    // so cursor sees an empty starting state but we keep forensic
+    // transcripts for post-mortem inspection. Bound disk usage by
+    // pruning archives beyond the most recent 10. Side effect: any
+    // ongoing manual SSH cursor session loses its scratch state when
+    // a tick fires.
     [
       'cursor state reset',
-      'rm -rf /data/home/.cursor/chats/* /data/home/.cursor/projects/*/agent-transcripts/* 2>/dev/null; true',
+      [
+        'set +e',
+        'ARCHIVE_ROOT=/data/home/.cursor/_archive',
+        'ARCHIVE=$ARCHIVE_ROOT/$(date -u +%Y%m%dT%H%M%SZ)',
+        'mkdir -p "$ARCHIVE"',
+        '[ -d /data/home/.cursor/chats ] && mv /data/home/.cursor/chats "$ARCHIVE/"',
+        '[ -d /data/home/.cursor/projects/data-upflow/agent-transcripts ] && mv /data/home/.cursor/projects/data-upflow/agent-transcripts "$ARCHIVE/"',
+        'mkdir -p /data/home/.cursor/chats /data/home/.cursor/projects/data-upflow/agent-transcripts',
+        'ls -dt $ARCHIVE_ROOT/*/ 2>/dev/null | tail -n +11 | xargs -r rm -rf',
+        'true',
+      ].join('; '),
     ],
     [
       'git sync',
