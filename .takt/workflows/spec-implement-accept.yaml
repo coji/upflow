@@ -32,6 +32,7 @@ report_formats:
   spec-review-report: ../facets/output-contracts/spec-review-report.md
   acceptance-report: ../facets/output-contracts/acceptance-report.md
   supervise-report: ../facets/output-contracts/supervise-report.md
+  implement-report: ../facets/output-contracts/implement-report.md
 
 loop_monitors:
   # Spec review <-> Spec revision loop
@@ -167,6 +168,10 @@ steps:
     # prompts in headless mode (observed: 80-min hang on issue #399).
     # cursor-agent has no edit-only flag, so all-or-nothing here.
     required_permission_mode: full
+    output_contracts:
+      report:
+        - name: implement-report.md
+          format: implement-report
     instruction: |
       Implement according to the task spec (order.md).
 
@@ -184,16 +189,35 @@ steps:
          ```bash
          pnpm format:fix && pnpm validate
          ```
+      6. Write `implement-report.md` per the format. The report MUST
+         contain exactly one of these lines (this is the Judgment marker
+         the judge reads literally):
+
+         ```
+         ## Implement: COMPLETED
+         ```
+
+         or
+
+         ```
+         ## Implement: BLOCKED
+         ```
+
+         Free-form prose elsewhere is fine; the marker line is
+         non-negotiable.
 
       **Rules:**
       - Only modify files listed in order.md's files to change
       - Do not modify PLAN.md or order.md
       - Follow existing code patterns and conventions (refer to CLAUDE.md)
       - Keep changes minimal
+      - Caveats / observed flakiness / "validation sometimes fails under
+        load" go in the Notes section, NOT in the Judgment marker. Emit
+        COMPLETED unless the implementation itself cannot be finished.
     rules:
-      - condition: Implementation complete, validation passes
+      - condition: 'implement-report.md contains the line `## Implement: COMPLETED`'
         next: acceptance
-      - condition: Cannot implement, insufficient information
+      - condition: 'implement-report.md contains the line `## Implement: BLOCKED`'
         next: ABORT
 
   # 5. Acceptance testing
@@ -240,6 +264,10 @@ steps:
     # See `implement` step for why coder uses `full`, not `edit`.
     required_permission_mode: full
     pass_previous_response: false
+    output_contracts:
+      report:
+        - name: implement-report.md
+          format: implement-report
     instruction: |
       Fix the issues raised in the acceptance testing.
 
@@ -251,14 +279,30 @@ steps:
          ```bash
          pnpm format:fix && pnpm validate
          ```
+      5. Write `implement-report.md` per the same format the implement
+         step uses. The report MUST contain exactly one of these lines:
+
+         ```
+         ## Implement: COMPLETED
+         ```
+
+         or
+
+         ```
+         ## Implement: BLOCKED
+         ```
+
+         COMPLETED means the fix is applied; BLOCKED means the fix
+         cannot be made (escalate to supervise). Caveats /
+         observed flakiness go in Notes, not in the marker.
 
       **Rules:**
       - Do not modify PLAN.md or order.md
       - Only make fixes within scope
     rules:
-      - condition: Fix complete
+      - condition: 'implement-report.md contains the line `## Implement: COMPLETED`'
         next: acceptance
-      - condition: Cannot fix
+      - condition: 'implement-report.md contains the line `## Implement: BLOCKED`'
         next: supervise
 
   # 8. Final verification
