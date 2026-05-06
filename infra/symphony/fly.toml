@@ -28,6 +28,16 @@ PORT = "8080"
 # Volume-backed so DB state survives machine restarts; matches the
 # symphony repo dir layout (`/data/upflow/...`).
 UPFLOW_DATA_DIR = "/data/upflow/data"
+# Dummy values to satisfy app/libs/dotenv.server.ts schema validation.
+# Symphony itself never makes outbound OAuth calls; these only exist so
+# that takt steps that import server modules (vitest, pnpm build, etc.)
+# pass the env-var presence check. Real OAuth secrets stay in Fly
+# secrets for the upflow production app, NOT here. CI does the same
+# trick via `cp .env.example .env`.
+BETTER_AUTH_URL = "http://localhost:8080"
+BETTER_AUTH_SECRET = "symphony-preflight-dummy-secret-32+chars-not-a-real-secret"
+GITHUB_CLIENT_ID = "symphony-dummy"
+GITHUB_CLIENT_SECRET = "symphony-dummy"
 
 [[mounts]]
 source = "symphony_data"
