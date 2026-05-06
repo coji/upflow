@@ -234,7 +234,49 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   // Stages MUST stay in lockstep with `infra/symphony/preflight-local.sh`,
   // which runs the same chain locally for pre-deploy verification. There's
   // no shared definition yet — keep the two arrays manually in sync.
+  // Exception: `cursor state reset` only matters on the persistent fly
+  // volume, not in the throwaway local preflight container, so it lives
+  // here only.
   const preflightStages: Array<[string, string]> = [
+    // cursor-agent's composer model retrieves prompts from its
+    // persistent project memory under `$HOME/.cursor/` when composing
+    // subagent tasks. Stale sessions left over from prior symphony
+    // runs or manual SSH testing leak in as subagent prompts and
+    // trigger out-of-scope edits (observed on issue #399). Cursor
+    // exposes no CLI flag or config option to disable subagent project
+    // memory (verified against cursor.com/docs/cli and
+    // cursor.com/docs/subagents), so we have to manage the state file
+    // tree ourselves before each takt run.
+    //
+    // Archive (not delete) the active dirs into a timestamped sibling
+    // so cursor sees an empty starting state but we keep forensic
+    // transcripts for post-mortem inspection. Bound disk usage by
+    // pruning archives beyond the most recent 10. Side effect: any
+    // ongoing manual SSH cursor session loses its scratch state when
+    // a tick fires.
+    //
+    // The `data-upflow` literal in the projects path is cursor's own
+    // slug for the workspace (slashes in `/data/upflow` collapsed to
+    // dashes). If SYMPHONY_REPO_DIR ever moves, this slug changes and
+    // the mv silently misses — re-derive then.
+    [
+      'cursor state reset',
+      // Joined with `;` (not `&&` like sibling stages) because each
+      // step is independently optional: source dirs may not exist on
+      // first boot, prune may have nothing to remove. Trailing `true`
+      // pins the stage exit to 0 so a stray `rm` failure on an
+      // unreadable archive doesn't fail preflight.
+      [
+        'ARCHIVE_ROOT=$HOME/.cursor/_archive',
+        'ARCHIVE=$ARCHIVE_ROOT/$(date -u +%Y%m%dT%H%M%SZ)',
+        'mkdir -p "$ARCHIVE"',
+        'mv $HOME/.cursor/chats "$ARCHIVE/" 2>/dev/null',
+        'mv $HOME/.cursor/projects/data-upflow/agent-transcripts "$ARCHIVE/" 2>/dev/null',
+        'mkdir -p $HOME/.cursor/chats $HOME/.cursor/projects/data-upflow/agent-transcripts',
+        'ls -dt $ARCHIVE_ROOT/*/ 2>/dev/null | tail -n +11 | xargs -r rm -rf',
+        'true',
+      ].join('; '),
+    ],
     [
       'git sync',
       [
