@@ -277,6 +277,33 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
         'true',
       ].join('; '),
     ],
+    // cursor-agent's auto-update flow downloads newer versions to
+    // `$HOME/.local/share/cursor-agent/versions/<ver>/cursor-agent` and
+    // immediately spawns `<that binary> cleanup-install-versions <ver>`
+    // as a detached child. The child is supposed to remove stale
+    // version dirs deterministically but in practice falls through to
+    // LLM agent mode with the args as a user prompt. The composer
+    // model then edits Dockerfile / docs trying to "complete" what it
+    // reads as a versioning task — see issue #399.
+    //
+    // The Dockerfile-pinned binary (/opt/...) is shimmed at build
+    // time. Auto-installed copies in HOME need the same shim re-applied
+    // each tick: a `for` loop hits any version dir cursor has dropped,
+    // saves the real binary as `cursor-agent.real` if not already, and
+    // overwrites the entry point with our shim. Idempotent via the
+    // SHIM_VERSION marker in cursor-agent-shim.sh.
+    [
+      'cursor-agent shim',
+      'SHIM=/opt/cursor-agent-shim.sh; ' +
+        'for bin in $HOME/.local/share/cursor-agent/versions/*/cursor-agent; do ' +
+        '  [ -f "$bin" ] || continue; ' +
+        '  grep -q SHIM_VERSION=cursor-cleanup-noop "$bin" 2>/dev/null && continue; ' +
+        '  mv "$bin" "$bin.real"; ' +
+        '  cp "$SHIM" "$bin"; ' +
+        '  chmod +x "$bin"; ' +
+        'done; ' +
+        'true',
+    ],
     [
       'git sync',
       [

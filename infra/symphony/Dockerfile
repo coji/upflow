@@ -62,11 +62,23 @@ COPY --from=atlas /atlas /usr/local/bin/atlas
 # a throwaway HOME and copy the binary into a system path. The official
 # installer doesn't expose a version pin yet — track upstream and rebuild
 # the image when cursor-agent rolls out a relevant change.
+#
+# Then shim the installed binary: cursor-agent's auto-update flow spawns
+# `cursor-agent cleanup-install-versions <ver>` as a detached child, but
+# the child falls through to LLM agent mode and treats the args as a
+# user prompt — see cursor-agent-shim.sh for the full investigation.
+# Save the real binary as `cursor-agent.real`; the shim execs it for
+# every invocation except cleanup-install-versions, which it no-ops.
+COPY infra/symphony/cursor-agent-shim.sh /opt/cursor-agent-shim.sh
 RUN mkdir -p /tmp/cursor-install \
   && HOME=/tmp/cursor-install bash -c 'curl -fsSL https://cursor.com/install | bash' \
   && mkdir -p /opt/cursor-agent \
   && cp -r /tmp/cursor-install/.local/share/cursor-agent /opt/cursor-agent/ \
-  && ln -s /opt/cursor-agent/cursor-agent/versions/*/cursor-agent /usr/local/bin/cursor-agent \
+  && BIN=$(ls /opt/cursor-agent/cursor-agent/versions/*/cursor-agent) \
+  && mv "$BIN" "$BIN.real" \
+  && cp /opt/cursor-agent-shim.sh "$BIN" \
+  && chmod +x "$BIN" \
+  && ln -s "$BIN" /usr/local/bin/cursor-agent \
   && rm -rf /tmp/cursor-install
 
 # Run the server as a non-root user. /data is the Volume mount and is
