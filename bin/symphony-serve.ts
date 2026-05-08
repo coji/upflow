@@ -277,6 +277,39 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
         'true',
       ].join('; '),
     ],
+    // cursor-agent's auto-update flow downloads newer versions to
+    // `$HOME/.local/share/cursor-agent/versions/<ver>/cursor-agent` and
+    // immediately spawns `<that binary> cleanup-install-versions <ver>`
+    // as a detached child. The child is supposed to remove stale
+    // version dirs deterministically but in practice falls through to
+    // LLM agent mode with the args as a user prompt. The composer
+    // model then edits Dockerfile / docs trying to "complete" what it
+    // reads as a versioning task — see issue #399.
+    //
+    // The Dockerfile-pinned binary (/opt/...) is shimmed at build
+    // time. Auto-installed copies in HOME need the same shim re-applied
+    // each tick: a `for` loop hits any version dir cursor has dropped,
+    // saves the real binary as `cursor-agent.real` if not already, and
+    // overwrites the entry point with our shim. Idempotent via the
+    // SHIM_VERSION marker in cursor-agent-shim.sh.
+    [
+      'cursor-agent shim',
+      // Fail fast if SHIM is missing — letting the loop proceed would
+      // leave each binary moved to `.real` with no replacement, so the
+      // next cursor-agent invocation would ENOENT. Within the loop,
+      // chain mv/cp/mv with `&&` and write to `$bin.tmp` first so a
+      // mid-swap cp failure can't strand us in a "real moved away,
+      // shim not yet written" state — the in-place mv is atomic.
+      'SHIM=/opt/cursor-agent-shim.sh; ' +
+        '[ -f "$SHIM" ] || { echo "[shim] $SHIM missing, aborting"; exit 1; }; ' +
+        'for bin in $HOME/.local/share/cursor-agent/versions/*/cursor-agent; do ' +
+        '  [ -f "$bin" ] || continue; ' +
+        '  grep -q SHIM_VERSION=cursor-cleanup-noop "$bin" 2>/dev/null && continue; ' +
+        '  cp "$SHIM" "$bin.tmp" && chmod +x "$bin.tmp" && ' +
+        '    mv "$bin" "$bin.real" && mv "$bin.tmp" "$bin" || ' +
+        '    { echo "[shim] failed to swap $bin"; rm -f "$bin.tmp"; exit 1; }; ' +
+        'done',
+    ],
     [
       'git sync',
       [

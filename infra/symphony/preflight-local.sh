@@ -64,12 +64,13 @@ ENV_ARGS=(
 # `runTakt` `preflightStages`. There's no shared definition yet — see
 # the cross-reference comment there.
 #
-# Intentional asymmetry: the production preflight has a `cursor state
-# reset` stage that wipes `/data/home/.cursor/`. We do NOT mirror it
-# here because the local preflight uses a throwaway docker container
-# with no persistent /data/home — there's no leftover cursor state to
-# clean. Adding it would just be a no-op rm that masks the actual
-# coverage gap.
+# Intentional asymmetry: the production preflight has two extra
+# stages — `cursor state reset` and `cursor-agent shim` — that we do
+# NOT mirror here. Both target persistent state under
+# `/data/home/.cursor/` and `/data/home/.local/share/cursor-agent/`
+# that only exists on the fly volume; the local preflight uses a
+# throwaway docker container with no such state. Adding them would
+# just be no-op rm/mv operations that mask the actual coverage gap.
 echo "[host] running preflight stages inside $IMAGE_TAG"
 docker run --rm \
   --entrypoint bash \
