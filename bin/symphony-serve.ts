@@ -594,8 +594,13 @@ async function processOneIssue(): Promise<{
         })
         // Wrap stderr in a fenced block so backticks / hash signs in
         // git or gh output don't break the surrounding markdown
-        // comment.
+        // comment. Also log the full untruncated error to stderr so
+        // the operator can see the same failure in `fly logs` without
+        // having to round-trip through the GitHub comment.
         .with({ kind: 'failed' }, ({ stage, error }) => {
+          console.error(
+            `[delivery] #${issue.number} failed at ${stage}: ${error}`,
+          )
           extraComment.push(
             `- delivery failed at \`${stage}\`:`,
             '```',
