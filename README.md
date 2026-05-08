@@ -1,4 +1,4 @@
-# UpFlow
+# Upflow
 
 Tracks pull request cycle times from GitHub — coding, pickup, review, and deploy — so teams can see where time is spent and ship faster.
 
@@ -19,7 +19,7 @@ pnpm install
 
 ### 2. Create a GitHub App
 
-UpFlow uses a GitHub App for OAuth login. This is required regardless of which integration method you choose below.
+Upflow uses a GitHub App for OAuth login. This is required regardless of which integration method you choose below.
 
 Create a GitHub App at https://github.com/settings/apps/new:
 
@@ -44,7 +44,7 @@ cp .env.example .env
 
 ### 3. Choose integration method
 
-UpFlow supports two ways to fetch PR data from GitHub.
+Upflow supports two ways to fetch PR data from GitHub.
 
 #### Method A: PAT (Personal Access Token) — simple self-hosted setup
 
@@ -83,11 +83,11 @@ The private key should be base64-encoded from the PEM file (required for platfor
 
 ##### Install the App to your Organization
 
-1. Log in to UpFlow and go to **Settings > Integration**
+1. Log in to Upflow and go to **Settings > Integration**
 2. Switch the integration method to **GitHub App**
 3. Click **Install GitHub App** — you'll be redirected to GitHub's installation page
 4. Select the target Organization and configure repository access (All / Selected)
-5. You'll be redirected back to UpFlow once installation is complete
+5. You'll be redirected back to Upflow once installation is complete
 
 You can verify the connection status in Settings > Integration.
 
@@ -138,7 +138,7 @@ Playwright writes `test/playwright/.auth/admin.json` (gitignored). **Do not** se
 
 ## GitHub API Emulator
 
-For local development and smoke tests, UpFlow can point GitHub REST API and
+For local development and smoke tests, Upflow can point GitHub REST API and
 Octokit calls at the [`emulate`](https://github.com/vercel-labs/emulate) GitHub
 emulator instead of the real GitHub API.
 
@@ -174,7 +174,7 @@ API calls are redirected.
 
 ## Fetching PR Data
 
-UpFlow needs to fetch PR data from GitHub to display metrics. After adding a repository in the dashboard, run:
+Upflow needs to fetch PR data from GitHub to display metrics. After adding a repository in the dashboard, run:
 
 ```bash
 pnpm tsx batch/cli.ts crawl <org-id>
