@@ -365,18 +365,9 @@ function extractImplementJudgment(
 }
 
 function extractImplementWhy(report: string): string {
-  // The contract puts the blocker in `## Why (if BLOCKED)`. Match the
-  // section header (with or without the parenthetical) and grab the
-  // body up to the next `##` heading or end-of-file.
-  //
-  // Done as locate-heading + slice (not a single regex with `$`) because
-  // `$` under /m matches at every line boundary, so a lazy regex stops
-  // at the first newline and silently truncates multi-line Why bodies.
-  const heading = report.match(/^##\s*Why\b[^\n]*\n+/im)
-  if (heading?.index === undefined) return ''
-  const after = report.slice(heading.index + heading[0].length)
-  const next = after.match(/\n##\s/)
-  return (next?.index === undefined ? after : after.slice(0, next.index)).trim()
+  // The contract puts the blocker in `## Why (if BLOCKED)`; the parenthetical
+  // is matched by extractMarkdownSection's `[^\n]*` heading-line wildcard.
+  return extractMarkdownSection(report, 'Why')
 }
 
 export function elapsedMarker(elapsedMs: number): string {
@@ -403,8 +394,9 @@ export function isValidTaktBranch(branch: string): boolean {
 
 /**
  * Extract the body of a `## <heading>` section from a markdown report.
- * Same locate-heading + slice approach as extractImplementWhy — `$`
- * under /m would truncate multi-line bodies at the first newline.
+ * Locate-heading + slice (rather than a single regex with `$`) because
+ * `$` under /m matches every line boundary, so a lazy quantifier
+ * silently truncates multi-line section bodies at the first newline.
  */
 function extractMarkdownSection(markdown: string, heading: string): string {
   const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -414,6 +406,17 @@ function extractMarkdownSection(markdown: string, heading: string): string {
   const after = markdown.slice(match.index + match[0].length)
   const next = after.match(/\n##\s/)
   return (next?.index === undefined ? after : after.slice(0, next.index)).trim()
+}
+
+/**
+ * Pull the most informative human-readable string out of a finished
+ * subprocess for inclusion in operator-facing error reports. Subprocess
+ * exit channels vary: many CLIs write the failure to stderr, some
+ * write JSON to stdout, and a few exit non-zero with both empty (e.g.,
+ * killed by signal). Try them in priority order.
+ */
+export function runError(r: RunResult): string {
+  return r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`
 }
 
 export function formatDeliveryCommitMessage(

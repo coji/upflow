@@ -30,6 +30,7 @@ import {
 } from 'node:http'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { match } from 'ts-pattern'
 import { getErrorMessageForLog } from '~/app/libs/error-message'
 import {
   BUDGET_MS,
@@ -50,6 +51,7 @@ import {
   parseFiniteNumberEnv,
   readLatestJsonlEvent,
   run,
+  runError,
   usedBudgetMs,
 } from './symphony-shared'
 
@@ -383,10 +385,17 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   }
 }
 
+type DeliveryStage =
+  | 'detect-branch'
+  | 'detect-changes'
+  | 'commit'
+  | 'push'
+  | 'pr-create'
+
 type DeliveryResult =
   | { kind: 'delivered'; prUrl: string }
   | { kind: 'no_changes' }
-  | { kind: 'failed'; stage: string; error: string }
+  | { kind: 'failed'; stage: DeliveryStage; error: string }
 
 /**
  * After a successful takt run, persist cursor's edits as a draft PR.
@@ -424,8 +433,7 @@ async function deliverTaktResult(
     return {
       kind: 'failed',
       stage: 'detect-branch',
-      error:
-        branchProbe.stderr || branchProbe.stdout || `exit ${branchProbe.code}`,
+      error: runError(branchProbe),
     }
   }
   const branch = branchProbe.stdout.trim()
@@ -442,11 +450,7 @@ async function deliverTaktResult(
     `cd ${REPO_DIR} && git ${safeDir} status --porcelain`,
   ])
   if (status.code !== 0) {
-    return {
-      kind: 'failed',
-      stage: 'detect-changes',
-      error: status.stderr || status.stdout,
-    }
+    return { kind: 'failed', stage: 'detect-changes', error: runError(status) }
   }
   if (status.stdout.trim() === '') {
     return { kind: 'no_changes' }
@@ -462,11 +466,7 @@ async function deliverTaktResult(
     { input: commitMsg },
   )
   if (commit.code !== 0) {
-    return {
-      kind: 'failed',
-      stage: 'commit',
-      error: commit.stderr || commit.stdout,
-    }
+    return { kind: 'failed', stage: 'commit', error: runError(commit) }
   }
 
   const push = await run('bash', [
@@ -474,11 +474,7 @@ async function deliverTaktResult(
     `cd ${REPO_DIR} && git ${safeDir} push -u origin ${branch}`,
   ])
   if (push.code !== 0) {
-    return {
-      kind: 'failed',
-      stage: 'push',
-      error: push.stderr || push.stdout,
-    }
+    return { kind: 'failed', stage: 'push', error: runError(push) }
   }
 
   const prBody = formatDeliveryPrBody({
@@ -497,11 +493,7 @@ async function deliverTaktResult(
     { input: prBody, env: { ...process.env, ISSUE_TITLE: issue.title } },
   )
   if (pr.code !== 0) {
-    return {
-      kind: 'failed',
-      stage: 'pr-create',
-      error: pr.stderr || pr.stdout,
-    }
+    return { kind: 'failed', stage: 'pr-create', error: runError(pr) }
   }
 
   return { kind: 'delivered', prUrl: pr.stdout.trim() }
@@ -588,20 +580,30 @@ async function processOneIssue(): Promise<{
     const extraComment: string[] = []
     if (result.outcome === 'success') {
       const delivery = await deliverTaktResult(issue, taktResult)
-      if (delivery.kind === 'delivered') {
-        nextLabel = LABEL.inReview
-        extraComment.push(`- pr: ${delivery.prUrl}`)
-      } else if (delivery.kind === 'no_changes') {
+      match(delivery)
+        .with({ kind: 'delivered' }, ({ prUrl }) => {
+          nextLabel = LABEL.inReview
+          extraComment.push(`- pr: ${prUrl}`)
+        })
         // Workflow judged COMPLETE but cursor produced no edits —
         // either the issue was a no-op or the working tree got reset
         // mid-run. Treat as failure so it surfaces; otherwise the
         // operator would see "in-review" with no PR.
-        extraComment.push('- delivery skipped: no changes to commit')
-      } else {
-        extraComment.push(
-          `- delivery failed at ${delivery.stage}: ${delivery.error.slice(0, 300)}`,
-        )
-      }
+        .with({ kind: 'no_changes' }, () => {
+          extraComment.push('- delivery skipped: no changes to commit')
+        })
+        // Wrap stderr in a fenced block so backticks / hash signs in
+        // git or gh output don't break the surrounding markdown
+        // comment.
+        .with({ kind: 'failed' }, ({ stage, error }) => {
+          extraComment.push(
+            `- delivery failed at \`${stage}\`:`,
+            '```',
+            error.slice(0, 300),
+            '```',
+          )
+        })
+        .exhaustive()
     }
 
     await ghRemoveLabel(issue.number, LABEL.running)
