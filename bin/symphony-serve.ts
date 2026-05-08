@@ -40,10 +40,13 @@ import {
   type TaktOutcome,
   classifyTakt,
   elapsedMarker,
+  formatDeliveryCommitMessage,
+  formatDeliveryPrBody,
   ghAddLabel,
   ghComment,
   ghIssueList,
   ghRemoveLabel,
+  isValidTaktBranch,
   parseFiniteNumberEnv,
   readLatestJsonlEvent,
   run,
@@ -380,6 +383,130 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
   }
 }
 
+type DeliveryResult =
+  | { kind: 'delivered'; prUrl: string }
+  | { kind: 'no_changes' }
+  | { kind: 'failed'; stage: string; error: string }
+
+/**
+ * After a successful takt run, persist cursor's edits as a draft PR.
+ * takt creates a `takt/issue-N-...` branch and lets the coder step
+ * leave uncommitted edits in the working tree on the assumption that
+ * "the system" will commit/push/PR after the workflow ends — this is
+ * that system. Without it, every successful run leaves the work in a
+ * dirty working tree that the next preflight `git reset --hard`
+ * silently wipes (observed on issue #413).
+ *
+ * Each phase is a separate failure boundary so the post-mortem
+ * comment names exactly what broke. We do not try to roll back: a
+ * commit succeeded but push failed leaves the commit on the takt
+ * branch, which is harmless because the next preflight resets to
+ * main and the operator can either retry or push by hand.
+ */
+async function deliverTaktResult(
+  issue: IssueRef,
+  taktResult: TaktChildResult,
+): Promise<DeliveryResult> {
+  // `safe.directory` because git refuses to operate on a repo whose
+  // owner does not match the current uid; entrypoint.sh chowns /data
+  // to symphony but the global git config does not include this dir.
+  const safeDir = `-c safe.directory=${REPO_DIR}`
+  // Identify symphony as the committer so the audit trail names a
+  // bot rather than impersonating a human GitHub account.
+  const userCfg =
+    '-c user.name=symphony-bot -c user.email=symphony@upflow.local'
+
+  const branchProbe = await run('bash', [
+    '-lc',
+    `cd ${REPO_DIR} && git ${safeDir} branch --show-current`,
+  ])
+  if (branchProbe.code !== 0) {
+    return {
+      kind: 'failed',
+      stage: 'detect-branch',
+      error:
+        branchProbe.stderr || branchProbe.stdout || `exit ${branchProbe.code}`,
+    }
+  }
+  const branch = branchProbe.stdout.trim()
+  if (!isValidTaktBranch(branch)) {
+    return {
+      kind: 'failed',
+      stage: 'detect-branch',
+      error: `expected takt/issue-N-* branch, got: ${branch || '(empty)'}`,
+    }
+  }
+
+  const status = await run('bash', [
+    '-lc',
+    `cd ${REPO_DIR} && git ${safeDir} status --porcelain`,
+  ])
+  if (status.code !== 0) {
+    return {
+      kind: 'failed',
+      stage: 'detect-changes',
+      error: status.stderr || status.stdout,
+    }
+  }
+  if (status.stdout.trim() === '') {
+    return { kind: 'no_changes' }
+  }
+
+  const commitMsg = formatDeliveryCommitMessage(issue.number, issue.title)
+  const commit = await run(
+    'bash',
+    [
+      '-lc',
+      `cd ${REPO_DIR} && git ${safeDir} ${userCfg} add -A && git ${safeDir} ${userCfg} commit -F -`,
+    ],
+    { input: commitMsg },
+  )
+  if (commit.code !== 0) {
+    return {
+      kind: 'failed',
+      stage: 'commit',
+      error: commit.stderr || commit.stdout,
+    }
+  }
+
+  const push = await run('bash', [
+    '-lc',
+    `cd ${REPO_DIR} && git ${safeDir} push -u origin ${branch}`,
+  ])
+  if (push.code !== 0) {
+    return {
+      kind: 'failed',
+      stage: 'push',
+      error: push.stderr || push.stdout,
+    }
+  }
+
+  const prBody = formatDeliveryPrBody({
+    issueNumber: issue.number,
+    implementReport: taktResult.implementReport,
+    superviseReport: taktResult.superviseReport,
+  })
+  // Pass the title via env to dodge shell-quoting issues with
+  // characters like ` " $ ' that show up in real issue titles.
+  const pr = await run(
+    'bash',
+    [
+      '-lc',
+      `cd ${REPO_DIR} && gh pr create --draft --base main --head ${branch} --title "$ISSUE_TITLE" --body-file -`,
+    ],
+    { input: prBody, env: { ...process.env, ISSUE_TITLE: issue.title } },
+  )
+  if (pr.code !== 0) {
+    return {
+      kind: 'failed',
+      stage: 'pr-create',
+      error: pr.stderr || pr.stdout,
+    }
+  }
+
+  return { kind: 'delivered', prUrl: pr.stdout.trim() }
+}
+
 async function processOneIssue(): Promise<{
   state: 'idle' | 'processed'
   issue?: number
@@ -456,8 +583,27 @@ async function processOneIssue(): Promise<{
 
     const result = classifyTakt(taktResult)
     const finishedAt = dayjs.utc().toISOString()
-    const nextLabel =
-      result.outcome === 'success' ? LABEL.inReview : LABEL.failed
+
+    let nextLabel: string = LABEL.failed
+    const extraComment: string[] = []
+    if (result.outcome === 'success') {
+      const delivery = await deliverTaktResult(issue, taktResult)
+      if (delivery.kind === 'delivered') {
+        nextLabel = LABEL.inReview
+        extraComment.push(`- pr: ${delivery.prUrl}`)
+      } else if (delivery.kind === 'no_changes') {
+        // Workflow judged COMPLETE but cursor produced no edits —
+        // either the issue was a no-op or the working tree got reset
+        // mid-run. Treat as failure so it surfaces; otherwise the
+        // operator would see "in-review" with no PR.
+        extraComment.push('- delivery skipped: no changes to commit')
+      } else {
+        extraComment.push(
+          `- delivery failed at ${delivery.stage}: ${delivery.error.slice(0, 300)}`,
+        )
+      }
+    }
+
     await ghRemoveLabel(issue.number, LABEL.running)
     await ghAddLabel(issue.number, nextLabel)
     await ghComment(
@@ -468,6 +614,7 @@ async function processOneIssue(): Promise<{
         `- elapsed: ${Math.round(result.elapsedMs / 60000)} min`,
         `- next label: ${nextLabel}`,
         `- reason: ${result.reason}`,
+        ...extraComment,
         '',
         elapsedMarker(result.elapsedMs),
       ].join('\n'),
