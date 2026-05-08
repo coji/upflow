@@ -26,4 +26,9 @@ if [ "${1:-}" = "cleanup-install-versions" ]; then
   exit 0
 fi
 
-exec "$0.real" "$@"
+# Resolve $0 through any symlinks before appending `.real`. The
+# Dockerfile creates `/usr/local/bin/cursor-agent` as a symlink to
+# `/opt/cursor-agent/cursor-agent/versions/<ver>/cursor-agent`, so
+# bare `$0.real` would resolve to the non-existent
+# `/usr/local/bin/cursor-agent.real` when invoked through PATH.
+exec "$(readlink -f "$0").real" "$@"

@@ -294,15 +294,21 @@ async function runTakt(issueNumber: number): Promise<TaktChildResult> {
     // SHIM_VERSION marker in cursor-agent-shim.sh.
     [
       'cursor-agent shim',
+      // Fail fast if SHIM is missing — letting the loop proceed would
+      // leave each binary moved to `.real` with no replacement, so the
+      // next cursor-agent invocation would ENOENT. Within the loop,
+      // chain mv/cp/mv with `&&` and write to `$bin.tmp` first so a
+      // mid-swap cp failure can't strand us in a "real moved away,
+      // shim not yet written" state — the in-place mv is atomic.
       'SHIM=/opt/cursor-agent-shim.sh; ' +
+        '[ -f "$SHIM" ] || { echo "[shim] $SHIM missing, aborting"; exit 1; }; ' +
         'for bin in $HOME/.local/share/cursor-agent/versions/*/cursor-agent; do ' +
         '  [ -f "$bin" ] || continue; ' +
         '  grep -q SHIM_VERSION=cursor-cleanup-noop "$bin" 2>/dev/null && continue; ' +
-        '  mv "$bin" "$bin.real"; ' +
-        '  cp "$SHIM" "$bin"; ' +
-        '  chmod +x "$bin"; ' +
-        'done; ' +
-        'true',
+        '  cp "$SHIM" "$bin.tmp" && chmod +x "$bin.tmp" && ' +
+        '    mv "$bin" "$bin.real" && mv "$bin.tmp" "$bin" || ' +
+        '    { echo "[shim] failed to swap $bin"; rm -f "$bin.tmp"; exit 1; }; ' +
+        'done',
     ],
     [
       'git sync',
