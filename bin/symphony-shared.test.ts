@@ -485,15 +485,26 @@ describe('parseFiniteNumberEnv', () => {
 
 describe('isValidTaktBranch', () => {
   it.each([
+    // takt's actual naming pattern + a few near-variants
     ['takt/issue-413-1778258246', true],
     ['takt/issue-1-0', true],
     ['takt/issue-413-anything-after', true],
+    ['takt/issue-1-foo.bar_baz-42', true],
+    // wrong shape
     ['main', false],
     ['takt/foo', false],
     ['takt/issue-/something', false],
     ['takt/issue-abc-123', false],
     ['feat/takt/issue-413-x', false],
     ['', false],
+    // shell-hostile suffixes that are git-legal but must be rejected
+    // before being interpolated into `git push origin ${branch}` etc.
+    ['takt/issue-1-$(touch /tmp/evil)', false],
+    ['takt/issue-1-`whoami`', false],
+    ['takt/issue-1-foo;rm', false],
+    ['takt/issue-1-foo bar', false],
+    ['takt/issue-1-foo$bar', false],
+    ['takt/issue-1-foo|baz', false],
   ])('isValidTaktBranch(%s) === %s', (branch, expected) => {
     expect(isValidTaktBranch(branch)).toBe(expected)
   })

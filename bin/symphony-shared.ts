@@ -389,9 +389,16 @@ export function elapsedMarker(elapsedMs: number): string {
  * runs. We only push branches that match this shape — anything else
  * means we ended up on the wrong branch and should bail rather than
  * accidentally pushing main.
+ *
+ * The suffix character class is intentionally restrictive: callers
+ * interpolate this branch name into bash commands (`git push origin
+ * ${branch}`, `gh pr create --head ${branch}`) without quoting, so a
+ * git-legal but shell-hostile name like `takt/issue-1-$(touch /evil)`
+ * could otherwise execute injection at the spawn site. Limit to the
+ * characters takt actually uses (alphanum, dot, dash, underscore).
  */
 export function isValidTaktBranch(branch: string): boolean {
-  return /^takt\/issue-\d+-/.test(branch)
+  return /^takt\/issue-\d+-[A-Za-z0-9_.-]+$/.test(branch)
 }
 
 /**
