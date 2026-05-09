@@ -21,7 +21,7 @@ import { AppLoadingProgress } from './components'
 import './styles/globals.css'
 
 export const meta: Route.MetaFunction = () => [
-  { title: 'UpFlow' },
+  { title: 'Upflow' },
   { name: 'description', content: 'Cycletime metrics reports.' },
 ]
 

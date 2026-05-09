@@ -68,7 +68,7 @@ export default function LoginPage({
       <Center>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle>UpFlow</CardTitle>
+            <CardTitle>Upflow</CardTitle>
           </CardHeader>
 
           {error && (

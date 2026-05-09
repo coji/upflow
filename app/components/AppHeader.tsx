@@ -32,7 +32,7 @@ export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
       <HStack>
         <Heading>
           <Link to={isAdmin ? href('/admin') : href('/')}>
-            UpFlow {isAdmin && <span className="text-destructive">Admin</span>}
+            Upflow {isAdmin && <span className="text-destructive">Admin</span>}
           </Link>
         </Heading>
 
