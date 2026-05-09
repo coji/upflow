@@ -15,11 +15,13 @@
 
 ## Validation
 
-Summary of pnpm validate output
+Source: upstream implement (or fix) step. Quote the validation summary
+from `implement-report.md` instead of re-running `pnpm validate` here.
 
 ## Database Setup (if applicable)
 
-Summary of pnpm db:setup output
+Source: upstream implement (or fix) step. Quote the `pnpm db:setup`
+summary from `implement-report.md` instead of re-running it here.
 
 ## Scope Check
 
