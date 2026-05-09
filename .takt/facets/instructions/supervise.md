@@ -4,27 +4,27 @@ Verify the overall consistency of the implementation and determine whether it ca
 
 ## Steps
 
-1. List all completion criteria from order.md and check the status of each
+1. Trust the upstream validation routing.
 
-2. Run validation:
+   The simplify step (and fix step on the failure path) only routes to
+   `supervise` when `pnpm validate` passed. Re-running `pnpm validate`
+   here would just repeat the same work — and on this repo `pnpm test`
+   contends on ts-morph initialization across vitest workers, which has
+   silently hung the supervise Bash tool past takt's stream-idle
+   timeout (issue #399, 2026-05-09). Read `implement-report.md` and
+   (if present) `acceptance-report.md` for the validation summary
+   instead of re-executing.
 
-   ```bash
-   pnpm validate
-   ```
+2. List all completion criteria from order.md and check the status of
+   each (cross-reference `acceptance-report.md`).
 
-3. If the task involves DB schema changes, also run:
+3. Check changed files with `git diff --name-only HEAD`:
+   - Any out-of-scope changes?
+   - Has order.md or PLAN.md been modified?
 
-   ```bash
-   pnpm db:setup
-   ```
+4. If an acceptance testing report exists, review any remaining issues.
 
-4. Check changed files with `git diff --name-only HEAD`:
-   - Are there any out-of-scope changes?
-   - Have order.md or PLAN.md been modified?
-
-5. If an acceptance testing report exists, review any remaining issues
-
-6. Judgment:
-   - All completion criteria met + validation passes -> ready to complete
+5. Judgment:
+   - All completion criteria met + upstream validation passed -> ready to complete
    - Only minor remaining issues -> issue fix instructions and route to fix
    - Spec-level issues -> route back to spec-review
