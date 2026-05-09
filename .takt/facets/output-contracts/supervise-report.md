@@ -21,7 +21,9 @@ Judgment criteria:
 
 ## Validation
 
-Summary of pnpm validate output
+Source: upstream simplify (or fix) step. Quote the validation summary
+from `implement-report.md` / `acceptance-report.md` instead of re-running
+`pnpm validate` here.
 
 ## Scope Check
 
