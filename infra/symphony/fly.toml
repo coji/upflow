@@ -52,13 +52,14 @@ destination = "/data"
 [[services]]
 protocol = "tcp"
 internal_port = 8080
-# The HTTP /tick handler runs takt synchronously so the Fly proxy sees an
-# active connection for the entire 60-90 min run. We do NOT set
-# auto_stop_machines because the proxy's "no traffic" heuristic fires on
-# subprocess-only activity. The app self-exits after an idle window
-# (see bin/symphony-serve.ts) and the proxy auto-starts on the next tick.
+# Frozen (2026-05-09): symphony は claude code の SSE silent hang
+# (anthropics/claude-code#33949) と takt の 10 分 idle ハードコードの
+# 組み合わせで安定運用が困難になり、一旦凍結。`auto_start_machines`
+# を切ることで `gh workflow disable symphony-tick.yml` 後に万が一の
+# 手動 /tick が来てもマシンが起動しない。再開時は true に戻して
+# `fly deploy` + `gh workflow enable symphony-tick.yml`。
 auto_stop_machines = "off"
-auto_start_machines = true
+auto_start_machines = false
 min_machines_running = 0
 
 [[services.ports]]
