@@ -4,10 +4,17 @@ name: 🎼 Symphony tick
 # period auto-starts the machine; the symphony server then either picks up
 # one ready issue (long-running takt run) or returns idle and the machine
 # self-shuts after its idle window.
+#
+# Frozen (2026-05-09): schedule trigger を外して凍結中。fly machine も
+# `auto_start_machines = false` で起動しない。残してあるのは
+# workflow_dispatch だけで、再開判断後に手動で叩いて動作確認できる。
+# 復活手順:
+#   1. infra/symphony/fly.toml の auto_start_machines を true に戻す
+#   2. fly deploy -c infra/symphony/fly.toml --dockerfile infra/symphony/Dockerfile
+#   3. gh workflow enable symphony-tick.yml
+#   4. この yml の `schedule:` を復活させる
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
