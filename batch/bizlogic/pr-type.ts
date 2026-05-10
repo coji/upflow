@@ -31,68 +31,63 @@ function normalize(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? ''
 }
 
-function isReleaseSignal(input: ClassifyPrTypeInput) {
-  const sourceBranch = normalize(input.sourceBranch)
-  const targetBranch = normalize(input.targetBranch)
+function isReleaseShapedBranch(normalizedSourceBranch: string): boolean {
   return (
-    sourceBranch.startsWith('release/') ||
-    releaseTitlePattern.test(input.title.trim()) ||
-    ((sourceBranch === 'main' || sourceBranch === 'master') &&
-      (targetBranch === 'production' || targetBranch === 'prod'))
+    normalizedSourceBranch.startsWith('release/') ||
+    normalizedSourceBranch === 'main' ||
+    normalizedSourceBranch === 'master'
   )
 }
 
-function isTemplateMergeSignal(input: ClassifyPrTypeInput) {
-  const sourceBranch = normalize(input.sourceBranch)
-  return (
-    templateMergeTitlePattern.test(input.title.trim()) ||
-    sourceBranch.startsWith('template/') ||
-    sourceBranch.startsWith('template_update-')
-  )
-}
-
-function isDependencySignal(input: ClassifyPrTypeInput) {
-  const author = normalize(input.author)
-  if (!author) return false
-  return input.authorIsBot === true || input.botLogins?.has(author) === true
-}
-
-function getReleaseTitleVersion(title: string) {
-  if (!releaseTitlePattern.test(title.trim())) return null
-  return title.match(versionPattern)?.[0] ?? null
-}
-
-function hasSignalConflict(input: ClassifyPrTypeInput) {
-  const releaseTitleVersion = getReleaseTitleVersion(input.title)
-  if (!releaseTitleVersion) return false
-
-  const sourceBranch = normalize(input.sourceBranch)
-  if (
-    sourceBranch.startsWith('release/') ||
-    sourceBranch === 'main' ||
-    sourceBranch === 'master'
-  ) {
-    return false
-  }
-
-  const branchVersion =
-    input.sourceBranch.trim().match(versionPattern)?.[0] ?? null
-  return branchVersion !== null && branchVersion !== releaseTitleVersion
+function hasVersionMismatch(
+  trimmedTitle: string,
+  trimmedSourceBranch: string,
+): boolean {
+  const titleVersion = trimmedTitle.match(versionPattern)?.[0]
+  if (!titleVersion) return false
+  const branchVersion = trimmedSourceBranch.match(versionPattern)?.[0]
+  return branchVersion != null && branchVersion !== titleVersion
 }
 
 export function classifyPrType(
   input: ClassifyPrTypeInput,
 ): ClassifyPrTypeResult {
-  const prType: PrType = isReleaseSignal(input)
-    ? 'release'
-    : isTemplateMergeSignal(input)
-      ? 'template-merge'
-      : isDependencySignal(input)
-        ? 'dependency'
-        : 'normal'
+  const trimmedTitle = input.title.trim()
+  const trimmedSourceBranch = input.sourceBranch.trim()
+  const sourceBranch = trimmedSourceBranch.toLowerCase()
+  const targetBranch = normalize(input.targetBranch)
+  const author = normalize(input.author)
+  const titleHasReleaseMarker = releaseTitlePattern.test(trimmedTitle)
 
-  return {
-    prType,
-    prTypeWarning: hasSignalConflict(input) ? 'signal-conflict' : null,
+  let prType: PrType
+  if (
+    sourceBranch.startsWith('release/') ||
+    titleHasReleaseMarker ||
+    ((sourceBranch === 'main' || sourceBranch === 'master') &&
+      (targetBranch === 'production' || targetBranch === 'prod'))
+  ) {
+    prType = 'release'
+  } else if (
+    templateMergeTitlePattern.test(trimmedTitle) ||
+    sourceBranch.startsWith('template/') ||
+    sourceBranch.startsWith('template_update-')
+  ) {
+    prType = 'template-merge'
+  } else if (
+    author !== '' &&
+    (input.authorIsBot === true || input.botLogins?.has(author) === true)
+  ) {
+    prType = 'dependency'
+  } else {
+    prType = 'normal'
   }
+
+  const prTypeWarning: PrTypeWarning | null =
+    titleHasReleaseMarker &&
+    !isReleaseShapedBranch(sourceBranch) &&
+    hasVersionMismatch(trimmedTitle, trimmedSourceBranch)
+      ? 'signal-conflict'
+      : null
+
+  return { prType, prTypeWarning }
 }
