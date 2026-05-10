@@ -1,0 +1,32 @@
+name: rdd-draft
+description: 'Issue -> RDD draft (docs/rdd/issue-<N>-<slug>.md). Single step. Output is marked DRAFT and requires human review before use.'
+max_steps: 5
+initial_step: rdd-draft
+
+interactive_mode: quiet
+
+personas:
+  spec-author: ../facets/personas/spec-author.md
+instructions:
+  rdd-draft: ../facets/instructions/rdd-draft.md
+knowledge:
+  implementation-plan: ../facets/knowledge/implementation-plan.md
+report_formats:
+  rdd-draft-report: ../facets/output-contracts/rdd-draft-report.md
+
+steps:
+  - name: rdd-draft
+    edit: true
+    persona: spec-author
+    knowledge: implementation-plan
+    instruction: rdd-draft
+    required_permission_mode: edit
+    output_contracts:
+      report:
+        - name: rdd-draft-report.md
+          format: rdd-draft-report
+    rules:
+      - condition: 'rdd-draft-report.md contains the line `## RDD Draft: CREATED`'
+        next: COMPLETE
+      - condition: 'rdd-draft-report.md contains the line `## RDD Draft: BLOCKED`'
+        next: ABORT
