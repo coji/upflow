@@ -73,7 +73,9 @@ CI 時間と認知負荷の指標化は ROI が高いと考えられるが、未
 
 ## 参考資料
 
-- [The SPACE of Developer Productivity (ACM Queue, 2021)](https://queue.acm.org/detail.cfm?id=3454124) — SPACE 原典
-- [DevEx: What Actually Drives Productivity (ACM Queue, 2023)](https://queue.acm.org/detail.cfm?id=3595878) — DevEx 原典
+- [The SPACE of Developer Productivity (ACM Queue, 2021)](https://queue.acm.org/detail.cfm?id=3454124) — SPACE 原典 (Forsgren, Storey, Maddila, Zimmermann, Houck, Butler)
+- [DevEx: What Actually Drives Productivity (ACM Queue, 2023)](https://queue.acm.org/detail.cfm?id=3595878) — DevEx 原典 (Noda, Storey, Forsgren, Greiler)
 - [Measuring developer productivity with the DX Core 4](https://getdx.com/research/measuring-developer-productivity-with-the-dx-core-4/) — DX Core 4
 - [DORA vs SPACE vs DevEx 2026: Engineering Productivity Frameworks Compared](https://pandev-metrics.com/docs/blog/dora-vs-space-vs-devex-2026)
+
+> **原典確認の状況 (2026-05 検証時点)**: ACM Queue の 2 本 (SPACE, DevEx) は本書執筆時に外部 fetch がブロックされ、原文 PDF を直接確認できなかった。本書の記述は WebSearch で得た複数の二次ソース (上記 DX / pandev-metrics 記事等) と専門書のオンライン要約に基づく。各 framework の 5 次元 / 3 次元の分類自体は広く一致しており大きな食い違いは確認していないが、引用時は二次ソース由来を明示する。原典は ACM Digital Library から購読アクセスで入手可能。

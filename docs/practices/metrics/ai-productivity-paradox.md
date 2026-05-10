@@ -17,6 +17,8 @@ AI コーディング支援の普及で、**個人の出力は劇的に増えた
 
 「個人が速くなる → 組織が速くなる」が成立していない。むしろ後者は悪化している。
 
+> **数値の出典について (2026-05 検証時点)**: 上記数値は DORA 公式ページ ([dora-report-2025](https://dora.dev/dora-report-2025/)) の概要には掲載されておらず、本書では **二次ソース** ([Faros](https://www.faros.ai/blog/key-takeaways-from-the-dora-report-2025), [InfoQ](https://www.infoq.com/news/2026/03/ai-dora-report/), [Honeycomb](https://www.honeycomb.io/resources/reports/dora-report-2025) 等) で複数確認できた数値を採用している。原典 PDF を直接確認した訳ではないので、引用するときは「二次ソース由来」を明示する。完全な原典確認は dora.dev からダウンロードできる PDF を参照。
+
 ## なぜ起きるか
 
 ### 構造
