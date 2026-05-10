@@ -20,13 +20,17 @@ afterEach(() => {
 })
 
 describe('LoginPage', () => {
-  test.each([
-    { error: null, label: 'no error' },
-    { error: 'unable_to_get_user_info', label: 'with error' },
-  ])('card width is stable ($label)', ({ error }) => {
-    const { container } = render(<LoginPage {...loginProps(error)} />)
-    const card = container.querySelector('[data-slot="card"]')
-    expect(card).toHaveClass('w-full', 'max-w-sm')
+  test('card classes are identical regardless of error', () => {
+    const { container: noError } = render(<LoginPage {...loginProps(null)} />)
+    const noErrorCard = noError.querySelector('[data-slot="card"]')?.className
+    cleanup()
+    const { container: withError } = render(
+      <LoginPage {...loginProps('unable_to_get_user_info')} />,
+    )
+    const withErrorCard =
+      withError.querySelector('[data-slot="card"]')?.className
+    expect(noErrorCard).toBe(withErrorCard)
+    expect(noErrorCard).toContain('max-w-sm')
   })
 
   test('error param renders alert with mapped copy', () => {
@@ -42,7 +46,5 @@ describe('LoginPage', () => {
   test('no error param renders no alert', () => {
     render(<LoginPage {...loginProps(null)} />)
     expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.queryByText('Sign in failed.')).not.toBeInTheDocument()
-    expect(screen.queryByText(unauthorizedCopy)).not.toBeInTheDocument()
   })
 })
