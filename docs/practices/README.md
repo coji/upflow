@@ -16,17 +16,16 @@ upflow は cycle time / DORA 指標を計測するダッシュボードだが、
 
 DORA は 2025 年現在、技術・プロセス・文化など **34 の能力** を定義している。本書はそのうち **「PR を作って main までたどり着くまで」** に集中する。
 
-| 状態                | 範囲                                                                | 章                             |
-| ------------------- | ------------------------------------------------------------------- | ------------------------------ |
-| ✅ **扱う**         | PR サイズ、段階的 PR、マージキュー、初回レビュー SLA                | [pr-flow/](./pr-flow/)         |
-| ✅ **扱う**         | AI と人間のレビュー分担、レビューの質                               | [code-review/](./code-review/) |
-| ✅ **扱う**         | DORA / SPACE / DevEx の指標、AI パラドックス                        | [metrics/](./metrics/)         |
-| 🟡 **将来追加予定** | CI / CD / test automation / **Deploy time** (cycle time の構成要素) | `delivery/` (未作成)           |
-| 🟡 **将来追加予定** | Trunk-based development / Working in small batches (用語整理)       | `delivery/` または独立         |
-| ❌ **当面扱わない** | アーキテクチャ (loosely coupled / flexible infra / DB change mgmt)  | —                              |
-| ❌ **当面扱わない** | セキュリティ (pervasive security)                                   | —                              |
-| ❌ **当面扱わない** | 観測性・運用 (monitoring / observability / proactive notification)  | —                              |
-| ❌ **当面扱わない** | 文化・組織 (Westrum / learning culture / 心理的安全 / WIP limits)   | —                              |
+| 状態                | 範囲                                                               | 章                             |
+| ------------------- | ------------------------------------------------------------------ | ------------------------------ |
+| ✅ **扱う**         | PR サイズ、段階的 PR、マージキュー、初回レビュー SLA               | [pr-flow/](./pr-flow/)         |
+| ✅ **扱う**         | AI と人間のレビュー分担、レビューの質                              | [code-review/](./code-review/) |
+| ✅ **扱う**         | DORA / SPACE / DevEx の指標、AI パラドックス                       | [metrics/](./metrics/)         |
+| ✅ **扱う**         | Test / CI / CD / Deployment / Trunk-based                          | [delivery/](./delivery/)       |
+| ❌ **当面扱わない** | アーキテクチャ (loosely coupled / flexible infra / DB change mgmt) | —                              |
+| ❌ **当面扱わない** | セキュリティ (pervasive security)                                  | —                              |
+| ❌ **当面扱わない** | 観測性・運用 (monitoring / observability / proactive notification) | —                              |
+| ❌ **当面扱わない** | 文化・組織 (Westrum / learning culture / 心理的安全 / WIP limits)  | —                              |
 
 DORA 34 能力との 1 対 1 対応マップは [metrics/dora.md の「DORA 34 能力と本書の対応マップ」](./metrics/dora.md#dora-34-能力と本書の対応マップ) を参照。
 
@@ -62,7 +61,7 @@ flowchart LR
 
     paradox["AI 生産性のパラドックス<br/>放置すると flow を侵食"]
 
-    future["将来追加予定<br/>CI/CD / Deploy time など<br/>(現状未対応)"]
+    delivery["delivery/<br/>(Test → Trunk → CI → CD → Deploy)<br/>main から本番への到達経路"]
 
     P --> flow
     culture --> flow
@@ -73,7 +72,8 @@ flowchart LR
     devex --> org
     paradox -. 圧力 .-> P
     paradox -. 圧力 .-> flow
-    future -. 将来 .-> flow
+    delivery --> dora
+    flow --> delivery
 ```
 
 | 層                     | 何                                             | DORA 元図との対応                 |
@@ -81,10 +81,10 @@ flowchart LR
 | **Practices**          | 個別の手段 (規律・ツール・運用)                | Technical practices ボックス      |
 | **健全な PR flow**     | 中核能力 (本書で扱う「能力」)                  | Continuous delivery               |
 | **レビュー文化**       | 横から効く要因                                 | Westrum culture                   |
+| **delivery/**          | main → 本番の経路 (Test/Trunk/CI/CD/Deploy)    | 個別能力に対応                    |
 | **Outcomes**           | DORA + DevEx の両面                            | SDO performance + Less burnout 等 |
 | **組織パフォーマンス** | 最終結果                                       | Organizational performance        |
 | **AI パラドックス**    | 本書独自。何もしないと flow を侵食する外部圧力 | (DORA 元図にはなし)               |
-| **将来追加予定**       | CI/CD / Deploy 等。flow に効くが現状本書未対応 | DORA 元図には含まれる             |
 
 ## AI 時代の前提
 
@@ -123,6 +123,16 @@ PR が滞らずに main までたどり着くための実践。
 - [dora.md](./metrics/dora.md) — DORA 4 指標
 - [space-devex.md](./metrics/space-devex.md) — SPACE / DevEx / DX Core 4
 - [ai-productivity-paradox.md](./metrics/ai-productivity-paradox.md) — AI 生産性のパラドックス
+
+### [delivery/](./delivery/) — main から本番に届ける
+
+PR がマージされてから本番に到達するまでの実践群 (cycle time の Deploy Time 区間)。下から積む階層構造。
+
+- [test-automation.md](./delivery/test-automation.md) — テスト自動化 (土台、AI 生成テスト論を含む)
+- [trunk-based-development.md](./delivery/trunk-based-development.md) — 短命ブランチで main を release-ready に保つ
+- [continuous-integration.md](./delivery/continuous-integration.md) — 全変更を毎回統合してテスト
+- [continuous-delivery.md](./delivery/continuous-delivery.md) — いつでもデプロイ可能な状態を維持
+- [deployment-automation.md](./delivery/deployment-automation.md) — ボタン一発でデプロイできる仕組み
 
 ## 各ファイルの構成
 

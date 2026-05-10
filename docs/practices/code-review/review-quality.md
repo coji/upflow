@@ -18,6 +18,18 @@
 - 人間レビュアーは AI が見ない「組織固有の文脈」を担保する役割
 - 認知負荷が増えるので、レビュー対象を絞ることが重要 ([ai-human-split.md](./ai-human-split.md))
 
+### DORA の「同期レビュー推奨」との整合
+
+DORA の Trunk-Based Development ([../delivery/trunk-based-development.md](../delivery/trunk-based-development.md)) は「非同期レビュー」を anti-pattern として挙げ、同期人間レビューを推奨している。本書は **非同期 + 6 時間 SLA** ([../pr-flow/first-review-sla.md](../pr-flow/first-review-sla.md)) を採るので、一見矛盾する。
+
+矛盾は **DORA の主張を分解すれば解消する**:
+
+| DORA の主張  | 背後の原理                             | 2026 年の実装                                                                                 |
+| ------------ | -------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 同期レビュー | 即時 feedback でブランチを長引かせない | **AI レビューが PR open 後 1-2 分で 1 次 feedback** が即時性を担う。人間は 6h SLA で 2 次補完 |
+
+DORA の研究 (2018-2024) は AI レビューが普及する前のデータ。2026 年では「即時 feedback」を AI が、「設計判断」を人間が分担する形が現実解。形式的な「同期 vs 非同期」より、**ブランチ寿命と最初の feedback 時間** で測るのが本質。詳細は [../delivery/trunk-based-development.md](../delivery/trunk-based-development.md) の「DORA の主張を分解する」節。
+
 ## 具体的な実践
 
 ### 1. PR description が起点
