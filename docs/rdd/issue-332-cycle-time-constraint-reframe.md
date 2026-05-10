@@ -1,189 +1,195 @@
-# Cycle Time を binding constraint 起点に再フレームする
+# Cycle Time を「上位の遅い PR の診断」起点に再フレームする
 
 <!-- DRAFT: 人間レビュー前。受け入れ条件・代案・移行方針は要確認。 -->
 
 ## 背景・課題
 
-Issue #327 で追加された Cycle Time ダッシュボードは、Coding / Pickup / Review の stage time を並列に表示し、Bottleneck Mix でも stage の median または average 構成比をそのまま比較している。Issue #332 は、この構造が「本当に capacity が足りていない binding constraint」と「その結果として遅く見える downstream symptom」の区別を失わせ、読み手を Pickup time など単一 stage の短縮へ誘導するリスクを問題にしている。
+Issue #327 で追加された Cycle Time ダッシュボードは、Coding / Pickup / Review の stage time を **中央値中心** に並列表示し、Bottleneck Mix も stage の median または average の構成比をそのまま比較する構造になっている。Issue #332 はこの構造が **「本当に詰まっているのはどこか」を見せられていない** ことを問題提起している。
 
-#331 は「リンク追加」「Insights 文に矢印を足す」型の表面修正として close されている。本 RDD では、Cycle Time ダッシュボードを症状の順位表ではなく、constraint signal と stage time の因果関係を確認する画面へ再設計する。
+実テナントの計測で次が確認できた (詳細は内部調査参照):
 
-この画面が扱う範囲は、PR flow の診断である。全社レベルの bottleneck 解消運用、capacity planning、reviewer ごとの load balancing、リアルタイム alert / notification は本 RDD のスコープ外とする。
+- Pickup / Review の **中央値は数十分から数時間** に収まる (= 半数以上の PR は瞬殺マージ)
+- 一方 **上位 10% は数日、上位 1% は週単位** で停滞する
+- `cycle time の合計待ち時間` の **大半は上位の遅い側 PR が作っている** (上位 10% が全体の大半を占める)
+- 中央値を改善しても合計待ち時間はほぼ変わらない (改善余地は遅い側に偏在)
+
+つまり中央値中心の現行表示は、**ボトルネックの所在を逆方向に誤誘導している**。改善すべきは中央値ではなく「**遅い側の PR が何で詰まっているか**」を診断すること。
+
+加えて 2026 年の業界動向 ([../practices/metrics/ai-productivity-paradox.md](../practices/metrics/ai-productivity-paradox.md)) でも、AI コーディング普及で PR サイズ +51.3%、レビューなしマージ +31%、レビュー中央値 +441% の悪化が報告されており、本問題は upflow 固有ではなく業界全体の構造問題。
+
+#331 は「リンク追加」「Insights 文に矢印を足す」型の表面修正として close されている。本 RDD では、Cycle Time ダッシュボードを **遅い側 PR の特徴別診断画面** へ再設計する。
+
+スコープ: PR flow の診断のみ。capacity planning、reviewer 個別割当、リアルタイム alert / notification は本 RDD 対象外。
 
 ## 現状実装の確認
 
-- Cycle Time 画面の route は `app/routes/$orgSlug/analysis/cycle-time/index.tsx` で、breadcrumb label は `Cycle Time` として定義されている (`index.tsx:58-60`)。
-- loader は org / timezone / team / PR title filter を取得し、`period`、`metric`、`repository` query を解釈している (`index.tsx:80-130`)。
-- raw data は `getOrgCachedData` 経由で `getCycleTimeRawData` を current / previous period 分取得している (`index.tsx:133-157`)。
-- `clientLoader` は `computeWeeklyTrend`、`computeKpi`、`computeBottleneckMix`、`computeInsights`、`computeAuthorRows`、`computeLongestPrs` を呼び、表示用データを生成している (`index.tsx:187-235`)。
-- 画面本体は KPI、Weekly Trend、Bottleneck Mix、Insights、By Author、Longest PRs を並べている (`index.tsx:403-429`)。
-- 現行の説明文は first commit から merge までの cycle time と bottlenecks を扱い、Deploy lag は別扱いとしている (`index.tsx:315-321`)。
-- Cycle Time の stage は `coding` / `pickup` / `review` の 3 つに限定され、Deploy は除外されている (`aggregate.ts:7-18`)。
-- `computeBottleneckMix` は stage ごとの median / average を合計し、その比率を返している (`aggregate.ts:244-277`)。
-- `computeInsights` は比率最大の stage を main driver として文言化し、previous period との差分を付けている (`aggregate.ts:319-393`)。
-- `BottleneckMixCard` は `Stage share by {mode} time` として stage 構成比を表示している (`bottleneck-mix-card.tsx:16-74`)。
-- `InsightsCard` は `computeInsights` の文字列をそのまま highlight として表示している (`insights-card.tsx:14-41`)。
-- `KpiCards` は `Median Total` / `Avg Total`、`PRs`、`Review (median|avg)` の 3 枚を表示している (`kpi-cards.tsx:23-49`)。
-- `getCycleTimeRawData` は tenant DB の `pullRequests` から merged PR を対象に `codingTime` / `pickupTime` / `reviewTime` を select し、`mergedAt` で期間を切っている (`queries.server.ts:10-65`)。
-- batch 側の cycle time 定義は `codingTime`、`pickupTime`、`reviewTime`、`deployTime`、`totalTime` として実装されている (`batch/bizlogic/cycletime.ts:9-110`)。
-- Review Bottleneck 画面は `Review Queue Trend`、`WIP Count vs Review Time`、`PR Size Distribution & Review Time` を表示している (`analysis/reviews/index.tsx:244-248`)。
-- Review Bottleneck の loader は queue history、WIP cycle、PR size distribution を同じ cache key で取得している (`analysis/reviews/index.tsx:60-132`)。
-- `getQueueHistoryRawData` は `pullRequestReviewers.requestedAt` と review resolution を使い、期間中 open だった reviewer assignment を返している (`analysis/reviews/+functions/queries.server.ts:11-105`)。
-- `getWipCycleRawData` は merged PR の `reviewTime`、PR timestamps、size / complexity 情報を返し、WIP 数は client 側で計算するとコメントしている (`analysis/reviews/+functions/queries.server.ts:107-168`)。
-- `getPRSizeDistribution` は merged PR の additions / deletions / reviewTime / pickupTime / complexity を返している (`analysis/reviews/+functions/queries.server.ts:170-230`)。
-- `computeWipCounts` は author ごとの sweep line で同時 open PR 数を計算している (`analysis/reviews/+functions/aggregate.ts:55-103`)。
-- `aggregateWipCycle` は WIP label ごとの median review time と insight を返している (`analysis/reviews/+functions/aggregate.ts:105-146`)。
-- `aggregateWeeklyQueueTrend` は日次 queue length から週次 max / median queue を計算し、直近 4 週と前 4 週の比較 insight を返している (`analysis/reviews/+functions/aggregate.ts:166-259`)。
-- tenant DB の `pull_requests` には PR timestamp、stage time、PR size / complexity が保存されている (`db/tenant.sql:56-89`)。
-- tenant DB の `pull_request_reviews` には reviewer、state、submitted_at が保存され、PR への foreign key がある (`db/tenant.sql:90-103`)。
-- tenant DB の `pull_request_reviewers` には reviewer assignment と requested_at が保存されている (`db/tenant.sql:104-112`)。
-- shared DB は organizations / members / integrations など org 境界を持つが、PR・review・stage time の実データは tenant DB 側にある (`db/shared.sql:18-29`, `db/shared.sql:76-86`, `db/shared.sql:129-142`)。
+- Cycle Time 画面の route は `app/routes/$orgSlug/analysis/cycle-time/index.tsx` で、breadcrumb label は `Cycle Time` (`index.tsx:58-60`)
+- loader は org / timezone / team / PR title filter を取得し、`period`、`metric`、`repository` query を解釈 (`index.tsx:80-130`)
+- raw data は `getOrgCachedData` 経由で `getCycleTimeRawData` を current / previous period 分取得 (`index.tsx:133-157`)
+- `clientLoader` は `computeWeeklyTrend`、`computeKpi`、`computeBottleneckMix`、`computeInsights`、`computeAuthorRows`、`computeLongestPrs` を呼ぶ (`index.tsx:187-235`)
+- 画面本体は KPI / Weekly Trend / Bottleneck Mix / Insights / By Author / Longest PRs を並列表示 (`index.tsx:403-429`)
+- Cycle Time の stage は `coding` / `pickup` / `review` の 3 つに限定、Deploy は除外 (`aggregate.ts:7-18`)
+- `computeBottleneckMix` は stage ごとの median / average を合計して比率を返す (`aggregate.ts:244-277`)
+- `computeInsights` は比率最大の stage を main driver として文言化 (`aggregate.ts:319-393`)
+- `KpiCards` は `Median Total` / `Avg Total`、`PRs`、`Review (median|avg)` の 3 枚を表示 (`kpi-cards.tsx:23-49`)
+- `BottleneckMixCard` は `Stage share by {mode} time` として stage 構成比を表示 (`bottleneck-mix-card.tsx:16-74`)
+- `getCycleTimeRawData` は tenant DB の `pullRequests` から merged PR を対象に `codingTime` / `pickupTime` / `reviewTime` を select、`mergedAt` で期間を切る (`queries.server.ts:10-65`)
+- batch 側の cycle time 定義は `codingTime`、`pickupTime`、`reviewTime`、`deployTime`、`totalTime` (`batch/bizlogic/cycletime.ts:9-110`)
+- `Longest PRs` 表示は既に存在し、上位の遅い PR を一覧化している (`index.tsx` の該当セクション、`computeLongestPrs`)
+- Review Bottleneck 画面 (別 route) は `Review Queue Trend`、`WIP Count vs Review Time`、`PR Size Distribution & Review Time` を表示 (`analysis/reviews/index.tsx:244-248`)
+- `getPRSizeDistribution` は merged PR の additions / deletions / reviewTime / pickupTime / complexity を返す (`analysis/reviews/+functions/queries.server.ts:170-230`)
+- tenant DB の `pull_requests` には PR timestamp、stage time、PR size / complexity、author、`pull_request_reviews` には reviewer / state / submitted_at を保存 (`db/tenant.sql:56-103`)
+- shared DB は org 境界、PR データは tenant DB 側 (`db/shared.sql:18-29`)
 
 ## 設計判断
 
 ### 結論
 
-Cycle Time ダッシュボードは、stage median の並列比較から、上流の constraint signal と下流の stage time を階層的に pair 表示する constraint vs symptom 診断画面へ移行する。
+Cycle Time ダッシュボードを **「中央値中心の stage 並列表示」から「上位の遅い PR の特徴別診断」へ移行** する。具体的には:
+
+1. **主表示は「上位 N% の遅い PR」とその特徴 (PR size、作成曜日、月、author 分布、bot/no-review 区分)**
+2. **bot PR と「レビューなしマージ PR」を query 層でフィルタ可能にする** (生中央値が機能不全になる主因の除去)
+3. 中央値・stage 構成比は **「過去比較・SLO 監視用の補助表示」** として残置 (削除しない)
+4. 業界文脈 (DORA 2025 AI productivity paradox) を画面に明示し、「中央値で速く見えても遅い側に問題が偏在する」現象を読み手に説明
 
 ### 理由
 
-現行の Bottleneck Mix は stage time の構成比を示すだけで、Pickup が遅い原因が reviewer queue / WIP にあるのか、Coding 側の大きな PR にあるのかを分離できない。既存の Review Bottleneck には Queue Trend、WIP × Review Time、PR Size 分布があり、少なくとも review 周辺の constraint signal は tenant DB の raw data から再計算できる。
-
-本ドラフトでは、binding constraint を「対象期間または週次 bucket で、WIP / queue depth / stagnation の上流 signal が悪化し、その下流 stage time の悪化と同じ視覚単位で確認できる制約候補」と暫定定義する。capacity 値が未確定なため、初期表示では断定的な capacity shortage ではなく constraint candidate として扱う。
+- **データ起点**: 実テナント計測で「中央値は速い、上位 10% に問題が偏在、合計待ち時間の大半は遅い側」が確認済 (具体値は内部調査参照)。中央値構成比の Bottleneck Mix は、データ的に意味のある順位を出せていない
+- **業界整合**: DORA 2025 で同じパターン (PR サイズ +51.3%、レビューなしマージ +31%) が業界規模で確認されており、AI 時代に強化される問題。upflow は「検出側の dashboard」としてこの現象を可視化する位置にある ([../practices/metrics/ai-productivity-paradox.md](../practices/metrics/ai-productivity-paradox.md))
+- **因子の単純化**: 実データで因子の効き目を見ると **PR size が最強** (XS と XL で遅延発生率に数倍差)、次に **作成曜日** (金曜投入は週末越えで体感的に遅い)、次に **月単位ばらつき**。一方、reviewer 指名はそもそも大半の PR で行われていないため reviewer queue / WIP は signal として弱い。この発見は元 RDD の「constraint signal = reviewer queue 主」という仮説を否定する
+- **既存資産の活用**: Longest PRs 表示は既に存在 (`computeLongestPrs`)。これを主表示化し、特徴別の集計 (size 分布、曜日、月) を周辺に配置すれば、新規実装は最小化できる
+- **Pair 表示は副次扱い**: 元 RDD の「上流 signal × 下流 stage time pair」は、主信号が PR size であれば「PR size 別の stage time 分布」という単一カードに統合できる。階層 pair UI は不要
 
 ### 採らなかった代案
 
-- 案 A: #331 型のリンク追加 / Insights 文への矢印追加だけで済ませる。既存の stage median 並列構造が残り、binding constraint と downstream symptom の区別が UI の主構造にならないため採らない。
-- 案 B: median / average の精度改善だけを行う。#329 の論点には接続するが、正しい median を出しても「何を改善すべきか」を stage 単体へ誤誘導する問題は残るため採らない。
-- 案 C: capacity planning 機能として team capacity を入力・予測する。Issue #332 のスコープ外であり、入力モデルが未確定な状態で診断画面に混ぜると誤判定リスクが増えるため採らない。
+- **案 A: 元 RDD のまま「constraint signal vs symptom pair 表示」を主軸にする** — 実データで reviewer queue / WIP が主因でないことが分かったため、pair 表示の主軸が空転する。採用しない
+- **案 B: 中央値の精度改善 (issue #329 系) のみ行う** — 中央値が正確になっても「中央値で診断する」前提自体が誤っているため、根本問題は解消しない。採用しない
+- **案 C: capacity planning 機能を追加** — Issue #332 のスコープ外。capacity 値の入力モデルが未確定で、診断画面に混ぜると誤判定リスクが増える。採用しない
+- **案 D: Bottleneck Mix を完全削除して全部 Longest PRs に集約** — 中央値・stage 構成比は SLO 監視や過去 dashboard との比較で正当な用途がある。完全削除はオンボーディング負荷を上げる。補助表示として残置する案を採用
 
 ## 要件
 
 ### 機能
 
-- ユーザーは Bottleneck Mix 相当の領域で、`binding constraint candidate` と `downstream symptom` を別ラベル・別階層で確認できる。
-- ユーザーは Insights で「constraint signal が悪化したため、対応する stage time が悪化した」という causal 文構造を読む。
-- ユーザーは同じカードまたは同じ視覚単位で、上流 signal と下流 stage time の pair を確認できる。例: Review queue trend と Pickup / Review time を並べる。
-- ユーザーは `median Pickup` を単独 KPI として主判断しない。Pickup は constraint signal と pair にするか、旧 view / diagnostic detail に降格する。
-- ユーザーはこの画面の目的が「PR flow の制約候補を見つけること」であり、「capacity planning」「reviewer 個別割当」「alerting」をしない画面であることを確認できる。
-- 既存の period / team / repository / PR title filter の文脈は新ビューにも残す。
+- ユーザーは画面を開いたとき、**主表示として「上位の遅い PR とその特徴」** を見る (中央値や stage 構成比ではなく)
+- ユーザーは PR を **PR size、作成曜日、月、author、bot/no-review 区分** で特徴別にグルーピングして遅延発生率を確認できる
+- ユーザーは **bot PR とレビューなしマージ PR をフィルタで除外/分離** して数値を見られる (デフォルトは除外)
+- ユーザーは Insights で「上位の遅い PR は X (例: 大きい PR / 金曜投入 / 特定 author) に偏っている」という具体的な特徴を読む
+- ユーザーは **中央値と stage 構成比を補助表示として参照** できる (主画面の下部 or sub-tab)
+- ユーザーは画面の説明で「中央値が良くても遅い側に問題が偏在することがある」を理解できる (DORA 2025 文脈の onboarding copy)
+- 既存の period / team / repository / PR title filter は新ビューでも維持
 
 ### 非機能
 
-- constraint 判定は既存の 5 分 cache と同程度の粒度で再計算できる範囲に収める。WIP / queue 計算が全 PR・全 reviewer に対して無制限に走る設計は採らない。
-- constraint 表示は誤判定リスクを明示する。判定根拠が弱いときは `candidate`、`insufficient signal`、`needs review` など断定しないラベルを使う。
-- 既存ユーザーのオンボーディング負荷を下げるため、旧 median view は一定期間 sub-tab または opt-in detail として残す。
-- tenant DB の org scoping は既存どおり `getTenantDb(organizationId)` と org middleware に従う。
-- 実テナント名・社名・実データ由来の固有名詞を新規 docs / fixture / test に含めない。
+- 集計は既存の 5 分 cache 範囲で再計算可能なコストに収める。bot / レビューなし区分は `pull_requests.author` と `pull_request_reviews` の単純集計で実現可能
+- フィルタ既定値の変更による既存ユーザー混乱を抑える (デフォルトで bot 除外なら、トグル UI で「全 PR を含む」に戻せること)
+- tenant DB の org scoping は既存どおり `getTenantDb(organizationId)` と org middleware に従う
+- 実テナント名・社名・実データ由来の固有数値を新規 docs / fixture / test に含めない (NDA 配慮、`docs/agent-rules/confidentiality.md` 参照)
 
 ## スキーマ変更
 
 スキーマ変更なし。
 
-WIP、queue depth、review stagnation、PR size 分布は、現状の tenant DB にある `pull_requests`、`pull_request_reviews`、`pull_request_reviewers` から再計算できる。capacity 値を手入力する場合だけ新規永続化が必要になるが、本ドラフトの採用候補では capacity 値を必須にしない。したがって `db/shared.sql` / `db/tenant.sql` の変更、destructive 操作、`IF EXISTS` が必要な migration は発生しない想定とする。
+PR size、作成曜日、月、author、bot/no-review 区分はすべて現状の tenant DB (`pull_requests` の additions / deletions / pull_request_created_at / author、`pull_request_reviews` の有無) から計算可能。bot 判定は author 名のパターンマッチ (Renovate / dependabot[bot] / github-actions[bot] 等) で実装、後で `bot_authors` のような小規模テーブルに切り出す余地はあるが本 PR スコープ外。
 
 ## アプリケーション変更
 
-- `app/routes/$orgSlug/analysis/cycle-time/index.tsx:187-235`: `clientLoader` の集計結果を stage median 中心から constraint pair 中心へ変える。
-- `app/routes/$orgSlug/analysis/cycle-time/index.tsx:403-429`: KPI / Weekly Trend / Bottleneck Mix / Insights の配置を constraint view へ変更し、旧表示を sub-tab または opt-in detail に降格する。
-- `app/routes/$orgSlug/analysis/cycle-time/+functions/aggregate.ts:244-277`: Bottleneck Mix の出力を stage share だけでなく constraint candidate / symptom pair を表せる要件に更新する。
-- `app/routes/$orgSlug/analysis/cycle-time/+functions/aggregate.ts:319-393`: Insights を main driver 文ではなく causal 文として生成する要件に更新する。
-- `app/routes/$orgSlug/analysis/cycle-time/+functions/queries.server.ts:10-65`: Cycle Time 側 raw data は引き続き merged PR の stage time を取得する。
-- `app/routes/$orgSlug/analysis/reviews/+functions/queries.server.ts:11-230`: Queue Trend / WIP × Review Time / PR Size の raw query を Cycle Time 側から利用できる接続点として扱う。
-- `app/routes/$orgSlug/analysis/reviews/+functions/aggregate.ts:55-259`: WIP count / queue trend 集計を constraint signal の候補として利用する。
-- `app/routes/$orgSlug/analysis/cycle-time/+components/bottleneck-mix-card.tsx:16-74`: stage share card を constraint vs symptom card に置き換える。
-- `app/routes/$orgSlug/analysis/cycle-time/+components/insights-card.tsx:14-41`: causal insight 文と根拠 signal を表示できるようにする。
-- `app/routes/$orgSlug/analysis/cycle-time/+components/kpi-cards.tsx:23-49`: Review median を単独 KPI として主役にする構造を見直す。
-- `app/routes/$orgSlug/analysis/cycle-time/+functions/aggregate.test.ts:198-231`: 現 Bottleneck Mix の stage ratio test は、新しい constraint pair の test へ置き換える。
-- `app/routes/$orgSlug/analysis/reviews/+functions/aggregate.test.ts:82-346`: WIP / queue / PR size 集計の既存 test を回帰確認に使う。
+- `app/routes/$orgSlug/analysis/cycle-time/+functions/queries.server.ts:10-65` — bot / レビューなしマージの区分情報を返すよう raw query を拡張 (`pull_request_reviews` を JOIN、author パターンマッチ)
+- `app/routes/$orgSlug/analysis/cycle-time/+functions/aggregate.ts:7-393` — 集計関数を「中央値中心」から「上位 N% の遅い PR + 特徴別分布」中心に再構成
+  - `computeKpi` — 中央値 KPI を補助化、主 KPI を「上位 10% の遅い PR の件数 / 合計待ち時間」に
+  - `computeBottleneckMix` — stage 構成比を「補助表示」用に維持、主表示用に「PR size 別 / 曜日別 / 月別の遅延発生率」関数を追加
+  - `computeInsights` — main driver 文ではなく「遅い PR の特徴」を要約する文構造に
+- `app/routes/$orgSlug/analysis/cycle-time/index.tsx:187-235` — `clientLoader` の集計呼び出しを上記再構成に合わせる
+- `app/routes/$orgSlug/analysis/cycle-time/index.tsx:403-429` — レイアウトを「主: 上位の遅い PR + 特徴別分布、補助: 中央値 / stage 構成比」に並べ替え
+- `app/routes/$orgSlug/analysis/cycle-time/+components/bottleneck-mix-card.tsx:16-74` — stage share カードを「PR size 別の遅延発生率」型に置き換え (元の stage share 表示は補助表示用に残す)
+- `app/routes/$orgSlug/analysis/cycle-time/+components/insights-card.tsx:14-41` — Insight 文を「遅い PR の特徴」を述べる構造に
+- `app/routes/$orgSlug/analysis/cycle-time/+components/kpi-cards.tsx:23-49` — 主 KPI を「上位の遅い PR」関連に変更、中央値系 KPI は補助エリアへ
+- `app/routes/$orgSlug/analysis/cycle-time/+functions/aggregate.test.ts:198-231` — 上位の遅い PR + 特徴別の代表シナリオに置き換え
 
 ## UI 変更
-
-採用候補は A / B / E の組み合わせとする。
-
-- A: Bottleneck Mix を constraint vs symptom 表示に書き換える。
-- B: KPI を再構成し、constraint signal と関連 stage time を pair 表示する。
-- E: Insights を causal 文に書き換える。
-
-C の Cumulative Flow Diagram は有力だが、週次 queue / WIP の表示と重複しやすいため Phase 2 候補にする。D の Throughput vs WIP scatter は Little's Law ベースの説明が強く、capacity 定義が未確定な初期導入では後回しにする。
 
 主要画面のドラフト構造:
 
 ```text
-Cycle Time Constraint Diagnosis
-Purpose: identify constraint candidates in PR flow, not assign reviewer work.
+Cycle Time Diagnosis
+Purpose: identify slow PRs and what causes them.
+Note: Median can look fast even when slow PRs dominate total wait time.
+Industry context: DORA 2025 reports +441% review time, +51.3% PR size in AI era.
+
+Filter: [✓ exclude bot] [✓ exclude no-review merges] [reset]
 
 +---------------------------------------------------------------+
-| Constraint candidate                                           |
-| Review capacity pressure                                       |
-| Signal: Review queue median ↑ / reviewer WIP high              |
-| Symptom: Pickup median ↑ / Review median ↑                     |
-| Confidence: candidate, needs human confirmation                 |
+| Top KPI                                                       |
+| Slow PR count (top 10%): N | Wait time share: X% of total     |
 +---------------------------------------------------------------+
 
 +-----------------------------+  +-----------------------------+
-| Upstream signal             |  | Downstream symptom          |
-| Review Queue Trend          |  | Pickup + Review stage time |
-| WIP buckets                 |  | Previous-period delta      |
+| Slow PRs by characteristic  |  | Longest PRs (top 20)        |
+| - PR size buckets (XS-XL)   |  | - sorted by total time      |
+|   slow rate per bucket      |  | - shows author / size /     |
+| - Day of week (Mon-Sun)     |  |   created date              |
+| - Month                     |  |                             |
+| - Author distribution       |  |                             |
 +-----------------------------+  +-----------------------------+
 
 +---------------------------------------------------------------+
-| Causal Insights                                                |
-| Review queue increased; Pickup time rose in the same period.   |
-| Treat Pickup as a downstream symptom until reviewer WIP drops. |
+| Insights                                                      |
+| Slow PRs concentrate in: large size (XL), Friday creation,   |
+| and specific months. Median Pickup is fast (under 1h) but    |
+| top 10% take over 4 days.                                    |
 +---------------------------------------------------------------+
 
 +---------------------------------------------------------------+
-| Legacy median breakdown (collapsed / opt-in)                   |
-| Coding / Pickup / Review stage share                           |
+| (Auxiliary) Median view & stage share                         |
+| Coding / Pickup / Review median, stage share for SLO/history |
 +---------------------------------------------------------------+
 ```
 
-median 表示は完全廃止しない。SLO 監視や過去 dashboard との比較用途があるため、初期移行では `Legacy median breakdown` として折りたたみまたは sub-tab に降格する。主画面では median Pickup を単独判断材料として見せない。
+中央値表示は完全廃止しない。SLO 監視や過去 dashboard との比較用途を補助エリアで維持。**主画面では中央値を主判断材料として見せない**。
 
 ## 移行方針
 
-ドラフト案では、一気に置換せず、同じ `/:orgSlug/analysis/cycle-time` 内で新 constraint view を主表示にし、旧 median view を sub-tab または collapsed section に降格する。理由は、既存ユーザーが #327 の表示に慣れている可能性があり、比較導線なしで完全置換するとオンボーディング負荷が大きいからである。
+新主画面と旧表示を **同一 route 内で構造的に分離** する (主表示と補助表示)。理由は:
 
-Stacked PR に分ける場合の粒度:
+- 既存ユーザーが #327 表示に慣れている可能性があり、route 完全置換はオンボーディング負荷大
+- 「主と補助」を明示することで、新画面の意図 (中央値ではなく遅い PR を見ろ) を読み取りやすくする
+- ロールバックは「主と補助の入れ替え」で対応可能
 
-1. signal 計算層: Cycle Time 側から Review Bottleneck の queue / WIP / PR size signal を取得・集計できるようにする。
-2. 表示層: constraint candidate card、pair 表示、causal Insights を追加する。
-3. 旧表示の降格: Bottleneck Mix / median Pickup の単独主表示を collapsed / sub-tab へ移す。
-4. copy / onboarding: 画面の目的・限界と warning copy を追加する。
+Stacked PR 分割案:
 
-warning copy は「この画面は制約候補を示す。capacity 不足を断定せず、PR / reviewer 文脈と併せて確認する」趣旨にする。
+1. **query 層**: bot / レビューなしマージ区分を返すよう raw query 拡張
+2. **集計層**: 上位 N% / 特徴別 (size / 曜日 / 月) の集計関数追加
+3. **表示層**: 主 KPI / 特徴別カード / Insight の新構造を実装、旧 Bottleneck Mix を補助エリアへ降格
+4. **copy / onboarding**: 画面説明、DORA 2025 文脈、中央値の限界に関する説明文を追加
+
+各 PR のサイズは [../practices/pr-flow/pr-size-discipline.md](../practices/pr-flow/pr-size-discipline.md) の 200-400 行基準に収める。段階分割は [../practices/pr-flow/stacked-prs.md](../practices/pr-flow/stacked-prs.md) のパターン。
 
 ## 受け入れ条件
 
-- [ ] 実装後、Bottleneck Mix 相当の表示で constraint candidate と downstream symptom が別ラベル・別階層で表示される。
-- [ ] 実装後、Insights の文が「constraint signal」「その変化」「downstream stage time の変化」を含む causal 文構造になる。
-- [ ] 実装後、上流 signal と下流 stage time が同じカードまたは隣接する同一視覚単位で pair 表示される。
-- [ ] 実装後、`median Pickup` が主 KPI または単独 Bottleneck Mix の主ラベルとして表示されない。表示する場合は旧 view / detail / warning copy の配下に限定される。
-- [ ] `app/routes/$orgSlug/analysis/cycle-time/+functions/aggregate.test.ts` に constraint candidate / symptom pair の代表シナリオが追加され、green になる。
-- [ ] `app/routes/$orgSlug/analysis/reviews/+functions/aggregate.test.ts` の WIP / queue / PR size 既存シナリオが green のまま残る。
-- [ ] `pnpm validate` が green になる。
-- [ ] 新規 docs / fixture / test に実テナント名・社名・実データ由来の固有名詞が含まれない。
+- [ ] 実装後、Cycle Time 画面の主表示が「上位の遅い PR + 特徴別分布」となり、stage 中央値構成比が主表示の主役ではなくなる
+- [ ] 実装後、bot PR とレビューなしマージ PR をフィルタで除外/含めるトグルが動き、既定では除外されている
+- [ ] 実装後、PR size 別 (XS / S / M / L / XL) の遅延発生率カードが表示される
+- [ ] 実装後、作成曜日別の Pickup / Review 平均カードが表示される
+- [ ] 実装後、画面のトップに「中央値が速く見えても遅い側に問題が偏在することがある」旨の説明文が表示される
+- [ ] 実装後、Insights の文が「遅い PR の特徴 (size / 曜日 / author 等) の偏り」を述べる構造になる
+- [ ] 既存の中央値・stage 構成比表示が、主画面の下部または sub-tab に補助表示として残る
+- [ ] `app/routes/$orgSlug/analysis/cycle-time/+functions/aggregate.test.ts` に「上位の遅い PR の集計」「特徴別分布」「bot/レビューなしフィルタ」の代表シナリオが追加され green
+- [ ] `pnpm validate` が green
+- [ ] 新規 docs / fixture / test に実テナント名・社名・実データ由来の固有数値が含まれない
 
 ## リスク・補足
 
-- 誤った constraint 表示は、Pickup 直接改善と同じく誤誘導になる。初期表示は `binding constraint` と断定せず、`constraint candidate` と根拠 signal を併記する。
-- feature flag を使うかは未確定。ドラフト案では同一 route 内の sub-tab / collapsed fallback でロールバック性を確保するが、本番影響が大きい場合は feature flag を検討する。
-- WIP / queue 計算は raw assignment と review history に依存する。期間を広げたときの batch / loader / client aggregation の負荷は実データ規模で確認が必要。
-- #328 の released_at 正常化とは直接の集計軸が異なる。現 Cycle Time は merge 基準だが、Deploy lag を再統合する場合は #328 の結果を待つ。
-- #329 の median 信頼性の論点は残る。median は主判断から降格するが、SLO 監視や過去比較用途として残す場合は定義と信頼性の説明が必要。
+- **bot 判定の精度**: 初期実装は author 名パターンマッチ (Renovate, dependabot[bot], github-actions[bot] 等)。組織固有のボット (社内自動化スクリプト) は漏れる可能性あり。トグルで除外/含むの両方を選べるので、誤判定の影響は限定的
+- **「レビューなしマージ」の解釈**: `pull_request_reviews` が 0 件のマージ PR を指す。ただし self-merge / auto-merge / 緊急 hotfix が混ざるため、フィルタ ON 時は「人間レビューを通過した PR のみ」の意味になる。説明文で明示する
+- **特徴別カードの組み合わせ爆発**: PR size × 曜日 × 月 × author を全部組み合わせると表示が混雑する。初期は各次元独立のカード (1 次元集計のみ) に絞る
+- **過去比較が壊れる懸念**: 既存ユーザーが「先月の median Pickup が 0.5d だった」のような数字を覚えている場合、新主画面では同じ数字が出ない (フィルタ既定で bot 除外、上位の遅い PR 中心)。補助エリアで旧表示と同じ数字も並べることで対応
+- **upflow 自身の Coding/Pickup/Review/Deploy のうち Deploy 区間** は今回の主軸スコープ外。Deploy Time の特徴別分析は将来 RDD で扱う ([../practices/delivery/deployment-automation.md](../practices/delivery/deployment-automation.md))
+- 中央値の信頼性論点 (#329) は本 RDD で部分的に解消する (中央値を主判断から降格する) が、補助エリアで残す以上、定義と限界の説明は引き続き必要
 
 ## Open Questions (人間レビューで解消すべき論点)
 
-1. constraint の最終定義は WIP / queue / Little's Law / 過去比 / 複合のどれにするか。
-2. capacity 値は手入力、推定、または capacity 概念を使わない signal 推移のどれで扱うか。
-3. constraint 判定の粒度は週次、期間全体、または両方のどれにするか。
-4. 誤った constraint 表示が誤誘導するリスクに対し、どの UX ラベル・warning copy・confidence 表示を使うか。
-5. 既存ユーザーの混乱コストに対し、旧 view の残置期間、migration guide、warning copy をどう設計するか。
-6. Cycle Time と Review Bottleneck は 1 画面に統合するか、相互参照に留めるか。
-7. median は完全廃止するか、SLO 監視用途として opt-in / sub-tab に残すか。
-8. Phase 分割は signal 計算層、表示層、旧表示降格、copy の 4 段で十分か。
-9. `analysis/reviews` の aggregate 関数を Cycle Time 側から直接 import するか、共有 module に抽出するか。
-10. Review queue / WIP signal と Pickup / Review stage time を結びつける期間 alignment は同一週、移動平均、または前後 lag 付き比較のどれにするか。
-11. author WIP は現状 author ごとの open PR 数として計算されているが、Issue #332 の reviewer 負荷 signal としては reviewer assignment WIP を別に定義すべきか。
-12. PR Size 分布を constraint signal として主表示に入れるか、Review capacity pressure の補助 signal に留めるか。
+1. **「上位 N%」の N をいくつにするか**: 10% / 5% / 1% / 複数同時。デフォルト推奨と切り替え UI の有無
+2. **Cycle Time 画面と Review Bottleneck 画面の関係**: 統合する / 相互参照に留める / 役割分担を明確にする (Review Bottleneck は reviewer 視点を残す等)
+3. **特徴別カードの組み合わせ**: 1 次元集計のみで開始するか、2 次元クロス (size × 曜日 等) も初期から入れるか
+4. **段階移行の期間**: 旧 Bottleneck Mix を補助エリアに残す期間 (永続 / N 期間後に削除 / トグルで完全切替)
+5. **フィルタの既定値**: bot 除外を既定に / 全 PR 含むを既定に / org 設定で選べる、のどれにするか
