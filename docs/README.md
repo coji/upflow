@@ -32,6 +32,13 @@
 - [guides/gemini-prompting.md](./guides/gemini-prompting.md)
   LLM 利用時のプロンプト運用メモ
 
+## Agent ルール
+
+CLAUDE.md から逃がした、agent (Claude Code 等) 向けのドメイン固有ルール。CLAUDE.md は普遍的な指示のみに保つ方針 ([詳細](../CLAUDE.md#このファイルの編集方針))。
+
+- [agent-rules/](./agent-rules/) — 一覧は [agent-rules/README.md](./agent-rules/README.md)
+  - [confidentiality.md](./agent-rules/confidentiality.md) — 顧客情報・機密データの扱い (NDA 配慮)
+
 ## 整理方針
 
 - 計画は `roadmap.md` に集約する
