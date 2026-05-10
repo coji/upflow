@@ -54,9 +54,81 @@ upflow は **Lead Time for Changes** を構成する **PR cycle time** (Coding /
 
 PR cycle time の中央値中心の表示が AI 時代に機能不全を起こしている件は、issue #332 と [pr-flow/pr-size-discipline.md](../pr-flow/pr-size-discipline.md) を参照。
 
+## DORA 34 能力と本書の対応マップ
+
+DORA は 4 指標 (本ページ前半の話) だけでなく、それを支える **34 の能力** を定義している ([dora.dev/capabilities/](https://dora.dev/capabilities/))。本書 (`docs/practices/`) はそのうち PR flow / レビュー / 計測に関連する範囲だけを扱う。本表は 1 対 1 の対応マップ。
+
+凡例: ✅ 専用ファイルあり / 🟡 部分的に触れた / 🟠 将来追加予定 / ⚪ 当面扱わない (理由付き)
+
+### Core capabilities (技術)
+
+| DORA 能力                        | 状態 | 本書での扱い                                                                                                        |
+| -------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------- |
+| Code maintainability             | 🟡   | [pr-flow/pr-size-discipline.md](../pr-flow/pr-size-discipline.md) で部分的に。専用化の余地あり                      |
+| Continuous delivery              | 🟠   | 中核能力。`delivery/continuous-delivery.md` として将来追加予定                                                      |
+| Continuous integration           | 🟠   | [pr-flow/merge-queue.md](../pr-flow/merge-queue.md) で間接的に。`delivery/continuous-integration.md` として独立予定 |
+| Database change management       | ⚪   | upflow の計測対象外。Atlas 運用は CLAUDE.md 参照                                                                    |
+| Deployment automation            | 🟠   | `delivery/deployment-automation.md` として追加予定                                                                  |
+| Documentation quality            | ⚪   | 範囲が広すぎ。本書では扱わない                                                                                      |
+| Empowering teams to choose tools | ⚪   | 組織論。本書スコープ外                                                                                              |
+| Flexible infrastructure          | ⚪   | upflow の計測対象外                                                                                                 |
+| Loosely coupled teams            | ⚪   | 組織論。本書スコープ外                                                                                              |
+| Monitoring and observability     | ⚪   | 本番運用領域。本書スコープ外                                                                                        |
+| Pervasive security               | ⚪   | セキュリティ領域。本書スコープ外                                                                                    |
+| Streamlining change approval     | 🟡   | [pr-flow/first-review-sla.md](../pr-flow/first-review-sla.md) で部分的に                                            |
+| Test automation                  | 🟠   | `delivery/test-automation.md` として追加予定                                                                        |
+| Test data management             | ⚪   | テスト領域。本書スコープ外                                                                                          |
+| Trunk-based development          | 🟠   | `delivery/trunk-based-development.md` として追加予定                                                                |
+| Version control                  | ⚪   | 基礎すぎ。本書では暗黙の前提                                                                                        |
+
+### Process / Outcome capabilities
+
+| DORA 能力                                       | 状態 | 本書での扱い                                                                                                                                                        |
+| ----------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Working in small batches                        | 🟡   | [pr-flow/pr-size-discipline.md](../pr-flow/pr-size-discipline.md) と [pr-flow/stacked-prs.md](../pr-flow/stacked-prs.md) が実質これ。用語整理して専用化する余地あり |
+| Visibility of work in the value stream          | ⚪   | upflow 自体がこの能力を組織に提供する側。本書では扱わない                                                                                                           |
+| Visual management                               | ⚪   | 同上                                                                                                                                                                |
+| Work in process limits                          | ⚪   | プロセス管理。本書スコープ外                                                                                                                                        |
+| Customer feedback                               | ⚪   | プロダクト運用。本書スコープ外                                                                                                                                      |
+| Team experimentation                            | ⚪   | 組織論。本書スコープ外                                                                                                                                              |
+| Proactive failure notification                  | ⚪   | 本番運用領域。本書スコープ外                                                                                                                                        |
+| Monitoring systems to inform business decisions | ⚪   | 経営層領域。本書スコープ外                                                                                                                                          |
+| Job satisfaction                                | 🟡   | [space-devex.md](./space-devex.md) で SPACE の S として触れた                                                                                                       |
+| Well-being                                      | 🟡   | 同上                                                                                                                                                                |
+
+### Cultural capabilities
+
+| DORA 能力                                   | 状態 | 本書での扱い               |
+| ------------------------------------------- | ---- | -------------------------- |
+| Generative organizational culture (Westrum) | ⚪   | 組織文化論。本書スコープ外 |
+| Learning culture                            | ⚪   | 同上                       |
+| Transformational leadership                 | ⚪   | 経営論。本書スコープ外     |
+
+### AI-specific capabilities (2025 新規)
+
+| DORA 能力                        | 状態 | 本書での扱い                                                                                                     |
+| -------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------- |
+| Clear and communicated AI stance | 🟡   | [code-review/ai-human-split.md](../code-review/ai-human-split.md) が実質これの実装側。組織方針として書く余地あり |
+| AI-accessible internal data      | ⚪   | プラットフォーム領域。本書スコープ外                                                                             |
+| Healthy data ecosystems          | ⚪   | 同上                                                                                                             |
+| Platform engineering             | ⚪   | 組織形態論。本書スコープ外                                                                                       |
+| User-centric focus               | ⚪   | プロダクト論。本書スコープ外                                                                                     |
+
+### サマリ
+
+- ✅ 専用ファイル: 0
+- 🟡 部分対応: 7
+- 🟠 将来追加予定: 5
+- ⚪ 当面扱わない: 22
+
+「専用ファイル 0」の理由は、本書のファイル ([pr-size-discipline.md](../pr-flow/pr-size-discipline.md) 等) は DORA 能力名と 1 対 1 ではなく、複数の DORA 能力を横断する形で書いているため。「PR サイズ規律」は DORA で言う `Code maintainability` + `Working in small batches` + `Streamlining change approval` の交点に位置する。
+
+DORA の能力名で検索したい人のための索引、と本書の「PR flow ベースの再構成」は別物として共存させる。
+
 ## 参考資料
 
 - [DORA | dora.dev](https://dora.dev/) — 一次ソース。年ごとのレポートあり
+- [DORA Capabilities](https://dora.dev/capabilities/) — 34 能力一覧
 - [DORA Research: 2025 Overview](https://dora.dev/research/2025/) — 2025年版
 - [State of AI-assisted Software Development 2025](https://dora.dev/dora-report-2025/) — AI に焦点
 - [Accelerate](https://nicolefv.com/book) — 書籍。指標の理論的背景
