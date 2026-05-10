@@ -75,7 +75,8 @@ function hasSignalConflict(input: ClassifyPrTypeInput) {
     return false
   }
 
-  const branchVersion = input.sourceBranch.match(versionPattern)?.[0] ?? null
+  const branchVersion =
+    input.sourceBranch.trim().match(versionPattern)?.[0] ?? null
   return branchVersion !== null && branchVersion !== releaseTitleVersion
 }
 

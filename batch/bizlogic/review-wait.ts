@@ -25,7 +25,7 @@ export function isEligibleReviewer(props: {
   login: string | null
   actorType: ReviewerType | null
   authorLogin: string | null
-  botLogins: Set<string>
+  botLogins: ReadonlySet<string>
 }): boolean {
   const login = props.login?.toLowerCase()
   if (!login) return false
@@ -49,7 +49,7 @@ const TIMELINE_ORDER: Record<string, number> = {
 export function normalizeTimelineEvents(
   timelineItems: ShapedTimelineItem[],
   pr: ShapedGitHubPullRequest,
-  botLogins: Set<string>,
+  botLogins: ReadonlySet<string>,
 ): NormalizedTimelineEvent[] {
   const normalized: NormalizedTimelineEvent[] = []
 

@@ -59,7 +59,7 @@ interface BuildConfig {
   repositoryId: string
   releaseDetectionMethod: string
   releaseDetectionKey: string
-  botLogins: Set<string>
+  botLogins: ReadonlySet<string>
 }
 
 const nullOrDate = (dateStr?: Date | string | null) => {
@@ -87,7 +87,7 @@ async function loadPrArtifacts(
 function filterActors(
   artifacts: PrArtifacts,
   pr: ShapedGitHubPullRequest,
-  botLogins: Set<string>,
+  botLogins: ReadonlySet<string>,
 ): PrArtifacts {
   return {
     commits: artifacts.commits,
@@ -114,7 +114,7 @@ function filterActors(
 function computeDates(
   pr: ShapedGitHubPullRequest,
   artifacts: PrArtifacts,
-  botLogins: Set<string>,
+  botLogins: ReadonlySet<string>,
 ): PrDates {
   const firstReviewedAt = nullOrDate(
     computeFirstReviewedAt(artifacts.discussions, artifacts.reviews),
