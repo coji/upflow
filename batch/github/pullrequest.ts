@@ -9,6 +9,7 @@ import {
   reviewTime,
   totalTime,
 } from '~/batch/bizlogic/cycletime'
+import { classifyPrType } from '~/batch/bizlogic/pr-type'
 import {
   computeFirstReviewedAt,
   deriveReviewWait,
@@ -58,7 +59,7 @@ interface BuildConfig {
   repositoryId: string
   releaseDetectionMethod: string
   releaseDetectionKey: string
-  botLogins: Set<string>
+  botLogins: ReadonlySet<string>
 }
 
 const nullOrDate = (dateStr?: Date | string | null) => {
@@ -86,7 +87,7 @@ async function loadPrArtifacts(
 function filterActors(
   artifacts: PrArtifacts,
   pr: ShapedGitHubPullRequest,
-  botLogins: Set<string>,
+  botLogins: ReadonlySet<string>,
 ): PrArtifacts {
   return {
     commits: artifacts.commits,
@@ -113,7 +114,7 @@ function filterActors(
 function computeDates(
   pr: ShapedGitHubPullRequest,
   artifacts: PrArtifacts,
-  botLogins: Set<string>,
+  botLogins: ReadonlySet<string>,
 ): PrDates {
   const firstReviewedAt = nullOrDate(
     computeFirstReviewedAt(artifacts.discussions, artifacts.reviews),
@@ -151,7 +152,17 @@ function buildPullRequestRow(
   dates: PrDates,
   releasedAt: string | null,
   repositoryId: string,
+  botLogins: ReadonlySet<string>,
 ): Selectable<TenantDB.PullRequests> {
+  const { prType, prTypeWarning } = classifyPrType({
+    title: pr.title,
+    sourceBranch: pr.sourceBranch,
+    targetBranch: pr.targetBranch,
+    author: pr.author,
+    authorIsBot: pr.authorIsBot,
+    botLogins,
+  })
+
   return {
     repo: pr.repo,
     number: pr.number,
@@ -203,6 +214,8 @@ function buildPullRequestRow(
     riskAreas: null,
     classifiedAt: null,
     classifierModel: null,
+    prType,
+    prTypeWarning,
   }
 }
 
@@ -277,7 +290,13 @@ export const buildPullRequests = async (
 
       // 7. PR 行データ生成（純粋関数）
       pulls.push(
-        buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
+        buildPullRequestRow(
+          pr,
+          dates,
+          releasedAt,
+          config.repositoryId,
+          config.botLogins,
+        ),
       )
 
       // 8. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）

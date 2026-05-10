@@ -78,6 +78,23 @@ const processCmd = command(
   },
 )
 
+const recalculate = command(
+  {
+    name: 'recalculate',
+    parameters: ['[organization id]'],
+    help: {
+      description:
+        'Re-analyze stored raw data → upsert. No GitHub API calls. Runs as a durable job.',
+    },
+  },
+  async (argv) => {
+    const { recalculateCommand } = await import('./commands/recalculate')
+    await recalculateCommand({
+      organizationId: argv._.organizationId,
+    })
+  },
+)
+
 const classify = command(
   {
     name: 'classify',
@@ -208,6 +225,7 @@ cli({
   commands: [
     crawl,
     processCmd,
+    recalculate,
     classify,
     backfill,
     report,

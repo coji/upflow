@@ -10,6 +10,10 @@ export default defineConfig({
       'company_github_users.is_active': '0 | 1',
       'organization_settings.is_active': 'Generated<0 | 1>',
       'pull_requests.state': '"open" | "closed" | "merged"',
+      'pull_requests.pr_type':
+        'ColumnType<"release" | "template-merge" | "dependency" | "normal" | null, "release" | "template-merge" | "dependency" | "normal" | null | undefined, "release" | "template-merge" | "dependency" | "normal" | null>',
+      'pull_requests.pr_type_warning':
+        'ColumnType<"signal-conflict" | null, "signal-conflict" | null | undefined, "signal-conflict" | null>',
       'pull_request_reviews.state':
         '"APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "DISMISSED"',
       'repositories.provider': '"github"',
