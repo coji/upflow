@@ -17,7 +17,7 @@ Issue #327 で追加された Cycle Time ダッシュボードは、Coding / Pic
 
 加えて 2026 年の業界動向 ([../practices/metrics/ai-productivity-paradox.md](../practices/metrics/ai-productivity-paradox.md)) でも、AI コーディング普及で PR サイズ +51.3%、レビューなしマージ +31%、レビュー中央値 +441% の悪化が報告されており、本問題は upflow 固有ではなく業界全体の構造問題。
 
-#331 は「リンク追加」「Insights 文に矢印を足す」型の表面修正として close されている。本 RDD では、Cycle Time ダッシュボードを **遅い側 PR の特徴別診断画面** へ再設計する。
+Issue `#331` は「リンク追加」「Insights 文に矢印を足す」型の表面修正として close されている。本 RDD では、Cycle Time ダッシュボードを **遅い側 PR の特徴別診断画面** へ再設計する。
 
 スコープ: PR flow の診断のみ。capacity planning、reviewer 個別割当、リアルタイム alert / notification は本 RDD 対象外。
 
