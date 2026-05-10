@@ -130,6 +130,8 @@ export interface PullRequests {
   mergedAt: string | null;
   number: number;
   pickupTime: number | null;
+  prType: ColumnType<"release" | "template-merge" | "dependency" | "normal" | null, "release" | "template-merge" | "dependency" | "normal" | null | undefined, "release" | "template-merge" | "dependency" | "normal" | null>;
+  prTypeWarning: ColumnType<"signal-conflict" | null, "signal-conflict" | null | undefined, "signal-conflict" | null>;
   pullRequestCreatedAt: string;
   releasedAt: string | null;
   repo: string;
