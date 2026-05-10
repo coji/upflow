@@ -66,7 +66,7 @@ export default function LoginPage({
   return (
     <AppLayout>
       <Center>
-        <Card>
+        <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
             <CardTitle>Upflow</CardTitle>
           </CardHeader>
