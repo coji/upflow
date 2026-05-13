@@ -206,6 +206,37 @@ function buildPullRequestRow(
   }
 }
 
+function expandFilterForBranchRelease(
+  pullrequests: ShapedGitHubPullRequest[],
+  filterPrNumbers: Set<number> | undefined,
+  branchReleaseLookup: Map<number, string> | null,
+  releaseDetectionKey: string,
+) {
+  if (!filterPrNumbers || filterPrNumbers.size === 0 || !branchReleaseLookup) {
+    return filterPrNumbers
+  }
+
+  // フィルタに含まれる release PR (release branch を直接ターゲットにする merge) の
+  // releasedAt を集める。同じ releasedAt に解決される feature PR をフィルタに足す。
+  const releaseTimes = new Set<string>()
+  for (const pr of pullrequests) {
+    if (
+      filterPrNumbers.has(pr.number) &&
+      pr.targetBranch === releaseDetectionKey
+    ) {
+      const releasedAt = branchReleaseLookup.get(pr.number)
+      if (releasedAt) releaseTimes.add(releasedAt)
+    }
+  }
+  if (releaseTimes.size === 0) return filterPrNumbers
+
+  const expanded = new Set(filterPrNumbers)
+  for (const [prNumber, releasedAt] of branchReleaseLookup) {
+    if (releaseTimes.has(releasedAt)) expanded.add(prNumber)
+  }
+  return expanded
+}
+
 export const buildPullRequests = async (
   config: BuildConfig,
   pullrequests: ShapedGitHubPullRequest[],
@@ -229,6 +260,13 @@ export const buildPullRequests = async (
     )
   }
 
+  const analysisFilterPrNumbers = expandFilterForBranchRelease(
+    pullrequests,
+    filterPrNumbers,
+    branchReleaseLookup,
+    config.releaseDetectionKey,
+  )
+
   const pulls: Selectable<TenantDB.PullRequests>[] = []
   const reviews: AnalyzedReview[] = []
   const reviewers: AnalyzedReviewer[] = []
@@ -237,7 +275,7 @@ export const buildPullRequests = async (
   let processed = 0
   for (const pr of pullrequests) {
     // フィルタが指定されていれば、対象外PRをスキップ
-    if (filterPrNumbers && !filterPrNumbers.has(pr.number)) {
+    if (analysisFilterPrNumbers && !analysisFilterPrNumbers.has(pr.number)) {
       continue
     }
 
