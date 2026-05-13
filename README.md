@@ -182,11 +182,13 @@ pnpm tsx batch/cli.ts crawl <org-id>
 
 In production, `crawl` runs automatically every hour. With Method B (GitHub App + Webhook), data also updates in realtime on PR events.
 
-If `released_at` needs to be repaired after changing release detection logic or after a branch-release propagation bug, run a full refresh once:
+If `released_at` (or other analyze-derived columns) needs to be repaired after changing release detection logic or fixing an analyze-side bug, re-run analyze over the stored raw data — no GitHub API calls, takes a few minutes:
 
 ```bash
-pnpm tsx batch/cli.ts crawl <org-id> --refresh
+pnpm tsx batch/cli.ts process <org-id>
 ```
+
+Reach for `crawl --refresh` only when the raw data itself is wrong (missing PRs, schema gaps that need re-fetch). It re-hits the GitHub API for every PR and takes 30+ minutes.
 
 ## Authentication
 
