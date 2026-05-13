@@ -216,11 +216,12 @@ function expandFilterForBranchRelease(
     return filterPrNumbers
   }
 
+  // フィルタに含まれる release PR (release branch を直接ターゲットにする merge) の
+  // releasedAt を集める。同じ releasedAt に解決される feature PR をフィルタに足す。
   const releaseTimes = new Set<string>()
   for (const pr of pullrequests) {
     if (
       filterPrNumbers.has(pr.number) &&
-      pr.mergedAt &&
       pr.targetBranch === releaseDetectionKey
     ) {
       const releasedAt = branchReleaseLookup.get(pr.number)
@@ -230,11 +231,8 @@ function expandFilterForBranchRelease(
   if (releaseTimes.size === 0) return filterPrNumbers
 
   const expanded = new Set(filterPrNumbers)
-  for (const pr of pullrequests) {
-    const releasedAt = branchReleaseLookup.get(pr.number)
-    if (releasedAt && releaseTimes.has(releasedAt)) {
-      expanded.add(pr.number)
-    }
+  for (const [prNumber, releasedAt] of branchReleaseLookup) {
+    if (releaseTimes.has(releasedAt)) expanded.add(prNumber)
   }
   return expanded
 }
