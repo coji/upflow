@@ -182,6 +182,12 @@ pnpm tsx batch/cli.ts crawl <org-id>
 
 In production, `crawl` runs automatically every hour. With Method B (GitHub App + Webhook), data also updates in realtime on PR events.
 
+If `released_at` needs to be repaired after changing release detection logic or after a branch-release propagation bug, run a full refresh once:
+
+```bash
+pnpm tsx batch/cli.ts crawl <org-id> --refresh
+```
+
 ## Authentication
 
 - **GitHub OAuth only**: login requires the user's GitHub login to be registered in the org's GitHub Users list with Active status

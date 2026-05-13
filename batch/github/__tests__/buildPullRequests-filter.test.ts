@@ -313,6 +313,31 @@ describe('buildPullRequests filter', () => {
     expect(pr2Filtered).toEqual(pr2All)
   })
 
+  test('リリースPRがフィルタ対象なら同じリリースに乗るfeature PRも解析対象に含める', async () => {
+    // Incremental crawl では release PR だけが更新対象になることがある。
+    // その場合も、同じ releasedAt に解決される feature PR を upsert して releasedAt を補完する。
+    const filterJustReleasePr = new Set([4])
+
+    const resultAll = await buildPullRequests(config, prs, mockLoaders)
+    const resultFiltered = await buildPullRequests(
+      config,
+      prs,
+      mockLoaders,
+      filterJustReleasePr,
+    )
+
+    expect(resultFiltered.pulls.map((p) => p.number)).toEqual([1, 2, 4])
+    expect(resultFiltered.pulls).toEqual(
+      resultAll.pulls.filter((p) => [1, 2, 4].includes(p.number)),
+    )
+    expect(resultFiltered.pulls.find((p) => p.number === 1)?.releasedAt).toBe(
+      '2024-01-08T00:00:00Z',
+    )
+    expect(resultFiltered.pulls.find((p) => p.number === 2)?.releasedAt).toBe(
+      '2024-01-08T00:00:00Z',
+    )
+  })
+
   test('reviewer が 0 人の PR でも reviewers エントリが生成される', async () => {
     // PR#3 は reviewers: [] (basePr デフォルト)
     const result = await buildPullRequests(config, prs, mockLoaders)
