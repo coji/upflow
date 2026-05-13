@@ -1,4 +1,5 @@
 import { DEFAULT_PERSONAL_LIMIT } from '~/app/routes/$orgSlug/workload/+functions/aggregate-stacks'
+import { clearOrgCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -18,6 +19,7 @@ export const addTeam = async (params: {
       personalLimit: params.personalLimit ?? DEFAULT_PERSONAL_LIMIT,
     })
     .execute()
+  clearOrgCache(params.organizationId)
 }
 
 export const updateTeam = async (params: {
@@ -37,6 +39,7 @@ export const updateTeam = async (params: {
     })
     .where('id', '=', params.id)
     .execute()
+  clearOrgCache(params.organizationId)
 }
 
 export const deleteTeam = async (
@@ -45,4 +48,5 @@ export const deleteTeam = async (
 ) => {
   const tenantDb = getTenantDb(organizationId)
   await tenantDb.deleteFrom('teams').where('id', '=', id).execute()
+  clearOrgCache(organizationId)
 }

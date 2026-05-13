@@ -9,11 +9,13 @@ import { Stack } from '~/app/components/ui/stack'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   computeExcludedCount,
+  filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
+import { getOrgCachedData } from '~/app/services/cache.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
 import {
   DEFAULT_PERSONAL_LIMIT,
@@ -45,18 +47,33 @@ export const loader = async ({ context, request }: Route.LoaderArgs) => {
 
   const filter = await loadPrFilterState(request, organization.id)
 
-  const [openPRs, pendingReviews, reviewHistory, excludedCount] =
+  const cacheKey = `workload:${teamId ?? 'all'}:${filterCacheKeySuffix(filter)}`
+  const SIXTY_SECONDS = 60 * 1000
+
+  const [[openPRs, pendingReviews, reviewHistory], excludedCount] =
     await Promise.all([
-      getOpenPullRequests(organization.id, teamId, filter.normalizedPatterns),
-      getPendingReviewAssignments(
+      getOrgCachedData(
         organization.id,
-        teamId,
-        filter.normalizedPatterns,
-      ),
-      getOpenPullRequestReviews(
-        organization.id,
-        teamId,
-        filter.normalizedPatterns,
+        cacheKey,
+        () =>
+          Promise.all([
+            getOpenPullRequests(
+              organization.id,
+              teamId,
+              filter.normalizedPatterns,
+            ),
+            getPendingReviewAssignments(
+              organization.id,
+              teamId,
+              filter.normalizedPatterns,
+            ),
+            getOpenPullRequestReviews(
+              organization.id,
+              teamId,
+              filter.normalizedPatterns,
+            ),
+          ]),
+        SIXTY_SECONDS,
       ),
       computeExcludedCount(filter, (patterns) =>
         countOpenPullRequests(organization.id, teamId, patterns),

@@ -1,5 +1,6 @@
 import type { Updateable } from 'kysely'
 import { AppError } from '~/app/libs/app-error'
+import { clearOrgCache } from '~/app/services/cache.server'
 import { getTenantDb, type TenantDB } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -16,9 +17,10 @@ export const deleteRepository = async (
   if (Number(result.numDeletedRows ?? 0) !== 1) {
     throw new AppError('Repository not found')
   }
+  clearOrgCache(organizationId)
 }
 
-export const updateRepository = (
+export const updateRepository = async (
   organizationId: OrganizationId,
   repositoryId: string,
   data: Pick<
@@ -27,9 +29,11 @@ export const updateRepository = (
   >,
 ) => {
   const tenantDb = getTenantDb(organizationId)
-  return tenantDb
+  const result = await tenantDb
     .updateTable('repositories')
     .where('id', '=', repositoryId)
     .set(data)
     .executeTakeFirst()
+  clearOrgCache(organizationId)
+  return result
 }

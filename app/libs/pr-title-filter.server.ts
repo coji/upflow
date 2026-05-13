@@ -53,6 +53,18 @@ export interface FilterCountStats {
 }
 
 /**
+ * Cache-key suffix for loaders that gate output on PR-title-filter state.
+ * Compose as `` `${routePrefix}:...:${filterCacheKeySuffix(filter)}` ``.
+ * `JSON.stringify` on the sorted pattern list prevents collisions when a
+ * pattern legitimately contains the cache-key separator character.
+ */
+export const filterCacheKeySuffix = (state: PrFilterLoaderState): string => {
+  const sf = state.showFiltered ? 't' : 'f'
+  const patternSignature = JSON.stringify([...state.normalizedPatterns].sort())
+  return `sf=${sf}:patterns=${patternSignature}`
+}
+
+/**
  * Computes the excluded-count banner value. `counter` は SUM(CASE WHEN ...)
  * 併用で unfiltered と filtered の両方を 1 クエリで返すこと。Skips when filter
  * isn't active.

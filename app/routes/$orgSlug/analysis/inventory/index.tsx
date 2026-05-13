@@ -20,6 +20,7 @@ import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   computeExcludedCount,
+  filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import {
@@ -72,8 +73,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const filter = await loadPrFilterState(request, organization.id)
 
-  const sf = filter.showFiltered ? 't' : 'f'
-  const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}:sf=${sf}`
+  const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}:${filterCacheKeySuffix(filter)}`
 
   const FIVE_MINUTES = 5 * 60 * 1000
 

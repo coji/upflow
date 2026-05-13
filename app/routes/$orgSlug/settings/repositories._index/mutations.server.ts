@@ -1,4 +1,5 @@
 import { AppError } from '~/app/libs/app-error'
+import { clearOrgCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
@@ -17,6 +18,7 @@ export const updateRepositoryTeam = async (
   if (Number(result.numUpdatedRows ?? 0) !== 1) {
     throw new AppError('Repository not found')
   }
+  clearOrgCache(organizationId)
 }
 
 export const bulkUpdateRepositoryTeam = async (
@@ -39,4 +41,5 @@ export const bulkUpdateRepositoryTeam = async (
       throw new AppError('Some repositories were not found')
     }
   })
+  clearOrgCache(organizationId)
 }
