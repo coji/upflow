@@ -15,8 +15,7 @@
 // `docs/rdd/issue-307-pr-title-filter.md:469` for the pr_title_filters
 // emergency-disable case but the rule is general to every cached table.
 
-// biome-ignore lint/suspicious/noExplicitAny: simple in-memory cache implementation
-type CacheEntry = { data: any; expires: number }
+type CacheEntry = { data: Promise<unknown>; expires: number }
 
 /** org-scoped two-level cache: orgId → key → entry */
 const orgCacheStore = new Map<string, Map<string, CacheEntry>>()
@@ -40,12 +39,19 @@ export function getOrgCachedData<T>(
   const store = getOrgStore(orgId)
   const entry = store.get(key)
   if (entry && entry.expires > now) {
-    return entry.data
+    return entry.data as Promise<T>
   }
-  return loader().then((data) => {
-    store.set(key, { data, expires: now + ttl })
-    return data
+  // Store the in-flight promise so concurrent callers share a single loader
+  // invocation. Without this, N concurrent cold-miss requests for the same key
+  // all run loader() in parallel.
+  const promise = loader()
+  store.set(key, { data: promise, expires: now + ttl })
+  promise.catch(() => {
+    if (store.get(key)?.data === promise) {
+      store.delete(key)
+    }
   })
+  return promise
 }
 
 export const clearOrgCache = (orgId: string) => {

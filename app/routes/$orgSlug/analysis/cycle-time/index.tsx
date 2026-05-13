@@ -23,6 +23,7 @@ import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   computeExcludedCount,
+  filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import {
@@ -120,14 +121,9 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     ? repositoryParam
     : null
 
-  const sf = filter.showFiltered ? 't' : 'f'
-  // Pattern signature must invalidate the cache when patterns change. Use
-  // JSON.stringify so a pattern that legitimately contains the separator
-  // character can't collide with a different list.
-  const patternSignature = JSON.stringify([...filter.normalizedPatterns].sort())
   // metricMode is intentionally NOT in the cache key — raw rows are mode-
   // agnostic, the median/average choice is applied in clientLoader.
-  const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryId ?? 'all'}:${periodMonths}:sf=${sf}:patterns=${patternSignature}`
+  const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryId ?? 'all'}:${periodMonths}:${filterCacheKeySuffix(filter)}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
   const [[currentRows, previousRows], excludedCount] = await Promise.all([

@@ -9,6 +9,7 @@ import { Stack } from '~/app/components/ui/stack'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   computeExcludedCount,
+  filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
@@ -46,9 +47,7 @@ export const loader = async ({ context, request }: Route.LoaderArgs) => {
 
   const filter = await loadPrFilterState(request, organization.id)
 
-  const sf = filter.showFiltered ? 't' : 'f'
-  const patternSignature = JSON.stringify([...filter.normalizedPatterns].sort())
-  const cacheKey = `workload:${teamId ?? 'all'}:sf=${sf}:patterns=${patternSignature}`
+  const cacheKey = `workload:${teamId ?? 'all'}:${filterCacheKeySuffix(filter)}`
   const SIXTY_SECONDS = 60 * 1000
 
   const [[openPRs, pendingReviews, reviewHistory], excludedCount] =

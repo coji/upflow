@@ -18,6 +18,7 @@ import { calcSinceDate } from '~/app/libs/date-utils'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
   computeExcludedCount,
+  filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import {
@@ -76,8 +77,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const filter = await loadPrFilterState(request, organization.id)
 
-  const sf = filter.showFiltered ? 't' : 'f'
-  const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}:sf=${sf}`
+  const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}:${filterCacheKeySuffix(filter)}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
   const [[queueHistoryRaw, wipCycleRaw, prSizesRaw], excludedCount] =
