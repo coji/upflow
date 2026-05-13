@@ -87,6 +87,9 @@ CREATE TABLE `pull_requests` (
   PRIMARY KEY (`number`, `repository_id`),
   CONSTRAINT `pull_requests_repository_id_fkey` FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
+-- Index for cycle-time / throughput / workload loaders that filter on merged_at
+-- (range scan for merged windows; IS NULL slice for open-PR queries).
+CREATE INDEX `pull_requests_merged_at_idx` ON `pull_requests` (`merged_at`);
 -- Create "pull_request_reviews" table
 CREATE TABLE `pull_request_reviews` (
   `id` text NOT NULL,
