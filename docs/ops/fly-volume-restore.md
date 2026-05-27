@@ -1,11 +1,22 @@
 # Fly Volume Restore
 
 This note records the current production volume backup posture and the tested
-restore path for the `upflow` Fly app.
+restore path for the `upflow` Fly app. Fly volume snapshots are the **sole**
+disaster recovery mechanism for `upflow`.
 
-Continuous SQLite replication to Cloudflare R2 is documented separately in
-[Litestream R2 Backup](./litestream-r2.md). Fly volume snapshots remain the
-volume-level fallback for this runbook.
+## Why no continuous replication
+
+Continuous SQLite replication to Cloudflare R2 (Litestream) was retired on
+2026-05-27. It was redundant with the daily Fly volume snapshots (30-day
+retention) documented here, while its per-database 30s sync plus multi-level
+compaction generated R2 Class A operations that scaled with the tenant count and
+grew to roughly $20+/month — all storage-operation cost, not storage itself. The
+data it protected does not justify that: GitHub is the source of truth for tenant
+analytics (re-derivable via crawl), and `data.db` (orgs, members, integrations)
+changes infrequently, so a sub-24h RPO is not worth the cost. The only capability
+given up is an off-Fly copy; if that becomes necessary, prefer a once-daily push
+of `data.db` alone (a handful of Class A ops/day, effectively free) over
+re-enabling full Litestream replication.
 
 ## Current State
 
