@@ -21,14 +21,6 @@ set +x
 # Load Sentry before server (same as pnpm start). No-op when SENTRY_DSN is unset.
 export NODE_OPTIONS="--import ./instrument.server.mjs${NODE_OPTIONS:+ $NODE_OPTIONS}"
 
-if [ "${LITESTREAM_ENABLED:-0}" = "1" ]; then
-  : "${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required when LITESTREAM_ENABLED=1}"
-  : "${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required when LITESTREAM_ENABLED=1}"
-  : "${AWS_ENDPOINT_URL_S3:?AWS_ENDPOINT_URL_S3 is required when LITESTREAM_ENABLED=1}"
-  : "${AWS_REGION:?AWS_REGION is required when LITESTREAM_ENABLED=1}"
-  : "${LITESTREAM_REPLICA_PREFIX:?LITESTREAM_REPLICA_PREFIX is required when LITESTREAM_ENABLED=1}"
-
-  exec litestream replicate -config /etc/litestream.yml -exec "node server.mjs"
-fi
-
+# exec so node receives SIGINT/SIGTERM directly (Fly kill_signal = SIGINT).
+# Disaster recovery is handled by Fly volume snapshots; see docs/ops/fly-volume-restore.md.
 exec node server.mjs
