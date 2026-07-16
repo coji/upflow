@@ -69,6 +69,16 @@ In your GitHub App settings, add the following repository permissions:
 - **Deployments**: Read-only (deploy events for cycle time calculation)
 - **Metadata**: Read-only (automatically granted)
 
+Also add this organization permission so Upflow can verify that the person
+completing an installation is an active organization owner:
+
+- **Members**: Read-only
+
+Configure this permission before deploying the GitHub App connection flow.
+GitHub marks existing installations as requiring approval after an App gains a
+new organization permission; an organization owner must approve that request
+before Upflow can verify and connect the installation.
+
 ##### Additional environment variables
 
 Add to `.env`:
@@ -192,8 +202,8 @@ Reach for `crawl --refresh` only when the raw data itself is wrong (missing PRs,
 
 ## Authentication
 
-- **GitHub OAuth only**: login requires the user's GitHub login to be registered in the org's GitHub Users list with Active status
-- **First-user bootstrap**: on a fresh database with no users, the first GitHub login is allowed unconditionally and promoted to super admin
+- **GitHub OAuth only**: active Upflow members must remain enabled under Settings > GitHub Users. A GitHub account with no Upflow membership may authenticate only so an external GitHub organization owner can complete a delegated App installation; organization routes still require explicit Upflow membership
+- **First-user bootstrap**: a permanent database marker elects exactly one initial GitHub user as super admin; seeded and upgraded databases record bootstrap as already completed
 - **Auto-registration**: PR authors and reviewers are automatically added as inactive GitHub users during crawl — an admin enables them via Settings > GitHub Users
 
 ## License

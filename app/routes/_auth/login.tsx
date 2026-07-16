@@ -11,13 +11,16 @@ import {
   Center,
 } from '~/app/components/ui'
 import { auth, getSession, safeRedirectTo } from '~/app/libs/auth.server'
+import {
+  clearHandoffCookie,
+  handoffCookieForRedirect,
+} from '~/app/libs/github-handoff-auth.server'
 import type { Route } from './+types/login'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url)
   const redirectTo = safeRedirectTo(url.searchParams.get('redirectTo'))
   const error = url.searchParams.get('error')
-
   const session = await getSession(request)
   if (session) {
     throw redirect(redirectTo.startsWith('/login') ? '/' : redirectTo)
@@ -28,11 +31,11 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const session = await getSession(request)
+  const formData = await request.formData()
   if (session) {
     throw redirect('/')
   }
 
-  const formData = await request.formData()
   const rawRedirectTo = safeRedirectTo(
     formData.get('redirectTo') as string | null,
   )
@@ -52,12 +55,17 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 
   const data = await response.json()
-  return redirect(data.url || redirectTo, { headers: response.headers })
+  const headers = new Headers(response.headers)
+  const handoffCookie = handoffCookieForRedirect(redirectTo)
+  // A fresh non-handoff login must not inherit a delegated bearer nonce left
+  // behind when an earlier OAuth attempt was abandoned at GitHub.
+  headers.append('Set-Cookie', handoffCookie ?? clearHandoffCookie())
+  return redirect(data.url || redirectTo, { headers })
 }
 
 const errorMessages: Record<string, string> = {
   unable_to_get_user_info:
-    'This GitHub account is not authorized to sign in. Please ask an administrator to enable access.',
+    'GitHub sign-in could not be completed. Please retry or contact an administrator.',
 }
 
 export default function LoginPage({

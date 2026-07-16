@@ -143,7 +143,10 @@ export async function backfillInstallationMembershipCommand(
         if (orphans.length > 0) {
           await tenantDb
             .updateTable('repositories')
-            .set({ githubInstallationId: installationId })
+            .set({
+              githubInstallationId: installationId,
+              updatedAt: new Date().toISOString(),
+            })
             .where('githubInstallationId', 'is', null)
             .execute()
         }

@@ -25,6 +25,7 @@ emulate.config.yaml
 data
 
 node_modules
+/.pnpm-store/
 
 /.cache
 /build

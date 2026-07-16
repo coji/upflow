@@ -1,13 +1,19 @@
+import type { Kysely, Transaction } from 'kysely'
 import { db } from '~/app/services/db.server'
 import type { GithubAppLinkEventSource } from '~/app/services/github-app-link-events.server'
 import { tryLogGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
+import type { DB as TenantDatabase } from '~/app/services/tenant-type'
 import type { OrganizationId } from '~/app/types/organization'
 
 export type ReassignmentSource = Extract<
   GithubAppLinkEventSource,
   | 'installation_webhook'
   | 'installation_repositories_webhook'
+  | 'installation_update_callback'
+  | 'setup_callback'
+  | 'existing_installation_link'
+  | 'crawl_repair'
   | 'user_disconnect'
   | 'cli_repair'
   | 'manual_reassign'
@@ -102,9 +108,10 @@ export async function reassignBrokenRepository(input: {
 
   if (candidates.length === 1) {
     const nextCanonical = candidates[0]
+    const now = new Date().toISOString()
     await tenantDb
       .updateTable('repositories')
-      .set({ githubInstallationId: nextCanonical })
+      .set({ githubInstallationId: nextCanonical, updatedAt: now })
       .where('id', '=', repositoryId)
       .execute()
     await tryLogGithubAppLinkEvent({
@@ -155,40 +162,57 @@ export async function reassignBrokenRepository(input: {
  * The shared-DB audit log entries are written best-effort after the tenant
  * mutation succeeds.
  */
-export async function reassignCanonicalAfterLinkLoss(input: {
-  organizationId: OrganizationId
-  lostInstallationId: number
-  source: ReassignmentSource
-  repositoryIds?: string[]
-}): Promise<void> {
-  const { organizationId, lostInstallationId, source, repositoryIds } = input
+type ReassignmentDecision = {
+  repositoryId: string
+  nextCanonical: number | null
+  eventType:
+    | 'canonical_reassigned'
+    | 'canonical_cleared'
+    | 'assignment_required'
+  candidateCount: number
+}
 
-  const { ids: eligibleSet, hasUninitializedLink } =
-    await fetchEligibleInstallationIds(organizationId, {
-      excludeInstallationId: lostInstallationId,
-    })
+async function applyCanonicalReassignment(
+  input: {
+    organizationId: OrganizationId
+    lostInstallationId: number
+    repositoryIds?: string[]
+  },
+  tenantDb: Kysely<TenantDatabase> | Transaction<TenantDatabase>,
+  eligibility: { ids: Set<number>; hasUninitializedLink: boolean },
+): Promise<ReassignmentDecision[]> {
+  const { lostInstallationId, repositoryIds } = input
+  const { ids: eligibleSet, hasUninitializedLink } = eligibility
 
-  const tenantDb = getTenantDb(organizationId)
-
-  let rowsQuery = tenantDb
-    .selectFrom('repositories')
-    .leftJoin(
-      'repositoryInstallationMemberships',
-      'repositoryInstallationMemberships.repositoryId',
-      'repositories.id',
-    )
-    .select([
-      'repositories.id as repositoryId',
-      'repositoryInstallationMemberships.installationId as candidateInstallationId',
-      'repositoryInstallationMemberships.deletedAt as membershipDeletedAt',
-    ])
-    .where('repositories.githubInstallationId', '=', lostInstallationId)
-  if (repositoryIds !== undefined) {
-    rowsQuery = rowsQuery.where('repositories.id', 'in', repositoryIds)
+  const loadRows = (ids?: string[]) => {
+    let query = tenantDb
+      .selectFrom('repositories')
+      .leftJoin(
+        'repositoryInstallationMemberships',
+        'repositoryInstallationMemberships.repositoryId',
+        'repositories.id',
+      )
+      .select([
+        'repositories.id as repositoryId',
+        'repositoryInstallationMemberships.installationId as candidateInstallationId',
+        'repositoryInstallationMemberships.deletedAt as membershipDeletedAt',
+      ])
+      .where('repositories.githubInstallationId', '=', lostInstallationId)
+    if (ids !== undefined) query = query.where('repositories.id', 'in', ids)
+    return query.execute()
   }
-  const rows = await rowsQuery.execute()
-
-  if (rows.length === 0) return
+  const rows = repositoryIds
+    ? (
+        await Promise.all(
+          Array.from(
+            { length: Math.ceil(repositoryIds.length / 200) },
+            (_, index) =>
+              loadRows(repositoryIds.slice(index * 200, index * 200 + 200)),
+          ),
+        )
+      ).flat()
+    : await loadRows()
+  if (rows.length === 0) return []
 
   const candidatesByRepo = new Map<string, Set<number>>()
   for (const row of rows) {
@@ -208,62 +232,52 @@ export async function reassignCanonicalAfterLinkLoss(input: {
   }
 
   const reassignBuckets = new Map<number | null, string[]>()
-  type Decision = {
-    repositoryId: string
-    nextCanonical: number | null
-    eventType:
-      | 'canonical_reassigned'
-      | 'canonical_cleared'
-      | 'assignment_required'
-    candidateCount: number
-  }
-  const decisions: Decision[] = []
-
+  const decisions: ReassignmentDecision[] = []
   for (const [repositoryId, bucket] of candidatesByRepo) {
     const candidates = [...bucket]
-    let nextCanonical: number | null
-    let eventType: Decision['eventType']
-    if (candidates.length === 1) {
-      nextCanonical = candidates[0]
-      eventType = 'canonical_reassigned'
-    } else if (candidates.length === 0) {
-      nextCanonical = null
-      eventType = hasUninitializedLink
-        ? 'assignment_required'
-        : 'canonical_cleared'
-    } else {
-      nextCanonical = null
-      eventType = 'assignment_required'
-    }
+    const nextCanonical = candidates.length === 1 ? candidates[0] : null
+    const eventType: ReassignmentDecision['eventType'] =
+      candidates.length === 1
+        ? 'canonical_reassigned'
+        : candidates.length === 0 && !hasUninitializedLink
+          ? 'canonical_cleared'
+          : 'assignment_required'
     decisions.push({
       repositoryId,
       nextCanonical,
       eventType,
       candidateCount: candidates.length,
     })
-
-    let group = reassignBuckets.get(nextCanonical)
-    if (!group) {
-      group = []
-      reassignBuckets.set(nextCanonical, group)
-    }
+    const group = reassignBuckets.get(nextCanonical) ?? []
     group.push(repositoryId)
+    reassignBuckets.set(nextCanonical, group)
   }
 
+  const now = new Date().toISOString()
   for (const [nextCanonical, groupedRepositoryIds] of reassignBuckets) {
-    await tenantDb
-      .updateTable('repositories')
-      .set({ githubInstallationId: nextCanonical })
-      .where('id', 'in', groupedRepositoryIds)
-      .execute()
+    for (let offset = 0; offset < groupedRepositoryIds.length; offset += 200) {
+      await tenantDb
+        .updateTable('repositories')
+        .set({ githubInstallationId: nextCanonical, updatedAt: now })
+        .where('id', 'in', groupedRepositoryIds.slice(offset, offset + 200))
+        .execute()
+    }
   }
+  return decisions
+}
 
-  for (const decision of decisions) {
+async function logReassignmentDecisions(input: {
+  organizationId: OrganizationId
+  lostInstallationId: number
+  source: ReassignmentSource
+  decisions: ReassignmentDecision[]
+}): Promise<void> {
+  for (const decision of input.decisions) {
     await tryLogGithubAppLinkEvent({
-      organizationId,
-      installationId: lostInstallationId,
+      organizationId: input.organizationId,
+      installationId: input.lostInstallationId,
       eventType: decision.eventType,
-      source,
+      source: input.source,
       status: 'success',
       details: {
         repositoryId: decision.repositoryId,
@@ -272,6 +286,23 @@ export async function reassignCanonicalAfterLinkLoss(input: {
       },
     })
   }
+}
+
+export async function reassignCanonicalAfterLinkLoss(input: {
+  organizationId: OrganizationId
+  lostInstallationId: number
+  source: ReassignmentSource
+  repositoryIds?: string[]
+}): Promise<void> {
+  const eligibility = await fetchEligibleInstallationIds(input.organizationId, {
+    excludeInstallationId: input.lostInstallationId,
+  })
+  const decisions = await applyCanonicalReassignment(
+    input,
+    getTenantDb(input.organizationId),
+    eligibility,
+  )
+  await logReassignmentDecisions({ ...input, decisions })
 }
 
 export async function softDeleteRepositoryMembership(input: {
@@ -302,6 +333,7 @@ export async function upsertRepositoryMembership(input: {
     .values({
       repositoryId: input.repositoryId,
       installationId: input.installationId,
+      updatedAt: now,
     })
     .onConflict((oc) =>
       oc.columns(['repositoryId', 'installationId']).doUpdateSet({
@@ -324,50 +356,202 @@ export async function initializeMembershipsForInstallation(input: {
   organizationId: OrganizationId
   installationId: number
   repositories: Array<{ owner: string; name: string }>
+  snapshotStartedAt?: string
 }): Promise<string[]> {
   if (input.repositories.length === 0) return []
 
   const tenantDb = getTenantDb(input.organizationId)
-  const matched = await tenantDb
-    .selectFrom('repositories')
-    .select(['id', 'owner', 'repo'])
-    .where((eb) =>
-      eb.or(
-        input.repositories.map((r) =>
-          eb.and([eb('owner', '=', r.owner), eb('repo', '=', r.name)]),
-        ),
-      ),
+  const matched: Array<{ id: string; owner: string; repo: string }> = []
+  for (let offset = 0; offset < input.repositories.length; offset += 200) {
+    const chunk = input.repositories.slice(offset, offset + 200)
+    matched.push(
+      ...(await tenantDb
+        .selectFrom('repositories')
+        .select(['id', 'owner', 'repo'])
+        .where((eb) =>
+          eb.or(
+            chunk.map((r) =>
+              eb.and([
+                eb(eb.fn('lower', ['owner']), '=', r.owner.toLowerCase()),
+                eb(eb.fn('lower', ['repo']), '=', r.name.toLowerCase()),
+              ]),
+            ),
+          ),
+        )
+        .execute()),
     )
-    .execute()
+  }
 
   if (matched.length === 0) return []
 
-  const matchedIds = matched.map((r) => r.id)
   const now = new Date().toISOString()
+  const upsertedIds: string[] = []
   await tenantDb.transaction().execute(async (tx) => {
-    await tx
-      .insertInto('repositoryInstallationMemberships')
-      .values(
-        matched.map((repo) => ({
-          repositoryId: repo.id,
-          installationId: input.installationId,
-        })),
-      )
-      .onConflict((oc) =>
-        oc.columns(['repositoryId', 'installationId']).doUpdateSet({
-          deletedAt: null,
-          updatedAt: now,
-        }),
-      )
-      .execute()
+    for (let offset = 0; offset < matched.length; offset += 200) {
+      const chunk = matched.slice(offset, offset + 200)
+      const upserted = await tx
+        .insertInto('repositoryInstallationMemberships')
+        .values(
+          chunk.map((repo) => ({
+            repositoryId: repo.id,
+            installationId: input.installationId,
+            updatedAt: now,
+          })),
+        )
+        .onConflict((oc) => {
+          const update = oc
+            .columns(['repositoryId', 'installationId'])
+            .doUpdateSet({
+              deletedAt: null,
+              updatedAt: now,
+            })
+          return input.snapshotStartedAt
+            ? update.where('updatedAt', '<=', input.snapshotStartedAt)
+            : update
+        })
+        .returning('repositoryId')
+        .execute()
+      const chunkUpsertedIds = upserted.map((row) => row.repositoryId)
+      upsertedIds.push(...chunkUpsertedIds)
 
-    await tx
-      .updateTable('repositories')
-      .set({ githubInstallationId: input.installationId })
-      .where('id', 'in', matchedIds)
-      .where('githubInstallationId', 'is', null)
-      .execute()
+      if (chunkUpsertedIds.length > 0) {
+        await tx
+          .updateTable('repositories')
+          .set({ githubInstallationId: input.installationId, updatedAt: now })
+          .where('id', 'in', chunkUpsertedIds)
+          .where('githubInstallationId', 'is', null)
+          .execute()
+      }
+    }
   })
 
-  return matchedIds
+  return upsertedIds
+}
+
+/** Reconcile removals from an authoritative installation repository snapshot. */
+export async function reconcileMembershipSnapshot(input: {
+  organizationId: OrganizationId
+  installationId: number
+  repositories: Array<{ owner: string; name: string }>
+  snapshotStartedAt: string
+  source: Extract<
+    GithubAppLinkEventSource,
+    | 'setup_callback'
+    | 'existing_installation_link'
+    | 'installation_update_callback'
+    | 'crawl_repair'
+  >
+}): Promise<string[]> {
+  const tenantDb = getTenantDb(input.organizationId)
+  const visible = new Set(
+    input.repositories.map(
+      (repo) => `${repo.owner.toLowerCase()}/${repo.name.toLowerCase()}`,
+    ),
+  )
+  const active = await tenantDb
+    .selectFrom('repositoryInstallationMemberships as membership')
+    .innerJoin('repositories as repo', 'repo.id', 'membership.repositoryId')
+    .select([
+      'membership.repositoryId',
+      'membership.updatedAt',
+      'repo.owner',
+      'repo.repo',
+    ])
+    .where('membership.installationId', '=', input.installationId)
+    .where('membership.deletedAt', 'is', null)
+    .execute()
+  const removedRows = active.filter(
+    (row) =>
+      Date.parse(row.updatedAt) <= Date.parse(input.snapshotStartedAt) &&
+      !visible.has(`${row.owner.toLowerCase()}/${row.repo.toLowerCase()}`),
+  )
+  const now = new Date().toISOString()
+  const eligibility = await fetchEligibleInstallationIds(input.organizationId, {
+    excludeInstallationId: input.installationId,
+  })
+  const result = await tenantDb.transaction().execute(async (tx) => {
+    const deleted: Array<{ repositoryId: string }> = []
+    // Each optimistic-concurrency row adds an AND branch. Keep well below
+    // SQLite's default expression-depth limit (1,000) for large installations.
+    for (let offset = 0; offset < removedRows.length; offset += 200) {
+      const chunk = removedRows.slice(offset, offset + 200)
+      deleted.push(
+        ...(await tx
+          .updateTable('repositoryInstallationMemberships')
+          .set({ deletedAt: now, updatedAt: now })
+          .where('installationId', '=', input.installationId)
+          .where(
+            'repositoryId',
+            'in',
+            chunk.map((row) => row.repositoryId),
+          )
+          .where('deletedAt', 'is', null)
+          .where((eb) =>
+            eb.or(
+              chunk.map((row) =>
+                eb.and([
+                  eb('repositoryId', '=', row.repositoryId),
+                  eb('updatedAt', '=', row.updatedAt),
+                ]),
+              ),
+            ),
+          )
+          .returning('repositoryId')
+          .execute()),
+      )
+    }
+
+    // A previous attempt may have committed the membership removal before an
+    // old implementation failed to repair the canonical repository pointer.
+    // Include those stale canonical rows so crawl repair remains idempotent.
+    const protectedRows = await tx
+      .selectFrom('repositoryInstallationMemberships')
+      .select(['repositoryId', 'updatedAt'])
+      .where('installationId', '=', input.installationId)
+      .where('deletedAt', 'is', null)
+      .execute()
+    const protectedIds = new Set(
+      protectedRows
+        .filter(
+          (row) =>
+            Date.parse(row.updatedAt) > Date.parse(input.snapshotStartedAt),
+        )
+        .map((row) => row.repositoryId),
+    )
+    const canonicalRows = await tx
+      .selectFrom('repositories')
+      .select(['id', 'owner', 'repo'])
+      .where('githubInstallationId', '=', input.installationId)
+      .execute()
+    const retryIds = canonicalRows
+      .filter(
+        (row) =>
+          !protectedIds.has(row.id) &&
+          !visible.has(`${row.owner.toLowerCase()}/${row.repo.toLowerCase()}`),
+      )
+      .map((row) => row.id)
+    const affectedIds = [
+      ...new Set([...deleted.map((row) => row.repositoryId), ...retryIds]),
+    ]
+    const decisions =
+      affectedIds.length === 0
+        ? []
+        : await applyCanonicalReassignment(
+            {
+              organizationId: input.organizationId,
+              lostInstallationId: input.installationId,
+              repositoryIds: affectedIds,
+            },
+            tx,
+            eligibility,
+          )
+    return { affectedIds, decisions }
+  })
+  await logReassignmentDecisions({
+    organizationId: input.organizationId,
+    lostInstallationId: input.installationId,
+    source: input.source,
+    decisions: result.decisions,
+  })
+  return result.affectedIds
 }

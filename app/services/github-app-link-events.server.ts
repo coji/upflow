@@ -5,6 +5,7 @@ import type { OrganizationId } from '~/app/types/organization'
 
 export type GithubAppLinkEventType =
   | 'link_created'
+  | 'link_updated'
   | 'link_deleted'
   | 'link_suspended'
   | 'link_unsuspended'
@@ -17,6 +18,8 @@ export type GithubAppLinkEventType =
 
 export type GithubAppLinkEventSource =
   | 'setup_callback'
+  | 'existing_installation_link'
+  | 'installation_update_callback'
   | 'installation_webhook'
   | 'installation_repositories_webhook'
   | 'user_disconnect'

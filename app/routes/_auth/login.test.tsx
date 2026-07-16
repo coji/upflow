@@ -7,7 +7,7 @@ import type { Route } from './+types/login'
 vi.mock('~/app/libs/auth.server', () => ({}))
 
 const unauthorizedCopy =
-  'This GitHub account is not authorized to sign in. Please ask an administrator to enable access.'
+  'GitHub sign-in could not be completed. Please retry or contact an administrator.'
 
 function loginProps(error: string | null): Route.ComponentProps {
   return {

@@ -73,15 +73,29 @@ const githubAppNotConfigured = (
 
 async function buildInstallUrl(
   organizationId: OrganizationId,
+  userId: string,
 ): Promise<string | null> {
   const slug = await getGithubAppSlug()
   if (!slug) return null
-  const nonce = await generateInstallState(organizationId)
+  const nonce = await generateInstallState(organizationId, userId)
   return `https://github.com/apps/${slug}/installations/new?state=${encodeURIComponent(nonce)}`
 }
 
+async function buildInstallHandoffUrl(
+  organizationId: OrganizationId,
+  userId: string,
+  baseUrl: string,
+): Promise<string | null> {
+  const slug = await getGithubAppSlug()
+  if (!slug) return null
+  const nonce = await generateInstallState(organizationId, userId, 'handoff')
+  const url = new URL('/api/github/install', baseUrl)
+  url.searchParams.set('state', nonce)
+  return url.toString()
+}
+
 export const action = async ({ request, context }: Route.ActionArgs) => {
-  const { organization, membership } = context.get(orgContext)
+  const { organization, membership, user } = context.get(orgContext)
   requireOrgOwner(membership, organization.slug)
   const formData = await request.formData()
   const submission = parseWithZod(formData, { schema: integrationActionSchema })
@@ -171,12 +185,22 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       )
     })
     .with({ intent: INTENTS.installGithubApp }, async () => {
-      const installUrl = await buildInstallUrl(organization.id)
+      const installUrl = await buildInstallUrl(organization.id, user.id)
       if (!installUrl) return githubAppNotConfigured(INTENTS.installGithubApp)
       throw redirect(installUrl)
     })
     .with({ intent: INTENTS.copyInstallUrl }, async () => {
-      const installUrl = await buildInstallUrl(organization.id)
+      if (!process.env.BETTER_AUTH_URL) {
+        return dataWithError(
+          { intent: INTENTS.copyInstallUrl, lastResult: undefined },
+          { message: 'BETTER_AUTH_URL is not configured' },
+        )
+      }
+      const installUrl = await buildInstallHandoffUrl(
+        organization.id,
+        user.id,
+        process.env.BETTER_AUTH_URL,
+      )
       if (!installUrl) return githubAppNotConfigured(INTENTS.copyInstallUrl)
       return data({ intent: INTENTS.copyInstallUrl, installUrl })
     })

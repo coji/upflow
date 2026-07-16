@@ -183,6 +183,10 @@ CREATE TABLE `github_app_install_states` (
   `id` text NOT NULL,
   `organization_id` text NOT NULL,
   `nonce` text NOT NULL,
+  `created_by_user_id` text NULL,
+  `claimed_by_user_id` text NULL,
+  `claimed_at` text NULL,
+  `intent_kind` text NOT NULL DEFAULT 'direct' CHECK (`intent_kind` IN ('direct', 'handoff', 'legacy')),
   `expires_at` text NOT NULL,
   `consumed_at` text NULL,
   `created_at` text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -191,3 +195,9 @@ CREATE TABLE `github_app_install_states` (
 );
 -- Create index "github_app_install_states_nonce_key" to table: "github_app_install_states"
 CREATE UNIQUE INDEX `github_app_install_states_nonce_key` ON `github_app_install_states` (`nonce`);
+-- Create "bootstrap_markers" table (one-time application bootstrap actions)
+CREATE TABLE `bootstrap_markers` (
+  `key` text NOT NULL,
+  `created_at` text NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  PRIMARY KEY (`key`)
+);

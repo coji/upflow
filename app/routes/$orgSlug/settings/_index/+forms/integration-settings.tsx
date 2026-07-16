@@ -172,10 +172,16 @@ function GitHubAppSection({
     ) {
       return
     }
-    void navigator.clipboard.writeText(d.installUrl).then(() => {
-      toast.success('Install URL copied to clipboard')
-      copyFetcher.reset()
-    })
+    void navigator.clipboard.writeText(d.installUrl).then(
+      () => {
+        toast.success('Install URL copied to clipboard')
+        copyFetcher.reset()
+      },
+      () => {
+        toast.error('Could not copy the install URL. Please try again.')
+        copyFetcher.reset()
+      },
+    )
   }, [copyFetcher.state, copyFetcher.data, copyFetcher.reset])
 
   const hasAnyLink = githubAppLinks.length > 0
@@ -213,6 +219,20 @@ function GitHubAppSection({
                 Add another GitHub account
               </Button>
             </Form>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              loading={copyFetcher.state !== 'idle'}
+              onClick={() => {
+                copyFetcher.submit(
+                  { intent: INTENTS.copyInstallUrl },
+                  { method: 'POST' },
+                )
+              }}
+            >
+              Copy install URL
+            </Button>
           </HStack>
           {tokenNote}
         </Stack>
@@ -238,6 +258,20 @@ function GitHubAppSection({
                 Reinstall GitHub App
               </Button>
             </Form>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              loading={copyFetcher.state !== 'idle'}
+              onClick={() => {
+                copyFetcher.submit(
+                  { intent: INTENTS.copyInstallUrl },
+                  { method: 'POST' },
+                )
+              }}
+            >
+              Copy install URL
+            </Button>
             <Button
               type="button"
               variant="outline"
