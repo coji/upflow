@@ -40,11 +40,20 @@ export interface AtlasSchemaRevisions {
   version: string;
 }
 
+export interface BootstrapMarkers {
+  createdAt: Generated<string>;
+  key: string;
+}
+
 export interface GithubAppInstallStates {
+  claimedAt: string | null;
+  claimedByUserId: string | null;
   consumedAt: string | null;
   createdAt: Generated<string>;
+  createdByUserId: string | null;
   expiresAt: string;
   id: string;
+  intentKind: "direct" | "handoff" | "legacy";
   nonce: string;
   organizationId: string;
 }
@@ -168,6 +177,7 @@ export interface Verifications {
 export interface DB {
   accounts: Accounts;
   atlasSchemaRevisions: AtlasSchemaRevisions;
+  bootstrapMarkers: BootstrapMarkers;
   githubAppInstallStates: GithubAppInstallStates;
   githubAppLinkEvents: GithubAppLinkEvents;
   githubAppLinks: GithubAppLinks;

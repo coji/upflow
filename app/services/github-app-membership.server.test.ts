@@ -16,6 +16,7 @@ import { closeAllTenantDbs } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import {
   initializeMembershipsForInstallation,
+  reconcileMembershipSnapshot,
   reassignBrokenRepository,
   reassignCanonicalAfterLinkLoss,
 } from './github-app-membership.server'
@@ -204,6 +205,53 @@ describe('reassignCanonicalAfterLinkLoss', () => {
       .execute()
     expect(events).toHaveLength(1)
     expect(events[0].eventType).toBe('canonical_reassigned')
+  })
+
+  test('chunks large repository-id reassignment sets', async () => {
+    await insertLink(ALT_INSTALLATION)
+    const ids = Array.from({ length: 205 }, (_, index) => `repo-${index}`)
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb
+      .insertInto('repositories')
+      .values(
+        ids.map((id, index) => ({
+          id,
+          integrationId: 'int-1',
+          provider: 'github' as const,
+          owner: 'octo',
+          repo: `repo-${index}`,
+          githubInstallationId: LOST_INSTALLATION,
+          updatedAt: '2026-04-07T00:00:00Z',
+        })),
+      )
+      .execute()
+    await tenantDb
+      .insertInto('repositoryInstallationMemberships')
+      .values(
+        ids.map((repositoryId) => ({
+          repositoryId,
+          installationId: ALT_INSTALLATION,
+        })),
+      )
+      .execute()
+
+    await reassignCanonicalAfterLinkLoss({
+      organizationId: ORG_ID,
+      lostInstallationId: LOST_INSTALLATION,
+      source: 'installation_repositories_webhook',
+      repositoryIds: ids,
+    })
+
+    const rows = await tenantDb
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', 'in', ids)
+      .execute()
+    expect(rows).toHaveLength(205)
+    expect(
+      rows.every((row) => row.githubInstallationId === ALT_INSTALLATION),
+    ).toBe(true)
   })
 
   test('0 candidates → null + canonical_cleared event', async () => {
@@ -781,6 +829,44 @@ describe('initializeMembershipsForInstallation', () => {
     expect(result).toEqual([])
   })
 
+  test('does not resurrect a membership removed after snapshot start', async () => {
+    await seedRepository(null)
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb
+      .insertInto('repositoryInstallationMemberships')
+      .values({
+        repositoryId: REPO_ID,
+        installationId: LOST_INSTALLATION,
+        deletedAt: '2026-07-16T00:00:01.000Z',
+        updatedAt: '2026-07-16T00:00:01.000Z',
+      })
+      .execute()
+
+    await expect(
+      initializeMembershipsForInstallation({
+        organizationId: ORG_ID,
+        installationId: LOST_INSTALLATION,
+        repositories: [{ owner: 'octo', name: 'hello' }],
+        snapshotStartedAt: '2026-07-16T00:00:00.000Z',
+      }),
+    ).resolves.toEqual([])
+
+    const membership = await tenantDb
+      .selectFrom('repositoryInstallationMemberships')
+      .select('deletedAt')
+      .where('repositoryId', '=', REPO_ID)
+      .where('installationId', '=', LOST_INSTALLATION)
+      .executeTakeFirstOrThrow()
+    expect(membership.deletedAt).not.toBeNull()
+    const repository = await tenantDb
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', REPO_ID)
+      .executeTakeFirstOrThrow()
+    expect(repository.githubInstallationId).toBeNull()
+  })
+
   test('unmatched repositories are silently skipped', async () => {
     const result = await initializeMembershipsForInstallation({
       organizationId: ORG_ID,
@@ -788,5 +874,111 @@ describe('initializeMembershipsForInstallation', () => {
       repositories: [{ owner: 'no-such', name: 'repo' }],
     })
     expect(result).toEqual([])
+  })
+
+  test('matches GitHub repository coordinates case-insensitively', async () => {
+    await seedRepository(null)
+
+    const result = await initializeMembershipsForInstallation({
+      organizationId: ORG_ID,
+      installationId: INSTALLATION_ID,
+      repositories: [{ owner: 'OCTO', name: 'HELLO' }],
+    })
+
+    expect(result).toEqual([REPO_ID])
+  })
+
+  test('reconciles repositories removed from an installation snapshot', async () => {
+    await seedRepository(LOST_INSTALLATION)
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb
+      .insertInto('repositoryInstallationMemberships')
+      .values({
+        repositoryId: REPO_ID,
+        installationId: LOST_INSTALLATION,
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      })
+      .execute()
+
+    await expect(
+      reconcileMembershipSnapshot({
+        organizationId: ORG_ID,
+        installationId: LOST_INSTALLATION,
+        repositories: [],
+        snapshotStartedAt: new Date().toISOString(),
+        source: 'installation_update_callback',
+      }),
+    ).resolves.toEqual([REPO_ID])
+
+    const membership = await tenantDb
+      .selectFrom('repositoryInstallationMemberships')
+      .select('deletedAt')
+      .where('repositoryId', '=', REPO_ID)
+      .where('installationId', '=', LOST_INSTALLATION)
+      .executeTakeFirstOrThrow()
+    expect(membership.deletedAt).not.toBeNull()
+    const repo = await tenantDb
+      .selectFrom('repositories')
+      .select('githubInstallationId')
+      .where('id', '=', REPO_ID)
+      .executeTakeFirstOrThrow()
+    expect(repo.githubInstallationId).toBeNull()
+  })
+
+  test('does not remove a membership updated after snapshot fetching began', async () => {
+    await seedRepository(LOST_INSTALLATION)
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb
+      .insertInto('repositoryInstallationMemberships')
+      .values({
+        repositoryId: REPO_ID,
+        installationId: LOST_INSTALLATION,
+        updatedAt: '2026-07-16T00:00:01.000Z',
+      })
+      .execute()
+
+    await expect(
+      reconcileMembershipSnapshot({
+        organizationId: ORG_ID,
+        installationId: LOST_INSTALLATION,
+        repositories: [],
+        snapshotStartedAt: '2026-07-16T00:00:00.000Z',
+        source: 'crawl_repair',
+      }),
+    ).resolves.toEqual([])
+
+    const membership = await tenantDb
+      .selectFrom('repositoryInstallationMemberships')
+      .select('deletedAt')
+      .where('repositoryId', '=', REPO_ID)
+      .where('installationId', '=', LOST_INSTALLATION)
+      .executeTakeFirstOrThrow()
+    expect(membership.deletedAt).toBeNull()
+  })
+
+  test('orders mixed ISO timestamp precision chronologically', async () => {
+    await seedRepository(LOST_INSTALLATION)
+    const { getTenantDb } = await import('~/app/services/tenant-db.server')
+    const tenantDb = getTenantDb(ORG_ID)
+    await tenantDb
+      .insertInto('repositoryInstallationMemberships')
+      .values({
+        repositoryId: REPO_ID,
+        installationId: LOST_INSTALLATION,
+        updatedAt: '2026-07-16T00:00:00Z',
+      })
+      .execute()
+
+    await expect(
+      reconcileMembershipSnapshot({
+        organizationId: ORG_ID,
+        installationId: LOST_INSTALLATION,
+        repositories: [],
+        snapshotStartedAt: '2026-07-16T00:00:00.500Z',
+        source: 'crawl_repair',
+      }),
+    ).resolves.toEqual([REPO_ID])
   })
 })

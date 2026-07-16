@@ -4,7 +4,10 @@ import { organization } from 'better-auth/plugins/organization'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { githubApiUrl } from '~/app/libs/github-api.server'
+import { getGithubHandoffState } from '~/app/libs/github-handoff-auth.server'
+import { canAdmitGithubLogin } from '~/app/libs/github-login-admission'
 import { db, dialect } from '~/app/services/db.server'
+import { claimInitialSuperAdmin } from '~/app/services/bootstrap-admin.server'
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -47,52 +50,31 @@ export const auth = betterAuth({
           avatar_url: string
         }
 
-        // First-user bootstrap: if no users exist yet, allow login unconditionally
-        const userCount = await db
-          .selectFrom('users')
-          .select((eb) => eb.fn.countAll<string>().as('count'))
-          .executeTakeFirstOrThrow()
-        const isFirstUser = Number(userCount.count) === 0
-
-        if (!isFirstUser) {
-          // Check if this GitHub login is registered in any org's companyGithubUsers
-          const orgs = await db
-            .selectFrom('organizations')
-            .select(['id'])
-            .execute()
-          let isAllowed = false
-          let isRegisteredButInactive = false
-          const loginLower = profile.login.toLowerCase()
-          for (const { id } of orgs) {
-            try {
-              const tenantDb = getTenantDb(id as OrganizationId)
-              const match = await tenantDb
-                .selectFrom('companyGithubUsers')
-                .select(['login', 'isActive'])
-                .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
-                .executeTakeFirst()
-              if (match) {
-                if (match.isActive) {
-                  isAllowed = true
-                  break
-                }
-                isRegisteredButInactive = true
-              }
-            } catch {
-              // skip unreachable tenant DBs
+        // Existing Upflow members must still have an active company GitHub-user
+        // entry. A new account is admitted only while an owner has a live
+        // delegated installation intent; organization routes remain
+        // membership-protected after authentication.
+        const orgs = await db.selectFrom('organizations').select('id').execute()
+        const loginLower = profile.login.toLowerCase()
+        let isAllowedMember = false
+        for (const { id } of orgs) {
+          try {
+            const match = await getTenantDb(id as OrganizationId)
+              .selectFrom('companyGithubUsers')
+              .select('isActive')
+              .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
+              .executeTakeFirst()
+            if (match?.isActive) {
+              isAllowedMember = true
+              break
             }
-          }
-          if (!isAllowed) {
-            if (isRegisteredButInactive) {
-              console.warn(
-                `[GitHub OAuth] Login denied: ${profile.login} is registered but inactive`,
-              )
-            } else {
-              console.warn(
-                `[GitHub OAuth] Login denied: ${profile.login} not found in any org`,
-              )
-            }
-            return null
+          } catch (error) {
+            console.error(
+              `[GitHub OAuth] Failed to inspect company GitHub users for organization ${id}`,
+              error,
+            )
+            // Fail closed below for an existing member when a tenant DB cannot
+            // be inspected. Unregistered delegates do not depend on tenant DBs.
           }
         }
 
@@ -122,6 +104,96 @@ export const auth = betterAuth({
             emailsRes.status,
             await emailsRes.text(),
           )
+        }
+
+        if (!isAllowedMember) {
+          // During a user's first GitHub sign-in Better Auth has not inserted
+          // the provider account yet. Check both an existing provider account
+          // and the email that Better Auth may use for account linking.
+          let existingUser = await db
+            .selectFrom('accounts')
+            .innerJoin('users', 'users.id', 'accounts.userId')
+            .select(['users.id', 'users.role'])
+            .where('accounts.providerId', '=', 'github')
+            .where('accounts.accountId', '=', String(profile.id))
+            .executeTakeFirst()
+          if (!existingUser && profile.email && emailVerified) {
+            const emailMatches = await db
+              .selectFrom('users')
+              .select(['users.id', 'users.role'])
+              .where((eb) =>
+                eb(
+                  eb.fn('lower', ['users.email']),
+                  '=',
+                  profile.email!.toLowerCase(),
+                ),
+              )
+              .limit(2)
+              .execute()
+            // SQLite's email uniqueness is case-sensitive, while GitHub email
+            // identity is matched case-insensitively here. Refuse an ambiguous
+            // legacy database instead of admitting whichever row scans first.
+            if (emailMatches.length > 1) {
+              console.warn(
+                `[GitHub OAuth] Login denied: multiple users match verified email ${profile.email}`,
+              )
+              return null
+            }
+            existingUser = emailMatches[0]
+          }
+          const existingMembership = existingUser
+            ? await db
+                .selectFrom('members')
+                .select('id')
+                .where('userId', '=', existingUser.id)
+                .executeTakeFirst()
+            : undefined
+          const [bootstrapMarker, anyUser] = await Promise.all([
+            db
+              .selectFrom('bootstrapMarkers')
+              .select('key')
+              .where('key', '=', 'initial_super_admin')
+              .executeTakeFirst(),
+            db.selectFrom('users').select('id').limit(1).executeTakeFirst(),
+          ])
+          const isFirstUser = !bootstrapMarker && !anyUser
+          const restrictedExistingUser = Boolean(
+            existingMembership || existingUser?.role === 'admin',
+          )
+          const handoffNonce = getGithubHandoffState()
+          const pendingHandoff =
+            handoffNonce && !restrictedExistingUser && !isFirstUser
+              ? await db
+                  .selectFrom('githubAppInstallStates')
+                  .select('id')
+                  .where('nonce', '=', handoffNonce)
+                  .where('intentKind', '=', 'handoff')
+                  .where((eb) =>
+                    eb.or([
+                      eb('claimedAt', 'is', null),
+                      ...(existingUser
+                        ? [eb('claimedByUserId', '=', existingUser.id)]
+                        : []),
+                    ]),
+                  )
+                  .where('consumedAt', 'is', null)
+                  .where('expiresAt', '>', new Date().toISOString())
+                  .executeTakeFirst()
+              : undefined
+          if (
+            !canAdmitGithubLogin({
+              activeCompanyUser: isAllowedMember,
+              firstUser: isFirstUser,
+              existingMembership: Boolean(existingMembership),
+              existingSuperAdmin: existingUser?.role === 'admin',
+              pendingHandoff: Boolean(pendingHandoff),
+            })
+          ) {
+            console.warn(
+              `[GitHub OAuth] Login denied: ${profile.login} could not be admitted by active GitHub-user or delegated-install authorization`,
+            )
+            return null
+          }
         }
 
         return {
@@ -160,6 +232,9 @@ export const auth = betterAuth({
       userAgent: 'user_agent',
       userId: 'user_id',
     },
+    // Do not add GitHub to accountLinking.trustedProviders. Better Auth would
+    // then implicitly link an unverified GitHub email to an existing Upflow
+    // account, allowing an admitted delegate to take over that account.
   },
   account: {
     modelName: 'accounts',
@@ -175,9 +250,6 @@ export const auth = betterAuth({
       refreshTokenExpiresAt: 'refresh_token_expires_at',
       userId: 'user_id',
     },
-    accountLinking: {
-      trustedProviders: ['github'],
-    },
   },
   verification: {
     disableCleanup: true,
@@ -192,22 +264,11 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // First-user bootstrap: promote to super admin atomically.
-          // The WHERE ensures only one user can be promoted even under
-          // concurrent requests (no existing admin → UPDATE matches).
-          const result = await db
-            .updateTable('users')
-            .set({ role: 'admin' })
-            .where('id', '=', user.id)
-            .where(({ not, exists, selectFrom }) =>
-              not(
-                exists(
-                  selectFrom('users').select('id').where('role', '=', 'admin'),
-                ),
-              ),
-            )
-            .executeTakeFirst()
-          if (result.numUpdatedRows > 0n) {
+          // Claim a permanent singleton marker atomically. This elects exactly
+          // one first user under concurrent OAuth callbacks and never promotes
+          // another user after the original admin is deleted or demoted.
+          const promoted = await claimInitialSuperAdmin(db, user.id)
+          if (promoted) {
             console.info(
               `[Bootstrap] First user ${user.id} promoted to super admin`,
             )

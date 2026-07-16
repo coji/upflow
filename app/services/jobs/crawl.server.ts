@@ -7,7 +7,11 @@ import {
 import { clearOrgCache } from '~/app/services/cache.server'
 import { db } from '~/app/services/db.server'
 import { tryLogGithubAppLinkEvent } from '~/app/services/github-app-link-events.server'
-import { initializeMembershipsForInstallation } from '~/app/services/github-app-membership.server'
+import {
+  initializeMembershipsForInstallation,
+  reassignCanonicalAfterLinkLoss,
+  reconcileMembershipSnapshot,
+} from '~/app/services/github-app-membership.server'
 import { fetchInstallationRepositories } from '~/app/services/github-installation-repos.server'
 import { resolveOctokitForRepository } from '~/app/services/github-octokit.server'
 import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
@@ -26,18 +30,45 @@ async function repairMembershipForLink(
   installationId: number,
 ): Promise<void> {
   try {
+    const activeLink = await db
+      .selectFrom('githubAppLinks')
+      .select('installationId')
+      .where('organizationId', '=', organizationId)
+      .where('installationId', '=', installationId)
+      .where('deletedAt', 'is', null)
+      .executeTakeFirst()
+    if (!activeLink) return
+
+    const snapshotStartedAt = new Date().toISOString()
     const repos = await fetchInstallationRepositories(installationId)
     await initializeMembershipsForInstallation({
       organizationId,
       installationId,
       repositories: repos,
+      snapshotStartedAt,
     })
-    await db
+    await reconcileMembershipSnapshot({
+      organizationId,
+      installationId,
+      repositories: repos,
+      snapshotStartedAt,
+      source: 'crawl_repair',
+    })
+    const initialized = await db
       .updateTable('githubAppLinks')
       .set({ membershipInitializedAt: new Date().toISOString() })
       .where('organizationId', '=', organizationId)
       .where('installationId', '=', installationId)
-      .execute()
+      .where('deletedAt', 'is', null)
+      .executeTakeFirst()
+    if (initialized.numUpdatedRows !== 1n) {
+      await reassignCanonicalAfterLinkLoss({
+        organizationId,
+        lostInstallationId: installationId,
+        source: 'crawl_repair',
+      })
+      throw new Error('GitHub App link was disconnected during crawl repair')
+    }
     await tryLogGithubAppLinkEvent({
       organizationId,
       installationId,

@@ -20,6 +20,7 @@ export const addRepository = async (
   data: { owner: string; repo: string; githubInstallationId: number | null },
 ): Promise<AddRepositoryResult> => {
   const tenantDb = getTenantDb(organizationId)
+  const now = new Date().toISOString()
 
   const organizationSetting = await tenantDb
     .selectFrom('organizationSettings')
@@ -42,7 +43,7 @@ export const addRepository = async (
       githubInstallationId: data.githubInstallationId,
       releaseDetectionKey: organizationSetting.releaseDetectionKey,
       releaseDetectionMethod: organizationSetting.releaseDetectionMethod,
-      updatedAt: sql`CURRENT_TIMESTAMP`,
+      updatedAt: now,
     })
     .onConflict((cb) =>
       cb.columns(['integrationId', 'owner', 'repo']).doUpdateSet((eb) => ({

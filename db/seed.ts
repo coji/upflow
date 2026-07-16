@@ -36,6 +36,15 @@ async function seed() {
     .returningAll()
     .executeTakeFirstOrThrow()
 
+  // `db:setup` applies migrations before seeding, so the database is empty
+  // when the bootstrap-marker migration runs. Mark this pre-provisioned admin
+  // as the completed one-time bootstrap before any OAuth login can occur.
+  await db
+    .insertInto('bootstrapMarkers')
+    .values({ key: 'initial_super_admin' })
+    .onConflict((oc) => oc.column('key').doNothing())
+    .execute()
+
   // organization
   const organization = await db
     .insertInto('organizations')
