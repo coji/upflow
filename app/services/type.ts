@@ -53,7 +53,7 @@ export interface GithubAppInstallStates {
   createdByUserId: string | null;
   expiresAt: string;
   id: string;
-  intentKind: "direct" | "handoff" | "legacy";
+  intentKind: Generated<string>;
   nonce: string;
   organizationId: string;
 }

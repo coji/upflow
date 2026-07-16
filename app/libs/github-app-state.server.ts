@@ -108,6 +108,9 @@ export async function consumeAuthorizedInstallStateDetailed(input: {
         'This install link predates delegated authorization. Start the connection again from Upflow Integration settings.',
       )
     }
+    if (state.intentKind !== 'direct' && state.intentKind !== 'handoff') {
+      throw new InstallStateError('Invalid install state intent')
+    }
     const existingLink = await trx
       .selectFrom('githubAppLinks')
       .select('organizationId')
