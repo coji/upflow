@@ -29,7 +29,7 @@ FROM build-base AS deps
 
 WORKDIR /upflow
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch
 
 
@@ -40,7 +40,7 @@ ENV NODE_ENV=production
 WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --prod --offline --frozen-lockfile
 
 
@@ -50,7 +50,7 @@ FROM build-base AS build
 WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --offline --frozen-lockfile && pnpm rebuild better-sqlite3
 
 COPY . .

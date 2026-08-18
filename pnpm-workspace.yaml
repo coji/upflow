@@ -1,0 +1,10 @@
+onlyBuiltDependencies:
+  - '@sentry/cli'
+  - '@tailwindcss/oxide'
+  - better-sqlite3
+  - esbuild
+  - lefthook
+  - msw
+  - protobufjs
+  - sharp
+  - workerd
