@@ -12,6 +12,7 @@ import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.serv
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 import { isOrgOwner, type MemberRole } from './member-role'
+import { requestUrl } from './request-url.server'
 import { RESERVED_SLUGS } from './reserved-slugs'
 
 export const auth = betterAuth({
@@ -394,7 +395,7 @@ export const safeRedirectTo = (
 }
 
 const loginRedirect = (request: Request): never => {
-  const url = new URL(request.url)
+  const url = requestUrl(request)
   const redirectTo = url.pathname + url.search
   throw redirect(`/login?redirectTo=${encodeURIComponent(redirectTo)}`)
 }

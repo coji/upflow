@@ -2,7 +2,10 @@ pre-commit:
   commands:
     format:
       glob: '*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css,md,mdx,yml,yaml,html,toml}'
-      run: pnpm exec vp fmt -c .oxfmtrc.json {staged_files} && git add {staged_files}
+      # --no-error-on-unmatched-pattern: staged files が全て ignore 対象
+      # （oxfmtrc/oxlintrc の ignorePatterns）の場合も失敗させない。
+      # vp 0.3.1 以降、対象 0 件は exit 1 になる。
+      run: pnpm exec vp fmt -c .oxfmtrc.json --no-error-on-unmatched-pattern {staged_files} && git add {staged_files}
     lint:
       glob: '*.{js,jsx,ts,tsx,mjs,cjs}'
-      run: pnpm exec vp lint -c .oxlintrc.json --fix {staged_files} && git add {staged_files}
+      run: pnpm exec vp lint -c .oxlintrc.json --fix --no-error-on-unmatched-pattern {staged_files} && git add {staged_files}

@@ -1,5 +1,5 @@
-ARG NODE_VERSION=24.14.0
-ARG PNPM_VERSION=10.32.1
+ARG NODE_VERSION=24.20.0
+ARG PNPM_VERSION=12.3.4
 
 # Pin CLI versions explicitly so the image is reproducible. Bump these
 # along with takt-side feature work; otherwise an opaque `latest` shift

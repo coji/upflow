@@ -158,12 +158,10 @@ async function loadReposForApp(
         () => fetchAllInstallationRepos(octokit),
         300000,
       )
-      return repos.map(
-        (repo): TaggedInstallationRepo => ({
-          installationId: link.installationId,
-          repo,
-        }),
-      )
+      return repos.map((repo): TaggedInstallationRepo => ({
+        installationId: link.installationId,
+        repo,
+      }))
     }),
   )
   const failedInstallationIds: number[] = []
@@ -229,6 +227,7 @@ export const loader = async ({
   request,
   params,
   context,
+  url,
 }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   requireOrgOwner(membership, organization.slug)
@@ -245,7 +244,7 @@ export const loader = async ({
   })
 
   if (refresh) {
-    const searchParams = new URL(request.url).searchParams
+    const searchParams = url.searchParams
     searchParams.delete('refresh')
     clearOrgCache(organization.id)
     throw redirect(

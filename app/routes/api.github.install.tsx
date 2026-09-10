@@ -18,8 +18,7 @@ function installError(error: unknown): never {
   throw error
 }
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const url = new URL(request.url)
+export const loader = async ({ request, url }: Route.LoaderArgs) => {
   const state = url.searchParams.get('state')?.trim()
   if (!state) throw new Response('Missing install state', { status: 400 })
 

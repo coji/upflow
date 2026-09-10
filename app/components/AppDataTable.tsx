@@ -1,15 +1,18 @@
 import {
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
   type ColumnDef,
+  type ColumnVisibilityState,
+  type RowData,
   type SortingState,
-  type VisibilityState,
 } from '@tanstack/react-table'
 import React from 'react'
 
 import { AppDataTableViewOptions } from '~/app/components/AppDataTableViewOption'
+import {
+  appTableFeatures,
+  type AppTableFeatures,
+} from '~/app/components/table-features'
 import {
   HStack,
   Stack,
@@ -21,9 +24,9 @@ import {
   TableRow,
 } from '~/app/components/ui'
 
-interface AppDataTableProps<TData, TValue> {
+interface AppDataTableProps<TData extends RowData, TValue> {
   title?: React.ReactNode
-  columns: ColumnDef<TData, TValue>[]
+  columns: ColumnDef<AppTableFeatures, TData, any>[]
   data: TData[]
   optionsChildren?: React.ReactNode
   /** Content rendered between the toolbar and the table. */
@@ -54,7 +57,7 @@ export function reorderRows<T extends { id: string }>(
   return [...known, ...unknown]
 }
 
-export function AppDataTable<TData, TValue>({
+export function AppDataTable<TData extends RowData, TValue>({
   title,
   columns,
   data,
@@ -64,7 +67,7 @@ export function AppDataTable<TData, TValue>({
 }: AppDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>(
+    React.useState<ColumnVisibilityState>(
       Object.fromEntries(
         columns
           .filter(
@@ -77,13 +80,12 @@ export function AppDataTable<TData, TValue>({
           ]),
       ),
     )
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data,
     columns,
     getRowId,
-    getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     state: { sorting, columnVisibility },
   })

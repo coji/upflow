@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { AlertTriangleIcon, ExternalLinkIcon } from 'lucide-react'
 import { useFetcher } from 'react-router'
 import { match } from 'ts-pattern'
@@ -97,7 +98,7 @@ export const createColumns = (
   orgSlug: string,
   teams: TeamRow[],
   integrationMethod: 'token' | 'github_app' | null,
-): ColumnDef<RepositoryRow>[] => [
+): ColumnDef<AppTableFeatures, RepositoryRow, any>[] => [
   {
     id: 'select',
     header: ({ table }) => (

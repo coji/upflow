@@ -1,0 +1,18 @@
+# pnpm v11+ reads build approvals from here (the `pnpm` field in
+# package.json is no longer read). Migrated 1:1 from the old
+# `pnpm.onlyBuiltDependencies` list.
+allowBuilds:
+  '@sentry/cli': true
+  '@tailwindcss/oxide': true
+  better-sqlite3: true
+  esbuild: true
+  # @google/genai の preinstall は no-op の echo のみ。実行しても意味がない
+  # ため明示的に拒否（旧 onlyBuiltDependencies 時代と同等の扱い）。
+  '@google/genai': false
+  # lefthook の postinstall (バイナリ取得) は旧 onlyBuiltDependencies 時代と
+  # 同様に実行しない。`prepare` は `|| true` で失敗を許容している。
+  lefthook: false
+  msw: true
+  protobufjs: true
+  sharp: true
+  workerd: true

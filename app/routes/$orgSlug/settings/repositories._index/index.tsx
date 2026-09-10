@@ -25,9 +25,9 @@ import {
 } from './mutations.server'
 import { listFilteredRepositories } from './queries.server'
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
-  const searchParams = new URL(request.url).searchParams
+  const searchParams = url.searchParams
 
   const { repo, team } = QuerySchema.parse({
     repo: searchParams.get('repo'),

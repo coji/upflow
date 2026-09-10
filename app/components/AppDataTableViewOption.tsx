@@ -1,4 +1,4 @@
-import type { Table } from '@tanstack/react-table'
+import type { RowData, Table } from '@tanstack/react-table'
 import { Settings2Icon } from 'lucide-react'
 import type React from 'react'
 import { match, P } from 'ts-pattern'
@@ -11,12 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/app/components/ui'
+import type { AppTableFeatures } from '~/app/components/table-features'
 
-interface AppDataTableViewOptionsProps<TData> {
-  table: Table<TData>
+interface AppDataTableViewOptionsProps<TData extends RowData> {
+  table: Table<AppTableFeatures, TData>
   children?: React.ReactNode
 }
-export function AppDataTableViewOptions<TData>({
+export function AppDataTableViewOptions<TData extends RowData>({
   table,
   children,
 }: AppDataTableViewOptionsProps<TData>) {

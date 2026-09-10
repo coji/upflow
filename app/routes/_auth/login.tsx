@@ -17,8 +17,7 @@ import {
 } from '~/app/libs/github-handoff-auth.server'
 import type { Route } from './+types/login'
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const url = new URL(request.url)
+export const loader = async ({ request, url }: Route.LoaderArgs) => {
   const redirectTo = safeRedirectTo(url.searchParams.get('redirectTo'))
   const error = url.searchParams.get('error')
   const session = await getSession(request)

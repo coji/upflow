@@ -25,7 +25,7 @@ function createFreshOrg(): OrganizationId {
 }
 
 const makeRequest = (search: string) =>
-  new Request(`http://example.com/foo${search}`)
+  new URL(`http://example.com/foo${search}`)
 
 describe('loadPrFilterState', () => {
   let orgId: OrganizationId

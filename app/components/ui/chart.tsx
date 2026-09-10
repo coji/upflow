@@ -1,5 +1,9 @@
 import * as React from 'react'
 import * as RechartsPrimitive from 'recharts'
+import type {
+  LegendPayload,
+  TooltipContentProps as RechartsTooltipContentProps,
+} from 'recharts'
 
 import { cn } from '~/app/libs/utils'
 
@@ -116,7 +120,10 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+}: // recharts 3 passes content props at runtime via cloneElement, so keep
+// them optional here. TooltipContentProps carries payload/label/active
+// (Tooltip props alone no longer include them).
+Partial<RechartsTooltipContentProps> &
   React.ComponentProps<'div'> & {
     hideLabel?: boolean
     hideIndicator?: boolean
@@ -186,7 +193,11 @@ function ChartTooltipContent({
 
             return (
               <div
-                key={item.dataKey}
+                key={
+                  typeof item.dataKey === 'function'
+                    ? index
+                    : (item.dataKey ?? index)
+                }
                 className={cn(
                   '[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5',
                   indicator === 'dot' && 'items-center',
@@ -256,11 +267,16 @@ function ChartLegendContent({
   payload,
   verticalAlign = 'bottom',
   nameKey,
-}: React.ComponentProps<'div'> &
-  Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
-    hideIcon?: boolean
-    nameKey?: string
-  }) {
+}: React.ComponentProps<'div'> & {
+  // recharts 3 no longer exposes payload on Legend props; the custom
+  // content receives it at runtime via cloneElement, so type it directly.
+  payload?: ReadonlyArray<LegendPayload>
+  verticalAlign?: React.ComponentProps<
+    typeof RechartsPrimitive.Legend
+  >['verticalAlign']
+  hideIcon?: boolean
+  nameKey?: string
+}) {
   const { config } = useChart()
 
   if (!payload?.length) {

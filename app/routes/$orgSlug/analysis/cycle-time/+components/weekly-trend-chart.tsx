@@ -4,6 +4,7 @@ import {
   Cell,
   ComposedChart,
   Line,
+  type MouseHandlerDataParam,
   XAxis,
   YAxis,
 } from 'recharts'
@@ -62,12 +63,11 @@ export function WeeklyTrendChart({
     )
   }
 
-  const handleChartClick = (state: {
-    activePayload?: { payload?: unknown }[]
-  }) => {
-    const payload = state?.activePayload?.[0]?.payload as
-      | WeeklyTrendPoint
-      | undefined
+  // recharts 3 removed activePayload from chart click state; resolve the
+  // clicked week via the tooltip index into the data array instead.
+  const handleChartClick = (state: MouseHandlerDataParam) => {
+    const index = state?.activeTooltipIndex
+    const payload = typeof index === 'number' ? weeks[index] : undefined
     if (!payload) return
     onSelectWeek(payload.weekStart === selectedWeek ? null : payload.weekStart)
   }
@@ -91,7 +91,7 @@ export function WeeklyTrendChart({
             onClick={handleChartClick}
             style={{ cursor: 'pointer' }}
           >
-            <CartesianGrid vertical={false} />
+            <CartesianGrid vertical={false} yAxisId="left" />
             <XAxis
               dataKey="weekLabel"
               tick={{ fontSize: 12 }}

@@ -6,7 +6,7 @@ import type { Route } from '../routes/$orgSlug/+types/_layout'
 import { orgContext, teamContext, timezoneContext } from './context'
 
 export const orgMemberMiddleware: Route.MiddlewareFunction = async (
-  { request, params, context },
+  { request, params, context, url },
   next,
 ) => {
   const org = await requireOrgMember(request, params.orgSlug)
@@ -14,7 +14,6 @@ export const orgMemberMiddleware: Route.MiddlewareFunction = async (
   const timezone = await getOrganizationTimezone(org.organization.id)
   context.set(timezoneContext, timezone)
 
-  const url = new URL(request.url)
   const teams = await listTeams(org.organization.id)
   const teamFromUrl = url.searchParams.get('team')
   const teamFromCookie = getSelectedTeam(request)

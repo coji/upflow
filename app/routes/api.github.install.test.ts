@@ -23,6 +23,12 @@ const mockClaim = vi.mocked(claimInstallStateForUser)
 const mockTarget = vi.mocked(getInstallStateTarget)
 const mockSlug = vi.mocked(getGithubAppSlug)
 
+// React Router v8 passes a normalized `url` alongside `request`.
+function loaderArgs(url: string) {
+  const request = new Request(url)
+  return { request, url: new URL(request.url) } as never
+}
+
 describe('api.github.install', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -37,9 +43,7 @@ describe('api.github.install', () => {
   test('sends an unauthenticated recipient through login with the state intact', async () => {
     mockSession.mockResolvedValue(null)
     await expect(
-      loader({
-        request: new Request('http://x/api/github/install?state=secret'),
-      } as never),
+      loader(loaderArgs('http://x/api/github/install?state=secret')),
     ).rejects.toMatchObject({ status: 302 })
   })
 

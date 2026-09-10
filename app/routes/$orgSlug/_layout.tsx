@@ -28,8 +28,8 @@ export interface RouteHandle {
   mainFixed?: boolean
 }
 
-export const meta = ({ data }: Route.MetaArgs) => [
-  { title: `${data?.organization.name} - Upflow` },
+export const meta = ({ loaderData }: Route.MetaArgs) => [
+  { title: `${loaderData?.organization.name} - Upflow` },
 ]
 
 export const handle = {

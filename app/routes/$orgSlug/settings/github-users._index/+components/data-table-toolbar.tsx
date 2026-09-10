@@ -1,4 +1,4 @@
-import type { Table } from '@tanstack/react-table'
+import type { RowData, Table } from '@tanstack/react-table'
 import { ExternalLinkIcon, LoaderIcon, PlusIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useSearchParams } from 'react-router'
@@ -23,16 +23,17 @@ import {
   ComboboxList,
   ComboboxTrigger,
 } from '~/app/components/ui/combobox'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { useDataTableState } from '../+hooks/use-data-table-state'
 
 type GithubUserCandidate = { login: string; avatarUrl: string }
 const EMPTY_CANDIDATES: GithubUserCandidate[] = []
 
-interface DataTableToolbarProps<TData> {
-  table: Table<TData>
+interface DataTableToolbarProps<TData extends RowData> {
+  table: Table<AppTableFeatures, TData>
 }
 
-export function DataTableToolbar<TData>({
+export function DataTableToolbar<TData extends RowData>({
   table,
 }: DataTableToolbarProps<TData>) {
   const [searchParams, setSearchParams] = useSearchParams()

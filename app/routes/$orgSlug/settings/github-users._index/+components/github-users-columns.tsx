@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { ExternalLinkIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher } from 'react-router'
@@ -123,7 +124,9 @@ function EditableDisplayName({
   )
 }
 
-export function createColumns(timezone: string): ColumnDef<GithubUserRow>[] {
+export function createColumns(
+  timezone: string,
+): ColumnDef<AppTableFeatures, GithubUserRow, any>[] {
   return [
     {
       accessorKey: 'login',

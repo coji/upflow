@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { AppSortableHeader } from '~/app/components'
 import { AuthorBadge } from '~/app/components/author-badge'
 import { ExternalLink } from '~/app/components/external-link'
@@ -13,7 +14,7 @@ export function createColumns(
   timezone: string,
   orgSlug: string,
   isAdmin: boolean,
-): ColumnDef<PullRequest>[] {
+): ColumnDef<AppTableFeatures, PullRequest, any>[] {
   return [
     {
       accessorKey: 'author',
@@ -77,7 +78,7 @@ export function createColumns(
           number={row.original.number}
         />
       ),
-      sortingFn: complexitySortingFn,
+      sortFn: complexitySortingFn,
       enableHiding: false,
     },
     {

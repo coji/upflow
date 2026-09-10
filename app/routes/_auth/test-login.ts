@@ -33,7 +33,7 @@ async function buildSignedSetCookie(
   return parts.join('; ')
 }
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ url }: Route.LoaderArgs) => {
   const e2eLoginOk =
     process.env.NODE_ENV !== 'production' &&
     process.env.ENABLE_E2E_LOGIN === '1'
@@ -41,7 +41,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     return new Response(null, { status: 404 })
   }
 
-  const url = new URL(request.url)
   if (url.searchParams.get('email') !== E2E_ADMIN_EMAIL) {
     return new Response(null, { status: 404 })
   }

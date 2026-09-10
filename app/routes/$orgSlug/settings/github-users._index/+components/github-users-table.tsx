@@ -1,10 +1,9 @@
 import {
   type ColumnDef,
   type RowData,
-  type VisibilityState,
+  type ColumnVisibilityState,
   flexRender,
-  getCoreRowModel,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table'
 import { useState } from 'react'
 import {
@@ -15,6 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
+import {
+  appTableFeatures,
+  type AppTableFeatures,
+} from '~/app/components/table-features'
 import type { GithubUserRow } from '../queries.server'
 import {
   DataTablePagination,
@@ -23,16 +26,16 @@ import {
 import { DataTableToolbar } from './data-table-toolbar'
 
 declare module '@tanstack/react-table' {
-  interface ColumnMeta<TData extends RowData, TValue> {
+  interface ColumnMeta<TFeatures, TData extends RowData, TValue> {
     className: string
   }
-  interface TableMeta<TData extends RowData> {
+  interface TableMeta<TFeatures, TData extends RowData> {
     currentGithubLogin?: string | null
   }
 }
 
 interface DataTableProps {
-  columns: ColumnDef<GithubUserRow>[]
+  columns: ColumnDef<AppTableFeatures, GithubUserRow, any>[]
   data: GithubUserRow[]
   pagination: PaginationProps
   currentGithubLogin: string | null
@@ -44,15 +47,16 @@ export function GithubUsersTable({
   pagination,
   currentGithubLogin,
 }: DataTableProps) {
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] =
+    useState<ColumnVisibilityState>({})
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data,
     columns,
     getRowId: (row) => row.login,
     state: { columnVisibility },
     onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
     meta: { currentGithubLogin },
   })
 

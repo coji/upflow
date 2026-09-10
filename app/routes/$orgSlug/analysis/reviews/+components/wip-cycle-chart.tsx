@@ -124,7 +124,7 @@ export function WipCycleChart({
               <LabelList
                 dataKey="medianHours"
                 position="top"
-                formatter={(v: number) => formatHours(v)}
+                formatter={(v) => formatHours(Number(v))}
               />
             </Bar>
           </BarChart>

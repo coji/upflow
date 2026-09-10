@@ -38,7 +38,7 @@ export const useBreadcrumbs = () => {
     }
     return {
       ...match.handle.breadcrumb(
-        match.data,
+        match.loaderData,
         match.params as Record<string, string>,
       ),
       isCurrentPage: idx === breadcrumbMatches.length - 1,

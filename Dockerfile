@@ -1,5 +1,5 @@
-ARG NODE_VERSION=24.14.0
-ARG PNPM_VERSION=10.32.1
+ARG NODE_VERSION=24.20.0
+ARG PNPM_VERSION=12.3.4
 
 # --- Build base: includes native build tools for better-sqlite3 ---
 FROM node:${NODE_VERSION}-slim AS build-base

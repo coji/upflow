@@ -4,7 +4,7 @@ import { consola } from 'consola'
 import { isbot } from 'isbot'
 import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'
-import type { AppLoadContext, EntryContext } from 'react-router'
+import type { EntryContext, RouterContextProvider } from 'react-router'
 import { ServerRouter } from 'react-router'
 import '~/app/libs/dotenv.server'
 
@@ -33,7 +33,7 @@ function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
-  _loadContext: AppLoadContext,
+  _loadContext: RouterContextProvider,
 ) {
   return isbot(request.headers.get('user-agent'))
     ? handleBotRequest(
