@@ -1,4 +1,4 @@
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef, RowData } from '@tanstack/react-table'
 import { MoreHorizontalIcon } from 'lucide-react'
 import { createContext, useContext } from 'react'
 import { Button } from '~/app/components/ui/button'
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '~/app/components/ui/dropdown-menu'
 import { cn } from '~/app/libs/utils'
+import type { AppTableFeatures } from '~/app/components/table-features'
 
 /**
  * `HidePRsByTitleMenu` 内で trigger を出すための context。
@@ -53,10 +54,10 @@ export function HidePRsByTitleMenu({
  * TanStack Table の末尾に差し込む「admin 専用 actions 列」を返す。
  * 非 admin には空配列を返すので spread で呼び出し側に負担を残さない。
  */
-export function hidePrActionsColumn<T>(
+export function hidePrActionsColumn<T extends RowData>(
   isAdmin: boolean,
   getTitle: (row: T) => string | null | undefined,
-): ColumnDef<T>[] {
+): ColumnDef<AppTableFeatures, T, any>[] {
   if (!isAdmin) return []
   return [
     {

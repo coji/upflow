@@ -1,4 +1,4 @@
-import { type ColumnDef, createColumnHelper } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowDownIcon, ArrowUpIcon, MinusIcon } from 'lucide-react'
 import { ExternalLink } from '~/app/components/external-link'
 import { Badge } from '~/app/components/ui/badge'
@@ -14,6 +14,10 @@ import {
   type PRSizeLabel,
 } from '~/app/libs/pr-classify'
 import { cn } from '~/app/libs/utils'
+import {
+  createAppColumnHelper,
+  type AppTableFeatures,
+} from '~/app/components/table-features'
 import { hidePrActionsColumn } from '~/app/routes/$orgSlug/+components/hide-prs-by-title-menu'
 import type { FeedbackRow } from '../+functions/queries.server'
 
@@ -44,11 +48,11 @@ function DirectionIcon({
   return <MinusIcon className="text-muted-foreground h-4 w-4" />
 }
 
-const columnHelper = createColumnHelper<FeedbackRow>()
+const columnHelper = createAppColumnHelper<FeedbackRow>()
 
 export function createFeedbackColumns(
   isAdmin: boolean,
-): ColumnDef<FeedbackRow, unknown>[] {
+): ColumnDef<AppTableFeatures, FeedbackRow, any>[] {
   return [
     columnHelper.accessor('repoName', {
       header: 'Repository',

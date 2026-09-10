@@ -1,4 +1,5 @@
 import type { Table } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { LoaderIcon, XIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { useFetcher } from 'react-router'
@@ -15,7 +16,7 @@ import type { TeamRow } from '~/app/routes/$orgSlug/settings/teams._index/querie
 import type { RepositoryRow } from '../queries.server'
 
 interface DataTableFloatingBarProps {
-  table: Table<RepositoryRow>
+  table: Table<AppTableFeatures, RepositoryRow>
   teams: TeamRow[]
 }
 

@@ -1,16 +1,17 @@
-import type { Column } from '@tanstack/react-table'
+import type { Column, RowData } from '@tanstack/react-table'
 import { ArrowDownAZIcon, ArrowUpAZIcon } from 'lucide-react'
 import { match } from 'ts-pattern'
 
 import { Button } from '~/app/components/ui'
+import type { AppTableFeatures } from '~/app/components/table-features'
 
-interface AppSortableHeaderProps<TData> extends React.ComponentProps<
-  typeof Button
-> {
-  column: Column<TData>
+interface AppSortableHeaderProps<
+  TData extends RowData,
+> extends React.ComponentProps<typeof Button> {
+  column: Column<AppTableFeatures, TData>
   title: string
 }
-export const AppSortableHeader = <TData,>({
+export const AppSortableHeader = <TData extends RowData>({
   column,
   title,
   ...rest

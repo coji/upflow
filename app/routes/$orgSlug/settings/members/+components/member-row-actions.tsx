@@ -1,6 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import type { Row } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { MoreHorizontalIcon, TrashIcon, UserCogIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
@@ -37,7 +38,7 @@ export function MemberRowActions({
   row,
   currentMembershipId,
 }: {
-  row: Row<MemberRow>
+  row: Row<AppTableFeatures, MemberRow>
   currentMembershipId?: string
 }) {
   const member = row.original

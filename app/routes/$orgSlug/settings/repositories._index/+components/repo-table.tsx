@@ -2,10 +2,9 @@ import {
   type ColumnDef,
   type RowData,
   type RowSelectionState,
-  type VisibilityState,
+  type ColumnVisibilityState,
   flexRender,
-  getCoreRowModel,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table'
 import { useState } from 'react'
 import {
@@ -16,6 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from '~/app/components/ui/table'
+import {
+  appTableFeatures,
+  type AppTableFeatures,
+} from '~/app/components/table-features'
 import type { TeamRow } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import type { RepositoryRow } from '../queries.server'
 import { DataTableFloatingBar } from './data-table-floating-bar'
@@ -26,13 +29,13 @@ import {
 import { DataTableToolbar } from './data-table-toolbar'
 
 declare module '@tanstack/react-table' {
-  interface ColumnMeta<TData extends RowData, TValue> {
+  interface ColumnMeta<TFeatures, TData extends RowData, TValue> {
     className: string
   }
 }
 
 interface DataTableProps {
-  columns: ColumnDef<RepositoryRow>[]
+  columns: ColumnDef<AppTableFeatures, RepositoryRow, any>[]
   data: RepositoryRow[]
   pagination: PaginationProps
   teams: TeamRow[]
@@ -48,10 +51,12 @@ export function RepoTable({
   orgSlug,
   canAddRepositories,
 }: DataTableProps) {
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] =
+    useState<ColumnVisibilityState>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data,
     columns,
     getRowId: (row) => row.id,
@@ -59,7 +64,6 @@ export function RepoTable({
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,
-    getCoreRowModel: getCoreRowModel(),
   })
 
   return (

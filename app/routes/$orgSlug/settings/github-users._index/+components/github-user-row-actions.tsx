@@ -1,4 +1,5 @@
 import type { Row } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import {
   LogInIcon,
   LogOutIcon,
@@ -22,7 +23,7 @@ export function GithubUserRowActions({
   row,
   isSelf,
 }: {
-  row: Row<GithubUserRow>
+  row: Row<AppTableFeatures, GithubUserRow>
   isSelf: boolean
 }) {
   const user = row.original

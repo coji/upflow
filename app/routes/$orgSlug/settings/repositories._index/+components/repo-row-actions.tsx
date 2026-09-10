@@ -1,4 +1,5 @@
 import type { Row } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { EyeIcon, MoreHorizontalIcon, SettingsIcon } from 'lucide-react'
 import { Link, href } from 'react-router'
 import { Button } from '~/app/components/ui/button'
@@ -16,7 +17,7 @@ export function RepoRowActions({
   row,
   orgSlug,
 }: {
-  row: Row<RepositoryRow>
+  row: Row<AppTableFeatures, RepositoryRow>
   orgSlug: string
 }) {
   const repo = row.original

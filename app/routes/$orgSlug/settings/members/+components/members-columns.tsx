@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import type { AppTableFeatures } from '~/app/components/table-features'
 import { Avatar, AvatarFallback, AvatarImage } from '~/app/components/ui/avatar'
 import { Badge } from '~/app/components/ui/badge'
 import dayjs from '~/app/libs/dayjs'
@@ -6,7 +7,9 @@ import type { MemberRow } from '../queries.server'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { MemberRowActions } from './member-row-actions'
 
-export function createColumns(timezone: string): ColumnDef<MemberRow>[] {
+export function createColumns(
+  timezone: string,
+): ColumnDef<AppTableFeatures, MemberRow, any>[] {
   return [
     {
       accessorKey: 'name',

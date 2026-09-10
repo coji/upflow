@@ -1,12 +1,15 @@
 import {
   type ColumnDef,
   type RowData,
-  type VisibilityState,
+  type ColumnVisibilityState,
   flexRender,
-  getCoreRowModel,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table'
 import { useState } from 'react'
+import {
+  appTableFeatures,
+  type AppTableFeatures,
+} from '~/app/components/table-features'
 import {
   Table,
   TableBody,
@@ -23,16 +26,16 @@ import {
 import { DataTableToolbar } from './data-table-toolbar'
 
 declare module '@tanstack/react-table' {
-  interface ColumnMeta<TData extends RowData, TValue> {
+  interface ColumnMeta<TFeatures, TData extends RowData, TValue> {
     className: string
   }
-  interface TableMeta<TData extends RowData> {
+  interface TableMeta<TFeatures, TData extends RowData> {
     currentMembershipId?: string
   }
 }
 
 interface DataTableProps {
-  columns: ColumnDef<MemberRow>[]
+  columns: ColumnDef<AppTableFeatures, MemberRow, any>[]
   data: MemberRow[]
   pagination: PaginationProps
   currentMembershipId: string
@@ -44,9 +47,11 @@ export function MembersTable({
   pagination,
   currentMembershipId,
 }: DataTableProps) {
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] =
+    useState<ColumnVisibilityState>({})
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data,
     columns,
     getRowId: (row) => row.id,
@@ -54,7 +59,6 @@ export function MembersTable({
       columnVisibility,
     },
     onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
     meta: { currentMembershipId },
   })
 

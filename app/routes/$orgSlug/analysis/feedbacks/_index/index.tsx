@@ -1,11 +1,8 @@
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
+import { flexRender, useTable } from '@tanstack/react-table'
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
+import { appTableFeatures } from '~/app/components/table-features'
 import {
   PageHeader,
   PageHeaderActions,
@@ -148,10 +145,10 @@ export default function FeedbacksPage({
   const { sort, updateSort } = useDataTableState()
 
   const columns = useMemo(() => createFeedbackColumns(isAdmin), [isAdmin])
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data: feedbacks,
     columns,
-    getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
     manualPagination: true,
   })
