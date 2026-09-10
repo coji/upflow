@@ -158,12 +158,10 @@ async function loadReposForApp(
         () => fetchAllInstallationRepos(octokit),
         300000,
       )
-      return repos.map(
-        (repo): TaggedInstallationRepo => ({
-          installationId: link.installationId,
-          repo,
-        }),
-      )
+      return repos.map((repo): TaggedInstallationRepo => ({
+        installationId: link.installationId,
+        repo,
+      }))
     }),
   )
   const failedInstallationIds: number[] = []
