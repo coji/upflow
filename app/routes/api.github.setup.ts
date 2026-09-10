@@ -17,8 +17,7 @@ import {
 import type { OrganizationId } from '~/app/types/organization'
 import type { Route } from './+types/api.github.setup'
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const url = new URL(request.url)
+export const loader = async ({ request, url }: Route.LoaderArgs) => {
   const installationIdParam = url.searchParams.get('installation_id')
   const state = url.searchParams.get('state')
   if (!installationIdParam) {

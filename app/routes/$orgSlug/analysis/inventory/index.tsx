@@ -51,11 +51,10 @@ const PERIOD_OPTIONS = [
 
 const VALID_PERIODS = [1, 3, 6, 12] as const
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
-  const url = new URL(request.url)
   const teamParam = context.get(teamContext)
   const periodParam = url.searchParams.get('period') || null
   const periodMonths = VALID_PERIODS.includes(
@@ -71,7 +70,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const now = dayjs.utc().toISOString()
 
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   const cacheKey = `inventory:${teamParam ?? 'all'}:${periodMonths}:${excludeBots ? 'exclude-bots' : 'include-bots'}:${filterCacheKeySuffix(filter)}`
 

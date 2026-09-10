@@ -268,15 +268,15 @@ function ChartLegendContent({
   verticalAlign = 'bottom',
   nameKey,
 }: React.ComponentProps<'div'> & {
-    // recharts 3 no longer exposes payload on Legend props; the custom
-    // content receives it at runtime via cloneElement, so type it directly.
-    payload?: ReadonlyArray<LegendPayload>
-    verticalAlign?: React.ComponentProps<
-      typeof RechartsPrimitive.Legend
-    >['verticalAlign']
-    hideIcon?: boolean
-    nameKey?: string
-  }) {
+  // recharts 3 no longer exposes payload on Legend props; the custom
+  // content receives it at runtime via cloneElement, so type it directly.
+  payload?: ReadonlyArray<LegendPayload>
+  verticalAlign?: React.ComponentProps<
+    typeof RechartsPrimitive.Legend
+  >['verticalAlign']
+  hideIcon?: boolean
+  nameKey?: string
+}) {
   const { config } = useChart()
 
   if (!payload?.length) {

@@ -34,9 +34,9 @@ export const handle = {
   }),
 }
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, user } = context.get(orgContext)
-  const searchParams = new URL(request.url).searchParams
+  const searchParams = url.searchParams
 
   // GitHub user search for combobox candidates
   const q = searchParams.get('q')

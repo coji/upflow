@@ -68,11 +68,10 @@ const PERIOD_OPTIONS = [
 
 const VALID_PERIODS = [1, 3, 6, 12]
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
-  const url = new URL(request.url)
   const teamParam = context.get(teamContext) ?? undefined
   const periodParam = url.searchParams.get('period')
   const periodMonths =
@@ -90,7 +89,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const sortOrder =
     (url.searchParams.get('sort_order') as 'asc' | 'desc') || 'desc'
 
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   const [feedbackResult, summary, excludedCount] = await Promise.all([
     listFilteredFeedbacks({

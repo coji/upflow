@@ -29,7 +29,7 @@ import {
 } from './+functions/stacks.server'
 import type { Route } from './+types/index'
 
-export const loader = async ({ context, request }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
 
   const teamParam = context.get(teamContext)
@@ -45,7 +45,7 @@ export const loader = async ({ context, request }: Route.LoaderArgs) => {
       ? Math.max(...teams.map((t) => t.personalLimit))
       : DEFAULT_PERSONAL_LIMIT
 
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   const cacheKey = `workload:${teamId ?? 'all'}:${filterCacheKeySuffix(filter)}`
   const SIXTY_SECONDS = 60 * 1000

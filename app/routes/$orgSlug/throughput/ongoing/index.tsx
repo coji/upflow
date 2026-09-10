@@ -41,15 +41,14 @@ export type PullRequest = Awaited<
   ReturnType<typeof getOngoingPullRequestReport>
 >[0]
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
 
-  const url = new URL(request.url)
   const teamParam = context.get(teamContext)
   const businessDaysOnly = url.searchParams.get('businessDays') !== '0'
 
   const toIso = dayjs().utc().toISOString()
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   const [pullRequests, excludedCount] = await Promise.all([
     getOngoingPullRequestReport(

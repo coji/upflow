@@ -78,12 +78,10 @@ const VALID_PERIODS = [1, 3, 6, 12] as const
 
 const VALID_METRICS: readonly MetricMode[] = ['median', 'average'] as const
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
   const teamParam = context.get(teamContext)
-
-  const url = new URL(request.url)
 
   const periodParam = url.searchParams.get('period')
   const periodMonths = VALID_PERIODS.includes(
@@ -109,7 +107,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const prevSinceDate = calcSinceDate(periodMonths * 2, timezone)
   const now = dayjs.utc().toISOString()
 
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   const repositories = await listCycleTimeRepositories(
     organization.id,

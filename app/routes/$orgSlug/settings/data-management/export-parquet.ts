@@ -12,11 +12,10 @@ import { iterateExportRows } from './+functions/build-export-data.server'
 import { writeParquetFile } from './+functions/write-parquet.server'
 import type { Route } from './+types/export-parquet'
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ request, context, url }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
 
-  const includeRaw =
-    new URL(request.url).searchParams.get('includeRaw') === 'true'
+  const includeRaw = url.searchParams.get('includeRaw') === 'true'
 
   const tmpPath = join(tmpdir(), `upflow-export-${randomUUID()}.parquet`)
 

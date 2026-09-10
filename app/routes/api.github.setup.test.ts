@@ -75,6 +75,12 @@ function req(url: string) {
   return new Request(url)
 }
 
+// React Router v8 passes a normalized `url` alongside `request`.
+function loaderArgs(url: string) {
+  const request = req(url)
+  return { request, url: new URL(request.url) } as never
+}
+
 describe('api.github.setup loader', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -98,9 +104,9 @@ describe('api.github.setup loader', () => {
   })
 
   test('400 when installation_id missing', async () => {
-    const res = (await loader({
-      request: req('http://x/api/github/setup?state=n'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?state=n'),
+    )) as Response
     expect(res.status).toBe(400)
     expect(mockConsume).not.toHaveBeenCalled()
   })
@@ -112,11 +118,11 @@ describe('api.github.setup loader', () => {
       .mockResolvedValueOnce({ id: 'm1' } as never)
 
     await expect(
-      loader({
-        request: req(
+      loader(
+        loaderArgs(
           'http://x/api/github/setup?installation_id=1&state=stale-state',
         ),
-      } as never),
+      ),
     ).rejects.toBeInstanceOf(Response)
 
     expect(mockConsume).not.toHaveBeenCalled()
@@ -130,9 +136,7 @@ describe('api.github.setup loader', () => {
       .mockResolvedValueOnce({ organizationId: 'o1', slug: 'acme' } as never)
       .mockResolvedValueOnce({ id: 'm1' } as never)
     await expect(
-      loader({
-        request: req('http://x/api/github/setup?installation_id=1'),
-      } as never),
+      loader(loaderArgs('http://x/api/github/setup?installation_id=1')),
     ).rejects.toMatchObject({ status: 302 })
     expect(mockConsume).not.toHaveBeenCalled()
     expect(mockCompleteSetup).toHaveBeenCalled()
@@ -145,11 +149,11 @@ describe('api.github.setup loader', () => {
     mockGetStateOrganization.mockResolvedValue('o1' as never)
 
     await expect(
-      loader({
-        request: req(
+      loader(
+        loaderArgs(
           'http://x/api/github/setup?installation_id=1&state=live-state',
         ),
-      } as never),
+      ),
     ).rejects.toMatchObject({ status: 302 })
 
     expect(mockConsume).toHaveBeenCalledWith({
@@ -167,11 +171,11 @@ describe('api.github.setup loader', () => {
     mockConsume.mockRejectedValue(new InstallStateError('already used'))
 
     await expect(
-      loader({
-        request: req(
+      loader(
+        loaderArgs(
           'http://x/api/github/setup?installation_id=1&state=raced-state',
         ),
-      } as never),
+      ),
     ).rejects.toMatchObject({ status: 302 })
 
     expect(mockCompleteSetup).toHaveBeenCalledWith(
@@ -186,11 +190,11 @@ describe('api.github.setup loader', () => {
     } as never)
     mockGetStateOrganization.mockResolvedValue('intended-org' as never)
 
-    const response = (await loader({
-      request: req(
+    const response = (await loader(
+      loaderArgs(
         'http://x/api/github/setup?installation_id=1&state=other-org-state',
       ),
-    } as never)) as Response
+    )) as Response
 
     expect(response.status).toBe(409)
     expect(mockVerifyInstallation).not.toHaveBeenCalled()
@@ -209,9 +213,7 @@ describe('api.github.setup loader', () => {
     })
 
     await expect(
-      loader({
-        request: req('http://x/api/github/setup?installation_id=1'),
-      } as never),
+      loader(loaderArgs('http://x/api/github/setup?installation_id=1')),
     ).rejects.toBeInstanceOf(Response)
 
     expect(mockConsume).toHaveBeenCalledWith({
@@ -236,9 +238,9 @@ describe('api.github.setup loader', () => {
       new GithubInstallationAuthorizationError('not owner'),
     )
 
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=1'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=1'),
+    )) as Response
 
     expect(res.status).toBe(403)
     expect(mockVerifyInstallation).toHaveBeenCalled()
@@ -246,18 +248,18 @@ describe('api.github.setup loader', () => {
   })
 
   test('400 when installation_id is not an integer', async () => {
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=abc&state=nonce'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=abc&state=nonce'),
+    )) as Response
     expect(res.status).toBe(400)
   })
 
   test('502 when GitHub API fails', async () => {
     mockVerifyInstallation.mockRejectedValue(new Error('network'))
 
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=1&state=nonce'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=1&state=nonce'),
+    )) as Response
 
     expect(res.status).toBe(502)
     expect(mockConsume).not.toHaveBeenCalled()
@@ -268,9 +270,9 @@ describe('api.github.setup loader', () => {
     mockGetSession.mockResolvedValue(null)
 
     await expect(
-      loader({
-        request: req('http://x/api/github/setup?installation_id=1&state=nonce'),
-      } as never),
+      loader(
+        loaderArgs('http://x/api/github/setup?installation_id=1&state=nonce'),
+      ),
     ).rejects.toBeInstanceOf(Response)
 
     expect(mockVerifyInstallation).not.toHaveBeenCalled()
@@ -281,9 +283,9 @@ describe('api.github.setup loader', () => {
   test('400 when consumeInstallState rejects', async () => {
     mockConsume.mockRejectedValue(new InstallStateError('used'))
 
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=1&state=bad'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=1&state=bad'),
+    )) as Response
 
     expect(res.status).toBe(400)
   })
@@ -294,9 +296,9 @@ describe('api.github.setup loader', () => {
       new GithubInstallationAlreadyLinkedError('already linked'),
     )
 
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=1&state=nonce'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=1&state=nonce'),
+    )) as Response
 
     expect(res.status).toBe(409)
     expect(mockRelease).toHaveBeenCalledWith('state-1')
@@ -306,9 +308,9 @@ describe('api.github.setup loader', () => {
     mockExecuteTakeFirst.mockResolvedValueOnce(undefined)
     mockCompleteSetup.mockRejectedValue(new Error('database busy'))
 
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=1&state=nonce'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=1&state=nonce'),
+    )) as Response
 
     expect(res.status).toBe(500)
     expect(mockRelease).toHaveBeenCalledWith('state-1')
@@ -320,9 +322,9 @@ describe('api.github.setup loader', () => {
       new GithubInstallationAuthorizationError('sign in again'),
     )
 
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=1'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=1'),
+    )) as Response
 
     expect(res.status).toBe(403)
     expect(await res.text()).toBe(
@@ -338,9 +340,9 @@ describe('api.github.setup loader', () => {
       new GithubInstallationAuthorizationError('approve Members permission'),
     )
 
-    const res = (await loader({
-      request: req('http://x/api/github/setup?installation_id=1&state=handoff'),
-    } as never)) as Response
+    const res = (await loader(
+      loaderArgs('http://x/api/github/setup?installation_id=1&state=handoff'),
+    )) as Response
 
     expect(res.status).toBe(403)
     expect(await res.text()).toBe('approve Members permission')

@@ -58,11 +58,10 @@ const PERIOD_OPTIONS = [
   { value: 'all', label: 'All time' },
 ] as const
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
-  const url = new URL(request.url)
   const teamParam = context.get(teamContext)
   const periodParam = url.searchParams.get('period')
   const VALID_PERIODS = [1, 3, 6, 12]
@@ -75,7 +74,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 
   const sinceDate = calcSinceDate(periodMonths, timezone)
 
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}:${filterCacheKeySuffix(filter)}`
   const FIVE_MINUTES = 5 * 60 * 1000

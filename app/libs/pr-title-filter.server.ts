@@ -21,11 +21,10 @@ export interface PrFilterLoaderState {
  * 軽量な存在チェックだけ実施して DB 往復を減らす。
  */
 export const loadPrFilterState = async (
-  request: Request,
+  url: URL,
   organizationId: OrganizationId,
 ): Promise<PrFilterLoaderState> => {
-  const showFiltered =
-    new URL(request.url).searchParams.get('showFiltered') === '1'
+  const showFiltered = url.searchParams.get('showFiltered') === '1'
   if (showFiltered) {
     const hasAnyEnabledPattern =
       await hasAnyEnabledPrTitleFilter(organizationId)

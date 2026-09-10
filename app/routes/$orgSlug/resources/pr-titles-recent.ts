@@ -10,14 +10,13 @@ import type { Route } from './+types/pr-titles-recent'
 // lazy fetch 前提で、通常閲覧時の loader payload には含めない。
 export const middleware = [orgAdminMiddleware]
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   if (!isOrgAdmin(membership.role)) {
     // middleware と二重防御
     throw data({ error: 'forbidden' }, { status: 403 })
   }
 
-  const url = new URL(request.url)
   const daysParam = Number(url.searchParams.get('days') ?? '90')
   const days = Number.isFinite(daysParam)
     ? Math.max(1, Math.min(180, Math.floor(daysParam)))

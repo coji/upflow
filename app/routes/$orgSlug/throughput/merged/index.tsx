@@ -46,12 +46,11 @@ export type PullRequest = Awaited<
   ReturnType<typeof getMergedPullRequestReport>
 >[0]
 
-export const loader = async ({ request, context }: Route.LoaderArgs) => {
+export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   const objective = 2.0
   const timezone = context.get(timezoneContext)
 
-  const url = new URL(request.url)
   const fromParam = url.searchParams.get('from')
   const toParam = url.searchParams.get('to')
   const teamParam = context.get(teamContext)
@@ -70,7 +69,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const prevFrom = fromDate.subtract(7, 'day')
   const prevTo = toDate.subtract(7, 'day')
 
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   const fromIso = fromDate.utc().toISOString()
   const toIso = toDate.utc().toISOString()

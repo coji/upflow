@@ -47,15 +47,10 @@ export const handle = {
   }),
 }
 
-export const loader = async ({
-  request,
-  params,
-  context,
-}: Route.LoaderArgs) => {
+export const loader = async ({ params, context, url }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
   const timezone = context.get(timezoneContext)
 
-  const url = new URL(request.url)
   const weekParam = url.searchParams.get('week')
 
   const parsed = weekParam ? dayjs(weekParam, 'YYYY-MM-DD') : null
@@ -66,7 +61,7 @@ export const loader = async ({
   const from = weekStart.utc().toISOString()
   const to = weekEnd.utc().toISOString()
 
-  const filter = await loadPrFilterState(request, organization.id)
+  const filter = await loadPrFilterState(url, organization.id)
 
   // 週のサマリーとして created PR 数を母集団とする
   const [
