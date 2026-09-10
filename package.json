@@ -5,7 +5,14 @@
   "sideEffects": false,
   "type": "module",
   "engines": {
-    "node": "24.14.0"
+    "node": "24.20.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.20.0",
+      "onFail": "download"
+    }
   },
   "scripts": {
     "build": "run-s build:react-router build:job build:workers build:db-scripts",
@@ -146,17 +153,5 @@
     "vite-plus": "0.1.20",
     "vitest": "4.1.4"
   },
-  "packageManager": "pnpm@10.32.1",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@sentry/cli",
-      "@tailwindcss/oxide",
-      "better-sqlite3",
-      "esbuild",
-      "msw",
-      "protobufjs",
-      "sharp",
-      "workerd"
-    ]
-  }
+  "packageManager": "pnpm@12.3.4"
 }
