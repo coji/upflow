@@ -16,6 +16,7 @@ export const getOpenPullRequests = async (
   organizationId: OrganizationId,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  hideDrafts = false,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -35,6 +36,7 @@ export const getOpenPullRequests = async (
     )
     .where(excludeBots)
     .where(excludePrTitleFilters(normalizedPatterns))
+    .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .select([
       'pullRequests.author',
       'pullRequests.number',
@@ -44,6 +46,7 @@ export const getOpenPullRequests = async (
       'pullRequests.url',
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.complexity',
+      'pullRequests.isDraft',
       'companyGithubUsers.displayName as authorDisplayName',
     ])
     .execute()
@@ -58,6 +61,7 @@ export const countOpenPullRequests = async (
   organizationId: OrganizationId,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  hideDrafts = false,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
@@ -76,6 +80,7 @@ export const countOpenPullRequests = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
+    .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .select((eb) => [
       eb.fn.countAll<number>().as('unfiltered'),
       filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
@@ -88,12 +93,46 @@ export const countOpenPullRequests = async (
 }
 
 /**
+ * hideDrafts バナー用に、タイトルフィルター適用後の open PR のうち Draft の件数を返す。
+ * Draft 除外とタイトル除外の二重カウントを避けるため、title filter 適用後の集合で数える。
+ */
+export const countHiddenDrafts = async (
+  organizationId: OrganizationId,
+  teamId?: string | null,
+  normalizedPatterns: readonly string[] = [],
+): Promise<number> => {
+  const tenantDb = getTenantDb(organizationId)
+  const row = await tenantDb
+    .selectFrom('pullRequests')
+    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
+    .leftJoin('companyGithubUsers', (join) =>
+      join.onRef(
+        (eb) => eb.fn('lower', ['pullRequests.author']),
+        '=',
+        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+      ),
+    )
+    .where('pullRequests.mergedAt', 'is', null)
+    .where('pullRequests.closedAt', 'is', null)
+    .$if(teamId != null, (qb) =>
+      qb.where('repositories.teamId', '=', teamId as string),
+    )
+    .where(excludeBots)
+    .where(excludePrTitleFilters(normalizedPatterns))
+    .where('pullRequests.isDraft', '=', 1)
+    .select((eb) => [eb.fn.countAll<number>().as('draftCount')])
+    .executeTakeFirstOrThrow()
+  return Number(row.draftCount)
+}
+
+/**
  * オープンPRに対する現在のレビュー割り当て（Team Stacks の Reviewer 側用）
  */
 export const getPendingReviewAssignments = async (
   organizationId: OrganizationId,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  hideDrafts = false,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -124,6 +163,7 @@ export const getPendingReviewAssignments = async (
     .where('pullRequestReviewers.requestedAt', 'is not', null)
     .where(excludeBots)
     .where(excludePrTitleFilters(normalizedPatterns))
+    .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .$if(teamId != null, (qb) =>
       qb.where('repositories.teamId', '=', teamId as string),
     )
@@ -137,6 +177,7 @@ export const getPendingReviewAssignments = async (
       'pullRequests.author',
       'pullRequests.pullRequestCreatedAt',
       'pullRequests.complexity',
+      'pullRequests.isDraft',
       'companyGithubUsers.displayName as reviewerDisplayName',
     ])
     .execute()
@@ -150,6 +191,7 @@ export const getOpenPullRequestReviews = async (
   organizationId: OrganizationId,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  hideDrafts = false,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -182,6 +224,7 @@ export const getOpenPullRequestReviews = async (
     )
     .where(excludeBots)
     .where(excludePrTitleFilters(normalizedPatterns))
+    .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .select([
       'pullRequestReviews.pullRequestNumber as number',
       'pullRequestReviews.repositoryId',

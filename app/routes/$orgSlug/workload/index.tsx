@@ -14,6 +14,7 @@ import {
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { DraftFilterStatus } from './+components/draft-filter-status'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
@@ -22,6 +23,7 @@ import {
   aggregateTeamStacks,
 } from './+functions/aggregate-stacks'
 import {
+  countHiddenDrafts,
   countOpenPullRequests,
   getOpenPullRequestReviews,
   getOpenPullRequests,
@@ -46,11 +48,12 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
       : DEFAULT_PERSONAL_LIMIT
 
   const filter = await loadPrFilterState(url, organization.id)
+  const hideDrafts = url.searchParams.get('hideDrafts') === '1'
 
-  const cacheKey = `workload:${teamId ?? 'all'}:${filterCacheKeySuffix(filter)}`
+  const cacheKey = `workload:${teamId ?? 'all'}:${filterCacheKeySuffix(filter)}:hd=${hideDrafts ? '1' : '0'}`
   const SIXTY_SECONDS = 60 * 1000
 
-  const [[openPRs, pendingReviews, reviewHistory], excludedCount] =
+  const [[openPRs, pendingReviews, reviewHistory], excludedCount, draftCount] =
     await Promise.all([
       getOrgCachedData(
         organization.id,
@@ -61,23 +64,27 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
               organization.id,
               teamId,
               filter.normalizedPatterns,
+              hideDrafts,
             ),
             getPendingReviewAssignments(
               organization.id,
               teamId,
               filter.normalizedPatterns,
+              hideDrafts,
             ),
             getOpenPullRequestReviews(
               organization.id,
               teamId,
               filter.normalizedPatterns,
+              hideDrafts,
             ),
           ]),
         SIXTY_SECONDS,
       ),
       computeExcludedCount(filter, (patterns) =>
-        countOpenPullRequests(organization.id, teamId, patterns),
+        countOpenPullRequests(organization.id, teamId, patterns, hideDrafts),
       ),
+      countHiddenDrafts(organization.id, teamId, filter.normalizedPatterns),
     ])
 
   return {
@@ -89,6 +96,8 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     filterActive: filter.filterActive,
     showFiltered: filter.showFiltered,
     hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hideDrafts,
+    draftCount,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -105,6 +114,8 @@ export const clientLoader = async ({
     filterActive,
     showFiltered,
     hasAnyEnabledPattern,
+    hideDrafts,
+    draftCount,
     isAdmin,
   } = await serverLoader()
 
@@ -119,6 +130,8 @@ export const clientLoader = async ({
     filterActive,
     showFiltered,
     hasAnyEnabledPattern,
+    hideDrafts,
+    draftCount,
     isAdmin,
   }
 }
@@ -146,6 +159,8 @@ export default function ReviewStacksPage({
     filterActive,
     showFiltered,
     hasAnyEnabledPattern,
+    hideDrafts,
+    draftCount,
     isAdmin,
   },
 }: Route.ComponentProps) {
@@ -159,6 +174,7 @@ export default function ReviewStacksPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <DraftFilterStatus draftCount={draftCount} hideDrafts={hideDrafts} />
           <PrTitleFilterStatus
             excludedCount={excludedCount}
             filterActive={filterActive}

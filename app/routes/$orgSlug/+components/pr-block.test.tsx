@@ -12,6 +12,7 @@ import {
 } from 'vitest'
 import { PRHideByTitleFilterContext } from './hide-prs-by-title-menu'
 import {
+  PRBlock,
   PRPopover,
   PRPopoverContent,
   type PRPopoverData,
@@ -59,6 +60,7 @@ const samplePr: PRPopoverData = {
   author: 'alice',
   authorDisplayName: 'Alice',
   reviewStatus: 'changes-pending',
+  isDraft: false,
   reviewerStates: [
     {
       login: 'alice',
@@ -223,5 +225,63 @@ describe('PRPopover', () => {
     await user.click(screen.getByRole('button', { name: 'More actions' }))
     await user.click(await screen.findByText('Hide PRs by title…'))
     expect(hide).toHaveBeenCalledWith('Secret')
+  })
+
+  test('draft PR shows Draft badge in popover content', () => {
+    render(<PRPopoverContent pr={{ ...samplePr, isDraft: true }} />)
+    expect(screen.getByText('Draft')).toBeTruthy()
+  })
+
+  test('non-draft PR shows no Draft badge in popover content', () => {
+    render(<PRPopoverContent pr={{ ...samplePr, isDraft: false }} />)
+    expect(screen.queryByText('Draft')).toBeNull()
+  })
+
+  test('draft PRBlock shows D dot and is labeled as Draft', () => {
+    render(
+      <PRBlock
+        pr={{
+          number: 1,
+          repo: 'acme/widget',
+          repositoryId: 'repo-1',
+          title: 'WIP',
+          url: 'https://github.com/acme/widget/pull/1',
+          createdAt: '2026-03-10T00:00:00Z',
+          complexity: 'M',
+          reviewStatus: 'unassigned',
+          isDraft: true,
+        }}
+        dataPrKey="acme/widget:1"
+      />,
+    )
+    const button = screen.getByRole('button', {
+      name: 'acme/widget#1 (Unassigned, Draft)',
+    })
+    expect(button.className).toContain('opacity-75')
+    expect(within(button).getByText('D')).toBeTruthy()
+  })
+
+  test('non-draft PRBlock has no D dot', () => {
+    render(
+      <PRBlock
+        pr={{
+          number: 1,
+          repo: 'acme/widget',
+          repositoryId: 'repo-1',
+          title: 'Fix it',
+          url: 'https://github.com/acme/widget/pull/1',
+          createdAt: '2026-03-10T00:00:00Z',
+          complexity: 'M',
+          reviewStatus: 'unassigned',
+          isDraft: false,
+        }}
+        dataPrKey="acme/widget:1"
+      />,
+    )
+    const button = screen.getByRole('button', {
+      name: 'acme/widget#1 (Unassigned)',
+    })
+    expect(button.className).not.toContain('opacity-75')
+    expect(within(button).queryByText('D')).toBeNull()
   })
 })

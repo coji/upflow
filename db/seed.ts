@@ -756,6 +756,7 @@ async function seed() {
       c: 'M',
       cr: 'Settings UI restructuring with new form sections',
       ra: null,
+      draft: false,
     },
     {
       n: 102,
@@ -768,6 +769,7 @@ async function seed() {
       c: 'L',
       cr: 'SAML/OIDC integration with session management changes',
       ra: 'authentication, security',
+      draft: false,
     },
     {
       n: 103,
@@ -780,6 +782,7 @@ async function seed() {
       c: 'S',
       cr: 'Hamburger menu z-index and animation fix',
       ra: null,
+      draft: true,
     },
     {
       n: 104,
@@ -792,6 +795,7 @@ async function seed() {
       c: 'M',
       cr: 'New audit_logs table with middleware for admin routes',
       ra: 'database, security',
+      draft: false,
     },
     {
       n: 105,
@@ -804,6 +808,7 @@ async function seed() {
       c: 'L',
       cr: 'Complex DnD interactions with optimistic state updates',
       ra: 'error-handling',
+      draft: false,
     },
     {
       n: 106,
@@ -816,6 +821,7 @@ async function seed() {
       c: 'M',
       cr: 'Major version bump with breaking API changes in auth flow',
       ra: 'authentication, security',
+      draft: false,
     },
     {
       n: 107,
@@ -828,6 +834,7 @@ async function seed() {
       c: 'S',
       cr: 'React error boundaries for route-level error handling',
       ra: 'error-handling',
+      draft: true,
     },
     {
       n: 108,
@@ -840,6 +847,7 @@ async function seed() {
       c: 'M',
       cr: 'Redis-backed rate limiter with per-endpoint configuration',
       ra: 'security, performance, external-service',
+      draft: false,
     },
   ]
 
@@ -866,6 +874,7 @@ async function seed() {
         riskAreas: pr.ra,
         classifiedAt: daysAgo(pr.createdDaysAgo),
         classifierModel: 'gemini-2.0-flash-lite',
+        isDraft: pr.draft ? 1 : 0,
       })
       .execute()
   }

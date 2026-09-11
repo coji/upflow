@@ -379,4 +379,15 @@ describe('buildPullRequests filter', () => {
     expect(pr2?.codingTime).toBe(1)
     expect(pr2?.pickupTime).toBe(1)
   })
+
+  test('persists draft flag as isDraft (draft → 1, ready → 0)', async () => {
+    const draftPrs: ShapedGitHubPullRequest[] = [
+      { ...basePr, id: 11, number: 11, draft: true, state: 'open' },
+      { ...basePr, id: 12, number: 12, draft: false, state: 'open' },
+    ]
+    const result = await buildPullRequests(config, draftPrs, mockLoaders)
+
+    expect(result.pulls.find((p) => p.number === 11)?.isDraft).toBe(1)
+    expect(result.pulls.find((p) => p.number === 12)?.isDraft).toBe(0)
+  })
 })

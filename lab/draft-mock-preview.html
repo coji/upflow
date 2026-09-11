@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Review Stacks Draft 識別 — 3案モック (#449)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      .pr {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .fill-blue {
+        background: #3b82f6;
+      }
+      .fill-green {
+        background: #10b981;
+      }
+      .fill-hollow {
+        box-shadow: inset 0 0 0 2px #9ca3af;
+        background: rgba(156, 163, 175, 0.15);
+      }
+      /* A案: 減光 + 破線アウトライン */
+      .draft-a {
+        opacity: 0.4;
+        outline: 1px dashed #9ca3af;
+        outline-offset: 1px;
+      }
+      /* B案: Dドット */
+      .draft-b-wrap {
+        position: relative;
+        display: inline-flex;
+        opacity: 0.75;
+      }
+      .draft-b-dot {
+        position: absolute;
+        right: -3px;
+        top: -3px;
+        width: 10px;
+        height: 10px;
+        border-radius: 9999px;
+        background: #6b7280;
+        color: #fff;
+        font-size: 7px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      /* C案: グレースケール */
+      .draft-c {
+        background: #d1d5db !important;
+        box-shadow: none !important;
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body class="bg-white p-6 text-sm text-gray-900">
+    <h1 class="mb-1 text-lg font-bold">Review Stacks Draft 識別 — 3案モック</h1>
+    <p class="mb-6 text-xs text-gray-500">
+      issue #449 / 既定=全件表示+識別。各行の4番目・7番目が Draft
+      想定。色=age、形=reviewStatus は維持。
+    </p>
+
+    <div class="grid gap-6 md:grid-cols-3">
+      <section class="rounded-lg border p-4">
+        <h2 class="mb-1 font-bold">A. 減光 + 破線（実装済み案）</h2>
+        <p class="mb-3 text-xs text-gray-500">
+          opacity-40 + dashed outline。色・形と直交し、popover に Draft バッジ。
+        </p>
+        <div class="mb-2 flex items-center gap-2">
+          <span class="w-16 text-xs">alice</span
+          ><span class="font-mono text-xs">3</span>
+          <span class="pr fill-blue"></span><span class="pr fill-green"></span
+          ><span class="pr fill-hollow"></span>
+          <span class="pr fill-blue draft-a"></span
+          ><span class="pr fill-hollow"></span
+          ><span class="pr fill-green"></span>
+          <span class="pr fill-blue draft-a"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-16 text-xs">bob</span
+          ><span class="font-mono text-xs">2</span>
+          <span class="pr fill-green"></span
+          ><span class="pr fill-hollow draft-a"></span>
+        </div>
+        <p class="mt-3 text-xs">
+          <span class="font-bold">評価:</span>
+          最小変更。投影時は薄くて見落とす可能性あり。
+        </p>
+      </section>
+
+      <section class="rounded-lg border p-4">
+        <h2 class="mb-1 font-bold">B. Dドット</h2>
+        <p class="mb-3 text-xs text-gray-500">
+          ブロック右上に D マーク。投影での可読性を優先。
+        </p>
+        <div class="mb-2 flex items-center gap-2">
+          <span class="w-16 text-xs">alice</span
+          ><span class="font-mono text-xs">3</span>
+          <span class="pr fill-blue"></span><span class="pr fill-green"></span
+          ><span class="pr fill-hollow"></span>
+          <span class="draft-b-wrap"
+            ><span class="pr fill-blue"></span
+            ><span class="draft-b-dot">D</span></span
+          >
+          <span class="pr fill-hollow"></span
+          ><span class="pr fill-green"></span>
+          <span class="draft-b-wrap"
+            ><span class="pr fill-blue"></span
+            ><span class="draft-b-dot">D</span></span
+          >
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-16 text-xs">bob</span
+          ><span class="font-mono text-xs">2</span>
+          <span class="pr fill-green"></span>
+          <span class="draft-b-wrap"
+            ><span class="pr fill-hollow"></span
+            ><span class="draft-b-dot">D</span></span
+          >
+        </div>
+        <p class="mt-3 text-xs">
+          <span class="font-bold">評価:</span> 明示的。16px
+          ブロック上の10pxドットは潰れやすいのが懸念。
+        </p>
+      </section>
+
+      <section class="rounded-lg border p-4">
+        <h2 class="mb-1 font-bold">C. グレースケール + 件数</h2>
+        <p class="mb-3 text-xs text-gray-500">
+          Draft は無彩色化。ヘッダーに N drafts 表示、除外トグルと一体。
+        </p>
+        <div class="mb-2 flex items-center gap-2">
+          <span class="w-16 text-xs">alice</span
+          ><span class="font-mono text-xs">3</span>
+          <span class="pr fill-blue"></span><span class="pr fill-green"></span
+          ><span class="pr fill-hollow"></span>
+          <span class="pr fill-blue draft-c"></span
+          ><span class="pr fill-hollow"></span
+          ><span class="pr fill-green"></span>
+          <span class="pr fill-blue draft-c"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-16 text-xs">bob</span
+          ><span class="font-mono text-xs">2</span>
+          <span class="pr fill-green"></span
+          ><span class="pr fill-hollow draft-c"></span>
+        </div>
+        <p class="mt-3 text-xs">
+          <span class="font-bold">評価:</span>
+          age色が消えるため「古いDraft」が埋もれる欠点あり。
+        </p>
+      </section>
+    </div>
+
+    <p class="mt-6 text-xs text-gray-500">
+      採用: B（Dドット）。実装もBに合わせ済み。
+    </p>
+  </body>
+</html>

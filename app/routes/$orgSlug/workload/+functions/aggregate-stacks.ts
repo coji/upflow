@@ -15,6 +15,7 @@ export interface StackPR {
   createdAt: string
   complexity: string | null
   reviewStatus?: PRReviewStatus
+  isDraft: boolean
 }
 
 export interface PersonStack {
@@ -42,6 +43,7 @@ interface OpenPRRow {
   url: string
   pullRequestCreatedAt: string
   complexity: string | null
+  isDraft: number
 }
 
 interface PendingReviewRow {
@@ -55,6 +57,7 @@ interface PendingReviewRow {
   author: string
   pullRequestCreatedAt: string
   complexity: string | null
+  isDraft: number
 }
 
 interface ReviewRow {
@@ -213,6 +216,7 @@ export function aggregateTeamStacks({
       createdAt: pr.pullRequestCreatedAt,
       complexity: pr.complexity,
       reviewStatus,
+      isDraft: pr.isDraft === 1,
     }
 
     let stack = authorMap.get(pr.author)
@@ -272,6 +276,7 @@ export function aggregateTeamStacks({
       createdAt: row.pullRequestCreatedAt,
       complexity: row.complexity,
       reviewStatus: 'in-review',
+      isDraft: row.isDraft === 1,
     })
   }
   const reviewerStacks = [...reviewerMap.values()].sort(

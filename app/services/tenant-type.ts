@@ -127,6 +127,7 @@ export interface PullRequests {
   deployTime: number | null;
   firstCommittedAt: string | null;
   firstReviewedAt: string | null;
+  isDraft: Generated<number>;
   mergedAt: string | null;
   number: number;
   pickupTime: number | null;
