@@ -16,6 +16,7 @@ function makePR(
     url: string
     pullRequestCreatedAt: string
     complexity: string | null
+    isDraft: number
   }> = {},
 ) {
   return {
@@ -28,6 +29,7 @@ function makePR(
     url: 'https://github.com/org/repo/pull/1',
     pullRequestCreatedAt: '2026-03-01T00:00:00Z',
     complexity: null,
+    isDraft: 0,
     ...overrides,
   }
 }
@@ -65,6 +67,7 @@ function makeReview(
     author: string
     pullRequestCreatedAt: string
     complexity: string | null
+    isDraft: number
   }> = {},
 ) {
   return {
@@ -78,6 +81,7 @@ function makeReview(
     author: 'alice',
     pullRequestCreatedAt: '2026-03-01T00:00:00Z',
     complexity: null,
+    isDraft: 0,
     ...overrides,
   }
 }
@@ -108,6 +112,23 @@ describe('aggregateTeamStacks', () => {
     const bob = result.authorStacks.find((s) => s.login === 'bob')
     expect(alice?.prs).toHaveLength(2)
     expect(bob?.prs).toHaveLength(1)
+  })
+
+  test('passes through isDraft from DB rows (1 → true, 0 → false)', () => {
+    const openPRs = [
+      makePR({ author: 'alice', number: 1, isDraft: 1 }),
+      makePR({ author: 'alice', number: 2, isDraft: 0 }),
+    ]
+    const pendingReviews = [
+      makeReview({ reviewer: 'bob', number: 1, isDraft: 1 }),
+    ]
+    const result = aggregateTeamStacks({ openPRs, pendingReviews })
+
+    const alice = result.authorStacks.find((s) => s.login === 'alice')
+    expect(alice?.prs.find((p) => p.number === 1)?.isDraft).toBe(true)
+    expect(alice?.prs.find((p) => p.number === 2)?.isDraft).toBe(false)
+    const bob = result.reviewerStacks.find((s) => s.login === 'bob')
+    expect(bob?.prs.find((p) => p.number === 1)?.isDraft).toBe(true)
   })
 
   test('author stacks sorted by PR count descending', () => {

@@ -37,6 +37,7 @@ export async function getPullRequestForPopover(
       'authorUser.displayName as authorDisplayName',
       'pullRequests.pullRequestCreatedAt as createdAt',
       'pullRequests.complexity',
+      'pullRequests.isDraft',
     ])
     .executeTakeFirst()
 
@@ -110,5 +111,6 @@ export async function getPullRequestForPopover(
     authorDisplayName: prRow.authorDisplayName,
     reviewStatus,
     reviewerStates,
+    isDraft: prRow.isDraft === 1,
   }
 }

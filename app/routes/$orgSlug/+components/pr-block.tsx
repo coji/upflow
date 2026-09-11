@@ -172,6 +172,7 @@ export interface PRPopoverData {
   authorDisplayName: string | null
   reviewStatus: PRReviewStatus
   reviewerStates: PRReviewerStateEntry[]
+  isDraft: boolean
 }
 
 export type PRPopoverLoaderData = {
@@ -188,6 +189,7 @@ export interface PRBlockData {
   createdAt: string
   complexity: string | null
   reviewStatus?: PRReviewStatus
+  isDraft?: boolean
 }
 
 interface ReviewStatusShape {
@@ -287,7 +289,7 @@ function PRPopoverDegraded({
   fallback,
 }: {
   prKey: { repositoryId: string; number: number }
-  fallback?: { title?: string; url?: string; repo?: string }
+  fallback?: { title?: string; url?: string; repo?: string; isDraft?: boolean }
 }) {
   const linkLabel = fallback?.repo
     ? formatPrIdentifier(fallback.repo, prKey.number)
@@ -304,6 +306,7 @@ function PRPopoverDegraded({
         ) : (
           <span className="font-medium">{linkLabel}</span>
         )}
+        {fallback?.isDraft && <DraftBadge />}
         {fallback?.title && (
           <HidePRsByTitleMenu title={fallback.title} className="ml-auto" />
         )}
@@ -312,6 +315,17 @@ function PRPopoverDegraded({
         <p className="text-muted-foreground line-clamp-3">{fallback.title}</p>
       )}
     </div>
+  )
+}
+
+function DraftBadge() {
+  return (
+    <Badge
+      variant="outline"
+      className="border-dashed px-1.5 py-0 text-[10px] font-normal text-gray-500 dark:text-gray-400"
+    >
+      Draft
+    </Badge>
   )
 }
 
@@ -335,6 +349,7 @@ export function PRPopoverContent({
         >
           {formatPrIdentifier(pr.repo, pr.number)}
         </ExternalLink>
+        {pr.isDraft && <DraftBadge />}
         <SizeBadge
           complexity={pr.complexity}
           className="ml-auto px-1.5 py-0 text-[10px]"
@@ -418,7 +433,7 @@ export function PRPopover({
 }: {
   prKey: { repositoryId: string; number: number }
   reviewState?: string
-  fallback?: { title?: string; url?: string; repo?: string }
+  fallback?: { title?: string; url?: string; repo?: string; isDraft?: boolean }
   children: React.ReactNode
 }) {
   const { orgSlug } = useParams<{ orgSlug: string }>()
@@ -507,22 +522,33 @@ export function PRBlock({
     : undefined
   const shape = statusShape?.shape ?? 'rounded-full'
   const prId = formatPrIdentifier(pr.repo, pr.number)
-  const ariaLabel = statusShape ? `${prId} (${statusShape.label})` : prId
+  const ariaLabel = statusShape
+    ? `${prId} (${statusShape.label}${pr.isDraft ? ', Draft' : ''})`
+    : pr.isDraft
+      ? `${prId} (Draft)`
+      : prId
   const isHollow =
     pr.reviewStatus === 'unassigned' ||
     pr.reviewStatus === 'approved-awaiting-merge' ||
     pr.reviewStatus === 'changes-pending'
   const fillClass = isHollow ? `ring-[2px] ring-inset ${ring} ${bgFaint}` : bg
+  // Draft は色・形状と直交する状態のため、右上の D ドットで識別する
+  const draftClass = pr.isDraft ? 'opacity-75' : ''
 
   return (
     <PRPopover
       prKey={{ repositoryId: pr.repositoryId, number: pr.number }}
-      fallback={{ title: pr.title, url: pr.url, repo: pr.repo }}
+      fallback={{
+        title: pr.title,
+        url: pr.url,
+        repo: pr.repo,
+        isDraft: pr.isDraft,
+      }}
     >
       <button
         type="button"
         data-pr-key={dataPrKey}
-        className={`flex size-4 shrink-0 items-center justify-center transition-all hover:scale-150 ${shape} ${fillClass}`}
+        className={`relative flex size-4 shrink-0 items-center justify-center transition-all hover:scale-150 ${shape} ${fillClass} ${draftClass}`}
         aria-label={ariaLabel}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
@@ -533,6 +559,14 @@ export function PRBlock({
             className={`text-[8px] leading-none font-bold ${blockTextColor}`}
           >
             {statusShape.icon}
+          </span>
+        )}
+        {pr.isDraft && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-[3px] -right-[3px] flex size-[10px] items-center justify-center rounded-full bg-gray-500 text-[7px] font-bold text-white dark:bg-gray-400 dark:text-gray-900"
+          >
+            D
           </span>
         )}
       </button>

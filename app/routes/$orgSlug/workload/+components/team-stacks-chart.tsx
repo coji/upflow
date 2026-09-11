@@ -232,6 +232,7 @@ const PRBlock = memo(function PRBlock({
           createdAt: pr.createdAt,
           complexity: pr.complexity,
           reviewStatus: pr.reviewStatus,
+          isDraft: pr.isDraft,
         }}
         colorMode={colorMode}
         dataPrKey={prKey}
@@ -415,6 +416,14 @@ function Legend({ mode }: { mode: ColorMode }) {
           <span className="text-muted-foreground">{entry.label}</span>
         </div>
       ))}
+      <div className="flex items-center gap-1">
+        <div className="relative size-3.5 rounded-full bg-gray-400 opacity-75 dark:bg-gray-500">
+          <span className="absolute -top-[2px] -right-[2px] flex size-2.5 items-center justify-center rounded-full bg-gray-500 text-[6px] font-bold text-white dark:bg-gray-400 dark:text-gray-900">
+            D
+          </span>
+        </div>
+        <span className="text-muted-foreground">Draft</span>
+      </div>
     </div>
   )
 }

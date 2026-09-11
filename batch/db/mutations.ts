@@ -37,6 +37,7 @@ export function upsertPullRequest(
         additions: eb.ref('excluded.additions'),
         deletions: eb.ref('excluded.deletions'),
         changedFiles: eb.ref('excluded.changedFiles'),
+        isDraft: eb.ref('excluded.isDraft'),
       })),
     )
     .executeTakeFirst()
@@ -99,6 +100,7 @@ export async function batchUpsertPullRequests(
           additions: eb.ref('excluded.additions'),
           deletions: eb.ref('excluded.deletions'),
           changedFiles: eb.ref('excluded.changedFiles'),
+          isDraft: eb.ref('excluded.isDraft'),
         })),
       )
       .execute()

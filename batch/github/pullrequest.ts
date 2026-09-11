@@ -203,6 +203,7 @@ function buildPullRequestRow(
     riskAreas: null,
     classifiedAt: null,
     classifierModel: null,
+    isDraft: pr.draft ? 1 : 0,
   }
 }
 

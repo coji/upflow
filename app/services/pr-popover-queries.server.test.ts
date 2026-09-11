@@ -132,6 +132,7 @@ describe('getPullRequestForPopover', () => {
     expect(pr?.author).toBe('alice')
     expect(pr?.authorDisplayName).toBe('Alice A')
     expect(pr?.reviewStatus).toBe('approved-awaiting-merge')
+    expect(pr?.isDraft).toBe(false)
     expect(pr?.reviewerStates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -141,6 +142,50 @@ describe('getPullRequestForPopover', () => {
         }),
       ]),
     )
+  })
+
+  test('returns isDraft true for draft PRs', async () => {
+    const orgId = createFreshOrg()
+    await seedRepository(orgId)
+    await seedGithubUser(orgId, 'alice', 'Alice A')
+    await getTenantDb(orgId)
+      .insertInto('pullRequests')
+      .values({
+        repo: 'widget',
+        number: 7,
+        sourceBranch: 'feature/draft',
+        targetBranch: 'main',
+        state: 'open',
+        author: 'alice',
+        title: 'WIP',
+        url: 'https://github.com/acme/widget/pull/7',
+        firstCommittedAt: null,
+        pullRequestCreatedAt: '2026-03-10T00:00:00Z',
+        firstReviewedAt: null,
+        mergedAt: null,
+        closedAt: null,
+        releasedAt: null,
+        codingTime: null,
+        pickupTime: null,
+        reviewTime: null,
+        deployTime: null,
+        totalTime: null,
+        repositoryId: 'repo-1',
+        updatedAt: null,
+        additions: null,
+        deletions: null,
+        changedFiles: null,
+        complexity: null,
+        complexityReason: null,
+        riskAreas: null,
+        classifiedAt: null,
+        classifierModel: null,
+        isDraft: 1,
+      })
+      .execute()
+
+    const pr = await getPullRequestForPopover(orgId, 'repo-1', 7)
+    expect(pr?.isDraft).toBe(true)
   })
 
   test('returns null when PR does not exist', async () => {

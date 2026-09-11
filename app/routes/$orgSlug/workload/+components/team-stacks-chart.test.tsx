@@ -31,6 +31,7 @@ function makeData(): TeamStacksData {
     createdAt: '2026-03-01T00:00:00Z',
     complexity: 'S' as string | null,
     reviewStatus: 'in-review' as const,
+    isDraft: false,
   }
   return {
     authorStacks: [{ login: 'alice', displayName: 'Alice', prs: [{ ...pr }] }],

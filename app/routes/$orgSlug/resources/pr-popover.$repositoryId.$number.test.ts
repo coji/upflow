@@ -88,6 +88,7 @@ const samplePr = {
   author: 'alice',
   authorDisplayName: 'Alice',
   reviewStatus: 'approved-awaiting-merge' as const,
+  isDraft: false,
   reviewerStates: [],
 }
 

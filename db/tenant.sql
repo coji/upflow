@@ -84,6 +84,7 @@ CREATE TABLE `pull_requests` (
   `risk_areas` text NULL,
   `classified_at` text NULL,
   `classifier_model` text NULL,
+  `is_draft` integer NOT NULL DEFAULT 0,
   PRIMARY KEY (`number`, `repository_id`),
   CONSTRAINT `pull_requests_repository_id_fkey` FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
