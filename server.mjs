@@ -16,6 +16,13 @@ const viteDevServer =
 
 const app = express()
 
+// Fly terminates TLS at the edge and forwards plain HTTP internally.
+// Trust the proxy so req.protocol/host reflect the public origin.
+// Without this, React Router v8's same-origin action check compares the
+// browser Origin (https) against an http request URL and rejects every
+// document POST with 400 Bad Request.
+app.set('trust proxy', 1)
+
 app.use((req, res, next) => {
   // helpful headers:
   res.set('x-fly-region', process.env.FLY_REGION ?? 'unknown')
