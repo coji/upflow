@@ -41,7 +41,7 @@ WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --prod --offline --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile
 
 
 # --- Build the app ---
@@ -51,7 +51,7 @@ WORKDIR /upflow
 
 COPY --from=deps /upflow/node_modules /upflow/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --offline --frozen-lockfile && pnpm rebuild better-sqlite3
+RUN pnpm install --frozen-lockfile && pnpm rebuild better-sqlite3
 
 COPY . .
 
