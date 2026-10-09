@@ -214,6 +214,12 @@ export const auth = betterAuth({
     database: {
       generateId: () => nanoid(),
     },
+    // Fly always appends the app's own IP to X-Forwarded-For, and Better Auth
+    // >= 1.6.21 refuses multi-hop chains, so rate limiting would collapse into
+    // one shared bucket. Fly-Client-IP carries the single client address.
+    ipAddress: {
+      ipAddressHeaders: ['fly-client-ip', 'x-forwarded-for'],
+    },
   },
   user: {
     modelName: 'users',
@@ -377,7 +383,7 @@ export const auth = betterAuth({
 })
 
 export const getSession = async (request: Request) => {
-  return await auth.api.getSession(request)
+  return await auth.api.getSession({ headers: request.headers })
 }
 
 export const safeRedirectTo = (
