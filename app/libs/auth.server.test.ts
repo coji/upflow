@@ -1,12 +1,13 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { getIp } from 'better-auth/api'
 import { describe, expect, test, vi } from 'vitest'
 
 vi.stubEnv('UPFLOW_DATA_DIR', mkdtempSync(path.join(tmpdir(), 'auth-test-')))
 
 // Import after env stub to avoid resolveDataDir() throwing
-const { safeRedirectTo } = await import('./auth.server')
+const { auth, getSession, safeRedirectTo } = await import('./auth.server')
 
 describe('safeRedirectTo', () => {
   test('returns the path when it starts with /', () => {
@@ -67,5 +68,22 @@ describe('safeRedirectTo', () => {
 
   test('uses custom fallback', () => {
     expect(safeRedirectTo(null, '/dashboard')).toBe('/dashboard')
+  })
+})
+
+describe('getSession', () => {
+  test('accepts a Request without throwing (Better Auth requires plain headers)', async () => {
+    const request = new Request('http://localhost/')
+    await expect(getSession(request)).resolves.toBeNull()
+  })
+})
+
+describe('client IP resolution behind Fly', () => {
+  test('uses Fly-Client-IP even when X-Forwarded-For is multi-hop', () => {
+    const headers = new Headers({
+      'fly-client-ip': '203.0.113.5',
+      'x-forwarded-for': '203.0.113.5, 198.51.100.7',
+    })
+    expect(getIp(headers, auth.options)).toBe('203.0.113.5')
   })
 })
