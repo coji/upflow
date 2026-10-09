@@ -63,7 +63,7 @@
     "@coji/zodix": "0.7.0",
     "@conform-to/react": "1.21.1",
     "@conform-to/zod": "1.21.1",
-    "@dsnp/parquetjs": "1.8.7",
+    "@dsnp/parquetjs": "1.8.9",
     "@google/genai": "2.21.0",
     "@googleapis/sheets": "14.0.0",
     "@holiday-jp/holiday_jp": "2.5.1",
@@ -145,7 +145,7 @@
     "tsx": "4.23.13",
     "vite": "8.2.2",
     "vite-plugin-devtools-json": "1.1.0",
-    "vite-plus": "0.3.1",
+    "vite-plus": "0.3.3",
     "vitest": "5.0.0"
   },
   "packageManager": "pnpm@12.3.4"
