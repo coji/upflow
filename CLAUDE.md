@@ -68,7 +68,7 @@ First-time Playwright: `pnpm exec playwright install chromium`.
 
 ### Tech Stack
 
-- **Framework**: React Router v7 (SSR mode) with Express server
+- **Framework**: React Router v8 (SSR mode) with Hono server (`server.mjs` + `server/`)
 - **Database**: SQLite via Atlas (migrations) and Kysely (query builder, type generation)
 - **Auth**: better-auth with GitHub OAuth, supporting organizations
 - **UI**: shadcn/ui components (new-york style) with Tailwind CSS v4

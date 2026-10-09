@@ -20,7 +20,7 @@ const setup = () => {
       }),
   )
   const app = createApp({ handler, publicDir, clientDir })
-  return { app, handler }
+  return { app, handler, publicDir, clientDir }
 }
 
 vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -81,7 +81,10 @@ describe('createApp', () => {
   })
 
   test('does not compress server-sent events', async () => {
+    const { publicDir, clientDir } = setup()
     const app = createApp({
+      publicDir,
+      clientDir,
       handler: async () =>
         new Response('data: x\n\n'.repeat(500), {
           headers: { 'Content-Type': 'text/event-stream' },
@@ -94,7 +97,10 @@ describe('createApp', () => {
   })
 
   test('compresses large HTML responses', async () => {
+    const { publicDir, clientDir } = setup()
     const app = createApp({
+      publicDir,
+      clientDir,
       handler: async () =>
         new Response('<p>x</p>'.repeat(500), {
           headers: { 'Content-Type': 'text/html' },
