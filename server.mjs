@@ -1,78 +1,26 @@
-import { createRequestHandler } from '@react-router/express'
-import compression from 'compression'
+import { createServer } from 'node:http'
+import { getRequestListener } from '@hono/node-server'
 import { consola } from 'consola'
-import express from 'express'
-import morgan from 'morgan'
+import { createRequestHandler } from 'react-router'
 import { createJobScheduler } from './build/job-scheduler.js'
+import { createApp } from './server/app.mjs'
+import { resolveForwardedUrl } from './server/forwarded-url.mjs'
 
-const viteDevServer =
-  process.env.NODE_ENV === 'production'
-    ? undefined
-    : await import('vite').then((vite) =>
-        vite.createServer({
-          server: { middlewareMode: true },
-        }),
-      )
+const build = await import('./build/server/index.js')
+const app = createApp({
+  handler: createRequestHandler(build, process.env.NODE_ENV),
+})
+const listener = getRequestListener(app.fetch)
 
-const app = express()
-
-// Fly terminates TLS at the edge and forwards plain HTTP internally.
-// Trust the proxy so req.protocol/host reflect the public origin.
-// Without this, React Router v8's same-origin action check compares the
-// browser Origin (https) against an http request URL and rejects every
-// document POST with 400 Bad Request.
-app.set('trust proxy', 1)
-
-app.use((req, res, next) => {
-  // helpful headers:
-  res.set('x-fly-region', process.env.FLY_REGION ?? 'unknown')
-  res.set('Strict-Transport-Security', `max-age=${60 * 60 * 24 * 365 * 100}`)
-  // /clean-urls/ -> /clean-urls
-  if (req.path.endsWith('/') && req.path.length > 1) {
-    const query = req.url.slice(req.path.length)
-    const safepath = req.path.slice(0, -1).replace(/\/+/g, '/')
-    res.redirect(301, safepath + query)
-    return
-  }
-  next()
+const server = createServer((req, res) => {
+  const forwardedUrl = resolveForwardedUrl(req.url, req.headers)
+  if (forwardedUrl) req.url = forwardedUrl
+  listener(req, res)
 })
 
-app.use(compression())
-app.disable('x-powered-by')
-app.use(express.static('public', { maxAge: '1h' }))
-app.use(
-  morgan('tiny', {
-    skip: (req) => req.url === '/healthcheck',
-  }),
-)
-
-// handle asset requests
-if (viteDevServer) {
-  app.use(viteDevServer.middlewares)
-} else {
-  app.use(
-    '/assets',
-    express.static('build/client/assets', {
-      immutable: true,
-      maxAge: '1y',
-    }),
-  )
-}
-app.use(express.static('build/client', { maxAge: '1h' }))
-
-// handle SSR requests
-app.all(
-  /.*/,
-  createRequestHandler({
-    build: viteDevServer
-      ? () => viteDevServer.ssrLoadModule('virtual:react-router/server-build')
-      : await import('./build/server/index.js'),
-  }),
-)
-
 const port = process.env.PORT || 3000
-const server = app.listen(port, () => {
-  consola.info(`Express server listening on port ${port}`)
+server.listen(port, () => {
+  consola.info(`Hono server listening on port ${port}`)
 })
 
 // Graceful shutdown
