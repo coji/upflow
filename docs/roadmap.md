@@ -108,7 +108,6 @@ Phase 0-2 および multi-installation 対応（issue #283）は完了済み。�
 ### クライアント移行が終わったらやること
 
 - PAT 方式のコードパスを整理する（新規 org セットアップも GitHub App を前提にするなら削除可）
-- `requireOrgOwner` によるリポ操作制限を解除し、admin に開放する
 - 個人 PAT を GitHub から revoke する
 - integrations データ移行スクリプトを削除する
   - `db/migrate-integrations-to-shared.ts`

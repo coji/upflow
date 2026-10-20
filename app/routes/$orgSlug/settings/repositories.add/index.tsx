@@ -25,7 +25,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import { requireOrgOwner } from '~/app/libs/auth.server'
+import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { captureExceptionToSentry } from '~/app/libs/sentry-node.server'
 import { orgContext } from '~/app/middleware/context'
@@ -230,7 +230,7 @@ export const loader = async ({
   url,
 }: Route.LoaderArgs) => {
   const { organization, membership } = context.get(orgContext)
-  requireOrgOwner(membership, organization.slug)
+  requireOrgAdmin(membership, organization.slug)
   const {
     owner: selectedOwner,
     cursor,
@@ -272,7 +272,7 @@ export const loader = async ({
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization, membership } = context.get(orgContext)
-  requireOrgOwner(membership, organization.slug)
+  requireOrgAdmin(membership, organization.slug)
   const integration = await getIntegrationWithRepositories(organization.id)
   if (!integration) {
     throw new Error('integration not created')

@@ -12,7 +12,7 @@ import { findActiveCompanyGithubUser } from '~/app/services/company-github-user-
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
-import { isOrgOwner, type MemberRole } from './member-role'
+import { isOrgAdmin, type MemberRole } from './member-role'
 import { requestUrl } from './request-url.server'
 import { RESERVED_SLUGS } from './reserved-slugs'
 
@@ -481,11 +481,11 @@ export const requireOrgMember = async (
   }
 }
 
-export const requireOrgOwner = (
+export const requireOrgAdmin = (
   membership: { role: MemberRole },
   orgSlug: string,
 ): void => {
-  if (!isOrgOwner(membership.role)) {
+  if (!isOrgAdmin(membership.role)) {
     throw redirect(href('/:orgSlug/settings/repositories', { orgSlug }))
   }
 }

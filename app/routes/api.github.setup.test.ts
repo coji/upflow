@@ -230,6 +230,23 @@ describe('api.github.setup loader', () => {
     )
   })
 
+  test('an Upflow admin of the linked org updates it without GitHub owner proof', async () => {
+    const mockWhere = vi.mocked(db.selectFrom('members').where)
+    mockExecuteTakeFirst
+      .mockResolvedValueOnce({ organizationId: 'o1', slug: 'acme' } as never)
+      .mockResolvedValueOnce({ id: 'm1' } as never)
+
+    await expect(
+      loader(loaderArgs('http://x/api/github/setup?installation_id=1')),
+    ).rejects.toBeInstanceOf(Response)
+
+    expect(mockWhere).toHaveBeenCalledWith('role', 'in', ['owner', 'admin'])
+    expect(mockVerifyUserCanManage).not.toHaveBeenCalled()
+    expect(mockCompleteSetup).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'installation_update_callback' }),
+    )
+  })
+
   test('403 when neither an Upflow owner nor GitHub owner updates a link', async () => {
     mockExecuteTakeFirst
       .mockResolvedValueOnce({ organizationId: 'o1', slug: 'acme' } as never)

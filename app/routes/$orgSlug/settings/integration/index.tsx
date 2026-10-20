@@ -2,7 +2,7 @@ import { parseWithZod } from '@conform-to/zod/v4'
 import { data, href, redirect } from 'react-router'
 import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
-import { requireOrgOwner } from '~/app/libs/auth.server'
+import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { generateInstallState } from '~/app/libs/github-app-state.server'
 import { orgContext } from '~/app/middleware/context'
@@ -96,7 +96,7 @@ async function buildInstallHandoffUrl(
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
   const { organization, membership, user } = context.get(orgContext)
-  requireOrgOwner(membership, organization.slug)
+  requireOrgAdmin(membership, organization.slug)
   const formData = await request.formData()
   const submission = parseWithZod(formData, { schema: integrationActionSchema })
   if (submission.status !== 'success') {
