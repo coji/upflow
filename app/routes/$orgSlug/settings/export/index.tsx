@@ -6,7 +6,7 @@ import { orgContext } from '~/app/middleware/context'
 import ContentSection from '../+components/content-section'
 import { ExportSettings } from '../_index/+forms/export-settings'
 import { upsertExportSetting } from '../_index/+functions/mutations.server'
-import { getExportSetting } from '../_index/+functions/queries.server'
+import { getExportSettingForDisplay } from '../_index/+functions/queries.server'
 import { exportSettingsSchema as schema } from '../_index/+schema'
 import type { Route } from './+types/index'
 
@@ -19,7 +19,7 @@ export const handle = {
 
 export const loader = async ({ context }: Route.LoaderArgs) => {
   const { organization } = context.get(orgContext)
-  const exportSetting = await getExportSetting(organization.id)
+  const exportSetting = await getExportSettingForDisplay(organization.id)
   return { exportSetting }
 }
 

@@ -38,10 +38,19 @@ export const createDefaultOrganizationSetting = async (
   return row
 }
 
-export const getExportSetting = async (organizationId: OrganizationId) => {
+/** Export settings safe to send to the browser (the private key is write-only). */
+export const getExportSettingForDisplay = async (
+  organizationId: OrganizationId,
+) => {
   const tenantDb = getTenantDb(organizationId)
-  return await tenantDb
+  const setting = await tenantDb
     .selectFrom('exportSettings')
-    .selectAll()
+    .select(['sheetId', 'clientEmail', 'privateKey'])
     .executeTakeFirst()
+  if (!setting) return undefined
+  return {
+    sheetId: setting.sheetId,
+    clientEmail: setting.clientEmail,
+    hasPrivateKey: !!setting.privateKey,
+  }
 }

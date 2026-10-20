@@ -26,7 +26,8 @@ export const integrationSettingsSchema = z.object({
 export const exportSettingsSchema = z.object({
   sheetId: z.string().max(255),
   clientEmail: z.email().max(255),
-  privateKey: z.string().max(10000),
+  // Write-only: blank keeps the stored key
+  privateKey: z.string().max(10000).optional().default(''),
 })
 
 export const deleteOrganizationSchema = z.object({
