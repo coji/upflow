@@ -350,7 +350,7 @@ export const crawlJob = defineJob({
       const processOpts = {
         concurrencyKey: processConcurrencyKey(orgId),
         labels: { organizationId: orgId },
-        coalesce: 'skip' as const,
+        coalesce: 'queue' as const,
       }
       if (
         shouldTriggerFullOrgProcessJob({

@@ -15,7 +15,7 @@ type Run = TypedClientRun<
 >
 
 export function isRunActive(status: RunStatus): boolean {
-  return status === 'pending' || status === 'leased'
+  return status === 'pending' || status === 'leased' || status === 'waiting'
 }
 
 const jobNameColors: Record<string, string> = {
@@ -30,6 +30,7 @@ function StatusBadge({ status }: { status: RunStatus }) {
     {
       pending: 'outline' as const,
       leased: 'secondary' as const,
+      waiting: 'secondary' as const,
       completed: 'default' as const,
       failed: 'destructive' as const,
       cancelled: 'outline' as const,
