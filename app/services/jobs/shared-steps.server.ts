@@ -27,7 +27,6 @@ interface OrganizationData {
   >
   botLogins: string[]
   repositories: Selectable<TenantDB.Repositories>[]
-  exportSetting?: Selectable<TenantDB.ExportSettings> | null
 }
 
 export interface JobSteps {
@@ -89,6 +88,9 @@ export async function analyzeAndFinalizeSteps(
   step: StepContext,
   orgId: OrganizationId,
   organization: OrganizationData,
+  // Holds the spreadsheet private key: pass it in from outside step.run so it
+  // is never persisted as step output (step outputs are readable via the API).
+  exportSetting: Selectable<TenantDB.ExportSettings> | null,
   options: AnalyzeAndFinalizeOptions = {},
 ) {
   const { filterPrNumbers, skipRepo, steps: stepFlags } = options
@@ -152,7 +154,6 @@ export async function analyzeAndFinalizeSteps(
   }
 
   // Export
-  const { exportSetting } = organization
   if (runExport && exportSetting) {
     await step.run('export', async () => {
       await runTimedStep(step, 'export', async () => {

@@ -35,9 +35,11 @@ export const processJob = defineJob({
       return { pullCount: 0 }
     }
 
-    const organization = await step.run('load-organization', async () => {
+    // Fetch org once before step (secrets stay outside step output)
+    const org = await getOrganization(orgId)
+
+    const organization = await step.run('load-organization', () => {
       step.progress(0, 0, 'Loading organization...')
-      const org = await getOrganization(orgId)
       if (!org.organizationSetting) {
         throw new Error('No organization setting configured')
       }
@@ -45,7 +47,6 @@ export const processJob = defineJob({
         organizationSetting: org.organizationSetting,
         botLogins: org.botLogins,
         repositories: org.repositories,
-        exportSetting: org.exportSetting,
       }
     })
 
@@ -68,6 +69,7 @@ export const processJob = defineJob({
       step,
       orgId,
       organization,
+      org.exportSetting,
       {
         filterPrNumbers,
         skipRepo,
