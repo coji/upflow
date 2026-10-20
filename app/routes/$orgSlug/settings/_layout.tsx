@@ -7,6 +7,7 @@ import {
   GroupIcon,
   PlugIcon,
   SettingsIcon,
+  TagsIcon,
   UsersIcon,
 } from 'lucide-react'
 import { Outlet, href } from 'react-router'
@@ -85,6 +86,11 @@ export default function SettingsLayout({
       title: 'PR Filters',
       icon: <FilterIcon size={18} />,
       href: href('/:orgSlug/settings/pr-filters', { orgSlug }),
+    },
+    {
+      title: 'PR Types',
+      icon: <TagsIcon size={18} />,
+      href: href('/:orgSlug/settings/pr-types', { orgSlug }),
     },
     {
       title: 'Export',
