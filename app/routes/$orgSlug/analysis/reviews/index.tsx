@@ -27,6 +27,7 @@ import {
   timezoneContext,
 } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { QueueTrendChart } from './+components/queue-trend-chart'
@@ -91,18 +92,21 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
               sinceDate,
               teamParam,
               filter.normalizedPatterns,
+              filter.prTypes,
             ),
             getWipCycleRawData(
               organization.id,
               sinceDate,
               teamParam,
               filter.normalizedPatterns,
+              filter.prTypes,
             ),
             getPRSizeDistribution(
               organization.id,
               sinceDate,
               teamParam,
               filter.normalizedPatterns,
+              filter.prTypes,
             ),
           ]),
         FIVE_MINUTES,
@@ -113,6 +117,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
           sinceDate,
           teamParam,
           patterns,
+          filter.prTypes,
         ),
       ),
     ])
@@ -210,6 +215,7 @@ export default function ReviewsPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <PrTypeFilter />
           <PrTitleFilterStatus
             excludedCount={excludedCount}
             filterActive={filterActive}

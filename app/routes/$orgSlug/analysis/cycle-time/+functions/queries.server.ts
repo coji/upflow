@@ -1,8 +1,11 @@
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import type { PrType } from '~/app/libs/pr-type'
 import {
+  DEFAULT_ALLOWED_PR_TYPES,
   excludeBots,
   excludePrTitleFilters,
   filteredPullRequestCount,
+  filterPrTypes,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -21,6 +24,7 @@ export const getCycleTimeRawData = async (
   teamId?: string | null,
   repositoryId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -46,6 +50,7 @@ export const getCycleTimeRawData = async (
     )
     .where(excludeBots)
     .where(excludePrTitleFilters(normalizedPatterns))
+    .where(filterPrTypes(prTypes))
     .select([
       'pullRequests.repositoryId',
       'pullRequests.repo',
@@ -73,6 +78,7 @@ export const countCycleTimePullRequests = async (
   teamId?: string | null,
   repositoryId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
@@ -94,6 +100,7 @@ export const countCycleTimePullRequests = async (
       qb.where('pullRequests.repositoryId', '=', repositoryId as string),
     )
     .where(excludeBots)
+    .where(filterPrTypes(prTypes))
     .select((eb) => [
       eb.fn.countAll<number>().as('unfiltered'),
       filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),

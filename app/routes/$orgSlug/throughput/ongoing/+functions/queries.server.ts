@@ -2,10 +2,13 @@ import { pipe, sortBy } from 'remeda'
 import { diffInDays } from '~/app/libs/business-hours'
 import dayjs from '~/app/libs/dayjs'
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import type { PrType } from '~/app/libs/pr-type'
 import {
+  DEFAULT_ALLOWED_PR_TYPES,
   excludeBots,
   excludePrTitleFilters,
   filteredPullRequestCount,
+  filterPrTypes,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -17,6 +20,7 @@ export const getOngoingPullRequestReport = async (
   teamId?: string | null,
   businessDaysOnly = true,
   normalizedPatterns: readonly string[] = [],
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   const pullrequests = await tenantDb
@@ -42,6 +46,7 @@ export const getOngoingPullRequestReport = async (
     .where('state', '=', 'open')
     .where(excludeBots)
     .where(excludePrTitleFilters(normalizedPatterns))
+    .where(filterPrTypes(prTypes))
     .leftJoin('pullRequestFeedbacks', (join) =>
       join
         .onRef(
@@ -98,6 +103,7 @@ export const countOngoingPullRequests = async (
   toDateTime: string | null,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
@@ -122,6 +128,7 @@ export const countOngoingPullRequests = async (
     .where('mergedAt', 'is', null)
     .where('state', '=', 'open')
     .where(excludeBots)
+    .where(filterPrTypes(prTypes))
     .select((eb) => [
       eb.fn.countAll<number>().as('unfiltered'),
       filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),

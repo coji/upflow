@@ -1,5 +1,9 @@
 import type { ExpressionBuilder } from 'kysely'
+import { PR_TYPES, type PrType } from '~/app/libs/pr-type'
 import type * as TenantDB from '~/app/services/tenant-type'
+
+/** 集計クエリの既定の PR 種別 (#429)。release / template-merge / dependency は除く */
+export const DEFAULT_ALLOWED_PR_TYPES: readonly PrType[] = ['normal']
 
 /**
  * companyGithubUsers.type が Bot でない行のみ残すフィルタ。
@@ -71,4 +75,20 @@ export function filteredPullRequestCount(
       ),
       eb.lit(0),
     )
+}
+
+/**
+ * pullRequests.prType が allowed に含まれる行だけを残すフィルタ (#429)。
+ * prType が NULL の行 (種別付与前) は normal として扱い、常に通す。
+ */
+export function filterPrTypes(allowed: readonly PrType[]) {
+  return (eb: ExpressionBuilder<TenantDB.DB, 'pullRequests'>) => {
+    if (PR_TYPES.every((t) => allowed.includes(t))) {
+      return eb.lit(true)
+    }
+    return eb.or([
+      eb('pullRequests.prType', 'is', null),
+      eb('pullRequests.prType', 'in', [...allowed]),
+    ])
+  }
 }

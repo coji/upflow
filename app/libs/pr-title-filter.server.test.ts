@@ -45,6 +45,7 @@ describe('loadPrFilterState', () => {
       normalizedPatterns: [],
       filterActive: false,
       hasAnyEnabledPattern: false,
+      prTypes: ['normal'],
     })
   })
 
@@ -84,7 +85,16 @@ describe('loadPrFilterState', () => {
       normalizedPatterns: [],
       filterActive: false,
       hasAnyEnabledPattern: true,
+      prTypes: ['normal'],
     })
+  })
+
+  test('reads the PR types to include from ?prTypes=', async () => {
+    const state = await loadPrFilterState(
+      makeRequest('?prTypes=release'),
+      orgId,
+    )
+    expect(state.prTypes).toEqual(['normal', 'release'])
   })
 
   test('hasAnyEnabledPattern=false when only disabled filters exist', async () => {
@@ -119,6 +129,7 @@ describe('computeExcludedCount', () => {
         normalizedPatterns: [],
         filterActive: false,
         hasAnyEnabledPattern: false,
+        prTypes: ['normal'],
       },
       counter,
     )
@@ -134,6 +145,7 @@ describe('computeExcludedCount', () => {
         normalizedPatterns: ['[wip]'],
         filterActive: true,
         hasAnyEnabledPattern: true,
+        prTypes: ['normal'],
       },
       counter,
     )
@@ -151,6 +163,7 @@ describe('computeExcludedCount', () => {
         normalizedPatterns: patterns,
         filterActive: true,
         hasAnyEnabledPattern: true,
+        prTypes: ['normal'],
       },
       counter,
     )
