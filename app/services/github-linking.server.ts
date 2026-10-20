@@ -1,12 +1,17 @@
 import { nanoid } from 'nanoid'
 import { githubApiUrl } from '~/app/libs/github-api.server'
+import {
+  bindCompanyGithubUserId,
+  findActiveCompanyGithubUser,
+} from '~/app/services/company-github-user-match.server'
 import { db } from '~/app/services/db.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 /**
  * GitHub ログイン後の自動処理:
- * 1. companyGithubUsers に login が登録されている org を探す
+ * 1. companyGithubUsers にこの GitHub アカウントが登録されている org を探す
+ *    (GitHub user ID で照合。未設定の行は login で照合して ID を記録する)
  * 2. その org のメンバーでなければ自動追加
  * 3. companyGithubUsers.userId を自動設定（PR author との紐付け）
  */
@@ -37,12 +42,10 @@ export async function linkGithubUserToCompanyUsers(
     return
   }
 
-  const profile = (await res.json()) as { login: string }
-  if (!profile.login) {
+  const profile = (await res.json()) as { id: number; login: string }
+  if (!profile.id || !profile.login) {
     return
   }
-
-  const loginLower = profile.login.toLowerCase()
 
   // Find all orgs where this GitHub login is registered in companyGithubUsers
   const orgs = await db.selectFrom('organizations').select(['id']).execute()
@@ -50,22 +53,19 @@ export async function linkGithubUserToCompanyUsers(
   for (const { id: orgId } of orgs) {
     try {
       const tenantDb = getTenantDb(orgId as OrganizationId)
-      const match = await tenantDb
-        .selectFrom('companyGithubUsers')
-        .select(['login'])
-        .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
-        .where('isActive', '=', 1)
-        .executeTakeFirst()
+      const match = await findActiveCompanyGithubUser(tenantDb, profile)
 
       if (!match) {
         continue
       }
 
+      await bindCompanyGithubUserId(tenantDb, match.login, profile.id)
+
       // Set userId on companyGithubUsers if not already set
       await tenantDb
         .updateTable('companyGithubUsers')
         .set({ userId })
-        .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
+        .where('login', '=', match.login)
         .where('userId', 'is', null)
         .execute()
 

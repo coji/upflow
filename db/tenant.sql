@@ -168,6 +168,7 @@ CREATE TABLE `pull_request_feedbacks` (
 CREATE TABLE `company_github_users` (
   `user_id` text NULL,
   `login` text NOT NULL,
+  `github_user_id` integer NULL,
   `display_name` text NOT NULL,
   `type` text NULL,
   `is_active` integer NOT NULL DEFAULT 0,
