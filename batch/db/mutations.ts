@@ -38,6 +38,8 @@ export function upsertPullRequest(
         deletions: eb.ref('excluded.deletions'),
         changedFiles: eb.ref('excluded.changedFiles'),
         isDraft: eb.ref('excluded.isDraft'),
+        prType: eb.ref('excluded.prType'),
+        prTypeWarning: eb.ref('excluded.prTypeWarning'),
       })),
     )
     .executeTakeFirst()
@@ -101,6 +103,8 @@ export async function batchUpsertPullRequests(
           deletions: eb.ref('excluded.deletions'),
           changedFiles: eb.ref('excluded.changedFiles'),
           isDraft: eb.ref('excluded.isDraft'),
+          prType: eb.ref('excluded.prType'),
+          prTypeWarning: eb.ref('excluded.prTypeWarning'),
         })),
       )
       .execute()

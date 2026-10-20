@@ -133,6 +133,8 @@ export interface PullRequests {
   mergedAt: string | null;
   number: number;
   pickupTime: number | null;
+  prType: string | null;
+  prTypeWarning: string | null;
   pullRequestCreatedAt: string;
   releasedAt: string | null;
   repo: string;
