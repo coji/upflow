@@ -90,13 +90,18 @@ export const action = async ({
   const formData = await request.formData()
   const intent = intentSchema.parse(formData.get('intent'))
 
-  const [repository, integration, githubAppLinks] = await Promise.all([
+  const [repository, pull, integration, githubAppLinks] = await Promise.all([
     getRepository(organization.id, repositoryId),
+    getPullRequest(organization.id, repositoryId, pullId),
     getIntegration(organization.id),
     getGithubAppLinks(organization.id),
   ])
   if (!repository) {
     throw new Response('Repository not found', { status: 404 })
+  }
+  // Same check as the loader: only act on PRs this org has already crawled
+  if (!pull) {
+    throw new Response('Pull request not found', { status: 404 })
   }
   if (repository.owner === null || repository.repo === null) {
     throw new Response('Repository is not properly configured', { status: 422 })
