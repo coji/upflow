@@ -1,7 +1,6 @@
 import { Outlet, href } from 'react-router'
 import { AppHeader, AppLayout } from '~/app/components'
-import { requireSuperAdmin } from '~/app/libs/auth.server'
-import type { Route } from './+types/_layout'
+import { superAdminMiddleware } from '~/app/middleware/super-admin'
 
 export const meta = () => [{ title: 'Upflow Admin' }]
 
@@ -9,9 +8,7 @@ export const handle = {
   breadcrumb: () => ({ label: 'Admin', to: href('/admin') }),
 }
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await requireSuperAdmin(request)
-}
+export const middleware = [superAdminMiddleware]
 
 const AdminLayoutPage = () => {
   return (
