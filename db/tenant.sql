@@ -135,6 +135,7 @@ CREATE TABLE `github_raw_data` (
   `timeline_items` text NULL,
   `updated_at` text NULL,
   `fetched_at` datetime NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  `processed_at` text NULL,
   PRIMARY KEY (`repository_id`, `pull_request_number`),
   CONSTRAINT `github_raw_data_repository_id_fkey`
     FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`)

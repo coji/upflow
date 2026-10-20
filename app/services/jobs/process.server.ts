@@ -2,6 +2,7 @@ import { defineJob } from '@coji/durably'
 import { z } from 'zod'
 import type { OrganizationId } from '~/app/types/organization'
 import { getOrganization } from '~/batch/db/queries'
+import { collectProcessWorkSet, markProcessed } from './process-work-set.server'
 import {
   analyzeAndFinalizeSteps,
   triggerClassifyStep,
@@ -30,8 +31,16 @@ export const processJob = defineJob({
   run: async (step, input) => {
     const orgId = input.organizationId as OrganizationId
 
-    // scopes: undefined → full-org processing, scopes: [] → no-op
-    if (input.scopes !== undefined && input.scopes.length === 0) {
+    // scopes: undefined → full-org processing.
+    // Otherwise process every dirty raw row plus the given scopes: scopes may
+    // be dropped when a trigger coalesces onto a pending run, so they are only
+    // a hint, never the source of truth (#285).
+    const fullOrg = input.scopes === undefined
+    const workSet = await step.run('collect-work-set', () =>
+      collectProcessWorkSet(orgId, { fullOrg, include: input.scopes }),
+    )
+    if (workSet.length === 0) {
+      step.log.info('No unprocessed PRs, skipping process.')
       return { pullCount: 0 }
     }
 
@@ -50,19 +59,15 @@ export const processJob = defineJob({
       }
     })
 
-    const scopes = input.scopes
-    const filterPrNumbers =
-      scopes && scopes.length > 0
-        ? new Map(
-            scopes.map((s) => [s.repositoryId, new Set(s.prNumbers)] as const),
-          )
-        : undefined
-    const allowedRepoIds =
-      scopes && scopes.length > 0
-        ? new Set(scopes.map((s) => s.repositoryId))
-        : undefined
-    const skipRepo = allowedRepoIds
-      ? (repoId: string) => !allowedRepoIds.has(repoId)
+    const filterPrNumbers = fullOrg
+      ? undefined
+      : new Map(
+          workSet.map(
+            (s) => [s.repositoryId, new Set(s.prs.map(([n]) => n))] as const,
+          ),
+        )
+    const skipRepo = filterPrNumbers
+      ? (repoId: string) => !filterPrNumbers.has(repoId)
       : undefined
 
     const { pullCount } = await analyzeAndFinalizeSteps(
@@ -76,6 +81,11 @@ export const processJob = defineJob({
         steps: input.steps,
       },
     )
+
+    // Without upsert the analyzed results are discarded, so the rows stay dirty.
+    if (input.steps?.upsert ?? true) {
+      await step.run('mark-processed', () => markProcessed(orgId, workSet))
+    }
 
     await triggerClassifyStep(step, orgId)
 

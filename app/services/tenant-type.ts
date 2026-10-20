@@ -49,6 +49,7 @@ export interface GithubRawData {
   commits: ColumnType<unknown, string, string>;
   discussions: ColumnType<unknown, string, string>;
   fetchedAt: Generated<string>;
+  processedAt: string | null;
   pullRequest: ColumnType<unknown, string, string>;
   pullRequestNumber: number;
   repositoryId: string;
