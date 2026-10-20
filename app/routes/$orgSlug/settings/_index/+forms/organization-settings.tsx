@@ -161,13 +161,17 @@ export const OrganizationSettings = ({
 
         <fieldset className="space-y-1">
           <HStack>
-            <Label htmlFor={fields.isActive.id}>Active</Label>
+            <Label htmlFor={fields.isActive.id}>Scheduled sync</Label>
             <Switch
               name={fields.isActive.name}
               id={fields.isActive.id}
               defaultChecked={fields.isActive.initialValue === '1'}
             />
           </HStack>
+          <p className="text-muted-foreground text-sm">
+            Fetch pull requests from GitHub every hour. Turning this off does
+            not restrict member access.
+          </p>
           <div className="text-destructive">{fields.isActive.errors}</div>
         </fieldset>
 
