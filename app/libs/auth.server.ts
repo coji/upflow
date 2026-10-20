@@ -8,6 +8,7 @@ import { getGithubHandoffState } from '~/app/libs/github-handoff-auth.server'
 import { canAdmitGithubLogin } from '~/app/libs/github-login-admission'
 import { db, dialect } from '~/app/services/db.server'
 import { claimInitialSuperAdmin } from '~/app/services/bootstrap-admin.server'
+import { findActiveCompanyGithubUser } from '~/app/services/company-github-user-match.server'
 import { linkGithubUserToCompanyUsers } from '~/app/services/github-linking.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -56,16 +57,14 @@ export const auth = betterAuth({
         // delegated installation intent; organization routes remain
         // membership-protected after authentication.
         const orgs = await db.selectFrom('organizations').select('id').execute()
-        const loginLower = profile.login.toLowerCase()
         let isAllowedMember = false
         for (const { id } of orgs) {
           try {
-            const match = await getTenantDb(id as OrganizationId)
-              .selectFrom('companyGithubUsers')
-              .select('isActive')
-              .where((eb) => eb(eb.fn('lower', ['login']), '=', loginLower))
-              .executeTakeFirst()
-            if (match?.isActive) {
+            const match = await findActiveCompanyGithubUser(
+              getTenantDb(id as OrganizationId),
+              { id: profile.id, login: profile.login },
+            )
+            if (match) {
               isAllowedMember = true
               break
             }

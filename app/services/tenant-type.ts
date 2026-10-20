@@ -27,6 +27,7 @@ export interface AtlasSchemaRevisions {
 export interface CompanyGithubUsers {
   createdAt: Generated<string>;
   displayName: string;
+  githubUserId: number | null;
   isActive: 0 | 1;
   lastActivityAt: string | null;
   login: string;
