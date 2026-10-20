@@ -83,6 +83,7 @@ export function createColumns(
         <MemberRowActions
           row={row}
           currentMembershipId={table.options.meta?.currentMembershipId}
+          currentMemberRole={table.options.meta?.currentMemberRole}
         />
       ),
     },

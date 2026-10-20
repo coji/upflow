@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/app/components/ui/select'
+import { isOrgOwner, type MemberRole } from '~/app/libs/member-role'
 import type { action } from '../index'
 import { changeRoleSchema } from '../index'
 import type { MemberRow } from '../queries.server'
@@ -37,12 +38,17 @@ import type { MemberRow } from '../queries.server'
 export function MemberRowActions({
   row,
   currentMembershipId,
+  currentMemberRole,
 }: {
   row: Row<AppTableFeatures, MemberRow>
   currentMembershipId?: string
+  currentMemberRole?: MemberRole
 }) {
   const member = row.original
   const isSelf = member.id === currentMembershipId
+  const isOwner = currentMemberRole ? isOrgOwner(currentMemberRole) : false
+  // Only owners may change or remove another owner (enforced server-side too)
+  const canManage = !isSelf && (member.role !== 'owner' || isOwner)
   const [roleOpen, setRoleOpen] = useState(false)
   const deleteFetcher = useFetcher()
 
@@ -58,7 +64,10 @@ export function MemberRowActions({
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setRoleOpen(true)} disabled={isSelf}>
+          <DropdownMenuItem
+            onClick={() => setRoleOpen(true)}
+            disabled={!canManage}
+          >
             <UserCogIcon className="mr-2 h-4 w-4" />
             Change Role {isSelf && '(You)'}
           </DropdownMenuItem>
@@ -70,7 +79,7 @@ export function MemberRowActions({
               )
             }}
             className="text-destructive"
-            disabled={isSelf}
+            disabled={!canManage}
           >
             <TrashIcon className="mr-2 h-4 w-4" />
             Remove {isSelf && '(You)'}
@@ -94,6 +103,7 @@ export function MemberRowActions({
           open={roleOpen}
           onOpenChange={setRoleOpen}
           member={member}
+          canGrantOwner={isOwner}
         />
       )}
     </>
@@ -104,10 +114,12 @@ function ChangeRoleDialog({
   open,
   onOpenChange,
   member,
+  canGrantOwner,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   member: MemberRow
+  canGrantOwner: boolean
 }) {
   const fetcher = useFetcher<typeof action>()
   const isSubmitting = fetcher.state !== 'idle'
@@ -164,7 +176,7 @@ function ChangeRoleDialog({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="owner">Owner</SelectItem>
+              {canGrantOwner && <SelectItem value="owner">Owner</SelectItem>}
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="member">Member</SelectItem>
             </SelectContent>
