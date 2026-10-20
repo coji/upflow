@@ -32,7 +32,7 @@ import {
   SelectValue,
   Stack,
 } from '~/app/components/ui'
-import { isOrgOwner, requireOrgOwner } from '~/app/libs/auth.server'
+import { requireOrgAdmin } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import ContentSection from '~/app/routes/$orgSlug/settings/+components/content-section'
@@ -55,7 +55,7 @@ const githubSchema = z.object({
 })
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
-  const { organization, membership } = context.get(orgContext)
+  const { organization } = context.get(orgContext)
   const { repository: repositoryId } = zx.parseParams(params, {
     repository: z.string(),
   })
@@ -73,7 +73,6 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
     repositoryId,
     repository,
     provider: integration.provider,
-    canDeleteRepository: isOrgOwner(membership.role),
   }
 }
 
@@ -109,11 +108,7 @@ export const action = async ({
     throw new Response('repository not found', { status: 404 })
   }
   const formData = await request.formData()
-  // update (settings change) is allowed for all roles; delete requires owner
-  const intent = formData.get('intent')
-  if (intent !== 'update') {
-    requireOrgOwner(membership, organization.slug)
-  }
+  requireOrgAdmin(membership, organization.slug)
   const submission = parseWithZod(formData, { schema: actionSchema })
   if (submission.status !== 'success') {
     return data({ ok: false, lastResult: submission.reply() }, { status: 400 })
@@ -295,7 +290,7 @@ function DangerZone({
 }
 
 export default function EditRepositoryPage({
-  loaderData: { organization, repository, provider, canDeleteRepository },
+  loaderData: { organization, repository, provider },
 }: Route.ComponentProps) {
   const form = match(provider)
     .with('github', () => (
@@ -315,7 +310,7 @@ export default function EditRepositoryPage({
         {form}
       </ContentSection>
 
-      {canDeleteRepository ? <DangerZone repository={repository} /> : null}
+      <DangerZone repository={repository} />
     </Stack>
   )
 }

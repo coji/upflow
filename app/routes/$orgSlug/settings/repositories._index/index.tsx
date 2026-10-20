@@ -4,7 +4,6 @@ import { data } from 'react-router'
 import { dataWithError, dataWithSuccess } from 'remix-toast'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import { isOrgOwner } from '~/app/libs/auth.server'
 import { getErrorMessage } from '~/app/libs/error-message'
 import { orgContext } from '~/app/middleware/context'
 import { reassignBrokenRepository } from '~/app/services/github-app-membership.server'
@@ -26,7 +25,7 @@ import {
 import { listFilteredRepositories } from './queries.server'
 
 export const loader = async ({ context, url }: Route.LoaderArgs) => {
-  const { organization, membership } = context.get(orgContext)
+  const { organization } = context.get(orgContext)
   const searchParams = url.searchParams
 
   const { repo, team } = QuerySchema.parse({
@@ -66,7 +65,6 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     repositories,
     pagination,
     teams,
-    canAddRepositories: isOrgOwner(membership.role),
     integrationMethod,
   }
 }
@@ -214,7 +212,6 @@ export default function OrganizationRepositoryIndexPage({
     repositories,
     pagination,
     teams,
-    canAddRepositories,
     integrationMethod,
   },
 }: Route.ComponentProps) {
@@ -236,7 +233,6 @@ export default function OrganizationRepositoryIndexPage({
         pagination={pagination}
         teams={teams}
         orgSlug={slug}
-        canAddRepositories={canAddRepositories}
       />
     </ContentSection>
   )

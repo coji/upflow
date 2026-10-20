@@ -9,14 +9,9 @@ import { useDataTableState } from '../+hooks/use-data-table-state'
 interface DataTableToolbarProps {
   teams: TeamRow[]
   orgSlug: string
-  canAddRepositories: boolean
 }
 
-export function DataTableToolbar({
-  teams,
-  orgSlug,
-  canAddRepositories,
-}: DataTableToolbarProps) {
+export function DataTableToolbar({ teams, orgSlug }: DataTableToolbarProps) {
   const { queries, updateQueries, isFiltered, resetFilters } =
     useDataTableState()
 
@@ -43,14 +38,12 @@ export function DataTableToolbar({
           </Button>
         )}
       </div>
-      {canAddRepositories ? (
-        <Button asChild>
-          <Link to={href('/:orgSlug/settings/repositories/add', { orgSlug })}>
-            <PlusIcon className="h-4 w-4" />
-            Add
-          </Link>
-        </Button>
-      ) : null}
+      <Button asChild>
+        <Link to={href('/:orgSlug/settings/repositories/add', { orgSlug })}>
+          <PlusIcon className="h-4 w-4" />
+          Add
+        </Link>
+      </Button>
     </div>
   )
 }

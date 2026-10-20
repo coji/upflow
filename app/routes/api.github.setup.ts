@@ -71,17 +71,17 @@ export const loader = async ({ request, url }: Route.LoaderArgs) => {
     return new Response('Could not verify GitHub installation', { status: 502 })
   }
 
-  const existingLinkOwner = existingLink
+  const existingLinkAdmin = existingLink
     ? await db
         .selectFrom('members')
         .select('id')
         .where('organizationId', '=', existingLink.organizationId)
         .where('userId', '=', session.user.id)
-        .where('role', '=', 'owner')
+        .where('role', 'in', ['owner', 'admin'])
         .executeTakeFirst()
     : undefined
 
-  if (existingLink && !existingLinkOwner) {
+  if (existingLink && !existingLinkAdmin) {
     try {
       await verifyUserCanManageGithubInstallation(session.user.id, installation)
     } catch (error) {
@@ -95,7 +95,7 @@ export const loader = async ({ request, url }: Route.LoaderArgs) => {
   let consumedStateId: string | null = null
   if (existingLink) {
     // Repository-selection updates for an already-linked installation carry
-    // no state. The durable link plus the owner check above establishes the
+    // no state. The durable link plus the owner/admin check above establishes the
     // tenant; consuming a new-link intent here would invalidate another flow.
     organizationId = existingLink.organizationId as OrganizationId
     if (liveExistingState) {
@@ -109,7 +109,7 @@ export const loader = async ({ request, url }: Route.LoaderArgs) => {
       } catch (e) {
         if (e instanceof InstallStateError) {
           // Another callback may have consumed the same state after the live
-          // check above. The durable existing link plus owner authorization
+          // check above. The durable existing link plus owner/admin authorization
           // already establish this update's tenant, so do not drop the GitHub
           // repository-selection change solely because of that race.
           console.warn(
@@ -214,18 +214,18 @@ export const loader = async ({ request, url }: Route.LoaderArgs) => {
   }
 
   const member =
-    existingLinkOwner ??
+    existingLinkAdmin ??
     (await db
       .selectFrom('members')
       .select('id')
       .where('organizationId', '=', organizationId)
       .where('userId', '=', session.user.id)
-      .where('role', '=', 'owner')
+      .where('role', 'in', ['owner', 'admin'])
       .executeTakeFirst())
 
   if (!member) {
     return new Response(
-      '<!doctype html><meta charset="utf-8"><title>GitHub App connected</title><p>The GitHub App was connected successfully. You may close this window and tell the Upflow organization owner.</p>',
+      '<!doctype html><meta charset="utf-8"><title>GitHub App connected</title><p>The GitHub App was connected successfully. You may close this window and tell an Upflow organization owner or admin.</p>',
       { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
     )
   }
