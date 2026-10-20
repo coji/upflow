@@ -23,7 +23,7 @@ interface ExportSettingsProps {
   exportSetting?: {
     sheetId: string
     clientEmail: string
-    privateKey: string
+    hasPrivateKey: boolean
   }
 }
 
@@ -38,7 +38,10 @@ export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
       (actionData?.intent === INTENTS.exportSettings &&
         actionData?.lastResult) ||
       undefined,
-    defaultValue: exportSetting,
+    defaultValue: exportSetting && {
+      sheetId: exportSetting.sheetId,
+      clientEmail: exportSetting.clientEmail,
+    },
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   })
 
@@ -59,7 +62,14 @@ export const ExportSettings = ({ exportSetting }: ExportSettingsProps) => {
 
         <fieldset className="space-y-1">
           <Label htmlFor={privateKey.id}>Private Key</Label>
-          <Textarea {...getTextareaProps(privateKey)} />
+          <Textarea
+            {...getTextareaProps(privateKey)}
+            placeholder={
+              exportSetting?.hasPrivateKey
+                ? 'Private key is set. Enter a new value to update.'
+                : undefined
+            }
+          />
           <div className="text-destructive">{privateKey.errors}</div>
         </fieldset>
 

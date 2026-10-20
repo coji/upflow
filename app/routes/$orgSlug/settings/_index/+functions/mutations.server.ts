@@ -1,4 +1,5 @@
 import type { Insertable } from 'kysely'
+import { AppError } from '~/app/libs/app-error'
 import { nanoid } from 'nanoid'
 import { db, sql, type DB, type Updateable } from '~/app/services/db.server'
 import {
@@ -72,6 +73,9 @@ export const upsertIntegration = async (
     .execute()
 }
 
+/**
+ * The private key is write-only: an empty `privateKey` keeps the stored key.
+ */
 export const upsertExportSetting = async (
   organizationId: OrganizationId,
   data: Omit<Insertable<TenantDB.ExportSettings>, 'id' | 'updatedAt'>,
@@ -79,18 +83,28 @@ export const upsertExportSetting = async (
   const tenantDb = getTenantDb(organizationId)
   const existing = await tenantDb
     .selectFrom('exportSettings')
-    .select('id')
+    .select(['id', 'privateKey'])
     .executeTakeFirst()
+
+  const privateKey = data.privateKey || existing?.privateKey
+  if (!privateKey) {
+    throw new AppError('Private key is required')
+  }
 
   if (existing) {
     return await tenantDb
       .updateTable('exportSettings')
       .where('id', '=', existing.id)
-      .set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
+      .set({ ...data, privateKey, updatedAt: sql`CURRENT_TIMESTAMP` })
       .execute()
   }
   return await tenantDb
     .insertInto('exportSettings')
-    .values({ id: nanoid(), ...data, updatedAt: sql`CURRENT_TIMESTAMP` })
+    .values({
+      id: nanoid(),
+      ...data,
+      privateKey,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
     .execute()
 }
