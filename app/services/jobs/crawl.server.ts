@@ -136,7 +136,6 @@ export const crawlJob = defineJob({
         organizationSetting: fullOrg.organizationSetting,
         botLogins: fullOrg.botLogins,
         repositories: fullOrg.repositories,
-        exportSetting: fullOrg.exportSetting,
       }
     })
 
