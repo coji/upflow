@@ -59,7 +59,12 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     sortOrder,
   })
 
-  return { members, pagination, currentMembershipId: membership.id }
+  return {
+    members,
+    pagination,
+    currentMembershipId: membership.id,
+    currentMemberRole: membership.role,
+  }
 }
 
 export const changeRoleSchema = z.object({
@@ -95,7 +100,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   return match(submission.value)
     .with({ intent: 'changeRole' }, async ({ memberId, role }) => {
       try {
-        await changeMemberRole(memberId, organization.id, role, membership.id)
+        await changeMemberRole(memberId, organization.id, role, membership)
       } catch (e) {
         console.error('Failed to change member role:', e)
         const message = getErrorMessage(e)
@@ -117,7 +122,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     })
     .with({ intent: 'removeMember' }, async ({ memberId }) => {
       try {
-        await removeMember(memberId, organization.id, membership.id)
+        await removeMember(memberId, organization.id, membership)
       } catch (e) {
         console.error('Failed to remove member:', e)
         return data(
@@ -138,7 +143,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 }
 
 export default function OrganizationMembersPage({
-  loaderData: { members, pagination, currentMembershipId },
+  loaderData: { members, pagination, currentMembershipId, currentMemberRole },
 }: Route.ComponentProps) {
   const timezone = useTimezone()
   const columns = useMemo(() => createColumns(timezone), [timezone])
@@ -154,6 +159,7 @@ export default function OrganizationMembersPage({
         columns={columns}
         pagination={pagination}
         currentMembershipId={currentMembershipId}
+        currentMemberRole={currentMemberRole}
       />
     </ContentSection>
   )

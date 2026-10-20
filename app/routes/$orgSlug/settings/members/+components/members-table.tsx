@@ -24,6 +24,7 @@ import {
   type PaginationProps,
 } from './data-table-pagination'
 import { DataTableToolbar } from './data-table-toolbar'
+import type { MemberRole } from '~/app/libs/member-role'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TFeatures, TData extends RowData, TValue> {
@@ -31,6 +32,7 @@ declare module '@tanstack/react-table' {
   }
   interface TableMeta<TFeatures, TData extends RowData> {
     currentMembershipId?: string
+    currentMemberRole?: MemberRole
   }
 }
 
@@ -39,6 +41,7 @@ interface DataTableProps {
   data: MemberRow[]
   pagination: PaginationProps
   currentMembershipId: string
+  currentMemberRole: MemberRole
 }
 
 export function MembersTable({
@@ -46,6 +49,7 @@ export function MembersTable({
   data,
   pagination,
   currentMembershipId,
+  currentMemberRole,
 }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] =
     useState<ColumnVisibilityState>({})
@@ -59,7 +63,7 @@ export function MembersTable({
       columnVisibility,
     },
     onColumnVisibilityChange: setColumnVisibility,
-    meta: { currentMembershipId },
+    meta: { currentMembershipId, currentMemberRole },
   })
 
   return (
