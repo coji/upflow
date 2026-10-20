@@ -3,6 +3,8 @@ import {
   listEnabledPrTitleFilterPatterns,
 } from '~/app/services/pr-title-filter-queries.server'
 import type { OrganizationId } from '~/app/types/organization'
+import type { PrType } from './pr-type'
+import { parseIncludedPrTypes, toAllowedPrTypes } from './pr-type-filter'
 
 export interface PrFilterLoaderState {
   showFiltered: boolean
@@ -13,6 +15,8 @@ export interface PrFilterLoaderState {
    * バナー状態 UI が「showFiltered を解除しても意味がないケース (0 件)」を判別できる。
    */
   hasAnyEnabledPattern: boolean
+  /** 集計に含める PR 種別 (`?prTypes=`、#429)。normal は常に含む */
+  prTypes: readonly PrType[]
 }
 
 /**
@@ -25,6 +29,7 @@ export const loadPrFilterState = async (
   organizationId: OrganizationId,
 ): Promise<PrFilterLoaderState> => {
   const showFiltered = url.searchParams.get('showFiltered') === '1'
+  const prTypes = toAllowedPrTypes(parseIncludedPrTypes(url.searchParams))
   if (showFiltered) {
     const hasAnyEnabledPattern =
       await hasAnyEnabledPrTitleFilter(organizationId)
@@ -33,6 +38,7 @@ export const loadPrFilterState = async (
       normalizedPatterns: [],
       filterActive: false,
       hasAnyEnabledPattern,
+      prTypes,
     }
   }
   const enabled = await listEnabledPrTitleFilterPatterns(organizationId)
@@ -41,6 +47,7 @@ export const loadPrFilterState = async (
     normalizedPatterns: enabled,
     filterActive: enabled.length > 0,
     hasAnyEnabledPattern: enabled.length > 0,
+    prTypes,
   }
 }
 
@@ -60,7 +67,8 @@ export interface FilterCountStats {
 export const filterCacheKeySuffix = (state: PrFilterLoaderState): string => {
   const sf = state.showFiltered ? 't' : 'f'
   const patternSignature = JSON.stringify([...state.normalizedPatterns].sort())
-  return `sf=${sf}:patterns=${patternSignature}`
+  const prTypes = [...state.prTypes].sort().join(',')
+  return `sf=${sf}:patterns=${patternSignature}:types=${prTypes}`
 }
 
 /**

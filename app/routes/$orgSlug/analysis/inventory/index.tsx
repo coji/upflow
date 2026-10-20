@@ -29,6 +29,7 @@ import {
   timezoneContext,
 } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
@@ -88,6 +89,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
           teamParam,
           excludeBots,
           filter.normalizedPatterns,
+          filter.prTypes,
         ),
       FIVE_MINUTES,
     ),
@@ -99,6 +101,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
         teamParam,
         excludeBots,
         patterns,
+        filter.prTypes,
       ),
     ),
   ])
@@ -196,6 +199,7 @@ export default function InventoryPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions className="flex flex-wrap">
+          <PrTypeFilter />
           <PrTitleFilterStatus
             excludedCount={excludedCount}
             filterActive={filterActive}

@@ -6,8 +6,10 @@ import { closeTenantDb, getTenantDb } from '~/app/services/tenant-db.server'
 import { type OrganizationId, toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
 import {
+  excludeBots,
   excludePrTitleFilters,
   filteredPullRequestCount,
+  filterPrTypes,
 } from './tenant-query.server'
 
 const testDir = path.join(tmpdir(), `tenant-query-test-${Date.now()}`)
@@ -221,5 +223,97 @@ describe('filteredPullRequestCount', () => {
 
     expect(Number(row.unfiltered)).toBe(0)
     expect(Number(row.filtered)).toBe(0)
+  })
+})
+
+describe('filterPrTypes', () => {
+  let orgId: OrganizationId
+
+  beforeEach(() => {
+    orgId = createFreshOrg()
+  })
+
+  afterEach(async () => {
+    await closeTenantDb(orgId)
+  })
+
+  async function seedTyped(
+    number: number,
+    prType: string | null,
+    author = 'alice',
+  ) {
+    await seedRepoAndPR(orgId, number, `PR ${number}`)
+    await getTenantDb(orgId)
+      .updateTable('pullRequests')
+      .set({ prType, author })
+      .where('number', '=', number)
+      .execute()
+  }
+
+  async function numbersFor(
+    allowed: Parameters<typeof filterPrTypes>[0],
+    withoutBots = false,
+  ) {
+    const rows = await getTenantDb(orgId)
+      .selectFrom('pullRequests')
+      .leftJoin('companyGithubUsers', (join) =>
+        join.onRef(
+          (eb) => eb.fn('lower', ['pullRequests.author']),
+          '=',
+          (eb) => eb.fn('lower', ['companyGithubUsers.login']),
+        ),
+      )
+      .select('pullRequests.number')
+      .where(filterPrTypes(allowed))
+      .$if(withoutBots, (qb) => qb.where(excludeBots))
+      .execute()
+    return rows.map((r) => r.number).sort()
+  }
+
+  test('keeps normal and not-yet-classified PRs by default', async () => {
+    await seedTyped(1, 'normal')
+    await seedTyped(2, null)
+    await seedTyped(3, 'release')
+    await seedTyped(4, 'template-merge')
+    await seedTyped(5, 'dependency')
+
+    expect(await numbersFor(['normal'])).toEqual([1, 2])
+  })
+
+  test('adds the explicitly included types', async () => {
+    await seedTyped(1, 'normal')
+    await seedTyped(2, 'release')
+    await seedTyped(3, 'dependency')
+
+    expect(await numbersFor(['normal', 'release'])).toEqual([1, 2])
+  })
+
+  test('does not filter when every type is allowed', async () => {
+    await seedTyped(1, 'normal')
+    await seedTyped(2, 'release')
+    await seedTyped(3, 'template-merge')
+    await seedTyped(4, 'dependency')
+
+    expect(
+      await numbersFor(['normal', 'release', 'template-merge', 'dependency']),
+    ).toEqual([1, 2, 3, 4])
+  })
+
+  test('ANDs with excludeBots: including dependency keeps bot PRs out', async () => {
+    await seedTyped(1, 'normal')
+    await seedTyped(2, 'dependency', 'renovate')
+    await getTenantDb(orgId)
+      .insertInto('companyGithubUsers')
+      .values({
+        login: 'renovate',
+        displayName: 'renovate',
+        type: 'Bot',
+        isActive: 0,
+        updatedAt: '2026-03-01T00:00:00Z',
+      })
+      .execute()
+
+    expect(await numbersFor(['normal', 'dependency'], true)).toEqual([1])
+    expect(await numbersFor(['normal', 'dependency'])).toEqual([1, 2])
   })
 })

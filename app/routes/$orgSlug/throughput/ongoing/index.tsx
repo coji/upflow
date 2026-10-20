@@ -23,6 +23,7 @@ import {
 import { median as calcMedian } from '~/app/libs/stats'
 import { orgContext, teamContext } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
 import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
 import {
@@ -58,6 +59,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
       teamParam || undefined,
       businessDaysOnly,
       filter.normalizedPatterns,
+      filter.prTypes,
     ),
     computeExcludedCount(filter, (patterns) =>
       countOngoingPullRequests(
@@ -66,6 +68,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
         toIso,
         teamParam || undefined,
         patterns,
+        filter.prTypes,
       ),
     ),
   ])
@@ -117,6 +120,7 @@ export default function OngoingPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <PrTypeFilter />
           <PrTitleFilterStatus
             excludedCount={excludedCount}
             filterActive={filterActive}

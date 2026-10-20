@@ -32,6 +32,7 @@ import {
   timezoneContext,
 } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { BottleneckMixCard } from './+components/bottleneck-mix-card'
 import { ByAuthorTable } from './+components/by-author-table'
@@ -137,6 +138,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
             teamParam,
             repositoryId,
             filter.normalizedPatterns,
+            filter.prTypes,
           ),
           getCycleTimeRawData(
             organization.id,
@@ -145,6 +147,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
             teamParam,
             repositoryId,
             filter.normalizedPatterns,
+            filter.prTypes,
           ),
         ]),
       FIVE_MINUTES,
@@ -156,6 +159,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
         teamParam,
         repositoryId,
         patterns,
+        filter.prTypes,
       ),
     ),
   ])
@@ -315,6 +319,7 @@ export default function CycleTimePage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions className="flex flex-wrap">
+          <PrTypeFilter />
           <PrTitleFilterStatus
             excludedCount={excludedCount}
             filterActive={filterActive}
