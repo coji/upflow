@@ -326,12 +326,14 @@ export const crawlJob = defineJob({
       }
     }
 
+    // Trigger process even when nothing was fetched: it picks up raw rows left
+    // unprocessed (a failed run, a migration that resets processed_at) and
+    // exits early when there are none.
     if (!input.refresh && !input.prNumbers && updatedPrNumbers.size === 0) {
-      step.log.info('No updated PRs, skipping process.')
+      step.log.info('No updated PRs.')
       await step.run('finalize', () => {
         clearOrgCache(orgId)
       })
-      return { fetchedRepos: repoCount, pullCount: 0, failedRepos }
     }
 
     if (input.prNumbers && updatedPrNumbers.size === 0) {

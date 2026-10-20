@@ -223,3 +223,13 @@ migration:
 3. **不一致 warning の UI 表現**: 一般ユーザー向けの可視化が必要か (規約遵守を促すダッシュボード)、admin 専用で十分か
 4. **stacked PR / sibling branch artifact 対策**: 実測 < 0.1% の頻度。`firstCommittedAt` が parent branch の commit を拾う問題。first-parent traversal では解決しない (sibling branch の linear history を遡るため)。完全解消には git history 解析が必要だが ROI が低い。defer して #426 ダッシュボード上で問題が顕在化した時点で別 RDD 化するか
 5. **closed issue #428 の first-parent traversal**: 実測で対象 0 件 (本番デプロイフロー signal 追加後)。defer して、運用観測で必要が出たら別 issue 化
+
+## 実装時の決定 (2026-10)
+
+段階 1 (スキーマ + 判定 + upsert への組み込み) の実装で次のように決めた。
+
+- **dependency の判定を絞った**: 「bot author なら dependency」ではなく「bot author かつ依存更新のシグナル (branch に `renovate` / `dependabot`、title が `chore(deps):` / `Bump ...` / `dependency` 等) がある」場合だけにした。AI コーディングエージェントや CI 自動化も bot として PR を作るようになっており、それらを dependency と呼ぶと種別の意味が崩れるため。bot author の PR を集計から外す役割は従来どおり `excludeBots` が担う
+- **release の title 判定はバージョン付きに限る**: `release` の直後にバージョンが続くもの (`Release 1.2.0` / `[web] Release 1.2.0` / `Mobile release 2.3.1` / `chore(main): release 1.2.0`) だけを拾う。`fix: release branch detection` や `release.sh ...` のように release に触れるだけの PR を除外するため
+- **template-merge は title と branch の OR**: `Merged ... into ...` の title か、`template/*` / `template_update-*` の branch のどちらかで判定する
+- **既存 PR への付与**: migration で `github_raw_data.processed_at` を NULL に戻し、次の process で全 PR を処理し直して `pr_type` を埋める (#478 の未処理判定を利用)。crawl は新規取得が 0 件でも process を起動するようにし、更新のないテナントも次の定期 crawl で埋まる
+- **Open Questions**: 1 (手動 override) は入れない。2 (本番ブランチ名) は `production` / `prod` 固定。3 (warning の UI) は admin 向け画面のみ。4・5 は defer

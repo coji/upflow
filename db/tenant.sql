@@ -85,6 +85,8 @@ CREATE TABLE `pull_requests` (
   `classified_at` text NULL,
   `classifier_model` text NULL,
   `is_draft` integer NOT NULL DEFAULT 0,
+  `pr_type` text NULL CHECK (`pr_type` IS NULL OR `pr_type` IN ('release', 'template-merge', 'dependency', 'normal')),
+  `pr_type_warning` text NULL CHECK (`pr_type_warning` IS NULL OR `pr_type_warning` IN ('signal-conflict')),
   PRIMARY KEY (`number`, `repository_id`),
   CONSTRAINT `pull_requests_repository_id_fkey` FOREIGN KEY (`repository_id`) REFERENCES `repositories` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );

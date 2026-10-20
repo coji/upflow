@@ -14,6 +14,7 @@ import {
   deriveReviewWait,
   normalizeTimelineEvents,
 } from '~/batch/bizlogic/review-wait'
+import { classifyPrType } from '~/batch/bizlogic/pr-type'
 import { logger } from '~/batch/helper/logger'
 import { buildRequestedAtMap } from './fetcher'
 import type {
@@ -151,7 +152,14 @@ function buildPullRequestRow(
   dates: PrDates,
   releasedAt: string | null,
   repositoryId: string,
+  authorIsBot: boolean,
 ): Selectable<TenantDB.PullRequests> {
+  const { prType, prTypeWarning } = classifyPrType({
+    title: pr.title,
+    sourceBranch: pr.sourceBranch,
+    targetBranch: pr.targetBranch,
+    authorIsBot,
+  })
   return {
     repo: pr.repo,
     number: pr.number,
@@ -204,6 +212,8 @@ function buildPullRequestRow(
     classifiedAt: null,
     classifierModel: null,
     isDraft: pr.draft ? 1 : 0,
+    prType,
+    prTypeWarning,
   }
 }
 
@@ -316,7 +326,14 @@ export const buildPullRequests = async (
 
       // 7. PR 行データ生成（純粋関数）
       pulls.push(
-        buildPullRequestRow(pr, dates, releasedAt, config.repositoryId),
+        buildPullRequestRow(
+          pr,
+          dates,
+          releasedAt,
+          config.repositoryId,
+          pr.authorIsBot ||
+            config.botLogins.has((pr.author ?? '').toLowerCase()),
+        ),
       )
 
       // 8. レビュー情報を収集（PENDING レビューは submittedAt がないため除外）
