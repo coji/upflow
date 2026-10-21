@@ -82,6 +82,8 @@ const samplePr = {
   number: 1,
   repo: 'acme/widget',
   title: 'Fix bug',
+  sourceBranch: 'feature/fix-bug',
+  targetBranch: 'main',
   url: 'https://github.com/acme/widget/pull/1',
   createdAt: '2026-03-10T00:00:00Z',
   complexity: 'M' as string | null,
