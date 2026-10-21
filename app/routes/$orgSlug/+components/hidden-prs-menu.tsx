@@ -81,7 +81,9 @@ export function HiddenPrsMenu({
   }
 
   const label =
-    summary.hiddenCount > 0 ? `${summary.hiddenCount}件を非表示` : '非表示なし'
+    summary.hiddenCount > 0
+      ? `${summary.hiddenCount} PR${summary.hiddenCount === 1 ? '' : 's'} hidden`
+      : 'No PRs hidden'
 
   return (
     <DropdownMenu>
@@ -90,14 +92,14 @@ export function HiddenPrsMenu({
           size="sm"
           variant="outline"
           className="h-8 gap-1.5 tabular-nums"
-          aria-label={`${label}。非表示にする PR を選ぶ`}
+          aria-label={`${label}. Choose which PRs to hide`}
         >
           <ListFilterIcon size={14} />
           {label}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>この画面で非表示にしている PR</DropdownMenuLabel>
+        <DropdownMenuLabel>Hidden on this page</DropdownMenuLabel>
         {rows.map(({ reason, active, count }) => (
           <DropdownMenuCheckboxItem
             key={reason}
@@ -133,12 +135,12 @@ export function HiddenPrsMenu({
             )
           }}
         >
-          すべて表示する
+          Show all PRs
         </DropdownMenuItem>
         {isAdmin && orgSlug != null && (
           <DropdownMenuItem asChild>
             <Link to={href('/:orgSlug/settings/pr-filters', { orgSlug })}>
-              フィルタを管理…
+              Manage filters…
             </Link>
           </DropdownMenuItem>
         )}
