@@ -29,7 +29,7 @@ import {
 import { calcSinceDate } from '~/app/libs/date-utils'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import {
@@ -37,7 +37,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import { DataTablePagination } from './+components/data-table-pagination'
 import { createFeedbackColumns } from './+components/feedback-columns'
 import { FeedbackSummaryCards } from './+components/feedback-summary-cards'
@@ -88,7 +88,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
 
   const filter = await loadPrFilterState(url, organization.id)
 
-  const [feedbackResult, summary, excludedCount] = await Promise.all([
+  const [feedbackResult, summary, hiddenPrs] = await Promise.all([
     listFilteredFeedbacks({
       organizationId: organization.id,
       teamId: teamParam,
@@ -105,13 +105,16 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
       sinceDate,
       normalizedPatterns: filter.normalizedPatterns,
     }),
-    computeExcludedCount(filter, (patterns) =>
-      countFeedbacks({
-        organizationId: organization.id,
-        teamId: teamParam,
-        sinceDate,
-        normalizedPatterns: patterns,
-      }),
+    loadHiddenPrSummary(
+      filter,
+      (breakdown) =>
+        countFeedbacks({
+          organizationId: organization.id,
+          teamId: teamParam,
+          sinceDate,
+          breakdown,
+        }),
+      { typesApplicable: false },
     ),
   ])
 
@@ -120,10 +123,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     pagination: feedbackResult.pagination,
     summary,
     periodMonths,
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -134,10 +134,7 @@ export default function FeedbacksPage({
     pagination,
     summary,
     periodMonths,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   },
 }: Route.ComponentProps) {
@@ -163,13 +160,7 @@ export default function FeedbacksPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
           <Select
             value={String(periodMonths)}
             onValueChange={(value) => {

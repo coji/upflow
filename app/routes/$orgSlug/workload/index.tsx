@@ -8,14 +8,12 @@ import {
 import { Stack } from '~/app/components/ui/stack'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
-import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
-import { DraftFilterStatus } from './+components/draft-filter-status'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { TeamStacksChart } from './+components/team-stacks-chart'
@@ -24,7 +22,6 @@ import {
   aggregateTeamStacks,
 } from './+functions/aggregate-stacks'
 import {
-  countHiddenDrafts,
   countOpenPullRequests,
   getOpenPullRequestReviews,
   getOpenPullRequests,
@@ -54,7 +51,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const cacheKey = `workload:${teamId ?? 'all'}:${filterCacheKeySuffix(filter)}:hd=${hideDrafts ? '1' : '0'}`
   const SIXTY_SECONDS = 60 * 1000
 
-  const [[openPRs, pendingReviews, reviewHistory], excludedCount, draftCount] =
+  const [[openPRs, pendingReviews, reviewHistory], hiddenPrs] =
     await Promise.all([
       getOrgCachedData(
         organization.id,
@@ -85,20 +82,11 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
           ]),
         SIXTY_SECONDS,
       ),
-      computeExcludedCount(filter, (patterns) =>
-        countOpenPullRequests(
-          organization.id,
-          teamId,
-          patterns,
-          hideDrafts,
-          filter.prTypes,
-        ),
-      ),
-      countHiddenDrafts(
-        organization.id,
-        teamId,
-        filter.normalizedPatterns,
-        filter.prTypes,
+      loadHiddenPrSummary(
+        filter,
+        (breakdown) =>
+          countOpenPullRequests(organization.id, teamId, breakdown),
+        { hideDrafts },
       ),
     ])
 
@@ -107,12 +95,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     pendingReviews,
     reviewHistory,
     personalLimit,
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
-    hideDrafts,
-    draftCount,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -125,12 +108,7 @@ export const clientLoader = async ({
     pendingReviews,
     reviewHistory,
     personalLimit,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
-    hideDrafts,
-    draftCount,
+    hiddenPrs,
     isAdmin,
   } = await serverLoader()
 
@@ -141,12 +119,7 @@ export const clientLoader = async ({
       reviewHistory,
       personalLimit,
     }),
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
-    hideDrafts,
-    draftCount,
+    hiddenPrs,
     isAdmin,
   }
 }
@@ -168,16 +141,7 @@ export function HydrateFallback() {
 }
 
 export default function ReviewStacksPage({
-  loaderData: {
-    teamStacks,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
-    hideDrafts,
-    draftCount,
-    isAdmin,
-  },
+  loaderData: { teamStacks, hiddenPrs, isAdmin },
 }: Route.ComponentProps) {
   return (
     <Stack>
@@ -189,15 +153,7 @@ export default function ReviewStacksPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
-          <PrTypeFilter />
-          <DraftFilterStatus draftCount={draftCount} hideDrafts={hideDrafts} />
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
         </PageHeaderActions>
       </PageHeader>
 

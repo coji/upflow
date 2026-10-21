@@ -19,7 +19,7 @@ import { getEndOfWeek, getStartOfWeek, parseDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import {
@@ -27,8 +27,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
-import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import { DiffBadge } from '../+components/diff-badge'
 import { StatCard } from '../+components/stat-card'
 import { calcStats } from '../+functions/calc-stats'
@@ -75,7 +74,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const fromIso = fromDate.utc().toISOString()
   const toIso = toDate.utc().toISOString()
 
-  const [pullRequests, prevPullRequests, excludedCount] = await Promise.all([
+  const [pullRequests, prevPullRequests, hiddenPrs] = await Promise.all([
     getDeployedPullRequestReport(
       organization.id,
       fromIso,
@@ -96,14 +95,13 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
       filter.normalizedPatterns,
       filter.prTypes,
     ),
-    computeExcludedCount(filter, (patterns) =>
+    loadHiddenPrSummary(filter, (breakdown) =>
       countDeployedPullRequests(
         organization.id,
         fromIso,
         toIso,
         teamParam || undefined,
-        patterns,
-        filter.prTypes,
+        breakdown,
       ),
     ),
   ])
@@ -118,10 +116,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     ...stats,
     prev: prevStats,
     businessDaysOnly,
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -136,10 +131,7 @@ export default function DeployedPage({
     median,
     prev,
     businessDaysOnly,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   },
   params: { orgSlug },
@@ -161,14 +153,7 @@ export default function DeployedPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
-          <PrTypeFilter />
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
         </PageHeaderActions>
       </PageHeader>
 

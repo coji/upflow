@@ -14,7 +14,7 @@ import { formatPrIdentifier } from '~/app/libs/format-pr'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, timezoneContext } from '~/app/middleware/context'
@@ -25,8 +25,7 @@ import {
   REVIEW_STATUS_PRIORITY,
   type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
-import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import {
   buildPRReviewerStatesMap,
   classifyPRReviewStatus,
@@ -65,65 +64,51 @@ export const loader = async ({ params, context, url }: Route.LoaderArgs) => {
   const filter = await loadPrFilterState(url, organization.id)
 
   // 週のサマリーとして created PR 数を母集団とする
-  const [
-    user,
-    createdPRs,
-    mergedPRs,
-    closedPRs,
-    reviews,
-    backlog,
-    excludedCount,
-  ] = await Promise.all([
-    getUserProfile(organization.id, params.login),
-    getCreatedPRs(
-      organization.id,
-      params.login,
-      from,
-      to,
-      filter.normalizedPatterns,
-      filter.prTypes,
-    ),
-    getMergedPRs(
-      organization.id,
-      params.login,
-      from,
-      to,
-      filter.normalizedPatterns,
-      filter.prTypes,
-    ),
-    getClosedPRs(
-      organization.id,
-      params.login,
-      from,
-      to,
-      filter.normalizedPatterns,
-      filter.prTypes,
-    ),
-    getReviewsSubmitted(
-      organization.id,
-      params.login,
-      from,
-      to,
-      filter.normalizedPatterns,
-      filter.prTypes,
-    ),
-    getBacklogDetails(
-      organization.id,
-      params.login,
-      filter.normalizedPatterns,
-      filter.prTypes,
-    ),
-    computeExcludedCount(filter, (patterns) =>
-      countCreatedPRs(
+  const [user, createdPRs, mergedPRs, closedPRs, reviews, backlog, hiddenPrs] =
+    await Promise.all([
+      getUserProfile(organization.id, params.login),
+      getCreatedPRs(
         organization.id,
         params.login,
         from,
         to,
-        patterns,
+        filter.normalizedPatterns,
         filter.prTypes,
       ),
-    ),
-  ])
+      getMergedPRs(
+        organization.id,
+        params.login,
+        from,
+        to,
+        filter.normalizedPatterns,
+        filter.prTypes,
+      ),
+      getClosedPRs(
+        organization.id,
+        params.login,
+        from,
+        to,
+        filter.normalizedPatterns,
+        filter.prTypes,
+      ),
+      getReviewsSubmitted(
+        organization.id,
+        params.login,
+        from,
+        to,
+        filter.normalizedPatterns,
+        filter.prTypes,
+      ),
+      getBacklogDetails(
+        organization.id,
+        params.login,
+        filter.normalizedPatterns,
+        filter.prTypes,
+      ),
+      loadHiddenPrSummary(filter, (breakdown) =>
+        countCreatedPRs(organization.id, params.login, from, to, breakdown),
+      ),
+    ])
 
   // Build holiday map for the week
   const holidays: Record<string, string> = {}
@@ -167,10 +152,7 @@ export const loader = async ({ params, context, url }: Route.LoaderArgs) => {
     holidays,
     weekStart: weekStart.format('YYYY-MM-DD'),
     weekEnd: weekEnd.format('YYYY-MM-DD'),
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -185,10 +167,7 @@ export default function MemberWeeklyPage({
     backlog,
     holidays,
     weekStart,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   },
   params,
@@ -355,14 +334,7 @@ export default function MemberWeeklyPage({
           </Link>
         </HStack>
         <HStack>
-          <PrTypeFilter />
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
         </HStack>
       </div>
 

@@ -1,11 +1,12 @@
 import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
-import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import type { PrType } from '~/app/libs/pr-type'
 import {
   DEFAULT_ALLOWED_PR_TYPES,
   excludeBots,
   excludePrTitleFilters,
-  filteredPullRequestCount,
+  hiddenPrBreakdown,
+  type HiddenPrBreakdownInput,
+  type HiddenPrBreakdownRow,
   filterPrTypes,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -65,13 +66,11 @@ export const getOpenPullRequests = async (
  */
 export const countOpenPullRequests = async (
   organizationId: OrganizationId,
-  teamId?: string | null,
-  normalizedPatterns: readonly PrFilterPattern[] = [],
-  hideDrafts = false,
-  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
-): Promise<FilterCountStats> => {
+  teamId: string | null | undefined,
+  breakdown: HiddenPrBreakdownInput,
+): Promise<HiddenPrBreakdownRow> => {
   const tenantDb = getTenantDb(organizationId)
-  const row = await tenantDb
+  return await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .leftJoin('companyGithubUsers', (join) =>
@@ -87,52 +86,8 @@ export const countOpenPullRequests = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
-    .where(filterPrTypes(prTypes))
-    .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
-    .select((eb) => [
-      eb.fn.countAll<number>().as('unfiltered'),
-      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
-    ])
+    .select(hiddenPrBreakdown(breakdown))
     .executeTakeFirstOrThrow()
-  return {
-    unfiltered: Number(row.unfiltered),
-    filtered: Number(row.filtered),
-  }
-}
-
-/**
- * hideDrafts バナー用に、タイトルフィルター適用後の open PR のうち Draft の件数を返す。
- * Draft 除外とタイトル除外の二重カウントを避けるため、title filter 適用後の集合で数える。
- */
-export const countHiddenDrafts = async (
-  organizationId: OrganizationId,
-  teamId?: string | null,
-  normalizedPatterns: readonly PrFilterPattern[] = [],
-  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
-): Promise<number> => {
-  const tenantDb = getTenantDb(organizationId)
-  const row = await tenantDb
-    .selectFrom('pullRequests')
-    .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
-    .leftJoin('companyGithubUsers', (join) =>
-      join.onRef(
-        (eb) => eb.fn('lower', ['pullRequests.author']),
-        '=',
-        (eb) => eb.fn('lower', ['companyGithubUsers.login']),
-      ),
-    )
-    .where('pullRequests.mergedAt', 'is', null)
-    .where('pullRequests.closedAt', 'is', null)
-    .$if(teamId != null, (qb) =>
-      qb.where('repositories.teamId', '=', teamId as string),
-    )
-    .where(excludeBots)
-    .where(filterPrTypes(prTypes))
-    .where(excludePrTitleFilters(normalizedPatterns))
-    .where('pullRequests.isDraft', '=', 1)
-    .select((eb) => [eb.fn.countAll<number>().as('draftCount')])
-    .executeTakeFirstOrThrow()
-  return Number(row.draftCount)
 }
 
 /**

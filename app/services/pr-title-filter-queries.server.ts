@@ -2,7 +2,10 @@ import type {
   PrFilterPattern,
   PrFilterTarget,
 } from '~/app/libs/pr-title-filter'
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  getTenantDbWithoutJsonParsing,
+} from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 export type PrTitleFilterRow = {
@@ -21,7 +24,7 @@ export type PrTitleFilterRow = {
 export const listPrTitleFilters = async (
   organizationId: OrganizationId,
 ): Promise<PrTitleFilterRow[]> => {
-  const tenantDb = getTenantDb(organizationId)
+  const tenantDb = getTenantDbWithoutJsonParsing(organizationId)
   const rows = await tenantDb
     .selectFrom('prTitleFilters')
     .select([
@@ -48,7 +51,7 @@ export const listPrTitleFilters = async (
 export const listEnabledPrTitleFilterPatterns = async (
   organizationId: OrganizationId,
 ): Promise<PrFilterPattern[]> => {
-  const tenantDb = getTenantDb(organizationId)
+  const tenantDb = getTenantDbWithoutJsonParsing(organizationId)
   const rows = await tenantDb
     .selectFrom('prTitleFilters')
     .select(['target', 'normalizedPattern'])
@@ -65,24 +68,6 @@ const toPrFilterTarget = (value: string): PrFilterTarget =>
   value === 'branch' ? 'branch' : 'title'
 
 /**
- * `showFiltered=1` で patterns 本体は不要だが、status UI の「Filter off」
- * button 表示判定だけに有効フィルタ有無が必要なケース用。
- * `pr_title_filters_is_enabled_idx` を使った 1 行 lookup で済ませる。
- */
-export const hasAnyEnabledPrTitleFilter = async (
-  organizationId: OrganizationId,
-): Promise<boolean> => {
-  const tenantDb = getTenantDb(organizationId)
-  const row = await tenantDb
-    .selectFrom('prTitleFilters')
-    .select('id')
-    .where('isEnabled', '=', 1)
-    .limit(1)
-    .executeTakeFirst()
-  return row != null
-}
-
-/**
  * Sheet プレビュー用の直近 PR タイトル一覧。
  * LIMIT で payload を抑える (Sheet プレビューは上位 20 件しか表示しないが、
  * マッチ件数はこのリスト全体に対して計算するため少し余裕を持って 1000 件にする)。
@@ -92,7 +77,7 @@ export const listRecentPullRequestTitles = async (
   organizationId: OrganizationId,
   sinceDays = 90,
 ): Promise<{ repositoryId: string; number: number; title: string }[]> => {
-  const tenantDb = getTenantDb(organizationId)
+  const tenantDb = getTenantDbWithoutJsonParsing(organizationId)
   const cutoff = new Date(
     Date.now() - sinceDays * 24 * 60 * 60 * 1000,
   ).toISOString()

@@ -233,3 +233,7 @@ migration:
 - **template-merge は title と branch の OR**: `Merged ... into ...` の title か、`template/*` / `template_update-*` の branch のどちらかで判定する
 - **既存 PR への付与**: migration で `github_raw_data.processed_at` を NULL に戻し、次の process で全 PR を処理し直して `pr_type` を埋める (#478 の未処理判定を利用)。crawl は新規取得が 0 件でも process を起動するようにし、更新のないテナントも次の定期 crawl で埋まる
 - **Open Questions**: 1 (手動 override) は入れない。2 (本番ブランチ名) は `production` / `prod` 固定。3 (warning の UI) は admin 向け画面のみ。4・5 は defer
+
+## 追記: 非表示メニューへの統合
+
+ダッシュボードの「PR types」トグルは、Draft とタイトル・ブランチのフィルタと合わせて「N件を非表示」メニュー 1 つにまとめた。種別ごとの件数を並べ、release などを既に隠していることが初見で分かるようにするため。1 件の PR は、リリース → テンプレート → 依存更新 → Draft → フィルタ の順で最初に該当する有効な理由にだけ数える。

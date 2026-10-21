@@ -17,7 +17,7 @@ import { Stack } from '~/app/components/ui/stack'
 import { calcSinceDate } from '~/app/libs/date-utils'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
@@ -26,8 +26,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
-import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { PRSizeChart } from './+components/pr-size-chart'
 import { QueueTrendChart } from './+components/queue-trend-chart'
@@ -80,7 +79,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const cacheKey = `reviews:${teamParam ?? 'all'}:${periodMonths}:${filterCacheKeySuffix(filter)}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const [[queueHistoryRaw, wipCycleRaw, prSizesRaw], excludedCount] =
+  const [[queueHistoryRaw, wipCycleRaw, prSizesRaw], hiddenPrs] =
     await Promise.all([
       getOrgCachedData(
         organization.id,
@@ -111,13 +110,12 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
           ]),
         FIVE_MINUTES,
       ),
-      computeExcludedCount(filter, (patterns) =>
+      loadHiddenPrSummary(filter, (breakdown) =>
         countWipCyclePullRequests(
           organization.id,
           sinceDate,
           teamParam,
-          patterns,
-          filter.prTypes,
+          breakdown,
         ),
       ),
     ])
@@ -128,10 +126,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     prSizesRaw,
     sinceDate,
     periodMonths,
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -145,10 +140,7 @@ export const clientLoader = async ({
     prSizesRaw,
     sinceDate,
     periodMonths,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   } = await serverLoader()
 
@@ -166,10 +158,7 @@ export const clientLoader = async ({
     prSizes: aggregatePRSize(prSizesRaw),
     prSizesRaw,
     periodMonths,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   }
 }
@@ -196,10 +185,7 @@ export default function ReviewsPage({
     prSizes,
     prSizesRaw,
     periodMonths,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   },
 }: Route.ComponentProps) {
@@ -215,14 +201,7 @@ export default function ReviewsPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
-          <PrTypeFilter />
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
           <Select
             value={String(periodMonths)}
             onValueChange={(value) => {
