@@ -165,6 +165,8 @@ export interface PRPopoverData {
   number: number
   repo: string
   title: string
+  sourceBranch: string
+  targetBranch: string
   url: string
   createdAt: string
   complexity: string | null
@@ -362,6 +364,12 @@ export function PRPopoverContent({
       >
         {pr.title}
       </ExternalLink>
+      <div
+        className="text-muted-foreground truncate font-mono text-[10px]"
+        title={`${pr.sourceBranch} → ${pr.targetBranch}`}
+      >
+        {pr.sourceBranch} → {pr.targetBranch}
+      </div>
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
         <span className="inline-flex items-center gap-1">
           <GitHubAvatar login={pr.author} size={14} />

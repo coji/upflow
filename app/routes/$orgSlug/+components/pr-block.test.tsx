@@ -54,6 +54,8 @@ const samplePr: PRPopoverData = {
   number: 1,
   repo: 'acme/widget',
   title: 'Fix it',
+  sourceBranch: 'release/2026-10-06',
+  targetBranch: 'main',
   url: 'https://github.com/acme/widget/pull/1',
   createdAt: '2026-03-10T00:00:00Z',
   complexity: 'M',
@@ -225,6 +227,11 @@ describe('PRPopover', () => {
     await user.click(screen.getByRole('button', { name: 'More actions' }))
     await user.click(await screen.findByText('Hide PRs by title…'))
     expect(hide).toHaveBeenCalledWith('Secret')
+  })
+
+  test('shows source and target branch in popover content', () => {
+    render(<PRPopoverContent pr={samplePr} />)
+    expect(screen.getByText('release/2026-10-06 → main')).toBeTruthy()
   })
 
   test('draft PR shows Draft badge in popover content', () => {
