@@ -57,6 +57,20 @@ const DEFAULT_HIDDEN: Record<HiddenPrReason, boolean> = {
 }
 
 /**
+ * メニューに出す行。種別の行は、件数 0 で既定どおりなら出さない (その種別の PR が
+ * ない組織で並べても判断材料にならない)。種別は並びの先頭なので件数が他のチェックで
+ * 変わらず、行が出たり消えたりしない。Draft とフィルタの行は手前の理由で件数が
+ * 変わるので 0 件でも常に出す (フィルタはパターン登録時のみ summary に含まれる)。
+ */
+export const visibleReasons = (summary: HiddenPrSummary) =>
+  summary.reasons.filter(
+    (r) =>
+      !isOptionalPrType(r.reason) ||
+      r.count > 0 ||
+      r.active !== DEFAULT_HIDDEN[r.reason],
+  )
+
+/**
  * 画面から隠している PR の件数と、その理由ごとの切り替え。
  * 種別 (`?prTypes=`)、Draft (`?hideDrafts=1`)、タイトル・ブランチのフィルタ
  * (`?showFiltered=1`) を 1 つにまとめる。チェックは「いま隠している」を表す。
@@ -71,11 +85,7 @@ export function HiddenPrsMenu({
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // 件数 0 で既定どおりの行は出さない (該当 PR がない理由を並べても判断材料にならない)。
-  // 既定から外した行は 0 件でも残し、元に戻せるようにする
-  const rows = summary.reasons.filter(
-    (r) => r.count > 0 || r.active !== DEFAULT_HIDDEN[r.reason],
-  )
+  const rows = visibleReasons(summary)
   if (rows.length === 0) {
     return null
   }

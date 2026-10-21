@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { HIDDEN_PR_REASONS } from '~/app/libs/hidden-prs'
-import { setReasonHidden } from './hidden-prs-menu'
+import { setReasonHidden, visibleReasons } from './hidden-prs-menu'
 
 const apply = (
   search: string,
@@ -42,5 +42,27 @@ describe('setReasonHidden', () => {
       prTypes: 'release,template-merge,dependency',
       showFiltered: '1',
     })
+  })
+})
+
+describe('visibleReasons', () => {
+  test('keeps the filter and draft rows at zero, drops idle zero type rows', () => {
+    // release/ のブランチフィルタが release PR と重なり、フィルタ側が 0 件になる状態
+    const rows = visibleReasons({
+      hiddenCount: 3,
+      reasons: [
+        { reason: 'release', active: true, count: 3 },
+        { reason: 'template-merge', active: true, count: 0 },
+        { reason: 'dependency', active: false, count: 0 },
+        { reason: 'draft', active: false, count: 0 },
+        { reason: 'filter', active: true, count: 0 },
+      ],
+    })
+    expect(rows.map((r) => r.reason)).toEqual([
+      'release',
+      'dependency',
+      'draft',
+      'filter',
+    ])
   })
 })
