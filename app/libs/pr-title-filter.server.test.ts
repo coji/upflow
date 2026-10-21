@@ -59,7 +59,7 @@ describe('loadPrFilterState', () => {
     const state = await loadPrFilterState(makeRequest(''), orgId)
     expect(state.showFiltered).toBe(false)
     expect(state.filterActive).toBe(true)
-    expect(state.normalizedPatterns.slice().sort()).toEqual(
+    expect(state.normalizedPatterns.map((p) => p.pattern).sort()).toEqual(
       ['[do not merge]', '[wip]'].sort(),
     )
   })
@@ -73,7 +73,9 @@ describe('loadPrFilterState', () => {
     })
 
     const state = await loadPrFilterState(makeRequest(''), orgId)
-    expect(state.normalizedPatterns).toEqual(['[wip]'])
+    expect(state.normalizedPatterns).toEqual([
+      { target: 'title', pattern: '[wip]' },
+    ])
   })
 
   test('showFiltered=1 bypasses patterns but keeps hasAnyEnabledPattern flag', async () => {
@@ -87,6 +89,31 @@ describe('loadPrFilterState', () => {
       hasAnyEnabledPattern: true,
       prTypes: ['normal'],
     })
+  })
+
+  test('returns branch patterns with their target', async () => {
+    await createPrTitleFilter(orgId, {
+      target: 'branch',
+      pattern: 'Release/',
+      userId: 'u',
+    })
+
+    const state = await loadPrFilterState(makeRequest(''), orgId)
+    expect(state.normalizedPatterns).toEqual([
+      { target: 'branch', pattern: 'release/' },
+    ])
+  })
+
+  test('the same pattern can be registered for title and branch', async () => {
+    await createPrTitleFilter(orgId, { pattern: 'release', userId: 'u' })
+    await createPrTitleFilter(orgId, {
+      target: 'branch',
+      pattern: 'release',
+      userId: 'u',
+    })
+    await expect(
+      createPrTitleFilter(orgId, { pattern: 'Release', userId: 'u' }),
+    ).rejects.toThrow(/UNIQUE/)
   })
 
   test('reads the PR types to include from ?prTypes=', async () => {
@@ -142,7 +169,7 @@ describe('computeExcludedCount', () => {
     const result = await computeExcludedCount(
       {
         showFiltered: false,
-        normalizedPatterns: ['[wip]'],
+        normalizedPatterns: [{ target: 'title', pattern: '[wip]' }],
         filterActive: true,
         hasAnyEnabledPattern: true,
         prTypes: ['normal'],
@@ -151,11 +178,16 @@ describe('computeExcludedCount', () => {
     )
     expect(result).toBe(3)
     expect(counter).toHaveBeenCalledTimes(1)
-    expect(counter).toHaveBeenCalledWith(['[wip]'])
+    expect(counter).toHaveBeenCalledWith([
+      { target: 'title', pattern: '[wip]' },
+    ])
   })
 
   test('passes the actual normalizedPatterns array to counter', async () => {
-    const patterns = ['[wip]', '[epic-'] as const
+    const patterns = [
+      { target: 'title', pattern: '[wip]' },
+      { target: 'branch', pattern: 'release/' },
+    ] as const
     const counter = vi.fn(async () => ({ unfiltered: 5, filtered: 2 }))
     await computeExcludedCount(
       {

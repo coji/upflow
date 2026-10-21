@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import type { PrType } from '~/app/libs/pr-type'
 import {
@@ -37,7 +38,7 @@ export const countCreatedPRs = async (
   login: string,
   from: string,
   to: string,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
@@ -65,7 +66,7 @@ export const getCreatedPRs = async (
   login: string,
   from: string,
   to: string,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -96,7 +97,7 @@ export const getMergedPRs = async (
   login: string,
   from: string,
   to: string,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -129,7 +130,7 @@ export const getClosedPRs = async (
   login: string,
   from: string,
   to: string,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -164,7 +165,7 @@ export const getReviewsSubmitted = async (
   login: string,
   from: string,
   to: string,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -213,7 +214,7 @@ export const getReviewsSubmitted = async (
 export const getBacklogDetails = async (
   organizationId: OrganizationId,
   login: string,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)

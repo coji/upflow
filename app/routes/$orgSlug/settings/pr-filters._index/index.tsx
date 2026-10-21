@@ -17,6 +17,13 @@ import {
 } from '~/app/components/ui/table'
 import { getErrorMessage } from '~/app/libs/error-message'
 import {
+  NativeSelect,
+  NativeSelectOption,
+} from '~/app/components/ui/native-select'
+import {
+  PR_FILTER_TARGET_LABELS,
+  PR_FILTER_TARGETS,
+  type PrFilterTarget,
   prTitleFilterPatternSchema,
   translatePrTitleFilterError,
 } from '~/app/libs/pr-title-filter'
@@ -45,6 +52,7 @@ export const loader = async ({ context }: Route.LoaderArgs) => {
 
 const createSchema = z.object({
   intent: z.literal('create'),
+  target: z.enum(PR_FILTER_TARGETS),
   pattern: prTitleFilterPatternSchema,
 })
 
@@ -80,9 +88,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   }
 
   return match(submission.value)
-    .with({ intent: 'create' }, async ({ pattern }) => {
+    .with({ intent: 'create' }, async ({ target, pattern }) => {
       try {
         await createPrTitleFilter(organization.id, {
+          target,
           pattern,
           userId: user.id,
         })
@@ -152,15 +161,30 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
 function AddFilterForm() {
   const fetcher = useFetcher()
+  const [target, setTarget] = useState<PrFilterTarget>('title')
   const [pattern, setPattern] = useState('')
 
   return (
     <fetcher.Form method="post" onSubmit={() => setPattern('')}>
       <input type="hidden" name="intent" value="create" />
       <HStack>
+        <NativeSelect
+          name="target"
+          aria-label="Match against"
+          value={target}
+          onChange={(e) => setTarget(e.target.value as PrFilterTarget)}
+        >
+          {PR_FILTER_TARGETS.map((t) => (
+            <NativeSelectOption key={t} value={t}>
+              {PR_FILTER_TARGET_LABELS[t]}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
         <Input
           name="pattern"
-          placeholder="e.g. [DO NOT MERGE]"
+          placeholder={
+            target === 'branch' ? 'e.g. release/' : 'e.g. [DO NOT MERGE]'
+          }
           value={pattern}
           onChange={(e) => setPattern(e.target.value)}
           className="max-w-sm"
@@ -187,6 +211,7 @@ function FilterRow({
 }: {
   filter: {
     id: string
+    target: PrFilterTarget
     pattern: string
     isEnabled: boolean
     createdByName: string | null
@@ -199,6 +224,9 @@ function FilterRow({
 
   return (
     <TableRow>
+      <TableCell className="text-sm">
+        {PR_FILTER_TARGET_LABELS[filter.target]}
+      </TableCell>
       <TableCell className="font-mono text-sm">{filter.pattern}</TableCell>
       <TableCell>
         <Switch
@@ -250,8 +278,8 @@ export default function PrFiltersPage({
 }: Route.ComponentProps) {
   return (
     <ContentSection
-      title="PR Title Filters"
-      desc="Hide PRs whose titles contain any of the patterns below. Case-insensitive substring match. Applies to all dashboard views (Review Stacks, throughput, analysis)."
+      title="PR Filters"
+      desc="Hide PRs whose title or source branch contains any of the patterns below. Case-insensitive substring match. Applies to all dashboard views (Review Stacks, throughput, analysis)."
     >
       <Stack gap="4">
         <AddFilterForm />
@@ -260,6 +288,7 @@ export default function PrFiltersPage({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-24">Match</TableHead>
                 <TableHead>Pattern</TableHead>
                 <TableHead className="w-24">Enabled</TableHead>
                 <TableHead className="w-40">Last edited by</TableHead>
@@ -273,7 +302,7 @@ export default function PrFiltersPage({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No filters yet.
                   </TableCell>
                 </TableRow>

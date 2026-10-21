@@ -49,7 +49,7 @@ export function PrTitleFilterStatus({
         Icon={FilterXIcon}
         label="Filter off"
         buttonClassName="text-muted-foreground"
-        ariaLabel="Title filter is off"
+        ariaLabel="PR filter is off"
         primaryAction={{
           href: buildHref(location, (p) => p.delete('showFiltered')),
           label: 'Re-enable filter',
@@ -67,7 +67,7 @@ export function PrTitleFilterStatus({
     <StatusDropdown
       Icon={FilterIcon}
       label={`${excludedCount} hidden`}
-      ariaLabel={`${excludedCount} PRs hidden by title filter`}
+      ariaLabel={`${excludedCount} PRs hidden by PR filters`}
       primaryAction={{
         href: buildHref(location, (p) => p.set('showFiltered', '1')),
         label: 'Show all PRs',

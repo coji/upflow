@@ -560,3 +560,12 @@ Phase ごとの安全に DROP 可能な条件:
 ## Status
 
 Implemented in #308, #316, #317
+
+## 追記: ブランチ名パターン
+
+タイトルだけでは `release/2026-10-06` のようなリリースブランチの PR を除外できないため、`pr_title_filters` に `target` 列 (`title` | `branch`) を追加した。
+
+- `branch` は `pull_requests.source_branch` に対して、タイトルと同じ大小無視の部分一致で照合する
+- 一意制約は `(target, normalized_pattern)`。同じ文字列をタイトル用とブランチ用に別々に登録できる
+- 既存の行は `title` になる。テーブル名と関数名は互換のため `pr_title_filter` のまま残す
+- 一覧画面からワンクリックで追加する Sheet はタイトル用のまま。ブランチ用は設定画面から登録する

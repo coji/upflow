@@ -1,5 +1,20 @@
 import { z } from 'zod'
 
+/** パターンを照合する PR の項目。title は PR タイトル、branch は source branch 名 */
+export const PR_FILTER_TARGETS = ['title', 'branch'] as const
+export type PrFilterTarget = (typeof PR_FILTER_TARGETS)[number]
+
+export const PR_FILTER_TARGET_LABELS: Record<PrFilterTarget, string> = {
+  title: 'Title',
+  branch: 'Branch',
+}
+
+/** loader から query に渡す有効パターン。pattern は `normalizePattern()` 済み */
+export interface PrFilterPattern {
+  target: PrFilterTarget
+  pattern: string
+}
+
 export const PR_TITLE_FILTER_PATTERN_MIN_LENGTH = 2
 export const PR_TITLE_FILTER_PATTERN_MAX_LENGTH = 200
 
@@ -16,7 +31,7 @@ export const prTitleFilterPatternSchema = z
   )
 
 /**
- * UNIQUE(normalized_pattern) のキーと substring match の両方に使う。
+ * UNIQUE(target, normalized_pattern) のキーと substring match の両方に使う。
  *
  * NFC 正規化は unique 制約の防御 (結合文字の `Café` と precomposed `Café` が
  * 別 row として登録されるのを防ぐ) 目的で入れている。`matchesPattern` と SQL 側の
@@ -39,7 +54,7 @@ export const matchesPattern = (
  */
 export const translatePrTitleFilterError = (message: string): string => {
   if (/UNIQUE\s+constraint\s+failed/i.test(message)) {
-    return 'This pattern is already registered.'
+    return 'This pattern is already registered for this target.'
   }
   return message
 }

@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import { closeTenantDb, getTenantDb } from '~/app/services/tenant-db.server'
 import { type OrganizationId, toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
@@ -25,10 +26,20 @@ function createFreshOrg(): OrganizationId {
   return toOrgId(orgId)
 }
 
+const byTitle = (pattern: string): PrFilterPattern => ({
+  target: 'title',
+  pattern,
+})
+const byBranch = (pattern: string): PrFilterPattern => ({
+  target: 'branch',
+  pattern,
+})
+
 async function seedRepoAndPR(
   orgId: OrganizationId,
   number: number,
   title: string,
+  sourceBranch = 'feature',
 ) {
   const tenantDb = getTenantDb(orgId)
   await tenantDb
@@ -50,7 +61,7 @@ async function seedRepoAndPR(
     .values({
       repo: 'widget',
       number,
-      sourceBranch: 'feature',
+      sourceBranch,
       targetBranch: 'main',
       state: 'open',
       author: 'alice',
@@ -94,7 +105,7 @@ describe('excludePrTitleFilters', () => {
     const rows = await getTenantDb(orgId)
       .selectFrom('pullRequests')
       .select('number')
-      .where(excludePrTitleFilters(['[do not merge]']))
+      .where(excludePrTitleFilters([byTitle('[do not merge]')]))
       .execute()
 
     expect(rows.map((r) => r.number)).toEqual([3])
@@ -108,7 +119,9 @@ describe('excludePrTitleFilters', () => {
     const rows = await getTenantDb(orgId)
       .selectFrom('pullRequests')
       .select('number')
-      .where(excludePrTitleFilters(['[do not merge]', '[epic-']))
+      .where(
+        excludePrTitleFilters([byTitle('[do not merge]'), byTitle('[epic-')]),
+      )
       .execute()
 
     expect(rows.map((r) => r.number)).toEqual([3])
@@ -121,7 +134,7 @@ describe('excludePrTitleFilters', () => {
     const matchedPct = await getTenantDb(orgId)
       .selectFrom('pullRequests')
       .select('number')
-      .where(excludePrTitleFilters(['100%']))
+      .where(excludePrTitleFilters([byTitle('100%')]))
       .execute()
     expect(matchedPct.map((r) => r.number)).toEqual([2])
 
@@ -129,9 +142,37 @@ describe('excludePrTitleFilters', () => {
     const allWithoutLiteral = await getTenantDb(orgId)
       .selectFrom('pullRequests')
       .select('number')
-      .where(excludePrTitleFilters(['nonexistent']))
+      .where(excludePrTitleFilters([byTitle('nonexistent')]))
       .execute()
     expect(allWithoutLiteral.map((r) => r.number).sort()).toEqual([1, 2])
+  })
+
+  test('branch patterns match the source branch, not the title', async () => {
+    await seedRepoAndPR(orgId, 1, 'Release 2026-10-06', 'release/2026-10-06')
+    await seedRepoAndPR(orgId, 2, 'release/ notes in title', 'feature/notes')
+    await seedRepoAndPR(orgId, 3, 'regular PR', 'feature/regular')
+
+    const rows = await getTenantDb(orgId)
+      .selectFrom('pullRequests')
+      .select('number')
+      .where(excludePrTitleFilters([byBranch('release/')]))
+      .execute()
+
+    expect(rows.map((r) => r.number).sort()).toEqual([2, 3])
+  })
+
+  test('title and branch patterns combine as AND-of-exclusions', async () => {
+    await seedRepoAndPR(orgId, 1, '[WIP] draft', 'feature/a')
+    await seedRepoAndPR(orgId, 2, 'Bump version', 'release/1.2.0')
+    await seedRepoAndPR(orgId, 3, 'regular PR', 'feature/b')
+
+    const rows = await getTenantDb(orgId)
+      .selectFrom('pullRequests')
+      .select('number')
+      .where(excludePrTitleFilters([byTitle('[wip]'), byBranch('release/')]))
+      .execute()
+
+    expect(rows.map((r) => r.number)).toEqual([3])
   })
 
   test('treats _ as literal (not LIKE single-char wildcard)', async () => {
@@ -141,7 +182,7 @@ describe('excludePrTitleFilters', () => {
     const rows = await getTenantDb(orgId)
       .selectFrom('pullRequests')
       .select('number')
-      .where(excludePrTitleFilters(['pr_123']))
+      .where(excludePrTitleFilters([byTitle('pr_123')]))
       .execute()
 
     expect(rows.map((r) => r.number)).toEqual([2])
@@ -184,9 +225,10 @@ describe('filteredPullRequestCount', () => {
       .selectFrom('pullRequests')
       .select((eb) => [
         eb.fn.countAll<number>().as('unfiltered'),
-        filteredPullRequestCount(['[do not merge]', '[epic-'])(eb).as(
-          'filtered',
-        ),
+        filteredPullRequestCount([
+          byTitle('[do not merge]'),
+          byTitle('[epic-'),
+        ])(eb).as('filtered'),
       ])
       .executeTakeFirstOrThrow()
 
@@ -202,7 +244,9 @@ describe('filteredPullRequestCount', () => {
       .selectFrom('pullRequests')
       .select((eb) => [
         eb.fn.countAll<number>().as('unfiltered'),
-        filteredPullRequestCount(['zzz-never-matches'])(eb).as('filtered'),
+        filteredPullRequestCount([byTitle('zzz-never-matches')])(eb).as(
+          'filtered',
+        ),
       ])
       .executeTakeFirstOrThrow()
 
@@ -217,7 +261,7 @@ describe('filteredPullRequestCount', () => {
       .where('number', '=', 9999)
       .select((eb) => [
         eb.fn.countAll<number>().as('unfiltered'),
-        filteredPullRequestCount(['foo'])(eb).as('filtered'),
+        filteredPullRequestCount([byTitle('foo')])(eb).as('filtered'),
       ])
       .executeTakeFirstOrThrow()
 

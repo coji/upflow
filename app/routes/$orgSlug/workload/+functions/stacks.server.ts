@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import type { PrType } from '~/app/libs/pr-type'
 import {
@@ -18,7 +19,7 @@ import type { OrganizationId } from '~/app/types/organization'
 export const getOpenPullRequests = async (
   organizationId: OrganizationId,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   hideDrafts = false,
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
@@ -65,7 +66,7 @@ export const getOpenPullRequests = async (
 export const countOpenPullRequests = async (
   organizationId: OrganizationId,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   hideDrafts = false,
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
@@ -106,7 +107,7 @@ export const countOpenPullRequests = async (
 export const countHiddenDrafts = async (
   organizationId: OrganizationId,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<number> => {
   const tenantDb = getTenantDb(organizationId)
@@ -140,7 +141,7 @@ export const countHiddenDrafts = async (
 export const getPendingReviewAssignments = async (
   organizationId: OrganizationId,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   hideDrafts = false,
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
@@ -201,7 +202,7 @@ export const getPendingReviewAssignments = async (
 export const getOpenPullRequestReviews = async (
   organizationId: OrganizationId,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   hideDrafts = false,
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {

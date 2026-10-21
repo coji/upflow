@@ -1,8 +1,13 @@
+import type {
+  PrFilterPattern,
+  PrFilterTarget,
+} from '~/app/libs/pr-title-filter'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 export type PrTitleFilterRow = {
   id: string
+  target: PrFilterTarget
   pattern: string
   normalizedPattern: string
   isEnabled: boolean
@@ -21,6 +26,7 @@ export const listPrTitleFilters = async (
     .selectFrom('prTitleFilters')
     .select([
       'id',
+      'target',
       'pattern',
       'normalizedPattern',
       'isEnabled',
@@ -31,21 +37,32 @@ export const listPrTitleFilters = async (
     ])
     .orderBy('createdAt', 'asc')
     .execute()
-  return rows.map((row) => ({ ...row, isEnabled: Boolean(row.isEnabled) }))
+  return rows.map((row) => ({
+    ...row,
+    target: toPrFilterTarget(row.target),
+    isEnabled: Boolean(row.isEnabled),
+  }))
 }
 
-/** loader が query 組み込みで使う enabled パターンの normalizedPattern 配列 */
+/** loader が query 組み込みで使う enabled パターン (target + normalizedPattern) */
 export const listEnabledPrTitleFilterPatterns = async (
   organizationId: OrganizationId,
-): Promise<string[]> => {
+): Promise<PrFilterPattern[]> => {
   const tenantDb = getTenantDb(organizationId)
   const rows = await tenantDb
     .selectFrom('prTitleFilters')
-    .select('normalizedPattern')
+    .select(['target', 'normalizedPattern'])
     .where('isEnabled', '=', 1)
     .execute()
-  return rows.map((row) => row.normalizedPattern)
+  return rows.map((row) => ({
+    target: toPrFilterTarget(row.target),
+    pattern: row.normalizedPattern,
+  }))
 }
+
+/** DB の CHECK 制約で title / branch に限られる */
+const toPrFilterTarget = (value: string): PrFilterTarget =>
+  value === 'branch' ? 'branch' : 'title'
 
 /**
  * `showFiltered=1` で patterns 本体は不要だが、status UI の「Filter off」

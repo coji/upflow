@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import { sql } from 'kysely'
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import type { PrType } from '~/app/libs/pr-type'
@@ -20,7 +21,7 @@ export const getQueueHistoryRawData = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -117,7 +118,7 @@ export const getWipCycleRawData = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -181,7 +182,7 @@ export const getPRSizeDistribution = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -246,7 +247,7 @@ export const countWipCyclePullRequests = async (
   organizationId: OrganizationId,
   sinceDate: string,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)

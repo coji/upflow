@@ -82,6 +82,7 @@ export interface PrTitleFilters {
   isEnabled: Generated<number>;
   normalizedPattern: string;
   pattern: string;
+  target: Generated<string>;
   updatedAt: Generated<string>;
   updatedBy: string;
 }

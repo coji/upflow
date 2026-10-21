@@ -158,7 +158,7 @@ describe('translatePrTitleFilterError', () => {
       translatePrTitleFilterError(
         'SQLITE_CONSTRAINT: UNIQUE constraint failed: pr_title_filters.normalized_pattern',
       ),
-    ).toBe('This pattern is already registered.')
+    ).toBe('This pattern is already registered for this target.')
   })
 
   it('passes through unrelated errors unchanged', () => {
