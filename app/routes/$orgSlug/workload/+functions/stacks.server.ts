@@ -1,8 +1,11 @@
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
+import type { PrType } from '~/app/libs/pr-type'
 import {
+  DEFAULT_ALLOWED_PR_TYPES,
   excludeBots,
   excludePrTitleFilters,
   filteredPullRequestCount,
+  filterPrTypes,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -17,6 +20,7 @@ export const getOpenPullRequests = async (
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
   hideDrafts = false,
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -35,6 +39,7 @@ export const getOpenPullRequests = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
+    .where(filterPrTypes(prTypes))
     .where(excludePrTitleFilters(normalizedPatterns))
     .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .select([
@@ -62,6 +67,7 @@ export const countOpenPullRequests = async (
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
   hideDrafts = false,
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
@@ -80,6 +86,7 @@ export const countOpenPullRequests = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
+    .where(filterPrTypes(prTypes))
     .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .select((eb) => [
       eb.fn.countAll<number>().as('unfiltered'),
@@ -100,6 +107,7 @@ export const countHiddenDrafts = async (
   organizationId: OrganizationId,
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<number> => {
   const tenantDb = getTenantDb(organizationId)
   const row = await tenantDb
@@ -118,6 +126,7 @@ export const countHiddenDrafts = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
+    .where(filterPrTypes(prTypes))
     .where(excludePrTitleFilters(normalizedPatterns))
     .where('pullRequests.isDraft', '=', 1)
     .select((eb) => [eb.fn.countAll<number>().as('draftCount')])
@@ -133,6 +142,7 @@ export const getPendingReviewAssignments = async (
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
   hideDrafts = false,
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -162,6 +172,7 @@ export const getPendingReviewAssignments = async (
     .where('pullRequests.closedAt', 'is', null)
     .where('pullRequestReviewers.requestedAt', 'is not', null)
     .where(excludeBots)
+    .where(filterPrTypes(prTypes))
     .where(excludePrTitleFilters(normalizedPatterns))
     .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .$if(teamId != null, (qb) =>
@@ -192,6 +203,7 @@ export const getOpenPullRequestReviews = async (
   teamId?: string | null,
   normalizedPatterns: readonly string[] = [],
   hideDrafts = false,
+  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
   return await tenantDb
@@ -223,6 +235,7 @@ export const getOpenPullRequestReviews = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
+    .where(filterPrTypes(prTypes))
     .where(excludePrTitleFilters(normalizedPatterns))
     .$if(hideDrafts, (qb) => qb.where('pullRequests.isDraft', '=', 0))
     .select([

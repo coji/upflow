@@ -26,6 +26,7 @@ import {
   type PRReviewStatus,
 } from '~/app/routes/$orgSlug/+components/pr-block'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
 import {
   buildPRReviewerStatesMap,
   classifyPRReviewStatus,
@@ -80,6 +81,7 @@ export const loader = async ({ params, context, url }: Route.LoaderArgs) => {
       from,
       to,
       filter.normalizedPatterns,
+      filter.prTypes,
     ),
     getMergedPRs(
       organization.id,
@@ -87,6 +89,7 @@ export const loader = async ({ params, context, url }: Route.LoaderArgs) => {
       from,
       to,
       filter.normalizedPatterns,
+      filter.prTypes,
     ),
     getClosedPRs(
       organization.id,
@@ -94,6 +97,7 @@ export const loader = async ({ params, context, url }: Route.LoaderArgs) => {
       from,
       to,
       filter.normalizedPatterns,
+      filter.prTypes,
     ),
     getReviewsSubmitted(
       organization.id,
@@ -101,10 +105,23 @@ export const loader = async ({ params, context, url }: Route.LoaderArgs) => {
       from,
       to,
       filter.normalizedPatterns,
+      filter.prTypes,
     ),
-    getBacklogDetails(organization.id, params.login, filter.normalizedPatterns),
+    getBacklogDetails(
+      organization.id,
+      params.login,
+      filter.normalizedPatterns,
+      filter.prTypes,
+    ),
     computeExcludedCount(filter, (patterns) =>
-      countCreatedPRs(organization.id, params.login, from, to, patterns),
+      countCreatedPRs(
+        organization.id,
+        params.login,
+        from,
+        to,
+        patterns,
+        filter.prTypes,
+      ),
     ),
   ])
 
@@ -337,13 +354,16 @@ export default function MemberWeeklyPage({
             ← Review Stacks
           </Link>
         </HStack>
-        <PrTitleFilterStatus
-          excludedCount={excludedCount}
-          filterActive={filterActive}
-          showFiltered={showFiltered}
-          hasAnyEnabledPattern={hasAnyEnabledPattern}
-          isAdmin={isAdmin}
-        />
+        <HStack>
+          <PrTypeFilter />
+          <PrTitleFilterStatus
+            excludedCount={excludedCount}
+            filterActive={filterActive}
+            showFiltered={showFiltered}
+            hasAnyEnabledPattern={hasAnyEnabledPattern}
+            isAdmin={isAdmin}
+          />
+        </HStack>
       </div>
 
       <HStack>
