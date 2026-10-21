@@ -14,6 +14,7 @@ import {
 } from '~/app/libs/pr-title-filter.server'
 import { orgContext, teamContext } from '~/app/middleware/context'
 import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
+import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
 import { DraftFilterStatus } from './+components/draft-filter-status'
 import { listTeams } from '~/app/routes/$orgSlug/settings/teams._index/queries.server'
 import { getOrgCachedData } from '~/app/services/cache.server'
@@ -65,26 +66,40 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
               teamId,
               filter.normalizedPatterns,
               hideDrafts,
+              filter.prTypes,
             ),
             getPendingReviewAssignments(
               organization.id,
               teamId,
               filter.normalizedPatterns,
               hideDrafts,
+              filter.prTypes,
             ),
             getOpenPullRequestReviews(
               organization.id,
               teamId,
               filter.normalizedPatterns,
               hideDrafts,
+              filter.prTypes,
             ),
           ]),
         SIXTY_SECONDS,
       ),
       computeExcludedCount(filter, (patterns) =>
-        countOpenPullRequests(organization.id, teamId, patterns, hideDrafts),
+        countOpenPullRequests(
+          organization.id,
+          teamId,
+          patterns,
+          hideDrafts,
+          filter.prTypes,
+        ),
       ),
-      countHiddenDrafts(organization.id, teamId, filter.normalizedPatterns),
+      countHiddenDrafts(
+        organization.id,
+        teamId,
+        filter.normalizedPatterns,
+        filter.prTypes,
+      ),
     ])
 
   return {
@@ -174,6 +189,7 @@ export default function ReviewStacksPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
+          <PrTypeFilter />
           <DraftFilterStatus draftCount={draftCount} hideDrafts={hideDrafts} />
           <PrTitleFilterStatus
             excludedCount={excludedCount}

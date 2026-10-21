@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 import { calcPagination } from '~/app/libs/db-utils'
@@ -18,7 +19,7 @@ function feedbackBaseQuery(
   tenantDb: Kysely<TenantDB>,
   sinceDate: string,
   teamId?: string,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
 ) {
   let query = tenantDb
     .selectFrom('pullRequestFeedbacks')
@@ -54,7 +55,7 @@ interface ListFilteredFeedbacksArgs {
   pageSize: number
   sortBy?: string
   sortOrder: 'asc' | 'desc'
-  normalizedPatterns?: readonly string[]
+  normalizedPatterns?: readonly PrFilterPattern[]
 }
 
 export const listFilteredFeedbacks = async ({
@@ -147,7 +148,7 @@ export const countFeedbacks = async ({
   organizationId: OrganizationId
   teamId?: string
   sinceDate: string
-  normalizedPatterns?: readonly string[]
+  normalizedPatterns?: readonly PrFilterPattern[]
 }): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
   // base query は excludePrTitleFilters を含むので、unfiltered 側は素の base
@@ -170,7 +171,7 @@ interface GetFeedbackSummaryArgs {
   organizationId: OrganizationId
   teamId?: string
   sinceDate: string
-  normalizedPatterns?: readonly string[]
+  normalizedPatterns?: readonly PrFilterPattern[]
 }
 
 export const getFeedbackSummary = async ({

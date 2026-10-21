@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import {
   hasAnyEnabledPrTitleFilter,
   listEnabledPrTitleFilterPatterns,
@@ -8,7 +9,7 @@ import { parseIncludedPrTypes, toAllowedPrTypes } from './pr-type-filter'
 
 export interface PrFilterLoaderState {
   showFiltered: boolean
-  normalizedPatterns: readonly string[]
+  normalizedPatterns: readonly PrFilterPattern[]
   filterActive: boolean
   /**
    * DB に有効パターンが 1 件以上あるか。`showFiltered=1` でも DB 状態は保持するため、
@@ -66,7 +67,9 @@ export interface FilterCountStats {
  */
 export const filterCacheKeySuffix = (state: PrFilterLoaderState): string => {
   const sf = state.showFiltered ? 't' : 'f'
-  const patternSignature = JSON.stringify([...state.normalizedPatterns].sort())
+  const patternSignature = JSON.stringify(
+    state.normalizedPatterns.map((p) => `${p.target}:${p.pattern}`).sort(),
+  )
   const prTypes = [...state.prTypes].sort().join(',')
   return `sf=${sf}:patterns=${patternSignature}:types=${prTypes}`
 }
@@ -78,7 +81,7 @@ export const filterCacheKeySuffix = (state: PrFilterLoaderState): string => {
  */
 export const computeExcludedCount = async (
   state: PrFilterLoaderState,
-  counter: (patterns: readonly string[]) => Promise<FilterCountStats>,
+  counter: (patterns: readonly PrFilterPattern[]) => Promise<FilterCountStats>,
 ): Promise<number> => {
   if (!state.filterActive) return 0
   const { unfiltered, filtered } = await counter(state.normalizedPatterns)

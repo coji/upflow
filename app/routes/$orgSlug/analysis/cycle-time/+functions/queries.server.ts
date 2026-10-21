@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import type { PrType } from '~/app/libs/pr-type'
 import {
@@ -23,7 +24,7 @@ export const getCycleTimeRawData = async (
   untilDate: string | null,
   teamId?: string | null,
   repositoryId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -77,7 +78,7 @@ export const countCycleTimePullRequests = async (
   sinceDate: string,
   teamId?: string | null,
   repositoryId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)

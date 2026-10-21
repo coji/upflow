@@ -1,5 +1,8 @@
 import { nanoid } from 'nanoid'
-import { normalizePattern } from '~/app/libs/pr-title-filter'
+import {
+  normalizePattern,
+  type PrFilterTarget,
+} from '~/app/libs/pr-title-filter'
 import { clearOrgCache } from '~/app/services/cache.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
@@ -10,7 +13,12 @@ import type { OrganizationId } from '~/app/types/organization'
  */
 export const createPrTitleFilter = async (
   organizationId: OrganizationId,
-  input: { pattern: string; isEnabled?: boolean; userId: string },
+  input: {
+    target?: PrFilterTarget
+    pattern: string
+    isEnabled?: boolean
+    userId: string
+  },
 ): Promise<{ id: string }> => {
   const tenantDb = getTenantDb(organizationId)
   const id = nanoid()
@@ -20,6 +28,7 @@ export const createPrTitleFilter = async (
     .insertInto('prTitleFilters')
     .values({
       id,
+      target: input.target ?? 'title',
       pattern: input.pattern.trim(),
       normalizedPattern: normalized,
       isEnabled: input.isEnabled === false ? 0 : 1,

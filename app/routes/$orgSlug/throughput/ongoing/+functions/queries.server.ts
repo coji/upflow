@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import { pipe, sortBy } from 'remeda'
 import { diffInDays } from '~/app/libs/business-hours'
 import dayjs from '~/app/libs/dayjs'
@@ -19,7 +20,7 @@ export const getOngoingPullRequestReport = async (
   toDateTime: string | null,
   teamId?: string | null,
   businessDaysOnly = true,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -102,7 +103,7 @@ export const countOngoingPullRequests = async (
   fromDateTime: string | null,
   toDateTime: string | null,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)

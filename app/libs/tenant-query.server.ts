@@ -1,5 +1,6 @@
 import type { ExpressionBuilder } from 'kysely'
 import { PR_TYPES, type PrType } from '~/app/libs/pr-type'
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import type * as TenantDB from '~/app/services/tenant-type'
 
 /** 集計クエリの既定の PR 種別 (#429)。release / template-merge / dependency は除く */
@@ -23,23 +24,28 @@ export function excludeBots(
 }
 
 /**
- * pullRequests.title が指定の normalized pattern のいずれにもマッチしない行だけを残すフィルタ。
- * `instr(lower(title), pattern) = 0` で literal substring 判定するため、`%` や `_` が
+ * PR filter のパターンのいずれにもマッチしない行だけを残すフィルタ。target が
+ * title なら pullRequests.title、branch なら pullRequests.sourceBranch と照合する。
+ * `instr(lower(column), pattern) = 0` で literal substring 判定するため、`%` や `_` が
  * ワイルドカードとして解釈される LIKE の問題を避ける。
  *
- * normalizedPatterns は trim + lowercase 済みであること (`normalizePattern()` 経由)。
+ * pattern は trim + lowercase 済みであること (`normalizePattern()` 経由)。
  * 空配列の場合は常に true (no-op) を返す。
  */
-export function excludePrTitleFilters(normalizedPatterns: readonly string[]) {
+export function excludePrTitleFilters(patterns: readonly PrFilterPattern[]) {
   return (eb: ExpressionBuilder<TenantDB.DB, 'pullRequests'>) => {
-    if (normalizedPatterns.length === 0) {
+    if (patterns.length === 0) {
       return eb.lit(true)
     }
     return eb.and(
-      normalizedPatterns.map((pattern) =>
+      patterns.map(({ target, pattern }) =>
         eb(
           eb.fn('instr', [
-            eb.fn('lower', ['pullRequests.title']),
+            eb.fn('lower', [
+              target === 'branch'
+                ? 'pullRequests.sourceBranch'
+                : 'pullRequests.title',
+            ]),
             eb.val(pattern),
           ]),
           '=',
@@ -61,7 +67,7 @@ export function excludePrTitleFilters(normalizedPatterns: readonly string[]) {
  * normalizedPatterns 空の場合は countAll() と同じ値を返す (filtered = unfiltered)。
  */
 export function filteredPullRequestCount(
-  normalizedPatterns: readonly string[],
+  normalizedPatterns: readonly PrFilterPattern[],
 ) {
   return (eb: ExpressionBuilder<TenantDB.DB, 'pullRequests'>) =>
     eb.fn.coalesce(

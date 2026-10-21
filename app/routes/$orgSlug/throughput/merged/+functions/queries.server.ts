@@ -1,3 +1,4 @@
+import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import { pipe, sortBy } from 'remeda'
 import { diffInDays } from '~/app/libs/business-hours'
 import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
@@ -19,7 +20,7 @@ export const getMergedPullRequestReport = async (
   objective: number,
   teamId?: string | null,
   businessDaysOnly = true,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ) => {
   const tenantDb = getTenantDb(organizationId)
@@ -105,7 +106,7 @@ export const countMergedPullRequests = async (
   fromDateTime: string | null,
   toDateTime: string | null,
   teamId?: string | null,
-  normalizedPatterns: readonly string[] = [],
+  normalizedPatterns: readonly PrFilterPattern[] = [],
   prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
 ): Promise<FilterCountStats> => {
   const tenantDb = getTenantDb(organizationId)
