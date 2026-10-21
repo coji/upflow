@@ -3,10 +3,11 @@ import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 import { calcPagination } from '~/app/libs/db-utils'
 import { PR_SIZE_RANK } from '~/app/libs/pr-classify'
-import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import {
   excludePrTitleFilters,
-  filteredPullRequestCount,
+  hiddenPrBreakdown,
+  type HiddenPrBreakdownInput,
+  type HiddenPrBreakdownRow,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
 import type { DB as TenantDB } from '~/app/services/tenant-type'
@@ -143,28 +144,19 @@ export const countFeedbacks = async ({
   organizationId,
   teamId,
   sinceDate,
-  normalizedPatterns = [],
+  breakdown,
 }: {
   organizationId: OrganizationId
   teamId?: string
   sinceDate: string
-  normalizedPatterns?: readonly PrFilterPattern[]
-}): Promise<FilterCountStats> => {
+  breakdown: HiddenPrBreakdownInput
+}): Promise<HiddenPrBreakdownRow> => {
   const tenantDb = getTenantDb(organizationId)
   // base query は excludePrTitleFilters を含むので、unfiltered 側は素の base
   // (patterns 空) で組み立てて 1 クエリで unfiltered/filtered を集計する。
-  const row = await feedbackBaseQuery(tenantDb, sinceDate, teamId, [])
-    .select((eb) => [
-      eb.fn
-        .count<string>('pullRequestFeedbacks.pullRequestNumber')
-        .as('unfiltered'),
-      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
-    ])
+  return await feedbackBaseQuery(tenantDb, sinceDate, teamId, [])
+    .select(hiddenPrBreakdown(breakdown))
     .executeTakeFirstOrThrow()
-  return {
-    unfiltered: Number(row.unfiltered),
-    filtered: Number(row.filtered),
-  }
 }
 
 interface GetFeedbackSummaryArgs {

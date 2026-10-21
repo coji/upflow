@@ -1,13 +1,14 @@
 import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
 import { pipe, sortBy } from 'remeda'
 import { diffInDays } from '~/app/libs/business-hours'
-import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import type { PrType } from '~/app/libs/pr-type'
 import {
   DEFAULT_ALLOWED_PR_TYPES,
   excludeBots,
   excludePrTitleFilters,
-  filteredPullRequestCount,
+  hiddenPrBreakdown,
+  type HiddenPrBreakdownInput,
+  type HiddenPrBreakdownRow,
   filterPrTypes,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -112,12 +113,11 @@ export const countDeployedPullRequests = async (
   organizationId: OrganizationId,
   fromDateTime: string | null,
   toDateTime: string | null,
-  teamId?: string | null,
-  normalizedPatterns: readonly PrFilterPattern[] = [],
-  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
-): Promise<FilterCountStats> => {
+  teamId: string | null | undefined,
+  breakdown: HiddenPrBreakdownInput,
+): Promise<HiddenPrBreakdownRow> => {
   const tenantDb = getTenantDb(organizationId)
-  const row = await tenantDb
+  return await tenantDb
     .selectFrom('pullRequests')
     .innerJoin('repositories', 'pullRequests.repositoryId', 'repositories.id')
     .leftJoin('companyGithubUsers', (join) =>
@@ -136,14 +136,6 @@ export const countDeployedPullRequests = async (
       qb.where('repositories.teamId', '=', teamId as string),
     )
     .where(excludeBots)
-    .where(filterPrTypes(prTypes))
-    .select((eb) => [
-      eb.fn.countAll<number>().as('unfiltered'),
-      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
-    ])
+    .select(hiddenPrBreakdown(breakdown))
     .executeTakeFirstOrThrow()
-  return {
-    unfiltered: Number(row.unfiltered),
-    filtered: Number(row.filtered),
-  }
 }

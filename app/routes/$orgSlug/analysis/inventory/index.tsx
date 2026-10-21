@@ -19,7 +19,7 @@ import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
@@ -28,8 +28,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
-import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { OpenPRInventoryChart } from './+components/open-pr-inventory-chart'
 import { aggregateWeeklyOpenPRInventory } from './+functions/aggregate'
@@ -77,7 +76,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
 
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const [rawRows, excludedCount] = await Promise.all([
+  const [rawRows, hiddenPrs] = await Promise.all([
     getOrgCachedData(
       organization.id,
       cacheKey,
@@ -93,15 +92,14 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
         ),
       FIVE_MINUTES,
     ),
-    computeExcludedCount(filter, (patterns) =>
+    loadHiddenPrSummary(filter, (breakdown) =>
       countOpenPRInventory(
         organization.id,
         sinceDate,
         now,
         teamParam,
         excludeBots,
-        patterns,
-        filter.prTypes,
+        breakdown,
       ),
     ),
   ])
@@ -114,10 +112,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     periodMonths,
     excludeBots,
     unreviewedOnly,
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -133,10 +128,7 @@ export const clientLoader = async ({
     periodMonths,
     excludeBots,
     unreviewedOnly,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   } = await serverLoader()
 
@@ -151,10 +143,7 @@ export const clientLoader = async ({
     periodMonths,
     excludeBots,
     unreviewedOnly,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   }
 }
@@ -179,10 +168,7 @@ export default function InventoryPage({
     periodMonths,
     excludeBots,
     unreviewedOnly,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   },
 }: Route.ComponentProps) {
@@ -199,14 +185,7 @@ export default function InventoryPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions className="flex flex-wrap">
-          <PrTypeFilter />
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
           <Select
             value={String(periodMonths)}
             onValueChange={(value) => {

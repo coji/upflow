@@ -22,7 +22,7 @@ import { calcSinceDate } from '~/app/libs/date-utils'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   filterCacheKeySuffix,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
@@ -31,8 +31,7 @@ import {
   teamContext,
   timezoneContext,
 } from '~/app/middleware/context'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
-import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import { getOrgCachedData } from '~/app/services/cache.server'
 import { BottleneckMixCard } from './+components/bottleneck-mix-card'
 import { ByAuthorTable } from './+components/by-author-table'
@@ -125,7 +124,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const cacheKey = `cycle-time:${teamParam ?? 'all'}:${repositoryId ?? 'all'}:${periodMonths}:${filterCacheKeySuffix(filter)}`
   const FIVE_MINUTES = 5 * 60 * 1000
 
-  const [[currentRows, previousRows], excludedCount] = await Promise.all([
+  const [[currentRows, previousRows], hiddenPrs] = await Promise.all([
     getOrgCachedData(
       organization.id,
       cacheKey,
@@ -152,14 +151,13 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
         ]),
       FIVE_MINUTES,
     ),
-    computeExcludedCount(filter, (patterns) =>
+    loadHiddenPrSummary(filter, (breakdown) =>
       countCycleTimePullRequests(
         organization.id,
         sinceDate,
         teamParam,
         repositoryId,
-        patterns,
-        filter.prTypes,
+        breakdown,
       ),
     ),
   ])
@@ -174,10 +172,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     metricMode,
     repositoryId,
     repositories,
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
@@ -225,10 +220,7 @@ export const clientLoader = async ({
     metricMode: data.metricMode,
     repositoryId: data.repositoryId,
     repositories: data.repositories,
-    excludedCount: data.excludedCount,
-    filterActive: data.filterActive,
-    showFiltered: data.showFiltered,
-    hasAnyEnabledPattern: data.hasAnyEnabledPattern,
+    hiddenPrs: data.hiddenPrs,
     isAdmin: data.isAdmin,
   }
 }
@@ -261,10 +253,7 @@ export default function CycleTimePage({
     metricMode,
     repositoryId,
     repositories,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin,
   },
 }: Route.ComponentProps) {
@@ -319,14 +308,7 @@ export default function CycleTimePage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions className="flex flex-wrap">
-          <PrTypeFilter />
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
           <Select
             value={repositoryId ?? 'all'}
             onValueChange={(value) => {

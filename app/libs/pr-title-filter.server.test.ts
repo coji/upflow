@@ -6,10 +6,7 @@ import { createPrTitleFilter } from '~/app/services/pr-title-filter-mutations.se
 import { closeTenantDb } from '~/app/services/tenant-db.server'
 import { type OrganizationId, toOrgId } from '~/app/types/organization'
 import { setupTenantSchema } from '~/test/setup-tenant-db'
-import {
-  computeExcludedCount,
-  loadPrFilterState,
-} from './pr-title-filter.server'
+import { toHiddenPrSummary, loadPrFilterState } from './pr-title-filter.server'
 
 const testDir = path.join(tmpdir(), `pr-filter-server-test-${Date.now()}`)
 mkdirSync(testDir, { recursive: true })
@@ -38,13 +35,13 @@ describe('loadPrFilterState', () => {
     await closeTenantDb(orgId)
   })
 
-  test('returns filterActive=false and hasAnyEnabledPattern=false when DB is empty', async () => {
+  test('returns filterActive=false and no patterns when DB is empty', async () => {
     const state = await loadPrFilterState(makeRequest(''), orgId)
     expect(state).toEqual({
       showFiltered: false,
       normalizedPatterns: [],
+      enabledPatterns: [],
       filterActive: false,
-      hasAnyEnabledPattern: false,
       prTypes: ['normal'],
     })
   })
@@ -78,15 +75,15 @@ describe('loadPrFilterState', () => {
     ])
   })
 
-  test('showFiltered=1 bypasses patterns but keeps hasAnyEnabledPattern flag', async () => {
+  test('showFiltered=1 bypasses patterns but keeps the enabled patterns for counting', async () => {
     await createPrTitleFilter(orgId, { pattern: '[WIP]', userId: 'u' })
 
     const state = await loadPrFilterState(makeRequest('?showFiltered=1'), orgId)
     expect(state).toEqual({
       showFiltered: true,
       normalizedPatterns: [],
+      enabledPatterns: [{ target: 'title', pattern: '[wip]' }],
       filterActive: false,
-      hasAnyEnabledPattern: true,
       prTypes: ['normal'],
     })
   })
@@ -124,7 +121,7 @@ describe('loadPrFilterState', () => {
     expect(state.prTypes).toEqual(['normal', 'release'])
   })
 
-  test('hasAnyEnabledPattern=false when only disabled filters exist', async () => {
+  test('enabledPatterns is empty when only disabled filters exist', async () => {
     await createPrTitleFilter(orgId, {
       pattern: '[WIP]',
       userId: 'u',
@@ -132,7 +129,7 @@ describe('loadPrFilterState', () => {
     })
 
     const state = await loadPrFilterState(makeRequest('?showFiltered=1'), orgId)
-    expect(state.hasAnyEnabledPattern).toBe(false)
+    expect(state.enabledPatterns).toEqual([])
   })
 
   test('any other value of showFiltered is not treated as truthy', async () => {
@@ -147,58 +144,43 @@ describe('loadPrFilterState', () => {
   })
 })
 
-describe('computeExcludedCount', () => {
-  test('returns 0 when filter is not active (no DB query)', async () => {
-    const counter = vi.fn()
-    const result = await computeExcludedCount(
-      {
-        showFiltered: false,
-        normalizedPatterns: [],
-        filterActive: false,
-        hasAnyEnabledPattern: false,
-        prTypes: ['normal'],
-      },
-      counter,
-    )
-    expect(result).toBe(0)
-    expect(counter).not.toHaveBeenCalled()
-  })
+describe('toHiddenPrSummary', () => {
+  const row = {
+    hiddenRelease: 2,
+    hiddenTemplateMerge: 0,
+    hiddenDependency: '4',
+    hiddenDraft: 3,
+    hiddenFilter: 1,
+  }
 
-  test('returns unfiltered - filtered via single counter call', async () => {
-    const counter = vi.fn(async () => ({ unfiltered: 10, filtered: 7 }))
-    const result = await computeExcludedCount(
-      {
-        showFiltered: false,
-        normalizedPatterns: [{ target: 'title', pattern: '[wip]' }],
-        filterActive: true,
-        hasAnyEnabledPattern: true,
-        prTypes: ['normal'],
-      },
-      counter,
-    )
-    expect(result).toBe(3)
-    expect(counter).toHaveBeenCalledTimes(1)
-    expect(counter).toHaveBeenCalledWith([
-      { target: 'title', pattern: '[wip]' },
+  test('sums only the active reasons into hiddenCount', () => {
+    const summary = toHiddenPrSummary(row, {
+      prTypes: ['normal', 'dependency'],
+      typesApplicable: true,
+      enabledPatterns: [{ target: 'branch', pattern: 'release/' }],
+      filterActive: true,
+      hideDrafts: false,
+    })
+    expect(summary.reasons).toEqual([
+      { reason: 'release', active: true, count: 2 },
+      { reason: 'template-merge', active: true, count: 0 },
+      { reason: 'dependency', active: false, count: 4 },
+      { reason: 'draft', active: false, count: 3 },
+      { reason: 'filter', active: true, count: 1 },
     ])
+    expect(summary.hiddenCount).toBe(3)
   })
 
-  test('passes the actual normalizedPatterns array to counter', async () => {
-    const patterns = [
-      { target: 'title', pattern: '[wip]' },
-      { target: 'branch', pattern: 'release/' },
-    ] as const
-    const counter = vi.fn(async () => ({ unfiltered: 5, filtered: 2 }))
-    await computeExcludedCount(
-      {
-        showFiltered: false,
-        normalizedPatterns: patterns,
-        filterActive: true,
-        hasAnyEnabledPattern: true,
-        prTypes: ['normal'],
-      },
-      counter,
-    )
-    expect(counter).toHaveBeenCalledWith(patterns)
+  test('drops type rows on pages without the type filter', () => {
+    const summary = toHiddenPrSummary(row, {
+      prTypes: ['normal'],
+      typesApplicable: false,
+      enabledPatterns: [{ target: 'title', pattern: '[wip]' }],
+      filterActive: false,
+    })
+    expect(summary.reasons).toEqual([
+      { reason: 'filter', active: false, count: 1 },
+    ])
+    expect(summary.hiddenCount).toBe(0)
   })
 })

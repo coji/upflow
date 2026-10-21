@@ -17,13 +17,12 @@ import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
 import { isOrgAdmin } from '~/app/libs/member-role'
 import {
-  computeExcludedCount,
+  loadHiddenPrSummary,
   loadPrFilterState,
 } from '~/app/libs/pr-title-filter.server'
 import { median as calcMedian } from '~/app/libs/stats'
 import { orgContext, teamContext } from '~/app/middleware/context'
-import { PrTitleFilterStatus } from '~/app/routes/$orgSlug/+components/pr-title-filter-status'
-import { PrTypeFilter } from '~/app/routes/$orgSlug/+components/pr-type-filter'
+import { HiddenPrsMenu } from '~/app/routes/$orgSlug/+components/hidden-prs-menu'
 import { StatCard } from '../+components/stat-card'
 import { createColumns } from './+columns'
 import {
@@ -51,7 +50,7 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
   const toIso = dayjs().utc().toISOString()
   const filter = await loadPrFilterState(url, organization.id)
 
-  const [pullRequests, excludedCount] = await Promise.all([
+  const [pullRequests, hiddenPrs] = await Promise.all([
     getOngoingPullRequestReport(
       organization.id,
       null,
@@ -61,14 +60,13 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
       filter.normalizedPatterns,
       filter.prTypes,
     ),
-    computeExcludedCount(filter, (patterns) =>
+    loadHiddenPrSummary(filter, (breakdown) =>
       countOngoingPullRequests(
         organization.id,
         null,
         toIso,
         teamParam || undefined,
-        patterns,
-        filter.prTypes,
+        breakdown,
       ),
     ),
   ])
@@ -82,25 +80,13 @@ export const loader = async ({ context, url }: Route.LoaderArgs) => {
     pullRequests,
     median,
     businessDaysOnly,
-    excludedCount,
-    filterActive: filter.filterActive,
-    showFiltered: filter.showFiltered,
-    hasAnyEnabledPattern: filter.hasAnyEnabledPattern,
+    hiddenPrs,
     isAdmin: isOrgAdmin(membership.role),
   }
 }
 
 export default function OngoingPage({
-  loaderData: {
-    pullRequests,
-    median,
-    businessDaysOnly,
-    excludedCount,
-    filterActive,
-    showFiltered,
-    hasAnyEnabledPattern,
-    isAdmin,
-  },
+  loaderData: { pullRequests, median, businessDaysOnly, hiddenPrs, isAdmin },
   params: { orgSlug },
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams()
@@ -120,14 +106,7 @@ export default function OngoingPage({
           </PageHeaderDescription>
         </PageHeaderHeading>
         <PageHeaderActions>
-          <PrTypeFilter />
-          <PrTitleFilterStatus
-            excludedCount={excludedCount}
-            filterActive={filterActive}
-            showFiltered={showFiltered}
-            hasAnyEnabledPattern={hasAnyEnabledPattern}
-            isAdmin={isAdmin}
-          />
+          <HiddenPrsMenu summary={hiddenPrs} isAdmin={isAdmin} />
         </PageHeaderActions>
       </PageHeader>
 

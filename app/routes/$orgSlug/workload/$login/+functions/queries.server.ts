@@ -1,11 +1,12 @@
 import type { PrFilterPattern } from '~/app/libs/pr-title-filter'
-import type { FilterCountStats } from '~/app/libs/pr-title-filter.server'
 import type { PrType } from '~/app/libs/pr-type'
 import {
   DEFAULT_ALLOWED_PR_TYPES,
   excludeBots,
   excludePrTitleFilters,
-  filteredPullRequestCount,
+  hiddenPrBreakdown,
+  type HiddenPrBreakdownInput,
+  type HiddenPrBreakdownRow,
   filterPrTypes,
 } from '~/app/libs/tenant-query.server'
 import { getTenantDb } from '~/app/services/tenant-db.server'
@@ -38,27 +39,18 @@ export const countCreatedPRs = async (
   login: string,
   from: string,
   to: string,
-  normalizedPatterns: readonly PrFilterPattern[] = [],
-  prTypes: readonly PrType[] = DEFAULT_ALLOWED_PR_TYPES,
-): Promise<FilterCountStats> => {
+  breakdown: HiddenPrBreakdownInput,
+): Promise<HiddenPrBreakdownRow> => {
   const tenantDb = getTenantDb(organizationId)
-  const row = await tenantDb
+  return await tenantDb
     .selectFrom('pullRequests')
     .where((eb) =>
       eb(eb.fn('lower', ['pullRequests.author']), '=', login.toLowerCase()),
     )
     .where('pullRequestCreatedAt', '>=', from)
     .where('pullRequestCreatedAt', '<=', to)
-    .where(filterPrTypes(prTypes))
-    .select((eb) => [
-      eb.fn.countAll<number>().as('unfiltered'),
-      filteredPullRequestCount(normalizedPatterns)(eb).as('filtered'),
-    ])
+    .select(hiddenPrBreakdown(breakdown))
     .executeTakeFirstOrThrow()
-  return {
-    unfiltered: Number(row.unfiltered),
-    filtered: Number(row.filtered),
-  }
 }
 
 export const getCreatedPRs = async (
