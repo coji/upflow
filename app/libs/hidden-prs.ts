@@ -15,11 +15,11 @@ export const HIDDEN_PR_REASONS = [
 export type HiddenPrReason = (typeof HIDDEN_PR_REASONS)[number]
 
 export const HIDDEN_PR_REASON_LABELS: Record<HiddenPrReason, string> = {
-  release: 'リリース PR',
-  'template-merge': 'テンプレートのマージ',
-  dependency: '依存ライブラリの更新',
-  draft: 'Draft',
-  filter: 'タイトル・ブランチのフィルタ',
+  release: 'Release PRs',
+  'template-merge': 'Template merges',
+  dependency: 'Dependency updates',
+  draft: 'Drafts',
+  filter: 'Title / branch filters',
 }
 
 export interface HiddenPrReasonCount {
