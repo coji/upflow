@@ -2,7 +2,10 @@ import type {
   PrFilterPattern,
   PrFilterTarget,
 } from '~/app/libs/pr-title-filter'
-import { getTenantDb } from '~/app/services/tenant-db.server'
+import {
+  getTenantDb,
+  getTenantDbWithoutJsonParsing,
+} from '~/app/services/tenant-db.server'
 import type { OrganizationId } from '~/app/types/organization'
 
 export type PrTitleFilterRow = {
@@ -21,7 +24,7 @@ export type PrTitleFilterRow = {
 export const listPrTitleFilters = async (
   organizationId: OrganizationId,
 ): Promise<PrTitleFilterRow[]> => {
-  const tenantDb = getTenantDb(organizationId)
+  const tenantDb = getTenantDbWithoutJsonParsing(organizationId)
   const rows = await tenantDb
     .selectFrom('prTitleFilters')
     .select([
@@ -48,7 +51,7 @@ export const listPrTitleFilters = async (
 export const listEnabledPrTitleFilterPatterns = async (
   organizationId: OrganizationId,
 ): Promise<PrFilterPattern[]> => {
-  const tenantDb = getTenantDb(organizationId)
+  const tenantDb = getTenantDbWithoutJsonParsing(organizationId)
   const rows = await tenantDb
     .selectFrom('prTitleFilters')
     .select(['target', 'normalizedPattern'])
@@ -74,7 +77,7 @@ export const listRecentPullRequestTitles = async (
   organizationId: OrganizationId,
   sinceDays = 90,
 ): Promise<{ repositoryId: string; number: number; title: string }[]> => {
-  const tenantDb = getTenantDb(organizationId)
+  const tenantDb = getTenantDbWithoutJsonParsing(organizationId)
   const cutoff = new Date(
     Date.now() - sinceDays * 24 * 60 * 60 * 1000,
   ).toISOString()

@@ -101,6 +101,14 @@ describe('loadPrFilterState', () => {
     ])
   })
 
+  test('bracketed patterns stay strings (not parsed as JSON)', async () => {
+    await createPrTitleFilter(orgId, { pattern: '[1]', userId: 'u' })
+    const state = await loadPrFilterState(makeRequest(''), orgId)
+    expect(state.normalizedPatterns).toEqual([
+      { target: 'title', pattern: '[1]' },
+    ])
+  })
+
   test('the same pattern can be registered for title and branch', async () => {
     await createPrTitleFilter(orgId, { pattern: 'release', userId: 'u' })
     await createPrTitleFilter(orgId, {

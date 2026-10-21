@@ -59,6 +59,20 @@ export function getTenantDb(
 }
 
 /**
+ * ParseJSONResultsPlugin を外した tenant DB (CamelCasePlugin は残す)。
+ * plugin は `[` で始まり `]` で終わる文字列を JSON とみなして parse するため、
+ * `[WIP]` のようなユーザー入力の文字列を読むときはこちらを使う
+ * (parse 失敗のエラーログが出るうえ、`[1]` は配列に化ける)。
+ */
+export function getTenantDbWithoutJsonParsing(
+  organizationId: OrganizationId,
+): Kysely<TenantDB.DB> {
+  return getTenantDb(organizationId)
+    .withoutPlugins()
+    .withPlugin(new CamelCasePlugin())
+}
+
+/**
  * Get the underlying better-sqlite3 instance for raw queries.
  * Use this to bypass ParseJSONResultsPlugin for performance-sensitive reads.
  */

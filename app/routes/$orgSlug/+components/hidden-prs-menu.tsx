@@ -17,7 +17,6 @@ import {
 } from '~/app/libs/hidden-prs'
 import { OPTIONAL_PR_TYPES, type OptionalPrType } from '~/app/libs/pr-type'
 import {
-  PR_TYPES_SEARCH_PARAM,
   parseIncludedPrTypes,
   setIncludedPrTypes,
 } from '~/app/libs/pr-type-filter'
@@ -48,11 +47,14 @@ export function setReasonHidden(
   return params
 }
 
-/** 既定から外れた表示設定が URL にあるか。あれば件数 0 でもボタンを残す */
-const hasNonDefaultParams = (params: URLSearchParams) =>
-  params.has(PR_TYPES_SEARCH_PARAM) ||
-  params.has('hideDrafts') ||
-  params.has('showFiltered')
+/** URL パラメータがないときの状態。種別とフィルタは隠す、Draft は表示する */
+const DEFAULT_HIDDEN: Record<HiddenPrReason, boolean> = {
+  release: true,
+  'template-merge': true,
+  dependency: true,
+  draft: false,
+  filter: true,
+}
 
 /**
  * 画面から隠している PR の件数と、その理由ごとの切り替え。
@@ -69,11 +71,12 @@ export function HiddenPrsMenu({
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const anyCount = summary.reasons.some((r) => r.count > 0)
-  if (
-    summary.reasons.length === 0 ||
-    (!anyCount && !hasNonDefaultParams(searchParams))
-  ) {
+  // 件数 0 で既定どおりの行は出さない (該当 PR がない理由を並べても判断材料にならない)。
+  // 既定から外した行は 0 件でも残し、元に戻せるようにする
+  const rows = summary.reasons.filter(
+    (r) => r.count > 0 || r.active !== DEFAULT_HIDDEN[r.reason],
+  )
+  if (rows.length === 0) {
     return null
   }
 
@@ -95,7 +98,7 @@ export function HiddenPrsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>この画面で非表示にしている PR</DropdownMenuLabel>
-        {summary.reasons.map(({ reason, active, count }) => (
+        {rows.map(({ reason, active, count }) => (
           <DropdownMenuCheckboxItem
             key={reason}
             checked={active}
