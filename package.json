@@ -5,12 +5,12 @@
   "sideEffects": false,
   "type": "module",
   "engines": {
-    "node": "24.20.0"
+    "node": "24.22.1"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "24.20.0",
+      "version": "24.22.1",
       "onFail": "download"
     }
   },
