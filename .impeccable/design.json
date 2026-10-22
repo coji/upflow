@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T23:41:53.020667+00:00",
+  "title": "Design System: Upflow",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.145 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "ink-strong": {
+        "role": "primary",
+        "displayName": "Ink Strong",
+        "canonical": "oklch(0.205 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "paper-raised": {
+        "role": "neutral",
+        "displayName": "Paper Raised",
+        "canonical": "oklch(0.985 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "wash": {
+        "role": "neutral",
+        "displayName": "Wash",
+        "canonical": "oklch(0.97 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "oklch(0.556 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.922 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "focus-haze": {
+        "role": "neutral",
+        "displayName": "Focus Haze",
+        "canonical": "oklch(0.87 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "alarm-red": {
+        "role": "error",
+        "displayName": "Alarm Red",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": [
+          "oklch(0.15 0.245 27.325)",
+          "oklch(0.26 0.245 27.325)",
+          "oklch(0.37 0.245 27.325)",
+          "oklch(0.48 0.245 27.325)",
+          "oklch(0.60 0.245 27.325)",
+          "oklch(0.72 0.245 27.325)",
+          "oklch(0.84 0.245 27.325)",
+          "oklch(0.95 0.245 27.325)"
+        ]
+      },
+      "age-fresh": {
+        "role": "data",
+        "displayName": "Fresh Blue (< 1d, size M)",
+        "canonical": "oklch(0.623 0.214 259.815)",
+        "tonalRamp": [
+          "oklch(0.15 0.214 259.815)",
+          "oklch(0.26 0.214 259.815)",
+          "oklch(0.37 0.214 259.815)",
+          "oklch(0.48 0.214 259.815)",
+          "oklch(0.60 0.214 259.815)",
+          "oklch(0.72 0.214 259.815)",
+          "oklch(0.84 0.214 259.815)",
+          "oklch(0.95 0.214 259.815)"
+        ]
+      },
+      "age-settling": {
+        "role": "data",
+        "displayName": "Settling Green (1–3d, size S)",
+        "canonical": "oklch(0.696 0.17 162.48)",
+        "tonalRamp": [
+          "oklch(0.15 0.170 162.48)",
+          "oklch(0.26 0.170 162.48)",
+          "oklch(0.37 0.170 162.48)",
+          "oklch(0.48 0.170 162.48)",
+          "oklch(0.60 0.170 162.48)",
+          "oklch(0.72 0.170 162.48)",
+          "oklch(0.84 0.170 162.48)",
+          "oklch(0.95 0.170 162.48)"
+        ]
+      },
+      "age-waiting": {
+        "role": "data",
+        "displayName": "Waiting Amber (3–7d, size L)",
+        "canonical": "oklch(0.769 0.188 70.08)",
+        "tonalRamp": [
+          "oklch(0.15 0.188 70.08)",
+          "oklch(0.26 0.188 70.08)",
+          "oklch(0.37 0.188 70.08)",
+          "oklch(0.48 0.188 70.08)",
+          "oklch(0.60 0.188 70.08)",
+          "oklch(0.72 0.188 70.08)",
+          "oklch(0.84 0.188 70.08)",
+          "oklch(0.95 0.188 70.08)"
+        ]
+      },
+      "age-stalled": {
+        "role": "data",
+        "displayName": "Stalled Red (7–14d, size XL)",
+        "canonical": "oklch(0.637 0.237 25.331)",
+        "tonalRamp": [
+          "oklch(0.15 0.237 25.331)",
+          "oklch(0.26 0.237 25.331)",
+          "oklch(0.37 0.237 25.331)",
+          "oklch(0.48 0.237 25.331)",
+          "oklch(0.60 0.237 25.331)",
+          "oklch(0.72 0.237 25.331)",
+          "oklch(0.84 0.237 25.331)",
+          "oklch(0.95 0.237 25.331)"
+        ]
+      },
+      "age-stuck": {
+        "role": "data",
+        "displayName": "Stuck Purple (14–30d)",
+        "canonical": "oklch(0.627 0.265 303.9)",
+        "tonalRamp": [
+          "oklch(0.15 0.265 303.9)",
+          "oklch(0.26 0.265 303.9)",
+          "oklch(0.37 0.265 303.9)",
+          "oklch(0.48 0.265 303.9)",
+          "oklch(0.60 0.265 303.9)",
+          "oklch(0.72 0.265 303.9)",
+          "oklch(0.84 0.265 303.9)",
+          "oklch(0.95 0.265 303.9)"
+        ]
+      },
+      "age-abandoned": {
+        "role": "data",
+        "displayName": "Abandoned Near-Black (31d+)",
+        "canonical": "oklch(0.269 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0.000 0)",
+          "oklch(0.26 0.000 0)",
+          "oklch(0.37 0.000 0)",
+          "oklch(0.48 0.000 0)",
+          "oklch(0.60 0.000 0)",
+          "oklch(0.72 0.000 0)",
+          "oklch(0.84 0.000 0)",
+          "oklch(0.95 0.000 0)"
+        ]
+      },
+      "size-xs": {
+        "role": "data",
+        "displayName": "Slate (size XS)",
+        "canonical": "oklch(0.704 0.04 256.788)",
+        "tonalRamp": [
+          "oklch(0.15 0.040 256.788)",
+          "oklch(0.26 0.040 256.788)",
+          "oklch(0.37 0.040 256.788)",
+          "oklch(0.48 0.040 256.788)",
+          "oklch(0.60 0.040 256.788)",
+          "oklch(0.72 0.040 256.788)",
+          "oklch(0.84 0.040 256.788)",
+          "oklch(0.95 0.040 256.788)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles, one per page."
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "Stat card numbers."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Most UI text, menus, table cells."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Legends, captions, small buttons."
+      },
+      "overline": {
+        "displayName": "Overline",
+        "purpose": "Uppercase section labels inside popovers."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-xs",
+        "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "purpose": "Outline buttons only."
+      },
+      {
+        "name": "popover",
+        "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+        "purpose": "Open dropdowns and popovers."
+      }
+    ],
+    "motion": [
+      {
+        "name": "accordion",
+        "value": "0.2s ease-out",
+        "purpose": "Accordion open/close."
+      },
+      {
+        "name": "hover",
+        "value": "150ms",
+        "purpose": "Background color transitions on buttons and rows."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Primary action, e.g. form submit.",
+      "html": "<button class=\"ds-btn\">Add</button>",
+      "css": ".ds-btn{background:var(--primary,oklch(0.205 0 0));color:var(--primary-foreground,oklch(0.985 0 0));height:36px;padding:8px 16px;border:none;border-radius:8px;font:500 14px/1 ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:background .15s}.ds-btn:hover{background:oklch(0.205 0 0 / .9)}.ds-btn:focus-visible{outline:none;box-shadow:0 0 0 3px oklch(0.87 0 0 / .5)}"
+    },
+    {
+      "name": "Hidden-PRs Button",
+      "kind": "button",
+      "refersTo": "button-outline-sm",
+      "description": "Outline small button used for page-header filter actions.",
+      "html": "<button class=\"ds-btn-outline\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"/><path d=\"M7 12h10\"/><path d=\"M10 18h4\"/></svg><span>3 PRs hidden</span></button>",
+      "css": ".ds-btn-outline{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;background:oklch(1 0 0);color:oklch(0.145 0 0);border:1px solid oklch(0.922 0 0);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);font:500 14px/1 ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;transition:background .15s}.ds-btn-outline:hover{background:oklch(0.97 0 0)}.ds-btn-outline:focus-visible{outline:none;box-shadow:0 0 0 3px oklch(0.87 0 0 / .5)}"
+    },
+    {
+      "name": "PR Block Row",
+      "kind": "custom",
+      "refersTo": "pr-block",
+      "description": "One person's stack: name, count, one circle per PR colored by age, dashed limit line.",
+      "html": "<div class=\"ds-stack\"><span class=\"ds-stack-name\">Alice</span><span class=\"ds-stack-count\">4</span><span class=\"ds-blk\" style=\"background:oklch(0.623 0.214 259.815)\"></span><span class=\"ds-blk\" style=\"background:oklch(0.696 0.17 162.48)\"></span><span class=\"ds-limit\"></span><span class=\"ds-blk\" style=\"background:oklch(0.769 0.188 70.08)\"></span><span class=\"ds-blk ds-blk-ring\"></span></div>",
+      "css": ".ds-stack{display:flex;align-items:center;gap:4px;padding:8px 0;border-bottom:1px solid oklch(0.922 0 0);font:14px ui-sans-serif,system-ui,sans-serif;color:oklch(0.145 0 0)}.ds-stack-name{width:120px}.ds-stack-count{width:28px;color:oklch(0.556 0 0);font-variant-numeric:tabular-nums}.ds-blk{width:20px;height:20px;border-radius:9999px;cursor:pointer;transition:transform .15s}.ds-blk:hover{transform:scale(1.15)}.ds-blk-ring{background:oklch(0.704 0 0 / .2);box-shadow:inset 0 0 0 1.5px oklch(0.704 0 0)}.ds-limit{width:0;height:20px;margin:0 2px;border-left:2px dashed oklch(0.704 0.191 22.216)}"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "stat-card",
+      "description": "Headline metric over a muted label.",
+      "html": "<div class=\"ds-stat\"><div class=\"ds-stat-value\">12</div><div class=\"ds-stat-label\">Merged</div></div>",
+      "css": ".ds-stat{border:1px solid oklch(0.922 0 0);border-radius:10px;padding:16px;text-align:center;background:oklch(1 0 0);font-family:ui-sans-serif,system-ui,sans-serif}.ds-stat-value{font-size:30px;font-weight:700;line-height:1.2;color:oklch(0.145 0 0);font-variant-numeric:tabular-nums}.ds-stat-label{font-size:14px;color:oklch(0.556 0 0)}"
+    },
+    {
+      "name": "Sidebar Item",
+      "kind": "nav",
+      "description": "Navigation item in the inset sidebar; active item gets the Wash fill.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-group\">Workload</span><a class=\"ds-nav-item is-active\" href=\"#\">Review Stacks</a><a class=\"ds-nav-item\" href=\"#\">Cycle Time</a></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:2px;width:220px;padding:8px;background:oklch(0.985 0 0);border:1px solid oklch(0.922 0 0);border-radius:10px;font:14px ui-sans-serif,system-ui,sans-serif}.ds-nav-group{padding:6px 8px;font-size:12px;color:oklch(0.556 0 0)}.ds-nav-item{padding:6px 8px;border-radius:6px;color:oklch(0.145 0 0);text-decoration:none}.ds-nav-item:hover,.ds-nav-item.is-active{background:oklch(0.97 0 0)}.ds-nav-item:focus-visible{outline:none;box-shadow:0 0 0 3px oklch(0.87 0 0 / .5)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Flow Board",
+    "overview": "Upflow is a board a team gathers around. The surface is black, white and gray, close to unstyled, so that the only color on screen is the state of the work: how long a PR has been open, how big it is, whether it is waiting on someone. A manager, a developer and a consultant should be able to look at the same screen and point at the same red dot.\n\nThe system is dense and calm. Lists, rows of small round blocks, a few stat cards, and plain headings carry everything. There is no decorative imagery, gradient or brand illustration; the incumbent UI is shadcn/ui (new-york, neutral base) on Tailwind v4, and new screens extend it rather than restyle it.\n\nA brand accent color is wanted but not yet chosen. Until it is, nothing on the surface uses color for identity.",
+    "keyCharacteristics": [
+      "Monochrome chrome, chromatic data.",
+      "System sans at small sizes; hierarchy from weight and size, not color.",
+      "Flat surfaces separated by hairline borders.",
+      "Round blocks as the unit of work: one block is one PR.",
+      "Every hidden or filtered item is counted and stated on screen."
+    ],
+    "rules": [
+      {
+        "name": "The Color Means Data Rule",
+        "body": "Chrome (buttons, headings, navigation, cards) stays in the neutral ramp. A hue on screen must answer \"what state is this PR in?\" If it doesn't, it is gray.",
+        "section": "colors"
+      },
+      {
+        "name": "The Accent Is Undecided Rule",
+        "body": "A single brand accent is planned but not chosen. Do not introduce one inside a feature; propose it as its own change.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numbers Align Rule",
+        "body": "Counts that change or sit in a column use tabular figures (`tabular-nums`), so a count of 8 and a count of 23 line up.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Over Shadow Rule",
+        "body": "To separate two areas, draw a 1px Hairline border. Don't add a shadow to a card, row or section.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep chrome in the neutral ramp and let only data carry hue (The Color Means Data Rule).",
+      "Do reuse the age and size scales exactly as defined, with the same thresholds, wherever PR age or size appears.",
+      "Do use Lucide icons at 14–16px; the filter icon (`list-filter`) marks filtering controls.",
+      "Do write `dark:` variants for new color classes, as existing components do. Dark mode has no switch yet, but it is kept working.",
+      "Do write UI copy in English. Japanese appears only as data until i18n lands.",
+      "Do show counts with `tabular-nums` and say how many items are hidden and why."
+    ],
+    "donts": [
+      "Don't introduce a brand accent, gradient or decorative color inside a feature.",
+      "Don't give a new meaning to an existing data color (for example, using red for \"selected\").",
+      "Don't add shadows to cards, rows or sections.",
+      "Don't use emoji or text glyphs as new icons; the existing ✓ ✗ 💬 ⏳ marks are legacy, not a pattern to extend.",
+      "Don't mix Japanese and English UI copy on one screen."
+    ]
+  }
+}
