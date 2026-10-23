@@ -12,7 +12,9 @@ export function DiffBadge({
   invertColor?: boolean
 }) {
   if (prevValue === null) return null
-  const diff = value - prevValue
+  // Round to the displayed precision so a change that shows as "+0.0" is
+  // treated as no change instead of being colored as better or worse.
+  const diff = Math.round((value - prevValue) * 10) / 10
   if (diff === 0) return null
   const isPositive = invertColor ? diff < 0 : diff > 0
   return (

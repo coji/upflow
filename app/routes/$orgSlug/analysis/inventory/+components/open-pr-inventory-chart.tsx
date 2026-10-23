@@ -94,6 +94,7 @@ export function OpenPRInventoryChart({
               }
             />
             <ChartLegend
+              itemSorter={null}
               content={<ChartLegendContent className="flex-wrap" />}
             />
             {Object.keys(chartConfig).map((key) => (
