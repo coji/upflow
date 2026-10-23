@@ -19,7 +19,9 @@ export function DiffBadge({
     <span
       className={cn(
         'text-xs font-medium',
-        isPositive ? 'text-emerald-600' : 'text-red-500',
+        isPositive
+          ? 'text-emerald-600 dark:text-emerald-400'
+          : 'text-red-600 dark:text-red-400',
       )}
     >
       {format(diff)}

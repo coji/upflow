@@ -33,7 +33,7 @@ Upflow is provided to the clients of TechTalk's development-organization support
 - PRs are classified by rule into normal / release / template merge / dependency. Dashboards count normal PRs by default and say how many PRs are hidden and why.
 - Admins can register title and source-branch patterns to hide PRs from dashboards.
 - PR size is classified by an LLM (Gemini); users can correct it.
-- **UI language:** English for now. Japanese text appears only as data (names, PR titles). Japanese/English switching (i18n) is planned but not built; until then new UI copy is written in English, not mixed. Some older strings in Japanese (e.g. parts of the PR popover and error messages) are leftovers, not the rule.
+- **UI language:** English for now. Japanese text appears only as data (names, PR titles). Japanese/English switching (i18n) is planned but not built; until then new UI copy is written in English, not mixed.
 - The repository is public: customer names, org slugs, and customer-derived numbers must not appear in code, docs, or UI fixtures (`docs/agent-rules/confidentiality.md`).
 
 ## Evidence on Hand

@@ -16,18 +16,27 @@ import {
 } from '~/app/components/ui/chart'
 import { useTimezone } from '~/app/hooks/use-timezone'
 import dayjs from '~/app/libs/dayjs'
+import { AGE_THRESHOLDS } from '~/app/routes/$orgSlug/+components/pr-block'
 
 import type { OpenPRInventoryAggregation } from '../+functions/aggregate'
 
-// Colors aligned with Review Stacks age thresholds
-const chartConfig = {
-  daysUnder1: { label: '< 1d', color: '#3b82f6' }, // blue-500
-  days1to3: { label: '1-3d', color: '#10b981' }, // emerald-500
-  days3to7: { label: '3-7d', color: '#f59e0b' }, // amber-500
-  days7to14: { label: '7-14d', color: '#ef4444' }, // red-500
-  days14to30: { label: '14-30d', color: '#a855f7' }, // purple-500
-  days31Plus: { label: '31d+', color: '#262626' }, // neutral-800
-} satisfies ChartConfig
+// Same age scale as the Review Stacks blocks, in the same order as the
+// aggregation's buckets.
+const AGE_BUCKET_KEYS = [
+  'daysUnder1',
+  'days1to3',
+  'days3to7',
+  'days7to14',
+  'days14to30',
+  'days31Plus',
+] as const
+
+const chartConfig = Object.fromEntries(
+  AGE_BUCKET_KEYS.map((key, i) => [
+    key,
+    { label: AGE_THRESHOLDS[i].label, theme: AGE_THRESHOLDS[i].chart },
+  ]),
+) satisfies ChartConfig
 
 export function OpenPRInventoryChart({
   data,

@@ -110,7 +110,7 @@ describe('PRPopover', () => {
       </PRPopover>,
     )
     await user.click(screen.getByRole('button', { name: 'open' }))
-    expect(screen.getByText('PR が見つかりませんでした')).toBeTruthy()
+    expect(screen.getByText('PR not found')).toBeTruthy()
   })
 
   test('(c) fetch_failed message and fallback link', async () => {
@@ -130,7 +130,7 @@ describe('PRPopover', () => {
       </PRPopover>,
     )
     await user.click(screen.getByRole('button', { name: 'open' }))
-    expect(screen.getByText('PR の情報を取得できませんでした')).toBeTruthy()
+    expect(screen.getByText('Couldn’t load this PR. Try again.')).toBeTruthy()
     const link = screen.getByRole('link', { name: 'acme/widget#1' })
     expect(link.getAttribute('href')).toBe(
       'https://github.com/acme/widget/pull/1',
@@ -152,7 +152,7 @@ describe('PRPopover', () => {
     }
     render(<PRPopoverContent pr={pr} reviewState="APPROVED" />)
     expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
-    expect(screen.getByText('この日の review')).toBeTruthy()
+    expect(screen.getByText('Reviews on this day')).toBeTruthy()
     expect(screen.getByText('Reviewers')).toBeTruthy()
   })
 
@@ -171,7 +171,7 @@ describe('PRPopover', () => {
     }
     render(<PRPopoverContent pr={pr} reviewState="APPROVED" />)
     const daySection = screen
-      .getByText('この日の review')
+      .getByText('Reviews on this day')
       .closest('div')?.parentElement
     expect(daySection).not.toBeNull()
     expect(within(daySection as HTMLElement).getByText(/Approved/)).toBeTruthy()

@@ -114,7 +114,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: 'ロールを変更しました' },
+        { message: 'Role changed' },
       )
     })
     .with({ intent: 'confirm-removeMember' }, () => {
@@ -136,7 +136,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: 'メンバーを削除しました' },
+        { message: 'Member removed' },
       )
     })
     .exhaustive()

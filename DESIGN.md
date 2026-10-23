@@ -124,10 +124,11 @@ A neutral grayscale shell with a fixed set of data colors whose meaning never ch
 
 These are semantic, not decorative. Each one always means the same thing.
 
-- **PR age:** Fresh blue (`age-fresh`, under 1 day) → Settling green (`age-settling`, 1–3 days) → Waiting amber (`age-waiting`, 3–7 days) → Stalled red (`age-stalled`, 7–14 days) → Stuck purple (`age-stuck`, 14–30 days) → Abandoned near-black (`age-abandoned`, 31 days or more).
+- **PR age:** Fresh blue (`age-fresh`, under 1 day) → Settling green (`age-settling`, 1–3 days) → Waiting amber (`age-waiting`, 3–7 days) → Stalled red (`age-stalled`, 7–14 days) → Stuck purple (`age-stuck`, 14–30 days) → Abandoned near-black (`age-abandoned`, 31 days or more; light gray in dark mode so it stays visible). The scale is defined once, in `AGE_THRESHOLDS` (`app/routes/$orgSlug/+components/pr-block.tsx`), and charts take their colors from it.
 - **PR size:** XS slate (`size-xs`), S green, M blue, L amber, XL red. Size reuses the age hues on purpose, so a viewer switches between the Age and Size views with a toggle rather than reading both at once.
 - **Review status:** approved reads green (emerald 600), changes requested and unassigned read amber (amber 600), and in-review stays gray.
 - **Unknown:** gray (gray 300) when a size or age cannot be computed.
+- **Data color as text:** when a data hue colors text or a mark (a link, a holiday, a ✓ inside a block), use the 600 shade (400 in dark mode), or 700/300 on a faint fill, so it meets contrast. The 500 shades are for fills only.
 
 ### Named Rules
 
@@ -217,6 +218,7 @@ Gently rounded rectangles for containers and controls (8px base: 6px small, 8px 
 - **Do** write `dark:` variants for new color classes, as existing components do. Dark mode has no switch yet, but it is kept working.
 - **Do** write UI copy in English. Japanese appears only as data until i18n lands.
 - **Do** show counts with `tabular-nums` and say how many items are hidden and why.
+- **Do** give hover-only feedback a keyboard equivalent (focus), and add `motion-reduce:` to any transition that moves or scales.
 
 ### Don't:
 
