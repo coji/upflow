@@ -29,31 +29,31 @@ export const SIZE_BLOCK_COLORS: Record<string, BlockColor> = {
     bg: 'bg-slate-400',
     ring: 'ring-slate-400',
     bgFaint: 'bg-slate-400/20',
-    text: 'text-slate-400',
+    text: 'text-slate-700 dark:text-slate-300',
   },
   S: {
     bg: 'bg-emerald-500',
     ring: 'ring-emerald-500',
     bgFaint: 'bg-emerald-500/20',
-    text: 'text-emerald-500',
+    text: 'text-emerald-700 dark:text-emerald-300',
   },
   M: {
     bg: 'bg-blue-500',
     ring: 'ring-blue-500',
     bgFaint: 'bg-blue-500/20',
-    text: 'text-blue-500',
+    text: 'text-blue-700 dark:text-blue-300',
   },
   L: {
     bg: 'bg-amber-500',
     ring: 'ring-amber-500',
     bgFaint: 'bg-amber-500/20',
-    text: 'text-amber-500',
+    text: 'text-amber-700 dark:text-amber-300',
   },
   XL: {
     bg: 'bg-red-500',
     ring: 'ring-red-500',
     bgFaint: 'bg-red-500/20',
-    text: 'text-red-500',
+    text: 'text-red-700 dark:text-red-300',
   },
 }
 
@@ -61,57 +61,80 @@ export const UNKNOWN_COLOR: BlockColor = {
   bg: 'bg-gray-300 dark:bg-gray-600',
   ring: 'ring-gray-400',
   bgFaint: 'bg-gray-400/20',
-  text: 'text-gray-400',
+  text: 'text-gray-700 dark:text-gray-300',
 }
 
+// Single source for the PR age scale (DESIGN.md: age-fresh … age-abandoned).
+// `chart` mirrors the Tailwind hues for charts that take raw colors.
 export const AGE_THRESHOLDS = [
   {
     maxDays: 1,
     bg: 'bg-blue-500',
     ring: 'ring-blue-500',
     bgFaint: 'bg-blue-500/20',
-    text: 'text-blue-500',
+    text: 'text-blue-700 dark:text-blue-300',
     label: '< 1d',
+    chart: {
+      light: 'oklch(0.623 0.214 259.815)',
+      dark: 'oklch(0.623 0.214 259.815)',
+    },
   },
   {
     maxDays: 3,
     bg: 'bg-emerald-500',
     ring: 'ring-emerald-500',
     bgFaint: 'bg-emerald-500/20',
-    text: 'text-emerald-500',
+    text: 'text-emerald-700 dark:text-emerald-300',
     label: '1-3d',
+    chart: {
+      light: 'oklch(0.696 0.17 162.48)',
+      dark: 'oklch(0.696 0.17 162.48)',
+    },
   },
   {
     maxDays: 7,
     bg: 'bg-amber-500',
     ring: 'ring-amber-500',
     bgFaint: 'bg-amber-500/20',
-    text: 'text-amber-500',
+    text: 'text-amber-700 dark:text-amber-300',
     label: '3-7d',
+    chart: {
+      light: 'oklch(0.769 0.188 70.08)',
+      dark: 'oklch(0.769 0.188 70.08)',
+    },
   },
   {
     maxDays: 14,
     bg: 'bg-red-500',
     ring: 'ring-red-500',
     bgFaint: 'bg-red-500/20',
-    text: 'text-red-500',
+    text: 'text-red-700 dark:text-red-300',
     label: '7-14d',
+    chart: {
+      light: 'oklch(0.637 0.237 25.331)',
+      dark: 'oklch(0.637 0.237 25.331)',
+    },
   },
   {
     maxDays: 30,
     bg: 'bg-purple-500',
     ring: 'ring-purple-500',
     bgFaint: 'bg-purple-500/20',
-    text: 'text-purple-500',
+    text: 'text-purple-700 dark:text-purple-300',
     label: '14-30d',
+    chart: {
+      light: 'oklch(0.627 0.265 303.9)',
+      dark: 'oklch(0.627 0.265 303.9)',
+    },
   },
   {
     maxDays: Infinity,
-    bg: 'bg-neutral-800',
-    ring: 'ring-neutral-800',
-    bgFaint: 'bg-neutral-800/20',
-    text: 'text-neutral-800',
+    bg: 'bg-neutral-800 dark:bg-neutral-300',
+    ring: 'ring-neutral-800 dark:ring-neutral-300',
+    bgFaint: 'bg-neutral-800/20 dark:bg-neutral-300/20',
+    text: 'text-neutral-800 dark:text-neutral-300',
     label: '31d+',
+    chart: { light: 'oklch(0.269 0 0)', dark: 'oklch(0.87 0 0)' },
   },
 ] as const
 
@@ -248,8 +271,16 @@ export const REVIEW_STATE_STYLE: Record<
   string,
   { icon: string; text: string; className: string }
 > = {
-  APPROVED: { icon: '✓', text: 'Approved', className: 'text-emerald-600' },
-  CHANGES_REQUESTED: { icon: '✗', text: 'Changes', className: 'text-red-500' },
+  APPROVED: {
+    icon: '✓',
+    text: 'Approved',
+    className: 'text-emerald-600 dark:text-emerald-400',
+  },
+  CHANGES_REQUESTED: {
+    icon: '✗',
+    text: 'Changes',
+    className: 'text-red-600 dark:text-red-400',
+  },
   COMMENTED: {
     icon: '💬',
     text: 'Comment',
@@ -386,7 +417,7 @@ export function PRPopoverContent({
       {stateInfo && (
         <div className="space-y-0.5">
           <div className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
-            この日の review
+            Reviews on this day
           </div>
           <div className={`text-xs font-medium ${stateInfo.className}`}>
             {stateInfo.icon} {stateInfo.text}
@@ -429,8 +460,8 @@ export function PRPopoverContent({
 }
 
 const ERROR_MESSAGES = {
-  not_found: 'PR が見つかりませんでした',
-  fetch_failed: 'PR の情報を取得できませんでした',
+  not_found: 'PR not found',
+  fetch_failed: 'Couldn’t load this PR. Try again.',
 } as const
 
 export function PRPopover({
@@ -509,6 +540,8 @@ export function PRBlock({
   colorMode = 'size',
   onMouseEnter,
   onMouseLeave,
+  onFocus,
+  onBlur,
   onClick,
   dataPrKey,
 }: {
@@ -516,6 +549,8 @@ export function PRBlock({
   colorMode?: PRBlockColorMode
   onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void
   onMouseLeave?: () => void
+  onFocus?: () => void
+  onBlur?: () => void
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   dataPrKey?: string
 }) {
@@ -556,10 +591,12 @@ export function PRBlock({
       <button
         type="button"
         data-pr-key={dataPrKey}
-        className={`relative flex size-4 shrink-0 items-center justify-center transition-all hover:scale-150 ${shape} ${fillClass} ${draftClass}`}
+        className={`relative flex size-4 shrink-0 items-center justify-center transition-[transform,opacity] hover:scale-150 focus-visible:scale-150 motion-reduce:transition-none ${shape} ${fillClass} ${draftClass}`}
         aria-label={ariaLabel}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
+        onFocus={onFocus}
+        onBlur={onBlur}
         onClick={onClick}
       >
         {statusShape?.icon && (

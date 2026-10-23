@@ -122,7 +122,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: 'チームを変更しました' },
+        { message: 'Team changed' },
       )
     })
     .with({ intent: 'bulkUpdateTeam' }, async ({ repositoryIds, teamId }) => {
@@ -141,7 +141,9 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: `${repositoryIds.length}件のチームを変更しました` },
+        {
+          message: `Team changed for ${repositoryIds.length} ${repositoryIds.length === 1 ? 'repository' : 'repositories'}`,
+        },
       )
     })
     .with({ intent: 'reassignBroken' }, async ({ repositoryId }) => {

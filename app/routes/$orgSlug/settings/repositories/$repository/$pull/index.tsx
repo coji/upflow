@@ -260,9 +260,9 @@ const ComparisonSection = ({
           <>
             <Badge variant="secondary">GitHub: {githubItems.length}</Badge>
             {hasDiff ? (
-              <Badge variant="destructive">差分あり</Badge>
+              <Badge variant="destructive">Differs</Badge>
             ) : (
-              <Badge variant="outline">一致</Badge>
+              <Badge variant="outline">Matches</Badge>
             )}
           </>
         )}
@@ -393,7 +393,7 @@ const RepositoryPullsIndexPage = ({
         <div className="space-y-2">
           <HStack>
             <Heading>Pull Request Reviews</Heading>
-            <Badge variant="secondary">{processedReviews.length}件</Badge>
+            <Badge variant="secondary">{processedReviews.length}</Badge>
           </HStack>
           <details>
             <summary className="text-muted-foreground cursor-pointer text-sm">
@@ -408,7 +408,7 @@ const RepositoryPullsIndexPage = ({
         <div className="space-y-2">
           <HStack>
             <Heading>Pull Request Reviewers</Heading>
-            <Badge variant="secondary">{processedReviewers.length} 件</Badge>
+            <Badge variant="secondary">{processedReviewers.length}</Badge>
           </HStack>
           <details>
             <summary className="text-muted-foreground cursor-pointer text-sm">

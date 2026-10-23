@@ -218,6 +218,7 @@
         "role": "data",
         "displayName": "Abandoned Near-Black (31d+)",
         "canonical": "oklch(0.269 0 0)",
+        "dark": "oklch(0.87 0 0)",
         "tonalRamp": [
           "oklch(0.15 0.000 0)",
           "oklch(0.26 0.000 0)",

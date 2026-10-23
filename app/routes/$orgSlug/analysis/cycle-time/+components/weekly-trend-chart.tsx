@@ -146,6 +146,7 @@ export function WeeklyTrendChart({
               }
             />
             <ChartLegend
+              itemSorter={null}
               content={<ChartLegendContent className="flex-wrap" />}
             />
             {STAGES.map((stage, i) => (

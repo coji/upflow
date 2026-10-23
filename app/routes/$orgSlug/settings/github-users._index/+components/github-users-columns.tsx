@@ -30,11 +30,11 @@ const USER_TYPES = [
 function getConfirmDesc(login: string, pendingType: string): string {
   switch (pendingType) {
     case 'Bot':
-      return `${login} を Bot に変更しますか？Bot はメトリクス集計から除外されます。`
+      return `Change ${login} to Bot? Bots are excluded from metrics.`
     case 'User':
-      return `${login} を User に変更しますか？`
+      return `Change ${login} to User?`
     default:
-      return `${login} のタイプ設定を解除しますか？`
+      return `Clear the type for ${login}?`
   }
 }
 
@@ -81,9 +81,9 @@ function UserTypeSelect({
       </Select>
 
       <ConfirmDialog
-        title="ユーザータイプの変更"
+        title="Change user type"
         desc={getConfirmDesc(login, pendingType)}
-        confirmText="変更"
+        confirmText="Change"
         destructive={pendingType === 'Bot'}
         fetcher={fetcher}
       >
