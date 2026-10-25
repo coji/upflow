@@ -480,17 +480,19 @@ export default function MemberWeeklyPage({
               >
                 <div className="mb-2 text-center">
                   <div
-                    className={`text-xs ${day.holiday ? 'text-red-500' : 'text-muted-foreground'}`}
+                    className={`text-xs ${day.holiday ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
                   >
                     {day.label}
                   </div>
                   <div
-                    className={`text-sm font-medium ${day.holiday ? 'text-red-500' : ''}`}
+                    className={`text-sm font-medium ${day.holiday ? 'text-red-600 dark:text-red-400' : ''}`}
                   >
                     {day.dayNum}
                   </div>
                   {day.holiday && (
-                    <div className="text-[9px] text-red-400">{day.holiday}</div>
+                    <div className="text-[10px] text-red-600 dark:text-red-400">
+                      {day.holiday}
+                    </div>
                   )}
                 </div>
                 {total === 0 ? (
@@ -817,7 +819,7 @@ function PRRow({
       <div className="flex min-w-0 items-start justify-between gap-2 lg:contents">
         <ExternalLink
           href={url}
-          className="min-w-0 truncate text-blue-500 hover:underline lg:block"
+          className="min-w-0 truncate text-blue-600 hover:underline lg:block dark:text-blue-400"
         >
           {formatPrIdentifier(repo, number)}
         </ExternalLink>

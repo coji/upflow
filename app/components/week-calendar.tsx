@@ -90,8 +90,8 @@ function WeekDayButton({
       data-selected={isSelected}
       className={cn(
         className,
-        !isSelected && isHoliday && 'text-red-500',
-        !isSelected && isWeekend && !isHoliday && 'text-muted-foreground/50',
+        !isSelected && isHoliday && 'text-red-600 dark:text-red-400',
+        !isSelected && isWeekend && !isHoliday && 'text-muted-foreground',
         isSelected &&
           'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-none',
         isWeekStart && 'rounded-l-lg',
@@ -247,7 +247,7 @@ const WeeklyCalendar = ({
                   setOpen(false)
                 }}
               >
-                今週に戻る
+                This week
               </Button>
             </div>
           )}

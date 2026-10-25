@@ -56,7 +56,7 @@ export const AppHeader = ({ isAdmin = false }: AppHeaderProps) => {
               <HStack>
                 <div>
                   <p className="text-sm">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
+                  <p className="text-muted-foreground text-xs">{user.email}</p>
                 </div>
                 <Spacer />
                 <Badge

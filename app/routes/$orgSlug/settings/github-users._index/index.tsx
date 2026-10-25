@@ -191,7 +191,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: `${login} を追加しました` },
+        { message: `Added ${login}` },
       )
     })
     .with({ intent: 'update' }, async ({ login, displayName }) => {
@@ -214,7 +214,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: `${login} を更新しました` },
+        { message: `Updated ${login}` },
       )
     })
     .with({ intent: 'confirm-delete' }, () => {
@@ -236,7 +236,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: `${login} を削除しました` },
+        { message: `Deleted ${login}` },
       )
     })
     .with({ intent: 'confirm-update-type' }, () => {
@@ -261,10 +261,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         )
       }
       const typeLabel =
-        type === 'Bot' ? 'Bot' : type === 'User' ? 'User' : '未設定'
+        type === 'Bot' ? 'Bot' : type === 'User' ? 'User' : 'Not set'
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: `${login} のタイプを ${typeLabel} に変更しました` },
+        { message: `Changed ${login} type to ${typeLabel}` },
       )
     })
     .with({ intent: 'confirm-toggle-active' }, () => {
@@ -289,10 +289,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           { status: 400 },
         )
       }
-      const statusLabel = isActive ? 'ログイン許可' : 'ログイン拒否'
+      const statusLabel = isActive ? 'allowed' : 'blocked'
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: `${login} を${statusLabel}に変更しました` },
+        { message: `Login ${statusLabel} for ${login}` },
       )
     })
     .exhaustive()

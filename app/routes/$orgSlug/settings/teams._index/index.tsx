@@ -93,7 +93,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: 'チームを追加しました' },
+        { message: 'Team added' },
       )
     })
     .with(
@@ -120,7 +120,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
         }
         return dataWithSuccess(
           { ok: true, lastResult: null },
-          { message: 'チームを更新しました' },
+          { message: 'Team updated' },
         )
       },
     )
@@ -143,7 +143,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       }
       return dataWithSuccess(
         { ok: true, lastResult: null },
-        { message: 'チームを削除しました' },
+        { message: 'Team deleted' },
       )
     })
     .exhaustive()

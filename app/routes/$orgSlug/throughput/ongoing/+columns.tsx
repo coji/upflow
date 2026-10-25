@@ -50,7 +50,7 @@ export function createColumns(
       cell: ({ row }) => (
         <ExternalLink
           href={row.original.url}
-          className="block w-96 truncate text-blue-500 hover:underline"
+          className="block w-96 truncate text-blue-600 hover:underline dark:text-blue-400"
         >
           <span>{row.original.title}</span>
         </ExternalLink>

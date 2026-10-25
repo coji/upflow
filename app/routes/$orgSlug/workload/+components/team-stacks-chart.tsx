@@ -238,6 +238,8 @@ const PRBlock = memo(function PRBlock({
         dataPrKey={prKey}
         onMouseEnter={() => setHovered({ prKey, author: pr.author })}
         onMouseLeave={() => setHovered(null)}
+        onFocus={() => setHovered({ prKey, author: pr.author })}
+        onBlur={() => setHovered(null)}
         onClick={(e) => setSelected(e, prKey, pr.author)}
       />
     </>

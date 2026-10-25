@@ -139,7 +139,7 @@ export function aggregateWipCycle(
   let insight: string | null = null
   if (lowMedian && highMedian && lowMedian > 0) {
     const ratio = (highMedian / lowMedian).toFixed(1)
-    insight = `WIP 0-1 の review time 中央値: ${formatHours(lowMedian)} → WIP 3+ : ${formatHours(highMedian)}（${ratio}倍）`
+    insight = `Median review time: ${formatHours(lowMedian)} at WIP 0-1 → ${formatHours(highMedian)} at WIP 3+ (${ratio}x)`
   }
 
   return { groups, insight }
@@ -251,7 +251,7 @@ export function aggregateWeeklyQueueTrend(
       recent4.reduce((s, w) => s + w.medianQueue, 0) / recent4.length
     const prevAvg = prev4.reduce((s, w) => s + w.medianQueue, 0) / prev4.length
     if (prevAvg > 0 && recentAvg > prevAvg * 1.2) {
-      insight = `直近4週のキュー中央値が前4週比 ${((recentAvg / prevAvg) * 100 - 100).toFixed(0)}% 増加。レビュワー追加を検討してください。`
+      insight = `The median review queue over the last 4 weeks is up ${((recentAvg / prevAvg) * 100 - 100).toFixed(0)}% from the 4 weeks before. Consider adding reviewers.`
     }
   }
 
@@ -330,7 +330,7 @@ export function aggregatePRSize(data: PRSizeRawRow[]): PRSizeAggregation {
 
   let insight: string | null = null
   if (total > 0 && xsSMedian !== null) {
-    insight = `全PRの ${xsSPct}% が XS/S サイズ（${xsS}件）。review time 中央値 ${formatHours(xsSMedian)}。これらを自動マージすればレビュー負荷を大幅に削減可能。`
+    insight = `${xsSPct}% of PRs are XS/S (${xsS} PRs), with a median review time of ${formatHours(xsSMedian)}. Auto-merging these would cut review load substantially.`
   }
 
   return { countData, timeData, insight }

@@ -582,6 +582,7 @@ export default function AddRepositoryPage({
               type="button"
               variant="outline"
               size="icon"
+              aria-label="First page"
               disabled={searchParams.get('cursor') === null}
               onClick={() => {
                 setSearchParams(
@@ -602,6 +603,7 @@ export default function AddRepositoryPage({
               type="button"
               variant="outline"
               size="icon"
+              aria-label="Next page"
               disabled={!pageInfo.hasNextPage}
               onClick={() => {
                 setSearchParams(
