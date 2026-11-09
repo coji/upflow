@@ -103,6 +103,7 @@ CREATE TABLE `invitations` (
 -- Create "teams" table
 CREATE TABLE `teams` (
   `id` text NOT NULL,
+  `member_count` integer NOT NULL DEFAULT 0,
   `name` text NOT NULL,
   `organization_id` text NOT NULL,
   `created_at` date NOT NULL,
@@ -115,6 +116,7 @@ CREATE INDEX `teams_organization_id_idx` ON `teams` (`organization_id`);
 -- Create "team_members" table
 CREATE TABLE `team_members` (
   `id` text NOT NULL,
+  `membership_key` text NULL,
   `team_id` text NOT NULL,
   `user_id` text NOT NULL,
   `created_at` date NULL,
@@ -122,6 +124,7 @@ CREATE TABLE `team_members` (
   CONSTRAINT `team_members_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT `team_members_team_id_fkey` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE UNIQUE INDEX `team_members_membership_key_key` ON `team_members` (`membership_key`);
 -- Create index "team_members_team_id_idx" to table: "team_members"
 CREATE INDEX `team_members_team_id_idx` ON `team_members` (`team_id`);
 -- Create index "team_members_user_id_idx" to table: "team_members"

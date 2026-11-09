@@ -139,6 +139,7 @@ export interface Sessions {
 export interface TeamMembers {
   createdAt: string | null;
   id: string;
+  membershipKey: string | null;
   teamId: string;
   userId: string;
 }
@@ -146,6 +147,7 @@ export interface TeamMembers {
 export interface Teams {
   createdAt: string;
   id: string;
+  memberCount: Generated<number>;
   name: string;
   organizationId: string;
   updatedAt: string | null;

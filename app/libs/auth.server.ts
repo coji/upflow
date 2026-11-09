@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { admin } from 'better-auth/plugins/admin'
 import { organization } from 'better-auth/plugins/organization'
+import type { GithubProfile } from 'better-auth/social-providers'
 import { nanoid } from 'nanoid'
 import { href, redirect } from 'react-router'
 import { githubApiUrl } from '~/app/libs/github-api.server'
@@ -44,13 +45,7 @@ export const auth = betterAuth({
           )
           return null
         }
-        const profile = (await res.json()) as {
-          id: number
-          login: string
-          name: string | null
-          email: string | null
-          avatar_url: string
-        }
+        const profile = (await res.json()) as GithubProfile
 
         // Existing Upflow members must still have an active company GitHub-user
         // entry. A new account is admitted only while an owner has a live
@@ -62,7 +57,7 @@ export const auth = betterAuth({
           try {
             const match = await findActiveCompanyGithubUser(
               getTenantDb(id as OrganizationId),
-              { id: profile.id, login: profile.login },
+              { id: Number(profile.id), login: profile.login },
             )
             if (match) {
               isAllowedMember = true
@@ -198,7 +193,6 @@ export const auth = betterAuth({
 
         return {
           user: {
-            id: String(profile.id),
             name: profile.name || profile.login,
             email: profile.email,
             image: profile.avatar_url,
@@ -340,6 +334,7 @@ export const auth = betterAuth({
             organizationId: 'organization_id',
             createdAt: 'created_at',
             updatedAt: 'updated_at',
+            memberCount: 'member_count',
           },
         },
         teamMember: {
@@ -347,6 +342,7 @@ export const auth = betterAuth({
           fields: {
             teamId: 'team_id',
             userId: 'user_id',
+            membershipKey: 'membership_key',
             createdAt: 'created_at',
           },
         },

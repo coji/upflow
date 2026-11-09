@@ -33,7 +33,21 @@ export function ensureSentryNodeInitialized() {
     dsn,
     environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV,
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
-    sendDefaultPii: false,
+    // Preserve the v10 collection policy; v11 enables these categories by default.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: {
+        request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+        response: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+      },
+      httpBodies: [],
+      urlQueryParams: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+      genAI: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      queues: false,
+      graphQL: { document: false, variables: false },
+    },
   })
 }
 
