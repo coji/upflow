@@ -26,6 +26,11 @@ export const handleError: typeof sentryHandleError = (error, ctx) => {
   sentryHandleError(error, ctx)
 }
 
+// Keep error reporting in handleError so its 404/400 filters still apply.
+export const instrumentations = [
+  Sentry.createSentryServerInstrumentation({ captureErrors: false }),
+]
+
 export const streamTimeout = 30000
 
 function handleRequest(

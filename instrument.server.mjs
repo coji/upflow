@@ -11,7 +11,6 @@ const dsn = process.env.SENTRY_DSN
 if (dsn) {
   Sentry.init({
     dsn,
-    sendDefaultPii: true,
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
     beforeSend(event) {
       // Filter out react-router internal errors (404 bot/scanner noise, 400 missing loader)

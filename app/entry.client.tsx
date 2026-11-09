@@ -13,7 +13,6 @@ const dsn = import.meta.env.VITE_SENTRY_DSN
 if (dsn) {
   Sentry.init({
     dsn,
-    sendDefaultPii: true,
     integrations: [],
     tracesSampleRate: parseSampleRate(
       import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE,
