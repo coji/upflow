@@ -1,4 +1,4 @@
-ARG NODE_VERSION=24.22.2
+ARG NODE_VERSION=24.22.3
 ARG PNPM_VERSION=12.18.0
 
 # Pin CLI versions explicitly so the image is reproducible. Bump these
