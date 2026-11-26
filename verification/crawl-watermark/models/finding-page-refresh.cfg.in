@@ -1,0 +1,19 @@
+\* Finding 2: a PR page refresh and a webhook crawl fetch the same PR at once.
+\* @...@ values are read from the code by check.sh.
+SPECIFICATION Spec
+CONSTANTS
+    PRs = {1, 2}
+    MaxTime = 2
+    MaxUpdates = 2
+    MaxFails = 1
+    MaxHourly = 2
+    Workers = 1
+    StopInclusive = @StopInclusive@
+    AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    TargetedNeverAdvances = @TargetedNeverAdvances@
+    SaveGuard = @SaveGuard@
+    SameSecondUpdates = FALSE
+    WithRepoAdd = FALSE
+    WithPageRefresh = TRUE
+    PartialListing = FALSE
+INVARIANTS TypeOK RawNeverGoesBack

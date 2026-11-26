@@ -1,0 +1,19 @@
+\* Finding 1: a PR that changes in the same GitHub second as a PR list read.
+\* @...@ values are read from the code by check.sh.
+SPECIFICATION Spec
+CONSTANTS
+    PRs = {1, 2}
+    MaxTime = 2
+    MaxUpdates = 2
+    MaxFails = 1
+    MaxHourly = 2
+    Workers = 1
+    StopInclusive = @StopInclusive@
+    AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    TargetedNeverAdvances = @TargetedNeverAdvances@
+    SaveGuard = @SaveGuard@
+    SameSecondUpdates = TRUE
+    WithRepoAdd = FALSE
+    WithPageRefresh = FALSE
+    PartialListing = FALSE
+INVARIANTS TypeOK Converged
