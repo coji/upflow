@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import { computeAdvancedScanWatermark } from './scan-watermark'
+import {
+  computeAdvancedScanWatermark,
+  SCAN_WATERMARK_CLOCK_MARGIN_MS,
+} from './scan-watermark'
+
+// Long after every updatedAt below, so the cap does not apply.
+const LATER = '2026-03-16T15:00:00.000Z'
 
 describe('computeAdvancedScanWatermark', () => {
   test('targeted fetch never advances the watermark', () => {
@@ -8,6 +14,7 @@ describe('computeAdvancedScanWatermark', () => {
         isTargetedFetch: true,
         prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:00Z' }],
         savedPrNumbers: new Set([101]),
+        listStartedAt: LATER,
       }),
     ).toBeNull()
   })
@@ -18,6 +25,7 @@ describe('computeAdvancedScanWatermark', () => {
         isTargetedFetch: false,
         prsToFetch: [],
         savedPrNumbers: new Set(),
+        listStartedAt: LATER,
       }),
     ).toBeNull()
   })
@@ -32,6 +40,7 @@ describe('computeAdvancedScanWatermark', () => {
           { number: 99, updatedAt: '2026-03-16T13:30:00Z' },
         ],
         savedPrNumbers: new Set([100, 101, 99]),
+        listStartedAt: LATER,
       }),
     ).toBe('2026-03-16T13:55:00Z')
   })
@@ -47,6 +56,7 @@ describe('computeAdvancedScanWatermark', () => {
           { number: 101, updatedAt: '2026-03-16T13:55:00Z' },
         ],
         savedPrNumbers: new Set([101, 999]),
+        listStartedAt: LATER,
       }),
     ).toBeNull()
   })
@@ -63,6 +73,7 @@ describe('computeAdvancedScanWatermark', () => {
           { number: 101, updatedAt: '2026-03-16T13:55:00Z' },
         ],
         savedPrNumbers: new Set([101]),
+        listStartedAt: LATER,
       }),
     ).toBeNull()
   })
@@ -80,6 +91,7 @@ describe('computeAdvancedScanWatermark', () => {
       isTargetedFetch: true,
       prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:00Z' }],
       savedPrNumbers: new Set([101]),
+      listStartedAt: LATER,
     })
     expect(targeted).toBeNull() // watermark still 13:30
 
@@ -90,7 +102,67 @@ describe('computeAdvancedScanWatermark', () => {
         { number: 100, updatedAt: '2026-03-16T13:45:00Z' },
       ],
       savedPrNumbers: new Set([100, 101]),
+      listStartedAt: LATER,
     })
     expect(fullSweep).toBe('2026-03-16T13:55:00Z')
+  })
+
+  test('a sweep with no list start time does not advance', () => {
+    expect(
+      computeAdvancedScanWatermark({
+        isTargetedFetch: false,
+        prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:00Z' }],
+        savedPrNumbers: new Set([101]),
+        listStartedAt: null,
+      }),
+    ).toBeNull()
+  })
+
+  test('the watermark stays the margin before the list read', () => {
+    // The list is read at 13:55:05.123 and its newest PR changed at 13:55:05.
+    // That second had not ended: a PR updated later in it also gets 13:55:05.
+    expect(SCAN_WATERMARK_CLOCK_MARGIN_MS).toBe(5 * 60 * 1000)
+    expect(
+      computeAdvancedScanWatermark({
+        isTargetedFetch: false,
+        prsToFetch: [
+          { number: 101, updatedAt: '2026-03-16T13:55:05Z' },
+          { number: 100, updatedAt: '2026-03-16T13:40:00Z' },
+        ],
+        savedPrNumbers: new Set([100, 101]),
+        listStartedAt: '2026-03-16T13:55:05.123Z',
+      }),
+    ).toBe('2026-03-16T13:50:05Z')
+  })
+
+  test('the cap uses the same form as GitHub updatedAt (whole seconds, Z)', () => {
+    const watermark = computeAdvancedScanWatermark({
+      isTargetedFetch: false,
+      prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:05Z' }],
+      savedPrNumbers: new Set([101]),
+      listStartedAt: '2026-03-16T13:55:05.999Z',
+    })
+    expect(watermark).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
+    // String comparison with updatedAt must order them by time.
+    expect('2026-03-16T13:50:05Z' <= (watermark ?? '')).toBe(true)
+    expect('2026-03-16T13:50:06Z' <= (watermark ?? '')).toBe(false)
+  })
+
+  test('same-second scenario: a PR updated in the second of the list read is listed again', () => {
+    // 1. 13:55:05.200 the sweep reads the list. PR#101 changed at 13:55:05.
+    // 2. 13:55:05.800 PR#101 changes again: updatedAt is still 13:55:05,
+    //    and its webhook is dropped (it joins a waiting crawl).
+    // 3. The next sweep stops at updatedAt <= watermark. With the watermark at
+    //    13:55:05 it would skip PR#101 forever; capped, it lists it again.
+    const watermark = computeAdvancedScanWatermark({
+      isTargetedFetch: false,
+      prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:05Z' }],
+      savedPrNumbers: new Set([101]),
+      listStartedAt: '2026-03-16T13:55:05.200Z',
+    })
+    expect(watermark).toBe('2026-03-16T13:50:05Z')
+    const nextSweepStopsAt = (updatedAt: string) =>
+      watermark !== null && updatedAt <= watermark
+    expect(nextSweepStopsAt('2026-03-16T13:55:05Z')).toBe(false)
   })
 })

@@ -1,6 +1,6 @@
 \* The code as it is, with one worker (production: one server process).
 \* The repository is added while things run, GitHub lists every PR,
-\* and no PR changes in the same second as a PR list read.
+\* and a PR can change in the same second as a PR list read.
 \* @...@ values are read from the code by check.sh.
 SPECIFICATION Spec
 CONSTANTS
@@ -14,7 +14,9 @@ CONSTANTS
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
     TargetedNeverAdvances = @TargetedNeverAdvances@
     SaveGuard = @SaveGuard@
-    SameSecondUpdates = FALSE
+    CapAtListTime = @CapAtListTime@
+    ClockAhead = FALSE
+    SameSecondUpdates = TRUE
     WithRepoAdd = TRUE
     WithPageRefresh = FALSE
     PartialListing = FALSE

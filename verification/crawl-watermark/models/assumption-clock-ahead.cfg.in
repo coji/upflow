@@ -1,4 +1,6 @@
-\* Finding 1: a PR that changes in the same GitHub second as a PR list read.
+\* Assumption broken on purpose: the server clock runs ahead of GitHub's by more than
+\* SCAN_WATERMARK_CLOCK_MARGIN_MS, so the cap does not keep the watermark out of the
+\* second of the list read.
 \* @...@ values are read from the code by check.sh.
 SPECIFICATION Spec
 CONSTANTS
@@ -12,6 +14,8 @@ CONSTANTS
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
     TargetedNeverAdvances = @TargetedNeverAdvances@
     SaveGuard = @SaveGuard@
+    CapAtListTime = @CapAtListTime@
+    ClockAhead = TRUE
     SameSecondUpdates = TRUE
     WithRepoAdd = FALSE
     WithPageRefresh = FALSE

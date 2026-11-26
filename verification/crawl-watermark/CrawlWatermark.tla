@@ -25,8 +25,11 @@ CONSTANTS
     AdvanceNeedsAllSaved, \* scan-watermark.ts: no advance unless every listed PR was saved
     TargetedNeverAdvances,\* scan-watermark.ts: a targeted (webhook) fetch never advances
     SaveGuard,            \* store.ts savePrData: keep the row when its fetchedAt is newer
+    CapAtListTime,        \* scan-watermark.ts: watermark stays before the second of the list read
     \* --- switches for conditions outside the code ---
     SameSecondUpdates,    \* a PR can change in the same GitHub second as a PR list read
+    ClockAhead,           \* the server clock runs ahead of GitHub's by more than
+                          \* SCAN_WATERMARK_CLOCK_MARGIN_MS
     WithRepoAdd,          \* the repository is added while things run (repositories.add crawl)
     WithPageRefresh,      \* someone presses refresh on a PR page ($pull/index.tsx), once
     PartialListing        \* GitHub returns a list page with null nodes (GraphQL partial error)
@@ -39,7 +42,7 @@ CrawlKeys == {"org", "repo"}
 NoPend == [kind |-> "none", tgt |-> 0]
 NoRun == [kind |-> "none", tgt |-> 0, phase |-> "none", inc |-> FALSE, wm |-> None,
           listed |-> {}, todo |-> {}, cur |-> 0, fa |-> 0, rv |-> 0,
-          saved |-> {}, q |-> FALSE, full |-> TRUE]
+          saved |-> {}, q |-> FALSE, full |-> TRUE, ls |-> 0]
 
 VARIABLES
     now,        \* GitHub clock, whole seconds (updatedAt has second resolution)
@@ -174,7 +177,7 @@ CrawlStarts(k) ==
     /\ Run(k).phase = "none" /\ pend[k].kind # "none"
     /\ Cardinality({j \in CrawlKeys : lease[j].phase # "none"}) < Workers
     /\ LET inc == (k = "repo") \/ repoAdded
-       IN Set(k, [NoRun EXCEPT !.kind = pend[k].kind, !.tgt = pend[k].tgt,
+       IN Set(k, [NoRun EXCEPT !.kind = pend[k].kind, !.tgt = pend[k].tgt, !.ls = now,
                      !.inc = inc, !.wm = watermark, !.q = quiet,
                      !.todo = IF pend[k].kind = "target" THEN {pend[k].tgt} ELSE {},
                      !.listed = IF pend[k].kind = "target" /\ ~TargetedNeverAdvances
@@ -193,7 +196,8 @@ PrListFetched(k) ==
     /\ LET L == {p \in PRs : Listed(Run(k).wm, p)}
        IN \E S \in (IF PartialListing THEN SUBSET L ELSE {L}) :
             Set(k, [Run(k) EXCEPT !.listed = {<<p, ghUpd[p]>> : p \in S},
-                                  !.todo = S, !.full = (S = L), !.phase = "pick"])
+                                  !.todo = S, !.full = (S = L), !.ls = now,
+                                  !.phase = "pick"])
     /\ listSec' = now
     /\ UNCHANGED <<raw, seen, watermark, fclock, pend, finalDone, fails>> /\ UNCHANGED Others
 
@@ -233,13 +237,21 @@ PrSaved(k) ==
 
 \* computeAdvancedScanWatermark + step advance-scan-watermark (store.setScanWatermark,
 \* an unconditional UPDATE).  Targeted fetches have no updatedAt, so never advance.
+\* The cap is listStartedAt - SCAN_WATERMARK_CLOCK_MARGIN_MS.  One model second
+\* stands for the margin: the cap is the second before the list read, or the
+\* second of the read itself when the server clock runs ahead (ClockAhead).
+\* A cap of -1 equals None: the next sweep lists every PR.
+Cap(r) == IF ClockAhead THEN r.ls ELSE r.ls - 1
+NewWatermark(r) ==
+    LET m == Max({e[2] : e \in r.listed})
+    IN IF CapAtListTime /\ m > Cap(r) THEN Cap(r) ELSE m
 AllSaved(r) == \A e \in r.listed : e[1] \in r.saved
 WatermarkStep(k) ==
     /\ Run(k).phase = "pick" /\ Run(k).todo = {}
     /\ LET r == Run(k) IN
        /\ IF (r.kind = "sweep" \/ (r.kind = "target" /\ ~TargetedNeverAdvances))
              /\ r.listed # {} /\ (AdvanceNeedsAllSaved => AllSaved(r))
-          THEN watermark' = Max({e[2] : e \in r.listed})
+          THEN watermark' = NewWatermark(r)
           ELSE UNCHANGED watermark
        /\ Set(k, [r EXCEPT !.phase = "done"])
     /\ UNCHANGED <<raw, seen, fclock, listSec, pend, finalDone, fails>> /\ UNCHANGED Others

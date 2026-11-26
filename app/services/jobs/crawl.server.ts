@@ -218,6 +218,7 @@ export const crawlJob = defineJob({
 
         const prNumberSet = input.prNumbers ? new Set(input.prNumbers) : null
         let prsToFetch: Array<{ number: number; updatedAt?: string }>
+        let listStartedAt: string | null = null
         if (prNumberSet) {
           prsToFetch = input.prNumbers?.map((n) => ({ number: n })) ?? []
         } else {
@@ -227,15 +228,20 @@ export const crawlJob = defineJob({
               input.refresh || scanWatermark === FETCH_ALL_SENTINEL
                 ? undefined
                 : scanWatermark
+            // Taken before the request and kept in the step output, so a
+            // resumed run reuses it. Caps the watermark (scan-watermark.ts).
+            const startedAt = new Date().toISOString()
             try {
               return {
                 prs: await fetcher.pullrequestList(stopBefore),
+                listStartedAt: startedAt,
                 missingMessage: null as string | null,
               }
             } catch (e) {
               if (e instanceof GraphQLResourceMissingError) {
                 return {
                   prs: [] as Array<{ number: number; updatedAt: string }>,
+                  listStartedAt: startedAt,
                   missingMessage: e.message,
                 }
               }
@@ -246,6 +252,9 @@ export const crawlJob = defineJob({
             throw new GraphQLResourceMissingError(result.missingMessage)
           }
           prsToFetch = result.prs
+          // A run checkpointed before listStartedAt existed has none: then
+          // the watermark stays where it is for this sweep.
+          listStartedAt = result.listStartedAt ?? null
         }
 
         const repoUpdated = new Set<number>()
@@ -311,6 +320,7 @@ export const crawlJob = defineJob({
           isTargetedFetch: prNumberSet !== null,
           prsToFetch,
           savedPrNumbers: repoUpdated,
+          listStartedAt,
         })
         if (nextWatermark !== null) {
           await step.run(`advance-scan-watermark:${repoLabel}`, async () => {
