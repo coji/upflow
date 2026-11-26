@@ -1,0 +1,21 @@
+\* The code as it is, with one worker (production: one server process).
+\* The repository is added while things run, GitHub lists every PR,
+\* and no PR changes in the same second as a PR list read.
+\* @...@ values are read from the code by check.sh.
+SPECIFICATION Spec
+CONSTANTS
+    PRs = {1, 2}
+    MaxTime = 2
+    MaxUpdates = 2
+    MaxFails = 1
+    MaxHourly = 2
+    Workers = 1
+    StopInclusive = @StopInclusive@
+    AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    TargetedNeverAdvances = @TargetedNeverAdvances@
+    SaveGuard = @SaveGuard@
+    SameSecondUpdates = FALSE
+    WithRepoAdd = TRUE
+    WithPageRefresh = FALSE
+    PartialListing = FALSE
+INVARIANTS TypeOK Converged RawNeverGoesBack

@@ -67,8 +67,9 @@ data.db
 data.db-shm
 data.db-wal
 
-# Claude Code
-.claude
+# Claude Code (skills are shared; settings stay local)
+.claude/*
+!.claude/skills/
 
 /order.md
 /.sprite

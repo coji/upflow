@@ -1,0 +1,19 @@
+\* Broken on purpose: a webhook (targeted) fetch advances the watermark to that PR's updatedAt.
+\* @...@ values are read from the code by check.sh.
+SPECIFICATION Spec
+CONSTANTS
+    PRs = {1, 2}
+    MaxTime = 2
+    MaxUpdates = 2
+    MaxFails = 1
+    MaxHourly = 2
+    Workers = 1
+    StopInclusive = @StopInclusive@
+    AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    TargetedNeverAdvances = FALSE
+    SaveGuard = @SaveGuard@
+    SameSecondUpdates = FALSE
+    WithRepoAdd = FALSE
+    WithPageRefresh = FALSE
+    PartialListing = FALSE
+INVARIANTS TypeOK Converged

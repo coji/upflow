@@ -1,0 +1,21 @@
+\* The code as it is with two workers (a second process, such as batch/cli.ts,
+\* on the same data/durably.db). Converged must still hold.
+\* Smaller bounds: a second lane that runs at the same time grows the state space fast.
+\* @...@ values are read from the code by check.sh.
+SPECIFICATION Spec
+CONSTANTS
+    PRs = {1, 2}
+    MaxTime = 1
+    MaxUpdates = 2
+    MaxFails = 0
+    MaxHourly = 1
+    Workers = 2
+    StopInclusive = @StopInclusive@
+    AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    TargetedNeverAdvances = @TargetedNeverAdvances@
+    SaveGuard = @SaveGuard@
+    SameSecondUpdates = FALSE
+    WithRepoAdd = TRUE
+    WithPageRefresh = FALSE
+    PartialListing = FALSE
+INVARIANTS TypeOK Converged
