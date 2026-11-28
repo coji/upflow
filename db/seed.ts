@@ -2,7 +2,8 @@ import { consola } from 'consola'
 import 'dotenv/config'
 import { nanoid } from 'nanoid'
 import { copyFileSync } from 'node:fs'
-import { db, sql } from '~/app/services/db.server'
+import path from 'node:path'
+import { db, resolveDataDir, sql } from '~/app/services/db.server'
 import {
   closeTenantDb,
   createTenantDb,
@@ -1352,8 +1353,10 @@ async function seed() {
   // Close tenant DB connection to flush WAL before copying
   await closeTenantDb(orgId)
 
-  // Copy tenant DB for type generation (used by db:generate:tenant)
-  copyFileSync(tenantDbPath, './data/tenant_seed.db')
+  // Copy tenant DB for type generation (used by db:generate:tenant, which reads
+  // ./data/tenant_seed.db — the same file when UPFLOW_DATA_DIR=./data). Writing
+  // under the data dir keeps a seed into another UPFLOW_DATA_DIR from touching ./data.
+  copyFileSync(tenantDbPath, path.join(resolveDataDir(), 'tenant_seed.db'))
 
   consola.info('Database has been seeded. 🌱')
 }
