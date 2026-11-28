@@ -22,7 +22,7 @@ import type {
   ShapedGitHubTag,
   ShapedTimelineItem,
 } from './model'
-import { createStore } from './store'
+import { createStore, nextFetchedAt } from './store'
 
 // Set up a temp directory for tenant DB
 const testDir = path.join(tmpdir(), `store-test-${Date.now()}`)
@@ -180,7 +180,7 @@ describe('store', () => {
         discussions,
         timelineItems,
       },
-      isoAt(1_700_000_000_000),
+      null,
     )
 
     expect(await store.loader.pullrequests()).toEqual([pr])
@@ -201,7 +201,7 @@ describe('store', () => {
         reviews: makeReviews(1),
         discussions: makeDiscussions(1),
       },
-      isoAt(1_700_000_000_000),
+      null,
     )
 
     const updatedPr = { ...pr, title: 'Updated PR #1' }
@@ -222,7 +222,7 @@ describe('store', () => {
         reviews: makeReviews(1),
         discussions: makeDiscussions(1),
       },
-      isoAt(1_700_000_100_000),
+      await store.getFetchedAt(1),
     )
 
     const prs = await store.loader.pullrequests()
@@ -251,7 +251,7 @@ describe('store', () => {
         reviews: makeReviews(1),
         discussions: makeDiscussions(1),
       },
-      isoAt(1_700_000_000_000),
+      null,
     )
 
     expect(await store.loader.timelineItems(1)).toEqual([])
@@ -285,7 +285,7 @@ describe('store', () => {
           reviews: makeReviews(n),
           discussions: makeDiscussions(n),
         },
-        isoAt(1_700_000_000_000 + n),
+        null,
       )
     }
 
@@ -309,7 +309,7 @@ describe('store', () => {
         reviews: makeReviews(1),
         discussions: makeDiscussions(1),
       },
-      isoAt(1_700_000_000_000),
+      null,
     )
     await store.savePrData(
       makePr(2),
@@ -318,7 +318,7 @@ describe('store', () => {
         reviews: makeReviews(2),
         discussions: makeDiscussions(2),
       },
-      isoAt(1_700_000_000_001),
+      null,
     )
 
     expect(await store.loader.pullrequests()).toHaveLength(2)
@@ -344,7 +344,7 @@ describe('store', () => {
         reviews: makeReviews(1),
         discussions: makeDiscussions(1),
       },
-      isoAt(1_700_000_000_000),
+      null,
     )
     expect(await store.getScanWatermark()).toBe('2024-01-05T00:00:00Z')
   })
@@ -360,7 +360,7 @@ describe('store', () => {
         discussions: makeDiscussions(1),
         timelineItems: makeTimelineItems(1),
       },
-      isoAt(1_700_000_000_000),
+      null,
     )
 
     await store.preloadAll()
@@ -376,81 +376,144 @@ describe('store', () => {
     expect(await store.loader.timelineItems(1)).toEqual(makeTimelineItems(1))
   })
 
-  test('savePrData does not overwrite row when incoming fetchedAt is older', async () => {
-    const store = createStore({ organizationId: orgId, repositoryId })
+  const saveInitial = async (
+    store: ReturnType<typeof createStore>,
+    now: Date,
+  ) => {
     const pr = makePr(1)
-    const newer = isoAt(1_700_000_100_000)
-    const older = isoAt(1_700_000_000_000)
+    expect(
+      await store.savePrData(
+        pr,
+        {
+          commits: makeCommits(1),
+          reviews: makeReviews(1),
+          discussions: makeDiscussions(1),
+        },
+        null,
+        now,
+      ),
+    ).toBe(true)
+    return pr
+  }
 
-    await store.savePrData(
-      pr,
-      {
-        commits: makeCommits(1),
-        reviews: makeReviews(1),
-        discussions: makeDiscussions(1),
-      },
-      newer,
-    )
+  test('savePrData refuses to save when another fetch saved the row after expectedFetchedAt was read', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    const pr = await saveInitial(store, new Date(1_700_000_000_000))
+    // Fetch A reads the row's fetchedAt, then starts its GitHub reads.
+    const seenByA = await store.getFetchedAt(1)
+    // Fetch B (started earlier or later) saves first.
+    const newerPr = { ...pr, title: 'Saved by B' }
+    expect(
+      await store.savePrData(
+        newerPr,
+        {
+          commits: makeCommits(1),
+          reviews: makeReviews(1),
+          discussions: makeDiscussions(1),
+        },
+        seenByA,
+        new Date(1_700_000_200_000),
+      ),
+    ).toBe(true)
 
-    const stalePr = { ...pr, title: 'Stale overwrite attempt' }
-    await store.savePrData(
-      stalePr,
-      {
-        commits: [{ ...makeCommits(1)[0], sha: 'stale-sha' }],
-        reviews: makeReviews(1),
-        discussions: makeDiscussions(1),
-      },
-      older,
-    )
+    // A's save comes later in time but must not land over B's.
+    const stalePr = { ...pr, title: 'Saved by A' }
+    expect(
+      await store.savePrData(
+        stalePr,
+        {
+          commits: [{ ...makeCommits(1)[0], sha: 'stale-sha' }],
+          reviews: makeReviews(1),
+          discussions: makeDiscussions(1),
+        },
+        seenByA,
+        new Date(1_700_000_300_000),
+      ),
+    ).toBe(false)
 
     const prs = await store.loader.pullrequests()
-    expect(prs[0].title).toBe('PR #1')
+    expect(prs[0].title).toBe('Saved by B')
     expect(await store.loader.commits(1)).toEqual(makeCommits(1))
   })
 
-  test('updatePrMetadata skips when incoming fetchedAt is older than stored', async () => {
+  test('savePrData with expectedFetchedAt null refuses when the row now exists', async () => {
     const store = createStore({ organizationId: orgId, repositoryId })
-    const pr = makePr(1)
-    await store.savePrData(
-      pr,
-      {
-        commits: makeCommits(1),
-        reviews: makeReviews(1),
-        discussions: makeDiscussions(1),
-      },
-      isoAt(1_700_000_100_000),
-    )
-
-    const staleMeta = { ...pr, title: 'Stale metadata' }
-    const n = await store.updatePrMetadata([
-      { pr: staleMeta, fetchedAt: isoAt(1_700_000_000_000) },
-    ])
-    expect(n).toBe(0)
-
-    const prs = await store.loader.pullrequests()
-    expect(prs[0].title).toBe('PR #1')
+    await saveInitial(store, new Date(1_700_000_000_000))
+    expect(
+      await store.savePrData(
+        { ...makePr(1), title: 'Second insert' },
+        {
+          commits: makeCommits(1),
+          reviews: makeReviews(1),
+          discussions: makeDiscussions(1),
+        },
+        null,
+      ),
+    ).toBe(false)
+    expect((await store.loader.pullrequests())[0].title).toBe('PR #1')
   })
 
-  test('updatePrMetadata applies when incoming fetchedAt is newer or equal', async () => {
+  test('a landed save always moves fetchedAt forward, even when the clock is behind', async () => {
     const store = createStore({ organizationId: orgId, repositoryId })
-    const pr = makePr(1)
+    await saveInitial(store, new Date(1_700_000_100_000))
+    const before = await store.getFetchedAt(1)
+    expect(
+      await store.savePrData(
+        makePr(1),
+        {
+          commits: makeCommits(1),
+          reviews: makeReviews(1),
+          discussions: makeDiscussions(1),
+        },
+        before,
+        new Date(1_700_000_000_000),
+      ),
+    ).toBe(true)
+    const after = await store.getFetchedAt(1)
+    expect(after).toBe(isoAt(1_700_000_100_001))
+  })
+
+  test('nextFetchedAt', () => {
+    expect(nextFetchedAt(new Date(5_000), null)).toBe(isoAt(5_000))
+    expect(nextFetchedAt(new Date(5_000), isoAt(4_000))).toBe(isoAt(5_000))
+    expect(nextFetchedAt(new Date(5_000), isoAt(5_000))).toBe(isoAt(5_001))
+    expect(nextFetchedAt(new Date(5_000), isoAt(9_000))).toBe(isoAt(9_001))
+  })
+
+  test('updatePrMetadata skips a row saved after expectedFetchedAt was read', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    const pr = await saveInitial(store, new Date(1_700_000_000_000))
+    const seen = await store.getFetchedAt(1)
+    expect(seen).not.toBeNull()
     await store.savePrData(
-      pr,
+      { ...pr, title: 'Saved by crawl' },
       {
         commits: makeCommits(1),
         reviews: makeReviews(1),
         discussions: makeDiscussions(1),
       },
-      isoAt(1_700_000_000_000),
+      seen,
     )
 
-    const updated = { ...pr, title: 'New title' }
     const n = await store.updatePrMetadata([
-      { pr: updated, fetchedAt: isoAt(1_700_000_100_000) },
+      { pr: { ...pr, title: 'Stale metadata' }, expectedFetchedAt: seen ?? '' },
+    ])
+    expect(n).toBe(0)
+    expect((await store.loader.pullrequests())[0].title).toBe('Saved by crawl')
+  })
+
+  test('updatePrMetadata applies when the row is unchanged', async () => {
+    const store = createStore({ organizationId: orgId, repositoryId })
+    const pr = await saveInitial(store, new Date(1_700_000_000_000))
+    const fetchedAtByPr = await store.getFetchedAtByPr()
+    const seen = fetchedAtByPr.get(1)
+    expect(seen).toBe(isoAt(1_700_000_000_000))
+
+    const n = await store.updatePrMetadata([
+      { pr: { ...pr, title: 'New title' }, expectedFetchedAt: seen ?? '' },
     ])
     expect(n).toBe(1)
-
-    const prs = await store.loader.pullrequests()
-    expect(prs[0].title).toBe('New title')
+    expect((await store.loader.pullrequests())[0].title).toBe('New title')
+    expect(await store.getFetchedAt(1)).not.toBe(seen)
   })
 })

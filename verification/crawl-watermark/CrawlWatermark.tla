@@ -24,7 +24,11 @@ CONSTANTS
     StopInclusive,        \* fetcher.ts pullrequestList: stop when node.updatedAt <= stopBefore
     AdvanceNeedsAllSaved, \* scan-watermark.ts: no advance unless every listed PR was saved
     TargetedNeverAdvances,\* scan-watermark.ts: a targeted (webhook) fetch never advances
-    SaveGuard,            \* store.ts savePrData: keep the row when its fetchedAt is newer
+    SaveRule,             \* store.ts savePrData: when a save lands.  "unchanged": only if
+                          \* the row's fetchedAt is still the one read before the GitHub
+                          \* reads.  "fetchedAt": only if the fetchedAt taken before the
+                          \* reads is not older than the row's (the rule before this one).
+                          \* "none": always.
     CapAtListTime,        \* scan-watermark.ts: watermark stays before the second of the list read
     \* --- switches for conditions outside the code ---
     SameSecondUpdates,    \* a PR can change in the same GitHub second as a PR list read
@@ -42,16 +46,16 @@ CrawlKeys == {"org", "repo"}
 NoPend == [kind |-> "none", tgt |-> 0]
 NoRun == [kind |-> "none", tgt |-> 0, phase |-> "none", inc |-> FALSE, wm |-> None,
           listed |-> {}, todo |-> {}, cur |-> 0, fa |-> 0, rv |-> 0,
-          saved |-> {}, q |-> FALSE, full |-> TRUE, ls |-> 0]
+          saved |-> {}, q |-> FALSE, full |-> TRUE, ls |-> 0, tok |-> 0]
 
 VARIABLES
     now,        \* GitHub clock, whole seconds (updatedAt has second resolution)
     ghVer,      \* GitHub: current version of each PR
     ghUpd,      \* GitHub: updatedAt of each PR
-    raw,        \* githubRawData row: [ver, fa] (ver 0 = no row, fa = fetchedAt)
+    raw,        \* githubRawData row: [ver, fa] (ver 0 = no row, fa = fetchedAt; 0 = no row)
     seen,       \* highest version ever written to each row (for RawNeverGoesBack)
     watermark,  \* repositories.scanWatermark
-    fclock,     \* new Date() used for fetchedAt; strictly increasing
+    fclock,     \* new Date() taken before the reads, for the "fetchedAt" rule only
     listSec,    \* GitHub second of the latest PR list read (for SameSecondUpdates)
     hooks,      \* pull_request webhooks sent by GitHub, not yet handled
     pend,       \* durably: the one pending crawl run per concurrency key
@@ -149,9 +153,10 @@ RepoAdded ==
     /\ UNCHANGED <<now, ghVer, ghUpd, raw, seen, watermark, fclock, listSec, hooks, lease,
                    quiet, finalDone, updates, fails, hourly, pages>>
 
-\* $pull/index.tsx 'refresh': fetchedAt = new Date(), the same six reads, then
-\* store.savePrData, in the request handler.  The process trigger after it is
-\* outside this model.  Never touches the watermark.
+\* $pull/index.tsx 'refresh': fetchAndSavePr in the request handler, the same
+\* steps as a crawl's fetch-pr.  A refused save shows a message and saves
+\* nothing.  The process trigger after it is outside this model.  Never
+\* touches the watermark.
 PageRefresh(p) ==
     /\ WithPageRefresh /\ repoAdded /\ pages < 1
     /\ lease["page"].phase = "none"
@@ -201,16 +206,24 @@ PrListFetched(k) ==
     /\ listSec' = now
     /\ UNCHANGED <<raw, seen, watermark, fclock, pend, finalDone, fails>> /\ UNCHANGED Others
 
-\* step fetch-pr:<repo>:#<n> begins: fetchedAt = new Date().toISOString()
+\* step fetch-pr:<repo>:#<n> begins.  fetch-and-save-pr.ts fetchAndSavePr:
+\* store.getFetchedAt(n) before the first GitHub request (tok).  fa is the
+\* fetchedAt the "fetchedAt" rule took at this point (new Date()); the other
+\* rules take no time here, and fclock stays put to keep the state space small.
 PrFetchBegins(k) ==
     /\ Run(k).phase = "pick" /\ Run(k).todo # {}
-    /\ \E p \in Run(k).todo :
-         Set(k, [Run(k) EXCEPT !.cur = p, !.todo = @ \ {p}, !.fa = fclock + 1,
-                               !.phase = "read"])
-    /\ fclock' = fclock + 1
+    /\ LET old == SaveRule = "fetchedAt" IN
+       /\ \E p \in Run(k).todo :
+            Set(k, [Run(k) EXCEPT !.cur = p, !.todo = @ \ {p},
+                                  !.fa = IF old THEN fclock + 1 ELSE 0,
+                                  !.tok = raw[p].fa, !.phase = "read"])
+       /\ fclock' = IF old THEN fclock + 1 ELSE fclock
     /\ UNCHANGED <<raw, seen, watermark, listSec, pend, finalDone, fails>> /\ UNCHANGED Others
 
-\* the Promise.all of pullrequest/commits/comments/reviews/timelineItems/files
+\* the Promise.all of pullrequest/commits/comments/reviews/timelineItems/files.
+\* One step: the model does not split the six requests.  Under "unchanged"
+\* that is safe, because every request starts after tok was read; the
+\* "fetchedAt" rule would need the split to show all its failures.
 PrDetailsRead(k) ==
     /\ Run(k).phase = "read"
     /\ Set(k, [Run(k) EXCEPT !.rv = ghVer[Run(k).cur], !.phase = "save"])
@@ -223,16 +236,27 @@ PrDetailsFail(k) ==
     /\ Set(k, [Run(k) EXCEPT !.phase = "pick"])
     /\ UNCHANGED <<raw, seen, watermark, fclock, listSec, pend, finalDone>> /\ UNCHANGED Others
 
-\* store.savePrData: upsert ... WHERE excluded.fetchedAt >= githubRawData.fetchedAt.
-\* The step returns {saved:true} even when the WHERE discards the write.
+\* store.savePrData.  "unchanged": INSERT ... ON CONFLICT DO UPDATE WHERE
+\* githubRawData.fetchedAt = tok (DO NOTHING when tok is "no row"), with a new
+\* fetchedAt later than tok (nextFetchedAt).  Only equality with tok matters
+\* under this rule, so the model counts writes per row instead of keeping a
+\* clock.  A refused save makes the step return
+\* {saved:false}.  "fetchedAt": the old WHERE excluded.fetchedAt >=
+\* githubRawData.fetchedAt, and the step returned {saved:true} either way.
 PrSaved(k) ==
     /\ Run(k).phase = "save"
-    /\ LET r == Run(k) IN
-       /\ IF ~SaveGuard \/ r.fa >= raw[r.cur].fa
-          THEN /\ raw' = [raw EXCEPT ![r.cur] = [ver |-> r.rv, fa |-> r.fa]]
-               /\ seen' = [seen EXCEPT ![r.cur] = IF r.rv > @ THEN r.rv ELSE @]
-          ELSE UNCHANGED <<raw, seen>>
-       /\ Set(k, [r EXCEPT !.saved = @ \cup {r.cur}, !.phase = "pick"])
+    /\ LET r == Run(k)
+           ok == CASE SaveRule = "unchanged" -> raw[r.cur].fa = r.tok
+                   [] SaveRule = "fetchedAt" -> r.fa >= raw[r.cur].fa
+                   [] OTHER -> TRUE
+           fa == IF SaveRule = "unchanged" THEN raw[r.cur].fa + 1 ELSE r.fa
+       IN /\ IF ok
+             THEN /\ raw' = [raw EXCEPT ![r.cur] = [ver |-> r.rv, fa |-> fa]]
+                  /\ seen' = [seen EXCEPT ![r.cur] = IF r.rv > @ THEN r.rv ELSE @]
+             ELSE UNCHANGED <<raw, seen>>
+          /\ Set(k, [r EXCEPT !.saved = IF ok \/ SaveRule # "unchanged"
+                                         THEN @ \cup {r.cur} ELSE @,
+                              !.phase = "pick"])
     /\ UNCHANGED <<watermark, fclock, listSec, pend, finalDone, fails>> /\ UNCHANGED Others
 
 \* computeAdvancedScanWatermark + step advance-scan-watermark (store.setScanWatermark,

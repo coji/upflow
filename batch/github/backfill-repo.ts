@@ -30,18 +30,22 @@ export async function backfillRepo(
 
   if (options?.files) {
     // files のみ backfill: raw data の pullRequest JSON に files を追加
+    // Before the reads: a row that another fetch saves meanwhile is skipped.
+    const fetchedAtByPr = await store.getFetchedAtByPr()
     const prs = await store.loader.pullrequests()
     logger.info(`backfilling files for ${prs.length} PRs...`)
     let updated = 0
     let errors = 0
     for (const pr of prs) {
       if (pr.files && pr.files.length > 0) continue // already has files
+      const expectedFetchedAt = fetchedAtByPr.get(pr.number)
+      if (expectedFetchedAt === undefined) continue
       try {
-        const fetchedAt = new Date().toISOString()
         const files = await fetcher.files(pr.number)
         const prWithFiles = { ...pr, files }
-        await store.updatePrMetadata([{ pr: prWithFiles, fetchedAt }])
-        updated++
+        updated += await store.updatePrMetadata([
+          { pr: prWithFiles, expectedFetchedAt },
+        ])
       } catch (err) {
         errors++
         logger.warn(
@@ -60,13 +64,17 @@ export async function backfillRepo(
     return
   }
 
+  // 一覧を読む前の fetchedAt。読んでいる間に別の取得が保存した行は上書きしない
+  const fetchedAtByPr = await store.getFetchedAtByPr()
   // PR 一覧を取得（メタデータのみ、詳細は不要）
   const allPullRequests = await fetcher.pullrequests()
   logger.info(`fetched ${allPullRequests.length} PR metadata.`)
 
-  const fetchedAt = new Date().toISOString()
   const updated = await store.updatePrMetadata(
-    allPullRequests.map((pr) => ({ pr, fetchedAt })),
+    allPullRequests.flatMap((pr) => {
+      const expectedFetchedAt = fetchedAtByPr.get(pr.number)
+      return expectedFetchedAt === undefined ? [] : [{ pr, expectedFetchedAt }]
+    }),
   )
   logger.info(
     `updated ${updated} raw records in ${repository.owner}/${repository.repo}`,

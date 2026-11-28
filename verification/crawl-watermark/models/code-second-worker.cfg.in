@@ -1,5 +1,5 @@
 \* The code as it is with two workers (a second process, such as batch/cli.ts,
-\* on the same data/durably.db). Converged must still hold. Same-second updates
+\* on the same data/durably.db). Converged and RawNeverGoesBack must hold. Same-second updates
 \* are left to the code model: with them this model takes about a minute.
 \* Smaller bounds: a second lane that runs at the same time grows the state space fast.
 \* @...@ values are read from the code by check.sh.
@@ -14,11 +14,11 @@ CONSTANTS
     StopInclusive = @StopInclusive@
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
     TargetedNeverAdvances = @TargetedNeverAdvances@
-    SaveGuard = @SaveGuard@
+    SaveRule = @SaveRule@
     CapAtListTime = @CapAtListTime@
     ClockAhead = FALSE
     SameSecondUpdates = FALSE
     WithRepoAdd = TRUE
     WithPageRefresh = FALSE
     PartialListing = FALSE
-INVARIANTS TypeOK Converged
+INVARIANTS TypeOK Converged RawNeverGoesBack

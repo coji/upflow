@@ -1,0 +1,25 @@
+\* Mutant: the save rule before fetchAndSavePr, which kept the copy whose
+\* fetchedAt, taken before the reads, was newer.  A page refresh and a crawl
+\* fetch read the same PR at once, and the one that started first can read
+\* the newer copy.  Same bounds as code-page-refresh, without same-second
+\* updates.  RawNeverGoesBack must fail.
+\* Other @...@ values are read from the code by check.sh.
+SPECIFICATION Spec
+CONSTANTS
+    PRs = {1, 2}
+    MaxTime = 1
+    MaxUpdates = 2
+    MaxFails = 0
+    MaxHourly = 1
+    Workers = 1
+    StopInclusive = @StopInclusive@
+    AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    TargetedNeverAdvances = @TargetedNeverAdvances@
+    SaveRule = "fetchedAt"
+    CapAtListTime = @CapAtListTime@
+    ClockAhead = FALSE
+    SameSecondUpdates = FALSE
+    WithRepoAdd = FALSE
+    WithPageRefresh = TRUE
+    PartialListing = FALSE
+INVARIANTS TypeOK RawNeverGoesBack

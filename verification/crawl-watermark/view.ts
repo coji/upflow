@@ -5,7 +5,7 @@ type Vars = {
   listSec: number
   watermark: number
   ghVer: Record<string, number>
-  raw: Record<string, { ver: number }>
+  raw: Record<string, { ver: number; fa: number }>
   pend: Record<string, { kind: string }>
   lease: Record<string, { kind: string; phase: string }>
 }
@@ -81,13 +81,15 @@ export const step = (action: string, from: Vars, to: Vars) => {
     case 'PrListFetched':
       return `${who(from, to)} reads the PR list`
     case 'PrFetchBegins':
-      return `${who(from, to)} starts fetching a PR and records fetchedAt`
+      return `${who(from, to)} starts fetching a PR and notes the row's fetchedAt`
     case 'PrDetailsRead':
       return `${who(from, to)} reads the PR from GitHub`
     case 'PrDetailsFail':
       return `${who(from, to)} fails to read the PR`
     case 'PrSaved':
-      return `${who(from, to)} saves the PR`
+      return JSON.stringify(from.raw) === JSON.stringify(to.raw)
+        ? `${who(from, to)} tries to save the PR, and the save does not land`
+        : `${who(from, to)} saves the PR`
     case 'WatermarkStep':
       return to.watermark !== from.watermark
         ? 'the crawl moves the watermark'

@@ -1,5 +1,5 @@
 \* The code as it is, plus one PR page refresh that runs beside the crawl.
-\* Converged must still hold: the next webhook fetch repairs an overwritten row.
+\* Converged and RawNeverGoesBack must hold.
 \* Smaller bounds: a second lane that runs at the same time grows the state space fast.
 \* @...@ values are read from the code by check.sh.
 SPECIFICATION Spec
@@ -13,11 +13,11 @@ CONSTANTS
     StopInclusive = @StopInclusive@
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
     TargetedNeverAdvances = @TargetedNeverAdvances@
-    SaveGuard = @SaveGuard@
+    SaveRule = @SaveRule@
     CapAtListTime = @CapAtListTime@
     ClockAhead = FALSE
     SameSecondUpdates = TRUE
     WithRepoAdd = FALSE
     WithPageRefresh = TRUE
     PartialListing = FALSE
-INVARIANTS TypeOK Converged
+INVARIANTS TypeOK Converged RawNeverGoesBack
