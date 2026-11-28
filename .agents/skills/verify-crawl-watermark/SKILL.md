@@ -1,6 +1,6 @@
 ---
 name: verify-crawl-watermark
-description: crawl ジョブの scan watermark と githubRawData への保存を TLA+ でモデル検査する。crawl.server.ts、scan-watermark.ts、fetcher.ts の pullrequestList / paginateGraphQL、store.ts の savePrData / setScanWatermark、crawl を trigger する箇所 (webhook、job-scheduler、repositories.add)、PR 画面の refresh、concurrency key、durably の設定や coalesce を変えたとき、または「PR の更新が取り込まれない」「ダッシュボードの PR が古いまま」を調べるときに使う。
+description: crawl ジョブの scan watermark と githubRawData への保存を TLA+ でモデル検査する。crawl.server.ts、scan-watermark.ts、fetcher.ts の pullrequestList / paginateGraphQLWithStatus、store.ts の getFetchedAt / savePrData / setScanWatermark、fetch-and-save-pr.ts、crawl を trigger する箇所 (webhook、job-scheduler、repositories.add)、PR 画面の refresh、concurrency key、durably の設定や coalesce を変えたとき、または「PR の更新が取り込まれない」「ダッシュボードの PR が古いまま」を調べるときに使う。
 ---
 
 # crawl の scan watermark を検査する
@@ -17,20 +17,20 @@ description: crawl ジョブの scan watermark と githubRawData への保存を
 
 次のどれかに触れる変更をしたら、push の前に実行する。
 
-| ファイル                                                                   | モデルの中で対応するもの                                                                                                                                                                                                         |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/services/jobs/crawl.server.ts` (`crawlJob`)                           | `CrawlStarts` から `CrawlEnds` までの各手順。`fetch-prs` の step で取る `listStartedAt` は `PrListFetched` の `ls`。`repoUpdated` に入れる条件は `PrSaved` の `saved`、`computeAdvancedScanWatermark` の呼び方は `WatermarkStep` |
-| `app/services/jobs/scan-watermark.ts` (`computeAdvancedScanWatermark`)     | `WatermarkStep` の `NewWatermark`、切り替え `AdvanceNeedsAllSaved` / `TargetedNeverAdvances` / `CapAtListTime`、環境 `ClockAhead`                                                                                                |
-| `batch/github/fetcher.ts` (`pullrequestList`, `paginateGraphQL`)           | `PrListFetched`、切り替え `StopInclusive`、環境 `PartialListing`                                                                                                                                                                 |
-| `batch/github/store.ts` (`getFetchedAt`, `savePrData`, `setScanWatermark`) | `PrFetchBegins` の `tok`、`PrSaved`、切り替え `SaveRule`、`WatermarkStep` の上書き                                                                                                                                               |
-| `app/services/github-webhook-pull.server.ts`                               | `WebhookHandled` (coalesce `skip`)                                                                                                                                                                                               |
-| `batch/job-scheduler.ts`                                                   | `HourlyTrigger` (coalesce なし。pending があれば ConflictError で何も積まれない)                                                                                                                                                 |
-| `app/routes/$orgSlug/settings/repositories.add/index.tsx`                  | `RepoAdded` (別の concurrency key `crawl:<org>:<repo>`)                                                                                                                                                                          |
-| `batch/github/fetch-and-save-pr.ts` (`fetchAndSavePr`)                     | `PrFetchBegins` から `PrSaved` まで (行の `fetchedAt` を読んでから GitHub を読み、保存する)                                                                                                                                      |
-| `app/routes/$orgSlug/settings/repositories/$repository/$pull/index.tsx`    | `PageRefresh` (リクエストの中で `fetchAndSavePr` を呼ぶ。durably の外)                                                                                                                                                           |
-| `app/services/jobs/concurrency-keys.server.ts`                             | `Keys` / `CrawlKeys`                                                                                                                                                                                                             |
-| `app/services/durably.server.ts`                                           | `CrawlStarts` の `Workers` (1 プロセスに worker 1 つ、`maxConcurrentRuns` の既定値 1)                                                                                                                                            |
-| `@coji/durably` の更新                                                     | `Trigger` (pending が 1 つあれば新しい依頼は捨てられる)、`CrawlStarts`                                                                                                                                                           |
+| ファイル                                                                   | モデルの中で対応するもの                                                                                                                                                                                                                                   |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/services/jobs/crawl.server.ts` (`crawlJob`)                           | `CrawlStarts` から `CrawlEnds` までの各手順。`fetch-prs` の step で取る `listStartedAt` は `PrListFetched` の `ls`、`listComplete` は `full`。`repoUpdated` に入れる条件は `PrSaved` の `saved`、`computeAdvancedScanWatermark` の呼び方は `WatermarkStep` |
+| `app/services/jobs/scan-watermark.ts` (`computeAdvancedScanWatermark`)     | `WatermarkStep` の `NewWatermark`、切り替え `AdvanceNeedsAllSaved` / `AdvanceNeedsFullList` / `TargetedNeverAdvances` / `CapAtListTime`、環境 `ClockAhead`                                                                                                 |
+| `batch/github/fetcher.ts` (`pullrequestList`, `paginateGraphQLWithStatus`) | `PrListFetched` (`complete` は `full`)、切り替え `StopInclusive`、環境 `PartialListing`                                                                                                                                                                    |
+| `batch/github/store.ts` (`getFetchedAt`, `savePrData`, `setScanWatermark`) | `PrFetchBegins` の `tok`、`PrSaved`、切り替え `SaveRule`、`WatermarkStep` の上書き                                                                                                                                                                         |
+| `app/services/github-webhook-pull.server.ts`                               | `WebhookHandled` (coalesce `skip`)                                                                                                                                                                                                                         |
+| `batch/job-scheduler.ts`                                                   | `HourlyTrigger` (coalesce なし。pending があれば ConflictError で何も積まれない)                                                                                                                                                                           |
+| `app/routes/$orgSlug/settings/repositories.add/index.tsx`                  | `RepoAdded` (別の concurrency key `crawl:<org>:<repo>`)                                                                                                                                                                                                    |
+| `batch/github/fetch-and-save-pr.ts` (`fetchAndSavePr`)                     | `PrFetchBegins` から `PrSaved` まで (行の `fetchedAt` を読んでから GitHub を読み、保存する)                                                                                                                                                                |
+| `app/routes/$orgSlug/settings/repositories/$repository/$pull/index.tsx`    | `PageRefresh` (リクエストの中で `fetchAndSavePr` を呼ぶ。durably の外)                                                                                                                                                                                     |
+| `app/services/jobs/concurrency-keys.server.ts`                             | `Keys` / `CrawlKeys`                                                                                                                                                                                                                                       |
+| `app/services/durably.server.ts`                                           | `CrawlStarts` の `Workers` (1 プロセスに worker 1 つ、`maxConcurrentRuns` の既定値 1)                                                                                                                                                                      |
+| `@coji/durably` の更新                                                     | `Trigger` (pending が 1 つあれば新しい依頼は捨てられる)、`CrawlStarts`                                                                                                                                                                                     |
 
 durably の動きは `node_modules/@coji/durably/docs/llms.md` の "With coalesce" と `maxConcurrentRuns` の説明が正本 (0.16.1 で確認)。`opensrc/` にある durably は 0.14.0 で古い。
 
@@ -61,17 +61,18 @@ verification/crawl-watermark/check.sh --accept   # 全モデルを回し、今�
 
 ## 結果の読み方
 
-| モデル                      | 期待                    | 意味                                                                                                                                                                                 |
-| --------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `code`                      | pass                    | 今のコード、worker 1 つ (本番はサーバー 1 プロセス)。途中でリポジトリが追加され、一覧を読んだのと同じ秒にも PR が変わりうる。GitHub は一覧を欠けずに返す。変更の合否はまずこれで見る |
-| `code-page-refresh`         | pass                    | `code` に PR 画面の refresh を 1 回足す。refresh と crawl が同じ PR を同時に取っても、行が古い内容で上書きされず、最後は最新になること                                               |
-| `code-second-worker`        | pass                    | worker 2 つ (同じ `data/durably.db` で `batch/cli.ts` などを動かしたとき)。追加用の crawl と組織の crawl が同時に走っても、古い内容で上書きされず、最後は最新になること              |
-| `assumption-clock-ahead`    | `Converged` 違反        | 前提を外した版。サーバーの時計が GitHub より余裕 (`SCAN_WATERMARK_CLOCK_MARGIN_MS`) 以上進んでいると、上限が効かず同じ秒の更新を失う。この前提にモデルが頼っていることの確認         |
-| `finding-partial-list`      | `Converged` 違反        | 既知の問題 1                                                                                                                                                                         |
-| `mutant-advance-on-failure` | `Converged` 違反        | わざと壊した版。保存に失敗した PR があっても watermark を進める。検査が失敗できることの確認                                                                                          |
-| `mutant-targeted-advances`  | `Converged` 違反        | わざと壊した版。webhook の取得 (PR 番号を指定した取得) で watermark を進める                                                                                                         |
-| `mutant-no-list-time-cap`   | `Converged` 違反        | わざと壊した版。watermark を一覧の最新の `updatedAt` のままにし、一覧を読んだ時刻で抑えない (直す前のコード)。同じ秒の更新が失われる                                                 |
-| `mutant-fetchedat-guard`    | `RawNeverGoesBack` 違反 | わざと壊した版。保存の条件を直す前の「読む前に取った `fetchedAt` が新しいほうを残す」に戻す。`code-page-refresh` と同じ範囲で、refresh と crawl の同時取得で新しい内容が消える       |
+| モデル                           | 期待                    | 意味                                                                                                                                                                                 |
+| -------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `code`                           | pass                    | 今のコード、worker 1 つ (本番はサーバー 1 プロセス)。途中でリポジトリが追加され、一覧を読んだのと同じ秒にも PR が変わりうる。GitHub は一覧を欠けずに返す。変更の合否はまずこれで見る |
+| `code-page-refresh`              | pass                    | `code` に PR 画面の refresh を 1 回足す。refresh と crawl が同じ PR を同時に取っても、行が古い内容で上書きされず、最後は最新になること                                               |
+| `code-second-worker`             | pass                    | worker 2 つ (同じ `data/durably.db` で `batch/cli.ts` などを動かしたとき)。追加用の crawl と組織の crawl が同時に走っても、古い内容で上書きされず、最後は最新になること              |
+| `assumption-clock-ahead`         | `Converged` 違反        | 前提を外した版。サーバーの時計が GitHub より余裕 (`SCAN_WATERMARK_CLOCK_MARGIN_MS`) 以上進んでいると、上限が効かず同じ秒の更新を失う。この前提にモデルが頼っていることの確認         |
+| `code-partial-list`              | pass                    | `code` の範囲で、GitHub が一覧の一部を返さないことがある (GraphQL の部分エラーで node が null)。欠けた一覧では watermark を進めず、あとの crawl が欠けた PR を拾うこと               |
+| `mutant-advance-on-failure`      | `Converged` 違反        | わざと壊した版。保存に失敗した PR があっても watermark を進める。検査が失敗できることの確認                                                                                          |
+| `mutant-advance-on-partial-list` | `Converged` 違反        | わざと壊した版。一覧が欠けていても watermark を進める (直す前のコード)。欠けた PR より新しい PR があると、欠けた PR は二度と一覧されない                                             |
+| `mutant-targeted-advances`       | `Converged` 違反        | わざと壊した版。webhook の取得 (PR 番号を指定した取得) で watermark を進める                                                                                                         |
+| `mutant-no-list-time-cap`        | `Converged` 違反        | わざと壊した版。watermark を一覧の最新の `updatedAt` のままにし、一覧を読んだ時刻で抑えない (直す前のコード)。同じ秒の更新が失われる                                                 |
+| `mutant-fetchedat-guard`         | `RawNeverGoesBack` 違反 | わざと壊した版。保存の条件を直す前の「読む前に取った `fetchedAt` が新しいほうを残す」に戻す。`code-page-refresh` と同じ範囲で、refresh と crawl の同時取得で新しい内容が消える       |
 
 - `FAIL  code  expected pass, got Converged` は、変更で約束が破れたか、モデルがコードとずれたかのどちらか。次の節で見分ける。
 - `FAIL  finding-*  expected ..., got pass` は、既知の問題が今のコードで再現しなくなったということ。直したのなら、その設定を `code-*` に変えて期待を `pass` にするか、直す前の書き方を `mutant-*` として残し、下の「既知の問題」から消す。
@@ -108,6 +109,7 @@ verification/crawl-watermark/check.sh --accept   # 全モデルを回し、今�
 
 - `updatedAt` は秒の精度。保存が通るたびに、その行の `fetchedAt` は前より後の値になる (`nextFetchedAt`)。モデルは行ごとの書き込み回数で表す。
 - サーバーの時計は GitHub の時計より `SCAN_WATERMARK_CLOCK_MARGIN_MS` (5 分) 以上進んでいない。モデルの 1 秒がこの余裕を表す。外すと `assumption-clock-ahead` のとおり同じ秒の更新を失う。
+- GitHub が一覧の一部を返さないのは、PR の更新が止まる前だけにしている。止まったあとも欠け続けると、モデルの crawl が終わらないため。実際に欠け続けると、watermark はそのリポジトリで進まず、毎時の crawl が古い watermark から一覧し直す (取得は増えるが PR は失わない)。
 - PR 一覧は一度に読む。ページの間に PR が更新されて順位が変わる場合は扱わない (その PR の新しい `updatedAt` は一覧のどれよりも新しいので、次の crawl が拾う)。
 - PR の詳細 6 種類は同じ時点の内容として読む (`PrDetailsRead` は 1 手順)。今の保存の条件は、6 つの取得がどれも行の `fetchedAt` を読んだあとに始まることだけに頼るので、これで足りる。読み終えた時刻で順番を決める書き方が足りないこと (6 つの取得が相手の取得と入り混じる) は、このモデルでは示せない。`store.ts` の `savePrData` のコメントに理由を書いた。
 - GitHub は、ある時点より後に始めた読み取りに、その時点より古い内容を返さない。
@@ -124,11 +126,11 @@ verification/crawl-watermark/check.sh --accept   # 全モデルを回し、今�
 
 - **同じ PR を 2 か所で同時に取ると、新しい内容が古い内容で上書きされる** (`mutant-fetchedat-guard` が直す前の形)。PR 画面の refresh と crawl、または worker 2 つのときの 2 つの crawl で起きた。直す前は、GitHub を読む前に取った `fetchedAt` が新しいほうを残していたが、先に読み始めた取得のほうが新しい内容を読むことがある。今は、読む前に行の `fetchedAt` を控え、保存のときにそれが変わっていなければ書く (`fetchAndSavePr`、`savePrData`)。書けなかった取得は失敗と同じに扱うので、crawl は watermark を進めず、次の crawl がその PR を取り直す。PR 画面の refresh は、保存できなかったことを画面に出す。`backfill` の `updatePrMetadata` も同じ条件にした。
 
+- **GitHub が一覧の一部を null で返すと、その PR を越えて watermark が進む** (`mutant-advance-on-partial-list` が直す前の形)。`paginateGraphQL` は GraphQL の部分エラーのとき部分データを使い、null の node を黙って飛ばしていた。飛ばした PR より新しい PR が一覧にあれば watermark はそこまで進み、飛ばした PR は二度と一覧されなかった。今は `paginateGraphQLWithStatus` が部分エラーのページを 1 回読み直し、それでも欠けていれば `complete: false` を返す。crawl は一覧した PR を取得するが、watermark は進めない (`computeAdvancedScanWatermark` の `listComplete`)。GitHub が実際にこう返すかは分からないが、返しても PR を失わない。
+
 ## 既知の問題
 
-1. **GitHub が一覧の一部を null で返すと、その PR を越えて watermark が進む** (`finding-partial-list`)
-   - `paginateGraphQL` は GraphQL の部分エラーのとき部分データを使い、null の node を黙って飛ばす。飛ばした PR より新しい PR が一覧にあれば、watermark はそこまで進み、飛ばした PR は二度と一覧されない。
-   - GitHub が実際にこう返すかは、このモデルでは分からない。返すなら問題になる、という条件つきの発見。
+今のところ、モデルで見つかっていて直していない問題はない。見つけたら、ここに `finding-*` のモデルと一緒に書く。
 
 ## 同期の記録
 

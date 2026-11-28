@@ -15,6 +15,7 @@ describe('computeAdvancedScanWatermark', () => {
         prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:00Z' }],
         savedPrNumbers: new Set([101]),
         listStartedAt: LATER,
+        listComplete: true,
       }),
     ).toBeNull()
   })
@@ -26,6 +27,7 @@ describe('computeAdvancedScanWatermark', () => {
         prsToFetch: [],
         savedPrNumbers: new Set(),
         listStartedAt: LATER,
+        listComplete: true,
       }),
     ).toBeNull()
   })
@@ -41,6 +43,7 @@ describe('computeAdvancedScanWatermark', () => {
         ],
         savedPrNumbers: new Set([100, 101, 99]),
         listStartedAt: LATER,
+        listComplete: true,
       }),
     ).toBe('2026-03-16T13:55:00Z')
   })
@@ -57,6 +60,7 @@ describe('computeAdvancedScanWatermark', () => {
         ],
         savedPrNumbers: new Set([101, 999]),
         listStartedAt: LATER,
+        listComplete: true,
       }),
     ).toBeNull()
   })
@@ -74,6 +78,7 @@ describe('computeAdvancedScanWatermark', () => {
         ],
         savedPrNumbers: new Set([101]),
         listStartedAt: LATER,
+        listComplete: true,
       }),
     ).toBeNull()
   })
@@ -92,6 +97,7 @@ describe('computeAdvancedScanWatermark', () => {
       prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:00Z' }],
       savedPrNumbers: new Set([101]),
       listStartedAt: LATER,
+      listComplete: true,
     })
     expect(targeted).toBeNull() // watermark still 13:30
 
@@ -103,6 +109,7 @@ describe('computeAdvancedScanWatermark', () => {
       ],
       savedPrNumbers: new Set([100, 101]),
       listStartedAt: LATER,
+      listComplete: true,
     })
     expect(fullSweep).toBe('2026-03-16T13:55:00Z')
   })
@@ -114,6 +121,7 @@ describe('computeAdvancedScanWatermark', () => {
         prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:00Z' }],
         savedPrNumbers: new Set([101]),
         listStartedAt: null,
+        listComplete: true,
       }),
     ).toBeNull()
   })
@@ -131,6 +139,7 @@ describe('computeAdvancedScanWatermark', () => {
         ],
         savedPrNumbers: new Set([100, 101]),
         listStartedAt: '2026-03-16T13:55:05.123Z',
+        listComplete: true,
       }),
     ).toBe('2026-03-16T13:50:05Z')
   })
@@ -141,6 +150,7 @@ describe('computeAdvancedScanWatermark', () => {
       prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:05Z' }],
       savedPrNumbers: new Set([101]),
       listStartedAt: '2026-03-16T13:55:05.999Z',
+      listComplete: true,
     })
     expect(watermark).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
     // String comparison with updatedAt must order them by time.
@@ -159,10 +169,26 @@ describe('computeAdvancedScanWatermark', () => {
       prsToFetch: [{ number: 101, updatedAt: '2026-03-16T13:55:05Z' }],
       savedPrNumbers: new Set([101]),
       listStartedAt: '2026-03-16T13:55:05.200Z',
+      listComplete: true,
     })
     expect(watermark).toBe('2026-03-16T13:50:05Z')
     const nextSweepStopsAt = (updatedAt: string) =>
       watermark !== null && updatedAt <= watermark
     expect(nextSweepStopsAt('2026-03-16T13:55:05Z')).toBe(false)
+  })
+
+  test('a PR list with gaps (GraphQL partial error) never advances', () => {
+    expect(
+      computeAdvancedScanWatermark({
+        isTargetedFetch: false,
+        prsToFetch: [
+          { number: 1, updatedAt: '2026-03-16T13:00:00Z' },
+          { number: 2, updatedAt: '2026-03-16T13:10:00Z' },
+        ],
+        savedPrNumbers: new Set([1, 2]),
+        listStartedAt: LATER,
+        listComplete: false,
+      }),
+    ).toBeNull()
   })
 })

@@ -1,4 +1,6 @@
-\* Finding 3: GitHub returns a PR list page with a null node and no error.
+\* The code as it is, when GitHub can leave PRs out of a list page (a GraphQL
+\* partial error with null nodes).  Converged must hold: a sweep whose list had
+\* gaps keeps the watermark, and a later sweep lists the missing PRs.
 \* @...@ values are read from the code by check.sh.
 SPECIFICATION Spec
 CONSTANTS
@@ -10,6 +12,7 @@ CONSTANTS
     Workers = 1
     StopInclusive = @StopInclusive@
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    AdvanceNeedsFullList = @AdvanceNeedsFullList@
     TargetedNeverAdvances = @TargetedNeverAdvances@
     SaveRule = @SaveRule@
     CapAtListTime = @CapAtListTime@

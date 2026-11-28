@@ -793,6 +793,29 @@ export async function paginateGraphQL<TResult, TNode, TItem>(
   processNode: (node: TNode) => TItem | null,
   options: PaginateOptions<TNode, TResult> = {},
 ): Promise<TItem[]> {
+  const { items } = await paginateGraphQLWithStatus(
+    graphqlFn,
+    extractConnection,
+    processNode,
+    options,
+  )
+  return items
+}
+
+/**
+ * paginateGraphQL と同じ。加えて、GitHub が全部を返したかを `complete` で返す。
+ * `complete: false` は、GraphQL の部分エラーで部分データを使ったか、null の
+ * node を飛ばしたということ。飛ばした node が何だったかは分からない。
+ * 部分エラーのページは、部分データを使う前に 1 回だけ読み直す。
+ */
+export async function paginateGraphQLWithStatus<TResult, TNode, TItem>(
+  graphqlFn: (variables: Record<string, unknown>) => Promise<TResult>,
+  extractConnection: (
+    result: TResult,
+  ) => { nodes: (TNode | null)[] | null; pageInfo: PageInfo } | null,
+  processNode: (node: TNode) => TItem | null,
+  options: PaginateOptions<TNode, TResult> = {},
+): Promise<{ items: TItem[]; complete: boolean }> {
   const {
     initialPageSize = 100,
     minPageSize,
@@ -801,9 +824,12 @@ export async function paginateGraphQL<TResult, TNode, TItem>(
     isResourceMissing,
   } = options
   const items: TItem[] = []
+  let complete = true
   let cursor: string | null = null
   let hasNextPage = true
   const pageSizeRef = { value: initialPageSize }
+  // Pages (by cursor) already read again after a partial error.
+  const rereadCursors = new Set<string | null>()
 
   while (hasNextPage) {
     let result: TResult
@@ -821,7 +847,13 @@ export async function paginateGraphQL<TResult, TNode, TItem>(
           label,
         )
         if (handled.action === 'retry') continue
+        if (!rereadCursors.has(cursor)) {
+          rereadCursors.add(cursor)
+          logger.warn(`${label}: partial error, reading the page again`)
+          continue
+        }
         result = handled.data
+        complete = false
       }
     } else {
       // パターン B: シンプル（エラーは呼び出し元に伝播）
@@ -857,7 +889,10 @@ export async function paginateGraphQL<TResult, TNode, TItem>(
 
     let stopped = false
     for (const node of nodes) {
-      if (!node) continue
+      if (!node) {
+        complete = false
+        continue
+      }
       if (shouldStop?.(node)) {
         stopped = true
         break
@@ -871,7 +906,7 @@ export async function paginateGraphQL<TResult, TNode, TItem>(
     cursor = connection.pageInfo.endCursor ?? null
   }
 
-  return items
+  return { items, complete }
 }
 
 /**
@@ -1176,14 +1211,21 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
   }
 
   /**
-   * stopBefore が指定されると、updatedAt がそれより古い PR が出た時点でページング停止
+   * stopBefore が指定されると、updatedAt がそれより古い PR が出た時点でページング停止。
+   * `complete: false` は、GitHub が一覧の一部を返さなかったということ
+   * (paginateGraphQLWithStatus)。返らなかった PR は分からないので、crawl は
+   * watermark を進めない。
    */
-  const pullrequestList = (stopBefore?: string) => {
+  const pullrequestList = async (stopBefore?: string) => {
     type Result = ResultOf<typeof GetPullRequestListQuery>
     type Node = { number: number; updatedAt: string }
     const queryStr = print(GetPullRequestListQuery)
 
-    return paginateGraphQL<Result, Node, { number: number; updatedAt: string }>(
+    const { items, complete } = await paginateGraphQLWithStatus<
+      Result,
+      Node,
+      { number: number; updatedAt: string }
+    >(
       (vars) => graphqlWithTimeout<Result>(queryStr, { owner, repo, ...vars }),
       (r) => r?.repository?.pullRequests ?? null,
       (node) => ({ number: node.number, updatedAt: node.updatedAt }),
@@ -1197,6 +1239,12 @@ export const createFetcher = ({ owner, repo, octokit }: createFetcherProps) => {
           : undefined,
       },
     )
+    if (!complete) {
+      logger.warn(
+        `pullrequestList(${owner}/${repo}): GitHub did not return the whole PR list; the scan watermark stays`,
+      )
+    }
+    return { prs: items, complete }
   }
 
   const pullrequest = async (
