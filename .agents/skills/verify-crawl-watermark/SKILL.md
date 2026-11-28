@@ -134,7 +134,7 @@ verification/crawl-watermark/check.sh --accept   # 全モデルを回し、今�
 
 ## 同期の記録
 
-- 同期コミット: `94444b97` (`check.sh` の `SYNC_COMMIT`)。対象ファイルの中身の hash は `check.sh` の `SYNC_HASH`。
+- 同期コミット: `0215b02e` (`check.sh` の `SYNC_COMMIT`)。対象ファイルの中身の hash は `check.sh` の `SYNC_HASH`。
 - 対象ファイル: 上の表のファイル (`check.sh` の `COVERED`)。
 
 `SYNC_HASH` と `SYNC_COMMIT` を進めてよいのは、「コードが変わったとき」の手順でモデルが今のコードを表していると確かめたあとだけ。
