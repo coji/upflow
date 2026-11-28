@@ -19,8 +19,8 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 
 # Last confirmation that the model describes the covered code.
-SYNC_COMMIT=be21c2ac
-SYNC_HASH=82fb1372d9960f8c
+SYNC_COMMIT=6c9cd59c
+SYNC_HASH=6a2307b0c83d2ff2
 COVERED=(
   app/services/jobs/crawl.server.ts
   app/services/jobs/scan-watermark.ts
@@ -46,12 +46,13 @@ MODELS=(
   "code=pass"
   "code-page-refresh=pass"
   "code-second-worker=pass"
-  "finding-same-second=Converged"
+  "assumption-clock-ahead=Converged"
   "finding-page-refresh=RawNeverGoesBack"
   "finding-second-worker=RawNeverGoesBack"
   "finding-partial-list=Converged"
   "mutant-advance-on-failure=Converged"
   "mutant-targeted-advances=Converged"
+  "mutant-no-list-time-cap=Converged"
 )
 
 accept=0
@@ -66,7 +67,7 @@ done
 covered_hash() { cat "${COVERED[@]}" | shasum -a 256 | cut -c1-16; }
 
 # ---------------------------------------------------------------------------
-# Read the code switches from the code. A switch with a FALSE string is TRUE
+# Read the code switches from the code (5 strings). A switch with a FALSE string is TRUE
 # or FALSE by which string the file holds; when neither is found, the code
 # changed in a way the model does not know, so stop. A guard switch (no FALSE
 # string) is FALSE when its string is gone: the model then runs without the
@@ -95,7 +96,9 @@ TargetedNeverAdvances=$(switch_value TargetedNeverAdvances app/services/jobs/sca
   'if (isTargetedFetch) return null' '')
 SaveGuard=$(switch_value SaveGuard batch/github/store.ts \
   ".whereRef('excluded.fetchedAt', '>=', 'githubRawData.fetchedAt')" '')
-echo "Code switches: StopInclusive=$StopInclusive AdvanceNeedsAllSaved=$AdvanceNeedsAllSaved TargetedNeverAdvances=$TargetedNeverAdvances SaveGuard=$SaveGuard"
+CapAtListTime=$(switch_value CapAtListTime app/services/jobs/scan-watermark.ts \
+  'return max > cap ? cap : max' '')
+echo "Code switches: StopInclusive=$StopInclusive AdvanceNeedsAllSaved=$AdvanceNeedsAllSaved TargetedNeverAdvances=$TargetedNeverAdvances SaveGuard=$SaveGuard CapAtListTime=$CapAtListTime"
 
 installed_durably=$(node -p "require('./node_modules/@coji/durably/package.json').version" 2>/dev/null || echo unknown)
 if [[ "$installed_durably" != "$DURABLY_VERSION" ]]; then
@@ -126,6 +129,7 @@ for entry in "${MODELS[@]}"; do
       -e "s/@AdvanceNeedsAllSaved@/$AdvanceNeedsAllSaved/" \
       -e "s/@TargetedNeverAdvances@/$TargetedNeverAdvances/" \
       -e "s/@SaveGuard@/$SaveGuard/" \
+      -e "s/@CapAtListTime@/$CapAtListTime/" \
       "$HERE/models/$name.cfg.in" > "$OUT/$name.cfg"
   start=$SECONDS
   (cd "$HERE" && mise exec "$JAVA" -- java -XX:+UseParallelGC -cp "$JAR" tlc2.TLC \

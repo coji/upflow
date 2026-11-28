@@ -1,0 +1,22 @@
+\* Broken on purpose: the watermark is the newest updatedAt in the list, with no cap
+\* at the list read time (the code before the fix for the same-second update loss).
+\* @...@ values are read from the code by check.sh.
+SPECIFICATION Spec
+CONSTANTS
+    PRs = {1, 2}
+    MaxTime = 2
+    MaxUpdates = 2
+    MaxFails = 1
+    MaxHourly = 2
+    Workers = 1
+    StopInclusive = @StopInclusive@
+    AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    TargetedNeverAdvances = @TargetedNeverAdvances@
+    SaveGuard = @SaveGuard@
+    CapAtListTime = FALSE
+    ClockAhead = FALSE
+    SameSecondUpdates = TRUE
+    WithRepoAdd = FALSE
+    WithPageRefresh = FALSE
+    PartialListing = FALSE
+INVARIANTS TypeOK Converged

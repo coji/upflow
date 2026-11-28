@@ -14,7 +14,9 @@ CONSTANTS
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
     TargetedNeverAdvances = @TargetedNeverAdvances@
     SaveGuard = @SaveGuard@
-    SameSecondUpdates = FALSE
+    CapAtListTime = @CapAtListTime@
+    ClockAhead = FALSE
+    SameSecondUpdates = TRUE
     WithRepoAdd = FALSE
     WithPageRefresh = TRUE
     PartialListing = FALSE

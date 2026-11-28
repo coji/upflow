@@ -1,5 +1,6 @@
 \* The code as it is with two workers (a second process, such as batch/cli.ts,
-\* on the same data/durably.db). Converged must still hold.
+\* on the same data/durably.db). Converged must still hold. Same-second updates
+\* are left to the code model: with them this model takes about a minute.
 \* Smaller bounds: a second lane that runs at the same time grows the state space fast.
 \* @...@ values are read from the code by check.sh.
 SPECIFICATION Spec
@@ -14,6 +15,8 @@ CONSTANTS
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
     TargetedNeverAdvances = @TargetedNeverAdvances@
     SaveGuard = @SaveGuard@
+    CapAtListTime = @CapAtListTime@
+    ClockAhead = FALSE
     SameSecondUpdates = FALSE
     WithRepoAdd = TRUE
     WithPageRefresh = FALSE
