@@ -67,7 +67,7 @@ data.db
 data.db-shm
 data.db-wal
 
-# Claude Code (skills are shared; settings stay local)
+# Claude Code (skills and project settings are shared; local settings stay local)
 .claude/*
 !.claude/skills/
 !.claude/settings.json
