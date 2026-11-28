@@ -24,6 +24,17 @@ interface ParsedRow {
   timelineItems: ShapedTimelineItem[]
 }
 
+/**
+ * The fetchedAt for a new write: now, but always later than the row's current
+ * value, so that every landed write changes fetchedAt. process-work-set relies
+ * on that, and so does the next save's check.
+ */
+export const nextFetchedAt = (now: Date, current: string | null): string => {
+  const stamp = now.toISOString()
+  if (current === null || stamp > current) return stamp
+  return new Date(Date.parse(current) + 1).toISOString()
+}
+
 export const createStore = ({
   organizationId,
   repositoryId,
@@ -32,6 +43,46 @@ export const createStore = ({
 
   // --- save 系 ---
 
+  /**
+   * The row's fetchedAt, or null when the PR has no row. Read it before the
+   * GitHub reads and pass it to savePrData / updatePrMetadata: the save then
+   * lands only if no other fetch wrote the row in between.
+   */
+  const getFetchedAt = async (prNumber: number): Promise<string | null> => {
+    const row = await db
+      .selectFrom('githubRawData')
+      .select('fetchedAt')
+      .where('repositoryId', '=', repositoryId)
+      .where('pullRequestNumber', '=', prNumber)
+      .executeTakeFirst()
+    return row?.fetchedAt ?? null
+  }
+
+  /** fetchedAt of every row in the repository, by PR number. */
+  const getFetchedAtByPr = async (): Promise<Map<number, string>> => {
+    const rows = await db
+      .selectFrom('githubRawData')
+      .select(['pullRequestNumber', 'fetchedAt'])
+      .where('repositoryId', '=', repositoryId)
+      .execute()
+    return new Map(rows.map((r) => [r.pullRequestNumber, r.fetchedAt]))
+  }
+
+  /**
+   * Saves a PR's raw data, only if the row's fetchedAt is still
+   * `expectedFetchedAt` (null: only if the PR has no row yet). Returns whether
+   * it wrote.
+   *
+   * Two fetches of the same PR can overlap (a PR page refresh during a crawl,
+   * or two durably workers). Neither a timestamp taken before nor after the
+   * GitHub reads tells which copy is newer, because the reads of one fetch
+   * are six requests that can interleave with the other's. Saving only over
+   * the row the fetch saw before its reads does: a fetch that started its
+   * reads after another fetch saved cannot have read older data than it.
+   * The caller treats a refused save as a failed fetch, so a sweep keeps its
+   * watermark and lists the PR again. Checked by the TLA+ model in
+   * verification/crawl-watermark.
+   */
   const savePrData = async (
     pr: ShapedGitHubPullRequest,
     data: {
@@ -40,9 +91,11 @@ export const createStore = ({
       discussions: ShapedGitHubReviewComment[]
       timelineItems?: ShapedTimelineItem[]
     },
-    fetchedAt: string,
-  ) => {
-    await db
+    expectedFetchedAt: string | null,
+    now: Date = new Date(),
+  ): Promise<boolean> => {
+    const fetchedAt = nextFetchedAt(now, expectedFetchedAt)
+    const result = await db
       .insertInto('githubRawData')
       .values({
         repositoryId,
@@ -57,9 +110,10 @@ export const createStore = ({
         updatedAt: pr.updatedAt ?? null,
         fetchedAt,
       })
-      .onConflict((oc) =>
-        oc
-          .columns(['repositoryId', 'pullRequestNumber'])
+      .onConflict((oc) => {
+        const target = oc.columns(['repositoryId', 'pullRequestNumber'])
+        if (expectedFetchedAt === null) return target.doNothing()
+        return target
           .doUpdateSet((eb) => ({
             pullRequest: eb.ref('excluded.pullRequest'),
             commits: eb.ref('excluded.commits'),
@@ -69,31 +123,34 @@ export const createStore = ({
             updatedAt: eb.ref('excluded.updatedAt'),
             fetchedAt: eb.ref('excluded.fetchedAt'),
           }))
-          .whereRef('excluded.fetchedAt', '>=', 'githubRawData.fetchedAt'),
-      )
-      .execute()
+          .where('githubRawData.fetchedAt', '=', expectedFetchedAt)
+      })
+      .executeTakeFirst()
+    return (result.numInsertedOrUpdatedRows ?? 0n) > 0n
   }
 
   /**
    * PR メタデータ（pullRequest JSON）だけを更新する。
    * commits/reviews 等はそのまま残る。
    * 既に raw データがある PR のみ更新し、ない PR は無視する。
+   * savePrData と同じく、行の fetchedAt が expectedFetchedAt のままのときだけ書く。
    */
   const updatePrMetadata = async (
-    items: Array<{ pr: ShapedGitHubPullRequest; fetchedAt: string }>,
+    items: Array<{ pr: ShapedGitHubPullRequest; expectedFetchedAt: string }>,
+    now: Date = new Date(),
   ) => {
     let updated = 0
-    for (const { pr, fetchedAt } of items) {
+    for (const { pr, expectedFetchedAt } of items) {
       const result = await db
         .updateTable('githubRawData')
         .set({
           pullRequest: JSON.stringify(pr),
           updatedAt: pr.updatedAt ?? null,
-          fetchedAt,
+          fetchedAt: nextFetchedAt(now, expectedFetchedAt),
         })
         .where('repositoryId', '=', repositoryId)
         .where('pullRequestNumber', '=', pr.number)
-        .where((eb) => eb('fetchedAt', '<=', fetchedAt))
+        .where('fetchedAt', '=', expectedFetchedAt)
         .execute()
       if (result[0].numUpdatedRows > 0n) {
         updated++
@@ -294,6 +351,8 @@ export const createStore = ({
   }
 
   return {
+    getFetchedAt,
+    getFetchedAtByPr,
     savePrData,
     updatePrMetadata,
     saveTags,

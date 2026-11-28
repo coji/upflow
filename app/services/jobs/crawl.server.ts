@@ -22,6 +22,7 @@ import {
   createFetcher,
   GraphQLResourceMissingError,
 } from '~/batch/github/fetcher'
+import { fetchAndSavePr } from '~/batch/github/fetch-and-save-pr'
 import { createStore } from '~/batch/github/store'
 import { computeAdvancedScanWatermark } from './scan-watermark'
 
@@ -268,35 +269,14 @@ export const crawlJob = defineJob({
                 prsToFetch.length,
                 `Fetching ${repoLabel}#${pr.number} (${j + 1}/${prsToFetch.length})...`,
               )
-              const fetchedAt = new Date().toISOString()
               try {
-                const [
-                  prMetadata,
-                  commits,
-                  discussions,
-                  reviews,
-                  timelineItems,
-                  files,
-                ] = await Promise.all([
-                  fetcher.pullrequest(pr.number),
-                  fetcher.commits(pr.number),
-                  fetcher.comments(pr.number),
-                  fetcher.reviews(pr.number),
-                  fetcher.timelineItems(pr.number),
-                  fetcher.files(pr.number),
-                ])
-                const prForSave = { ...prMetadata, files }
-                await store.savePrData(
-                  prForSave,
-                  {
-                    commits,
-                    reviews,
-                    discussions,
-                    timelineItems,
-                  },
-                  fetchedAt,
+                if (await fetchAndSavePr(fetcher, store, pr.number)) {
+                  return { saved: true as const, number: pr.number }
+                }
+                step.log.warn(
+                  `${repoLabel}#${pr.number} was saved by another fetch while this one read it; not saved, the next sweep lists it again`,
                 )
-                return { saved: true as const, number: pr.number }
+                return { saved: false as const, number: pr.number }
               } catch (e) {
                 step.log.warn(
                   `Failed to fetch ${repoLabel}#${pr.number}: ${getErrorMessageForLog(e)}`,

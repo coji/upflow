@@ -11,7 +11,7 @@ CONSTANTS
     StopInclusive = @StopInclusive@
     AdvanceNeedsAllSaved = FALSE
     TargetedNeverAdvances = @TargetedNeverAdvances@
-    SaveGuard = @SaveGuard@
+    SaveRule = @SaveRule@
     CapAtListTime = @CapAtListTime@
     ClockAhead = FALSE
     SameSecondUpdates = FALSE

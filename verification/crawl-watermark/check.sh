@@ -19,8 +19,8 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 
 # Last confirmation that the model describes the covered code.
-SYNC_COMMIT=6c9cd59c
-SYNC_HASH=6a2307b0c83d2ff2
+SYNC_COMMIT=94444b97
+SYNC_HASH=550d858a3c978f94
 COVERED=(
   app/services/jobs/crawl.server.ts
   app/services/jobs/scan-watermark.ts
@@ -32,6 +32,7 @@ COVERED=(
   batch/job-scheduler.ts
   batch/github/fetcher.ts
   batch/github/store.ts
+  batch/github/fetch-and-save-pr.ts
 )
 DURABLY_VERSION=0.16.1
 
@@ -47,12 +48,11 @@ MODELS=(
   "code-page-refresh=pass"
   "code-second-worker=pass"
   "assumption-clock-ahead=Converged"
-  "finding-page-refresh=RawNeverGoesBack"
-  "finding-second-worker=RawNeverGoesBack"
   "finding-partial-list=Converged"
   "mutant-advance-on-failure=Converged"
   "mutant-targeted-advances=Converged"
   "mutant-no-list-time-cap=Converged"
+  "mutant-fetchedat-guard=RawNeverGoesBack"
 )
 
 accept=0
@@ -67,7 +67,7 @@ done
 covered_hash() { cat "${COVERED[@]}" | shasum -a 256 | cut -c1-16; }
 
 # ---------------------------------------------------------------------------
-# Read the code switches from the code (5 strings). A switch with a FALSE string is TRUE
+# Read the code switches from the code (fixed strings in the covered files). A switch with a FALSE string is TRUE
 # or FALSE by which string the file holds; when neither is found, the code
 # changed in a way the model does not know, so stop. A guard switch (no FALSE
 # string) is FALSE when its string is gone: the model then runs without the
@@ -94,11 +94,19 @@ AdvanceNeedsAllSaved=$(switch_value AdvanceNeedsAllSaved app/services/jobs/scan-
   'if (!savedPrNumbers.has(pr.number)) return null' '')
 TargetedNeverAdvances=$(switch_value TargetedNeverAdvances app/services/jobs/scan-watermark.ts \
   'if (isTargetedFetch) return null' '')
-SaveGuard=$(switch_value SaveGuard batch/github/store.ts \
-  ".whereRef('excluded.fetchedAt', '>=', 'githubRawData.fetchedAt')" '')
+# SaveRule has three values, so it is read here, not by switch_value.
+if grep -qF -- ".where('githubRawData.fetchedAt', '=', expectedFetchedAt)" batch/github/store.ts; then
+  SaveRule='"unchanged"'
+elif grep -qF -- ".whereRef('excluded.fetchedAt', '>=', 'githubRawData.fetchedAt')" batch/github/store.ts; then
+  SaveRule='"fetchedAt"'
+else
+  echo "NOTE: SaveRule: no save rule found in batch/github/store.ts savePrData, modeled as none:" >&2
+  echo "  .where('githubRawData.fetchedAt', '=', expectedFetchedAt)" >&2
+  SaveRule='"none"'
+fi
 CapAtListTime=$(switch_value CapAtListTime app/services/jobs/scan-watermark.ts \
   'return max > cap ? cap : max' '')
-echo "Code switches: StopInclusive=$StopInclusive AdvanceNeedsAllSaved=$AdvanceNeedsAllSaved TargetedNeverAdvances=$TargetedNeverAdvances SaveGuard=$SaveGuard CapAtListTime=$CapAtListTime"
+echo "Code switches: StopInclusive=$StopInclusive AdvanceNeedsAllSaved=$AdvanceNeedsAllSaved TargetedNeverAdvances=$TargetedNeverAdvances SaveRule=$SaveRule CapAtListTime=$CapAtListTime"
 
 installed_durably=$(node -p "require('./node_modules/@coji/durably/package.json').version" 2>/dev/null || echo unknown)
 if [[ "$installed_durably" != "$DURABLY_VERSION" ]]; then
@@ -128,7 +136,7 @@ for entry in "${MODELS[@]}"; do
   sed -e "s/@StopInclusive@/$StopInclusive/" \
       -e "s/@AdvanceNeedsAllSaved@/$AdvanceNeedsAllSaved/" \
       -e "s/@TargetedNeverAdvances@/$TargetedNeverAdvances/" \
-      -e "s/@SaveGuard@/$SaveGuard/" \
+      -e "s/@SaveRule@/$SaveRule/" \
       -e "s/@CapAtListTime@/$CapAtListTime/" \
       "$HERE/models/$name.cfg.in" > "$OUT/$name.cfg"
   start=$SECONDS

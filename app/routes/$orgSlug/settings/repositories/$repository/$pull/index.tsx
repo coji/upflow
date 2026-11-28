@@ -17,6 +17,7 @@ import {
 import { resolveOctokitForRepository } from '~/app/services/github-octokit.server'
 import { processConcurrencyKey } from '~/app/services/jobs/concurrency-keys.server'
 import { createFetcher } from '~/batch/github/fetcher'
+import { fetchAndSavePr } from '~/batch/github/fetch-and-save-pr'
 import { createStore } from '~/batch/github/store'
 import type { Route } from './+types/index'
 import {
@@ -141,32 +142,19 @@ export const action = async ({
       }
     })
     .with('refresh', async () => {
-      const fetchedAt = new Date().toISOString()
-      const [prMetadata, commits, comments, reviews, timelineItems, files] =
-        await Promise.all([
-          fetcher.pullrequest(pullId),
-          fetcher.commits(pullId),
-          fetcher.comments(pullId),
-          fetcher.reviews(pullId),
-          fetcher.timelineItems(pullId),
-          fetcher.files(pullId),
-        ])
-      const prForSave = { ...prMetadata, files }
-
       const store = createStore({
         organizationId: organization.id,
         repositoryId,
       })
-      await store.savePrData(
-        prForSave,
-        {
-          commits,
-          reviews,
-          discussions: comments,
-          timelineItems,
-        },
-        fetchedAt,
-      )
+      if (!(await fetchAndSavePr(fetcher, store, pullId))) {
+        // Another fetch (the crawl job) saved this PR during the reads.
+        return {
+          intent: 'refresh' as const,
+          success: false as const,
+          message:
+            'Not saved: another fetch saved this PR at the same time. Refresh again.',
+        }
+      }
 
       const { durably } = await import('~/app/services/durably.server')
       try {
@@ -186,7 +174,7 @@ export const action = async ({
         })
       }
 
-      return { intent: 'refresh' as const, success: true }
+      return { intent: 'refresh' as const, success: true as const }
     })
     .exhaustive()
 }
@@ -361,7 +349,12 @@ const RepositoryPullsIndexPage = ({
           </Button>
         </refreshFetcher.Form>
 
-        {refreshData?.success && <Badge variant="default">Refreshed</Badge>}
+        {refreshData?.success === true && (
+          <Badge variant="default">Refreshed</Badge>
+        )}
+        {refreshData?.success === false && (
+          <p className="text-destructive text-sm">{refreshData.message}</p>
+        )}
       </HStack>
 
       <Stack gap="4">
