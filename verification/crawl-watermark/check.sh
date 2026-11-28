@@ -19,8 +19,8 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 
 # Last confirmation that the model describes the covered code.
-SYNC_COMMIT=0215b02e
-SYNC_HASH=b26f31d444b7fc6f
+SYNC_COMMIT=1286accb
+SYNC_HASH=19b72656d0eb2542
 COVERED=(
   app/services/jobs/crawl.server.ts
   app/services/jobs/scan-watermark.ts
