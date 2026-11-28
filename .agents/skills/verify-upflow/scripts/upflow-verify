@@ -1,0 +1,281 @@
+#!/usr/bin/env bash
+# verify-upflow のハーネス。使い方は ../SKILL.md を参照。
+#
+#   upflow-verify launch [RUN_ID]          使い捨ての DB を作り、本番ビルドを起動する
+#   upflow-verify doctor RUN_ID            その instance を操作してよいかを読み取りだけで確かめる
+#   upflow-verify drive  RUN_ID SCENARIO   Playwright のシナリオを admin ログイン済みで流す
+#   upflow-verify sql    RUN_ID shared|tenant "SELECT ..."   DB を読み取り専用で見る
+#   upflow-verify list                     この helper が起動した instance を一覧する
+#   upflow-verify stop   RUN_ID...         起動した instance を止め、状態を消す (証拠は残す)
+set -euo pipefail
+
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO="$(git -C "$SCRIPTS_DIR" rev-parse --show-toplevel)"
+STATE_ROOT="${UPFLOW_VERIFY_HOME:-${TMPDIR:-/tmp}/upflow-verify}"
+STATE_ROOT="${STATE_ROOT%/}"
+EVIDENCE_ROOT="${UPFLOW_VERIFY_EVIDENCE:-$REPO/tmp/verify-evidence}"
+E2E_ADMIN_EMAIL='admin@example.com'
+
+die() {
+  echo "upflow-verify: $*" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  exit 2
+}
+
+# repo が要求する Node (package.json の devEngines) を pnpm 経由で解決する。
+# pid を直接持ちたいので `pnpm exec node` ではなく実体のパスを使う。
+node_bin() {
+  (cd "$REPO" && pnpm exec node -p 'process.execPath')
+}
+
+state_dir() {
+  [[ -n "${1:-}" ]] || die 'RUN_ID が必要です'
+  echo "$STATE_ROOT/$1"
+}
+
+load_state() {
+  local dir
+  dir="$(state_dir "$1")"
+  [[ -f "$dir/state.env" ]] || die "run $1 は見つかりません ($dir/state.env がない)"
+  # shellcheck disable=SC1091
+  source "$dir/state.env"
+}
+
+http_code() {
+  curl -s -o /dev/null --max-time 5 -w '%{http_code}' "$1" || true
+}
+
+# 1 つめの空きポート。8811 は `pnpm start:e2e` / Playwright webServer が使うので避ける。
+free_port() {
+  local p
+  for p in $(seq 8820 8899); do
+    if ! (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null; then
+      echo "$p"
+      return
+    fi
+  done
+  die '8820-8899 に空きポートがありません'
+}
+
+listening_pid() {
+  command -v lsof >/dev/null || return 0
+  lsof -nP -iTCP:"$1" -sTCP:LISTEN -t 2>/dev/null | head -1
+}
+
+build_is_stale() {
+  local marker="$REPO/build/server/index.js"
+  [[ -f "$marker" && -f "$REPO/build/job-scheduler.js" ]] || return 0
+  [[ -n "$(cd "$REPO" && find app server batch db public react-router.config.ts vite.config.ts -newer "$marker" -type f 2>/dev/null | head -1)" ]]
+}
+
+# 本番 .env の値がこの instance に混ざらないよう、外に出ていく系の変数を空で固定する。
+# dotenv は既に定義済みの変数 (空文字でも) を上書きしない。
+isolated_env() {
+  local data_dir="$1" port="$2"
+  echo "UPFLOW_DATA_DIR=$data_dir"
+  echo "NODE_ENV=test"
+  echo "ENABLE_E2E_LOGIN=1"
+  echo "PORT=$port"
+  echo "BETTER_AUTH_URL=http://localhost:$port"
+  echo "BETTER_AUTH_SECRET=verify-upflow-local-only-secret-0123456789"
+  echo "GITHUB_CLIENT_ID=verify-upflow-dummy"
+  echo "GITHUB_CLIENT_SECRET=verify-upflow-dummy"
+  echo "GITHUB_APP_ID="
+  echo "GITHUB_APP_PRIVATE_KEY="
+  echo "GITHUB_WEBHOOK_SECRET=verify-upflow-dummy"
+  echo "INTEGRATION_PRIVATE_TOKEN=verify-upflow-dummy-token"
+  echo "GEMINI_API_KEY="
+  echo "SENTRY_DSN="
+  echo "VITE_SENTRY_DSN="
+  echo "DISABLE_JOB_SCHEDULER=1"
+  echo "SEED_ADMIN_EMAIL=$E2E_ADMIN_EMAIL"
+  echo "SEED_MEMBER_EMAIL=member@example.com"
+  echo "SEED_ADMIN_GITHUB_LOGIN=test_user"
+}
+
+cmd_launch() {
+  local run_id="${1:-$(date +%Y%m%d-%H%M%S)-$$}"
+  local dir data_dir port node log
+  dir="$(state_dir "$run_id")"
+  [[ ! -e "$dir" ]] || die "run $run_id は既にあります。別の RUN_ID を使うか stop してください"
+  command -v atlas >/dev/null || die 'atlas が見つかりません (https://atlasgo.io/getting-started)'
+  command -v curl >/dev/null || die 'curl が見つかりません'
+  [[ -d "$REPO/node_modules" ]] || die "依存が入っていません。$REPO で pnpm install を実行してください"
+
+  mkdir -p "$dir/data"
+  data_dir="$dir/data"
+  log="$dir/setup.log"
+  port="$(free_port)"
+  node="$(node_bin)"
+  isolated_env "$data_dir" "$port" >"$dir/app.env"
+
+  cd "$REPO"
+  if build_is_stale; then
+    echo "build/ が無いか古いので pnpm build します (1-2 分)..."
+    pnpm build >>"$log" 2>&1 || die "pnpm build に失敗しました: $log"
+  fi
+
+  echo "使い捨て DB を $data_dir に作ります..."
+  (
+    set -a
+    # shellcheck disable=SC1091
+    source "$dir/app.env"
+    set +a
+    # db:apply:shared は ./data を直書きしているので URL を差し替えて同じことをする
+    atlas migrate apply --env local --url "sqlite://$data_dir/data.db"
+    pnpm exec tsx db/migrate-integrations-to-shared.ts
+    pnpm exec tsx db/apply-tenant-migrations.ts
+    # seed は kysely-codegen 用の ./data/tenant_seed.db も書く
+    mkdir -p data
+    pnpm exec tsx db/seed.ts
+  ) >>"$log" 2>&1 || die "DB の準備に失敗しました: $log"
+
+  {
+    echo "RUN_ID=$run_id"
+    echo "PORT=$port"
+    echo "BASE_URL=http://localhost:$port"
+    echo "DATA_DIR=$data_dir"
+    echo "EVIDENCE_DIR=$EVIDENCE_ROOT/$run_id"
+    echo "NODE_BIN=$node"
+    echo "GIT_REV=$(git rev-parse --short HEAD)"
+  } >"$dir/state.env"
+
+  (
+    set -a
+    # shellcheck disable=SC1091
+    source "$dir/app.env"
+    set +a
+    NODE_OPTIONS='--import ./instrument.server.mjs' nohup "$node" server.mjs >"$dir/server.log" 2>&1 &
+    echo $! >"$dir/server.pid"
+  )
+  local pid
+  pid="$(cat "$dir/server.pid")"
+  echo "PID=$pid" >>"$dir/state.env"
+
+  local base="http://localhost:$port" i
+  for i in $(seq 1 60); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      tail -30 "$dir/server.log" >&2
+      die "server が起動中に終了しました: $dir/server.log"
+    fi
+    # healthcheck だけでは「使える」ことにならない。seed の admin でログインできるまで待つ。
+    if [[ "$(http_code "$base/healthcheck")" == 200 && "$(http_code "$base/test-login?email=admin%40example.com")" == 302 ]]; then
+      mkdir -p "$EVIDENCE_ROOT/$run_id"
+      echo "ready: run=$run_id url=$base pid=$pid"
+      echo "  state:    $dir"
+      echo "  evidence: $EVIDENCE_ROOT/$run_id"
+      return 0
+    fi
+    sleep 1
+  done
+  tail -30 "$dir/server.log" >&2
+  die "60 秒以内に ready になりませんでした。止めるには: $0 stop $run_id"
+}
+
+cmd_doctor() {
+  load_state "${1:-}"
+  local fail=0 base="$BASE_URL" got
+  check() {
+    if [[ "$1" == ok ]]; then echo "OK   $2"; else
+      echo "FAIL $2"
+      fail=1
+    fi
+  }
+  kill -0 "$PID" 2>/dev/null && check ok "process $PID が生きている" || check ng "process $PID が生きていない"
+  got="$(listening_pid "$PORT")"
+  if command -v lsof >/dev/null; then
+    [[ "$got" == "$PID" ]] && check ok "port $PORT を listen しているのはこの run の process" ||
+      check ng "port $PORT を listen しているのは pid '${got:-なし}' (期待 $PID)"
+  else
+    echo "SKIP lsof が無いので port の持ち主は確かめていません"
+  fi
+  [[ "$(http_code "$base/healthcheck")" == 200 ]] && check ok "$base/healthcheck が 200" || check ng "$base/healthcheck が 200 でない"
+  [[ "$(http_code "$base/test-login?email=admin%40example.com")" == 302 ]] &&
+    check ok "seed admin で /test-login できる (ENABLE_E2E_LOGIN 有効、DB に seed あり)" ||
+    check ng "/test-login が 302 を返さない (seed 消失か ENABLE_E2E_LOGIN 無効)"
+  [[ -f "$DATA_DIR/data.db" ]] && ls "$DATA_DIR"/tenant_*.db >/dev/null 2>&1 &&
+    check ok "使い捨て DB $DATA_DIR に shared と tenant がある" || check ng "$DATA_DIR に DB が揃っていない"
+  local head
+  head="$(git -C "$REPO" rev-parse --short HEAD)"
+  [[ "$head" == "$GIT_REV" ]] && check ok "起動時と同じ commit ($GIT_REV)" ||
+    check ng "起動時 $GIT_REV から HEAD $head に変わっている。stop して launch し直す"
+  if build_is_stale; then
+    check ng "build/ より新しいソースがある。stop して launch し直す (launch が再ビルドする)"
+  else
+    check ok "build/ はソースより新しい"
+  fi
+  return "$fail"
+}
+
+cmd_drive() {
+  load_state "${1:-}"
+  local scenario="${2:-}"
+  [[ -f "$scenario" ]] || die "シナリオファイルがありません: $scenario"
+  scenario="$(cd "$(dirname "$scenario")" && pwd -P)/$(basename "$scenario")"
+  local name
+  name="$(basename "$scenario")"
+  name="${name%.*}-$(date +%H%M%S)"
+  # 1 回の drive ごとに別ディレクトリ。失敗した試行の証拠も上書きせずに残す。
+  BASE_URL="$BASE_URL" DATA_DIR="$DATA_DIR" EVIDENCE_DIR="$EVIDENCE_DIR/$name" \
+    E2E_ADMIN_EMAIL="$E2E_ADMIN_EMAIL" \
+    "$NODE_BIN" "$SCRIPTS_DIR/drive.mjs" "$scenario"
+}
+
+cmd_sql() {
+  load_state "${1:-}"
+  [[ -n "${2:-}" && -n "${3:-}" ]] || die 'sql RUN_ID shared|tenant "SELECT ..."'
+  DATA_DIR="$DATA_DIR" "$NODE_BIN" "$SCRIPTS_DIR/db.mjs" "$2" "$3"
+}
+
+cmd_list() {
+  [[ -d "$STATE_ROOT" ]] || return 0
+  local f
+  for f in "$STATE_ROOT"/*/state.env; do
+    [[ -f "$f" ]] || continue
+    (
+      # shellcheck disable=SC1090
+      source "$f"
+      local alive=dead
+      kill -0 "${PID:-0}" 2>/dev/null && alive=alive
+      echo "$RUN_ID  $BASE_URL  pid=${PID:-?} ($alive)  rev=$GIT_REV"
+    )
+  done
+}
+
+cmd_stop() {
+  [[ $# -gt 0 ]] || die 'stop RUN_ID...'
+  local run_id dir pid i
+  for run_id in "$@"; do
+    dir="$(state_dir "$run_id")"
+    [[ -d "$dir" ]] || {
+      echo "run $run_id はありません (済み)"
+      continue
+    }
+    pid="$(cat "$dir/server.pid" 2>/dev/null || true)"
+    # 名前で kill しない。この run が記録した pid が server.mjs を動かしているときだけ止める。
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null && ps -p "$pid" -o command= | grep -q 'server.mjs'; then
+      kill -TERM "$pid"
+      for i in $(seq 1 10); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 1
+      done
+      kill -0 "$pid" 2>/dev/null && kill -KILL "$pid"
+    fi
+    rm -rf "$dir"
+    echo "stopped $run_id (証拠は $EVIDENCE_ROOT/$run_id に残っています)"
+  done
+}
+
+case "${1:-}" in
+  launch) shift && cmd_launch "$@" ;;
+  doctor) shift && cmd_doctor "$@" ;;
+  drive) shift && cmd_drive "$@" ;;
+  sql) shift && cmd_sql "$@" ;;
+  list) cmd_list ;;
+  stop) shift && cmd_stop "$@" ;;
+  *) usage ;;
+esac
