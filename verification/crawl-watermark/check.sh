@@ -19,7 +19,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 
 # Last confirmation that the model describes the covered code.
-SYNC_COMMIT=1286accb
+SYNC_COMMIT=ab4ca215
 SYNC_HASH=19b72656d0eb2542
 COVERED=(
   app/services/jobs/crawl.server.ts
