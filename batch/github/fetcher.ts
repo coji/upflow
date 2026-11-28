@@ -884,6 +884,8 @@ export async function paginateGraphQLWithStatus<TResult, TNode, TItem>(
           `${label}: empty response at min page size ${pageSizeRef.value} (cursor: ${cursor})`,
         )
       }
+      // No connection in the response: whatever is past this page is unknown.
+      complete = false
       break
     }
 

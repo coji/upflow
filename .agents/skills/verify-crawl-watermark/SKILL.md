@@ -105,6 +105,8 @@ verification/crawl-watermark/check.sh --accept   # 全モデルを回し、今�
 
 検査の範囲: リポジトリ 1 つ、PR 2 つ、GitHub の時刻は 0〜2 秒、PR の更新は 2 回まで、取得の失敗は 1 回まで、更新が止まる前の定期 crawl の依頼は 2 回まで。`code-page-refresh`、`code-second-worker`、`mutant-fetchedat-guard` は、同時に進む実行が増えて状態が多くなるので、時刻 0〜1、失敗 0 回、定期 crawl 1 回に縮めている。`code-second-worker` は同じ秒の更新も外している (同じ秒の扱いは `code` が見る)。pass はこの範囲の中でだけ言える。
 
+`code-page-refresh` を広い範囲 (時刻 0〜2、失敗 1 回、定期 crawl 2 回、同じ秒の更新なし) にした版は、2026-11-29 に一度だけ回して pass した (約 7,800 万状態、2 分 11 秒)。毎回の実行には入れていない。PR 画面の refresh か保存の条件を大きく変えたときは、`tmp/crawl-watermark/code-page-refresh.cfg` の範囲を書き換えて TLC で直接回す。
+
 モデルが置いている前提:
 
 - `updatedAt` は秒の精度。保存が通るたびに、その行の `fetchedAt` は前より後の値になる (`nextFetchedAt`)。モデルは行ごとの書き込み回数で表す。
