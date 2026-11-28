@@ -8,6 +8,7 @@ const {
   createFetcher,
   GraphQLResourceMissingError,
   paginateGraphQL,
+  paginateGraphQLWithStatus,
   shapeTagNode,
 } = await import('./fetcher')
 
@@ -378,5 +379,88 @@ describe('paginateGraphQL shouldStop', () => {
       { number: 1, updatedAt: '2026-04-01T00:00:00Z' },
       { number: 2, updatedAt: '2026-03-01T00:00:00Z' },
     ])
+  })
+})
+
+describe('paginateGraphQLWithStatus completeness', () => {
+  type Node = { number: number }
+  type Result = {
+    repository: {
+      pullRequests: {
+        nodes: (Node | null)[]
+        pageInfo: { hasNextPage: boolean; endCursor: string | null }
+      }
+    }
+  }
+  const page = (nodes: (Node | null)[]): Result => ({
+    repository: {
+      pullRequests: {
+        nodes,
+        pageInfo: { hasNextPage: false, endCursor: null },
+      },
+    },
+  })
+  // What octokit throws for a GraphQL response with both data and errors.
+  const partialError = (data: Result) =>
+    Object.assign(new Error('partial'), {
+      data,
+      errors: [{ message: 'Something went wrong' }],
+    })
+  const extract = (r: Result) => r.repository.pullRequests
+  const options = { minPageSize: 10, label: 'test' }
+
+  test('complete when every node came back', async () => {
+    const result = await paginateGraphQLWithStatus(
+      () => Promise.resolve(page([{ number: 1 }, { number: 2 }])),
+      extract,
+      (n: Node) => n,
+      options,
+    )
+    expect(result).toEqual({
+      items: [{ number: 1 }, { number: 2 }],
+      complete: true,
+    })
+  })
+
+  test('reads a partial-error page again, and is complete if the second read is', async () => {
+    const graphqlFn = vi
+      .fn<() => Promise<Result>>()
+      .mockRejectedValueOnce(partialError(page([{ number: 2 }, null])))
+      .mockResolvedValueOnce(page([{ number: 2 }, { number: 1 }]))
+    const result = await paginateGraphQLWithStatus(
+      graphqlFn,
+      extract,
+      (n: Node) => n,
+      options,
+    )
+    expect(graphqlFn).toHaveBeenCalledTimes(2)
+    expect(result).toEqual({
+      items: [{ number: 2 }, { number: 1 }],
+      complete: true,
+    })
+  })
+
+  test('incomplete when the page is partial twice: the null node is skipped', async () => {
+    const graphqlFn = vi
+      .fn<() => Promise<Result>>()
+      .mockRejectedValue(partialError(page([{ number: 2 }, null])))
+    const result = await paginateGraphQLWithStatus(
+      graphqlFn,
+      extract,
+      (n: Node) => n,
+      options,
+    )
+    expect(graphqlFn).toHaveBeenCalledTimes(2)
+    expect(result).toEqual({ items: [{ number: 2 }], complete: false })
+  })
+
+  test('incomplete when a node is null without an error', async () => {
+    const result = await paginateGraphQLWithStatus(
+      () => Promise.resolve(page([{ number: 2 }, null])),
+      extract,
+      (n: Node) => n,
+      options,
+    )
+    expect(result.complete).toBe(false)
   })
 })

@@ -19,8 +19,8 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 
 # Last confirmation that the model describes the covered code.
-SYNC_COMMIT=94444b97
-SYNC_HASH=550d858a3c978f94
+SYNC_COMMIT=ab4ca215
+SYNC_HASH=19b72656d0eb2542
 COVERED=(
   app/services/jobs/crawl.server.ts
   app/services/jobs/scan-watermark.ts
@@ -48,8 +48,9 @@ MODELS=(
   "code-page-refresh=pass"
   "code-second-worker=pass"
   "assumption-clock-ahead=Converged"
-  "finding-partial-list=Converged"
+  "code-partial-list=pass"
   "mutant-advance-on-failure=Converged"
+  "mutant-advance-on-partial-list=Converged"
   "mutant-targeted-advances=Converged"
   "mutant-no-list-time-cap=Converged"
   "mutant-fetchedat-guard=RawNeverGoesBack"
@@ -92,6 +93,8 @@ StopInclusive=$(switch_value StopInclusive batch/github/fetcher.ts \
   '? (node) => node.updatedAt <= stopBefore' '? (node) => node.updatedAt < stopBefore')
 AdvanceNeedsAllSaved=$(switch_value AdvanceNeedsAllSaved app/services/jobs/scan-watermark.ts \
   'if (!savedPrNumbers.has(pr.number)) return null' '')
+AdvanceNeedsFullList=$(switch_value AdvanceNeedsFullList app/services/jobs/scan-watermark.ts \
+  'if (!listComplete) return null' '')
 TargetedNeverAdvances=$(switch_value TargetedNeverAdvances app/services/jobs/scan-watermark.ts \
   'if (isTargetedFetch) return null' '')
 # SaveRule has three values, so it is read here, not by switch_value.
@@ -106,7 +109,7 @@ else
 fi
 CapAtListTime=$(switch_value CapAtListTime app/services/jobs/scan-watermark.ts \
   'return max > cap ? cap : max' '')
-echo "Code switches: StopInclusive=$StopInclusive AdvanceNeedsAllSaved=$AdvanceNeedsAllSaved TargetedNeverAdvances=$TargetedNeverAdvances SaveRule=$SaveRule CapAtListTime=$CapAtListTime"
+echo "Code switches: StopInclusive=$StopInclusive AdvanceNeedsAllSaved=$AdvanceNeedsAllSaved AdvanceNeedsFullList=$AdvanceNeedsFullList TargetedNeverAdvances=$TargetedNeverAdvances SaveRule=$SaveRule CapAtListTime=$CapAtListTime"
 
 installed_durably=$(node -p "require('./node_modules/@coji/durably/package.json').version" 2>/dev/null || echo unknown)
 if [[ "$installed_durably" != "$DURABLY_VERSION" ]]; then
@@ -135,6 +138,7 @@ for entry in "${MODELS[@]}"; do
   [[ -n "$only" && "$only" != "$name" ]] && continue
   sed -e "s/@StopInclusive@/$StopInclusive/" \
       -e "s/@AdvanceNeedsAllSaved@/$AdvanceNeedsAllSaved/" \
+      -e "s/@AdvanceNeedsFullList@/$AdvanceNeedsFullList/" \
       -e "s/@TargetedNeverAdvances@/$TargetedNeverAdvances/" \
       -e "s/@SaveRule@/$SaveRule/" \
       -e "s/@CapAtListTime@/$CapAtListTime/" \

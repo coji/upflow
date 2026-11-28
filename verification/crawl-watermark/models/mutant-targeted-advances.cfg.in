@@ -10,6 +10,7 @@ CONSTANTS
     Workers = 1
     StopInclusive = @StopInclusive@
     AdvanceNeedsAllSaved = @AdvanceNeedsAllSaved@
+    AdvanceNeedsFullList = @AdvanceNeedsFullList@
     TargetedNeverAdvances = FALSE
     SaveRule = @SaveRule@
     CapAtListTime = @CapAtListTime@

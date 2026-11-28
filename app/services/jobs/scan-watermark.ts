@@ -34,6 +34,10 @@ const toGitHubTimestamp = (ms: number) =>
  *    second, after the read, has `updatedAt <= watermark` and no later sweep
  *    lists it. The cost is one extra fetch of the PRs updated within the
  *    margin before the read, on the next sweep only.
+ * 5. Sweeps whose PR list came back with gaps MUST NOT advance the watermark.
+ *    GitHub can answer a list page with a partial error and null nodes; the
+ *    missing PRs are unknown, so no watermark can be shown to stay below
+ *    them. The PRs that were listed are still fetched.
  *
  * `listStartedAt` is the server time taken just before the PR list request.
  * Without it the function cannot bound the watermark and returns null.
@@ -46,12 +50,21 @@ export const computeAdvancedScanWatermark = (params: {
   prsToFetch: ReadonlyArray<{ number: number; updatedAt?: string }>
   savedPrNumbers: ReadonlySet<number>
   listStartedAt: string | null
+  /** false when GitHub did not return the whole PR list (pullrequestList). */
+  listComplete: boolean
 }): string | null => {
-  const { isTargetedFetch, prsToFetch, savedPrNumbers, listStartedAt } = params
+  const {
+    isTargetedFetch,
+    prsToFetch,
+    savedPrNumbers,
+    listStartedAt,
+    listComplete,
+  } = params
 
   if (isTargetedFetch) return null
   if (prsToFetch.length === 0) return null
   if (listStartedAt === null) return null
+  if (!listComplete) return null
 
   let max: string | null = null
   for (const pr of prsToFetch) {

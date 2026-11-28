@@ -23,6 +23,7 @@ CONSTANTS
     \* --- switches that mirror a choice in the code (see check.sh) ---
     StopInclusive,        \* fetcher.ts pullrequestList: stop when node.updatedAt <= stopBefore
     AdvanceNeedsAllSaved, \* scan-watermark.ts: no advance unless every listed PR was saved
+    AdvanceNeedsFullList, \* scan-watermark.ts: no advance when the PR list had gaps
     TargetedNeverAdvances,\* scan-watermark.ts: a targeted (webhook) fetch never advances
     SaveRule,             \* store.ts savePrData: when a save lands.  "unchanged": only if
                           \* the row's fetchedAt is still the one read before the GitHub
@@ -194,12 +195,17 @@ CrawlStarts(k) ==
 
 \* step fetch-prs: fetcher.pullrequestList(stopBefore), UPDATED_AT DESC,
 \* paging stops at the first node with updatedAt <= stopBefore.
-\* With PartialListing, paginateGraphQL skips null nodes without an error.
+\* With PartialListing, GitHub can leave PRs out of the list (a GraphQL partial
+\* error with null nodes, after paginateGraphQLWithStatus has read the page
+\* again); full records whether the list came back whole (listComplete).
+\* Gaps happen only before things go quiet: GitHub returns the whole list
+\* again at some point.  Without that bound the sweeps after quiet could go on
+\* forever, and so could the model.
 Listed(w, p) == w = None \/ (IF StopInclusive THEN ghUpd[p] > w ELSE ghUpd[p] >= w)
 PrListFetched(k) ==
     /\ Run(k).phase = "list"
     /\ LET L == {p \in PRs : Listed(Run(k).wm, p)}
-       IN \E S \in (IF PartialListing THEN SUBSET L ELSE {L}) :
+       IN \E S \in (IF PartialListing /\ ~quiet THEN SUBSET L ELSE {L}) :
             Set(k, [Run(k) EXCEPT !.listed = {<<p, ghUpd[p]>> : p \in S},
                                   !.todo = S, !.full = (S = L), !.ls = now,
                                   !.phase = "pick"])
@@ -275,6 +281,7 @@ WatermarkStep(k) ==
     /\ LET r == Run(k) IN
        /\ IF (r.kind = "sweep" \/ (r.kind = "target" /\ ~TargetedNeverAdvances))
              /\ r.listed # {} /\ (AdvanceNeedsAllSaved => AllSaved(r))
+             /\ (AdvanceNeedsFullList => r.full)
           THEN watermark' = NewWatermark(r)
           ELSE UNCHANGED watermark
        /\ Set(k, [r EXCEPT !.phase = "done"])
