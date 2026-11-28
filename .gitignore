@@ -70,6 +70,7 @@ data.db-wal
 # Claude Code (skills are shared; settings stay local)
 .claude/*
 !.claude/skills/
+!.claude/settings.json
 
 /order.md
 /.sprite
