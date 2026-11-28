@@ -34,6 +34,8 @@ node_bin() {
 
 state_dir() {
   [[ -n "${1:-}" ]] || die 'RUN_ID が必要です'
+  # stop が rm -rf するので、state root の外を指せる値 (.., /) は受け付けない
+  [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || die "RUN_ID に使えるのは英数字と . _ - だけです (先頭は英数字): $1"
   echo "$STATE_ROOT/$1"
 }
 
@@ -63,13 +65,44 @@ free_port() {
 
 listening_pid() {
   command -v lsof >/dev/null || return 0
-  lsof -nP -iTCP:"$1" -sTCP:LISTEN -t 2>/dev/null | head -1
+  # 誰も listen していないと lsof は 1 を返す。pipefail と set -e で doctor が途中で落ちないようにする。
+  lsof -nP -iTCP:"$1" -sTCP:LISTEN -t 2>/dev/null | head -1 || true
+}
+
+# launch を 1 つずつ通す。build/ は checkout で 1 つ、atlas の SQLite 用ロックは
+# マシンで 1 つ (/tmp/atlas_migrate_execute.lock)、空きポートは確かめてから bind するまで
+# 予約されない。どれも同時に launch すると壊れるので、ready になるまでロックを持つ。
+acquire_launch_lock() {
+  local lock="$STATE_ROOT/.launch.lock" i
+  mkdir -p "$STATE_ROOT"
+  for i in $(seq 1 600); do
+    if mkdir "$lock" 2>/dev/null; then
+      echo $$ >"$lock/pid"
+      trap 'rm -rf "'"$lock"'"' EXIT
+      return 0
+    fi
+    # 持ち主が死んでいるロックは片付ける
+    if ! kill -0 "$(cat "$lock/pid" 2>/dev/null || echo 0)" 2>/dev/null; then
+      rm -rf "$lock"
+      continue
+    fi
+    ((i == 1)) && echo "別の launch が終わるのを待っています..."
+    sleep 1
+  done
+  die "10 分待っても launch のロック ($lock) が空きませんでした"
 }
 
 build_is_stale() {
   local marker="$REPO/build/server/index.js"
   [[ -f "$marker" && -f "$REPO/build/job-scheduler.js" ]] || return 0
-  [[ -n "$(cd "$REPO" && find app server batch db public react-router.config.ts vite.config.ts -newer "$marker" -type f 2>/dev/null | head -1)" ]]
+  [[ -n "$(cd "$REPO" && find app server batch db public react-router.config.ts vite.config.ts \
+    package.json pnpm-lock.yaml server.mjs instrument.server.mjs -newer "$marker" -type f 2>/dev/null | head -1)" ]]
+}
+
+# VITE_* は build 時に client bundle に焼き込まれる。開発者の .env の VITE_SENTRY_DSN で
+# 作られた build を使うと、検証中のブラウザのエラーが本物の Sentry に飛ぶ。
+build_has_sentry_dsn() {
+  grep -rqE 'ingest(\.[a-z]+)?\.sentry\.io' "$REPO/build/client" 2>/dev/null
 }
 
 # 本番 .env の値がこの instance に混ざらないよう、外に出ていく系の変数を空で固定する。
@@ -105,6 +138,8 @@ cmd_launch() {
   command -v atlas >/dev/null || die 'atlas が見つかりません (https://atlasgo.io/getting-started)'
   command -v curl >/dev/null || die 'curl が見つかりません'
   [[ -d "$REPO/node_modules" ]] || die "依存が入っていません。$REPO で pnpm install を実行してください"
+  acquire_launch_lock
+  [[ ! -e "$dir" ]] || die "run $run_id は既にあります。別の RUN_ID を使うか stop してください"
 
   mkdir -p "$dir/data"
   data_dir="$dir/data"
@@ -114,9 +149,9 @@ cmd_launch() {
   isolated_env "$data_dir" "$port" >"$dir/app.env"
 
   cd "$REPO"
-  if build_is_stale; then
-    echo "build/ が無いか古いので pnpm build します (1-2 分)..."
-    pnpm build >>"$log" 2>&1 || die "pnpm build に失敗しました: $log"
+  if build_is_stale || build_has_sentry_dsn; then
+    echo "build/ が無いか古いか Sentry の DSN 入りなので pnpm build します (1-2 分)..."
+    VITE_SENTRY_DSN= SENTRY_PUBLISH_RELEASE= pnpm build >>"$log" 2>&1 || die "pnpm build に失敗しました: $log"
   fi
 
   echo "使い捨て DB を $data_dir に作ります..."
@@ -129,8 +164,6 @@ cmd_launch() {
     atlas migrate apply --env local --url "sqlite://$data_dir/data.db"
     pnpm exec tsx db/migrate-integrations-to-shared.ts
     pnpm exec tsx db/apply-tenant-migrations.ts
-    # seed は kysely-codegen 用の ./data/tenant_seed.db も書く
-    mkdir -p data
     pnpm exec tsx db/seed.ts
   ) >>"$log" 2>&1 || die "DB の準備に失敗しました: $log"
 
@@ -164,6 +197,11 @@ cmd_launch() {
     fi
     # healthcheck だけでは「使える」ことにならない。seed の admin でログインできるまで待つ。
     if [[ "$(http_code "$base/healthcheck")" == 200 && "$(http_code "$base/test-login?email=admin%40example.com")" == 302 ]]; then
+      local owner
+      owner="$(listening_pid "$port")"
+      if [[ -n "$owner" && "$owner" != "$pid" ]]; then
+        die "port $port に答えているのは pid $owner で、この run ($pid) ではありません。止めるには: $0 stop $run_id"
+      fi
       mkdir -p "$EVIDENCE_ROOT/$run_id"
       echo "ready: run=$run_id url=$base pid=$pid"
       echo "  state:    $dir"
@@ -197,12 +235,16 @@ cmd_doctor() {
   [[ "$(http_code "$base/test-login?email=admin%40example.com")" == 302 ]] &&
     check ok "seed admin で /test-login できる (ENABLE_E2E_LOGIN 有効、DB に seed あり)" ||
     check ng "/test-login が 302 を返さない (seed 消失か ENABLE_E2E_LOGIN 無効)"
-  [[ -f "$DATA_DIR/data.db" ]] && ls "$DATA_DIR"/tenant_*.db >/dev/null 2>&1 &&
+  [[ -f "$DATA_DIR/data.db" ]] &&
+    [[ -n "$(find "$DATA_DIR" -maxdepth 1 -name 'tenant_*.db' ! -name tenant_seed.db | head -1)" ]] &&
     check ok "使い捨て DB $DATA_DIR に shared と tenant がある" || check ng "$DATA_DIR に DB が揃っていない"
   local head
   head="$(git -C "$REPO" rev-parse --short HEAD)"
   [[ "$head" == "$GIT_REV" ]] && check ok "起動時と同じ commit ($GIT_REV)" ||
     check ng "起動時 $GIT_REV から HEAD $head に変わっている。stop して launch し直す"
+  if build_has_sentry_dsn; then
+    check ng "build/ に Sentry の DSN が入っている。stop して launch し直す (launch が DSN 抜きで再ビルドする)"
+  fi
   if build_is_stale; then
     check ng "build/ より新しいソースがある。stop して launch し直す (launch が再ビルドする)"
   else
@@ -218,7 +260,7 @@ cmd_drive() {
   scenario="$(cd "$(dirname "$scenario")" && pwd -P)/$(basename "$scenario")"
   local name
   name="$(basename "$scenario")"
-  name="${name%.*}-$(date +%H%M%S)"
+  name="${name%.*}-$(date +%Y%m%d-%H%M%S)-$$"
   # 1 回の drive ごとに別ディレクトリ。失敗した試行の証拠も上書きせずに残す。
   BASE_URL="$BASE_URL" DATA_DIR="$DATA_DIR" EVIDENCE_DIR="$EVIDENCE_DIR/$name" \
     E2E_ADMIN_EMAIL="$E2E_ADMIN_EMAIL" \

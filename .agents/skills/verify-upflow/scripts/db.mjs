@@ -10,7 +10,9 @@ export function dbPath(dataDir, which) {
   if (which === 'tenant') {
     // seed は organization を 1 つ (techtalk) だけ作るので tenant DB も 1 つ
     const files = readdirSync(dataDir).filter(
-      (f) => f.startsWith('tenant_') && f.endsWith('.db'),
+      // tenant_seed.db は seed が kysely-codegen 用に置く複製なので除く
+      (f) =>
+        f.startsWith('tenant_') && f.endsWith('.db') && f !== 'tenant_seed.db',
     )
     if (files.length !== 1) {
       throw new Error(
